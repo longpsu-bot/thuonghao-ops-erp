@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, test } from "vitest";
 import assert from "node:assert/strict";
@@ -842,7 +843,7 @@ test("real Confirmed Need rows distinguish one nonzero edit from pending zero de
     planningBrowser.preSaveGateStateExpression(),
   );
   assert.equal(state.rendered_rows, 3);
-  assert.equal(state.quantity_delta_rows, 3);
+  assert.equal(state.quantity_delta_rows, 1);
   assert.equal(state.quantity_adjustment_rows, 1);
   const candidate = await browserEvaluate(
     planningBrowser.editableConfirmedNeedCandidateExpression(),
@@ -850,6 +851,10 @@ test("real Confirmed Need rows distinguish one nonzero edit from pending zero de
   assert.deepEqual(candidate, { lineId: "line-0" });
   const row =
     'section[aria-label="Xác nhận nhu cầu"] table[aria-label="Nhu cầu xác nhận"] tbody tr:nth-child(1)';
+  assert.match(
+    document.querySelector(`${row} [data-field="delta"]`).textContent,
+    /\+0,01 kg/,
+  );
   assert.equal(
     await browserEvaluate(
       planningBrowser.quantityEditSettledExpression(row, "1.01"),
@@ -860,9 +865,32 @@ test("real Confirmed Need rows distinguish one nonzero edit from pending zero de
     planningBrowser.assertPreSaveGate({
       ...state,
       rendered_rows: 248,
-      quantity_delta_rows: 248,
     }),
   );
+});
+
+test("unit-bearing deltas use semantic adjustment state for browser gates", async () => {
+  document.body.innerHTML = `<section aria-label="Xác nhận nhu cầu">
+    <table aria-label="Nhu cầu xác nhận"><tbody>
+      <tr><td data-field="confirmation" data-adjustment-state="valid"><input aria-label="Số lượng xác nhận Ingredient 0" value="1.001"></td><td data-field="delta">+0,001 kg</td></tr>
+      <tr><td data-field="confirmation" data-adjustment-state="invalid"><input aria-label="Số lượng xác nhận Ingredient 1" value="1.005" aria-invalid="true"></td><td data-field="delta">+0,005 kg</td></tr>
+      <tr><td data-field="confirmation" data-adjustment-state="unchanged"><input aria-label="Số lượng xác nhận Ingredient 2" value="1"></td><td data-field="delta">—</td></tr>
+    </tbody></table><button>Lưu</button>
+  </section>`;
+  const row =
+    'section[aria-label="Xác nhận nhu cầu"] table[aria-label="Nhu cầu xác nhận"] tbody tr:first-child';
+  assert.equal(
+    await browserEvaluate(
+      planningBrowser.quantityEditSettledExpression(row, "1.001"),
+    ),
+    true,
+  );
+  const state = await browserEvaluate(
+    planningBrowser.preSaveGateStateExpression(),
+  );
+  assert.equal(state.quantity_delta_rows, 2);
+  assert.equal(state.quantity_adjustment_rows, 1);
+  assert.equal(state.invalid_controls, 1);
 });
 
 const rehearsalDates = [
@@ -951,6 +979,29 @@ test("reason selection waits for the real conditional note input to mount", asyn
     document.querySelector(`${row} input[aria-label^="Ghi chú"]`),
     null,
   );
+  assert.equal(
+    document
+      .querySelector(`${row} [data-field="confirmation"]`)
+      ?.getAttribute("data-adjustment-state"),
+    "unchanged",
+  );
+  assert.equal(
+    screen.queryByRole("combobox", { name: "Lý do Ingredient 0" }),
+    null,
+  );
+  fireEvent.change(
+    screen.getByRole("textbox", { name: "Số lượng xác nhận Ingredient 0" }),
+    { target: { value: planningBrowser.minimalPlanningAdjustment(line) } },
+  );
+  await waitFor(() => {
+    assert.equal(
+      document
+        .querySelector(`${row} [data-field="confirmation"]`)
+        ?.getAttribute("data-adjustment-state"),
+      "valid",
+    );
+    assert.ok(screen.getByRole("combobox", { name: "Lý do Ingredient 0" }));
+  });
   fireEvent.change(
     screen.getByRole("combobox", { name: "Lý do Ingredient 0" }),
     {
@@ -964,7 +1015,9 @@ test("reason selection waits for the real conditional note input to mount", asyn
     interval: 5,
     timeout: 1000,
   });
-  assert.ok(document.querySelector(`${row} input[aria-label^="Ghi chú"]`));
+  const note = document.querySelector(`${row} input[aria-label^="Ghi chú"]`);
+  assert.ok(note);
+  assert.equal(note.disabled, false);
 });
 
 test("pre-Save waits for quantity, reason, note, and Save eligibility to settle", async () => {
@@ -972,12 +1025,9 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
     { length: 248 },
     (_, index) => `<tr>
     <td data-field="identity">Ingredient ${index}</td><td data-field="unit">kg</td><td data-field="raw-requirement">1</td>
-    <td data-field="operational-proposal">1</td><td data-field="confirmation"><input aria-label="Số lượng xác nhận ${index}" value="1"></td>
-    <td data-field="delta" class="delta">${index === 0 ? "—" : "0"}</td>
-    <td><select aria-label="Lý do ${index}">
-      <option value="PROPOSAL_ACCEPTED">Accepted</option>
-      <option value="OPERATIONAL_QUANTITY_ADJUSTMENT">Adjusted</option>
-    </select>${index === 0 ? '<input aria-label="Ghi chú 0" value="">' : ""}</td>
+    <td data-field="operational-proposal">1</td><td data-field="confirmation" data-adjustment-state="unchanged"><input aria-label="Số lượng xác nhận ${index}" value="1"></td>
+    <td data-field="delta" class="delta">—</td>
+    <td data-field="reason">Theo đề xuất</td>
   </tr>`,
   ).join("");
   document.body.innerHTML = `<section aria-label="Xác nhận nhu cầu">
@@ -990,7 +1040,15 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
     setTimeout(() => {
       first.querySelector('input[aria-label^="Số lượng xác nhận"]').value =
         "1.01";
-      first.querySelector(".delta").textContent = "+0,01";
+      first
+        .querySelector('[data-field="confirmation"]')
+        .setAttribute("data-adjustment-state", "invalid");
+      first.querySelector(".delta").textContent = "+0,01 kg";
+      first.querySelector('[data-field="reason"]').innerHTML =
+        `<select aria-label="Lý do 0">
+        <option value="PROPOSAL_ACCEPTED">Accepted</option>
+        <option value="OPERATIONAL_QUANTITY_ADJUSTMENT">Adjusted</option>
+      </select><input aria-label="Ghi chú 0" value="">`;
     }, 20),
     setTimeout(() => {
       first.querySelector('select[aria-label^="Lý do"]').value =
@@ -999,6 +1057,9 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
     setTimeout(() => {
       first.querySelector('input[aria-label^="Ghi chú"]').value =
         "Owner-approved Staging closeout verification: one minimal quantity edit; no Procurement release.";
+      first
+        .querySelector('[data-field="confirmation"]')
+        .setAttribute("data-adjustment-state", "valid");
     }, 60),
     setTimeout(() => {
       root.querySelector("button").disabled = false;
