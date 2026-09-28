@@ -1,11 +1,15 @@
 import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { useId } from "react";
+import type { CSSProperties } from "react";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   confirmedNeedConfirmationStateLabel,
   confirmedNeedInputDisplay,
   confirmedNeedReasonLabels,
+  exactDecimalEqual,
   exactQuantityDisplay,
   initialConfirmedNeedDraft,
+  normalizeConfirmedNeedQuantity,
   subtractExactDecimals,
   type ConfirmedNeedDraftLine,
   type ConfirmedNeedLine,
@@ -16,30 +20,48 @@ export function ConfirmedNeedTable({
   drafts,
   errors,
   editable,
+  compactEditing = false,
   onEdit,
 }: {
   lines: ConfirmedNeedLine[];
   drafts: Record<string, ConfirmedNeedDraftLine>;
   errors: Record<string, string>;
   editable: boolean;
+  compactEditing?: boolean;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   const id = useId();
   return (
-    <Table.ScrollArea
-      overflow="auto"
+    <AtlasTableViewport
+      label="Bảng xác nhận nhu cầu"
+      style={
+        {
+          "--atlas-confirmed-need-table-mobile-max-height": compactEditing
+            ? "28dvh"
+            : "var(--atlas-layout-table-mobile-height, 55dvh)",
+        } as CSSProperties
+      }
       maxH={{
-        base: "var(--atlas-layout-table-mobile-height, 55dvh)",
+        base: "var(--atlas-confirmed-need-table-mobile-max-height)",
         xl: "var(--atlas-layout-table-height, calc(100dvh - 425px))",
       }}
     >
-      <Table.Root aria-label="Nhu cầu xác nhận" size="sm" stickyHeader>
+      <Table.Root
+        aria-label="Nhu cầu xác nhận"
+        size="sm"
+        stickyHeader
+        style={
+          {
+            minWidth: "var(--atlas-layout-confirmed-need-table-min, 980px)",
+            "--atlas-confirmed-need-header-height": "38px",
+            "--atlas-confirmed-need-row-min-height": "46px",
+          } as CSSProperties
+        }
+      >
         <Table.Header>
           <Table.Row>
             {[
               "Nguyên liệu / nơi nhận",
-              "ĐVT",
-              "Nhu cầu tính",
               "Đề xuất vận hành",
               "Số lượng xác nhận",
               "Thay đổi",
@@ -47,7 +69,21 @@ export function ConfirmedNeedTable({
             ].map((label, i) => (
               <Table.ColumnHeader
                 key={label}
-                textAlign={i >= 2 && i <= 5 ? "end" : "start"}
+                textAlign={i >= 1 && i <= 3 ? "end" : "start"}
+                h="var(--atlas-confirmed-need-header-height)"
+                py="var(--atlas-layout-zero, 0)"
+                {...(i === 0
+                  ? {
+                      style: {
+                        position: "sticky",
+                        top: "var(--atlas-layout-zero, 0)",
+                        left: "var(--atlas-layout-zero, 0)",
+                        zIndex:
+                          "var(--atlas-layout-sticky-identity-header-z, 5)",
+                        background: "var(--atlas-colors-bg-toolbar)",
+                      },
+                    }
+                  : {})}
               >
                 {label}
               </Table.ColumnHeader>
@@ -63,24 +99,48 @@ export function ConfirmedNeedTable({
             const historical = historicalQuantity(line);
             const error = errors[line.confirmed_need_line_id];
             const description = `${id}-error-${index}`;
-            const delta = changed
-              ? subtractExactDecimals(
-                  draft.exact_quantity,
-                  initialConfirmedNeedDraft(line).exact_quantity,
-                )
-              : null;
+            const normalizedQuantity = normalizeConfirmedNeedQuantity(
+              draft.exact_quantity,
+            );
+            const adjusted = Boolean(
+              normalizedQuantity &&
+              !exactDecimalEqual(
+                normalizedQuantity,
+                line.proposed_confirmed_quantity,
+              ),
+            );
+            const delta =
+              adjusted && normalizedQuantity
+                ? subtractExactDecimals(
+                    normalizedQuantity,
+                    line.proposed_confirmed_quantity,
+                  )
+                : null;
             const attention = ["NEW", "CHANGED", "UNREVIEWED"].includes(
               line.confirmation_state,
+            );
+            const showReasonChrome = Boolean(
+              adjusted ||
+              draft.reason_note ||
+              draft.reason_code !== "PROPOSAL_ACCEPTED" ||
+              (line.current_decision_id && changed),
             );
             return (
               <Table.Row
                 key={line.confirmed_need_line_id}
                 data-confirmed-need-line
                 data-confirmed-need-line-id={line.confirmed_need_line_id}
+                minH="var(--atlas-confirmed-need-row-min-height)"
               >
                 <Table.Cell
                   data-field="identity"
                   minW="var(--atlas-layout-identity-width, 210px)"
+                  style={{
+                    position: "sticky",
+                    left: "var(--atlas-layout-zero, 0)",
+                    zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
+                    background: "var(--atlas-colors-bg-workbench)",
+                  }}
                 >
                   <Text data-role="ingredient-name" fontWeight="semibold">
                     {line.ingredient.name}
@@ -92,73 +152,86 @@ export function ConfirmedNeedTable({
                   >
                     {line.school.name} · {line.delivery_location.name}
                   </Text>
-                  <Text
-                    textStyle="helper"
-                    color={attention ? "status.warning" : "fg.muted"}
-                  >
-                    {attention ? "⚠ " : ""}
-                    {confirmedNeedConfirmationStateLabel(
-                      line.confirmation_state,
-                    )}
-                  </Text>
-                </Table.Cell>
-                <Table.Cell data-field="unit">
-                  {line.controlled_unit.code}
-                </Table.Cell>
-                <Table.Cell data-field="raw-requirement" textAlign="end">
-                  {exactQuantityDisplay(line.theoretical_quantity)}
+                  {attention && (
+                    <Text textStyle="helper" color="status.warning">
+                      ⚠{" "}
+                      {confirmedNeedConfirmationStateLabel(
+                        line.confirmation_state,
+                      )}
+                    </Text>
+                  )}
                 </Table.Cell>
                 <Table.Cell
                   data-field="operational-proposal"
                   textAlign="end"
                   whiteSpace="nowrap"
                 >
-                  <Text>
-                    {exactQuantityDisplay(line.proposed_confirmed_quantity)}
-                  </Text>
-                  {line.proposal_rounding_step && (
-                    <Text textStyle="helper" color="fg.muted">
-                      Làm tròn:{" "}
-                      {exactQuantityDisplay(line.proposal_rounding_step)}{" "}
+                  <Text textStyle="quantityInline">
+                    {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
+                    <Box
+                      as="span"
+                      textStyle="unitInline"
+                      color="fg.muted"
+                      ml="xs"
+                    >
                       {line.controlled_unit.code}
-                    </Text>
-                  )}
+                    </Box>
+                  </Text>
                 </Table.Cell>
                 <Table.Cell
                   data-field="confirmation"
+                  data-adjustment-state={
+                    error ? "invalid" : adjusted ? "valid" : "unchanged"
+                  }
                   minW="var(--atlas-layout-quantity-width, 145px)"
+                  style={{
+                    background: error
+                      ? "var(--atlas-colors-bg-danger)"
+                      : adjusted
+                        ? "var(--atlas-colors-bg-selected)"
+                        : undefined,
+                  }}
                 >
-                  <Input
-                    aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
-                    inputMode="decimal"
-                    textAlign="end"
-                    value={
-                      draft.quantity_entered
-                        ? draft.exact_quantity
-                        : confirmedNeedInputDisplay(draft.exact_quantity)
-                    }
-                    readOnly={historical}
-                    disabled={!editable}
-                    aria-invalid={Boolean(error)}
-                    aria-describedby={
-                      error || historical ? description : undefined
-                    }
-                    onChange={(e) =>
-                      onEdit(line.confirmed_need_line_id, {
-                        exact_quantity: e.target.value,
-                        quantity_entered: true,
-                      })
-                    }
-                  />
-                  {line.effective_policy && (
-                    <Text textStyle="helper" color="fg.muted">
-                      Bước xác nhận:{" "}
-                      {exactQuantityDisplay(
-                        line.effective_policy.planning_step,
-                      )}{" "}
+                  <Box
+                    display="grid"
+                    gridTemplateColumns="minmax(0, 1fr) auto"
+                    gap="xs"
+                    alignItems="center"
+                  >
+                    <Input
+                      aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
+                      inputMode="decimal"
+                      textAlign="end"
+                      value={
+                        draft.quantity_entered
+                          ? draft.exact_quantity
+                          : confirmedNeedInputDisplay(draft.exact_quantity)
+                      }
+                      readOnly={historical}
+                      disabled={!editable}
+                      aria-invalid={Boolean(error)}
+                      borderColor={
+                        error
+                          ? "status.danger"
+                          : adjusted
+                            ? "border.interactive"
+                            : undefined
+                      }
+                      fontWeight={adjusted ? "semibold" : "medium"}
+                      aria-describedby={
+                        error || historical ? description : undefined
+                      }
+                      onChange={(e) =>
+                        onEdit(line.confirmed_need_line_id, {
+                          exact_quantity: e.target.value,
+                          quantity_entered: true,
+                        })
+                      }
+                    />
+                    <Text textStyle="unitInline" color="fg.muted">
                       {line.controlled_unit.code}
                     </Text>
-                  )}
+                  </Box>
                   {historical && (
                     <Text id={description} textStyle="helper" color="fg.muted">
                       Giữ nguyên độ chính xác gốc · chỉ đọc.
@@ -170,39 +243,57 @@ export function ConfirmedNeedTable({
                   textAlign="end"
                   whiteSpace="nowrap"
                 >
-                  {delta ? exactQuantityDisplay(delta) : "—"}
+                  {delta ? (
+                    <Text textStyle="quantityInline" color="fg.primary">
+                      {exactQuantityDisplay(delta)}{" "}
+                      <Box
+                        as="span"
+                        textStyle="unitInline"
+                        color="fg.primary"
+                        ml="xs"
+                      >
+                        {line.controlled_unit.code}
+                      </Box>
+                    </Text>
+                  ) : (
+                    "—"
+                  )}
                 </Table.Cell>
                 <Table.Cell
                   data-field="reason"
                   minW="var(--atlas-layout-reason-width, 255px)"
                 >
                   <Box display="grid" gap="xs">
-                    <NativeSelect.Root disabled={!editable || historical}>
-                      <NativeSelect.Field
-                        aria-label={`Lý do ${line.ingredient.name}`}
-                        value={draft.reason_code}
-                        aria-invalid={Boolean(error)}
-                        aria-describedby={error ? description : undefined}
-                        onChange={(e) =>
-                          onEdit(line.confirmed_need_line_id, {
-                            reason_code: e.target
-                              .value as ConfirmedNeedDraftLine["reason_code"],
-                          })
-                        }
-                      >
-                        {Object.entries(confirmedNeedReasonLabels).map(
-                          ([code, label]) => (
-                            <option value={code} key={code}>
-                              {label}
-                            </option>
-                          ),
-                        )}
-                      </NativeSelect.Field>
-                      <NativeSelect.Indicator />
-                    </NativeSelect.Root>
-                    {(changed ||
-                      draft.reason_note ||
-                      draft.reason_code !== "PROPOSAL_ACCEPTED") && (
+                    {showReasonChrome ? (
+                      <NativeSelect.Root disabled={!editable || historical}>
+                        <NativeSelect.Field
+                          aria-label={`Lý do ${line.ingredient.name}`}
+                          value={draft.reason_code}
+                          aria-invalid={Boolean(error)}
+                          aria-describedby={error ? description : undefined}
+                          onChange={(e) =>
+                            onEdit(line.confirmed_need_line_id, {
+                              reason_code: e.target
+                                .value as ConfirmedNeedDraftLine["reason_code"],
+                            })
+                          }
+                        >
+                          {Object.entries(confirmedNeedReasonLabels).map(
+                            ([code, label]) => (
+                              <option value={code} key={code}>
+                                {label}
+                              </option>
+                            ),
+                          )}
+                        </NativeSelect.Field>
+                        <NativeSelect.Indicator />
+                      </NativeSelect.Root>
+                    ) : (
+                      <Text textStyle="helper" color="fg.muted">
+                        Theo đề xuất
+                      </Text>
+                    )}
+                    {showReasonChrome && (
                       <Input
                         aria-label={`Ghi chú ${line.ingredient.name}`}
                         placeholder="Ghi chú điều chỉnh"
@@ -238,6 +329,6 @@ export function ConfirmedNeedTable({
           Không có dòng phù hợp bộ lọc.
         </Text>
       )}
-    </Table.ScrollArea>
+    </AtlasTableViewport>
   );
 }

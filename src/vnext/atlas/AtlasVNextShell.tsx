@@ -1,26 +1,26 @@
 import {
   Box,
   Button,
-  Flex,
   Drawer,
+  Flex,
   Heading,
   Icon,
   Stack,
   Text,
 } from "@chakra-ui/react";
 import {
+  Buildings,
+  ClipboardText,
+  CookingPot,
   List,
   Package,
-  ClipboardText,
-  Buildings,
-  CookingPot,
-  Truck,
   Scales,
   ShoppingCart,
+  Truck,
   X,
 } from "@phosphor-icons/react";
-import { formatVietnamBusinessDate } from "./businessDate";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { formatVietnamBusinessDate } from "./businessDate";
 
 const navigation = [
   { id: "schools", label: "Trường học", icon: Buildings, group: "Dữ liệu gốc" },
@@ -47,6 +47,56 @@ const navigation = [
 
 export type AtlasVNextModuleId = (typeof navigation)[number]["id"];
 
+function RailTooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Box
+      position="relative"
+      onPointerEnter={() => setOpen(true)}
+      onPointerLeave={() => setOpen(false)}
+      onFocusCapture={() => setOpen(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          setOpen(false);
+      }}
+    >
+      {children}
+      {open && (
+        <Box
+          role="tooltip"
+          position="absolute"
+          style={{
+            left: "calc(100% + var(--atlas-spacing-xs))",
+            top: "50%",
+          }}
+          transform="translateY(-50%)"
+          zIndex="tooltip"
+          px="sm"
+          py="xs"
+          borderRadius="control"
+          bg="bg.navigation"
+          color="fg.inverse"
+          borderWidth="var(--atlas-layout-edge, 1px)"
+          borderColor="border.subtle"
+          textStyle="helper"
+          fontWeight="semibold"
+          boxShadow="var(--atlas-layout-shadow, none)"
+          whiteSpace="nowrap"
+          pointerEvents="none"
+        >
+          {label}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 export function AtlasVNextShell({
   children,
   activeModule = "procurement",
@@ -67,35 +117,36 @@ export function AtlasVNextShell({
   onSignOut?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuId = useId();
   const [desktop, setDesktop] = useState(
     () => window.matchMedia?.("(min-width: 64rem)").matches ?? false,
   );
+  const menuId = useId();
+  const lastTrigger = useRef<HTMLButtonElement | null>(null);
+
   useEffect(() => {
     const media = window.matchMedia?.("(min-width: 64rem)");
     if (!media) return;
     const update = () => {
       setDesktop(media.matches);
-      if (media.matches) setMenuOpen(false);
+      setMenuOpen(false);
     };
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-  const closeMenu = () => {
-    setMenuOpen(false);
-    toggleRef.current?.focus();
+
+  const openMenu = (trigger: HTMLButtonElement) => {
+    lastTrigger.current = trigger;
+    setMenuOpen(true);
+  };
+  const closeMenu = () => setMenuOpen(false);
+  const navigate = (id: AtlasVNextModuleId, fromDrawer = false) => {
+    onNavigate?.(id);
+    if (fromDrawer) closeMenu();
   };
 
-  const sidebar = (
-    <Stack
-      position={{ lg: "sticky" }}
-      top="var(--atlas-layout-zero, 0)"
-      minH={{ lg: "var(--atlas-layout-viewport-height, 100dvh)" }}
-      p="md"
-      gap="lg"
-    >
-      <Box px="sm" pt="sm" hideBelow="lg">
+  const fullMenu = (
+    <Stack minH="full" p="md" gap="lg">
+      <Box px="sm" pt="sm">
         <Heading textStyle="brand">Atlas</Heading>
         <Text textStyle="helper" color="fg.navMuted" mt="xs">
           Thượng Hảo · Điều hành cung ứng
@@ -147,10 +198,7 @@ export function AtlasVNextShell({
                 aria-current={id === activeModule ? "page" : undefined}
                 _hover={{ bg: "bg.navigationHover", color: "fg.inverse" }}
                 _focusVisible={{ outlineColor: "focus.inverse" }}
-                onClick={() => {
-                  onNavigate?.(id);
-                  if (menuOpen) closeMenu();
-                }}
+                onClick={() => navigate(id, true)}
               >
                 <Icon asChild flexShrink="0" boxSize="18px">
                   <NavIcon
@@ -190,79 +238,163 @@ export function AtlasVNextShell({
       direction={{ base: "column", lg: "row" }}
       bg="bg.workspace"
     >
-      <Flex
-        hideFrom="lg"
-        p="sm"
-        bg="bg.navigation"
-        color="fg.inverse"
-        align="center"
-        justify="space-between"
-      >
-        <Text textStyle="brandCompact">Atlas</Text>
-        <Button
-          ref={toggleRef}
-          variant="utility"
-          color="fg.inverse"
-          aria-label="Mở điều hướng"
-          aria-expanded={menuOpen}
-          aria-controls={menuId}
-          _focusVisible={{ outlineColor: "focus.inverse" }}
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <Icon asChild boxSize="20px">
-            {menuOpen ? <X /> : <List />}
-          </Icon>
-          Danh mục
-        </Button>
-      </Flex>
-      {desktop || !onNavigate ? (
-        <Box
-          as="aside"
-          w={{ base: "full", lg: "var(--atlas-layout-sidebar-width, 224px)" }}
-          flexShrink="0"
+      {!desktop && (
+        <Flex
+          p="sm"
           bg="bg.navigation"
           color="fg.inverse"
-          display={{ base: menuOpen ? "block" : "none", lg: "block" }}
+          align="center"
+          justify="space-between"
         >
-          {sidebar}
-        </Box>
-      ) : (
-        <Drawer.Root
-          open={menuOpen}
-          onOpenChange={({ open }) => {
-            if (!open) closeMenu();
-          }}
-          placement="start"
-          finalFocusEl={() => toggleRef.current}
-          lazyMount
-          unmountOnExit
+          <Text textStyle="brandCompact">Atlas</Text>
+          <Button
+            variant="utility"
+            color="fg.inverse"
+            aria-label="Mở điều hướng Atlas"
+            aria-expanded={menuOpen}
+            aria-controls={menuId}
+            _focusVisible={{ outlineColor: "focus.inverse" }}
+            onClick={(event) =>
+              menuOpen ? closeMenu() : openMenu(event.currentTarget)
+            }
+          >
+            <Icon asChild boxSize="20px">
+              {menuOpen ? <X /> : <List />}
+            </Icon>
+            Danh mục
+          </Button>
+        </Flex>
+      )}
+
+      {desktop && (
+        <Flex
+          as="aside"
+          aria-label="Điều hướng nhanh Atlas"
+          position="sticky"
+          top="var(--atlas-layout-zero, 0)"
+          w="var(--atlas-layout-nav-rail-width, 72px)"
+          h="var(--atlas-layout-viewport-height, 100dvh)"
+          flexShrink="0"
+          direction="column"
+          align="center"
+          bg="bg.navigation"
+          color="fg.inverse"
+          py="sm"
+          gap="sm"
         >
-          <Drawer.Backdrop style={{ animation: "none" }} />
-          <Drawer.Positioner>
-            <Drawer.Content
-              style={{ animation: "none" }}
-              bg="bg.navigation"
+          <Flex
+            minH="var(--atlas-layout-nav-brand-height, 58px)"
+            align="center"
+            justify="center"
+            aria-label="Atlas"
+          >
+            <Text textStyle="brandCompact">A</Text>
+          </Flex>
+          <RailTooltip label="Mở điều hướng Atlas">
+            <Button
+              variant="utility"
               color="fg.inverse"
-              maxW="var(--atlas-layout-mobile-nav-width, 300px)"
+              w="var(--atlas-layout-mobile-target, 44px)"
+              h="var(--atlas-layout-mobile-target, 44px)"
+              minW="var(--atlas-layout-mobile-target, 44px)"
+              p="var(--atlas-layout-zero, 0)"
+              aria-label="Mở điều hướng Atlas"
+              aria-expanded={menuOpen}
+              aria-controls={menuId}
+              _hover={{ bg: "bg.navigationHover", color: "fg.inverse" }}
+              _focusVisible={{ outlineColor: "focus.inverse" }}
+              onClick={(event) => openMenu(event.currentTarget)}
             >
-              <Drawer.Header>
-                <Drawer.Title>Điều hướng Atlas</Drawer.Title>
+              <List size={20} />
+            </Button>
+          </RailTooltip>
+          <Stack
+            as="nav"
+            aria-label="Điều hướng mô-đun Atlas"
+            gap="xs"
+            align="center"
+          >
+            {navigation.map(({ id, label, icon: NavIcon }) => (
+              <RailTooltip key={id} label={label}>
                 <Button
                   variant="utility"
                   color="fg.inverse"
-                  onClick={closeMenu}
-                  aria-label="Đóng điều hướng"
+                  w="var(--atlas-layout-mobile-target, 44px)"
+                  h="var(--atlas-layout-mobile-target, 44px)"
+                  minW="var(--atlas-layout-mobile-target, 44px)"
+                  p="var(--atlas-layout-zero, 0)"
+                  aria-label={label}
+                  aria-current={id === activeModule ? "page" : undefined}
+                  bg={
+                    id === activeModule ? "bg.navigationHover" : "transparent"
+                  }
+                  position="relative"
+                  _before={{
+                    content: '""',
+                    position: "absolute",
+                    insetBlock: "xs",
+                    left: "var(--atlas-layout-zero, 0)",
+                    width: "var(--atlas-layout-rail, 3px)",
+                    bg: id === activeModule ? "border.accent" : "transparent",
+                  }}
+                  _hover={{ bg: "bg.navigationHover", color: "fg.inverse" }}
+                  _focusVisible={{ outlineColor: "focus.inverse" }}
+                  onClick={() => navigate(id)}
                 >
-                  <X />
+                  <NavIcon
+                    size={20}
+                    weight={id === activeModule ? "bold" : "regular"}
+                    data-testid={
+                      id === "procurement" ? "procurement-nav-icon" : undefined
+                    }
+                    data-icon={
+                      id === "procurement" ? "shopping-cart" : undefined
+                    }
+                  />
                 </Button>
-              </Drawer.Header>
-              <Drawer.Body p="var(--atlas-layout-zero, 0)">
-                {sidebar}
-              </Drawer.Body>
-            </Drawer.Content>
-          </Drawer.Positioner>
-        </Drawer.Root>
+              </RailTooltip>
+            ))}
+          </Stack>
+        </Flex>
       )}
+
+      <Drawer.Root
+        open={menuOpen}
+        onOpenChange={({ open }) => {
+          if (!open) closeMenu();
+        }}
+        placement="start"
+        finalFocusEl={() => lastTrigger.current}
+        lazyMount
+        unmountOnExit
+      >
+        <Drawer.Backdrop style={{ animation: "none" }} />
+        <Drawer.Positioner>
+          <Drawer.Content
+            style={{ animation: "none" }}
+            bg="bg.navigation"
+            color="fg.inverse"
+            w="var(--atlas-layout-nav-drawer-width, 272px)"
+            maxW="var(--atlas-layout-mobile-nav-width, calc(100vw - 32px))"
+          >
+            <Drawer.Header>
+              <Drawer.Title>Điều hướng Atlas</Drawer.Title>
+              <Button
+                variant="utility"
+                color="fg.inverse"
+                onClick={closeMenu}
+                aria-label="Đóng điều hướng"
+              >
+                <X />
+              </Button>
+            </Drawer.Header>
+            <Drawer.Body p="var(--atlas-layout-zero, 0)">
+              {fullMenu}
+            </Drawer.Body>
+          </Drawer.Content>
+        </Drawer.Positioner>
+      </Drawer.Root>
+
       <Box flex="1" minW="var(--atlas-layout-zero, 0)">
         <Flex
           as="header"
@@ -283,6 +415,15 @@ export function AtlasVNextShell({
           </Text>
           {mode === "connected" && (
             <Flex align="center" gap="sm" wrap="wrap">
+              {environmentLabel && (
+                <Text
+                  textStyle="helper"
+                  color="fg.muted"
+                  overflowWrap="anywhere"
+                >
+                  Môi trường · {environmentLabel}
+                </Text>
+              )}
               <Text textStyle="helper">{userLabel}</Text>
               {onSignOut && (
                 <Button variant="utility" onClick={onSignOut}>

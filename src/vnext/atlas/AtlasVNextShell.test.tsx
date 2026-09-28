@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -15,7 +16,7 @@ import { AtlasVNextShell } from "./AtlasVNextShell";
 afterEach(cleanup);
 
 describe("Atlas vNext shell", () => {
-  it("marks the review-only Ingredient and Supplier module active", () => {
+  it("marks the review-only Ingredient and Supplier module active", async () => {
     render(
       <AtlasVNextProvider>
         <AtlasVNextShell activeModule="ingredients-suppliers">
@@ -23,12 +24,16 @@ describe("Atlas vNext shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
     expect(
-      screen.getByRole("button", { name: "Nguyên liệu và Nhà cung ứng" }),
+      await screen.findByRole("button", {
+        name: "Nguyên liệu và Nhà cung ứng",
+      }),
     ).toHaveAttribute("aria-current", "page");
   });
-  it("marks the review-only School module active", () => {
+  it("marks the review-only School module active", async () => {
     render(
       <AtlasVNextProvider>
         <AtlasVNextShell activeModule="schools">
@@ -36,13 +41,14 @@ describe("Atlas vNext shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
-    expect(screen.getByRole("button", { name: "Trường học" })).toHaveAttribute(
-      "aria-current",
-      "page",
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
     );
+    expect(
+      await screen.findByRole("button", { name: "Trường học" }),
+    ).toHaveAttribute("aria-current", "page");
   });
-  it("marks the review-only reconciliation job active", () => {
+  it("marks the review-only reconciliation job active", async () => {
     render(
       <AtlasVNextProvider>
         <AtlasVNextShell activeModule="reconciliation">
@@ -50,15 +56,19 @@ describe("Atlas vNext shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
     expect(
-      screen.getByRole("button", { name: "Đối chiếu PO / Phiếu xuất kho" }),
+      await screen.findByRole("button", {
+        name: "Đối chiếu PO / Phiếu xuất kho",
+      }),
     ).toHaveAttribute("aria-current", "page");
     expect(
       screen.getByRole("button", { name: "Phiếu xuất kho" }),
     ).not.toHaveAttribute("aria-current");
   });
-  it("marks the review-only School PXK module active", () => {
+  it("marks the review-only School PXK module active", async () => {
     render(
       <AtlasVNextProvider>
         <AtlasVNextShell activeModule="pxk">
@@ -66,15 +76,17 @@ describe("Atlas vNext shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
     expect(
-      screen.getByRole("button", { name: "Phiếu xuất kho" }),
+      await screen.findByRole("button", { name: "Phiếu xuất kho" }),
     ).toHaveAttribute("aria-current", "page");
     expect(
       screen.getByRole("button", { name: "Kế hoạch mua hàng" }),
     ).not.toHaveAttribute("aria-current");
   });
-  it("marks Planning active when composing its review workbench", () => {
+  it("marks Planning active when composing its review workbench", async () => {
     render(
       <AtlasVNextProvider>
         <AtlasVNextShell activeModule="planning">
@@ -82,16 +94,17 @@ describe("Atlas vNext shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
-    expect(screen.getByRole("button", { name: "Lập nhu cầu" })).toHaveAttribute(
-      "aria-current",
-      "page",
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
     );
+    expect(
+      await screen.findByRole("button", { name: "Lập nhu cầu" }),
+    ).toHaveAttribute("aria-current", "page");
     expect(
       screen.getByRole("button", { name: "Kế hoạch mua hàng" }),
     ).not.toHaveAttribute("aria-current");
   });
-  it("has one main and one semantic navigation with an explicit active page", () => {
+  it("has one main and one semantic navigation with an explicit active page", async () => {
     render(
       <AtlasVNextProvider>
         <AtlasVNextShell>
@@ -104,8 +117,12 @@ describe("Atlas vNext shell", () => {
       within(screen.getByRole("main")).getByText("Phạm vi công việc"),
     ).toBeInTheDocument();
     // jsdom uses the base/mobile CSS; desktop visibility is verified in browser.
-    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
-    const nav = screen.getByRole("navigation", { name: "Điều hướng Atlas" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
+    const nav = await screen.findByRole("navigation", {
+      name: "Điều hướng Atlas",
+    });
     expect(
       within(nav).getByRole("button", { name: "Kế hoạch mua hàng" }),
     ).toHaveAttribute("aria-current", "page");
@@ -119,7 +136,7 @@ describe("Atlas vNext shell", () => {
     );
     expect(within(nav).queryByText("Tổng quan")).not.toBeInTheDocument();
   });
-  it("provides a keyboard-reachable mobile toggle and returns focus on Escape", () => {
+  it("provides a keyboard-reachable mobile toggle and returns focus on Escape", async () => {
     render(
       <AtlasVNextProvider>
         <AtlasVNextShell>
@@ -127,17 +144,59 @@ describe("Atlas vNext shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
-    const toggle = screen.getByRole("button", { name: "Mở điều hướng" });
+    const toggle = screen.getByRole("button", {
+      name: "Mở điều hướng Atlas",
+    });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     toggle.focus();
     expect(toggle).toHaveFocus();
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    const nav = screen.getByRole("navigation");
+    const nav = await screen.findByRole("navigation");
     expect(toggle.getAttribute("aria-controls")).toBe(nav.id);
     fireEvent.keyDown(nav, { key: "Escape" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(toggle).toHaveFocus();
+    await waitFor(() => expect(toggle).toHaveFocus());
+  });
+  it("keeps environment identity visible in the compact connected header", () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell
+          mode="connected"
+          environmentLabel="Local · non-production"
+          userLabel="operator@example.test"
+        >
+          <h1>Current job</h1>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    expect(
+      within(screen.getByRole("banner")).getByText(
+        "Môi trường · Local · non-production",
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Current job" })).toBeVisible();
+  });
+  it("retains the non-authoritative reference label in the drawer", async () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell>
+          <h1>Review job</h1>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    expect(
+      within(screen.getByRole("banner")).queryByText(/Môi trường/),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
+    const drawer = await screen.findByRole("dialog", {
+      name: "Điều hướng Atlas",
+    });
+    expect(
+      within(drawer).getByText("Bản tham chiếu · Dữ liệu minh họa"),
+    ).toBeVisible();
   });
 });
 

@@ -10,6 +10,7 @@ import {
 import { Table as SheetIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 export function PlanningMenuStage({
   c,
   visibleSchoolIds,
@@ -89,10 +90,10 @@ export function PlanningMenuStage({
           </Text>
         )}
       </Flex>
-      <Box
+      <AtlasTableViewport
+        label="Bảng thực đơn theo trường"
         data-testid="weekly-menu-scroll"
         data-horizontal-scroll="local"
-        overflow="auto"
         maxH={
           c.locked
             ? "var(--atlas-layout-planning-recovery-table-height, max(160px, calc(100dvh - 570px)))"
@@ -162,7 +163,7 @@ export function PlanningMenuStage({
               ))}
           </Table.Body>
         </Table.Root>
-      </Box>
+      </AtlasTableViewport>
     </>
   );
 }

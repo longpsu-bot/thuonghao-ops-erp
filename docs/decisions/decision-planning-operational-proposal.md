@@ -65,19 +65,31 @@ confirmation, while D-046 governs the earlier deterministic system proposal.
 
 ## Presentation and evidence
 
-The Confirmed Need workbench presents `Nhu cầu tính`, `Đề xuất vận hành`, and
-`Số lượng xác nhận` separately. The proposal shows `Làm tròn` from the
-snapshotted Ingredient step; the input shows `Bước xác nhận` from H1A. Fresh
-lines (`current_decision_id = null`) are not historical merely because a value
-has six-decimal precision. Read-only historical protection is limited to actual
-authoritative decisions that cannot safely round-trip through the current
-step-aware editor.
+The Confirmed Need workbench keeps the exact theoretical requirement,
+Ingredient-derived proposal and human confirmation separately available. The
+resting decision table prioritizes `Đề xuất vận hành` and `Số lượng xác nhận`;
+it does not need to repeat the raw total or both policy helpers on every row.
+`Xem cách hình thành nhu cầu` progressively presents recipe and direct
+contributions, exact raw total, the revision's snapshotted Ingredient rounding
+step, proposal, effective H1A confirmation step, confirmed value and atomic
+source lines. This presentation must resolve one exact selected-run/current-
+batch identity and fail closed when its match is missing or ambiguous.
+
+An unchanged confirmation is presented quietly as acceptance of the proposal.
+A real human change is determined by exact proposal-versus-confirmation
+comparison and displays its signed delta; fresh lines
+(`current_decision_id = null`) are not presented as adjusted merely because
+their first decision is unsaved. H1A remains contextual confirmation policy and
+the source of step-aware validation. Read-only historical protection remains
+limited to actual authoritative decisions that cannot safely round-trip through
+the current step-aware editor.
 
 First Save semantics under D-037 do not change: every fresh line receives an
 explicit first decision, unchanged proposals remain `PROPOSAL_ACCEPTED`, and a
 real operator change remains an operational adjustment. The system proposal is
-explained by raw quantity plus the Ingredient rounding snapshot and creates no
-decision row itself.
+explained by exact raw quantity plus the Ingredient rounding snapshot and
+creates no decision row itself. The table and progressive evidence changes do
+not alter calculation, materialization, confirmation authority or persistence.
 
 When either RMVP-05.v1 Confirm or RMVP-05.v2 Save creates an adjusted successor
 revision, it copies `proposal_rounding_step` and
