@@ -205,12 +205,15 @@ describe("IngredientSupplierWorkbench", () => {
   it("uses the locked Station context/detail geometry and returns focus to the exact Ingredient action", async () => {
     renderWorkbench();
     await ready();
-    const context = screen.getByRole("complementary", {
+    const context = screen.getByRole("region", {
       name: "Ngữ cảnh công việc dữ liệu gốc",
     });
     expect(context).toHaveStyle({
-      "--atlas-task-context-desktop-width": "196px",
-      "--atlas-task-context-compact-height": "88px",
+      "--atlas-task-context-desktop-min-height": "68px",
+      "--atlas-task-context-desktop-target-height": "72px",
+    });
+    expect(context.parentElement).toHaveStyle({
+      gridTemplateRows: "auto minmax(0, 1fr)",
     });
     expect(
       within(context).getByLabelText(
@@ -355,7 +358,7 @@ describe("IngredientSupplierWorkbench", () => {
     renderWorkbench(createIngredientSupplierReviewFixture("READ_FAILURE"));
 
     expect(await screen.findByRole("alert")).toBeVisible();
-    const context = screen.getByRole("complementary", {
+    const context = screen.getByRole("region", {
       name: "Ngữ cảnh công việc dữ liệu gốc",
     });
     expect(

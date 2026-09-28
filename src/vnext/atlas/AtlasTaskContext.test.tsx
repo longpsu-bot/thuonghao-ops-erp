@@ -27,7 +27,7 @@ it("renders one supplied job heading and an explicit accessible compact summary"
     </AtlasVNextProvider>,
   );
 
-  const context = screen.getByRole("complementary", {
+  const context = screen.getByRole("region", {
     name: "Ngữ cảnh công việc mua hàng",
   });
   expect(within(context).getAllByRole("heading", { level: 1 })).toHaveLength(1);
@@ -42,11 +42,11 @@ it("renders one supplied job heading and an explicit accessible compact summary"
       "Tóm tắt công việc: 11/09/2026 · Tất cả trường",
     ),
   ).toHaveTextContent("11/09/2026 · Tất cả trường");
-  expect(within(context).getByText("Ngày phục vụ")).toBeInTheDocument();
-  expect(within(context).getByText("11/09/2026")).toBeInTheDocument();
+  expect(within(context).queryByText("Ngày phục vụ")).not.toBeInTheDocument();
+  expect(within(context).getByText("11/09/2026 · Tất cả trường")).toBeVisible();
 });
 
-it("owns the locked 196px desktop and 88px compact Station geometry", () => {
+it("owns a compact horizontal masthead without a desktop side-rail width", () => {
   render(
     <AtlasVNextProvider>
       <AtlasTaskContext {...presentationOnlyProps} />
@@ -54,11 +54,14 @@ it("owns the locked 196px desktop and 88px compact Station geometry", () => {
   );
 
   expect(
-    screen.getByRole("complementary", {
+    screen.getByRole("region", {
       name: "Ngữ cảnh công việc mua hàng",
     }),
   ).toHaveStyle({
-    "--atlas-task-context-desktop-width": "196px",
-    "--atlas-task-context-compact-height": "88px",
+    "--atlas-task-context-desktop-min-height": "68px",
+    "--atlas-task-context-desktop-target-height": "72px",
   });
+  expect(document.body.innerHTML).not.toContain(
+    "--atlas-task-context-desktop-width",
+  );
 });

@@ -94,12 +94,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Grid
-        templateColumns={{
-          base: "minmax(0, 1fr)",
-          lg: "var(--atlas-task-context-desktop-width, 196px) minmax(0, 1fr)",
-        }}
-      >
+      <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh nguồn lập nhu cầu"
           moduleLabel="Lập nhu cầu"

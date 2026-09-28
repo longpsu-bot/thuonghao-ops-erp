@@ -111,7 +111,7 @@ function story(scenario: ConfirmedReviewScenario, action?: Action): Story {
               "data-adjustment-state",
               "valid",
             );
-            expect(c.getByRole("cell", { name: "+2,25" })).toBeVisible();
+            expect(c.getByRole("cell", { name: "+2,25 kg" })).toBeVisible();
             expect(c.getByRole("button", { name: "Lưu" })).toBeEnabled();
             expect(c.getByRole("button", { name: "Lưu" })).toHaveAttribute(
               "data-atlas-action-priority",

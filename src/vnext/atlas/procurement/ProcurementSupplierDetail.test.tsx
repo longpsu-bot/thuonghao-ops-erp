@@ -63,9 +63,12 @@ describe("Supplier decisions", () => {
     quantity("NCC An Phú", "59.999999");
     expect(
       screen.getByRole("status", { name: "Cân đối phân bổ" }),
-    ).toHaveTextContent("0,000001 kg");
+    ).toHaveTextContent("99,999999 / 100 kg đã phân bổ · Thiếu 0,000001 kg");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
     quantity("NCC An Phú", "60");
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("100 / 100 kg đã phân bổ · Đã đủ");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
   });
   it.each(["bad", "", "-1", "60.0000001", "1e2"])(

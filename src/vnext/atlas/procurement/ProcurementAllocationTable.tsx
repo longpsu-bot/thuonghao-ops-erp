@@ -8,13 +8,16 @@ import {
   sumExactQuantities,
 } from "./procurementExactQuantity";
 
-const labels: Record<AllocationFamilyRow["state"], string> = {
-  UNALLOCATED: "Chưa phân bổ",
-  BALANCED: "Đã đủ",
-  STALE_REBALANCE_AVAILABLE: "Cần cập nhật",
-  NEEDS_REALLOCATION: "Cần phân bổ lại",
-  BLOCKED: "Bị chặn",
-};
+function allocationIssue(row: AllocationFamilyRow, remainder: bigint | null) {
+  if (row.state === "BLOCKED") return "Bị chặn";
+  if (row.state === "STALE_REBALANCE_AVAILABLE") return "Cần cập nhật";
+  if (row.state === "UNALLOCATED") return "Chưa phân bổ";
+  if (row.state === "BALANCED") return "Đủ";
+  if (remainder === null) return "Cần phân bổ lại";
+  if (remainder > 0n) return `Thiếu ${quantity(remainder)} ${row.unit_code}`;
+  if (remainder < 0n) return `Vượt ${quantity(-remainder)} ${row.unit_code}`;
+  return "Cần phân bổ lại";
+}
 export function ProcurementAllocationTable({
   rows,
   selectedKey,
@@ -40,11 +43,11 @@ export function ProcurementAllocationTable({
           style={
             {
               "--atlas-table-header-height": "38px",
-              "--atlas-table-row-height": "42px",
-              "--atlas-table-identity-width": "178px",
+              "--atlas-table-row-height": "46px",
+              "--atlas-table-identity-width": "190px",
             } as CSSProperties
           }
-          minW="var(--atlas-layout-procurement-table-min, 980px)"
+          minW="var(--atlas-layout-procurement-table-min, 880px)"
           size="sm"
           stickyHeader
         >
@@ -53,16 +56,14 @@ export function ProcurementAllocationTable({
               {[
                 "Nguyên liệu",
                 "Trường / điểm giao",
-                "Nhu cầu đã xác nhận",
-                "Đã phân bổ",
-                "Còn lại",
+                "Nhu cầu",
                 "Nhà cung ứng",
-                "Trạng thái",
+                "Tình trạng / vấn đề",
                 "Thao tác",
               ].map((label, index) => (
                 <Table.ColumnHeader
                   key={label}
-                  textAlign={index >= 2 && index <= 4 ? "end" : "start"}
+                  textAlign={index === 2 ? "end" : "start"}
                   position={
                     index === 0 ? { base: "sticky", lg: "static" } : undefined
                   }
@@ -93,9 +94,8 @@ export function ProcurementAllocationTable({
                   : parseExactQuantity(row.family_quantity);
               const rest =
                 total === null || need === null ? null : need - total;
-              const attention = !["UNALLOCATED", "BALANCED"].includes(
-                row.state,
-              );
+              const attention = row.state !== "BALANCED";
+              const issue = allocationIssue(row, rest);
               const action =
                 row.state === "BALANCED" ? "Xem phân bổ" : "Phân bổ NCC";
               return (
@@ -104,12 +104,16 @@ export function ProcurementAllocationTable({
                   aria-selected={selectedKey === key}
                   data-attention={attention || undefined}
                   h="var(--atlas-table-row-height)"
+                  bg={selectedKey === key ? "bg.selected" : "bg.workbench"}
+                  _hover={{
+                    bg: selectedKey === key ? "bg.selected" : "bg.toolbar",
+                  }}
                 >
                   <Table.Cell
                     position={{ base: "sticky", lg: "relative" }}
                     left="var(--atlas-layout-zero, 0)"
                     zIndex="var(--atlas-layout-sticky-cell-z, 1)"
-                    bg={selectedKey === key ? "bg.selected" : "bg.workbench"}
+                    style={{ background: "inherit" }}
                     minW="var(--atlas-table-identity-width)"
                     h="var(--atlas-table-row-height)"
                     py="xs"
@@ -133,24 +137,21 @@ export function ProcurementAllocationTable({
                       {row.location_name}
                     </Text>
                   </Table.Cell>
-                  {[need, total, rest].map((value, index) => (
-                    <Table.Cell
-                      key={index}
-                      textAlign="end"
-                      whiteSpace="nowrap"
-                      fontVariantNumeric="tabular-nums"
+                  <Table.Cell
+                    textAlign="end"
+                    whiteSpace="nowrap"
+                    fontVariantNumeric="tabular-nums"
+                  >
+                    {quantity(need)}{" "}
+                    <Box
+                      as="span"
+                      data-row-secondary=""
+                      textStyle="helper"
+                      color="fg.muted"
                     >
-                      {quantity(value)}{" "}
-                      <Box
-                        as="span"
-                        data-row-secondary=""
-                        textStyle="helper"
-                        color="fg.muted"
-                      >
-                        {row.unit_code}
-                      </Box>
-                    </Table.Cell>
-                  ))}
+                      {row.unit_code}
+                    </Box>
+                  </Table.Cell>
                   <Table.Cell minW="var(--atlas-layout-supplier-cell-width, 125px)">
                     {row.splits.length
                       ? row.splits
@@ -174,7 +175,7 @@ export function ProcurementAllocationTable({
                           ⚠{" "}
                         </Box>
                       )}
-                      {labels[row.state]}
+                      {issue}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
