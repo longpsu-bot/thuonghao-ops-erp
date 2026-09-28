@@ -133,8 +133,10 @@ export function PlanningSourceReview({
                       {r.context} · {r.action}
                     </Text>
                   </Table.Cell>
-                  <Table.Cell>{r.before}</Table.Cell>
-                  <Table.Cell>{r.after}</Table.Cell>
+                  <Table.Cell color="fg.muted">{r.before}</Table.Cell>
+                  <Table.Cell fontWeight="semibold" color="fg.primary">
+                    {r.after}
+                  </Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>

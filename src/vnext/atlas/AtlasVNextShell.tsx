@@ -86,6 +86,7 @@ function RailTooltip({
           borderColor="border.subtle"
           textStyle="helper"
           fontWeight="semibold"
+          boxShadow="var(--atlas-layout-shadow, none)"
           whiteSpace="nowrap"
           pointerEvents="none"
         >
@@ -327,10 +328,15 @@ export function AtlasVNextShell({
                   bg={
                     id === activeModule ? "bg.navigationHover" : "transparent"
                   }
-                  borderLeftWidth="var(--atlas-layout-rail, 3px)"
-                  borderLeftColor={
-                    id === activeModule ? "border.accent" : "transparent"
-                  }
+                  position="relative"
+                  _before={{
+                    content: '""',
+                    position: "absolute",
+                    insetBlock: "xs",
+                    left: "var(--atlas-layout-zero, 0)",
+                    width: "var(--atlas-layout-rail, 3px)",
+                    bg: id === activeModule ? "border.accent" : "transparent",
+                  }}
                   _hover={{ bg: "bg.navigationHover", color: "fg.inverse" }}
                   _focusVisible={{ outlineColor: "focus.inverse" }}
                   onClick={() => navigate(id)}
@@ -409,6 +415,15 @@ export function AtlasVNextShell({
           </Text>
           {mode === "connected" && (
             <Flex align="center" gap="sm" wrap="wrap">
+              {environmentLabel && (
+                <Text
+                  textStyle="helper"
+                  color="fg.muted"
+                  overflowWrap="anywhere"
+                >
+                  Môi trường · {environmentLabel}
+                </Text>
+              )}
               <Text textStyle="helper">{userLabel}</Text>
               {onSignOut && (
                 <Button variant="utility" onClick={onSignOut}>

@@ -1,5 +1,5 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
-import type { CSSProperties } from "react";
+import { Fragment, type CSSProperties } from "react";
 import type { IngredientMasterData } from "../bridges/ingredientSupplierMasterData";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { formatVietnameseDecimal } from "./ingredientSupplierModel";
@@ -78,13 +78,6 @@ export function IngredientCatalogue({
                 const priorities = [...item.supplier_priorities].sort(
                   (a, b) => a.priority - b.priority,
                 );
-                const preview = priorities
-                  .slice(0, 2)
-                  .map(
-                    (priority) =>
-                      `${priority.priority} ${priority.supplier_name}`,
-                  )
-                  .join(" · ");
                 return (
                   <Table.Row
                     key={item.ingredient_id}
@@ -95,7 +88,7 @@ export function IngredientCatalogue({
                       position={{ base: "sticky", lg: "static" }}
                       left="var(--atlas-layout-zero, 0)"
                       zIndex="var(--atlas-layout-sticky-cell-z, 1)"
-                      bg={chosen ? "bg.selected" : "bg.workbench"}
+                      style={{ background: "inherit" }}
                     >
                       {chosen && (
                         <Box data-selection-indicator aria-hidden="true" />
@@ -104,8 +97,15 @@ export function IngredientCatalogue({
                     </Table.Cell>
                     <Table.Cell>
                       <Text
-                        data-row-secondary=""
+                        data-row-secondary={
+                          item.ingredient_status === "INACTIVE" ? undefined : ""
+                        }
                         color={status[item.ingredient_status].color}
+                        fontWeight={
+                          item.ingredient_status === "INACTIVE"
+                            ? "semibold"
+                            : "normal"
+                        }
                       >
                         {status[item.ingredient_status].label}
                       </Text>
@@ -126,13 +126,25 @@ export function IngredientCatalogue({
                       </Text>
                     </Table.Cell>
                     <Table.Cell textAlign="right">
-                      {item.order_step === null
-                        ? "—"
-                        : formatVietnameseDecimal(item.order_step)}
+                      <Text textStyle="quantityInline">
+                        {item.order_step === null
+                          ? "—"
+                          : formatVietnameseDecimal(item.order_step)}
+                      </Text>
                     </Table.Cell>
                     <Table.Cell>
                       <Text data-row-secondary="" color="fg.muted">
-                        {preview || "Chưa có"}
+                        {priorities.length
+                          ? priorities.slice(0, 2).map((priority, index) => (
+                              <Fragment key={priority.supplier_id}>
+                                {index > 0 ? " · " : ""}
+                                <Box as="span" fontWeight="semibold">
+                                  {priority.priority}
+                                </Box>{" "}
+                                {priority.supplier_name}
+                              </Fragment>
+                            ))
+                          : "Chưa có"}
                         {priorities.length > 2
                           ? ` · +${priorities.length - 2}`
                           : ""}
@@ -141,7 +153,7 @@ export function IngredientCatalogue({
                     <Table.Cell>
                       <Button
                         size="sm"
-                        variant="tertiary"
+                        variant="tableAction"
                         onClick={(event) =>
                           onSelect(item.ingredient_id, event.currentTarget)
                         }

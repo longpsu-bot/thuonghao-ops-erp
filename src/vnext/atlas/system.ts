@@ -34,6 +34,7 @@ const control = {
   color: "fg.default",
   focusRingColor: "focus.ring",
   _placeholder: { color: "fg.muted" },
+  _hover: { borderColor: "border.interactive" },
   _focusVisible: focus,
   _disabled: disabledControl,
 } as const;
@@ -60,19 +61,27 @@ const button = defineRecipe({
         _active: { bg: "action.primary.hover", ...pressed },
       },
       secondary: {
-        bg: "bg.toolbar",
+        bg: "bg.workbench",
         color: "fg.primary",
         borderWidth: "var(--atlas-layout-edge, 1px)",
         borderColor: "border.default",
-        _hover: { bg: "bg.selected" },
+        _hover: { bg: "bg.selected", borderColor: "border.interactive" },
         _active: { bg: "bg.selected", ...pressed },
       },
       tertiary: {
-        bg: "bg.subtle",
+        bg: "transparent",
         color: "fg.default",
         borderWidth: "var(--atlas-layout-edge, 1px)",
         borderColor: "border.subtle",
         _hover: { bg: "bg.selected", color: "fg.primary" },
+        _active: { bg: "bg.selected", ...pressed },
+      },
+      tableAction: {
+        bg: "transparent",
+        color: "fg.primary",
+        borderWidth: "var(--atlas-layout-edge, 1px)",
+        borderColor: "border.subtle",
+        _hover: { bg: "bg.selected", borderColor: "border.interactive" },
         _active: { bg: "bg.selected", ...pressed },
       },
       utility: {
@@ -208,6 +217,7 @@ export const atlasSystem = createSystem(
             default: { value: "{colors.atlas.border}" },
             subtle: { value: "{colors.atlas.borderSoft}" },
             accent: { value: "{colors.atlas.clay}" },
+            interactive: { value: "{colors.atlas.focus}" },
           },
           status: {
             success: { value: "{colors.atlas.success}" },
@@ -245,6 +255,21 @@ export const atlasSystem = createSystem(
           },
         },
         helper: { value: { fontSize: "12px", lineHeight: "1.5" } },
+        quantityInline: {
+          value: {
+            fontSize: "13px",
+            fontWeight: "semibold",
+            lineHeight: "1.4",
+            fontVariantNumeric: "tabular-nums",
+          },
+        },
+        unitInline: {
+          value: {
+            fontSize: "12px",
+            fontWeight: "normal",
+            lineHeight: "1.4",
+          },
+        },
       },
       keyframes: {
         atlasDetailEnter: {
@@ -489,7 +514,7 @@ export const atlasSystem = createSystem(
             "requiredIndicator",
           ],
           base: {
-            label: { textStyle: "label", color: "fg.default" },
+            label: { textStyle: "label", color: "fg.muted" },
             root: { gap: "xs" },
           },
         },
@@ -509,9 +534,10 @@ export const atlasSystem = createSystem(
             columnHeader: {
               textStyle: "table",
               letterSpacing: "var(--atlas-layout-tracking, normal)",
+              minH: "var(--atlas-table-header-height, 38px)",
               bg: "bg.toolbar",
-              borderColor: "border.subtle",
-              color: "fg.muted",
+              borderBottomColor: "border.default",
+              color: "fg.default",
               fontWeight: "semibold",
               textTransform: "none",
             },
@@ -526,6 +552,8 @@ export const atlasSystem = createSystem(
               },
             },
             row: {
+              borderBottomWidth: "var(--atlas-layout-edge, 1px)",
+              borderBottomColor: "border.subtle",
               transition:
                 "var(--atlas-layout-row-transition, background-color 140ms ease-out)",
               _hover: { bg: "bg.subtle" },
@@ -540,8 +568,11 @@ export const atlasSystem = createSystem(
             size: {
               sm: {
                 root: { textStyle: "table" },
-                columnHeader: { px: "sm", py: "sm" },
-                cell: { px: "sm", py: "xs" },
+                columnHeader: {
+                  px: "var(--atlas-table-cell-x, 12px)",
+                  py: "sm",
+                },
+                cell: { px: "var(--atlas-table-cell-x, 12px)", py: "xs" },
               },
             },
           },

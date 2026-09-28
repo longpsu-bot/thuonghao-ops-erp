@@ -90,11 +90,12 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             role="group"
             aria-label="Phạm vi xác nhận nhu cầu"
             bg="bg.toolbar"
-            p="sm"
+            px={{ base: "sm", md: "md" }}
+            py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
             gap="sm"
             alignItems="start"
             borderBottomWidth="var(--atlas-layout-edge, 1px)"
-            borderColor="border.subtle"
+            borderColor="border.default"
             templateColumns={{
               base: "minmax(0, 1fr) auto auto",
               lg: "repeat(2, minmax(0, 1fr))",
@@ -184,7 +185,10 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               </Field.Root>
             </Box>
             <Field.Root>
-              <Field.Label display={{ base: "none", lg: "block" }}>
+              <Field.Label
+                display={{ base: "none", lg: "block" }}
+                color="fg.default"
+              >
                 Tìm kiếm
               </Field.Label>
               <Input
@@ -387,7 +391,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 </Text>
               )}
               {c.dirty && !c.released && (
-                <Text px="md" pb="xs" textStyle="helper" color="status.warning">
+                <Text px="md" pb="xs" textStyle="helper" color="fg.primary">
                   Đang chỉnh sửa · chưa lưu
                 </Text>
               )}

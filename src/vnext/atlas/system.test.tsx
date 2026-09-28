@@ -171,7 +171,7 @@ describe("Soft Mineral architecture", () => {
   it("owns quiet table selection and its clay geometric cue in the shared recipe", () => {
     expect(atlasSystem.getSlotRecipe("table").base).toMatchObject({
       root: { bg: "bg.workbench" },
-      columnHeader: { bg: "bg.toolbar", color: "fg.muted" },
+      columnHeader: { bg: "bg.toolbar", color: "fg.default" },
       row: {
         _selected: { bg: "bg.selected" },
         _motionReduce: { transition: "var(--atlas-layout-motion, none)" },
@@ -182,6 +182,57 @@ describe("Soft Mineral architecture", () => {
           width: "var(--atlas-layout-rail, 3px)",
         },
       },
+    });
+  });
+  it("authors controls as one mineral system with a quiet row-action variant", () => {
+    expect(atlasSystem.getRecipe("input").base).toMatchObject({
+      bg: "bg.workbench",
+      _hover: { borderColor: "border.interactive" },
+    });
+    expect(atlasSystem.getSlotRecipe("nativeSelect").base?.field).toMatchObject(
+      {
+        bg: "bg.workbench",
+        _hover: { borderColor: "border.interactive" },
+      },
+    );
+    expect(
+      atlasSystem.getRecipe("button").variants?.variant?.tableAction,
+    ).toMatchObject({
+      bg: "transparent",
+      color: "fg.primary",
+      borderColor: "border.subtle",
+      _hover: { bg: "bg.selected", borderColor: "border.interactive" },
+    });
+  });
+  it("gives operational tables an authored header and restrained row rhythm", () => {
+    expect(atlasSystem.getSlotRecipe("table").base).toMatchObject({
+      columnHeader: {
+        minH: "var(--atlas-table-header-height, 38px)",
+        bg: "bg.toolbar",
+        color: "fg.default",
+        fontWeight: "semibold",
+        borderBottomColor: "border.default",
+      },
+      row: {
+        borderBottomWidth: "var(--atlas-layout-edge, 1px)",
+        borderBottomColor: "border.subtle",
+      },
+    });
+  });
+  it("separates task switching from source switching without filled-chip tabs", () => {
+    expect(atlasPrimaryTabTrigger._selected).toMatchObject({
+      color: "fg.primary",
+      bg: "bg.workbench",
+      borderColor: "transparent",
+    });
+    expect(atlasPrimaryTabTrigger._after).toMatchObject({
+      bg: "border.accent",
+      height: "var(--atlas-layout-tab-marker, 3px)",
+    });
+    expect(atlasSecondaryTabTrigger._selected).toMatchObject({
+      color: "fg.primary",
+      bg: "transparent",
+      fontWeight: "semibold",
     });
   });
 });
