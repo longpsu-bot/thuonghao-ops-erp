@@ -27,6 +27,7 @@ import {
   focusFirstCompactFilter,
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
+import { atlasPrimaryTabList, atlasPrimaryTabTrigger } from "../AtlasTaskTabs";
 
 export function IngredientSupplierWorkbench({
   authSubject,
@@ -126,23 +127,14 @@ export function IngredientSupplierWorkbench({
             }}
           >
             <Box px="md" py="sm">
-              <Tabs.List aria-label="Công việc dữ liệu gốc">
-                <Tabs.Trigger
-                  value="ingredients"
-                  minH={{
-                    base: "var(--atlas-layout-mobile-target, 44px)",
-                    lg: "var(--atlas-layout-zero, 0)",
-                  }}
-                >
+              <Tabs.List
+                aria-label="Công việc dữ liệu gốc"
+                {...atlasPrimaryTabList}
+              >
+                <Tabs.Trigger value="ingredients" {...atlasPrimaryTabTrigger}>
                   Nguyên liệu
                 </Tabs.Trigger>
-                <Tabs.Trigger
-                  value="suppliers"
-                  minH={{
-                    base: "var(--atlas-layout-mobile-target, 44px)",
-                    lg: "var(--atlas-layout-zero, 0)",
-                  }}
-                >
+                <Tabs.Trigger value="suppliers" {...atlasPrimaryTabTrigger}>
                   Nhà cung ứng
                 </Tabs.Trigger>
               </Tabs.List>
@@ -293,8 +285,11 @@ function IngredientToolbar({
   return (
     <Grid
       bg="bg.toolbar"
-      p={{ base: "sm", md: "md" }}
+      px={{ base: "sm", md: "md" }}
+      py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
       gap="sm"
+      borderBottomWidth="var(--atlas-layout-edge, 1px)"
+      borderColor="border.default"
       alignItems="end"
       templateColumns={{
         base: "minmax(0, 1fr) auto auto",
@@ -305,7 +300,7 @@ function IngredientToolbar({
         gridColumn={{ base: "1 / 3", md: "auto" }}
         gridRow={{ base: "1", md: "auto" }}
       >
-        <Field.Label display={{ base: "none", md: "block" }}>
+        <Field.Label display={{ base: "none", md: "block" }} color="fg.default">
           Tìm nguyên liệu
         </Field.Label>
         <Input
@@ -403,8 +398,11 @@ function SupplierToolbar({
   return (
     <Grid
       bg="bg.toolbar"
-      p="md"
+      px={{ base: "sm", md: "md" }}
+      py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
       gap="sm"
+      borderBottomWidth="var(--atlas-layout-edge, 1px)"
+      borderColor="border.default"
       alignItems="end"
       templateColumns={{
         base: "minmax(0, 1fr)",
@@ -412,7 +410,7 @@ function SupplierToolbar({
       }}
     >
       <Field.Root>
-        <Field.Label>Tìm nhà cung ứng</Field.Label>
+        <Field.Label color="fg.default">Tìm nhà cung ứng</Field.Label>
         <Input
           aria-label="Tìm nhà cung ứng"
           placeholder="Tên hoặc thông tin liên hệ"

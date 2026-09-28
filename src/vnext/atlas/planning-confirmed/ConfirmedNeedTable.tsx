@@ -166,9 +166,14 @@ export function ConfirmedNeedTable({
                   textAlign="end"
                   whiteSpace="nowrap"
                 >
-                  <Text fontWeight="semibold" fontVariantNumeric="tabular-nums">
+                  <Text textStyle="quantityInline">
                     {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
-                    <Box as="span" textStyle="helper" color="fg.muted">
+                    <Box
+                      as="span"
+                      textStyle="unitInline"
+                      color="fg.muted"
+                      ml="xs"
+                    >
                       {line.controlled_unit.code}
                     </Box>
                   </Text>
@@ -205,6 +210,14 @@ export function ConfirmedNeedTable({
                       readOnly={historical}
                       disabled={!editable}
                       aria-invalid={Boolean(error)}
+                      borderColor={
+                        error
+                          ? "status.danger"
+                          : adjusted
+                            ? "border.interactive"
+                            : undefined
+                      }
+                      fontWeight={adjusted ? "semibold" : "medium"}
                       aria-describedby={
                         error || historical ? description : undefined
                       }
@@ -215,7 +228,7 @@ export function ConfirmedNeedTable({
                         })
                       }
                     />
-                    <Text textStyle="helper" color="fg.muted">
+                    <Text textStyle="unitInline" color="fg.muted">
                       {line.controlled_unit.code}
                     </Text>
                   </Box>
@@ -231,12 +244,16 @@ export function ConfirmedNeedTable({
                   whiteSpace="nowrap"
                 >
                   {delta ? (
-                    <Text
-                      fontWeight="semibold"
-                      color="fg.primary"
-                      fontVariantNumeric="tabular-nums"
-                    >
-                      {exactQuantityDisplay(delta)} {line.controlled_unit.code}
+                    <Text textStyle="quantityInline" color="fg.primary">
+                      {exactQuantityDisplay(delta)}{" "}
+                      <Box
+                        as="span"
+                        textStyle="unitInline"
+                        color="fg.primary"
+                        ml="xs"
+                      >
+                        {line.controlled_unit.code}
+                      </Box>
                     </Text>
                   ) : (
                     "—"

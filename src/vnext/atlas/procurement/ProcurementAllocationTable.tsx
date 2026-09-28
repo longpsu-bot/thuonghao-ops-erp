@@ -104,10 +104,6 @@ export function ProcurementAllocationTable({
                   aria-selected={selectedKey === key}
                   data-attention={attention || undefined}
                   h="var(--atlas-table-row-height)"
-                  bg={selectedKey === key ? "bg.selected" : "bg.workbench"}
-                  _hover={{
-                    bg: selectedKey === key ? "bg.selected" : "bg.toolbar",
-                  }}
                 >
                   <Table.Cell
                     position={{ base: "sticky", lg: "relative" }}
@@ -124,11 +120,13 @@ export function ProcurementAllocationTable({
                     <Text fontWeight="semibold">{row.ingredient_name}</Text>
                   </Table.Cell>
                   <Table.Cell minW="var(--atlas-layout-school-cell-width, 150px)">
-                    {row.schools
-                      ?.map((school) => school.school_name)
-                      .join(", ") ||
-                      row.school_name ||
-                      row.location_name}
+                    <Text fontWeight="medium">
+                      {row.schools
+                        ?.map((school) => school.school_name)
+                        .join(", ") ||
+                        row.school_name ||
+                        row.location_name}
+                    </Text>
                     <Text
                       data-row-secondary=""
                       textStyle="helper"
@@ -137,20 +135,19 @@ export function ProcurementAllocationTable({
                       {row.location_name}
                     </Text>
                   </Table.Cell>
-                  <Table.Cell
-                    textAlign="end"
-                    whiteSpace="nowrap"
-                    fontVariantNumeric="tabular-nums"
-                  >
-                    {quantity(need)}{" "}
-                    <Box
-                      as="span"
-                      data-row-secondary=""
-                      textStyle="helper"
-                      color="fg.muted"
-                    >
-                      {row.unit_code}
-                    </Box>
+                  <Table.Cell textAlign="end" whiteSpace="nowrap">
+                    <Text textStyle="quantityInline">
+                      {quantity(need)}{" "}
+                      <Box
+                        as="span"
+                        textStyle="unitInline"
+                        data-row-secondary=""
+                        color="fg.muted"
+                        ml="xs"
+                      >
+                        {row.unit_code}
+                      </Box>
+                    </Text>
                   </Table.Cell>
                   <Table.Cell minW="var(--atlas-layout-supplier-cell-width, 125px)">
                     {row.splits.length
@@ -168,6 +165,7 @@ export function ProcurementAllocationTable({
                             ? "status.warning"
                             : "fg.muted"
                       }
+                      fontWeight={attention ? "semibold" : "normal"}
                       data-row-secondary={attention ? undefined : ""}
                     >
                       {attention && (
@@ -180,7 +178,7 @@ export function ProcurementAllocationTable({
                   </Table.Cell>
                   <Table.Cell>
                     <Button
-                      variant="tertiary"
+                      variant="tableAction"
                       size="sm"
                       aria-label={`${action} ${row.ingredient_name} · ${row.schools?.map((school) => school.school_name).join(", ") || row.school_name || row.location_name} · ${row.location_name}`}
                       aria-expanded={selectedKey === key}

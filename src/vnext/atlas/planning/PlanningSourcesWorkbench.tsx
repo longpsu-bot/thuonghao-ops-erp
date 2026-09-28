@@ -113,7 +113,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
             onValueChange={(d) => c.transition({ job: d.value })}
             variant="line"
           >
-            <Box px="md" py="sm">
+            <Box>
               <Tabs.List
                 aria-label="Nguồn lập nhu cầu"
                 {...atlasSecondaryTabList}
@@ -133,8 +133,11 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               role="group"
               aria-label="Phạm vi nguồn lập nhu cầu"
               bg="bg.toolbar"
-              p={{ base: "sm", md: "md" }}
+              px={{ base: "sm", md: "md" }}
+              py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
               gap="sm"
+              borderBottomWidth="var(--atlas-layout-edge, 1px)"
+              borderColor="border.default"
               alignItems="start"
               templateColumns={{
                 base: "minmax(0, 1fr) auto auto",
@@ -227,7 +230,10 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 order={{ base: 1, md: 4 }}
                 gridColumn={{ base: "1", md: "auto" }}
               >
-                <Field.Label display={{ base: "none", md: "block" }}>
+                <Field.Label
+                  display={{ base: "none", md: "block" }}
+                  color="fg.default"
+                >
                   Tìm trường
                 </Field.Label>
                 <Input

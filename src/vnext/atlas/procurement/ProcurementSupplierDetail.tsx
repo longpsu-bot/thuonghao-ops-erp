@@ -76,6 +76,18 @@ export function ProcurementSupplierDetail({
               ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
               : `Vượt ${quantity(-remainder)} ${row.unit_code}`
         }`;
+  const reconciliationQuantity =
+    total === null || need === null
+      ? null
+      : `${quantity(total)} / ${quantity(need)} ${row.unit_code}`;
+  const reconciliationOutcome =
+    remainder === null
+      ? null
+      : remainder === 0n
+        ? "Đã đủ"
+        : remainder > 0n
+          ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
+          : `Vượt ${quantity(-remainder)} ${row.unit_code}`;
   const locked = disabled || row.complete === false;
   const canSave =
     !locked &&
@@ -212,17 +224,25 @@ export function ProcurementSupplierDetail({
         borderBottomWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
       >
-        <Text
-          fontWeight="semibold"
-          fontVariantNumeric="tabular-nums"
-          color={
-            remainder !== null && remainder !== 0n
-              ? "status.warning"
-              : "fg.primary"
-          }
-        >
-          {reconciliation}
-        </Text>
+        {reconciliationQuantity && reconciliationOutcome ? (
+          <Flex aria-label={reconciliation} align="baseline" wrap="wrap">
+            <Text as="span" textStyle="quantityInline" color="fg.default">
+              {reconciliationQuantity}
+            </Text>
+            <Text as="span" textStyle="unitInline" color="fg.muted" ml="xs">
+              {" đã phân bổ · "}
+            </Text>
+            <Text
+              as="span"
+              fontWeight="semibold"
+              color={remainder !== 0n ? "status.warning" : "fg.primary"}
+            >
+              {reconciliationOutcome}
+            </Text>
+          </Flex>
+        ) : (
+          <Text color="status.warning">{reconciliation}</Text>
+        )}
       </Box>
       <Stack
         p="md"

@@ -248,8 +248,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               role="group"
               aria-label="Phạm vi mua hàng"
               bg="bg.toolbar"
-              p={{ base: "sm", md: "md" }}
+              px={{ base: "sm", md: "md" }}
+              py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
               gap="sm"
+              borderBottomWidth="var(--atlas-layout-edge, 1px)"
+              borderColor="border.default"
               alignItems="end"
               templateColumns={{
                 base: "minmax(0, 1fr) auto auto",
@@ -351,7 +354,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 }}
                 gridColumn={{ base: "1", md: "auto" }}
               >
-                <Field.Label display={{ base: "none", md: "block" }}>
+                <Field.Label
+                  display={{ base: "none", md: "block" }}
+                  color="fg.default"
+                >
                   Tìm kiếm
                 </Field.Label>
                 <Input

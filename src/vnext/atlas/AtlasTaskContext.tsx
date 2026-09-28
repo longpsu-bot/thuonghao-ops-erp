@@ -43,7 +43,7 @@ export function AtlasTaskContext({
         lg: "var(--atlas-task-context-desktop-target-height)",
       }}
       px={{ base: "md", lg: "lg" }}
-      py="xs"
+      py="sm"
     >
       <Flex
         minH="full"
@@ -53,7 +53,7 @@ export function AtlasTaskContext({
         gap={{ base: "xs", lg: "lg" }}
       >
         <Box minW="var(--atlas-layout-zero, 0)">
-          <Text textStyle="helper" color="fg.muted">
+          <Text textStyle="helper" fontWeight="semibold" color="fg.muted">
             {moduleLabel}
           </Text>
           <Heading
@@ -66,12 +66,14 @@ export function AtlasTaskContext({
             }}
             lineHeight="var(--atlas-context-title-line-height, 1.15)"
             fontWeight="var(--atlas-context-title-weight, 700)"
+            letterSpacing="var(--atlas-context-title-tracking, -0.01em)"
           >
             {jobLabel}
           </Heading>
         </Box>
         <Text
-          textStyle="helper"
+          textStyle="table"
+          fontWeight="medium"
           color="fg.muted"
           textAlign={{ base: "left", lg: "right" }}
           whiteSpace={{ lg: "nowrap" }}
