@@ -158,6 +158,46 @@ describe("Atlas vNext shell", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     await waitFor(() => expect(toggle).toHaveFocus());
   });
+  it("keeps environment identity visible in the compact connected header", () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell
+          mode="connected"
+          environmentLabel="Local · non-production"
+          userLabel="operator@example.test"
+        >
+          <h1>Current job</h1>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    expect(
+      within(screen.getByRole("banner")).getByText(
+        "Môi trường · Local · non-production",
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Current job" })).toBeVisible();
+  });
+  it("retains the non-authoritative reference label in the drawer", async () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell>
+          <h1>Review job</h1>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    expect(
+      within(screen.getByRole("banner")).queryByText(/Môi trường/),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
+    const drawer = await screen.findByRole("dialog", {
+      name: "Điều hướng Atlas",
+    });
+    expect(
+      within(drawer).getByText("Bản tham chiếu · Dữ liệu minh họa"),
+    ).toBeVisible();
+  });
 });
 
 describe("Atlas vNext provider", () => {

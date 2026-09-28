@@ -415,6 +415,15 @@ export function AtlasVNextShell({
           </Text>
           {mode === "connected" && (
             <Flex align="center" gap="sm" wrap="wrap">
+              {environmentLabel && (
+                <Text
+                  textStyle="helper"
+                  color="fg.muted"
+                  overflowWrap="anywhere"
+                >
+                  Môi trường · {environmentLabel}
+                </Text>
+              )}
               <Text textStyle="helper">{userLabel}</Text>
               {onSignOut && (
                 <Button variant="utility" onClick={onSignOut}>

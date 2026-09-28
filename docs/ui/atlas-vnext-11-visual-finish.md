@@ -65,6 +65,10 @@ Review sheets are checked into the repository for Draft PR review:
 
 Focused tests cover the shared recipes and the nearest shell, task-context, Procurement, Ingredients, Planning Sources and Confirmed Need behavior boundaries. Required validation is TypeScript, the Atlas vNext boundary checker, targeted Prettier and whitespace checks.
 
+### Environment identity correction
+
+The connected shell header persistently shows `Môi trường · <environmentLabel>` beside the existing session identity, including compact layouts and while the navigation drawer is closed. This restores the visible environment identification required by PA-06A and keeps the label outside animated page content. The drawer footer retains its environment label; reference mode retains its non-authoritative footer. The 72px rail, 272px overlay drawer, task masthead and module navigation are unchanged. The existing page-transition assertion for the mounted environment label remains unchanged and must pass.
+
 Rollback is a frontend and documentation revert. There is no migration, hosted-state or data rollback because UI-11 changes no backend, Supabase, Retool or hosted business data.
 
 ## 7. Protected boundaries
