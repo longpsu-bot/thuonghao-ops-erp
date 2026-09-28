@@ -1,18 +1,23 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
+import { AtlasTableViewport } from "../AtlasTableViewport";
+import type { CSSProperties } from "react";
 import {
   formatExactQuantityForOperator as quantity,
   parseExactQuantity,
   sumExactQuantities,
 } from "./procurementExactQuantity";
 
-const labels: Record<AllocationFamilyRow["state"], string> = {
-  UNALLOCATED: "Chưa phân bổ",
-  BALANCED: "Đã đủ",
-  STALE_REBALANCE_AVAILABLE: "Cần cập nhật",
-  NEEDS_REALLOCATION: "Cần phân bổ lại",
-  BLOCKED: "Bị chặn",
-};
+function allocationIssue(row: AllocationFamilyRow, remainder: bigint | null) {
+  if (row.state === "BLOCKED") return "Bị chặn";
+  if (row.state === "STALE_REBALANCE_AVAILABLE") return "Cần cập nhật";
+  if (row.state === "UNALLOCATED") return "Chưa phân bổ";
+  if (row.state === "BALANCED") return "Đủ";
+  if (remainder === null) return "Cần phân bổ lại";
+  if (remainder > 0n) return `Thiếu ${quantity(remainder)} ${row.unit_code}`;
+  if (remainder < 0n) return `Vượt ${quantity(-remainder)} ${row.unit_code}`;
+  return "Cần phân bổ lại";
+}
 export function ProcurementAllocationTable({
   rows,
   selectedKey,
@@ -26,29 +31,51 @@ export function ProcurementAllocationTable({
 }) {
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      <Table.ScrollArea
+      <AtlasTableViewport
+        label="Bảng phân bổ nhà cung ứng"
         maxH={{
           base: "var(--atlas-layout-table-mobile-height, 50dvh)",
-          xl: "var(--atlas-layout-table-height, calc(100dvh - 360px))",
+          lg: "var(--atlas-layout-natural-height, none)",
         }}
-        overflow="auto"
       >
-        <Table.Root aria-label="Phân bổ nhà cung ứng" size="sm" stickyHeader>
+        <Table.Root
+          aria-label="Phân bổ nhà cung ứng"
+          style={
+            {
+              "--atlas-table-header-height": "38px",
+              "--atlas-table-row-height": "46px",
+              "--atlas-table-identity-width": "190px",
+            } as CSSProperties
+          }
+          minW="var(--atlas-layout-procurement-table-min, 880px)"
+          size="sm"
+          stickyHeader
+        >
           <Table.Header>
-            <Table.Row>
+            <Table.Row h="var(--atlas-table-header-height)">
               {[
                 "Nguyên liệu",
                 "Trường / điểm giao",
-                "Nhu cầu đã xác nhận",
-                "Đã phân bổ",
-                "Còn lại",
+                "Nhu cầu",
                 "Nhà cung ứng",
-                "Trạng thái",
+                "Tình trạng / vấn đề",
                 "Thao tác",
               ].map((label, index) => (
                 <Table.ColumnHeader
                   key={label}
-                  textAlign={index >= 2 && index <= 4 ? "end" : "start"}
+                  textAlign={index === 2 ? "end" : "start"}
+                  position={
+                    index === 0 ? { base: "sticky", lg: "static" } : undefined
+                  }
+                  left={index === 0 ? "var(--atlas-layout-zero, 0)" : undefined}
+                  zIndex={
+                    index === 0
+                      ? "var(--atlas-layout-sticky-header-z, 3)"
+                      : undefined
+                  }
+                  bg={index === 0 ? "bg.toolbar" : undefined}
+                  h="var(--atlas-table-header-height)"
+                  py="var(--atlas-layout-zero, 0)"
                 >
                   {label}
                 </Table.ColumnHeader>
@@ -67,9 +94,8 @@ export function ProcurementAllocationTable({
                   : parseExactQuantity(row.family_quantity);
               const rest =
                 total === null || need === null ? null : need - total;
-              const attention = !["UNALLOCATED", "BALANCED"].includes(
-                row.state,
-              );
+              const attention = row.state !== "BALANCED";
+              const issue = allocationIssue(row, rest);
               const action =
                 row.state === "BALANCED" ? "Xem phân bổ" : "Phân bổ NCC";
               return (
@@ -77,10 +103,16 @@ export function ProcurementAllocationTable({
                   key={key}
                   aria-selected={selectedKey === key}
                   data-attention={attention || undefined}
+                  h="var(--atlas-table-row-height)"
                 >
                   <Table.Cell
-                    position="relative"
-                    minW="var(--atlas-layout-ingredient-width, 125px)"
+                    position={{ base: "sticky", lg: "relative" }}
+                    left="var(--atlas-layout-zero, 0)"
+                    zIndex="var(--atlas-layout-sticky-cell-z, 1)"
+                    style={{ background: "inherit" }}
+                    minW="var(--atlas-table-identity-width)"
+                    h="var(--atlas-table-row-height)"
+                    py="xs"
                   >
                     {selectedKey === key && (
                       <Box data-selection-indicator="" aria-hidden="true" />
@@ -88,11 +120,13 @@ export function ProcurementAllocationTable({
                     <Text fontWeight="semibold">{row.ingredient_name}</Text>
                   </Table.Cell>
                   <Table.Cell minW="var(--atlas-layout-school-cell-width, 150px)">
-                    {row.schools
-                      ?.map((school) => school.school_name)
-                      .join(", ") ||
-                      row.school_name ||
-                      row.location_name}
+                    <Text fontWeight="medium">
+                      {row.schools
+                        ?.map((school) => school.school_name)
+                        .join(", ") ||
+                        row.school_name ||
+                        row.location_name}
+                    </Text>
                     <Text
                       data-row-secondary=""
                       textStyle="helper"
@@ -101,24 +135,20 @@ export function ProcurementAllocationTable({
                       {row.location_name}
                     </Text>
                   </Table.Cell>
-                  {[need, total, rest].map((value, index) => (
-                    <Table.Cell
-                      key={index}
-                      textAlign="end"
-                      whiteSpace="nowrap"
-                      fontVariantNumeric="tabular-nums"
-                    >
-                      {quantity(value)}{" "}
+                  <Table.Cell textAlign="end" whiteSpace="nowrap">
+                    <Text textStyle="quantityInline">
+                      {quantity(need)}{" "}
                       <Box
                         as="span"
+                        textStyle="unitInline"
                         data-row-secondary=""
-                        textStyle="helper"
                         color="fg.muted"
+                        ml="xs"
                       >
                         {row.unit_code}
                       </Box>
-                    </Table.Cell>
-                  ))}
+                    </Text>
+                  </Table.Cell>
                   <Table.Cell minW="var(--atlas-layout-supplier-cell-width, 125px)">
                     {row.splits.length
                       ? row.splits
@@ -135,6 +165,7 @@ export function ProcurementAllocationTable({
                             ? "status.warning"
                             : "fg.muted"
                       }
+                      fontWeight={attention ? "semibold" : "normal"}
                       data-row-secondary={attention ? undefined : ""}
                     >
                       {attention && (
@@ -142,19 +173,23 @@ export function ProcurementAllocationTable({
                           ⚠{" "}
                         </Box>
                       )}
-                      {labels[row.state]}
+                      {issue}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
                     <Button
-                      variant="tertiary"
+                      variant="tableAction"
                       size="sm"
-                      aria-label={`${action} ${row.ingredient_name}`}
+                      aria-label={`${action} ${row.ingredient_name} · ${row.schools?.map((school) => school.school_name).join(", ") || row.school_name || row.location_name} · ${row.location_name}`}
                       aria-expanded={selectedKey === key}
                       disabled={
                         disabled || Boolean(selectedKey && selectedKey !== key)
                       }
                       onClick={(event) => onSelect(row, event.currentTarget)}
+                      minH={{
+                        base: "var(--atlas-layout-mobile-target, 44px)",
+                        lg: "compact",
+                      }}
                     >
                       {action}
                     </Button>
@@ -164,7 +199,7 @@ export function ProcurementAllocationTable({
             })}
           </Table.Body>
         </Table.Root>
-      </Table.ScrollArea>
+      </AtlasTableViewport>
       {!rows.length && (
         <Text p="lg" color="fg.muted">
           Không có nguyên liệu phù hợp trong phạm vi này.

@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
+import { Button } from "@chakra-ui/react";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { AtlasDesignLanguageReference } from "./AtlasDesignLanguageReference";
 import { atlasSystem } from "./system";
@@ -24,12 +25,18 @@ const show = () =>
   );
 
 describe("Atlas design language reference", () => {
-  it("shows surfaced primary, secondary and tertiary commands at rest", () => {
+  it("shows approved primary, secondary, tertiary and table actions at rest", () => {
     show();
+    render(
+      <AtlasVNextProvider>
+        <Button variant="tableAction">Xem dòng mẫu</Button>
+      </AtlasVNextProvider>,
+    );
     for (const [name, background, border] of [
-      ["Lưu phân bổ", "action-primary-default", null],
-      ["Áp dụng bộ lọc", "bg-toolbar", "border-default"],
-      ["Đóng chi tiết", "bg-subtle", "border-subtle"],
+      ["Lưu phân bổ", "var(--atlas-colors-action-primary-default)", null],
+      ["Áp dụng bộ lọc", "var(--atlas-colors-bg-workbench)", "border-default"],
+      ["Đóng chi tiết", "var(--atlas-colors-transparent)", "border-subtle"],
+      ["Xem dòng mẫu", "var(--atlas-colors-transparent)", "border-subtle"],
     ]) {
       const button = screen.getByRole("button", { name: name! });
       const rule = [...document.styleSheets]
@@ -40,7 +47,7 @@ describe("Atlas design language reference", () => {
             [...button.classList].some(
               (name) => rule.selectorText === `.${name}`,
             ) &&
-            rule.style.background === `var(--atlas-colors-${background})`,
+            rule.style.background === background,
         );
       expect(rule).toBeDefined();
       if (border) {
@@ -48,6 +55,10 @@ describe("Atlas design language reference", () => {
         expect(rule?.style.borderWidth).toBe("var(--atlas-layout-edge, 1px)");
       }
     }
+    expect(
+      atlasSystem._config.theme?.recipes?.button?.variants?.variant?.tableAction
+        ?._hover,
+    ).toMatchObject({ bg: "bg.selected", borderColor: "border.interactive" });
   });
 
   it("retains transparent utility and explicit pressed states for real commands", () => {

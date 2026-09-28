@@ -295,7 +295,7 @@ describe("06D-C locked Recipe peer navigation", () => {
       name: "Tạo lệnh điều chỉnh",
     });
     expect(
-      hasRestingBackground(forwardAction, "var(--atlas-colors-bg-toolbar)"),
+      hasRestingBackground(forwardAction, "var(--atlas-colors-bg-workbench)"),
     ).toBe(true);
     fireEvent.click(forwardAction);
 
@@ -386,7 +386,7 @@ describe("06B peer navigation and action hierarchy", () => {
     expect(
       hasRestingBackground(
         screen.getByRole("button", { name: /Xem.*Rau muống/ }),
-        "var(--atlas-colors-bg-subtle)",
+        "var(--atlas-colors-transparent)",
       ),
     ).toBe(true);
   });

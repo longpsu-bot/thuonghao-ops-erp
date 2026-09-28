@@ -7,14 +7,18 @@ export const atlasPrimaryTabList = {
   maxW: "full",
   p: "xs",
   bg: "bg.toolbar",
-  borderWidth: "var(--atlas-layout-edge, 1px)",
-  borderColor: "border.subtle",
+  borderBottomWidth: "var(--atlas-layout-edge, 1px)",
+  borderColor: "border.default",
   borderRadius: "control",
   overflowX: "auto",
 } as const;
 
 export const atlasPrimaryTabTrigger = {
   flexShrink: 0,
+  minH: {
+    base: "var(--atlas-layout-mobile-target, 44px)",
+    lg: "var(--atlas-layout-zero, 0)",
+  },
   px: "md",
   py: "sm",
   color: "fg.muted",
@@ -22,10 +26,22 @@ export const atlasPrimaryTabTrigger = {
   borderRadius: "control",
   borderWidth: "var(--atlas-layout-edge, 1px)",
   borderColor: "transparent",
+  position: "relative",
+  _after: {
+    content: '""',
+    position: "absolute",
+    left: "sm",
+    right: "sm",
+    bottom: "var(--atlas-layout-zero, 0)",
+    height: "var(--atlas-layout-tab-marker, 3px)",
+    bg: "border.accent",
+    opacity: "var(--atlas-layout-tab-marker-hidden, 0)",
+  },
   _selected: {
     color: "fg.primary",
-    bg: "bg.selected",
-    borderColor: "border.accent",
+    bg: "bg.workbench",
+    borderColor: "transparent",
+    _after: { opacity: "var(--atlas-layout-tab-marker-visible, 1)" },
   },
   _before: { display: "none" },
 } as const;
@@ -46,12 +62,20 @@ export const atlasSecondaryTabList = {
 
 export const atlasSecondaryTabTrigger = {
   flexShrink: 0,
+  minH: {
+    base: "var(--atlas-layout-mobile-target, 44px)",
+    lg: "var(--atlas-layout-zero, 0)",
+  },
   px: "sm",
   py: "xs",
   color: "fg.muted",
-  fontWeight: "medium",
-  borderRadius: "control",
-  _selected: { color: "fg.primary", bg: "bg.selected", fontWeight: "semibold" },
+  fontWeight: "semibold",
+  borderRadius: "var(--atlas-layout-zero, 0)",
+  _selected: {
+    color: "fg.primary",
+    bg: "transparent",
+    fontWeight: "semibold",
+  },
   _before: { bg: "border.accent" },
 } as const;
 

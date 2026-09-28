@@ -75,7 +75,14 @@ export function IngredientDetail({
       tabIndex={-1}
       aria-label="Chi tiết nguyên liệu"
       bg="bg.subtle"
-      borderLeftWidth="var(--atlas-layout-edge, 1px)"
+      borderLeftWidth={{
+        base: "var(--atlas-layout-zero, 0)",
+        lg: "var(--atlas-layout-edge, 1px)",
+      }}
+      borderTopWidth={{
+        base: "var(--atlas-layout-edge, 1px)",
+        lg: "var(--atlas-layout-zero, 0)",
+      }}
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
       display="flex"
@@ -109,6 +116,10 @@ export function IngredientDetail({
           variant="tertiary"
           aria-label="Đóng chi tiết"
           onClick={c.requestClose}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "compact",
+          }}
         >
           Đóng
         </Button>
@@ -199,12 +210,22 @@ export function IngredientDetail({
                 !c.ingredientDirty || !c.ingredientValid || Boolean(c.lock)
               }
               onClick={c.openIngredientReview}
+              minH={{
+                base: "var(--atlas-layout-mobile-target, 44px)",
+                lg: "control",
+              }}
             >
               Xem thay đổi
             </Button>
             {item?.ingredient_status === "ACTIVE" && (
               <>
-                <Button onClick={() => c.requestPriorities(item.ingredient_id)}>
+                <Button
+                  onClick={() => c.requestPriorities(item.ingredient_id)}
+                  minH={{
+                    base: "var(--atlas-layout-mobile-target, 44px)",
+                    lg: "control",
+                  }}
+                >
                   Ưu tiên NCC
                 </Button>
                 <Button
@@ -212,6 +233,10 @@ export function IngredientDetail({
                   onClick={() =>
                     c.requestLifecycle(item.ingredient_id, "INACTIVE")
                   }
+                  minH={{
+                    base: "var(--atlas-layout-mobile-target, 44px)",
+                    lg: "control",
+                  }}
                 >
                   Ngừng dùng
                 </Button>
@@ -223,6 +248,10 @@ export function IngredientDetail({
                   onClick={() =>
                     c.requestLifecycle(item.ingredient_id, "ACTIVE")
                   }
+                  minH={{
+                    base: "var(--atlas-layout-mobile-target, 44px)",
+                    lg: "control",
+                  }}
                 >
                   Kích hoạt
                 </Button>
@@ -231,6 +260,10 @@ export function IngredientDetail({
                   onClick={() =>
                     c.requestLifecycle(item.ingredient_id, "ARCHIVED")
                   }
+                  minH={{
+                    base: "var(--atlas-layout-mobile-target, 44px)",
+                    lg: "control",
+                  }}
                 >
                   Lưu trữ
                 </Button>

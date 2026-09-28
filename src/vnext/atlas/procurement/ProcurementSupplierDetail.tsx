@@ -12,6 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import type { CSSProperties } from "react";
 import {
   procurementOperatorMessages,
   type AllocationFamilyRow,
@@ -65,6 +66,28 @@ export function ProcurementSupplierDetail({
       ? null
       : parseExactQuantity(row.family_quantity);
   const remainder = total === null || need === null ? null : need - total;
+  const reconciliation =
+    total === null || need === null || remainder === null
+      ? "Chưa đủ dữ liệu để đối chiếu phân bổ."
+      : `${quantity(total)} / ${quantity(need)} ${row.unit_code} đã phân bổ · ${
+          remainder === 0n
+            ? "Đã đủ"
+            : remainder > 0n
+              ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
+              : `Vượt ${quantity(-remainder)} ${row.unit_code}`
+        }`;
+  const reconciliationQuantity =
+    total === null || need === null
+      ? null
+      : `${quantity(total)} / ${quantity(need)} ${row.unit_code}`;
+  const reconciliationOutcome =
+    remainder === null
+      ? null
+      : remainder === 0n
+        ? "Đã đủ"
+        : remainder > 0n
+          ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
+          : `Vượt ${quantity(-remainder)} ${row.unit_code}`;
   const locked = disabled || row.complete === false;
   const canSave =
     !locked &&
@@ -160,20 +183,26 @@ export function ProcurementSupplierDetail({
       role="region"
       aria-label={`Phân bổ ${row.ingredient_name}`}
       direction="column"
+      style={
+        {
+          "--atlas-procurement-detail-desktop-max-height":
+            "calc(100dvh - 330px)",
+        } as CSSProperties
+      }
       minW="var(--atlas-layout-zero, 0)"
       bg="bg.subtle"
       borderColor="border.subtle"
       borderLeftWidth={{
         base: "var(--atlas-layout-zero, 0)",
-        xl: "var(--atlas-layout-edge, 1px)",
+        lg: "var(--atlas-layout-edge, 1px)",
       }}
       borderTopWidth={{
         base: "var(--atlas-layout-edge, 1px)",
-        xl: "var(--atlas-layout-zero, 0)",
+        lg: "var(--atlas-layout-zero, 0)",
       }}
       maxH={{
         base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
-        xl: "var(--atlas-layout-detail-height, calc(100dvh - 360px))",
+        lg: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
       }}
     >
       <Box p="md" pb="sm">
@@ -186,42 +215,35 @@ export function ProcurementSupplierDetail({
           · {row.location_name}
         </Text>
       </Box>
-      <Flex
+      <Box
         role="status"
         aria-label="Cân đối phân bổ"
         aria-live="polite"
         mx="md"
         pb="sm"
-        gap="sm"
-        justify="space-between"
         borderBottomWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
       >
-        {(
-          [
-            ["Nhu cầu đã xác nhận", need],
-            ["Đã phân bổ", total],
-            ["Còn lại", remainder],
-          ] as const
-        ).map(([label, value]) => (
-          <Box key={label} minW="var(--atlas-layout-zero, 0)">
-            <Text textStyle="helper" color="fg.muted">
-              {label}
+        {reconciliationQuantity && reconciliationOutcome ? (
+          <Flex aria-label={reconciliation} align="baseline" wrap="wrap">
+            <Text as="span" textStyle="quantityInline" color="fg.default">
+              {reconciliationQuantity}
+            </Text>
+            <Text as="span" textStyle="unitInline" color="fg.muted" ml="xs">
+              {" đã phân bổ · "}
             </Text>
             <Text
+              as="span"
               fontWeight="semibold"
-              fontVariantNumeric="tabular-nums"
-              color={
-                label === "Còn lại" && value !== 0n
-                  ? "status.warning"
-                  : "fg.primary"
-              }
+              color={remainder !== 0n ? "status.warning" : "fg.primary"}
             >
-              {quantity(value)} {row.unit_code}
+              {reconciliationOutcome}
             </Text>
-          </Box>
-        ))}
-      </Flex>
+          </Flex>
+        ) : (
+          <Text color="status.warning">{reconciliation}</Text>
+        )}
+      </Box>
       <Stack
         p="md"
         gap="md"
@@ -288,6 +310,10 @@ export function ProcurementSupplierDetail({
                         ),
                       )
                     }
+                    minH={{
+                      base: "var(--atlas-layout-mobile-target, 44px)",
+                      lg: "compact",
+                    }}
                   >
                     Xóa
                   </Button>
@@ -309,6 +335,10 @@ export function ProcurementSupplierDetail({
             onClick={() => {
               setAdding(!adding);
               setSupplierId("");
+            }}
+            minH={{
+              base: "var(--atlas-layout-mobile-target, 44px)",
+              lg: "compact",
             }}
           >
             + Thêm nhà cung ứng
@@ -349,6 +379,10 @@ export function ProcurementSupplierDetail({
                   setAdded((ids) => [...ids, supplierId]);
                   setAdding(false);
                 }}
+                minH={{
+                  base: "var(--atlas-layout-mobile-target, 44px)",
+                  lg: "compact",
+                }}
               >
                 Thêm
               </Button>
@@ -386,12 +420,23 @@ export function ProcurementSupplierDetail({
         borderColor="border.subtle"
         flexShrink="0"
       >
-        <Button ref={closeButton} onClick={() => requestExit(onClose)}>
+        <Button
+          ref={closeButton}
+          onClick={() => requestExit(onClose)}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "control",
+          }}
+        >
           Đóng
         </Button>
         <Button
           variant="businessPrimary"
           disabled={!canSave}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "control",
+          }}
           onClick={() =>
             onSave(
               draft

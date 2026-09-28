@@ -71,7 +71,14 @@ export function PlanningSourceReview({
       tabIndex={-1}
       aria-label="Xem thay đổi"
       bg="bg.subtle"
-      borderLeftWidth="var(--atlas-layout-edge, 1px)"
+      borderLeftWidth={{
+        base: "var(--atlas-layout-zero, 0)",
+        lg: "var(--atlas-layout-edge, 1px)",
+      }}
+      borderTopWidth={{
+        base: "var(--atlas-layout-edge, 1px)",
+        lg: "var(--atlas-layout-zero, 0)",
+      }}
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
       display="flex"
@@ -86,7 +93,15 @@ export function PlanningSourceReview({
             {changes.length} thay đổi · toàn tuần
           </Text>
         </Box>
-        <Button variant="tertiary" size="sm" onClick={c.closeReview}>
+        <Button
+          variant="tertiary"
+          size="sm"
+          onClick={c.closeReview}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "compact",
+          }}
+        >
           Đóng
         </Button>
       </Flex>
@@ -118,8 +133,10 @@ export function PlanningSourceReview({
                       {r.context} · {r.action}
                     </Text>
                   </Table.Cell>
-                  <Table.Cell>{r.before}</Table.Cell>
-                  <Table.Cell>{r.after}</Table.Cell>
+                  <Table.Cell color="fg.muted">{r.before}</Table.Cell>
+                  <Table.Cell fontWeight="semibold" color="fg.primary">
+                    {r.after}
+                  </Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
@@ -150,12 +167,24 @@ export function PlanningSourceReview({
         )}
       </Box>
       <Flex p="md" gap="sm" justify="end" wrap="wrap">
-        <Button onClick={c.closeReview}>Quay lại</Button>
+        <Button
+          onClick={c.closeReview}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "control",
+          }}
+        >
+          Quay lại
+        </Button>
         {nextChain && !c.impact?.save_allowed ? (
           <Button
             variant="businessPrimary"
             disabled={!c.canEdit}
             onClick={() => void c.prepareCorrection(nextChain)}
+            minH={{
+              base: "var(--atlas-layout-mobile-target, 44px)",
+              lg: "control",
+            }}
           >
             Chuẩn bị hiệu chỉnh
           </Button>
@@ -166,6 +195,10 @@ export function PlanningSourceReview({
               !c.canEdit || !c.preview.can_save || !c.impact?.save_allowed
             }
             onClick={() => void c.save()}
+            minH={{
+              base: "var(--atlas-layout-mobile-target, 44px)",
+              lg: "control",
+            }}
           >
             Lưu
           </Button>

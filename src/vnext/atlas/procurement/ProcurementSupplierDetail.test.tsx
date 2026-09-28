@@ -34,6 +34,26 @@ const quantity = (name: string, value: string) =>
     target: { value },
   });
 describe("Supplier decisions", () => {
+  it("uses mobile-safe targets and keeps Save as the detail business action", () => {
+    const { container } = show(reviewFamily("manual_split"));
+
+    expect(
+      container.querySelector('[aria-label="Phân bổ Gạo thơm"]'),
+    ).toHaveStyle({
+      "--atlas-procurement-detail-desktop-max-height": "calc(100dvh - 330px)",
+    });
+
+    for (const name of ["Đóng", "Lưu phân bổ", "+ Thêm nhà cung ứng"]) {
+      expect(screen.getByRole("button", { name })).toHaveStyle({
+        minHeight: "var(--atlas-layout-mobile-target, 44px)",
+      });
+    }
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("focuses the header and displays exact authoritative split/balance", async () => {
     show(reviewFamily("manual_split"));
     expect(screen.getByRole("heading", { name: "Gạo thơm" })).toHaveFocus();
@@ -43,9 +63,12 @@ describe("Supplier decisions", () => {
     quantity("NCC An Phú", "59.999999");
     expect(
       screen.getByRole("status", { name: "Cân đối phân bổ" }),
-    ).toHaveTextContent("0,000001 kg");
+    ).toHaveTextContent("99,999999 / 100 kg đã phân bổ · Thiếu 0,000001 kg");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
     quantity("NCC An Phú", "60");
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("100 / 100 kg đã phân bổ · Đã đủ");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
   });
   it.each(["bad", "", "-1", "60.0000001", "1e2"])(

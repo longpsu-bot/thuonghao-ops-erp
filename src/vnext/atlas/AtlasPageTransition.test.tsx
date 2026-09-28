@@ -253,6 +253,7 @@ it("uses the same two phases for Confirmed Need handoff, retaining date and allo
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   nav("Lập nhu cầu");
   await settle("Thực đơn");
+  fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   fireEvent.change(
     await screen.findByRole("combobox", { name: "Ngày phục vụ" }),
     { target: { value: "2026-09-09" } },

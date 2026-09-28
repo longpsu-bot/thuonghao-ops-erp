@@ -15,6 +15,10 @@ const focus = {
   outlineColor: "focus.ring",
   outlineOffset: "var(--atlas-layout-focus-offset, 2px)",
 } as const;
+const mobileTargetHeight = {
+  base: "var(--atlas-layout-mobile-target, 44px)",
+  lg: "var(--atlas-layout-zero, 0)",
+} as const;
 const disabledControl = {
   bg: "bg.subtle",
   color: "fg.muted",
@@ -23,18 +27,21 @@ const disabledControl = {
   cursor: "disabled",
 } as const;
 const control = {
+  minH: mobileTargetHeight,
   borderRadius: "control",
   bg: "bg.workbench",
   borderColor: "border.default",
   color: "fg.default",
   focusRingColor: "focus.ring",
   _placeholder: { color: "fg.muted" },
+  _hover: { borderColor: "border.interactive" },
   _focusVisible: focus,
   _disabled: disabledControl,
 } as const;
 
 const button = defineRecipe({
   base: {
+    minH: mobileTargetHeight,
     borderRadius: "control",
     textStyle: "body",
     fontWeight: "semibold",
@@ -54,19 +61,27 @@ const button = defineRecipe({
         _active: { bg: "action.primary.hover", ...pressed },
       },
       secondary: {
-        bg: "bg.toolbar",
+        bg: "bg.workbench",
         color: "fg.primary",
         borderWidth: "var(--atlas-layout-edge, 1px)",
         borderColor: "border.default",
-        _hover: { bg: "bg.selected" },
+        _hover: { bg: "bg.selected", borderColor: "border.interactive" },
         _active: { bg: "bg.selected", ...pressed },
       },
       tertiary: {
-        bg: "bg.subtle",
+        bg: "transparent",
         color: "fg.default",
         borderWidth: "var(--atlas-layout-edge, 1px)",
         borderColor: "border.subtle",
         _hover: { bg: "bg.selected", color: "fg.primary" },
+        _active: { bg: "bg.selected", ...pressed },
+      },
+      tableAction: {
+        bg: "transparent",
+        color: "fg.primary",
+        borderWidth: "var(--atlas-layout-edge, 1px)",
+        borderColor: "border.subtle",
+        _hover: { bg: "bg.selected", borderColor: "border.interactive" },
         _active: { bg: "bg.selected", ...pressed },
       },
       utility: {
@@ -130,6 +145,7 @@ export const atlasSystem = createSystem(
             toolbar: { value: "#F0F4F1" },
             subtle: { value: "#F6F8F6" },
             selected: { value: "#E7EFEB" },
+            context: { value: "#DDE7E1" },
             navigation: { value: "#31413E" },
             navigationHover: { value: "#3B4D49" },
             navMuted: { value: "#C2CBC7" },
@@ -179,6 +195,7 @@ export const atlasSystem = createSystem(
             toolbar: { value: "{colors.atlas.toolbar}" },
             subtle: { value: "{colors.atlas.subtle}" },
             selected: { value: "{colors.atlas.selected}" },
+            context: { value: "{colors.atlas.context}" },
             navigation: { value: "{colors.atlas.navigation}" },
             navigationHover: { value: "{colors.atlas.navigationHover}" },
             success: { value: "{colors.atlas.successSoft}" },
@@ -200,6 +217,7 @@ export const atlasSystem = createSystem(
             default: { value: "{colors.atlas.border}" },
             subtle: { value: "{colors.atlas.borderSoft}" },
             accent: { value: "{colors.atlas.clay}" },
+            interactive: { value: "{colors.atlas.focus}" },
           },
           status: {
             success: { value: "{colors.atlas.success}" },
@@ -237,6 +255,21 @@ export const atlasSystem = createSystem(
           },
         },
         helper: { value: { fontSize: "12px", lineHeight: "1.5" } },
+        quantityInline: {
+          value: {
+            fontSize: "13px",
+            fontWeight: "semibold",
+            lineHeight: "1.4",
+            fontVariantNumeric: "tabular-nums",
+          },
+        },
+        unitInline: {
+          value: {
+            fontSize: "12px",
+            fontWeight: "normal",
+            lineHeight: "1.4",
+          },
+        },
       },
       keyframes: {
         atlasDetailEnter: {
@@ -327,7 +360,10 @@ export const atlasSystem = createSystem(
             trigger: {
               ...control,
               bg: "bg.subtle",
-              w: "compact",
+              w: {
+                base: "var(--atlas-layout-mobile-target, 44px)",
+                lg: "compact",
+              },
               h: "compact",
               borderWidth: "var(--atlas-layout-edge, 1px)",
               _hover: { bg: "bg.selected", color: "fg.primary" },
@@ -437,7 +473,7 @@ export const atlasSystem = createSystem(
             segmentGroup: {
               ...control,
               h: "control",
-              minH: "control",
+              minH: mobileTargetHeight,
               px: "sm",
               textStyle: "body",
             },
@@ -478,7 +514,7 @@ export const atlasSystem = createSystem(
             "requiredIndicator",
           ],
           base: {
-            label: { textStyle: "label", color: "fg.default" },
+            label: { textStyle: "label", color: "fg.muted" },
             root: { gap: "xs" },
           },
         },
@@ -498,9 +534,10 @@ export const atlasSystem = createSystem(
             columnHeader: {
               textStyle: "table",
               letterSpacing: "var(--atlas-layout-tracking, normal)",
+              minH: "var(--atlas-table-header-height, 38px)",
               bg: "bg.toolbar",
-              borderColor: "border.subtle",
-              color: "fg.muted",
+              borderBottomColor: "border.default",
+              color: "fg.default",
               fontWeight: "semibold",
               textTransform: "none",
             },
@@ -515,6 +552,8 @@ export const atlasSystem = createSystem(
               },
             },
             row: {
+              borderBottomWidth: "var(--atlas-layout-edge, 1px)",
+              borderBottomColor: "border.subtle",
               transition:
                 "var(--atlas-layout-row-transition, background-color 140ms ease-out)",
               _hover: { bg: "bg.subtle" },
@@ -529,8 +568,11 @@ export const atlasSystem = createSystem(
             size: {
               sm: {
                 root: { textStyle: "table" },
-                columnHeader: { px: "sm", py: "sm" },
-                cell: { px: "sm", py: "xs" },
+                columnHeader: {
+                  px: "var(--atlas-table-cell-x, 12px)",
+                  py: "sm",
+                },
+                cell: { px: "var(--atlas-table-cell-x, 12px)", py: "xs" },
               },
             },
           },

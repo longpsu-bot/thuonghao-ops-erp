@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 describe("Atlas routine refresh", () => {
-  it("keeps 8px controls, 6px workbenches and the circular compact Refresh exception", () => {
+  it("keeps 8px controls, 6px workbenches and a 44px mobile Refresh target", () => {
     const theme = atlasSystem._config.theme;
     expect(theme?.tokens?.radii?.control).toEqual({ value: "8px" });
     expect(theme?.tokens?.radii?.workbench).toEqual({ value: "6px" });
@@ -40,8 +40,8 @@ describe("Atlas routine refresh", () => {
             (name) => rule.selectorText === `.${name}`,
           ) &&
           rule.style.borderRadius === "var(--atlas-radii-full)" &&
-          rule.style.width === "var(--atlas-sizes-compact)" &&
-          rule.style.height === "var(--atlas-sizes-compact)",
+          rule.style.width === "var(--atlas-layout-mobile-target, 44px)" &&
+          rule.style.height === "var(--atlas-layout-mobile-target, 44px)",
       ),
     ).toBe(true);
   });

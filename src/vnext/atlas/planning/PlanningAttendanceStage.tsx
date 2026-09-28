@@ -12,6 +12,7 @@ import {
   validCount,
   type PlanningSourcesController,
 } from "./usePlanningSources";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 export function PlanningAttendanceStage({
   c,
   visibleSchoolIds,
@@ -78,8 +79,8 @@ export function PlanningAttendanceStage({
           </Button>
         </Box>
       )}
-      <Box
-        overflow="auto"
+      <AtlasTableViewport
+        label="Bảng sĩ số theo trường"
         maxH={
           pasteOpen
             ? "var(--atlas-layout-planning-paste-table-height, max(140px, calc(100dvh - 640px)))"
@@ -88,7 +89,12 @@ export function PlanningAttendanceStage({
               : "var(--atlas-layout-planning-table-height, max(240px, calc(100dvh - 480px)))"
         }
       >
-        <Table.Root aria-label="Sĩ số theo trường" size="sm" stickyHeader>
+        <Table.Root
+          aria-label="Sĩ số theo trường"
+          minW="var(--atlas-layout-attendance-table-min, 620px)"
+          size="sm"
+          stickyHeader
+        >
           <Table.Header>
             <Table.Row>
               <Table.ColumnHeader>Trường / điểm giao</Table.ColumnHeader>
@@ -138,7 +144,7 @@ export function PlanningAttendanceStage({
             })}
           </Table.Body>
         </Table.Root>
-      </Box>
+      </AtlasTableViewport>
     </>
   );
 }
