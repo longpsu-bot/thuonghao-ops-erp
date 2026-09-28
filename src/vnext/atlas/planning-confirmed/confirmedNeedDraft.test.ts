@@ -54,7 +54,7 @@ describe("Confirmed Need exact Planning-step drafts", () => {
         reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
         reason_note: "Bếp yêu cầu",
       }),
-    ).toBe("Số lượng phải là bội số của bước 0,01 kg.");
+    ).toBe("Số lượng xác nhận phải theo bước 0,01 kg.");
   });
 
   it.each(["4", "4.0"])("accepts exact %s at step 1", (quantity) => {
@@ -80,7 +80,7 @@ describe("Confirmed Need exact Planning-step drafts", () => {
       reason_note: "Bếp yêu cầu",
     };
     expect(draftError(line, draft)).toBe(
-      "Số lượng phải là bội số của bước 1 Quả.",
+      "Số lượng xác nhận phải theo bước 1 Quả.",
     );
     expect(draft.exact_quantity).toBe("4.5");
   });

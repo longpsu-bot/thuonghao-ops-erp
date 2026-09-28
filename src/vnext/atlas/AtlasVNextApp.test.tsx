@@ -41,7 +41,9 @@ function show() {
   return { apis, signOut, ...result };
 }
 async function nav(label: string) {
-  fireEvent.click(await screen.findByRole("button", { name: "Mở điều hướng" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Mở điều hướng Atlas" }),
+  );
   fireEvent.click(await screen.findByRole("button", { name: label }));
   await waitFor(() =>
     expect(
@@ -63,7 +65,9 @@ it("renders exactly one vNext capability for every primary navigation entry", as
     await waitFor(() =>
       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
     expect(await screen.findByRole("button", { name: label! })).toHaveAttribute(
       "aria-current",
       "page",

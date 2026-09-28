@@ -11,6 +11,13 @@
 **Branch:** `feat/atlas-ui-vnext-09-post-planning-convergence`
 **Scope:** React/Chakra presentation and review evidence only
 
+> **Presentation supersession:**
+> [Atlas vNext 10 — Decision Surface Refinement](./atlas-vnext-10-decision-surface-refinement.md)
+> supersedes UI-09's 196px/88px task-context geometry, the eight-column
+> Procurement allocation table and the seven-function resting Confirmed Need
+> table. UI-09 remains authoritative for the protected workflows, contracts,
+> quantity meanings, permissions and command semantics that UI-10 preserves.
+
 ## 1. Purpose and authority
 
 UI-09 ports the approved `Trạm Điều Hành` direction onto the certified current system. It does not merge the old UI stack. Current-main controllers, bridges, APIs, quantity helpers, permissions, command semantics, long-running-operation behavior and certification selectors remain authoritative.

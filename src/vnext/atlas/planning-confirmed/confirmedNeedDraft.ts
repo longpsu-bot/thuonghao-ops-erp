@@ -61,7 +61,7 @@ export function draftError(
       line.effective_policy.planning_step,
     )
   )
-    return `Số lượng phải là bội số của bước ${exactQuantityDisplay(
+    return `Số lượng xác nhận phải theo bước ${exactQuantityDisplay(
       line.effective_policy.planning_step,
     )} ${line.controlled_unit.code}.`;
   const equalsProposal = exactDecimalEqual(

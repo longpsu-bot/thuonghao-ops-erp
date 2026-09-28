@@ -60,25 +60,26 @@ const openFilters = () => {
     fireEvent.click(disclosure);
 };
 describe("Procurement vNext operator workbench", () => {
-  it("uses the locked Station context and attached-detail geometry", async () => {
+  it("uses a horizontal Station masthead and attached-detail geometry", async () => {
     show("manual_split");
 
     const workbench = screen.getByRole("region", {
       name: "Kế hoạch mua hàng",
     });
     const station = workbench.firstElementChild as HTMLElement;
-    const context = screen.getByRole("complementary", {
+    const context = screen.getByRole("region", {
       name: "Ngữ cảnh công việc mua hàng",
     });
     expect(station).toHaveStyle({
       minHeight:
         "var(--atlas-procurement-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))",
       alignContent: "start",
+      gridTemplateRows: "auto minmax(0, 1fr)",
     });
     expect(context.parentElement).toBe(station);
     expect(context).toHaveStyle({
-      "--atlas-task-context-desktop-width": "196px",
-      "--atlas-task-context-compact-height": "88px",
+      "--atlas-task-context-desktop-min-height": "68px",
+      "--atlas-task-context-desktop-target-height": "72px",
     });
     expect(
       within(context).getByLabelText(
@@ -482,10 +483,10 @@ describe("Procurement vNext operator workbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-procurement-table-min, 980px)",
+      minWidth: "var(--atlas-layout-procurement-table-min, 880px)",
       "--atlas-table-header-height": "38px",
-      "--atlas-table-row-height": "42px",
-      "--atlas-table-identity-width": "178px",
+      "--atlas-table-row-height": "46px",
+      "--atlas-table-identity-width": "190px",
     });
     expect(
       within(table)
@@ -494,19 +495,18 @@ describe("Procurement vNext operator workbench", () => {
     ).toEqual([
       "Nguyên liệu",
       "Trường / điểm giao",
-      "Nhu cầu đã xác nhận",
-      "Đã phân bổ",
-      "Còn lại",
+      "Nhu cầu",
       "Nhà cung ứng",
-      "Trạng thái",
+      "Tình trạng / vấn đề",
       "Thao tác",
     ]);
     expect(document.body).not.toHaveTextContent(
       /private-|fingerprint|UUID|phiên bản/i,
     );
-    expect(
-      within(screen.getByRole("table")).getByText("Chưa phân bổ"),
-    ).toBeVisible();
+    const unallocated = within(table).getByText("Chưa phân bổ");
+    expect(unallocated).toBeVisible();
+    expect(unallocated).toHaveTextContent("⚠ Chưa phân bổ");
+    expect(unallocated.closest("tr")).toHaveAttribute("data-attention", "true");
   });
   it("keeps search and exception filtering local", async () => {
     const { read } = show();
@@ -534,6 +534,10 @@ describe("Procurement vNext operator workbench", () => {
     expect(screen.getByRole("heading", { name: "Gạo thơm" })).toHaveFocus();
     const row = trigger.closest("tr")!;
     expect(row).toHaveAttribute("aria-selected", "true");
+    expect(row).toHaveStyle({ background: "var(--atlas-colors-bg-selected)" });
+    expect(row.firstElementChild).toHaveStyle({
+      background: "var(--atlas-colors-bg-selected)",
+    });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(row.querySelector("[data-selection-indicator]")).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
@@ -616,7 +620,7 @@ describe("Procurement vNext operator workbench", () => {
       within(picker).getByRole("button", { name: "Đóng bộ chọn trường" }),
     );
     await waitFor(() =>
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      expect(trigger).toHaveAttribute("aria-expanded", "false"),
     );
     expect(read).toHaveBeenCalledTimes(1);
     fireEvent.click(trigger);
@@ -637,7 +641,7 @@ describe("Procurement vNext operator workbench", () => {
     ["rebalance", "Cần cập nhật"],
     ["needs_reallocation", "Cần phân bổ lại"],
     ["blocked", "Bị chặn"],
-    ["manual_split", "Đã đủ"],
+    ["manual_split", "Đủ"],
   ] as const)("shows the %s operator state", async (scenario, label) => {
     show(scenario);
     await action();

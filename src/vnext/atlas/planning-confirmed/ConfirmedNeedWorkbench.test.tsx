@@ -77,13 +77,15 @@ describe("Confirmed Need Chakra operator surface", () => {
     show();
     await quantity();
 
-    const context = screen.getByRole("complementary", {
+    const context = screen.getByRole("region", {
       name: "Ngữ cảnh xác nhận nhu cầu",
+    });
+    expect(context.parentElement).toHaveStyle({
+      gridTemplateRows: "auto minmax(0, 1fr)",
     });
     expect(context).toHaveTextContent("Lập nhu cầu");
     expect(context).toHaveTextContent("Xác nhận nhu cầu");
-    expect(context).toHaveTextContent("Ngày phục vụ");
-    expect(context).toHaveTextContent("Trường / điểm giao");
+    expect(context).toHaveTextContent("07/09/2026 · Tất cả trường");
 
     const viewport = screen.getByRole("region", {
       name: "Bảng xác nhận nhu cầu",
@@ -92,9 +94,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(
       within(viewport).getByRole("table", { name: "Nhu cầu xác nhận" }),
     ).toHaveStyle({
-      minWidth: "var(--atlas-layout-confirmed-need-table-min, 1180px)",
+      minWidth: "var(--atlas-layout-confirmed-need-table-min, 980px)",
     });
-    expect(within(viewport).getAllByRole("columnheader")).toHaveLength(7);
+    expect(within(viewport).getAllByRole("columnheader")).toHaveLength(5);
     expect(
       within(viewport).getByRole("columnheader", {
         name: "Nguyên liệu / nơi nhận",
@@ -113,6 +115,13 @@ describe("Confirmed Need Chakra operator surface", () => {
       background: "var(--atlas-colors-bg-workbench)",
       zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
     });
+    expect(
+      within(
+        within(viewport)
+          .getByText("Gạo thơm")
+          .closest('[data-field="identity"]')!,
+      ).queryByText("Đã lưu"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps search and refresh immediate while compact filters disclose a truthful scope summary", async () => {
@@ -260,7 +269,7 @@ describe("Confirmed Need Chakra operator surface", () => {
   it("reports an unknown Station scope when the authoritative read fails", async () => {
     show("read_failure");
 
-    const context = await screen.findByRole("complementary", {
+    const context = await screen.findByRole("region", {
       name: "Ngữ cảnh xác nhận nhu cầu",
     });
     await screen.findByRole("alert");
@@ -302,6 +311,11 @@ describe("Confirmed Need Chakra operator surface", () => {
   it("styles a valid adjustment as a decision and only invalid input as danger", async () => {
     show();
     const input = await quantity();
+
+    expect(input.closest('[data-field="confirmation"]')).toHaveAttribute(
+      "data-adjustment-state",
+      "unchanged",
+    );
 
     await editValid();
     expect(
@@ -464,6 +478,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     const h = show();
     await quantity();
     h.f.batch.lines[0]!.confirmed_quantity_after = "99999999999999.980000";
+    h.f.batch.lines[0]!.proposed_confirmed_quantity = "99999999999999.980000";
     h.f.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
     fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
     await waitFor(() =>
@@ -474,7 +489,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     fireEvent.change(await quantity(), {
       target: { value: "99999999999999,99" },
     });
-    expect(screen.getByRole("cell", { name: "+0,01" })).toBeVisible();
+    expect(screen.getByRole("cell", { name: "+0,01 kg" })).toBeVisible();
   });
   it("pages Need detail through bounded backend reads and applies school/ingredient filters explicitly", async () => {
     const h = show();
@@ -539,13 +554,13 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Xác nhận nhu cầu",
     );
-    expect(screen.getAllByRole("columnheader")).toHaveLength(7);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
     expect(document.body.textContent).not.toMatch(
       /batch-current|line-0|revision-0|decision-0|DRAFT_REVIEW/,
     );
     expect(screen.getByText(/6 dòng/)).toBeVisible();
   });
-  it("shows raw requirement, operational proposal, confirmation, and exact step as distinct meanings", async () => {
+  it("keeps the primary table on proposal and human confirmation while moving raw and step evidence to progressive detail", async () => {
     show("needs_review", {}, (fixture) => {
       Object.assign(fixture.batch.lines[0]!, {
         theoretical_quantity: "0.025500",
@@ -557,25 +572,68 @@ describe("Confirmed Need Chakra operator surface", () => {
     const input = await quantity();
     const row = input.closest("tr")!;
     expect(
-      screen.getByRole("columnheader", { name: "Nhu cầu tính" }),
-    ).toBeVisible();
+      screen.queryByRole("columnheader", { name: "Nhu cầu tính" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("columnheader", { name: "Đề xuất vận hành" }),
     ).toBeVisible();
     expect(
       screen.getByRole("columnheader", { name: "Số lượng xác nhận" }),
     ).toBeVisible();
-    expect(
-      row.querySelector('[data-field="raw-requirement"]'),
-    ).toHaveTextContent("0,0255");
+    expect(row.querySelector('[data-field="raw-requirement"]')).toBeNull();
     expect(
       row.querySelector('[data-field="operational-proposal"]'),
     ).toHaveTextContent("0,1");
-    expect(
-      row.querySelector('[data-field="operational-proposal"]'),
-    ).toHaveTextContent("Làm tròn: 0,1 kg");
-    expect(row).toHaveTextContent("Bước xác nhận: 0,01 kg");
+    expect(row).not.toHaveTextContent("Làm tròn:");
+    expect(row).not.toHaveTextContent("Bước xác nhận:");
     expect(input).toHaveValue("0,1");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
+    );
+    const evidence = await screen.findByRole("table", {
+      name: "Cách hình thành nhu cầu",
+    });
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: "Cách hình thành nhu cầu",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("region", {
+        name: "Bằng chứng hình thành nhu cầu",
+      }),
+    ).toHaveAttribute("tabindex", "0");
+    const evidenceRow = within(evidence).getByText("Gạo thơm").closest("tr")!;
+    expect(evidenceRow).toHaveTextContent("0,0255 kg");
+    expect(evidenceRow).toHaveTextContent("0,1 kg");
+    expect(evidenceRow).toHaveTextContent("0,01 kg");
+  });
+  it("fails closed when Need detail cannot distinguish two customers with the exposed detail identity", async () => {
+    show("normal", {}, (fixture) => {
+      const group = fixture.need.grouped_requirements[0]!;
+      fixture.need.grouped_requirements.push({
+        ...group,
+        customer_id: "customer-other",
+      });
+      fixture.need.pagination.total_groups = 2;
+    });
+    await quantity();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
+    );
+    const evidence = await screen.findByRole("table", {
+      name: "Cách hình thành nhu cầu",
+    });
+    for (const ingredient of within(evidence).getAllByRole("button", {
+      name: "Xem chi tiết Gạo thơm",
+    }))
+      expect(ingredient).toBeDisabled();
+    expect(
+      within(evidence).getAllByText(
+        "Không đối chiếu được đầy đủ bằng chứng của dòng nhu cầu hiện tại.",
+      ),
+    ).toHaveLength(2);
   });
   it("does not classify a fresh six-place proposal as historical", async () => {
     show("needs_review", {}, (fixture) => {
@@ -586,6 +644,19 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(await quantity()).not.toHaveAttribute("readonly");
     expect(await quantity()).toBeEnabled();
   });
+  it("keeps a fresh exact proposal acceptance quiet while preserving its required first Save", async () => {
+    show("needs_review");
+    const input = await quantity();
+    const row = input.closest("tr")!;
+    expect(row).toHaveTextContent("Theo đề xuất");
+    expect(
+      within(row).queryByRole("combobox", { name: "Lý do Gạo thơm" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(row).queryByRole("textbox", { name: "Ghi chú Gạo thơm" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
+  });
   it("links invalid quantity to its error and disables Save/Continue", async () => {
     show();
     const input = await quantity();
@@ -593,7 +664,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(
       document.getElementById(input.getAttribute("aria-describedby")!),
-    ).toHaveTextContent("bước 0,25 kg");
+    ).toHaveTextContent("Số lượng xác nhận phải theo bước 0,25 kg.");
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
@@ -618,7 +689,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(
       within(row).getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
     ).toHaveValue("Bếp yêu cầu");
-    expect(row.querySelector('[data-field="delta"]')).toHaveTextContent("—");
+    expect(row.querySelector('[data-field="delta"]')).toHaveTextContent(
+      "+2,25 kg",
+    );
     expect(h.f.batch.lines[0]!.confirmed_quantity_after).toBe("10.250000");
     expect(h.save).toHaveBeenCalledTimes(1);
     expect(await h.save.mock.results[0]!.value).toMatchObject({
@@ -771,7 +844,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     fireEvent.click(
       within(
         screen.getByRole("table", { name: "Cách hình thành nhu cầu" }),
-      ).getByRole("button", { name: "Gạo thơm" }),
+      ).getByRole("button", { name: "Xem chi tiết Gạo thơm" }),
     );
     expect(await screen.findByText(/Cơm trắng/)).toBeVisible();
     expect(screen.getByText(/Bổ sung suất ăn/)).toBeVisible();

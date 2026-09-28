@@ -71,10 +71,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
       overflow="hidden"
     >
       <Grid
-        templateColumns={{
-          base: "minmax(0, 1fr)",
-          lg: "196px minmax(0, 1fr)",
-        }}
+        templateColumns="minmax(0, 1fr)"
+        templateRows="auto minmax(0, 1fr)"
         minH="var(--atlas-confirmed-need-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))"
       >
         <AtlasTaskContext
@@ -465,6 +463,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   authSubject={props.authSubject}
                   date={c.date}
                   runId={c.workbench.need_generation_source.run_id}
+                  batchId={c.workbench.confirmed_need_batch_id}
                   lines={c.workbench.lines}
                 />
               )}

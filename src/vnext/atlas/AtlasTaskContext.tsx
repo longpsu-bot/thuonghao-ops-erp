@@ -20,89 +20,65 @@ export function AtlasTaskContext({
   moduleLabel,
   jobLabel,
   compactSummary,
-  details = [],
   headingRef,
 }: AtlasTaskContextProps) {
   const geometry = {
-    "--atlas-task-context-desktop-width": "196px",
-    "--atlas-task-context-compact-height": "88px",
+    "--atlas-task-context-desktop-min-height": "68px",
+    "--atlas-task-context-desktop-target-height": "72px",
   } as CSSProperties;
 
   return (
     <Box
-      as="aside"
+      as="header"
+      role="region"
       aria-label={ariaLabel}
       style={geometry}
       bg="bg.context"
-      borderRightWidth={{
-        base: "var(--atlas-layout-zero, 0)",
-        lg: "var(--atlas-layout-edge, 1px)",
-      }}
-      borderBottomWidth={{
-        base: "var(--atlas-layout-edge, 1px)",
-        lg: "var(--atlas-layout-zero, 0)",
-      }}
+      borderBottomWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.default"
       flex="none"
-      w={{ base: "full", lg: "var(--atlas-task-context-desktop-width)" }}
-      h={{
-        base: "var(--atlas-task-context-compact-height)",
-        lg: "var(--atlas-layout-auto, auto)",
-      }}
+      w="full"
       minH={{
-        base: "var(--atlas-task-context-compact-height)",
-        lg: "full",
+        base: "var(--atlas-task-context-desktop-min-height)",
+        lg: "var(--atlas-task-context-desktop-target-height)",
       }}
-      overflow="hidden"
-      px="md"
-      py={{ base: "xs", lg: "lg" }}
+      px={{ base: "md", lg: "lg" }}
+      py="xs"
     >
-      <Flex h="full" direction="column" justify="center" gap="xs">
-        <Text textStyle="helper" color="fg.muted">
-          {moduleLabel}
-        </Text>
-        <Heading
-          as="h1"
-          ref={headingRef}
-          tabIndex={-1}
-          fontSize={{
-            base: "var(--atlas-context-title-compact, 20px)",
-            lg: "var(--atlas-context-title-desktop, 24px)",
-          }}
-          lineHeight="var(--atlas-context-title-line-height, 1.2)"
-          fontWeight="var(--atlas-context-title-weight, 650)"
-        >
-          {jobLabel}
-        </Heading>
+      <Flex
+        minH="full"
+        direction={{ base: "column", lg: "row" }}
+        align={{ base: "flex-start", lg: "center" }}
+        justify="space-between"
+        gap={{ base: "xs", lg: "lg" }}
+      >
+        <Box minW="var(--atlas-layout-zero, 0)">
+          <Text textStyle="helper" color="fg.muted">
+            {moduleLabel}
+          </Text>
+          <Heading
+            as="h1"
+            ref={headingRef}
+            tabIndex={-1}
+            fontSize={{
+              base: "var(--atlas-context-title-compact, 20px)",
+              lg: "var(--atlas-context-title-desktop, 26px)",
+            }}
+            lineHeight="var(--atlas-context-title-line-height, 1.15)"
+            fontWeight="var(--atlas-context-title-weight, 700)"
+          >
+            {jobLabel}
+          </Heading>
+        </Box>
         <Text
-          display={{ base: "block", lg: "none" }}
           textStyle="helper"
           color="fg.muted"
-          lineClamp="1"
+          textAlign={{ base: "left", lg: "right" }}
+          whiteSpace={{ lg: "nowrap" }}
           aria-label={`Tóm tắt công việc: ${compactSummary}`}
         >
           {compactSummary}
         </Text>
-        {details.length > 0 && (
-          <Flex
-            display={{ base: "none", lg: "flex" }}
-            direction="column"
-            gap="md"
-            mt="md"
-            minW="var(--atlas-layout-zero, 0)"
-          >
-            {details.map((detail) => (
-              <Box key={detail.label} minW="var(--atlas-layout-zero, 0)">
-                <Text textStyle="helper" color="fg.muted">
-                  {detail.label}
-                </Text>
-                <Text mt="xs" textStyle="body" fontWeight="semibold">
-                  {detail.value}
-                </Text>
-              </Box>
-            ))}
-          </Flex>
-        )}
       </Flex>
     </Box>
   );

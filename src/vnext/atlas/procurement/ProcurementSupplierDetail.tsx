@@ -66,6 +66,16 @@ export function ProcurementSupplierDetail({
       ? null
       : parseExactQuantity(row.family_quantity);
   const remainder = total === null || need === null ? null : need - total;
+  const reconciliation =
+    total === null || need === null || remainder === null
+      ? "Chưa đủ dữ liệu để đối chiếu phân bổ."
+      : `${quantity(total)} / ${quantity(need)} ${row.unit_code} đã phân bổ · ${
+          remainder === 0n
+            ? "Đã đủ"
+            : remainder > 0n
+              ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
+              : `Vượt ${quantity(-remainder)} ${row.unit_code}`
+        }`;
   const locked = disabled || row.complete === false;
   const canSave =
     !locked &&
@@ -193,42 +203,27 @@ export function ProcurementSupplierDetail({
           · {row.location_name}
         </Text>
       </Box>
-      <Flex
+      <Box
         role="status"
         aria-label="Cân đối phân bổ"
         aria-live="polite"
         mx="md"
         pb="sm"
-        gap="sm"
-        justify="space-between"
         borderBottomWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
       >
-        {(
-          [
-            ["Nhu cầu đã xác nhận", need],
-            ["Đã phân bổ", total],
-            ["Còn lại", remainder],
-          ] as const
-        ).map(([label, value]) => (
-          <Box key={label} minW="var(--atlas-layout-zero, 0)">
-            <Text textStyle="helper" color="fg.muted">
-              {label}
-            </Text>
-            <Text
-              fontWeight="semibold"
-              fontVariantNumeric="tabular-nums"
-              color={
-                label === "Còn lại" && value !== 0n
-                  ? "status.warning"
-                  : "fg.primary"
-              }
-            >
-              {quantity(value)} {row.unit_code}
-            </Text>
-          </Box>
-        ))}
-      </Flex>
+        <Text
+          fontWeight="semibold"
+          fontVariantNumeric="tabular-nums"
+          color={
+            remainder !== null && remainder !== 0n
+              ? "status.warning"
+              : "fg.primary"
+          }
+        >
+          {reconciliation}
+        </Text>
+      </Box>
       <Stack
         p="md"
         gap="md"

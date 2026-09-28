@@ -64,7 +64,9 @@ function show() {
 }
 
 async function nav(label: string) {
-  fireEvent.click(await screen.findByRole("button", { name: "Mở điều hướng" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Mở điều hướng Atlas" }),
+  );
   fireEvent.click(await screen.findByRole("button", { name: label }));
   await waitFor(() =>
     expect(
@@ -79,7 +81,9 @@ describe("Atlas pre-cutover UI polish", () => {
     expect(screen.queryByText("Vận hành trường học")).not.toBeInTheDocument();
     expect(screen.getByText("Hôm nay: 07/09/2026")).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
     const procurement = await screen.findByRole("button", {
       name: "Kế hoạch mua hàng",
     });

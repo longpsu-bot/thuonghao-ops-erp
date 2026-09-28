@@ -95,12 +95,7 @@ export function IngredientSupplierWorkbench({
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Grid
-        templateColumns={{
-          base: "minmax(0, 1fr)",
-          lg: "var(--atlas-task-context-desktop-width, 196px) minmax(0, 1fr)",
-        }}
-      >
+      <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh công việc dữ liệu gốc"
           moduleLabel="Nguyên liệu và Nhà cung ứng"

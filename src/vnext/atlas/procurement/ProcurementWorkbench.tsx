@@ -183,11 +183,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             lg: "var(--atlas-layout-workbench-height, calc(100dvh - 100px))",
           },
         }}
-        templateColumns={{
-          base: "minmax(0, 1fr)",
-          lg: "var(--atlas-task-context-desktop-width, 196px) minmax(0, 1fr)",
-        }}
-        alignContent={{ base: "start", lg: "stretch" }}
+        templateColumns="minmax(0, 1fr)"
+        templateRows="auto minmax(0, 1fr)"
+        alignContent="start"
       >
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh công việc mua hàng"

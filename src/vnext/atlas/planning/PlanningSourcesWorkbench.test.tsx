@@ -61,12 +61,15 @@ describe("Planning sources Chakra workbench", () => {
   it("places a visible current-job context before source tabs and the ordered workbar", async () => {
     await show();
 
-    const context = screen.getByRole("complementary", {
+    const context = screen.getByRole("region", {
       name: "Ngữ cảnh nguồn lập nhu cầu",
     });
     expect(context).toHaveStyle({
-      "--atlas-task-context-desktop-width": "196px",
-      "--atlas-task-context-compact-height": "88px",
+      "--atlas-task-context-desktop-min-height": "68px",
+      "--atlas-task-context-desktop-target-height": "72px",
+    });
+    expect(context.parentElement).toHaveStyle({
+      gridTemplateRows: "auto minmax(0, 1fr)",
     });
     expect(
       within(context).getByLabelText(
