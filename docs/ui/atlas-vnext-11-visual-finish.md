@@ -53,7 +53,13 @@ The three jobs and all source behavior remain unchanged. Secondary tabs now read
 
 Desktop evidence uses 1440×900. Mobile evidence uses 390×844. The 72px desktop rail, overlay drawer, local table overflow, compact filter disclosures, 44px mobile targets, exact row/action names, tab semantics, focus behavior and reduced-motion rules are unchanged. Quantity and Unit DOM spacing remains explicit so accessible names and text exports preserve strings such as `+0,01 kg`.
 
-The evidence set includes the four resting surfaces at both viewports plus Procurement selected/problem, Ingredients selected, Confirmed Need dirty-valid and the scrolled open progressive detail. It is stored outside the repository in the task visualization directory under `atlas-ui-11-implementation/`.
+The evidence set includes the four resting surfaces at both viewports plus Procurement selected/problem, Ingredients selected, Confirmed Need dirty-valid and the scrolled open progressive detail. The full-resolution captures remain in the task visualization directory under `atlas-ui-11-implementation/`.
+
+Review sheets are checked into the repository for Draft PR review:
+
+- [Desktop before / after](./evidence/atlas-ui-11/atlas-ui-11-before-after.png)
+- [Mobile before / after](./evidence/atlas-ui-11/atlas-ui-11-mobile.png)
+- [Selected, problem, dirty-valid and progressive-detail states](./evidence/atlas-ui-11/atlas-ui-11-state-evidence.png)
 
 ## 6. Validation and rollback
 
