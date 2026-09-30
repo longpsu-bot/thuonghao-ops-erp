@@ -1,6 +1,87 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { test } from "vitest";
-import { reachReadyToReview } from "./staging-planning-browser.mjs";
+import * as browser from "./staging-planning-browser.mjs";
+
+const { reachReadyToReview } = browser;
+
+test("desktop closeout waits for the rail and its module navigation", async () => {
+  document.body.innerHTML =
+    '<aside aria-label="Điều hướng nhanh Atlas"></aside>';
+  const evaluate = async (expression) => globalThis.eval(expression);
+  await assert.rejects(
+    () =>
+      browser.waitForAuthenticatedDesktopShell({
+        evaluate,
+        timeout: 10,
+        interval: 0,
+      }),
+    /BROWSER_GATE_authenticated_shell/,
+  );
+  document.querySelector("aside").innerHTML =
+    '<nav aria-label="Điều hướng mô-đun Atlas"></nav>';
+  await browser.waitForAuthenticatedDesktopShell({
+    evaluate,
+    timeout: 10,
+    interval: 0,
+  });
+});
+
+test("desktop icon-only module button navigates by accessible label", async () => {
+  document.body.innerHTML =
+    '<aside aria-label="Điều hướng nhanh Atlas"><nav aria-label="Điều hướng mô-đun Atlas"><button aria-label="Lập nhu cầu"><svg></svg></button></nav></aside>';
+  const button = document.querySelector("button");
+  let clicks = 0;
+  button.addEventListener("click", () => {
+    clicks += 1;
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      '<div role="tablist" aria-label="Giai đoạn lập nhu cầu"></div>',
+    );
+  });
+  await browser.navigateUntil({
+    evaluate: async (expression) => globalThis.eval(expression),
+    scope: 'nav[aria-label="Điều hướng mô-đun Atlas"]',
+    role: "button",
+    label: "Lập nhu cầu",
+    destination: '[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]',
+    timeout: 20,
+    interval: 0,
+  });
+  assert.equal(clicks, 1);
+});
+
+test("protected desktop runner scopes the shell gate and Planning navigation to the rail", () => {
+  const source = readFileSync(
+    resolve("scripts/staging-planning-browser.mjs"),
+    "utf8",
+  );
+  assert.match(source, /AUTHENTICATED_SHELL_SELECTOR/);
+  assert.match(source, /ATLAS_MODULE_NAV_SELECTOR/);
+  assert.match(source, /scope: ATLAS_MODULE_NAV_SELECTOR/);
+  assert.match(source, /diagnostic\.shell = await readSafeBrowserStructure/);
+  assert.doesNotMatch(source, /scope: 'nav\[aria-label="Điều hướng Atlas"\]'/);
+});
+
+test("failure diagnostics report shell structure without form values", async () => {
+  document.body.innerHTML =
+    '<input id="atlas-signin-email" value="private@example.com"><input id="atlas-signin-password" value="private-password"><div role="alert">private@example.com</div><aside aria-label="Điều hướng nhanh Atlas"><nav aria-label="Điều hướng mô-đun Atlas"><button aria-label="Lập nhu cầu"><svg></svg></button></nav></aside>';
+  const diagnostic = await browser.readSafeBrowserStructure({
+    evaluate: async (expression) => globalThis.eval(expression),
+  });
+  assert.equal(diagnostic.signinFormPresent, true);
+  assert.equal(diagnostic.alertCount, 1);
+  assert.equal(diagnostic.desktopRailPresent, true);
+  assert.equal(diagnostic.desktopModuleNavPresent, true);
+  assert.equal(diagnostic.drawerNavPresent, false);
+  assert.deepEqual(diagnostic.moduleNavigationLabels, ["Lập nhu cầu"]);
+  assert.equal(diagnostic.currentUrl, location.origin + location.pathname);
+  assert.doesNotMatch(
+    JSON.stringify(diagnostic),
+    /private@example\.com|private-password/,
+  );
+});
 
 test("corrected resume reaches review with zero Generate clicks", async () => {
   let clicks = 0;

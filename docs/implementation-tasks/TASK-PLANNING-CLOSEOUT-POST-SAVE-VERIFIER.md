@@ -1,8 +1,10 @@
 # Planning Closeout Post-Save Verifier Repair
 
-**Status:** Final certification-pin candidate; review and merge remain separate
+**Status:** Desktop browser-selector repair candidate; review and merge remain separate
 
 **Final certification-pin starting main SHA:** `9ba47752b5d7e2f750bca19d723c8de46751b771`
+
+**Browser-selector repair starting main SHA:** `6c7f184b19622250a9b79f12c46cd0a86496dc11`
 
 **Scope:** Certification/verifier repair only. No migration, hosted write,
 Planning regeneration, Confirmed Need Save, Purchase Handoff, Retool/OPS v1
@@ -42,6 +44,32 @@ and version. All 248 proposal-before facts must satisfy the D-046 formula.
 
 Failures report compact dimension counts and booleans. They never log the 248
 line or decision objects.
+
+## Protected desktop browser failure and repair
+
+Protected Closeout run
+[`36701115177`](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/36701115177)
+passed exact checkout, frozen installation, and non-mutating preflight, then
+failed at `BROWSER_GATE_authenticated_shell`. The supplied Supabase browser trace
+shows an HTTP 200 password-token response for subject
+`a1010000-0000-4000-8000-000000000101`, followed by an authenticated HTTP 200
+`get_school_master_data` response. Authentication succeeded and the connected
+Schools module mounted. The verifier's wait still targeted the full/drawer menu
+landmark `nav[aria-label="Điều hướng Atlas"]`, which is absent from the stationary
+desktop Chakra shell at the protected runner's 1600 × 1100 viewport.
+
+The desktop shell instead exposes `aside[aria-label="Điều hướng nhanh Atlas"]`
+with `nav[aria-label="Điều hướng mô-đun Atlas"]`. The repaired verifier requires
+both landmarks, scopes Planning navigation and navigation diagnostics to the
+module nav, and selects its icon-only `Lập nhu cầu` button by accessible label.
+Failure diagnostics now report only safe shell structure, alert count, bounded
+module labels, and URL origin/path; they never include form values, credentials,
+tokens, browser storage, or cookies.
+
+Run `36701115177` failed before Generate, Save, or Handoff was reached. It made
+no business writes. This repair does not retry that run or dispatch another
+Planning Closeout. The older hosted-closeout document's obsolete selector is a
+later documentation cleanup outside this certification-only delta.
 
 ## Preview provenance
 
