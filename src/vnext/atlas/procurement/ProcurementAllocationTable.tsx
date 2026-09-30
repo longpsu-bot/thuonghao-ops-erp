@@ -35,7 +35,7 @@ export function ProcurementAllocationTable({
         label="Bảng phân bổ nhà cung ứng"
         maxH={{
           base: "var(--atlas-layout-table-mobile-height, 50dvh)",
-          lg: "var(--atlas-layout-natural-height, none)",
+          lg: "var(--atlas-procurement-desktop-surface-max-height, calc(100dvh - 400px))",
         }}
       >
         <Table.Root
@@ -67,6 +67,9 @@ export function ProcurementAllocationTable({
                 <Table.ColumnHeader
                   key={label}
                   textAlign={index === 2 ? "end" : "start"}
+                  position={
+                    index === 0 ? { base: "sticky", lg: "static" } : undefined
+                  }
                   left={
                     index === 0
                       ? {

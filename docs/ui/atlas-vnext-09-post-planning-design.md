@@ -127,7 +127,7 @@ Functional edge fades may be used only as overflow cues and must not become deco
 
 The primary decision is exact supplier allocation. While editing, `Lưu phân bổ` is the single dominant action.
 
-Composition: task context → current job tabs → compact workbar → counts/blockers → natural-height allocation table → exact 320px attached detail when selected → calm unused canvas. The table is flexible; the detail is fixed at 320px on desktop and follows the table in document order on narrower widths.
+Composition: task context → current job tabs → compact workbar → counts/blockers → allocation table → exact 320px attached detail when selected → calm unused canvas. The table uses natural height for short content and a viewport-aware maximum with local vertical scrolling for long content. The detail is fixed at 320px on desktop and follows the table in document order on narrower widths.
 
 - Search remains immediate. Mobile keeps search visible and moves date, School scope and exception filter into `Bộ lọc` with a truthful closed summary.
 - The table keeps all eight columns, approximately 980px minimum width and a sticky Ingredient identity around 178px.

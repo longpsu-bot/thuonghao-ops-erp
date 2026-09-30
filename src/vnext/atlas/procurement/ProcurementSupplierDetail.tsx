@@ -186,7 +186,7 @@ export function ProcurementSupplierDetail({
       style={
         {
           "--atlas-procurement-detail-desktop-max-height":
-            "calc(100dvh - 330px)",
+            "var(--atlas-procurement-desktop-surface-max-height, calc(100dvh - 400px))",
         } as CSSProperties
       }
       minW="var(--atlas-layout-zero, 0)"

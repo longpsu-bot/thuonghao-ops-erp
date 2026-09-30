@@ -15,8 +15,10 @@ import {
 /** Pure vNext review composition; intentionally no production adapter or routing. */
 export function ProcurementReview({
   scenario = "normal",
+  allocationRowCount,
 }: {
   scenario?: ProcurementReviewScenario;
+  allocationRowCount?: number;
 }) {
   const fixture = useMemo(() => {
     const value = createProcurementReviewFixture(scenario);
@@ -61,9 +63,28 @@ export function ProcurementReview({
           };
         }),
       );
+      if (allocationRowCount) {
+        if (allocationRowCount < value.allocation.rows.length) {
+          value.allocation.rows.splice(allocationRowCount);
+        }
+        const seed = [...value.allocation.rows];
+        for (let index = seed.length; index < allocationRowCount; index++) {
+          const source = seed[index % seed.length]!;
+          value.allocation.rows.push({
+            ...source,
+            family: {
+              ...source.family,
+              ingredient_id: `long-review-ingredient-${index}`,
+              source_fingerprint: `long-review-source-${index}`,
+            },
+            ingredient_id: `long-review-ingredient-${index}`,
+            ingredient_name: `${source.ingredient_name} ${index + 1}`,
+          });
+        }
+      }
     }
     return value;
-  }, [scenario]);
+  }, [scenario, allocationRowCount]);
   const [exportMessage, setExportMessage] = useState("");
   const orderScenario =
     scenario.startsWith("po_") ||
@@ -108,6 +129,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Normal: Story = { args: { scenario: "normal" } };
+export const ShortAllocation: Story = {
+  args: { scenario: "normal", allocationRowCount: 2 },
+};
+export const LongAllocation: Story = {
+  args: { scenario: "normal", allocationRowCount: 248 },
+};
 export const SavedManualSplit: Story = { args: { scenario: "manual_split" } };
 export const Rebalance: Story = { args: { scenario: "rebalance" } };
 export const NeedsReallocation: Story = {
