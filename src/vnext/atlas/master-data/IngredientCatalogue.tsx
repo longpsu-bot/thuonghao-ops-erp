@@ -52,11 +52,16 @@ export function IngredientCatalogue({
             stickyHeader
           >
             <Table.Header>
-              <Table.Row h="var(--atlas-table-header-height)">
+              <Table.Row
+                h="var(--atlas-table-header-height)"
+                zIndex="var(--atlas-layout-sticky-header-z, 3)"
+              >
                 <Table.ColumnHeader
-                  position={{ base: "sticky", lg: "static" }}
-                  left="var(--atlas-layout-zero, 0)"
-                  zIndex="var(--atlas-layout-sticky-header-z, 3)"
+                  left={{
+                    base: "var(--atlas-layout-zero, 0)",
+                    lg: "var(--atlas-layout-auto, auto)",
+                  }}
+                  zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
                   bg="bg.toolbar"
                   minW="var(--atlas-table-identity-width)"
                 >

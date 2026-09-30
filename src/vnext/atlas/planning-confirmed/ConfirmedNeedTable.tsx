@@ -59,7 +59,7 @@ export function ConfirmedNeedTable({
         }
       >
         <Table.Header>
-          <Table.Row>
+          <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
             {[
               "Nguyên liệu / nơi nhận",
               "Đề xuất vận hành",
@@ -75,8 +75,6 @@ export function ConfirmedNeedTable({
                 {...(i === 0
                   ? {
                       style: {
-                        position: "sticky",
-                        top: "var(--atlas-layout-zero, 0)",
                         left: "var(--atlas-layout-zero, 0)",
                         zIndex:
                           "var(--atlas-layout-sticky-identity-header-z, 5)",
