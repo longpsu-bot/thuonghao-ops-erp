@@ -40,7 +40,8 @@ describe("Supplier decisions", () => {
     expect(
       container.querySelector('[aria-label="Phân bổ Gạo thơm"]'),
     ).toHaveStyle({
-      "--atlas-procurement-detail-desktop-max-height": "calc(100dvh - 330px)",
+      "--atlas-procurement-detail-desktop-max-height":
+        "var(--atlas-procurement-desktop-surface-max-height, calc(100dvh - 400px))",
     });
 
     for (const name of ["Đóng", "Lưu phân bổ", "+ Thêm nhà cung ứng"]) {

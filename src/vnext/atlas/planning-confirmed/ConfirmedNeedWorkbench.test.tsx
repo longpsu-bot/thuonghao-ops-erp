@@ -102,6 +102,7 @@ describe("Confirmed Need Chakra operator surface", () => {
         name: "Nguyên liệu / nơi nhận",
       }),
     ).toHaveStyle({
+      position: "sticky",
       left: "var(--atlas-layout-zero, 0)",
       background: "var(--atlas-colors-bg-toolbar)",
       zIndex: "var(--atlas-layout-sticky-identity-header-z, 5)",

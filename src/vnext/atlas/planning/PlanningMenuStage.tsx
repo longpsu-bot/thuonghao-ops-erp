@@ -110,6 +110,7 @@ export function PlanningMenuStage({
             <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
               <Table.ColumnHeader
                 data-sticky-column="school"
+                position="sticky"
                 left="var(--atlas-layout-zero, 0)"
                 zIndex="var(--atlas-layer-sticky-corner, 3)"
                 bg="bg.toolbar"

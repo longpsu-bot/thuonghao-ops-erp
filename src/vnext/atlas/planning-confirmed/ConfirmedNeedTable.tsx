@@ -75,6 +75,7 @@ export function ConfirmedNeedTable({
                 {...(i === 0
                   ? {
                       style: {
+                        position: "sticky",
                         left: "var(--atlas-layout-zero, 0)",
                         zIndex:
                           "var(--atlas-layout-sticky-identity-header-z, 5)",

@@ -57,6 +57,7 @@ export function IngredientCatalogue({
                 zIndex="var(--atlas-layout-sticky-header-z, 3)"
               >
                 <Table.ColumnHeader
+                  position={{ base: "sticky", lg: "static" }}
                   left={{
                     base: "var(--atlas-layout-zero, 0)",
                     lg: "var(--atlas-layout-auto, auto)",
