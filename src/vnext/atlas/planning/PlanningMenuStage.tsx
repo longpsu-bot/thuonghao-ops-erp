@@ -107,10 +107,9 @@ export function PlanningMenuStage({
           minW="var(--atlas-layout-menu-table-min-width, max-content)"
         >
           <Table.Header>
-            <Table.Row>
+            <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
               <Table.ColumnHeader
                 data-sticky-column="school"
-                position="sticky"
                 left="var(--atlas-layout-zero, 0)"
                 zIndex="var(--atlas-layer-sticky-corner, 3)"
                 bg="bg.toolbar"

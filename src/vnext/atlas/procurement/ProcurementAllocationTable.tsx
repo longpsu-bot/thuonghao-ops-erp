@@ -52,7 +52,10 @@ export function ProcurementAllocationTable({
           stickyHeader
         >
           <Table.Header>
-            <Table.Row h="var(--atlas-table-header-height)">
+            <Table.Row
+              h="var(--atlas-table-header-height)"
+              zIndex="var(--atlas-layout-sticky-header-z, 3)"
+            >
               {[
                 "Nguyên liệu",
                 "Trường / điểm giao",
@@ -64,13 +67,17 @@ export function ProcurementAllocationTable({
                 <Table.ColumnHeader
                   key={label}
                   textAlign={index === 2 ? "end" : "start"}
-                  position={
-                    index === 0 ? { base: "sticky", lg: "static" } : undefined
+                  left={
+                    index === 0
+                      ? {
+                          base: "var(--atlas-layout-zero, 0)",
+                          lg: "var(--atlas-layout-auto, auto)",
+                        }
+                      : undefined
                   }
-                  left={index === 0 ? "var(--atlas-layout-zero, 0)" : undefined}
                   zIndex={
                     index === 0
-                      ? "var(--atlas-layout-sticky-header-z, 3)"
+                      ? "var(--atlas-layout-sticky-identity-header-z, 5)"
                       : undefined
                   }
                   bg={index === 0 ? "bg.toolbar" : undefined}
