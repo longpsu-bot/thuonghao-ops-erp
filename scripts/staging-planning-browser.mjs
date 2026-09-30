@@ -3,6 +3,9 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+const AUTHENTICATED_SHELL_SELECTOR =
+  'aside[aria-label="Điều hướng nhanh Atlas"]';
+const ATLAS_MODULE_NAV_SELECTOR = 'nav[aria-label="Điều hướng mô-đun Atlas"]';
 const PHASE_TABLIST = '[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]';
 const CONFIRMED_WORKBENCH = 'section[aria-label="Xác nhận nhu cầu"]';
 const SOURCES_WORKBENCH = 'section[aria-label="Nguồn lập nhu cầu"]';
@@ -29,6 +32,28 @@ async function until(fn, label, timeout = 60000, interval = 300) {
     await sleep(interval);
   }
   throw new Error(`BROWSER_GATE_${label}`);
+}
+
+export async function waitForAuthenticatedDesktopShell({
+  evaluate,
+  timeout = 60000,
+  interval = 300,
+}) {
+  return until(
+    () =>
+      evaluate(
+        `(()=>{const rail=document.querySelector(${JSON.stringify(AUTHENTICATED_SHELL_SELECTOR)});return Boolean(rail&&rail.querySelector(${JSON.stringify(ATLAS_MODULE_NAV_SELECTOR)}));})()`,
+      ),
+    "authenticated_shell",
+    timeout,
+    interval,
+  );
+}
+
+export async function readSafeBrowserStructure({ evaluate }) {
+  return evaluate(
+    `(()=>{const rail=document.querySelector(${JSON.stringify(AUTHENTICATED_SHELL_SELECTOR)});const nav=rail?.querySelector(${JSON.stringify(ATLAS_MODULE_NAV_SELECTOR)});return {currentUrl:location.origin+location.pathname,signinFormPresent:Boolean(document.querySelector('#atlas-signin-email')),alertCount:document.querySelectorAll('[role="alert"]').length,desktopRailPresent:Boolean(rail),desktopModuleNavPresent:Boolean(nav),drawerNavPresent:Boolean(document.querySelector('nav[aria-label="Điều hướng Atlas"]')),moduleNavigationLabels:nav?[...nav.querySelectorAll('button[aria-label]')].map(e=>e.getAttribute('aria-label')).slice(0,20):[]};})()`,
+  );
 }
 
 export async function navigateToConfirmedNeed({
@@ -98,12 +123,16 @@ export async function navigateUntil({
   interval = 300,
 }) {
   const selector = `${scope} ${role === "tab" ? '[role="tab"]' : "button"}`;
+  const candidateLabel =
+    role === "button"
+      ? "(e.getAttribute('aria-label')||e.textContent.trim())"
+      : "e.textContent.trim()";
   const destinationReady = `(()=>{const destination=document.querySelector(${JSON.stringify(destination)});if(!destination)return false;${role === "tab" ? `const tab=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>e.textContent.trim()===${JSON.stringify(label)});return tab?.getAttribute('aria-selected')==='true';` : "return true;"}})()`;
   const end = Date.now() + timeout;
   while (Date.now() < end) {
     if (await evaluate(destinationReady)) return;
     await evaluate(
-      `(()=>{const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>e.textContent.trim()===${JSON.stringify(label)}&&!e.disabled&&e.getAttribute('aria-disabled')!=='true');if(!e)return false;e.click();return true;})()`,
+      `(()=>{const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>${candidateLabel}===${JSON.stringify(label)}&&!e.disabled&&e.getAttribute('aria-disabled')!=='true');if(!e)return false;e.click();return true;})()`,
     );
     if (await evaluate(destinationReady)) return;
     await sleep(interval);
@@ -849,7 +878,7 @@ export async function verifyPlanningBrowser({
     };
     const logNavigation = async (transition) => {
       const state = await evaluate(
-        `({transition:${JSON.stringify(transition)},url:location.href,controls:[...document.querySelectorAll('nav[aria-label="Điều hướng Atlas"] button,[role="tablist"][aria-label="Giai đoạn lập nhu cầu"],[role="tablist"][aria-label="Giai đoạn lập nhu cầu"] [role="tab"]')].map(e=>({tag:e.tagName.toLowerCase(),role:e.getAttribute('role')||e.tagName.toLowerCase(),label:e.getAttribute('aria-label')||e.textContent.trim(),disabled:Boolean(e.disabled)||e.getAttribute('aria-disabled')==='true',selected:e.getAttribute('aria-selected')==='true'}))})`,
+        `({transition:${JSON.stringify(transition)},url:location.origin+location.pathname,controls:[...document.querySelectorAll(${JSON.stringify(`${ATLAS_MODULE_NAV_SELECTOR} button,${PHASE_TABLIST},${PHASE_TABLIST} [role="tab"]`)})].map(e=>({tag:e.tagName.toLowerCase(),role:e.getAttribute('role')||e.tagName.toLowerCase(),label:e.getAttribute('aria-label')||e.textContent.trim(),disabled:Boolean(e.disabled)||e.getAttribute('aria-disabled')==='true',selected:e.getAttribute('aria-selected')==='true'}))})`,
       );
       console.log(JSON.stringify({ browser_navigation: state }));
     };
@@ -869,18 +898,12 @@ export async function verifyPlanningBrowser({
     await input("#atlas-signin-email", target.testEmail);
     await input("#atlas-signin-password", target.testPassword);
     await click("Đăng nhập");
-    await until(
-      () =>
-        evaluate(
-          `Boolean(document.querySelector('nav[aria-label="Điều hướng Atlas"]'))`,
-        ),
-      "authenticated_shell",
-    );
+    await waitForAuthenticatedDesktopShell({ evaluate });
     await logNavigation("authenticated");
     stage = "planning_navigation";
     await navigateUntil({
       evaluate,
-      scope: 'nav[aria-label="Điều hướng Atlas"]',
+      scope: ATLAS_MODULE_NAV_SELECTOR,
       role: "button",
       label: "Lập nhu cầu",
       destination: '[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]',
@@ -1065,6 +1088,11 @@ export async function verifyPlanningBrowser({
     };
   } catch (error) {
     const diagnostic = { browser_stage: stage };
+    try {
+      diagnostic.shell = await readSafeBrowserStructure({ evaluate });
+    } catch {
+      diagnostic.shell_read_failed = true;
+    }
     try {
       diagnostic.ui = await evaluate(
         `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const week=root?.querySelector('input[aria-label="Tuần phục vụ"]');const service=root?.querySelector('select[aria-label="Ngày phục vụ"]');const buttons=root?[...root.querySelectorAll('button')]:[];const generate=buttons.find(e=>e.textContent.trim()==='Tạo nhu cầu');const save=buttons.find(e=>e.textContent.trim()==='Lưu');return {week_value:week?.value??null,week_disabled:Boolean(week?.disabled),service_date:service?.value??null,service_options:service?[...service.options].map(o=>o.value):[],generate_present:Boolean(generate),generate_enabled:Boolean(generate&&!generate.disabled&&generate.getAttribute('aria-disabled')!=='true'),save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true'),rendered_rows:root?.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)}).length??0};})()`,
