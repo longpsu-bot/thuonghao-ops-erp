@@ -554,7 +554,7 @@ test("preview compatibility binds the certified base to the exact verifier commi
       comparison: {
         status: "ahead",
         merge_base_commit: {
-          sha: "1ee97fdb2a51d992c0ee57a9763243ad2da7c279",
+          sha: "9ba47752b5d7e2f750bca19d723c8de46751b771",
         },
         commits: [{ sha: verifierCommitSha }],
         files: [
@@ -565,8 +565,8 @@ test("preview compatibility binds the certified base to the exact verifier commi
     }),
     {
       verifierCommitSha,
-      certifiedPreviewBaseSha: "1ee97fdb2a51d992c0ee57a9763243ad2da7c279",
-      previewSha: "4eddd97a7524606ca6ce5e48e2700f6d23a31a03",
+      certifiedPreviewBaseSha: "9ba47752b5d7e2f750bca19d723c8de46751b771",
+      previewSha: "a51759a1ae3c5d38e957b3824ee5c38c33e69205",
     },
   );
   for (const comparison of [
@@ -579,7 +579,7 @@ test("preview compatibility binds the certified base to the exact verifier commi
     {
       status: "ahead",
       merge_base_commit: {
-        sha: "1ee97fdb2a51d992c0ee57a9763243ad2da7c279",
+        sha: "9ba47752b5d7e2f750bca19d723c8de46751b771",
       },
       commits: [{ sha: "c".repeat(40) }],
       files: [{ filename: "scripts/verify-staging-planning-closeout.mjs" }],
@@ -587,7 +587,7 @@ test("preview compatibility binds the certified base to the exact verifier commi
     {
       status: "ahead",
       merge_base_commit: {
-        sha: "1ee97fdb2a51d992c0ee57a9763243ad2da7c279",
+        sha: "9ba47752b5d7e2f750bca19d723c8de46751b771",
       },
       commits: [{ sha: verifierCommitSha }],
       files: [{ filename: "src/vnext/atlas/bridges/confirmedNeed.ts" }],
@@ -610,7 +610,7 @@ test("preview compatibility keeps PR 286 Draft/Open at the exact head and main b
       number: 286,
       state: "open",
       draft: true,
-      head: { sha: "4eddd97a7524606ca6ce5e48e2700f6d23a31a03" },
+      head: { sha: "a51759a1ae3c5d38e957b3824ee5c38c33e69205" },
       base: { ref: "main", sha: "a".repeat(40) },
     }),
   );
@@ -627,7 +627,7 @@ test("preview compatibility keeps PR 286 Draft/Open at the exact head and main b
           number: 286,
           state: "open",
           draft: true,
-          head: { sha: "4eddd97a7524606ca6ce5e48e2700f6d23a31a03" },
+          head: { sha: "a51759a1ae3c5d38e957b3824ee5c38c33e69205" },
           base: { ref: "main", sha: "a".repeat(40) },
           ...patch,
         }),

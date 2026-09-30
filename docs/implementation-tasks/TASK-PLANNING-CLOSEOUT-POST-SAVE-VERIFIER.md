@@ -1,8 +1,8 @@
 # Planning Closeout Post-Save Verifier Repair
 
-**Status:** Implemented locally; review and merge remain separate
+**Status:** Final certification-pin candidate; review and merge remain separate
 
-**Starting SHA:** `1ee97fdb2a51d992c0ee57a9763243ad2da7c279`
+**Final certification-pin starting main SHA:** `9ba47752b5d7e2f750bca19d723c8de46751b771`
 
 **Scope:** Certification/verifier repair only. No migration, hosted write,
 Planning regeneration, Confirmed Need Save, Purchase Handoff, Retool/OPS v1
@@ -49,13 +49,13 @@ The verifier distinguishes:
 
 - verifier commit: the exact new `main` SHA supplied to the workflow;
 - certified preview base:
-  `1ee97fdb2a51d992c0ee57a9763243ad2da7c279`;
+  `9ba47752b5d7e2f750bca19d723c8de46751b771`;
 - immutable PR #286 preview SHA:
-  `4eddd97a7524606ca6ce5e48e2700f6d23a31a03`;
+  `a51759a1ae3c5d38e957b3824ee5c38c33e69205`;
 - immutable preview URL:
-  `https://2c95cd16.thuonghao-ops-erp.pages.dev/`.
+  `https://06e87532.thuonghao-ops-erp.pages.dev/`.
 
-The older preview remains acceptable only when the GitHub comparison from the
+The approved immutable preview remains acceptable only when the GitHub comparison from the
 certified preview base to the verifier commit contains certification-only
 changes under the fail-closed allowlist: the closeout verifier, browser runner,
 closeout workflow, relevant verifier tests, and this exact implementation-task
@@ -67,6 +67,13 @@ the verifier lands; the two independent comparison checks retain the immutable
 certified merge-base proofs. The existing immutable build-manifest checks
 remain mandatory.
 
+Final connected read-only UAT passed after #336 on the approved immutable
+preview. It covered the Chakra connected production entrypoint, Procurement's
+248-row local scrolling and sticky header, mobile sticky identity intersections
+for Confirmed Need, Procurement, Ingredients, and Planning Menu, and retained
+Confirmed Need state (248 current rows and decisions, one persisted adjustment).
+The hosted UAT performed zero business writes.
+
 ## Migration, security, and rollback
 
 There is no schema or data migration. The verifier uses read-only management
@@ -77,14 +84,18 @@ Before merge, rollback is removal of this bounded verifier change. After merge,
 rollback is a normal verifier-only revert; the already-persisted v3 Planning
 facts remain untouched.
 
-## Post-merge owner sequence
+## Next owner sequence — not yet executed
 
-1. Obtain the exact new `main` verifier SHA.
-2. Do not rerun D-046 correction, Need Generation, Confirmed Need Save, or
-   Handoff.
-3. Keep the existing Staging batch v3 facts intact.
-4. Run `Atlas Staging Planning Closeout` with
-   `closeout_mode=post_save_resume` and `persist_rehearsal=false`.
-5. Require `FINAL_PLANNING_CLOSEOUT_PASS` and the exact 248/249/248/248,
+1. Merge this certification-pin PR.
+2. Record the resulting verifier `main` SHA as `VERIFIER_MAIN`.
+3. Do not rebase PR #286 afterward; keep its approved preview head pinned.
+4. Update the protected `atlas-staging` preview variables to the exact approved
+   preview SHA and immutable URL above.
+5. Run `Atlas Staging Planning Closeout` with `commit_sha=VERIFIER_MAIN`,
+   `closeout_mode=post_save_resume`, and `persist_rehearsal=false`.
+6. Require `FINAL_PLANNING_CLOSEOUT_PASS` and the exact 248/249/248/248,
    247/1, one-receipt, zero-Handoff, unchanged-fingerprint proof.
-6. Freeze Planning Closeout unless a new independent business defect is found.
+7. Only afterward consider PR #286 Ready for Review and owner merge.
+
+Do not rerun D-046 correction, Need Generation, Confirmed Need Save, or
+Handoff. Keep the existing Staging batch v3 facts intact.
