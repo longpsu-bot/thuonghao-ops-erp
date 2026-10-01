@@ -132,7 +132,7 @@ source, automatically requests backend canonical Preview, requires
 Preview is a validation step, not a second operator decision. Menu has no
 `Xem thay đổi`, `Lưu`, local unsaved candidate, or manual editing path. School,
 date and search filters never truncate the complete weekly write payload.
-Attendance and Pantry retain their own Review/Save flows. A governed downstream
+Attendance and Pantry retain their own Review/Save flows. Menu synchronization blockers are grouped by authoritative issue code in Vietnamese beside the Google source strip. Unknown/ambiguous source cells retain Dish value, slot and Sheet row in collapsed scroll-bounded details; the Menu table and retry stay visible. Parser identity blockers stop before Preview/Save. Unique active Dish names resolve globally; legacy slot matching applies only to duplicate-name compatibility. A governed downstream
 Save blocker displays the authoritative correction impact and permits the
 bounded `Chuẩn bị hiệu chỉnh` action only when the impact allows it. A transport
 uncertainty triggers authoritative readback without automatically repeating
@@ -143,7 +143,7 @@ Workbook parsers/backend contracts remain readable and unchanged.
 
 **The physical Google Sheet layout is not the Atlas business contract.** Supported
 Sheet layouts are semantic adapters into one canonical Weekly Menu contract:
-School + service date + Dish Type/Menu slot + Dish. Required semantic headers
+School + service date + contextual Menu slot + canonical Dish. Legacy Dish classification does not constrain slot eligibility. Required semantic headers
 such as `Tên trường` / `Ngày`, Dish Type names/codes, `source_header_aliases`,
 harmless leading-row tolerance and canonical validation remain the compatibility
 boundary. Explicit template version/profile hardening is deferred; this slice

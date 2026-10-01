@@ -1,10 +1,45 @@
 # RMVP-03A Planning Inputs API Contract
 
+## Menu slot / Dish identity correction — 01/10/2026
+
+MENU-SLOT-DISH-DECOUPLING-01 explicitly replaces the earlier typed-only Dish
+resolution and Weekly Menu eligibility rule. Canonical row and RPC envelopes
+remain unchanged: School + service date + `menu_slot_code` + `dish_id`.
+The Sheet column establishes the contextual slot; the cell establishes canonical
+Dish identity. A valid assignment requires an active School, a date within the
+week, an active supported slot, an active Dish, and unique School/date/slot.
+Neither a matching nor a non-null legacy `dishes.dish_type_id` is required.
+The physical `dish_types` catalog and Admin/Recipe classification consumers remain.
+
+The shared parser normalizes NFC, trims and lowercases using the existing safe
+Vietnamese normalization. It resolves active Dishes by exact code first, then
+by globally unique exact name. Only multiple same-name active records may use
+exactly one legacy slot match as transitional compatibility; zero or multiple
+slot matches produce `AMBIGUOUS_DISH`. No matches produce `UNKNOWN_DISH`.
+No array-order selection, Dish creation, master merge or non-blocking compatibility
+warning is introduced. Unique-name resolution never consults legacy classification.
+
+Parser results retain the canonical rows and add source-cell evidence plus
+`diagnostics` (code, source row number/reference, slot code/name and raw trimmed
+source value) and `compatibilityResolutions`. Unresolved Dish diagnostics stop
+connected Google sync before Preview/Save. Backend Preview blockers stop Save.
+The shared authoritative `atlas_core.rmvp_03a_menu_issues(date,jsonb)` removes only
+`UNMAPPED_DISH_TYPE` and `DISH_TYPE_MISMATCH`; slot, Dish, School/date, uniqueness,
+Recipe-readiness and effective-BOM checks retain their existing severity/semantics.
+Recipe authority still uses actual Dish + School Type, independently of slot.
+
+The Chakra Menu strip presents grouped Vietnamese issue-code summaries and
+collapsed, scroll-bounded source details. Raw backend English issue messages are
+never the operator fallback. The table and Google sync retry remain accessible;
+#340 one-action fetch → parse → Preview → consequential Save → readback and
+replacement/removal notifications remain intact. See the
+[task and duplicate audit](../implementation-tasks/TASK-MENU-SLOT-DISH-DECOUPLING.md).
+
 ## Import integrity correction — AUD-001/002 (17/09/2026)
 
 School resolution uses one normalized code match first and a name match only when unique. Multiple code/name matches or blank identities remain unresolved for the existing Preview blockers, never resolved by reference-array order. An explicit `Mã trường` / `school_code` column is code-only; the historical mixed-value `Tên trường` column and unlabeled Attendance paste retain unique-code-first fallback to unique names. This is shared by Google Menu matrices, Menu workbook parsing, Attendance workbook and Attendance paste; no new Menu workbook UI is added.
 
-Header parsing retains all source positions. Multiple recognized columns for a single School/date/Attendance field, duplicate normalized Dish Type headings, and alias collisions are blocking structural errors with zero candidate rows. Empty and presentation-only headings do not become business fields. Backend Preview/Save/checksum contracts, stable IDs, Attendance zero/blank rules, and typed Dish resolution are unchanged.
+Header parsing retains all source positions. Multiple recognized columns for a single School/date/Attendance field, duplicate normalized Dish Type headings, and alias collisions are blocking structural errors with zero candidate rows. Empty and presentation-only headings do not become business fields. Backend Preview/Save/checksum contracts, stable IDs, Attendance zero/blank rules, and the then-current typed Dish resolution were unchanged by that amendment. The Menu slot / Dish identity correction above now supersedes typed-only resolution.
 
 ## Approved transport amendment — 16/09/2026
 

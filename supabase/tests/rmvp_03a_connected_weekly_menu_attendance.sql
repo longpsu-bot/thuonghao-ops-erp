@@ -928,28 +928,28 @@ select ok(
 
 select ok(
   (
-    select jsonb_path_exists(
+    select not jsonb_path_exists(
       response_payload,
       '$.preview.issues.blockers[*] ? (@.code == "DISH_TYPE_MISMATCH")'
     )
-      and not (response_payload #>> '{preview,can_save}')::boolean
+      and (response_payload #>> '{preview,can_save}')::boolean
     from rmvp03a_results
     where result_name = 'menu-preview-type-mismatch'
   ),
-  'cross-type Dish assignment is a blocking preview issue'
+  'canonical Dish assignment is saveable across legacy types'
 );
 
 select ok(
   (
-    select jsonb_path_exists(
+    select not jsonb_path_exists(
       response_payload,
       '$.preview.issues.blockers[*] ? (@.code == "UNMAPPED_DISH_TYPE")'
     )
-      and not (response_payload #>> '{preview,can_save}')::boolean
+      and (response_payload #>> '{preview,can_save}')::boolean
     from rmvp03a_results
     where result_name = 'menu-preview-unmapped-dish'
   ),
-  'a historical unmapped Dish is visible but blocked from new Menu assignment'
+  'a canonical Dish with null legacy type is saveable in a valid slot'
 );
 
 select ok(
@@ -1963,6 +1963,89 @@ select ok(exists (
     ))
   ) -> 'warnings') issue where issue ->> 'code' = 'EFFECTIVE_BOM_BLOCKED'
 ), 'legacy false cannot hide an effective composition readiness warning');
+
+-- Bounded canonical identity regressions; all fixture changes roll back.
+update atlas_admin.dishes set dish_name = 'Cà ri gà + bánh mì'
+where dish_id = 'e3100000-0000-0000-0000-000000000021';
+update atlas_admin.dishes set dish_name = 'Sâm bổ lượng',
+  dish_type_id = (select dish_type_id from atlas_admin.dish_types where dish_type_code = 'dessert')
+where dish_id = 'e3100000-0000-0000-0000-000000000022';
+
+create function pg_temp.decoupled_rows(p_dish_id uuid, p_slots text[])
+returns jsonb language sql as $$
+  select jsonb_agg(jsonb_build_object(
+    'school_id', 'e3100000-0000-0000-0000-000000000010',
+    'service_date', '2026-08-10', 'menu_slot_code', slot,
+    'dish_id', p_dish_id, 'source_row_reference', 'decoupled:' || slot
+  )) from unnest(p_slots) slot;
+$$;
+
+select is(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000021', array[slot])) -> 'blockers',
+  '[]'::jsonb, 'Cà ri gà + bánh mì canonical identity passes in ' || slot)
+from unnest(array['savory','afternoon_snack']) slot;
+select is(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000021', array['savory','afternoon_snack'])) -> 'blockers',
+  '[]'::jsonb, 'same canonical Dish in two distinct slots is valid');
+select is(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000022', array[slot])) -> 'blockers',
+  '[]'::jsonb, 'Sâm bổ lượng canonical identity passes in ' || slot)
+from unnest(array['dessert','afternoon_snack']) slot;
+select is(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000024', array['afternoon_snack'])) -> 'blockers',
+  '[]'::jsonb, 'null legacy classification does not block canonical identity');
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000021', array['afternoon_snack'])),
+  '$.warnings[*] ? (@.code == "RECIPE_NOT_READY")'),
+  'cross-slot Dish still needs its actual Dish and School-Type Recipe');
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000021', array['afternoon_snack'])),
+  '$.warnings[*] ? (@.code == "EFFECTIVE_BOM_BLOCKED")'),
+  'cross-slot Dish retains effective BOM warning semantics');
+update atlas_admin.dishes set dish_status = 'INACTIVE'
+where dish_id = 'e3100000-0000-0000-0000-000000000025';
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000025', array['afternoon_snack'])),
+  '$.blockers[*] ? (@.code == "INACTIVE_DISH")'), 'inactive canonical Dish remains blocked');
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000021', array['savory','savory'])),
+  '$.blockers[*] ? (@.code == "DUPLICATE_MENU_ASSIGNMENT")'), 'duplicate School/date/slot remains blocked');
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-08-10',
+  pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000021', array['not-a-slot'])),
+  '$.blockers[*] ? (@.code == "UNKNOWN_DISH_TYPE")'), 'unknown Menu slot remains blocked');
+select ok(position('DISH_TYPE_MISMATCH' in pg_get_functiondef('atlas_core.rmvp_03a_menu_issues(date,jsonb)'::regprocedure)) = 0,
+  'authoritative helper contains no DISH_TYPE_MISMATCH blocker');
+select ok(position('UNMAPPED_DISH_TYPE' in pg_get_functiondef('atlas_core.rmvp_03a_menu_issues(date,jsonb)'::regprocedure)) = 0,
+  'authoritative helper contains no UNMAPPED_DISH_TYPE blocker');
+
+-- Exercise the actual consequential Save through its existing legacy helper chain.
+insert into atlas_core.role_capabilities(role_id, capability_id)
+select 'e3000000-0000-0000-0000-000000000020', capability_id
+from atlas_core.capabilities where capability_code = 'planning.input_preflight.read'
+on conflict do nothing;
+create temporary table decoupled_save_result(response jsonb);
+grant all on decoupled_save_result to authenticated;
+set local role authenticated;
+insert into decoupled_save_result
+select atlas_api.save_weekly_menu(
+  pg_temp.rmvp03a_command('decoupled-consequential', 1, jsonb_build_object(
+    'week_start', '2026-08-10', 'source_type', 'GOOGLE_SHEET',
+    'source_name', 'Rolled-back slot identity regression',
+    'source_signature', (atlas_api.preview_weekly_menu_import(pg_temp.rmvp03a_read(jsonb_build_object(
+      'week_start', '2026-08-10', 'rows', pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000021', array['savory','afternoon_snack'])
+    ))) #>> '{preview,source_signature}'),
+    'expected_source_signature', null,
+    'rows', pg_temp.decoupled_rows('e3100000-0000-0000-0000-000000000021', array['savory','afternoon_snack'])
+  )) || jsonb_build_object('contract_version', 'RMVP-03A.v2')
+);
+reset role;
+select is((select response ->> 'success' from decoupled_save_result), 'true',
+  'consequential save_weekly_menu accepts same Dish across savory and snack');
+select is((select count(*)::integer from atlas_planning.weekly_menu_lines l
+  join atlas_planning.weekly_menus m using(weekly_menu_id)
+  where m.week_start = '2026-08-10' and l.line_status = 'ACTIVE'
+    and l.dish_id = 'e3100000-0000-0000-0000-000000000021'), 2,
+  'consequential Save readback persists both distinct contextual slots');
 
 select * from finish();
 

@@ -9,7 +9,10 @@ export {
   parseMenuMatrix,
   parseAttendancePaste,
 } from "../../../modules/atlas/planning-inputs/planningInputsWorkbook";
-export type { SourceMatrix } from "../../../modules/atlas/planning-inputs/planningInputsWorkbook";
+export type {
+  SourceMatrix,
+  MenuSourceCell,
+} from "../../../modules/atlas/planning-inputs/planningInputsWorkbook";
 export {
   planningCorrectionImpactFromResult,
   safeNoDownstreamImpact,

@@ -29,6 +29,7 @@ import {
   weeklyMenuCompletionRequest,
 } from "./planningInputsApi";
 import {
+  planningIssueMessage as issueMessage,
   activeAttendanceRows,
   activeMenuRows,
   attendanceNeedsConfirmation,
@@ -268,54 +269,6 @@ function recordValue(value: JsonValue | undefined) {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? value
     : null;
-}
-
-function issueMessage(issue: PlanningIssue) {
-  const messages: Record<string, string> = {
-    EMPTY_WEEKLY_MENU: "Thực đơn tuần chưa có phân công hợp lệ.",
-    EMPTY_ATTENDANCE: "Sĩ số tuần chưa có dòng hợp lệ.",
-    INVALID_SCHOOL_ID: "Dòng dữ liệu chưa xác định được trường.",
-    UNKNOWN_SCHOOL: "Trường tham chiếu không tồn tại.",
-    INACTIVE_SCHOOL: "Trường tham chiếu đã ngừng hoạt động.",
-    INVALID_DISH_ID: "Dòng dữ liệu chưa xác định được món ăn.",
-    UNKNOWN_DISH: "Món ăn tham chiếu không tồn tại.",
-    INACTIVE_DISH: "Món ăn tham chiếu đã ngừng hoạt động.",
-    INVALID_SERVICE_DATE: "Ngày phục vụ không hợp lệ.",
-    SERVICE_DATE_OUTSIDE_WEEK: "Ngày phục vụ nằm ngoài tuần đã chọn.",
-    INVALID_MENU_SLOT: "Ô thực đơn không thuộc Loại món được cấu hình.",
-    UNKNOWN_DISH_TYPE: "Loại món của ô thực đơn không tồn tại.",
-    INACTIVE_DISH_TYPE: "Loại món của ô thực đơn đã ngừng hoạt động.",
-    UNMAPPED_DISH_TYPE: "Món ăn chưa được gán Loại món.",
-    DISH_TYPE_MISMATCH: "Món ăn không khớp Loại món của cột thực đơn.",
-    DUPLICATE_MENU_ASSIGNMENT: "Trùng trường, ngày và ô thực đơn.",
-    DUPLICATE_ATTENDANCE_ASSIGNMENT: "Trùng trường và ngày trong sĩ số.",
-    INVALID_STUDENT_PORTIONS:
-      "Số suất học sinh phải là số nguyên không âm được nhập rõ ràng.",
-    INVALID_TEACHER_PORTIONS:
-      "Số suất giáo viên phải là số nguyên không âm được nhập rõ ràng.",
-    RECIPE_NOT_READY:
-      "Món ăn chưa có công thức phát hành phù hợp cho loại trường.",
-    EFFECTIVE_BOM_BLOCKED:
-      "Thành phần công thức hiệu lực của món ăn hiện đang bị chặn.",
-    SUSPICIOUS_DUPLICATE_DISH:
-      "Một món ăn xuất hiện ở nhiều ô trong cùng trường và ngày.",
-    IGNORED_BLANK_SOURCE_ROWS: "Đã bỏ qua các dòng nguồn trống vô hại.",
-    DIFFERS_FROM_APPROVED_MENU:
-      "Phân công khác lần phê duyệt thực đơn gần nhất.",
-    OMITS_APPROVED_MENU_ASSIGNMENT:
-      "Bản nháp bỏ một phân công trong lần phê duyệt gần nhất.",
-    ZERO_TOTAL_PORTIONS: "Tổng suất học sinh và giáo viên của dòng này bằng 0.",
-    PORTIONS_DIFFER_FROM_DEFAULT: "Số suất khác mặc định hiện tại của trường.",
-    DIFFERS_FROM_APPROVED_ATTENDANCE:
-      "Số suất khác lần phê duyệt sĩ số gần nhất.",
-    OMITS_APPROVED_ATTENDANCE:
-      "Bản nháp bỏ một dòng trong lần phê duyệt gần nhất.",
-    MENU_ASSIGNMENT_WITHOUT_ATTENDANCE:
-      "Có phân công thực đơn nhưng chưa có dòng sĩ số tương ứng.",
-    ATTENDANCE_WITHOUT_MENU_ASSIGNMENT:
-      "Có dòng sĩ số nhưng chưa có phân công thực đơn tương ứng.",
-  };
-  return messages[issue.code] ?? issue.message;
 }
 
 function attendanceIssueMessage(

@@ -23,6 +23,46 @@ async function setup() {
   return { ...hook, fixture };
 }
 describe("Planning source safety", () => {
+  it.each(["UNKNOWN_DISH", "AMBIGUOUS_DISH"])(
+    "stops %s source identities before Preview and Save",
+    async (code) => {
+      const { result, fixture } = await setup();
+      const name = "Món chưa rõ";
+      if (code === "AMBIGUOUS_DISH")
+        fixture.planning.dishes.push(
+          ...["dup-1", "dup-2"].map((dish_id) => ({
+            ...fixture.planning.dishes[0],
+            dish_id,
+            dish_code: dish_id,
+            dish_name: name,
+          })),
+        );
+      fixture.api.syncMenuFromGoogle = async () =>
+        success({
+          source: { source_name: "Google", sheet_name: "Tuần" },
+          rows: [
+            ["Tên trường", "Ngày", "Món mặn"],
+            ["TH001", reviewWeek, name],
+          ],
+        });
+      const preview = vi.spyOn(fixture.api, "previewMenu");
+      const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+      await act(() => result.current.syncGoogle("google-1"));
+      expect(preview).not.toHaveBeenCalled();
+      expect(save).not.toHaveBeenCalled();
+      expect(result.current.menuSyncIssues[0]).toMatchObject({
+        code,
+        source_value: name,
+        menu_slot_name: "Món mặn",
+        source_row_number: 4,
+      });
+      expect(result.current.menuNotification).toBeNull();
+      expect(result.current.menuRows).toEqual(
+        fixture.planning.weekly_menu!.lines,
+      );
+      expect(result.current.canEdit).toBe(true);
+    },
+  );
   it("retains the authoritative default Attendance source metadata", async () => {
     const { result, fixture } = await setup();
     fixture.planning.attendance = null;
@@ -450,7 +490,9 @@ describe("Planning source safety", () => {
       });
     await act(() => result.current.syncGoogle("google-1"));
     expect(save).not.toHaveBeenCalled();
-    expect(result.current.errors).toContain("Món chưa nhận diện.");
+    expect(result.current.errors).toContain(
+      "Không tìm thấy món này trong danh mục Atlas.",
+    );
   });
   it("keeps additions quiet and announces replacement/removal only after readback", async () => {
     const { result, fixture } = await setup();

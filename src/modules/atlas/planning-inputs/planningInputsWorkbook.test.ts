@@ -271,3 +271,184 @@ describe("typed duplicate Dish names", () => {
     ]);
   });
 });
+
+describe("canonical Dish identity independent of Menu slot", () => {
+  const slots: PlanningDishType[] = [
+    {
+      ...dishTypes[0],
+      dish_type_id: "savory",
+      dish_type_code: "savory",
+      dish_type_name: "Món mặn",
+      source_header_aliases: [],
+    },
+    {
+      ...dishTypes[0],
+      dish_type_id: "snack",
+      dish_type_code: "afternoon_snack",
+      dish_type_name: "Buổi xế",
+      source_header_aliases: [],
+    },
+    {
+      ...dishTypes[0],
+      dish_type_id: "dessert",
+      dish_type_code: "dessert",
+      dish_type_name: "Tráng miệng",
+      source_header_aliases: [],
+    },
+  ];
+  const curry: PlanningDish = {
+    ...dishes[0],
+    dish_id: "curry",
+    dish_code: "CURRY",
+    dish_name: "Cà ri gà + bánh mì",
+    dish_type_id: "savory",
+    dish_type_code: "savory",
+  };
+  const parse = (catalog: PlanningDish[], values: string[]) =>
+    parseMenuMatrix(
+      [
+        ["Tên trường", "Ngày", "Món mặn", "Buổi xế", "Tráng miệng"],
+        ["TH001", "2026-08-03", ...values],
+      ],
+      { sourceName: "Google", sheetName: "Tuần", firstRowNumber: 3 },
+      slots,
+      schools,
+      catalog,
+    );
+  it.each(["savory", null])(
+    "uses one unique Dish across both slots with legacy type %s",
+    async (legacy) => {
+      const review = await parse(
+        [{ ...curry, dish_type_id: legacy, dish_type_code: legacy }],
+        [curry.dish_name, curry.dish_name],
+      );
+      expect(
+        review.rows.map((row) => [row.menu_slot_code, row.dish_id]),
+      ).toEqual([
+        ["savory", "curry"],
+        ["afternoon_snack", "curry"],
+      ]);
+      expect(review.diagnostics).toEqual([]);
+      expect(review.compatibilityResolutions).toEqual([]);
+    },
+  );
+  it("gives global code identity precedence over a same-name slot candidate", async () => {
+    const review = await parse(
+      [
+        curry,
+        {
+          ...curry,
+          dish_id: "other",
+          dish_code: "OTHER",
+          dish_name: "CURRY",
+          dish_type_id: "snack",
+          dish_type_code: "afternoon_snack",
+        },
+      ],
+      ["", " curry "],
+    );
+    expect(review.rows[0].dish_id).toBe("curry");
+  });
+  it.each(["Cà ri gà + bánh mì", "Sâm bổ lượng"])(
+    "records deterministic legacy duplicate compatibility for %s",
+    async (name) => {
+      const catalog = [
+        { ...curry, dish_name: name },
+        {
+          ...curry,
+          dish_id: "snack-dish",
+          dish_code: "SNACK",
+          dish_name: name,
+          dish_type_id: "snack",
+          dish_type_code: "afternoon_snack",
+        },
+      ];
+      for (const ordered of [catalog, [...catalog].reverse()]) {
+        const review = await parse(ordered, [name, name]);
+        expect(review.rows.map((row) => row.dish_id)).toEqual([
+          "curry",
+          "snack-dish",
+        ]);
+        expect(review.diagnostics).toEqual([]);
+        expect(review.compatibilityResolutions).toHaveLength(2);
+      }
+    },
+  );
+  it("uses dessert/snack compatibility for duplicated Sâm bổ lượng", async () => {
+    const name = "Sâm bổ lượng";
+    const review = await parse(
+      [
+        {
+          ...curry,
+          dish_name: name,
+          dish_id: "dessert-dish",
+          dish_type_id: "dessert",
+          dish_type_code: "dessert",
+        },
+        {
+          ...curry,
+          dish_name: name,
+          dish_id: "snack-dish",
+          dish_code: "SNACK",
+          dish_type_id: "snack",
+          dish_type_code: "afternoon_snack",
+        },
+      ],
+      ["", name, name],
+    );
+    expect(review.rows.map((row) => row.dish_id)).toEqual([
+      "snack-dish",
+      "dessert-dish",
+    ]);
+    expect(review.compatibilityResolutions).toHaveLength(2);
+    expect(review.diagnostics).toEqual([]);
+  });
+  it("resolves unique Sâm bổ lượng in dessert and snack", async () => {
+    const review = await parse(
+      [
+        {
+          ...curry,
+          dish_name: "Sâm bổ lượng",
+          dish_type_id: "dessert",
+          dish_type_code: "dessert",
+        },
+      ],
+      ["", "Sâm bổ lượng", "Sâm bổ lượng"],
+    );
+    expect(review.rows.map((row) => row.dish_id)).toEqual(["curry", "curry"]);
+    expect(review.diagnostics).toEqual([]);
+  });
+  it.each([0, 2])(
+    "blocks duplicate names with %s legacy slot candidates",
+    async (matches) => {
+      const catalog = [
+        curry,
+        { ...curry, dish_id: "duplicate", dish_code: "DUP" },
+      ].map((d) => ({
+        ...d,
+        dish_type_id: matches ? "snack" : "savory",
+        dish_type_code: matches ? "afternoon_snack" : "savory",
+      }));
+      const review = await parse(catalog, ["", curry.dish_name]);
+      expect(review.diagnostics).toEqual([
+        expect.objectContaining({
+          code: "AMBIGUOUS_DISH",
+          source_row_number: 4,
+          source_value: curry.dish_name,
+          menu_slot_code: "afternoon_snack",
+          menu_slot_name: "Buổi xế",
+        }),
+      ]);
+    },
+  );
+  it("diagnoses unknown and inactive-only names without choosing an inactive Dish", async () => {
+    const review = await parse(
+      [{ ...curry, dish_status: "INACTIVE" }],
+      ["Cá kho tiêu", curry.dish_name],
+    );
+    expect(review.diagnostics.map((issue) => issue.code)).toEqual([
+      "UNKNOWN_DISH",
+      "UNKNOWN_DISH",
+    ]);
+  });
+});

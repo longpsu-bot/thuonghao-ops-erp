@@ -9,10 +9,24 @@ import {
   mondayOf,
   planningPreviewFromResult,
   planningResultMessage,
+  planningIssueMessage,
   viDate,
 } from "./planningInputsModel";
 
 describe("Planning input model", () => {
+  it.each(["INVALID_DISH_ID", "UNKNOWN_DISH", "AMBIGUOUS_DISH", "FUTURE_CODE"])(
+    "uses Vietnamese issue-code copy without exposing raw backend text for %s",
+    (code) => {
+      const message = planningIssueMessage({
+        code,
+        message: "A row does not identify a valid dish.",
+        source_row_reference: "support:row:14",
+      });
+      expect(message).not.toContain("A row");
+      expect(message).toMatch(/[ăâđêôơư]/);
+      if (code === "FUTURE_CODE") expect(message).toContain("liên hệ hỗ trợ");
+    },
+  );
   beforeAll(() => {
     vi.stubEnv("TZ", "Asia/Ho_Chi_Minh");
   });
