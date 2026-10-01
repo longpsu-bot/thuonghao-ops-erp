@@ -148,6 +148,7 @@ export function createReviewProcurementWorkbenchFixture(
         supplier_id: supplierAId,
         supplier_name: "NCC An Phú",
         allocated_quantity: "60.000000",
+        supplier_note: null,
         split_ratio: "0.600000000000",
       },
       {
@@ -155,6 +156,7 @@ export function createReviewProcurementWorkbenchFixture(
         supplier_id: supplierBId,
         supplier_name: "NCC Bình Minh",
         allocated_quantity: "40.000000",
+        supplier_note: null,
         split_ratio: "0.400000000000",
       },
     ];
@@ -243,6 +245,7 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
           ingredient_name: "Gạo thơm",
         },
         ordered_quantity: "60.000000",
+        supplier_note: null,
         unit: { unit_id: unitId, unit_code: "kg" },
         delivery_location: {
           delivery_location_id: locationId,
@@ -273,6 +276,7 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
           ingredient_name: "Gạo thơm",
         },
         ordered_quantity: "40.000000",
+        supplier_note: null,
         unit: { unit_id: unitId, unit_code: "kg" },
         delivery_location: {
           delivery_location_id: "25000000-0000-4000-8000-000000000012",
@@ -439,6 +443,7 @@ export function createReviewSchoolCateringProcurementApi(
               (supplier) => supplier.supplier_id === split.supplier_id,
             )?.supplier_name ?? "Nhà cung ứng",
           allocated_quantity: split.allocated_quantity,
+          supplier_note: split.supplier_note?.trim() || null,
           split_ratio:
             split.allocated_quantity === "72.000000"
               ? "0.600000000000"
@@ -480,6 +485,7 @@ export function createReviewSchoolCateringProcurementApi(
             supplier_name:
               row.eligible_suppliers[0]?.supplier_name ?? "Nhà cung ứng",
             allocated_quantity: row.recommendation.allocated_quantity,
+            supplier_note: null,
             split_ratio: row.recommendation.split_ratio,
           },
         ];

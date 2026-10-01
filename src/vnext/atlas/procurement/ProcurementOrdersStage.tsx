@@ -160,6 +160,9 @@ export function ProcurementOrdersStage({
           xl: selected
             ? "minmax(0, 62fr) minmax(320px, 38fr)"
             : "minmax(0, 1fr)",
+          "2xl": selected
+            ? "minmax(0, 45fr) minmax(0, 55fr)"
+            : "minmax(0, 1fr)",
         }}
         minW="var(--atlas-layout-zero, 0)"
       >
@@ -357,20 +360,69 @@ export function ProcurementOrdersStage({
                   ⚠ {message}
                 </Text>
               ))}
-              <Table.ScrollArea>
+              <Stack
+                display={{ base: "flex", "2xl": "none" }}
+                gap="sm"
+                aria-label="Dòng đơn mua"
+              >
+                {selected.lines.map((line) => (
+                  <Box
+                    key={line.purchase_order_line_revision_id}
+                    bg="bg.workbench"
+                    borderWidth="var(--atlas-layout-edge, 1px)"
+                    borderColor="border.subtle"
+                    borderRadius="control"
+                    p="sm"
+                    minW="var(--atlas-layout-zero, 0)"
+                  >
+                    <Text fontWeight="semibold">
+                      {line.ingredient.ingredient_name}
+                    </Text>
+                    <Text textStyle="helper" color="fg.muted">
+                      {line.delivery_location.location_name} ·{" "}
+                      {quantity(line.ordered_quantity)} {line.unit.unit_code}
+                    </Text>
+                    {line.supplier_note && (
+                      <Text
+                        mt="xs"
+                        whiteSpace="pre-wrap"
+                        overflowWrap="anywhere"
+                      >
+                        <Box as="span" fontWeight="semibold">
+                          Ghi chú:{" "}
+                        </Box>
+                        {line.supplier_note}
+                      </Text>
+                    )}
+                  </Box>
+                ))}
+              </Stack>
+              <Table.ScrollArea display={{ base: "none", "2xl": "block" }}>
                 <Table.Root
                   aria-label={`Dòng đơn mua ${selected.supplier.supplier_name}`}
                   size="sm"
+                  minW="var(--atlas-orders-detail-min-width, 650px)"
                 >
+                  <Table.ColumnGroup>
+                    <Table.Column w="var(--atlas-orders-ingredient-width, 140px)" />
+                    <Table.Column w="var(--atlas-orders-location-width, 130px)" />
+                    <Table.Column w="var(--atlas-orders-quantity-width, 90px)" />
+                    <Table.Column w="var(--atlas-orders-unit-width, 60px)" />
+                    <Table.Column w="var(--atlas-orders-note-width, 230px)" />
+                  </Table.ColumnGroup>
                   <Table.Header>
                     <Table.Row>
-                      {["Nguyên liệu", "Điểm giao", "Số lượng", "Đơn vị"].map(
-                        (label) => (
-                          <Table.ColumnHeader key={label}>
-                            {label}
-                          </Table.ColumnHeader>
-                        ),
-                      )}
+                      {[
+                        "Nguyên liệu",
+                        "Điểm giao",
+                        "Số lượng",
+                        "Đơn vị",
+                        "Ghi chú",
+                      ].map((label) => (
+                        <Table.ColumnHeader key={label}>
+                          {label}
+                        </Table.ColumnHeader>
+                      ))}
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
@@ -386,6 +438,12 @@ export function ProcurementOrdersStage({
                           {quantity(line.ordered_quantity)}
                         </Table.Cell>
                         <Table.Cell>{line.unit.unit_code}</Table.Cell>
+                        <Table.Cell
+                          whiteSpace="pre-wrap"
+                          overflowWrap="anywhere"
+                        >
+                          {line.supplier_note ?? ""}
+                        </Table.Cell>
                       </Table.Row>
                     ))}
                   </Table.Body>

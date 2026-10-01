@@ -9,6 +9,32 @@ import {
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("keeps distinct line notes with their exact quantities in XLSX and PDF", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    order.lines[0]!.supplier_note = "Loại 500g/gói";
+    order.lines[1]!.supplier_note = "Giao trước 05:30";
+    const data = buildPurchaseOrderExportData(order);
+    expect(data.summaryLines).toHaveLength(2);
+    expect(data.summaryLines.map((line) => line.supplierNote)).toEqual([
+      "Loại 500g/gói",
+      "Giao trước 05:30",
+    ]);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
+    expect(workbook.getWorksheet("Tổng")!.getCell("E7").value).toBe("Ghi chú");
+    expect(workbook.getWorksheet("Tổng")!.getCell("E8").value).toBe(
+      "Loại 500g/gói",
+    );
+    expect(workbook.getWorksheet("Tổng")!.getCell("E9").value).toBe(
+      "Giao trước 05:30",
+    );
+    expect(
+      workbook.getWorksheet("Tổng")!.getCell("E8").alignment?.wrapText,
+    ).toBe(true);
+    const definition = buildPurchaseOrderPdfDefinition(order);
+    expect(JSON.stringify(definition)).toContain("Giao trước 05:30");
+  });
   it("builds summary and school detail solely from the released PO snapshot", () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
@@ -26,6 +52,7 @@ describe("released purchase-order exports", () => {
           ingredientName: "Gạo thơm",
           orderedQuantity: "100.000000",
           unitCode: "kg",
+          supplierNote: null,
         },
       ],
       schoolLines: [
@@ -35,6 +62,7 @@ describe("released purchase-order exports", () => {
           ingredientName: "Gạo thơm",
           orderedQuantity: "60.000000",
           unitCode: "kg",
+          supplierNote: null,
         },
         {
           schoolName: "Trường Trần Quốc Toản",
@@ -42,6 +70,7 @@ describe("released purchase-order exports", () => {
           ingredientName: "Gạo thơm",
           orderedQuantity: "40.000000",
           unitCode: "kg",
+          supplierNote: null,
         },
       ],
     });
@@ -175,6 +204,30 @@ describe("released purchase-order exports", () => {
     const bytes = await createPurchaseOrderPdf(order);
     expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
     expect(bytes.byteLength).toBeGreaterThan(1_000);
+  });
+
+  it("keeps a superseded historical note exportable and wraps a bounded note", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    order.status = "SUPERSEDED";
+    order.lines[0]!.supplier_note = "Giao trước 05:30; ".repeat(20).trim();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
+    expect(workbook.getWorksheet("Tổng")!.getCell("E8").value).toBe(
+      order.lines[0]!.supplier_note,
+    );
+    expect(
+      workbook.getWorksheet("Tổng")!.getCell("E8").alignment?.wrapText,
+    ).toBe(true);
+    expect(workbook.getWorksheet("Tổng")!.getRow(8).height).toBeGreaterThan(18);
+    expect(JSON.stringify(buildPurchaseOrderPdfDefinition(order))).toContain(
+      order.lines[0]!.supplier_note,
+    );
+    expect(
+      new TextDecoder().decode(
+        (await createPurchaseOrderPdf(order)).slice(0, 5),
+      ),
+    ).toBe("%PDF-");
   });
 
   it("rejects output generation for a DRAFT snapshot", async () => {

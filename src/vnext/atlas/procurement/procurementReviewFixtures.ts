@@ -119,6 +119,7 @@ export function reviewFamily(
             supplier_id: "supplier-a",
             supplier_name: "NCC An Phú",
             allocated_quantity: "60.000000",
+            supplier_note: null,
             split_ratio: "0.600000000000",
           },
           {
@@ -126,6 +127,7 @@ export function reviewFamily(
             supplier_id: "supplier-b",
             supplier_name: "NCC Bình Minh",
             allocated_quantity: "40.000000",
+            supplier_note: null,
             split_ratio: "0.400000000000",
           },
         ]
@@ -253,6 +255,7 @@ export function reviewOrder(
           ingredient_name: "Gạo thơm",
         },
         ordered_quantity: "60.000001",
+        supplier_note: null,
         unit: { unit_id: "unit-kg", unit_code: "kg" },
         delivery_location: {
           delivery_location_id: "location-0",

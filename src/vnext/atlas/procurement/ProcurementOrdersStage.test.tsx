@@ -43,6 +43,58 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it("shows each immutable supplier instruction in the PO line detail", () => {
+    const fixture = createProcurementReviewFixture("po_draft");
+    fixture.orders.purchase_orders[0]!.lines[0]!.supplier_note =
+      "Rau non, không lấy bó già";
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    const detail = within(
+      screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
+    );
+    expect(
+      detail.getByRole("columnheader", { name: "Ghi chú", hidden: true }),
+    ).toBeInTheDocument();
+    expect(detail.getByText("Ghi chú:")).toBeVisible();
+    expect(detail.getByText("Ghi chú:").parentElement).toHaveTextContent(
+      "Rau non, không lấy bó già",
+    );
+  });
+  it("leaves a blank line note quiet in the narrow detail", () => {
+    const { detail } = show("po_draft");
+    expect(within(detail).queryByText("Ghi chú:")).not.toBeInTheDocument();
+  });
+  it("uses the shaped historical line note on a released PO", () => {
+    const fixture = createProcurementReviewFixture("po_released");
+    fixture.orders.purchase_orders[0]!.lines[0]!.supplier_note =
+      "Loại 500g/gói";
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    const detail = within(
+      screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
+    );
+    expect(detail.getByText("Ghi chú:").parentElement).toHaveTextContent(
+      "Loại 500g/gói",
+    );
+  });
   it.each([
     [
       "po_stale",

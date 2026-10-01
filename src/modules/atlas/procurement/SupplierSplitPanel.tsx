@@ -464,6 +464,10 @@ export function SupplierSplitPanel({
                       {
                         supplier_id: supplierId,
                         allocated_quantity: value,
+                        supplier_note:
+                          row.splits.find(
+                            (split) => split.supplier_id === supplierId,
+                          )?.supplier_note ?? null,
                       },
                     ]
                   : [];

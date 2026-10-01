@@ -351,6 +351,7 @@ export function createReviewPurchaseJourney(
               (e) => e.supplier_id === s.supplier_id,
             )!.supplier_name,
             allocated_quantity: exact(micros(s.allocated_quantity)),
+            supplier_note: s.supplier_note?.trim() || null,
             split_ratio: `${ratio / 1_000_000_000_000n}.${String(ratio % 1_000_000_000_000n).padStart(12, "0")}`,
           };
         }),
@@ -422,6 +423,7 @@ export function createReviewPurchaseJourney(
                   ingredient_name: current.ingredient_name,
                 },
                 ordered_quantity: split.allocated_quantity,
+                supplier_note: split.supplier_note,
                 unit: {
                   unit_id: current.unit_id,
                   unit_code: current.unit_code,

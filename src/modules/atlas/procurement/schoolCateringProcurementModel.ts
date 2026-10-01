@@ -33,6 +33,7 @@ export type AllocationFamilyIdentity = {
 export type SupplierSplitInput = {
   supplier_id: string;
   allocated_quantity: ExactQuantity;
+  supplier_note?: string | null;
 };
 
 export type RecommendationCandidate = AllocationFamilyReference & {
@@ -51,6 +52,7 @@ export type AllocationSupplierSplit = {
   supplier_name: string;
   allocated_quantity: ExactQuantity;
   split_ratio: ExactQuantity;
+  supplier_note: string | null;
 };
 
 export type AllocationProposalSplit = {
@@ -131,6 +133,7 @@ export type PurchaseOrderLine = {
     ingredient_name: string;
   };
   ordered_quantity: ExactQuantity;
+  supplier_note: string | null;
   unit: { unit_id: string; unit_code: string };
   delivery_location: {
     delivery_location_id: string;

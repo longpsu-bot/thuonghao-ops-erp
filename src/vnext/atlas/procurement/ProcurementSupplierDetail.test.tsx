@@ -34,6 +34,35 @@ const quantity = (name: string, value: string) =>
     target: { value },
   });
 describe("Supplier decisions", () => {
+  it("treats a supplier note as part of the saved allocation decision", async () => {
+    const row = reviewFamily("manual_split");
+    row.splits[0]!.supplier_note = "Loại 500g/gói";
+    const { onSave, onClose } = show(row);
+    const note = screen.getByRole("textbox", {
+      name: "Ghi chú cho NCC An Phú",
+    });
+    expect(note).toHaveValue("Loại 500g/gói");
+    fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
+    expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    click("Đóng");
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục chỉnh sửa" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    click("Lưu phân bổ");
+    expect(onSave).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          supplier_id: "supplier-a",
+          allocated_quantity: "60.000000",
+          supplier_note: "Giao trước 05:30",
+        }),
+      ]),
+    );
+  });
   it("uses mobile-safe targets and keeps Save as the detail business action", () => {
     const { container } = show(reviewFamily("manual_split"));
 
@@ -91,11 +120,17 @@ describe("Supplier decisions", () => {
     expect(onSave).not.toHaveBeenCalled();
     click("Lưu phân bổ");
     expect(onSave).toHaveBeenCalledWith([
-      { supplier_id: "supplier-a", allocated_quantity: "100.000000" },
+      {
+        supplier_id: "supplier-a",
+        allocated_quantity: "100.000000",
+        supplier_note: null,
+      },
     ]);
   });
   it("keeps prior splits authoritative while applying a rebalance locally", () => {
-    const { onSave } = show(reviewFamily("rebalance"));
+    const row = reviewFamily("rebalance");
+    row.splits[0]!.supplier_note = "Rau non, không lấy bó già";
+    const { onSave } = show(row);
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("60");
@@ -104,7 +139,19 @@ describe("Supplier decisions", () => {
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("72");
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+    ).toHaveValue("Rau non, không lấy bó già");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    click("Lưu phân bổ");
+    expect(onSave).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          supplier_id: "supplier-a",
+          supplier_note: "Rau non, không lấy bó già",
+        }),
+      ]),
+    );
   });
   it("shows ineligible saved supplier and quantity without transferring it", () => {
     show(reviewFamily("needs_reallocation"));
@@ -133,9 +180,19 @@ describe("Supplier decisions", () => {
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC Thành Công" }),
     ).toHaveValue("");
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC Thành Công" }),
+    ).toHaveValue("");
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC Thành Công" }),
+      { target: { value: "Only this supplier" } },
+    );
     click("Xóa NCC Thành Công");
     expect(
       screen.queryByRole("textbox", { name: "Phân bổ NCC Thành Công" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Ghi chú cho NCC Thành Công" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Xóa NCC An Phú" }),
