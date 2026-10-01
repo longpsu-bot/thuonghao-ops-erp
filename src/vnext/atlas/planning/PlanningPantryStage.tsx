@@ -132,10 +132,21 @@ export function PlanningPantryStage({
       >
         <Table.Root
           aria-label="Nguyên liệu bổ sung"
-          minW="var(--atlas-layout-pantry-table-min, 1200px)"
+          tableLayout="fixed"
+          w="var(--atlas-pantry-table-width, 1156px)"
+          minW="var(--atlas-pantry-table-width, 1156px)"
           size="sm"
           stickyHeader
         >
+          <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-pantry-school-column, 210px)" />
+            <Table.Column w="var(--atlas-pantry-ingredient-column, 210px)" />
+            <Table.Column w="var(--atlas-pantry-purpose-column, 190px)" />
+            <Table.Column w="var(--atlas-pantry-quantity-column, 130px)" />
+            <Table.Column w="var(--atlas-pantry-note-column, 190px)" />
+            <Table.Column w="var(--atlas-pantry-reference-column, 130px)" />
+            <Table.Column w="var(--atlas-pantry-action-column, 96px)" />
+          </Table.ColumnGroup>
           <Table.Header>
             <Table.Row>
               {[

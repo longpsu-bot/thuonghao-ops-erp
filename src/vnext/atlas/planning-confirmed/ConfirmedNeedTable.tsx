@@ -1,7 +1,16 @@
 import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { CSSProperties } from "react";
+import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import {
+  atlasDefaultSort,
+  compareAtlasBigInt,
+  compareAtlasText,
+  nextAtlasSort,
+  sortAtlasRows,
+  type AtlasSortState,
+} from "../atlasTableSort";
 import {
   confirmedNeedConfirmationStateLabel,
   confirmedNeedInputDisplay,
@@ -15,6 +24,7 @@ import {
   type ConfirmedNeedLine,
 } from "../bridges/confirmedNeed";
 import { draftChanged, historicalQuantity } from "./confirmedNeedDraft";
+import { parseExactQuantity } from "../procurement/procurementExactQuantity";
 export function ConfirmedNeedTable({
   lines,
   drafts,
@@ -30,7 +40,31 @@ export function ConfirmedNeedTable({
   compactEditing?: boolean;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
+  type SortKey = "identity" | "proposal";
   const id = useId();
+  const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
+  const sortedLines = sortAtlasRows(lines, sort, {
+    identity: (left, right) => {
+      const ingredient = compareAtlasText(
+        left.ingredient.name,
+        right.ingredient.name,
+      );
+      return (
+        ingredient ||
+        compareAtlasText(
+          `${left.school.name} ${left.delivery_location.name}`,
+          `${right.school.name} ${right.delivery_location.name}`,
+        )
+      );
+    },
+    proposal: (left, right) =>
+      compareAtlasBigInt(
+        parseExactQuantity(left.proposed_confirmed_quantity),
+        parseExactQuantity(right.proposed_confirmed_quantity),
+      ),
+  });
+  const onSort = (key: SortKey) =>
+    setSort((current) => nextAtlasSort(current, key));
   return (
     <AtlasTableViewport
       label="Bảng xác nhận nhu cầu"
@@ -52,45 +86,68 @@ export function ConfirmedNeedTable({
         stickyHeader
         style={
           {
-            minWidth: "var(--atlas-layout-confirmed-need-table-min, 980px)",
             "--atlas-confirmed-need-header-height": "38px",
             "--atlas-confirmed-need-row-min-height": "46px",
           } as CSSProperties
         }
+        minW="var(--atlas-layout-confirmed-need-table-min, 1040px)"
+        w="var(--atlas-layout-confirmed-need-table-width, 1040px)"
+        tableLayout="fixed"
       >
+        <Table.ColumnGroup>
+          <Table.Column w="var(--atlas-confirmed-identity-width, 260px)" />
+          <Table.Column w="var(--atlas-confirmed-proposal-width, 150px)" />
+          <Table.Column w="var(--atlas-confirmed-quantity-width, 180px)" />
+          <Table.Column w="var(--atlas-confirmed-delta-width, 130px)" />
+          <Table.Column w="var(--atlas-confirmed-reason-width, 320px)" />
+        </Table.ColumnGroup>
         <Table.Header>
           <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
-            {[
-              "Nguyên liệu / nơi nhận",
-              "Đề xuất vận hành",
-              "Số lượng xác nhận",
-              "Thay đổi",
-              "Lý do / ghi chú",
-            ].map((label, i) => (
-              <Table.ColumnHeader
-                key={label}
-                textAlign={i >= 1 && i <= 3 ? "end" : "start"}
-                h="var(--atlas-confirmed-need-header-height)"
-                py="var(--atlas-layout-zero, 0)"
-                {...(i === 0
-                  ? {
-                      style: {
-                        position: "sticky",
-                        left: "var(--atlas-layout-zero, 0)",
-                        zIndex:
-                          "var(--atlas-layout-sticky-identity-header-z, 5)",
-                        background: "var(--atlas-colors-bg-toolbar)",
-                      },
-                    }
-                  : {})}
-              >
-                {label}
-              </Table.ColumnHeader>
-            ))}
+            <AtlasSortableColumnHeader
+              label="Nguyên liệu / nơi nhận"
+              columnKey="identity"
+              sort={sort}
+              onSort={onSort}
+              position="sticky"
+              left="var(--atlas-layout-zero, 0)"
+              zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
+              bg="bg.toolbar"
+              h="var(--atlas-confirmed-need-header-height)"
+              py="var(--atlas-layout-zero, 0)"
+            />
+            <AtlasSortableColumnHeader
+              label="Đề xuất vận hành"
+              columnKey="proposal"
+              sort={sort}
+              onSort={onSort}
+              textAlign="end"
+              h="var(--atlas-confirmed-need-header-height)"
+              py="var(--atlas-layout-zero, 0)"
+            />
+            <Table.ColumnHeader
+              textAlign="end"
+              h="var(--atlas-confirmed-need-header-height)"
+              py="var(--atlas-layout-zero, 0)"
+            >
+              Số lượng xác nhận
+            </Table.ColumnHeader>
+            <Table.ColumnHeader
+              textAlign="end"
+              h="var(--atlas-confirmed-need-header-height)"
+              py="var(--atlas-layout-zero, 0)"
+            >
+              Thay đổi
+            </Table.ColumnHeader>
+            <Table.ColumnHeader
+              h="var(--atlas-confirmed-need-header-height)"
+              py="var(--atlas-layout-zero, 0)"
+            >
+              Lý do / ghi chú
+            </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {lines.map((line, index) => {
+          {sortedLines.map((line, index) => {
             const draft =
               drafts[line.confirmed_need_line_id] ??
               initialConfirmedNeedDraft(line);

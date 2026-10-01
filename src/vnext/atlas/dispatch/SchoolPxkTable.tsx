@@ -40,8 +40,17 @@ export function SchoolPxkTable({
           aria-label="Phiếu xuất kho theo trường"
           size="sm"
           stickyHeader
-          minW="var(--atlas-layout-pxk-table-min, 570px)"
+          tableLayout="fixed"
+          w="var(--atlas-pxk-table-width, 810px)"
+          minW="var(--atlas-pxk-table-width, 810px)"
         >
+          <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-pxk-school-width, 240px)" />
+            <Table.Column w="var(--atlas-pxk-content-width, 100px)" />
+            <Table.Column w="var(--atlas-pxk-document-width, 170px)" />
+            <Table.Column w="var(--atlas-pxk-state-width, 150px)" />
+            <Table.Column w="var(--atlas-pxk-action-width, 150px)" />
+          </Table.ColumnGroup>
           <Table.Header>
             <Table.Row>
               {[

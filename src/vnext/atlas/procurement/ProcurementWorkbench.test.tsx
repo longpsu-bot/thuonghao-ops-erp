@@ -483,10 +483,12 @@ describe("Procurement vNext operator workbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-procurement-table-min, 880px)",
+      minWidth: "var(--atlas-layout-procurement-table-min, 1050px)",
+      width: "var(--atlas-layout-procurement-table-width, 1050px)",
+      tableLayout: "fixed",
       "--atlas-table-header-height": "38px",
       "--atlas-table-row-height": "46px",
-      "--atlas-table-identity-width": "190px",
+      "--atlas-table-identity-width": "200px",
     });
     expect(
       within(table)

@@ -3,6 +3,7 @@ import {
   Button,
   Flex,
   Popover,
+  Portal,
   Stack,
   Table,
   Text,
@@ -11,6 +12,7 @@ import { Table as SheetIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { useAtlasPortalContainer } from "../AtlasVNextProvider";
 export function PlanningMenuStage({
   c,
   visibleSchoolIds,
@@ -19,6 +21,7 @@ export function PlanningMenuStage({
   visibleSchoolIds: string[];
 }) {
   const [choose, setChoose] = useState(false);
+  const portalContainer = useAtlasPortalContainer();
   const sources =
     c.data?.google_sheet_sources.filter((s) => s.source_status === "ACTIVE") ??
     [];
@@ -59,25 +62,27 @@ export function PlanningMenuStage({
                 Đồng bộ Google Sheet
               </Button>
             )}
-            <Popover.Positioner>
-              <Popover.Content bg="bg.workbench" color="fg.default">
-                <Popover.Body>
-                  <Stack gap="xs">
-                    {sources.map((s) => (
-                      <Button
-                        key={s.weekly_menu_google_source_id}
-                        onClick={() => {
-                          setChoose(false);
-                          void c.syncGoogle(s.weekly_menu_google_source_id);
-                        }}
-                      >
-                        {s.source_name}
-                      </Button>
-                    ))}
-                  </Stack>
-                </Popover.Body>
-              </Popover.Content>
-            </Popover.Positioner>
+            <Portal container={portalContainer}>
+              <Popover.Positioner>
+                <Popover.Content bg="bg.workbench" color="fg.default">
+                  <Popover.Body>
+                    <Stack gap="xs">
+                      {sources.map((s) => (
+                        <Button
+                          key={s.weekly_menu_google_source_id}
+                          onClick={() => {
+                            setChoose(false);
+                            void c.syncGoogle(s.weekly_menu_google_source_id);
+                          }}
+                        >
+                          {s.source_name}
+                        </Button>
+                      ))}
+                    </Stack>
+                  </Popover.Body>
+                </Popover.Content>
+              </Popover.Positioner>
+            </Portal>
           </Popover.Root>
         ) : (
           <Text textStyle="helper">
@@ -104,8 +109,19 @@ export function PlanningMenuStage({
           aria-label="Thực đơn theo trường"
           size="sm"
           stickyHeader
-          minW="var(--atlas-layout-menu-table-min-width, max-content)"
+          tableLayout="fixed"
+          w="var(--atlas-layout-menu-table-width, max-content)"
+          minW="var(--atlas-layout-menu-table-width, max-content)"
         >
+          <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-menu-school-width, 220px)" />
+            {types.map((type) => (
+              <Table.Column
+                key={type.dish_type_id}
+                w="var(--atlas-menu-dish-width, 180px)"
+              />
+            ))}
+          </Table.ColumnGroup>
           <Table.Header>
             <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
               <Table.ColumnHeader
@@ -114,15 +130,11 @@ export function PlanningMenuStage({
                 left="var(--atlas-layout-zero, 0)"
                 zIndex="var(--atlas-layer-sticky-corner, 3)"
                 bg="bg.toolbar"
-                minW="var(--atlas-layout-menu-school-column, 220px)"
               >
                 Trường / điểm giao
               </Table.ColumnHeader>
               {types.map((t) => (
-                <Table.ColumnHeader
-                  key={t.dish_type_id}
-                  minW="var(--atlas-layout-menu-dish-column, 180px)"
-                >
+                <Table.ColumnHeader key={t.dish_type_id}>
                   {t.dish_type_name}
                 </Table.ColumnHeader>
               ))}

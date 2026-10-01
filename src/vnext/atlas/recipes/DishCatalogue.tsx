@@ -78,7 +78,32 @@ export function DishCatalogue({
               : "Chưa có món. Tạo món mới để bắt đầu."}
           </Text>
         ) : (
-          <Table.Root aria-label="Danh mục món" stickyHeader>
+          <Table.Root
+            aria-label="Danh mục món"
+            stickyHeader
+            tableLayout="fixed"
+            w={
+              compact
+                ? "var(--atlas-dish-compact-table-width, 340px)"
+                : "var(--atlas-dish-table-width, 870px)"
+            }
+            minW={
+              compact
+                ? "var(--atlas-dish-compact-table-width, 340px)"
+                : "var(--atlas-dish-table-width, 870px)"
+            }
+          >
+            <Table.ColumnGroup>
+              <Table.Column w="var(--atlas-dish-identity-width, 220px)" />
+              {!compact && (
+                <>
+                  <Table.Column w="var(--atlas-dish-type-width, 140px)" />
+                  <Table.Column w="var(--atlas-dish-state-width, 130px)" />
+                  <Table.Column w="var(--atlas-dish-recipe-width, 260px)" />
+                </>
+              )}
+              <Table.Column w="var(--atlas-dish-action-width, 120px)" />
+            </Table.ColumnGroup>
             <Table.Header
               display={{
                 base:

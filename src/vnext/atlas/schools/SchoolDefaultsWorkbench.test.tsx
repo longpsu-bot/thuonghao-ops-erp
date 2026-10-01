@@ -8,6 +8,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "storybook/test";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import type {
   AtlasRpcResult,
@@ -157,6 +158,101 @@ describe("Chakra School default portions workbench", () => {
     expect(screen.getByText("Trường Tiểu học Ánh Dương")).toBeInTheDocument();
     expect(screen.queryByText("Trường Trung học Beta")).not.toBeInTheDocument();
     expect(connected.getSchools).toHaveBeenCalledOnce();
+  });
+
+  it("keeps table geometry local and cycles sortable School headers back to business order", async () => {
+    const connected = apiWith();
+    await renderReady(connected.api);
+
+    const viewport = screen.getByRole("region", {
+      name: "Bảng sĩ số mặc định theo trường",
+    });
+    const table = within(viewport).getByRole("table", {
+      name: "Sĩ số mặc định theo trường",
+    });
+    expect(table).toHaveAttribute("data-sticky-header");
+    expect(table).toHaveStyle({
+      tableLayout: "fixed",
+      minWidth: "var(--atlas-layout-school-table-min, 1154px)",
+      width: "var(--atlas-layout-school-table-width, 1154px)",
+    });
+
+    const schoolHeader = within(table).getByRole("columnheader", {
+      name: /Trường/,
+    });
+    const sort = within(schoolHeader).getByRole("button", {
+      name: "Sắp xếp theo Trường",
+    });
+    expect(schoolHeader).toHaveAttribute("aria-sort", "none");
+
+    sort.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(schoolHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+      "Trường Tiểu học Ánh Dương",
+    );
+
+    fireEvent.click(sort);
+    expect(schoolHeader).toHaveAttribute("aria-sort", "descending");
+    expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+      "Trường Trung học Beta",
+    );
+
+    fireEvent.click(sort);
+    expect(schoolHeader).toHaveAttribute("aria-sort", "none");
+    expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+      "Trường Tiểu học Ánh Dương",
+    );
+    expect(student()).toHaveValue("420");
+  });
+
+  it("shows filter-empty copy only when authoritative Schools exist", async () => {
+    const connected = apiWith();
+    await renderReady(connected.api);
+
+    fireEvent.change(screen.getByLabelText("Tìm trường"), {
+      target: { value: "không tồn tại" },
+    });
+
+    expect(
+      screen.getByText("Không có trường phù hợp bộ lọc."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Chưa có trường học.")).not.toBeInTheDocument();
+  });
+
+  it("keeps loading and authoritative-empty states distinct from filter-empty", async () => {
+    const pendingApi = {
+      getSchools: vi.fn(() => new Promise<AtlasRpcResult>(() => {})),
+      updateSchoolDefaultsBulk: vi.fn(),
+    } as unknown as SchoolMasterDataApi;
+    const loading = render(
+      <AtlasVNextProvider>
+        <SchoolDefaultsWorkbench authSubject="operator-1" api={pendingApi} />
+      </AtlasVNextProvider>,
+    );
+
+    expect(
+      await screen.findByText("Đang tải dữ liệu trường học…"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Không có trường phù hợp bộ lọc."),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Chưa có trường học.")).not.toBeInTheDocument();
+
+    loading.unmount();
+    const empty = apiWith({ reads: [success([])] });
+    render(
+      <AtlasVNextProvider>
+        <SchoolDefaultsWorkbench authSubject="operator-1" api={empty.api} />
+      </AtlasVNextProvider>,
+    );
+    expect(await screen.findByText("Chưa có trường học.")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Không có trường phù hợp bộ lọc."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("table", { name: "Sĩ số mặc định theo trường" }),
+    ).not.toBeInTheDocument();
   });
 
   it("accepts explicit zero but rejects every invalid contract form without coercion", async () => {
@@ -472,6 +568,10 @@ describe("Chakra School default portions workbench", () => {
     const retry = await screen.findByRole("button", {
       name: "Thử tải lại dữ liệu",
     });
+    expect(
+      screen.queryByText("Không có trường phù hợp bộ lọc."),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Chưa có trường học.")).not.toBeInTheDocument();
     expect(screen.queryByText("Tải lại để xác nhận")).not.toBeInTheDocument();
     fireEvent.click(retry);
     expect(

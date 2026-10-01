@@ -696,10 +696,12 @@ describe("IngredientSupplierWorkbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-ingredient-table-min, 940px)",
+      minWidth: "var(--atlas-layout-ingredient-table-min, 1050px)",
+      width: "var(--atlas-layout-ingredient-table-width, 1050px)",
+      tableLayout: "fixed",
       "--atlas-table-header-height": "38px",
       "--atlas-table-row-height": "42px",
-      "--atlas-table-identity-width": "178px",
+      "--atlas-table-identity-width": "220px",
     });
     expect(screen.getAllByRole("row")).toHaveLength(361);
     const actions = screen.getAllByRole("button", {

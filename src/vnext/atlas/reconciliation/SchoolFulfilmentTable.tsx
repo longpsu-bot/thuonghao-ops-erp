@@ -51,8 +51,18 @@ export function SchoolFulfilmentTable({
         aria-label="Đối chiếu theo trường"
         size="sm"
         stickyHeader
-        minW="var(--atlas-layout-reconciliation-table-min, 740px)"
+        tableLayout="fixed"
+        w="var(--atlas-reconciliation-table-width, 1020px)"
+        minW="var(--atlas-reconciliation-table-width, 1020px)"
       >
+        <Table.ColumnGroup>
+          <Table.Column w="var(--atlas-reconciliation-date-width, 110px)" />
+          <Table.Column w="var(--atlas-reconciliation-school-width, 220px)" />
+          <Table.Column w="var(--atlas-reconciliation-result-width, 140px)" />
+          <Table.Column w="var(--atlas-reconciliation-documents-width, 180px)" />
+          <Table.Column w="var(--atlas-reconciliation-quantity-width, 240px)" />
+          <Table.Column w="var(--atlas-reconciliation-action-width, 130px)" />
+        </Table.ColumnGroup>
         <Table.Header>
           <Table.Row>
             {[

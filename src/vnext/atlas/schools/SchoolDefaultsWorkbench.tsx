@@ -12,8 +12,18 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { useImperativeHandle } from "react";
+import { useImperativeHandle, useState } from "react";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
+import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
+import { AtlasTableViewport } from "../AtlasTableViewport";
+import {
+  atlasDefaultSort,
+  compareAtlasNumber,
+  compareAtlasText,
+  nextAtlasSort,
+  sortAtlasRows,
+  type AtlasSortState,
+} from "../atlasTableSort";
 import type { SchoolMasterData } from "../bridges/schoolMasterData";
 import { parsePortionDraft } from "./schoolDefaultsModel";
 import {
@@ -181,12 +191,14 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         <Text p="md">Chưa có trường học.</Text>
       )}
 
-      <SchoolDefaultsTable
-        schools={c.visibleSchools}
-        drafts={c.drafts}
-        disabled={editingDisabled}
-        onEdit={c.edit}
-      />
+      {c.schools.length > 0 && (
+        <SchoolDefaultsTable
+          schools={c.visibleSchools}
+          drafts={c.drafts}
+          disabled={editingDisabled}
+          onEdit={c.edit}
+        />
+      )}
     </Box>
   );
 }
@@ -206,24 +218,85 @@ function SchoolDefaultsTable({
     value: string,
   ) => void;
 }) {
+  type SortKey = "order" | "school" | "type" | "status" | "location";
+  const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
   if (!schools.length)
     return <Text p="md">Không có trường phù hợp bộ lọc.</Text>;
+  const sortedSchools = sortAtlasRows(schools, sort, {
+    order: (left, right) =>
+      compareAtlasNumber(left.display_order, right.display_order),
+    school: (left, right) =>
+      compareAtlasText(left.school_name, right.school_name),
+    type: (left, right) =>
+      compareAtlasText(left.school_type_name, right.school_type_name),
+    status: (left, right) =>
+      compareAtlasText(left.school_status, right.school_status),
+    location: (left, right) =>
+      compareAtlasText(
+        left.delivery_location_name,
+        right.delivery_location_name,
+      ),
+  });
+  const onSort = (key: SortKey) =>
+    setSort((current) => nextAtlasSort(current, key));
   return (
-    <Box overflowX="auto" minW="var(--atlas-layout-zero, 0)">
+    <AtlasTableViewport
+      label="Bảng sĩ số mặc định theo trường"
+      maxH={{
+        base: "var(--atlas-layout-school-table-mobile-height, 55dvh)",
+        lg: "var(--atlas-layout-school-table-height, calc(100dvh - 350px))",
+      }}
+    >
       <Table.Root
         size="sm"
         aria-label="Sĩ số mặc định theo trường"
-        minW="var(--atlas-layout-school-table-min, 850px)"
+        data-sticky-header=""
+        stickyHeader
+        tableLayout="fixed"
+        minW="var(--atlas-layout-school-table-min, 1154px)"
+        w="var(--atlas-layout-school-table-width, 1154px)"
       >
+        <Table.ColumnGroup>
+          <Table.Column w="var(--atlas-school-order-width, 64px)" />
+          <Table.Column w="var(--atlas-school-identity-width, 240px)" />
+          <Table.Column w="var(--atlas-school-type-width, 150px)" />
+          <Table.Column w="var(--atlas-school-state-width, 140px)" />
+          <Table.Column w="var(--atlas-school-location-width, 260px)" />
+          <Table.Column w="var(--atlas-school-portion-width, 150px)" />
+          <Table.Column w="var(--atlas-school-portion-width, 150px)" />
+        </Table.ColumnGroup>
         <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeader width="var(--atlas-layout-school-order-width, 56px)">
-              #
-            </Table.ColumnHeader>
-            <Table.ColumnHeader>Trường</Table.ColumnHeader>
-            <Table.ColumnHeader>Loại trường</Table.ColumnHeader>
-            <Table.ColumnHeader>Trạng thái</Table.ColumnHeader>
-            <Table.ColumnHeader>Điểm giao</Table.ColumnHeader>
+          <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
+            <AtlasSortableColumnHeader
+              label="#"
+              columnKey="order"
+              sort={sort}
+              onSort={onSort}
+            />
+            <AtlasSortableColumnHeader
+              label="Trường"
+              columnKey="school"
+              sort={sort}
+              onSort={onSort}
+            />
+            <AtlasSortableColumnHeader
+              label="Loại trường"
+              columnKey="type"
+              sort={sort}
+              onSort={onSort}
+            />
+            <AtlasSortableColumnHeader
+              label="Trạng thái"
+              columnKey="status"
+              sort={sort}
+              onSort={onSort}
+            />
+            <AtlasSortableColumnHeader
+              label="Điểm giao"
+              columnKey="location"
+              sort={sort}
+              onSort={onSort}
+            />
             <Table.ColumnHeader textAlign="right">
               Học sinh mặc định
             </Table.ColumnHeader>
@@ -233,7 +306,7 @@ function SchoolDefaultsTable({
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {schools.map((school) => {
+          {sortedSchools.map((school) => {
             const draft = drafts[school.school_id] ?? {
               student: String(school.default_student_portions),
               teacher: String(school.default_teacher_portions),
@@ -324,6 +397,6 @@ function SchoolDefaultsTable({
           })}
         </Table.Body>
       </Table.Root>
-    </Box>
+    </AtlasTableViewport>
   );
 }

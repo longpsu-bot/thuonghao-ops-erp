@@ -91,10 +91,18 @@ export function PlanningAttendanceStage({
       >
         <Table.Root
           aria-label="Sĩ số theo trường"
-          minW="var(--atlas-layout-attendance-table-min, 620px)"
+          tableLayout="fixed"
+          w="var(--atlas-attendance-table-width, 630px)"
+          minW="var(--atlas-attendance-table-width, 630px)"
           size="sm"
           stickyHeader
         >
+          <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-attendance-school-width, 300px)" />
+            <Table.Column w="var(--atlas-attendance-count-width, 110px)" />
+            <Table.Column w="var(--atlas-attendance-count-width, 110px)" />
+            <Table.Column w="var(--atlas-attendance-total-width, 110px)" />
+          </Table.ColumnGroup>
           <Table.Header>
             <Table.Row>
               <Table.ColumnHeader>Trường / điểm giao</Table.ColumnHeader>
