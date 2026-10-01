@@ -49,3 +49,38 @@ the Atlas UI boundary. Frontend CI is the PR validation gate.
 Rollback after use must preserve accepted split notes and issued PO snapshots.
 The UI/command extension can be disabled with a forward change, but dropping
 the columns would lose historical business facts and is not a safe rollback.
+
+## Post-#342 migration-order stabilization
+
+PR #341 was rebased onto `origin/main` at
+`4ad1740203a7dc7a767a4eaec02cb3b847cb8b94` without conflicts. The supplier-note
+migration is now `20261001094403_procurement_supplier_line_note.sql`, after
+`20261001081941_menu_slot_dish_decoupling.sql`. The obsolete earlier filename
+is removed; there is exactly one supplier-note migration. Its SQL content is
+byte-identical to the reviewed PR #341 migration (Git blob
+`0e041123c0f65a7b132f88ede2aeb2288a92f07a`). No Planning code, business contract,
+runtime privilege, or supplier-note behavior changes in this stabilization.
+
+Validate a fresh local migration replay in this order, supplier-note and related
+Procurement pgTAP, the local school-catering Procurement verifier, focused
+Procurement frontend and XLSX/PDF tests, UI boundary, typecheck, targeted
+Prettier, whitespace and workspace checks. Frontend CI and Supabase Smoke must
+pass on the updated Draft PR before the owner merge gate.
+
+Hosted deployment remains a separate phase after the owner merges #341.
+Neither migration is deployed by this stabilization; hosted Staging, Retool,
+and live OPS writes remain zero. Do not deploy #342 alone while #341 remains
+unmerged. Rollback and historical-null behavior above are unchanged.
+
+Local stabilization results (2026-10-01): fresh migration replay passed;
+supplier-note/allocation/PO pgTAP passed 201 assertions on a clean database;
+purchase-review pgTAP passed 147 assertions through the repository include-expanding
+runner; the authenticated local Procurement verifier passed; 14 Procurement
+frontend/export files passed 220 tests; UI boundary, typecheck, targeted Prettier
+and whitespace checks passed. Run the rolled-back pgTAP suites before the
+authenticated verifier, which leaves synthetic local fixture data. Direct CLI
+execution of the purchase-review suite cannot mount its `../local` includes;
+use `node scripts/test-local-purchase-review.mjs purchase_review_confirm_release.sql`.
+The authority-map's existing table formatting is outside this stabilization's
+targeted formatting scope. Workspace verification passed with the historical
+D: path warning; the owner explicitly authorized this E: checkout.
