@@ -1,5 +1,41 @@
 # School-Catering Procurement API Contract
 
+## PROCUREMENT-SUPPLIER-LINE-NOTE-01 amendment
+
+Both existing supplier-allocation commands accept an optional `supplier_note` on each
+`splits[]` member. The existing public contract versions and names remain valid:
+omission is `null`. A supplied value must be a string or `null`, at most 500
+characters. The backend trims surrounding whitespace, converts empty or
+whitespace-only text to `null`, and rejects oversize or incorrectly typed values
+atomically. The note is a supplier-facing instruction for that exact supplier,
+Ingredient, Unit, destination, date and immutable Allocation Family revision. It
+is separate from command and revision `reason_note`.
+
+A note-only change is a material allocation decision: Save appends a successor
+revision, retains its predecessor, and leaves exact quantities, ratios, balance,
+eligibility, recommendations and source fingerprint unchanged. Generated
+recommendations begin with a null note. Advisory rebalance and recommendation
+Apply preserve a retained supplier's note; a newly added supplier begins blank.
+Confirmed Need to Handoff promotion copies each saved note into its corresponding
+immutable split. Allocation reads expose `splits[].supplier_note`.
+
+Every backend-created PO line freezes `supplier_note_snapshot` from its exact
+`school_catering_allocation_supplier_split_id`. PO reads expose it as
+`lines[].supplier_note`. Draft creation, regeneration, release successors and
+replacement Drafts use this same source; callers cannot supply a snapshot.
+Existing exact split lineage makes a Draft stale after a note-only successor.
+Released and superseded line snapshots remain historical facts, including when a
+later allocation carries another note. The official supplier XLSX/PDF renders the
+line snapshot under `Ghi chú`; a null value prints blank. Preliminary generated
+purchase review remains unchanged because no allocation note exists there.
+
+This is an additive migration with nullable columns; historical splits and PO
+lines remain null and receive no invented backfill. A forward rollback may hide
+note entry or document display while retaining already accepted split and issued
+PO snapshots. Dropping either column after use would destroy decision or document
+history and is not a safe rollback. Forced RLS, shaped APIs, existing privileges,
+and empty runtime `search_path` remain the security boundary.
+
 Status: Implemented and merged through the connected school-catering Procurement changes and PURCHASE-REVIEW-CONFIRM-RELEASE-01. The approved connected design and implementation records remain authoritative if this summary is incomplete.
 
 [ATLAS-MODEL-PRINCIPLE-01](../decisions/decision-atlas-model-convergence.md) and the [authority map through Procurement](../architecture/atlas-authority-map-through-procurement.md) clarify the current meaning without changing these APIs: generated review, recommendations, Handoff structures, Allocation Family identities, source promotion and PO drafts are supporting evidence beneath real commands; saved exact supplier splits are explicit human decisions; balance, freshness and eligibility are derived; released PO content and official number are explicit immutable supplier commitments. Existing source-specific Handoff allocation writers remain valid support/current-source routes and are not a second authority for the same source.

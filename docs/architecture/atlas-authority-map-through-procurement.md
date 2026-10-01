@@ -78,11 +78,14 @@ This compact register preserves the audit's four classifications. “Generate”
 | Procurement | Supplier recommendation | GENERATE | Advisory until accepted. |
 | Procurement | Allocation Family identity | GENERATE | Backend grouping by date/location/Ingredient/Unit. |
 | Procurement | Confirmed supplier splits | KEEP EXPLICIT | Human acceptance of exact quantities/suppliers. |
+| Procurement | Supplier-facing split note | KEEP EXPLICIT | Optional human instruction on each immutable supplier-specific split; note-only Save appends a revision. |
 | Procurement | Allocation balance/currentness | DERIVE | Compare saved decisions with authoritative sources. |
 | Procurement | Rebalance proposal | GENERATE | Apply and Save explicitly; never auto-accept. |
 | Procurement | Confirmed-source to Handoff-source promotion | GENERATE | Preserve accepted splits; append source-transition lineage. |
 | Procurement | PO draft and regenerated successors | GENERATE | Stable review identity; not an issued commitment. |
 | Procurement | PO freshness and release eligibility | DERIVE | Backend source/revision checks. |
+| Procurement | Note-driven PO staleness | DERIVE | Exact supplier-split lineage makes an older Draft stale after a note-only allocation successor. |
+| Procurement | PO line supplier-note snapshot | GENERATE | Freeze the exact split note on each line; never reconstruct an issued document from current allocation. |
 | Procurement | PO release and released snapshot | KEEP EXPLICIT | Explicit external commitment and immutable content. |
 | Procurement | Official PO number | KEEP EXPLICIT | Initially generated; permanently preserved after release. |
 | Shared | Revision heads, optimistic versions and receipts | GENERATE | Justified controlled persistence, not disposable state. |

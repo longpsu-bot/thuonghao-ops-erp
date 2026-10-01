@@ -22,6 +22,12 @@ export function ProcurementReview({
 }) {
   const fixture = useMemo(() => {
     const value = createProcurementReviewFixture(scenario);
+    if (scenario === "manual_split")
+      value.allocation.rows[0]!.splits[0]!.supplier_note =
+        "Loại 500g/gói · Giao trước 05:30";
+    if (scenario === "po_draft")
+      value.orders.purchase_orders[0]!.lines[0]!.supplier_note =
+        "Rau non, không lấy bó già. Giao trước 05:30; xác nhận quy cách đóng gói với bếp trước khi giao.";
     if (!["empty", "read_failure"].includes(scenario)) {
       const names = [
         "Thịt heo nạc",

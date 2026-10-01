@@ -98,6 +98,15 @@ function verifyPlanningCorrectionBoundaries() {
 }
 
 async function invoke(client, name, request) {
+  const data = await invokeOutcome(client, name, request);
+  assert(
+    data?.success === true,
+    `${name} was rejected (${data?.error_code ?? "UNKNOWN"}).`,
+  );
+  return data;
+}
+
+async function invokeOutcome(client, name, request) {
   const { data, error } = await client
     .schema("atlas_api")
     .rpc(name, { request });
@@ -106,11 +115,35 @@ async function invoke(client, name, request) {
       `${name} transport failed safely (${error.code ?? "UNKNOWN"}).`,
     );
   }
-  assert(
-    data?.success === true,
-    `${name} was rejected (${data?.error_code ?? "UNKNOWN"}).`,
-  );
   return data;
+}
+
+function localRows(sql) {
+  const output = runPinnedSupabase(
+    ["db", "query", "--local", "--agent", "no", "--output", "json", sql],
+    { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
+  );
+  return JSON.parse(output);
+}
+
+function allocationPayload(row, splits, confirmed) {
+  return {
+    family: {
+      service_date: row.family.service_date,
+      delivery_location_id: row.family.delivery_location_id,
+      ingredient_id: row.family.ingredient_id,
+      unit_id: row.family.unit_id,
+      expected_source_fingerprint: row.family.source_fingerprint,
+      ...(confirmed
+        ? {
+            expected_source_batch_id: row.family.source_confirmed_need_batch_id,
+            expected_source_batch_version:
+              row.family.source_confirmed_need_batch_version,
+          }
+        : {}),
+    },
+    splits,
+  };
 }
 
 function command(
@@ -292,7 +325,7 @@ async function main() {
     "get_confirmed_supplier_allocation_workbench",
     sourceRequest,
   );
-  const confirmedRows = beforeHandoff.rows.filter(
+  let confirmedRows = beforeHandoff.rows.filter(
     (item) => item.family.source_confirmed_need_batch_id === batchId,
   );
   assert(
@@ -304,6 +337,131 @@ async function main() {
           item.splits.length > 0,
       ),
     "Handoff prerequisite did not expose persisted Confirmed Need allocations.",
+  );
+  assert(
+    confirmedRows.every((item) =>
+      item.splits.every((split) => split.supplier_note === null),
+    ),
+    "Omitted v1 supplier notes must read back as null.",
+  );
+  const noteTarget = confirmedRows[0];
+  const originalSplit = noteTarget.splits[0];
+  const withNote = (value) =>
+    allocationPayload(
+      noteTarget,
+      [
+        {
+          supplier_id: originalSplit.supplier_id,
+          allocated_quantity: originalSplit.allocated_quantity,
+          supplier_note: value,
+        },
+      ],
+      true,
+    );
+  const oversized = await invokeOutcome(
+    client,
+    "save_confirmed_supplier_allocation",
+    command(
+      subject,
+      "CONFIRMED_SUPPLIER_ALLOCATION_SAVED",
+      noteTarget.family.version,
+      withNote("a".repeat(501)),
+      "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+    ),
+  );
+  assert(
+    oversized.error_code === "SUPPLIER_NOTE_INVALID",
+    "An oversized supplier note was not rejected safely.",
+  );
+  const noteRequest = command(
+    subject,
+    "CONFIRMED_SUPPLIER_ALLOCATION_SAVED",
+    noteTarget.family.version,
+    withNote("  Loại 500g/gói  "),
+    "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+  );
+  const noteSaved = await invoke(
+    client,
+    "save_confirmed_supplier_allocation",
+    noteRequest,
+  );
+  const noteReplay = await invoke(
+    client,
+    "save_confirmed_supplier_allocation",
+    noteRequest,
+  );
+  assert(
+    noteSaved.family.family_version === noteTarget.family.version + 1 &&
+      noteReplay.family.family_revision_id ===
+        noteSaved.family.family_revision_id,
+    "Note-only v1 Save did not append and replay one exact successor.",
+  );
+  const staleNote = await invokeOutcome(
+    client,
+    "save_confirmed_supplier_allocation",
+    command(
+      subject,
+      "CONFIRMED_SUPPLIER_ALLOCATION_SAVED",
+      noteTarget.family.version,
+      withNote("Giao trước 05:30"),
+      "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+    ),
+  );
+  assert(
+    staleNote.error_code === "STALE_VERSION",
+    "A stale expected version could overwrite a saved supplier note.",
+  );
+  const blankTarget = confirmedRows[1];
+  if (blankTarget) {
+    await invoke(
+      client,
+      "save_confirmed_supplier_allocation",
+      command(
+        subject,
+        "CONFIRMED_SUPPLIER_ALLOCATION_SAVED",
+        blankTarget.family.version,
+        allocationPayload(
+          blankTarget,
+          blankTarget.splits.map((split) => ({
+            supplier_id: split.supplier_id,
+            allocated_quantity: split.allocated_quantity,
+            supplier_note: " \t ",
+          })),
+          true,
+        ),
+        "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+      ),
+    );
+  }
+  const notedBeforeHandoff = await invoke(
+    client,
+    "get_confirmed_supplier_allocation_workbench",
+    sourceRequest,
+  );
+  confirmedRows = notedBeforeHandoff.rows.filter(
+    (item) => item.family.source_confirmed_need_batch_id === batchId,
+  );
+  const noted = confirmedRows.find(
+    (item) => item.family.family_id === noteTarget.family.family_id,
+  );
+  assert(
+    noted?.splits[0]?.supplier_note === "Loại 500g/gói" &&
+      noted.splits[0].allocated_quantity === originalSplit.allocated_quantity &&
+      confirmedRows.every((item) =>
+        item.splits.every(
+          (split) => item === noted || split.supplier_note === null,
+        ),
+      ),
+    "Saved note normalization changed quantities or whitespace-only null semantics.",
+  );
+  const noteHistory = localRows(
+    `select revision.revision_number,split.supplier_note from atlas_procurement.school_catering_allocation_family_revisions revision join atlas_procurement.school_catering_allocation_supplier_splits split using(family_revision_id) where revision.family_id='${noteTarget.family.family_id}'::uuid and split.supplier_id='${originalSplit.supplier_id}'::uuid order by revision.revision_number`,
+  );
+  assert(
+    noteHistory.length === 2 &&
+      noteHistory[0].supplier_note === null &&
+      noteHistory[1].supplier_note === "Loại 500g/gói",
+    "The predecessor supplier note changed or the successor did not persist.",
   );
 
   const handoff = await invoke(
@@ -363,6 +521,7 @@ async function main() {
             (prior) =>
               prior.supplier_id === split.supplier_id &&
               prior.allocated_quantity === split.allocated_quantity &&
+              prior.supplier_note === split.supplier_note &&
               prior.split_ratio === split.split_ratio &&
               uuidPattern.test(split.supplier_split_id),
           ),
@@ -400,8 +559,16 @@ async function main() {
           expected_source_fingerprint: promoted.family.source_fingerprint,
         },
         splits: [
-          { supplier_id: supplierA, allocated_quantity: quantityA },
-          { supplier_id: supplierB, allocated_quantity: quantityB },
+          {
+            supplier_id: supplierA,
+            allocated_quantity: quantityA,
+            supplier_note: "Loại 500g/gói",
+          },
+          {
+            supplier_id: supplierB,
+            allocated_quantity: quantityB,
+            supplier_note: "Giao trước 05:30",
+          },
         ],
       },
       "SCHOOL-CATERING-PROCUREMENT.v1",
@@ -417,7 +584,7 @@ async function main() {
     "get_school_catering_procurement_workbench",
     readRequest,
   );
-  const finalRow = readback.rows.find(
+  let finalRow = readback.rows.find(
     (item) => item.family.family_id === manual.family.family_id,
   );
   assert(
@@ -431,6 +598,7 @@ async function main() {
       (split) =>
         split.supplier_id === supplierA &&
         split.allocated_quantity === quantityA &&
+        split.supplier_note === "Loại 500g/gói" &&
         split.split_ratio === "0.600000000000",
     ),
     "Final readback does not retain the server-calculated 60% split.",
@@ -440,6 +608,7 @@ async function main() {
       (split) =>
         split.supplier_id === supplierB &&
         split.allocated_quantity === quantityB &&
+        split.supplier_note === "Giao trước 05:30" &&
         split.split_ratio === "0.400000000000",
     ),
     "Final readback does not retain the server-calculated 40% split.",
@@ -501,12 +670,13 @@ async function main() {
     assert(
       order?.status === "DRAFT" &&
         line?.ordered_quantity === quantity &&
+        line.supplier_note === split?.supplier_note &&
         line.source.family_revision_id === manual.family.family_revision_id &&
         line.source.supplier_split_id === split.supplier_split_id,
       "Supplier PO did not consume the current exact post-Handoff allocation.",
     );
   }
-  const draft = purchaseOrders.purchase_orders.find(
+  let draft = purchaseOrders.purchase_orders.find(
     (purchaseOrder) =>
       purchaseOrder.supplier.supplier_id === supplierA &&
       purchaseOrder.release_eligible,
@@ -514,6 +684,87 @@ async function main() {
   assert(
     draft?.status === "DRAFT" && draft.document_number === null,
     "Authoritative PO readback did not expose a releasable unnumbered DRAFT.",
+  );
+  const initialDraftRevisionId =
+    draft.current_revision.purchase_order_revision_id;
+  const noteOnly = await invoke(
+    client,
+    "save_school_catering_supplier_allocation",
+    command(
+      subject,
+      "SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED",
+      finalRow.family.version,
+      allocationPayload(
+        finalRow,
+        finalRow.splits.map((split) => ({
+          supplier_id: split.supplier_id,
+          allocated_quantity: split.allocated_quantity,
+          supplier_note:
+            split.supplier_id === supplierA
+              ? "Rau non, không lấy bó già"
+              : split.supplier_note,
+        })),
+        false,
+      ),
+      "SCHOOL-CATERING-PROCUREMENT.v1",
+    ),
+  );
+  assert(
+    noteOnly.family.family_version === finalRow.family.version + 1,
+    "Handoff note-only edit did not append an Allocation Family successor.",
+  );
+  const staleDraftRead = await invoke(
+    client,
+    "get_school_catering_purchase_orders",
+    poReadRequest,
+  );
+  const staleDraft = staleDraftRead.purchase_orders.find(
+    (item) => item.purchase_order_id === draft.purchase_order_id,
+  );
+  assert(
+    staleDraft?.commitment_state === "DRAFT_STALE" &&
+      staleDraft.lines.find(
+        (line) => line.source.family_id === manual.family.family_id,
+      )?.supplier_note === "Loại 500g/gói",
+    "A note-only successor did not stale the prior Draft or preserve its old snapshot.",
+  );
+  await invoke(
+    client,
+    "create_school_catering_purchase_order_drafts",
+    command(
+      subject,
+      "SCHOOL_CATERING_PO_DRAFTS_CREATED",
+      1,
+      { date_start: poDate, date_end: poDate },
+      "SCHOOL-CATERING-PROCUREMENT.v1",
+    ),
+  );
+  readback = await invoke(
+    client,
+    "get_school_catering_procurement_workbench",
+    readRequest,
+  );
+  finalRow = readback.rows.find(
+    (item) => item.family.family_id === manual.family.family_id,
+  );
+  purchaseOrders = await invoke(
+    client,
+    "get_school_catering_purchase_orders",
+    poReadRequest,
+  );
+  draft = purchaseOrders.purchase_orders.find(
+    (item) => item.purchase_order_id === staleDraft.purchase_order_id,
+  );
+  assert(
+    draft?.commitment_state === "DRAFT_CURRENT" &&
+      draft.current_revision.purchase_order_revision_id !==
+        initialDraftRevisionId &&
+      draft.lines.find(
+        (line) => line.source.family_id === manual.family.family_id,
+      )?.supplier_note === "Rau non, không lấy bó già" &&
+      finalRow.splits.find((split) => split.supplier_id === supplierB)
+        ?.supplier_note === "Giao trước 05:30",
+    "Regeneration did not adopt the newer note while retaining the other supplier's note.",
   );
   const releasedPo = await invoke(
     client,
@@ -546,12 +797,127 @@ async function main() {
   assert(
     releasedReadback?.status === "RELEASED_TO_SUPPLIER" &&
       releasedReadback.export_ready === true &&
-      releasedReadback.document_number === releasedPo.document_number,
+      releasedReadback.document_number === releasedPo.document_number &&
+      releasedReadback.lines.find(
+        (line) => line.source.family_id === manual.family.family_id,
+      )?.supplier_note === "Rau non, không lấy bó già",
     "Authoritative PO readback did not retain the released number/export state.",
+  );
+  await invoke(
+    client,
+    "save_school_catering_supplier_allocation",
+    command(
+      subject,
+      "SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED",
+      finalRow.family.version,
+      allocationPayload(
+        finalRow,
+        finalRow.splits.map((split) => ({
+          supplier_id: split.supplier_id,
+          allocated_quantity: split.allocated_quantity,
+          supplier_note:
+            split.supplier_id === supplierA
+              ? "Giao trước 04:30"
+              : split.supplier_note,
+        })),
+        false,
+      ),
+      "SCHOOL-CATERING-PROCUREMENT.v1",
+    ),
+  );
+  purchaseOrders = await invoke(
+    client,
+    "get_school_catering_purchase_orders",
+    poReadRequest,
+  );
+  const historicalReleased = purchaseOrders.purchase_orders.find(
+    (item) => item.purchase_order_id === draft.purchase_order_id,
+  );
+  assert(
+    historicalReleased?.commitment_state === "REPLACEMENT_REQUIRED" &&
+      historicalReleased.lines.find(
+        (line) => line.source.family_id === manual.family.family_id,
+      )?.supplier_note === "Rau non, không lấy bó già",
+    "Released PO note was rewritten or replacement need was not derived.",
+  );
+  await invoke(
+    client,
+    "create_school_catering_purchase_order_replacement",
+    command(
+      subject,
+      "SCHOOL_CATERING_PO_REPLACEMENT_CREATED",
+      historicalReleased.version,
+      {
+        replaced_purchase_order_id: historicalReleased.purchase_order_id,
+        expected_purchase_order_revision_id:
+          historicalReleased.current_revision.purchase_order_revision_id,
+      },
+      "SCHOOL-CATERING-PROCUREMENT.v1",
+    ),
+  );
+  purchaseOrders = await invoke(
+    client,
+    "get_school_catering_purchase_orders",
+    poReadRequest,
+  );
+  const replacementDraft = purchaseOrders.purchase_orders.find(
+    (item) => item.replaces_purchase_order_id === draft.purchase_order_id,
+  );
+  assert(
+    replacementDraft?.status === "DRAFT" &&
+      replacementDraft.lines.find(
+        (line) => line.source.family_id === manual.family.family_id,
+      )?.supplier_note === "Giao trước 04:30",
+    "Replacement Draft did not freeze the newer supplier instruction.",
+  );
+  await invoke(
+    client,
+    "release_school_catering_purchase_order",
+    command(
+      subject,
+      "SCHOOL_CATERING_PO_RELEASED",
+      replacementDraft.version,
+      {
+        purchase_order_id: replacementDraft.purchase_order_id,
+        expected_purchase_order_revision_id:
+          replacementDraft.current_revision.purchase_order_revision_id,
+      },
+      "SCHOOL-CATERING-PROCUREMENT.v1",
+    ),
+  );
+  purchaseOrders = await invoke(
+    client,
+    "get_school_catering_purchase_orders",
+    poReadRequest,
+  );
+  assert(
+    purchaseOrders.purchase_orders.find(
+      (item) => item.purchase_order_id === draft.purchase_order_id,
+    )?.status === "SUPERSEDED" &&
+      purchaseOrders.purchase_orders.find(
+        (item) => item.purchase_order_id === draft.purchase_order_id,
+      )?.export_ready === true &&
+      purchaseOrders.purchase_orders.find(
+        (item) => item.purchase_order_id === draft.purchase_order_id,
+      )?.allowed_actions.export === true &&
+      purchaseOrders.purchase_orders
+        .find((item) => item.purchase_order_id === draft.purchase_order_id)
+        ?.lines.find(
+          (line) => line.source.family_id === manual.family.family_id,
+        )?.supplier_note === "Rau non, không lấy bó già" &&
+      purchaseOrders.purchase_orders
+        .find(
+          (item) =>
+            item.purchase_order_id === replacementDraft.purchase_order_id,
+        )
+        ?.lines.find(
+          (line) => line.source.family_id === manual.family.family_id,
+        )?.supplier_note === "Giao trước 04:30",
+    "Superseded and replacement historical reads lost their distinct snapshots.",
   );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    `Verified D-042 correction gates and removed-Handoff-family PO regeneration, ${confirmedRows.length} preserved/promoted allocations, exact manual 60/40 edit at family version ${beforeVersion} -> ${manual.family.family_version}, current-split PO drafts, backend number release, and authoritative readback.`,
+    `Verified ${confirmedRows.length} supplier-note allocation sources, note-only successors, normalization, v1 omission/replay/stale guards, Handoff promotion, supplier-specific PO snapshots, Draft staleness/regeneration, immutable released history, replacement release, and superseded readback.`,
   );
 }
 

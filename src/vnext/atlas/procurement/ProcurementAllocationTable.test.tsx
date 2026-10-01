@@ -36,6 +36,7 @@ function row(
             supplier_id: "supplier-a",
             supplier_name: "NCC An Phú",
             allocated_quantity: allocated,
+            supplier_note: null,
             split_ratio: "1.000000000000",
           },
         ]

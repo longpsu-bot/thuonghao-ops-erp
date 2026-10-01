@@ -409,8 +409,16 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
     expect(save.mock.lastCall![0].payload.splits).toEqual([
-      { supplier_id: "supplier-a", allocated_quantity: "48.500000" },
-      { supplier_id: "supplier-b", allocated_quantity: "51.500000" },
+      {
+        supplier_id: "supplier-a",
+        allocated_quantity: "48.500000",
+        supplier_note: null,
+      },
+      {
+        supplier_id: "supplier-b",
+        allocated_quantity: "51.500000",
+        supplier_note: null,
+      },
     ]);
     await waitFor(() =>
       expect(
@@ -420,6 +428,34 @@ describe("Procurement vNext operator workbench", () => {
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("48,5");
+  });
+  it("saves a note-only decision and adopts the authoritative note readback", async () => {
+    const { save, read, fixture } = show("manual_split");
+    fireEvent.click(await action());
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+      {
+        target: { value: "  Giao trước 05:30  " },
+      },
+    );
+    const authority = structuredClone(fixture.allocation);
+    authority.rows[0]!.splits[0]!.supplier_note = "Giao trước 05:30";
+    read.mockResolvedValueOnce(reviewSuccess(authority));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.lastCall![0].payload.splits[0]).toEqual({
+      supplier_id: "supplier-a",
+      allocated_quantity: "60.000000",
+      supplier_note: "Giao trước 05:30",
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+      ).toHaveValue("Giao trước 05:30"),
+    );
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
   });
   it("shows a safe failed recovery read alongside UNKNOWN until authority returns", async () => {
     const { read, save } = show("unknown");

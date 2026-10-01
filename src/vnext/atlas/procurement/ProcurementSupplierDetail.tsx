@@ -10,6 +10,7 @@ import {
   NativeSelect,
   Stack,
   Text,
+  Textarea,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import type { CSSProperties } from "react";
@@ -42,9 +43,10 @@ export function ProcurementSupplierDetail({
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
   const saved = row.splits.filter((split) => eligible(split.supplier_id));
   const [draft, setDraft] = useState<SupplierSplitInput[]>(() =>
-    saved.map(({ supplier_id, allocated_quantity }) => ({
+    saved.map(({ supplier_id, allocated_quantity, supplier_note }) => ({
       supplier_id,
       allocated_quantity: quantity(allocated_quantity),
+      supplier_note: supplier_note ?? null,
     })),
   );
   const [added, setAdded] = useState<string[]>([]);
@@ -95,7 +97,8 @@ export function ProcurementSupplierDetail({
     remainder === 0n &&
     draft.some(
       (split) => (parseExactQuantity(split.allocated_quantity) ?? 0n) > 0n,
-    );
+    ) &&
+    draft.every((split) => (split.supplier_note ?? "").length <= 500);
   const dirty =
     draft.length !== saved.length ||
     draft.some((split) => {
@@ -106,7 +109,8 @@ export function ProcurementSupplierDetail({
       return (
         !original ||
         parsed === null ||
-        parsed !== parseExactQuantity(original.allocated_quantity)
+        parsed !== parseExactQuantity(original.allocated_quantity) ||
+        (split.supplier_note ?? "").trim() !== (original.supplier_note ?? "")
       );
     });
   const requestExit = (next: () => void) => {
@@ -128,6 +132,12 @@ export function ProcurementSupplierDetail({
       proposal.map(({ supplier_id, allocated_quantity }) => ({
         supplier_id,
         allocated_quantity: quantity(allocated_quantity),
+        supplier_note:
+          draft.find((split) => split.supplier_id === supplier_id)
+            ?.supplier_note ??
+          saved.find((split) => split.supplier_id === supplier_id)
+            ?.supplier_note ??
+          null,
       })),
     );
     setAdded(
@@ -324,6 +334,32 @@ export function ProcurementSupplierDetail({
                   Nhập số không âm, tối đa 6 chữ số thập phân.
                 </Field.ErrorText>
               )}
+              <Field.Root
+                mt="xs"
+                invalid={(split.supplier_note ?? "").length > 500}
+              >
+                <Field.Label textStyle="helper">Ghi chú cho NCC</Field.Label>
+                <Textarea
+                  aria-label={`Ghi chú cho ${supplier.supplier_name}`}
+                  value={split.supplier_note ?? ""}
+                  maxLength={500}
+                  rows={2}
+                  resize="vertical"
+                  disabled={locked}
+                  onChange={(event) =>
+                    setDraft((values) =>
+                      values.map((value) =>
+                        value.supplier_id === split.supplier_id
+                          ? { ...value, supplier_note: event.target.value }
+                          : value,
+                      ),
+                    )
+                  }
+                />
+                {(split.supplier_note ?? "").length > 500 && (
+                  <Field.ErrorText>Tối đa 500 ký tự.</Field.ErrorText>
+                )}
+              </Field.Root>
             </Field.Root>
           );
         })}
@@ -374,7 +410,11 @@ export function ProcurementSupplierDetail({
                 onClick={() => {
                   setDraft((values) => [
                     ...values,
-                    { supplier_id: supplierId, allocated_quantity: "" },
+                    {
+                      supplier_id: supplierId,
+                      allocated_quantity: "",
+                      supplier_note: null,
+                    },
                   ]);
                   setAdded((ids) => [...ids, supplierId]);
                   setAdding(false);
@@ -449,6 +489,7 @@ export function ProcurementSupplierDetail({
                   allocated_quantity: serializeExactQuantity(
                     split.allocated_quantity,
                   )!,
+                  supplier_note: split.supplier_note?.trim() || null,
                 })),
             )
           }
