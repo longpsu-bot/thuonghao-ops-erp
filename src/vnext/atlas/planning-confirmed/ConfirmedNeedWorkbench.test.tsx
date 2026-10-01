@@ -95,7 +95,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       within(viewport).getByRole("table", { name: "Nhu cầu xác nhận" }),
     ).toHaveStyle({
       minWidth: "var(--atlas-layout-confirmed-need-table-min, 1040px)",
-      width: "var(--atlas-layout-confirmed-need-table-width, 1040px)",
+      width: "100%",
       tableLayout: "fixed",
     });
     expect(within(viewport).getAllByRole("columnheader")).toHaveLength(5);

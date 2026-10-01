@@ -484,7 +484,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
       minWidth: "var(--atlas-layout-procurement-table-min, 1050px)",
-      width: "var(--atlas-layout-procurement-table-width, 1050px)",
+      width: "100%",
       tableLayout: "fixed",
       "--atlas-table-header-height": "38px",
       "--atlas-table-row-height": "46px",

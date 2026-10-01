@@ -74,6 +74,7 @@ export function AtlasTableViewport({
       <Box
         ref={viewportRef}
         {...props}
+        css={{ "& > table": { width: "100%" } }}
         role="region"
         aria-label={label}
         tabIndex={0}

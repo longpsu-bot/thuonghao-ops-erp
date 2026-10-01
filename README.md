@@ -99,7 +99,7 @@ pnpm exec supabase test db supabase/tests/rmvp_03a_connected_weekly_menu_attenda
 pnpm local:rmvp03a:verify
 ```
 
-Workbook and tab-paste input is previewed and checksum-bound before saving. Unknown references remain visible blockers, explicit attendance zero is preserved, reasoned reopen retains approval history, and readiness is a read-only comparison of the two current approvals. See [RMVP-03A Connected Weekly Menu and Attendance](docs/architecture/rmvp-03a-connected-weekly-menu-attendance.md) and the [RMVP-03A API contract](docs/api/rmvp-03a-planning-inputs.md).
+Google Sheet is the sole normal Weekly Menu authoring source. One Atlas synchronization action fetches its matrix, parses it, requests canonical backend Preview, calls the consequential `save_weekly_menu` command when valid, and adopts authoritative readback. Exceptional downstream correction remains explicit. Attendance retains its Review/Save flow and explicit zero semantics. Unknown references remain visible blockers, reasoned reopen retains approval history, and readiness is a read-only comparison of the two current approvals. See [RMVP-03A Connected Weekly Menu and Attendance](docs/architecture/rmvp-03a-connected-weekly-menu-attendance.md), the [RMVP-03A API contract](docs/api/rmvp-03a-planning-inputs.md), and the [current UI inventory](docs/ui/atlas-current-ui-inventory.md).
 
 ### PANTRY-02 connected Pantry source
 

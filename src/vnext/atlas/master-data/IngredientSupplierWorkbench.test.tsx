@@ -226,7 +226,9 @@ describe("IngredientSupplierWorkbench", () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("ingredient-supplier-master-detail")).toHaveStyle(
-      { "--atlas-attached-detail-width": "320px" },
+      {
+        "--atlas-master-detail-columns": "minmax(0, 62fr) minmax(320px, 38fr)",
+      },
     );
     expect(
       screen.getByRole("complementary", { name: "Chi tiết nguyên liệu" }),
@@ -697,7 +699,7 @@ describe("IngredientSupplierWorkbench", () => {
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
       minWidth: "var(--atlas-layout-ingredient-table-min, 1050px)",
-      width: "var(--atlas-layout-ingredient-table-width, 1050px)",
+      width: "100%",
       tableLayout: "fixed",
       "--atlas-table-header-height": "38px",
       "--atlas-table-row-height": "42px",

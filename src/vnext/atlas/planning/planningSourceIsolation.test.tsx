@@ -45,11 +45,17 @@ it.each(["menu", "attendance", "pantry"] as PlanningJob[])(
     else if (job === "attendance")
       act(() => result.current.editAttendance(0, "student_portions", "0"));
     else act(() => result.current.requestNoAdditions(true));
-    expect(result.current.candidate).toBe(true);
-    await act(() => result.current.previewChanges());
-    expect(result.current.preview?.can_save).toBe(true);
-    await act(() => result.current.save());
-    expect(result.current.outcome).toBe("Đã lưu.");
+    if (job === "menu") {
+      expect(result.current.candidate).toBe(false);
+      expect(result.current.preview).toBeNull();
+      expect(result.current.menuSyncedAt).not.toBe("");
+    } else {
+      expect(result.current.candidate).toBe(true);
+      await act(() => result.current.previewChanges());
+      expect(result.current.preview?.can_save).toBe(true);
+      await act(() => result.current.save());
+      expect(result.current.outcome).toBe("Đã lưu.");
+    }
     expect(result.current.locked).toBe(false);
     act(() =>
       result.current.transition({ job: job === "pantry" ? "menu" : "pantry" }),
@@ -190,7 +196,9 @@ it.each([
   async (failure, reason) => {
     const { result, fixture: f } = await menuWithPreview();
     f.api.saveCompletedMenu = async () => failure;
-    await act(() => result.current.save());
+    if (failure.kind === "transport_error")
+      f.api.getWorkbench = async () => unknown;
+    await act(() => result.current.syncGoogle("google-1"));
     expect(result.current.recoveryKind).toBe(reason);
     f.api.getWorkbench = async () => unknown;
     await act(() => result.current.recover());
@@ -231,7 +239,7 @@ it.each(["menu", "pantry"] as PlanningJob[])(
     await act(async () =>
       resolve(success({ workbench: job === "pantry" ? f.planning : f.pantry })),
     );
-    expect(result.current.dirty).toBe(true);
+    expect(result.current.dirty).toBe(job === "pantry");
     expect(result.current.canEdit).toBe(true);
   },
 );
@@ -258,11 +266,8 @@ it("recovers Planning alone and normalizes only invalid IDs against Pantry", asy
   expect(result.current.schoolIds).toEqual(["school-0"]);
 });
 
-it("discards obsolete preview authority after successful uncertain-write recovery", async () => {
+it("retains no reusable Menu preview authority after completed synchronization", async () => {
   const { result, fixture: f } = await menuWithPreview();
-  f.api.saveCompletedMenu = async () => unknown;
-  await act(() => result.current.save());
-  await act(() => result.current.recover());
   expect(result.current.locked).toBe(false);
   expect(result.current.preview).toBeNull();
   expect(result.current.impact).toBeNull();

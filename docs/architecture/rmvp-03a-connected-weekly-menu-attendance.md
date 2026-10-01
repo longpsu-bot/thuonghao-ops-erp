@@ -1,5 +1,20 @@
 # RMVP-03A — Connected Weekly Menu and Attendance
 
+## Current Weekly Menu operator path — 01/10/2026
+
+The original draft/review/approve journey and the transport amendment below
+record earlier implementation stages. In the current connected Atlas UI, Google
+Sheet is the sole normal Menu authoring authority: one `Đồng bộ Google Sheet`
+action fetches and parses the matrix, requests canonical backend Preview,
+requires `can_save`, calls consequential `atlas_api.save_weekly_menu`, and adopts
+authoritative readback. No separate Menu `Xem thay đổi` or `Lưu` action is shown.
+The backend still enforces version/signature and downstream correction safety;
+exceptional correction blockers remain explicit. Attendance retains its own
+Review/Save path. The [current RMVP-03A API contract](../api/rmvp-03a-planning-inputs.md)
+and [implementation task](../implementation-tasks/TASK-ATLAS-UI-VISUAL-POLISH-MENU-SYNC.md)
+describe this presentation amendment without changing the historical API or
+transport record below.
+
 ## Approved transport amendment — 16/09/2026
 
 The owner approved the existing Apps Script Web App as the Weekly Menu transport in place of Google service-account OAuth. `GOOGLE_SERVICE_ACCOUNT_JSON` is no longer used by the current reader. The server uses `GOOGLE_APPS_SCRIPT_WEBAPP_URL` and `GOOGLE_APPS_SCRIPT_SECRET`, supplied through the protected Staging workflow. The existing browser request/response, user authentication, Planning capability enforcement, configured source authority, parser, backend Preview and explicit Save behavior remain unchanged.

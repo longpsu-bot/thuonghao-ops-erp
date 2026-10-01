@@ -57,7 +57,7 @@ it("uses stable IDs, invokes navigation, and closes the overlay menu", async () 
   expect(toggle).toHaveFocus();
 });
 
-it("shows safe connected context and the injected Vietnam date across UTC midnight", () => {
+it("shows safe connected context and the injected Vietnam date across UTC midnight", async () => {
   const signOut = vi.fn();
   render(
     <AtlasVNextProvider>
@@ -76,12 +76,16 @@ it("shows safe connected context and the injected Vietnam date across UTC midnig
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(
     within(screen.getByRole("banner")).getByText("Môi trường · Staging"),
-  ).toBeVisible();
+  ).toBeInTheDocument();
   expect(screen.queryByText("Vận hành trường học")).not.toBeInTheDocument();
   expect(screen.getByText("operator@example.test")).toBeInTheDocument();
   expect(screen.queryByText(/Bản tham chiếu/)).not.toBeInTheDocument();
   expect(screen.queryByText(/10\/09\/2026/)).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Đăng xuất" }));
+  fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng Atlas" }));
+  const drawer = await screen.findByRole("dialog", {
+    name: "Điều hướng Atlas",
+  });
+  fireEvent.click(within(drawer).getByRole("button", { name: "Đăng xuất" }));
   expect(signOut).toHaveBeenCalledOnce();
 });
 
@@ -103,20 +107,23 @@ it("keeps connected environment identity mounted while the drawer opens and clos
     "Môi trường · Atlas staging · non-production",
   );
   const toggle = screen.getByRole("button", { name: "Mở điều hướng Atlas" });
-  expect(environment).toBeVisible();
+  expect(environment).toBeInTheDocument();
   toggle.focus();
   fireEvent.click(toggle);
   const drawer = await screen.findByRole("dialog", {
     name: "Điều hướng Atlas",
   });
   expect(environment).toBeInTheDocument();
-  expect(within(header).getByText("operator@example.test")).toBeVisible();
+  expect(
+    within(drawer).getByText("Môi trường · Atlas staging · non-production"),
+  ).toBeVisible();
+  expect(within(drawer).getByText("operator@example.test")).toBeVisible();
+  expect(within(header).getByText("operator@example.test")).toBeInTheDocument();
   fireEvent.click(
     within(drawer).getByRole("button", { name: "Đóng điều hướng" }),
   );
   await waitFor(() => expect(toggle).toHaveFocus());
   expect(environment).toBeInTheDocument();
-  expect(environment).toBeVisible();
 });
 
 it("keeps a 72px desktop rail and opens a 272px overlay without changing the workspace width", async () => {

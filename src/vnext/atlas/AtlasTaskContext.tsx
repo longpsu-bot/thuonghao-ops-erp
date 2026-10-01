@@ -74,7 +74,7 @@ export function AtlasTaskContext({
         <Text
           textStyle="table"
           fontWeight="medium"
-          color="fg.muted"
+          color="fg.primary"
           textAlign={{ base: "left", lg: "right" }}
           whiteSpace={{ lg: "nowrap" }}
           aria-label={`Tóm tắt công việc: ${compactSummary}`}

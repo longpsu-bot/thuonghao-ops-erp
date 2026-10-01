@@ -1,0 +1,653 @@
+[
+  {
+    "name": "shell",
+    "viewport": "1440x900",
+    "story": "atlas-vnext-connected-application--connected",
+    "file": "after/shell-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "school",
+    "viewport": "1440x900",
+    "story": "atlas-schools-school-defaults-workbench--normal",
+    "file": "after/school-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "ingredients",
+    "viewport": "1440x900",
+    "story": "atlas-master-data-ingredient-supplier-workbench--dense-ingredient-landing",
+    "file": "after/ingredients-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "ingredient-selected",
+    "viewport": "1440x900",
+    "story": "atlas-master-data-ingredient-supplier-workbench--ingredient-attached-detail",
+    "file": "after/ingredient-selected-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "menu",
+    "viewport": "1440x900",
+    "story": "atlas-vnext-planning-sources--menu",
+    "file": "after/menu-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "editable",
+    "viewport": "1440x900",
+    "story": "atlas-vnext-planning-sources--attendance-dirty",
+    "file": "after/editable-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "confirmed",
+    "viewport": "1440x900",
+    "story": "atlas-vnext-confirmed-need--dirty-valid",
+    "file": "after/confirmed-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "procurement",
+    "viewport": "1440x900",
+    "story": "atlas-vnext-procurement--normal",
+    "file": "after/procurement-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "warning",
+    "viewport": "1440x900",
+    "story": "atlas-vnext-procurement--blocked",
+    "file": "after/warning-1440x900.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "shell",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-connected-application--connected",
+    "file": "after/shell-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "school",
+    "viewport": "1280x800",
+    "story": "atlas-schools-school-defaults-workbench--normal",
+    "file": "after/school-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "ingredients",
+    "viewport": "1280x800",
+    "story": "atlas-master-data-ingredient-supplier-workbench--dense-ingredient-landing",
+    "file": "after/ingredients-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "ingredient-selected",
+    "viewport": "1280x800",
+    "story": "atlas-master-data-ingredient-supplier-workbench--ingredient-attached-detail",
+    "file": "after/ingredient-selected-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "menu",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-planning-sources--menu",
+    "file": "after/menu-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "editable",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-planning-sources--attendance-dirty",
+    "file": "after/editable-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "confirmed",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-confirmed-need--dirty-valid",
+    "file": "after/confirmed-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "procurement",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-procurement--normal",
+    "file": "after/procurement-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "warning",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-procurement--blocked",
+    "file": "after/warning-1280x800.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "shell",
+    "viewport": "768x1024",
+    "story": "atlas-vnext-connected-application--connected",
+    "file": "after/shell-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "school",
+    "viewport": "768x1024",
+    "story": "atlas-schools-school-defaults-workbench--normal",
+    "file": "after/school-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "ingredients",
+    "viewport": "768x1024",
+    "story": "atlas-master-data-ingredient-supplier-workbench--dense-ingredient-landing",
+    "file": "after/ingredients-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "ingredient-selected",
+    "viewport": "768x1024",
+    "story": "atlas-master-data-ingredient-supplier-workbench--ingredient-attached-detail",
+    "file": "after/ingredient-selected-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "menu",
+    "viewport": "768x1024",
+    "story": "atlas-vnext-planning-sources--menu",
+    "file": "after/menu-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "editable",
+    "viewport": "768x1024",
+    "story": "atlas-vnext-planning-sources--attendance-dirty",
+    "file": "after/editable-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "confirmed",
+    "viewport": "768x1024",
+    "story": "atlas-vnext-confirmed-need--dirty-valid",
+    "file": "after/confirmed-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "procurement",
+    "viewport": "768x1024",
+    "story": "atlas-vnext-procurement--normal",
+    "file": "after/procurement-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "warning",
+    "viewport": "768x1024",
+    "story": "atlas-vnext-procurement--blocked",
+    "file": "after/warning-768x1024.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "shell",
+    "viewport": "390x844",
+    "story": "atlas-vnext-connected-application--connected",
+    "file": "after/shell-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "school",
+    "viewport": "390x844",
+    "story": "atlas-schools-school-defaults-workbench--normal",
+    "file": "after/school-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "ingredients",
+    "viewport": "390x844",
+    "story": "atlas-master-data-ingredient-supplier-workbench--dense-ingredient-landing",
+    "file": "after/ingredients-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "ingredient-selected",
+    "viewport": "390x844",
+    "story": "atlas-master-data-ingredient-supplier-workbench--ingredient-attached-detail",
+    "file": "after/ingredient-selected-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "menu",
+    "viewport": "390x844",
+    "story": "atlas-vnext-planning-sources--menu",
+    "file": "after/menu-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "editable",
+    "viewport": "390x844",
+    "story": "atlas-vnext-planning-sources--attendance-dirty",
+    "file": "after/editable-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "confirmed",
+    "viewport": "390x844",
+    "story": "atlas-vnext-confirmed-need--dirty-valid",
+    "file": "after/confirmed-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "procurement",
+    "viewport": "390x844",
+    "story": "atlas-vnext-procurement--normal",
+    "file": "after/procurement-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "warning",
+    "viewport": "390x844",
+    "story": "atlas-vnext-procurement--blocked",
+    "file": "after/warning-390x844.png",
+    "overflowPx": 0,
+    "tables": 2,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "menu-additions",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-planning-sources--menu-additions-only",
+    "file": "after/menu-additions-1280x800.png",
+    "overflowPx": 0,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "menu-replacement",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-planning-sources--menu-replacement-notification",
+    "file": "after/menu-replacement-1280x800.png",
+    "overflowPx": 0,
+    "portalRoots": 1,
+    "notifications": 1,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "menu-correction-blocked",
+    "viewport": "1280x800",
+    "story": "atlas-vnext-planning-sources--menu-blocked",
+    "file": "after/menu-correction-blocked-1280x800.png",
+    "overflowPx": 0,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "name": "menu-additions",
+    "viewport": "390x844",
+    "story": "atlas-vnext-planning-sources--menu-additions-only",
+    "file": "after/menu-additions-390x844.png",
+    "overflowPx": 0,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  },
+  {
+    "name": "menu-replacement",
+    "viewport": "390x844",
+    "story": "atlas-vnext-planning-sources--menu-replacement-notification",
+    "file": "after/menu-replacement-390x844.png",
+    "overflowPx": 0,
+    "portalRoots": 1,
+    "notifications": 1,
+    "pageErrors": []
+  },
+  {
+    "name": "menu-correction-blocked",
+    "viewport": "390x844",
+    "story": "atlas-vnext-planning-sources--menu-blocked",
+    "file": "after/menu-correction-blocked-390x844.png",
+    "overflowPx": 0,
+    "portalRoots": 1,
+    "notifications": 0,
+    "pageErrors": []
+  }
+]

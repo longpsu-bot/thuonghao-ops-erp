@@ -40,6 +40,12 @@ import {
   type AtlasRpcResult,
   type SourceMatrix,
 } from "../bridges/planning";
+import type { AtlasNotificationMessage } from "../AtlasNotificationPortal";
+import {
+  classifyWeeklyMenuSync,
+  sameWeeklyMenuAssignments,
+  weeklyMenuSyncDescription,
+} from "./weeklyMenuSync";
 
 type Source = "planning" | "pantry";
 export type PlanningRecoveryKind =
@@ -132,6 +138,12 @@ const requiresReload = (r: AtlasRpcResult) =>
       "CHECKSUM_MISMATCH",
       "RETRYABLE_CONCURRENCY_FAILURE",
     ].includes(r.error.error_code));
+const correctionBlockerCodes = new Set([
+  "PLANNING_RELEASE_CORRECTION_REQUIRED",
+  "LEGACY_RANGE_CORRECTION_REQUIRED",
+  "BLOCKED_BY_PURCHASE_HANDOFF",
+  "BLOCKED_BY_DOWNSTREAM_COMMITMENT",
+]);
 
 export function usePlanningSources({
   api,
@@ -165,6 +177,9 @@ export function usePlanningSources({
     name: "",
   });
   const [menuCandidate, setMenuCandidate] = useState(false);
+  const [menuSyncedAt, setMenuSyncedAt] = useState("");
+  const [menuNotification, setMenuNotification] =
+    useState<AtlasNotificationMessage | null>(null);
   const [attendanceSource, setAttendanceSource] = useState({
     type: "SCHOOL_DEFAULTS",
     name: "Mặc định theo Thực đơn tuần",
@@ -200,6 +215,7 @@ export function usePlanningSources({
     googleGeneration = useRef(0),
     readGeneration = useRef({ planning: 0, pantry: 0 });
   const writeBusy = useRef(false);
+  const notificationId = useRef(0);
   const clearReview = () => {
     setPreview(null);
     setImpact(null);
@@ -519,6 +535,8 @@ export function usePlanningSources({
   const syncGoogle = async (id: string) => {
     if (
       !canEdit ||
+      writeBusy.current ||
+      syncing ||
       !data?.google_sheet_sources.some(
         (s) =>
           s.weekly_menu_google_source_id === id && s.source_status === "ACTIVE",
@@ -528,13 +546,39 @@ export function usePlanningSources({
     const token = ++googleGeneration.current,
       epoch = generation.current;
     setSyncing(true);
+    setBusy(true);
     clearReview();
+    setMenuCandidate(false);
+    setImportErrors([]);
+    setImportWarnings([]);
+    setOutcome("");
+    const persistedRows = activeMenuRows(data.weekly_menu);
+    const stillCurrent = () =>
+      token === googleGeneration.current && epoch === generation.current;
+    const announceReadback = (incomingRows: MenuLine[]) => {
+      const description = weeklyMenuSyncDescription(
+        classifyWeeklyMenuSync(persistedRows, incomingRows),
+      );
+      setMenuSyncedAt(
+        new Intl.DateTimeFormat("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+          timeZone: "Asia/Bangkok",
+        }).format(new Date()),
+      );
+      if (description)
+        setMenuNotification({
+          id: ++notificationId.current,
+          title: "Đã đồng bộ thực đơn",
+          description,
+        });
+    };
     try {
       const result = await invoke(() =>
         api.syncMenuFromGoogle(id, week, crypto.randomUUID()),
       );
-      if (token !== googleGeneration.current || epoch !== generation.current)
-        return;
+      if (!stillCurrent()) return;
       if (result.kind !== "success") {
         setOutcome("Không tải được Google Sheet. Dữ liệu chưa được lưu.");
         return;
@@ -553,7 +597,7 @@ export function usePlanningSources({
         return;
       }
       try {
-        const review = await parseMenuMatrix(
+        const parsed = await parseMenuMatrix(
           result.response.rows as SourceMatrix,
           {
             sourceName: source.source_name,
@@ -564,20 +608,169 @@ export function usePlanningSources({
           data.schools,
           data.dishes,
         );
-        if (token !== googleGeneration.current || epoch !== generation.current)
+        if (!stillCurrent()) return;
+        setImportWarnings(parsed.warnings);
+        if (parsed.errors.length) {
+          setImportErrors(parsed.errors);
+          setOutcome("Google Sheet có lỗi cấu trúc. Dữ liệu chưa được lưu.");
           return;
-        setMenuRows(review.rows);
-        setMenuSource({ type: "GOOGLE_SHEET", name: review.sourceName });
-        setMenuCandidate(true);
-        setImportErrors(review.errors);
-        setImportWarnings(review.warnings);
-        setOutcome("");
+        }
+
+        const previewResult = await invoke(() =>
+          api.previewMenu(
+            authSubject,
+            crypto.randomUUID(),
+            week,
+            jsonRows(parsed.rows),
+          ),
+        );
+        if (!stillCurrent()) return;
+        const nextPreview = planningPreviewFromResult<MenuLine>(previewResult);
+        if (!nextPreview) {
+          if (previewResult.kind === "success") {
+            setRecovery("UNKNOWN_OR_MISSING_READBACK");
+            setOutcome(
+              "Chưa có dữ liệu kiểm tra hợp lệ. Tải lại để xác nhận trước khi đồng bộ.",
+            );
+          } else setOutcome(planningResultMessage(previewResult));
+          return;
+        }
+        if (!nextPreview.can_save || nextPreview.issues.blockers.length) {
+          setImportErrors(
+            nextPreview.issues.blockers.map((issue) => issue.message),
+          );
+          setImportWarnings((warnings) => [
+            ...warnings,
+            ...nextPreview.issues.warnings.map((issue) => issue.message),
+          ]);
+          setOutcome(
+            "Thực đơn chưa đạt kiểm tra dữ liệu. Dữ liệu chưa được lưu.",
+          );
+          return;
+        }
+
+        const payload = {
+          week_start: week,
+          source_type: "GOOGLE_SHEET",
+          source_name: parsed.sourceName,
+          source_signature: nextPreview.source_signature,
+          expected_source_signature: data.weekly_menu?.source_signature ?? null,
+          rows: nextPreview.canonical_rows as unknown as JsonValue[],
+        };
+        writeBusy.current = true;
+        const saveResult = await invoke(() =>
+          api.saveCompletedMenu(
+            weeklyMenuCompletionRequest(
+              authSubject,
+              crypto.randomUUID(),
+              data.weekly_menu?.version ?? 1,
+              payload,
+            ),
+          ),
+        );
+        if (!stillCurrent()) return;
+
+        if (saveResult.kind === "success") {
+          const readback = planningReadbackFromResult(saveResult);
+          if (readback?.week_start === week) {
+            ++readGeneration.current.planning;
+            setData(readback);
+            resetPlanning(readback);
+            if (
+              readback.weekly_menu?.source_signature ===
+                nextPreview.source_signature &&
+              sameWeeklyMenuAssignments(
+                activeMenuRows(readback.weekly_menu),
+                nextPreview.canonical_rows,
+              )
+            ) {
+              clearReview();
+              announceReadback(nextPreview.canonical_rows);
+            } else {
+              setRecovery("UNKNOWN_OR_MISSING_READBACK");
+              setOutcome(
+                "Dữ liệu xác nhận sau khi đồng bộ không khớp kết quả kiểm tra. Tải lại để xác nhận.",
+              );
+            }
+          } else {
+            setRecovery("UNKNOWN_OR_MISSING_READBACK");
+            setOutcome(
+              "Chưa có dữ liệu xác nhận sau khi đồng bộ. Tải lại để xác nhận.",
+            );
+          }
+          return;
+        }
+
+        if (saveResult.kind === "transport_error") {
+          const readResult = await invoke(() =>
+            api.getWorkbench(authSubject, crypto.randomUUID(), week),
+          );
+          if (!stillCurrent()) return;
+          const readback = planningWorkbenchFromResult(readResult);
+          if (readback?.week_start !== week) {
+            setRecovery("UNKNOWN_OR_MISSING_READBACK");
+            setOutcome(
+              "Chưa xác định kết quả đồng bộ. Tải lại để xác nhận; hệ thống sẽ không tự lưu lại.",
+            );
+            return;
+          }
+          ++readGeneration.current.planning;
+          setData(readback);
+          resetPlanning(readback);
+          if (
+            sameWeeklyMenuAssignments(
+              activeMenuRows(readback.weekly_menu),
+              nextPreview.canonical_rows,
+            )
+          ) {
+            setOutcome(
+              "Dữ liệu hiện tại trùng với Google Sheet sau khi tải lại; hệ thống không tự lưu lần nữa.",
+            );
+          } else {
+            setOutcome(
+              "Đã tải lại dữ liệu hiện tại; thay đổi từ Google Sheet chưa được xác nhận là đã lưu.",
+            );
+          }
+          return;
+        }
+
+        if (requiresReload(saveResult)) {
+          recordFailure(saveResult);
+          return;
+        }
+
+        if (
+          saveResult.kind !== "backend_error" ||
+          !correctionBlockerCodes.has(saveResult.error.error_code)
+        ) {
+          recordFailure(saveResult);
+          return;
+        }
+
+        const impactResult = await invoke(() =>
+          api.getCorrectionImpact(
+            authSubject,
+            crypto.randomUUID(),
+            "WEEKLY_MENU",
+            payload,
+          ),
+        );
+        if (!stillCurrent()) return;
+        const nextImpact = planningCorrectionImpactFromResult(impactResult);
+        if (nextImpact && !nextImpact.save_allowed) {
+          setPreview(nextPreview);
+          setImpact(nextImpact);
+          setOutcome(planningResultMessage(saveResult));
+        } else recordFailure(saveResult);
       } catch {
-        if (token === googleGeneration.current && epoch === generation.current)
-          setOutcome("Không đọc được dữ liệu Google Sheet.");
+        if (stillCurrent()) setOutcome("Không đọc được dữ liệu Google Sheet.");
       }
     } finally {
-      if (token === googleGeneration.current) setSyncing(false);
+      if (token === googleGeneration.current) {
+        setSyncing(false);
+        setBusy(false);
+        writeBusy.current = false;
+      }
     }
   };
   const payloadFor = (
@@ -783,8 +976,14 @@ export function usePlanningSources({
     );
     writeBusy.current = false;
     setBusy(false);
-    if (result.kind === "success") await previewChanges();
-    else recordFailure(result);
+    if (result.kind === "success") {
+      if (job === "menu") {
+        clearReview();
+        setOutcome(
+          "Đã chuẩn bị hiệu chỉnh. Đồng bộ lại Google Sheet để lưu thực đơn.",
+        );
+      } else await previewChanges();
+    } else recordFailure(result);
   };
   return {
     week,
@@ -803,6 +1002,8 @@ export function usePlanningSources({
     modes: effectiveModes,
     noAdditions,
     menuSource,
+    menuSyncedAt,
+    menuNotification,
     dirty,
     candidate,
     errors,
@@ -840,6 +1041,7 @@ export function usePlanningSources({
     setMode,
     requestNoAdditions,
     syncGoogle,
+    dismissMenuNotification: () => setMenuNotification(null),
     previewChanges,
     save,
     prepareCorrection,

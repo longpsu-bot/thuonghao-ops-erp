@@ -193,16 +193,15 @@ export function IngredientSupplierWorkbench({
                 data-detail-open={detailOpen || undefined}
                 style={
                   {
-                    "--atlas-attached-detail-width": "320px",
+                    "--atlas-master-detail-columns":
+                      "minmax(0, 62fr) minmax(320px, 38fr)",
                   } as CSSProperties
                 }
                 mt="sm"
                 templateColumns={{
                   base: "minmax(0, 1fr)",
                   lg: detailOpen
-                    ? c.job === "ingredients"
-                      ? "minmax(0, 1fr) var(--atlas-attached-detail-width)"
-                      : "minmax(0, 62fr) minmax(320px, 38fr)"
+                    ? "var(--atlas-master-detail-columns)"
                     : "minmax(0, 1fr)",
                 }}
                 minW="var(--atlas-layout-zero, 0)"

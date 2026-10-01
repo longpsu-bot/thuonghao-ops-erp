@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
@@ -47,9 +48,23 @@ async function nav(label: string) {
   fireEvent.click(await screen.findByRole("button", { name: label }));
   await waitFor(() =>
     expect(
-      screen.queryByRole("dialog", { name: "Điều hướng Atlas" }),
-    ).not.toBeInTheDocument(),
+      document.querySelector('[role="dialog"][data-state="open"]'),
+    ).toBeNull(),
   );
+}
+async function clickSignOut() {
+  if (
+    screen
+      .queryByRole("dialog", { name: "Điều hướng Atlas", hidden: true })
+      ?.getAttribute("data-state") !== "open"
+  )
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
+  const drawer = await screen.findByRole("dialog", {
+    name: "Điều hướng Atlas",
+  });
+  fireEvent.click(within(drawer).getByRole("button", { name: "Đăng xuất" }));
 }
 it("renders exactly one vNext capability for every primary navigation entry", async () => {
   show();
@@ -74,7 +89,9 @@ it("renders exactly one vNext capability for every primary navigation entry", as
     );
     fireEvent.click(screen.getByRole("button", { name: "Đóng điều hướng" }));
     await waitFor(() =>
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      expect(
+        document.querySelector('[role="dialog"][data-state="open"]'),
+      ).toBeNull(),
     );
   }
 }, 60000);
@@ -84,16 +101,18 @@ it("guards sign out with the active School discard interaction", async () => {
     name: /Học sinh mặc định/,
   });
   fireEvent.change(fields[0]!, { target: { value: "123" } });
-  fireEvent.click(screen.getByRole("button", { name: "Đăng xuất" }));
+  await clickSignOut();
   expect(signOut).not.toHaveBeenCalled();
   fireEvent.click(
     await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
   );
   expect(signOut).not.toHaveBeenCalled();
   await waitFor(() =>
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    expect(
+      document.querySelector('[role="dialog"][data-state="open"]'),
+    ).toBeNull(),
   );
-  fireEvent.click(await screen.findByRole("button", { name: "Đăng xuất" }));
+  await clickSignOut();
   fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
   expect(signOut).toHaveBeenCalledOnce();
 });
@@ -185,7 +204,7 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
   const fields = await screen.findAllByRole("textbox", {
     name: /Học sinh mặc định/,
   });
-  fireEvent.click(screen.getByRole("button", { name: "Đăng xuất" }));
+  await clickSignOut();
   expect(signOut).toHaveBeenCalledOnce();
   fireEvent.change(fields[0]!, { target: { value: "123" } });
   rerender(

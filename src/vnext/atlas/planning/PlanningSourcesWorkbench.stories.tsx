@@ -31,7 +31,7 @@ export function PlanningReview({
           authSubject="fixture-operator"
           initialWeek={reviewWeek}
           initialJob={
-            scenario.startsWith("attendance")
+            scenario.startsWith("attendance") || scenario === "dirty_dialog"
               ? "attendance"
               : scenario.startsWith("pantry")
                 ? "pantry"
@@ -92,12 +92,47 @@ function story(scenario: PlanningReviewScenario): Story {
         ].includes(scenario)
       )
         return;
-      if (scenario.startsWith("menu") || scenario === "dirty_dialog") {
+      if (
+        [
+          "menu_additions",
+          "menu_replacement",
+          "menu_blocked",
+          "menu_stale",
+          "menu_unknown",
+          "menu_dirty",
+          "menu_review",
+        ].includes(scenario)
+      ) {
+        await userEvent.click(
+          canvas.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+        );
+        if (scenario === "menu_replacement") {
+          await within(document.body).findByRole("status", {
+            name: /Đã đồng bộ thực đơn/,
+          });
+        } else if (scenario === "menu_blocked") {
+          await canvas.findByText("Chưa thể đồng bộ thực đơn");
+        } else if (scenario === "menu_stale" || scenario === "menu_unknown") {
+          await canvas.findByRole("button", {
+            name:
+              scenario === "menu_stale"
+                ? "Tải lại dữ liệu hiện tại"
+                : "Tải lại để xác nhận",
+          });
+        } else {
+          await canvas.findByText(/Đã đồng bộ lúc/);
+        }
+        return;
+      }
+      if (scenario.startsWith("menu")) {
         await userEvent.click(
           canvas.getByRole("button", { name: "Đồng bộ Google Sheet" }),
         );
         await canvas.findByText("Đang chỉnh sửa · chưa lưu");
-      } else if (scenario.startsWith("attendance")) {
+      } else if (
+        scenario.startsWith("attendance") ||
+        scenario === "dirty_dialog"
+      ) {
         if (scenario === "attendance_paste") {
           await userEvent.click(
             canvas.getByRole("button", { name: "Dán hàng loạt" }),
@@ -122,7 +157,7 @@ function story(scenario: PlanningReviewScenario): Story {
         await userEvent.type(input, "30");
       }
       if (scenario === "dirty_dialog") {
-        await userEvent.click(canvas.getByRole("tab", { name: "Sĩ số" }));
+        await userEvent.click(canvas.getByRole("tab", { name: "Bổ sung" }));
         return;
       }
       if (scenario.endsWith("dirty") || scenario.endsWith("invalid")) return;
@@ -148,6 +183,8 @@ function story(scenario: PlanningReviewScenario): Story {
   };
 }
 export const Menu = story("menu");
+export const MenuAdditionsOnly = story("menu_additions");
+export const MenuReplacementNotification = story("menu_replacement");
 export const MenuDirty = story("menu_dirty");
 export const MenuReview = story("menu_review");
 export const MenuBlocked = story("menu_blocked");

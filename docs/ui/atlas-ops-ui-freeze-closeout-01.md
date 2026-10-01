@@ -1,5 +1,11 @@
 # ATLAS-OPS-UI-FREEZE-CLOSEOUT-01
 
+> **Current Menu presentation:** The candidate → `Xem thay đổi` → `Lưu`
+> sequence documented below is historical closeout evidence. The connected
+> Atlas Menu now synchronizes in one operator action through automatic backend
+> Preview, consequential `save_weekly_menu` and authoritative readback. See
+> [the current UI inventory](./atlas-current-ui-inventory.md).
+
 Pinned base: `4fa5968daa00d7abadccdc2ae7ab154c2c0c4bb1`.
 
 This is the last authorized presentation completeness pass, not the freeze gate.

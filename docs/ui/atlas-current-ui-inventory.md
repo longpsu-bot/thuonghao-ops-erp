@@ -113,7 +113,7 @@ sole Weekly Menu authoring authority. Atlas / Supabase owns the governed
 synchronized operational snapshot, validation, audit and downstream consumption.**
 
 The shared Planning rail contains only service week, service date, School scope,
-four equal workflow jobs, routine Refresh and the current contextual action.
+three source jobs, routine Refresh and the current contextual action.
 Service week displays Monday–Sunday while retaining the existing `week_start`
 contract. Selecting any date resolves to that governed week.
 
@@ -125,11 +125,19 @@ file selection, the old `Nhập thực đơn` toolbar and manual Dish assignment
 absent from the operator UI. Dish names are read-only business content. Other
 Planning jobs have no Google source control.
 
-Fetch parses a local canonical candidate without committing. `Xem thay đổi`
-requests backend preview/correction-impact evidence; `Lưu` invokes the existing
-authoritative completion command with the complete candidate and source
-signatures, then adopts authoritative readback. School/date display filters do
-not truncate that payload. `Bỏ bản đồng bộ` restores persisted rows. Technical
+The normal `Đồng bộ Google Sheet` action fetches and parses the configured
+source, automatically requests backend canonical Preview, requires
+`preview.can_save`, and submits the complete canonical week through
+`atlas_api.save_weekly_menu`. Atlas then adopts the authoritative readback.
+Preview is a validation step, not a second operator decision. Menu has no
+`Xem thay đổi`, `Lưu`, local unsaved candidate, or manual editing path. School,
+date and search filters never truncate the complete weekly write payload.
+Attendance and Pantry retain their own Review/Save flows. A governed downstream
+Save blocker displays the authoritative correction impact and permits the
+bounded `Chuẩn bị hiệu chỉnh` action only when the impact allows it. A transport
+uncertainty triggers authoritative readback without automatically repeating
+Save. Successful blank-to-Dish additions are quiet; successful replacements and
+removals produce one non-blocking Atlas notification after readback. Technical
 source facts remain in `Nguồn & lịch sử`; historical source types and retained
 Workbook parsers/backend contracts remain readable and unchanged.
 

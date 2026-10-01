@@ -8,6 +8,7 @@ import type {
   AttendanceLine,
   PantryPreview,
   PlanningCorrectionImpact,
+  PlanningInputsApi,
 } from "../bridges/planning";
 
 export const reviewWeek = "2026-09-07";
@@ -379,8 +380,23 @@ export function createPlanningReviewFixture() {
       previewAttendance: async () => success({ preview: attendancePreview() }),
       getCorrectionImpact: async () => success({ impact: safeImpact }),
       prepareCorrection: async () => success({}),
-      saveCompletedMenu: async () =>
-        success({ authoritative_readback: { planning_inputs: planning } }),
+      saveCompletedMenu: async (
+        request: Parameters<PlanningInputsApi["saveCompletedMenu"]>[0],
+      ) => {
+        const readback = structuredClone(planning);
+        readback.weekly_menu = {
+          ...readback.weekly_menu!,
+          source_type: request.payload.source_type,
+          source_name: request.payload.source_name,
+          source_signature: request.payload.source_signature,
+          lines: request.payload.rows as unknown as MenuLine[],
+          row_count: request.payload.rows.length,
+          version: request.expected_version + 1,
+        };
+        return success({
+          authoritative_readback: { planning_inputs: readback },
+        });
+      },
       saveCompletedAttendance: async () =>
         success({ authoritative_readback: { planning_inputs: planning } }),
     },
