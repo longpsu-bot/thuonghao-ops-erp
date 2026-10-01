@@ -14,6 +14,7 @@ import type { PantryApi } from "../bridges/planning";
 import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
 import { createPlanningStoryFixture } from "./planningStoryFixtures";
 import {
+  menuPreview,
   pantryPreview,
   success,
   unknown,
@@ -178,8 +179,10 @@ describe("Planning sources Chakra workbench", () => {
       value: 390,
     });
     await show();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(
+      await screen.findByRole("textbox", { name: "Học sinh Trường Nguyễn Du" }),
+      { target: { value: "0" } },
     );
     fireEvent.click(
       await screen.findByRole("button", { name: "Xem thay đổi" }),
@@ -219,9 +222,9 @@ describe("Planning sources Chakra workbench", () => {
       });
       const fixture = createPlanningReviewFixture();
       if (state === "busy")
-        fixture.api.saveCompletedMenu = async () =>
+        fixture.api.saveCompletedAttendance = async () =>
           new Promise(() => undefined);
-      else fixture.api.saveCompletedMenu = async () => unknown;
+      else fixture.api.saveCompletedAttendance = async () => unknown;
       render(
         <AtlasVNextProvider>
           <PlanningSourcesWorkbench
@@ -231,10 +234,13 @@ describe("Planning sources Chakra workbench", () => {
           />
         </AtlasVNextProvider>,
       );
-      const sync = await screen.findByRole("button", {
-        name: "Đồng bộ Google Sheet",
-      });
-      fireEvent.click(sync);
+      fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+      fireEvent.change(
+        await screen.findByRole("textbox", {
+          name: "Học sinh Trường Nguyễn Du",
+        }),
+        { target: { value: "0" } },
+      );
       fireEvent.click(
         await screen.findByRole("button", { name: "Xem thay đổi" }),
       );
@@ -311,6 +317,8 @@ describe("Planning sources Chakra workbench", () => {
       source_name: "Thực đơn điểm lẻ",
     });
     const sync = vi.spyOn(fixture.api, "syncMenuFromGoogle");
+    const preview = vi.spyOn(fixture.api, "previewMenu");
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
     render(
       <AtlasVNextProvider>
         <PlanningSourcesWorkbench
@@ -334,6 +342,8 @@ describe("Planning sources Chakra workbench", () => {
         expect.any(String),
       ),
     );
+    await waitFor(() => expect(preview).toHaveBeenCalledOnce());
+    expect(save).toHaveBeenCalledOnce();
   });
   it("refreshes authoritative sources without fetching Google", async () => {
     const { fixture, read } = await show();
@@ -381,7 +391,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(viewport).toContainElement(table);
     expect(table).toHaveStyle({
       minWidth: "var(--atlas-layout-menu-table-width, max-content)",
-      width: "var(--atlas-layout-menu-table-width, max-content)",
+      width: "100%",
       tableLayout: "fixed",
     });
     const schoolHeader = within(table).getByRole("columnheader", {
@@ -470,32 +480,114 @@ describe("Planning sources Chakra workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     expect(screen.getByRole("button", { name: "Tất cả trường" })).toBeVisible();
   });
-  it("renders Google candidate and attached meaningful change review with one save", async () => {
+  it("runs Menu sync as one action without Review or Save controls", async () => {
     await show();
     fireEvent.click(
       screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
     );
-    await screen.findByText("Đang chỉnh sửa · chưa lưu");
-    const trigger = screen.getByRole("button", { name: "Xem thay đổi" });
-    fireEvent.click(trigger);
-    const review = await screen.findByRole("complementary", {
-      name: "Xem thay đổi",
-    });
-    expect(review).toHaveFocus();
-    expect(screen.getByTestId("planning-source-editor-review")).toHaveStyle({
-      "--atlas-planning-review-columns":
-        "minmax(330px, .9fr) minmax(440px, 1.1fr)",
-    });
+    expect(await screen.findByText(/Đã đồng bộ lúc/)).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
-    ).toBeDisabled();
-    expect(within(review).getByText("Canh rau ngót")).toBeVisible();
-    expect(within(review).getByRole("button", { name: "Lưu" })).toBeEnabled();
-    expect(
-      screen.queryByText(/menu-preview|menu-authority|APPROVED/),
+      screen.queryByRole("button", { name: "Xem thay đổi" }),
     ).not.toBeInTheDocument();
-    fireEvent.click(within(review).getByRole("button", { name: "Đóng" }));
-    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
+    const notice = await screen.findByRole("status", {
+      name: /Đã đồng bộ thực đơn/,
+    });
+    expect(notice.parentElement).toHaveAttribute("data-atlas-portal-root");
+  });
+  it("saves the full canonical Menu payload despite School, date, and search filters", async () => {
+    const fixture = createPlanningReviewFixture();
+    const canonicalRows = [
+      menuPreview().canonical_rows[0],
+      {
+        ...menuPreview().canonical_rows[0],
+        school_id: "school-1",
+        service_date: "2026-09-08",
+        menu_slot_code: "main",
+        dish_id: "dish-1",
+        source_row_reference: "official:5",
+      },
+      {
+        ...menuPreview().canonical_rows[0],
+        school_id: "school-2",
+        service_date: "2026-09-09",
+        source_row_reference: "official:6",
+      },
+    ];
+    fixture.api.previewMenu = async () =>
+      success({
+        preview: {
+          ...menuPreview(),
+          canonical_rows: canonicalRows,
+          row_count: canonicalRows.length,
+        },
+      });
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("table", { name: "Thực đơn theo trường" });
+    openFilters();
+    fireEvent.change(screen.getByRole("combobox", { name: "Ngày phục vụ" }), {
+      target: { value: "2026-09-08" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Bỏ chọn tất cả" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("checkbox", { name: "Trường Nguyễn Du" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Tìm trong công việc" }),
+      { target: { value: "nguyen du" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    );
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    expect(save.mock.calls[0][0].payload.rows).toEqual(canonicalRows);
+  });
+  it("keeps a downstream Menu blocker inline without reopening Review or Save", async () => {
+    const fixture = createPlanningStoryFixture("menu_blocked");
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Đồng bộ Google Sheet" }),
+    );
+    const blocker = await screen.findByRole("alert", {
+      name: /Chưa thể đồng bộ thực đơn/,
+    });
+    expect(within(blocker).getByText(/Đã có cam kết mua hàng/)).toBeVisible();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("complementary", { name: "Xem thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Chuẩn bị hiệu chỉnh" }),
+    ).not.toBeInTheDocument();
   });
   it("shows editable attendance, explicit zero and totals, with one dirty exit dialog", async () => {
     await show();
@@ -513,7 +605,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(attendanceViewport).toContainElement(attendanceTable);
     expect(attendanceTable).toHaveStyle({
       minWidth: "var(--atlas-attendance-table-width, 630px)",
-      width: "var(--atlas-attendance-table-width, 630px)",
+      width: "100%",
       tableLayout: "fixed",
     });
     fireEvent.change(input, { target: { value: "0" } });
@@ -562,7 +654,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(pantryViewport).toContainElement(pantryTable);
     expect(pantryTable).toHaveStyle({
       minWidth: "var(--atlas-pantry-table-width, 1156px)",
-      width: "var(--atlas-pantry-table-width, 1156px)",
+      width: "100%",
       tableLayout: "fixed",
     });
     fireEvent.change(
@@ -803,6 +895,11 @@ it.each([
   async (response, label) => {
     const fixture = createPlanningReviewFixture();
     fixture.api.saveCompletedMenu = async () => response;
+    if (response.kind === "transport_error") {
+      let reads = 0;
+      fixture.api.getWorkbench = async () =>
+        reads++ === 0 ? success({ workbench: fixture.planning }) : unknown;
+    }
     render(
       <AtlasVNextProvider>
         <PlanningSourcesWorkbench
@@ -815,12 +912,9 @@ it.each([
     fireEvent.click(
       await screen.findByRole("button", { name: "Đồng bộ Google Sheet" }),
     );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Xem thay đổi" }),
-    );
-    const save = await screen.findByRole("button", { name: /Lưu/ });
-    await waitFor(() => expect(save).toBeEnabled());
-    fireEvent.click(save);
     expect(await screen.findByRole("button", { name: label })).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
   },
 );

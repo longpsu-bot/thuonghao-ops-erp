@@ -25,6 +25,8 @@ export type PlanningReviewScenario =
   | "pantry_prohibited"
   | "menu_read_failure"
   | "menu"
+  | "menu_additions"
+  | "menu_replacement"
   | "menu_dirty"
   | "menu_review"
   | "menu_blocked"
@@ -254,11 +256,58 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
     fixture.api.getCorrectionImpact = async () => success({ impact });
     fixture.pantryApi.getCorrectionImpact = async () => success({ impact });
   }
+  if (scenario === "menu_blocked")
+    fixture.api.saveCompletedMenu = async () => ({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "BLOCKED_BY_DOWNSTREAM_COMMITMENT",
+        retryable: false,
+        safe_message: "Đã có cam kết mua hàng.",
+      },
+    });
+  if (scenario === "menu_additions") {
+    const current = fixture.planning.weekly_menu!.lines;
+    const additions = [
+      ...current,
+      {
+        ...current[0],
+        menu_slot_code: "main",
+        dish_id: "dish-main",
+        source_row_reference: "fixture:addition",
+      },
+    ];
+    fixture.api.previewMenu = async () =>
+      success({
+        preview: {
+          ...menuPreview(),
+          canonical_rows: additions,
+          row_count: additions.length,
+        },
+      });
+    const readback = structuredClone(fixture.planning);
+    readback.weekly_menu!.lines = additions;
+    readback.weekly_menu!.source_signature = "menu-preview";
+    fixture.api.saveCompletedMenu = async () =>
+      success({ authoritative_readback: { planning_inputs: readback } });
+  }
+  if (scenario === "menu_replacement") {
+    const readback = structuredClone(fixture.planning);
+    readback.weekly_menu!.lines = proposedMenu;
+    readback.weekly_menu!.source_signature = "menu-preview";
+    fixture.api.saveCompletedMenu = async () =>
+      success({ authoritative_readback: { planning_inputs: readback } });
+  }
   if (scenario.endsWith("unknown") || scenario.endsWith("stale")) {
     const response = scenario.endsWith("stale") ? stale : unknown;
     fixture.api.saveCompletedMenu = async () => response;
     fixture.api.saveCompletedAttendance = async () => response;
     fixture.pantryApi.saveCompleted = async () => response;
+  }
+  if (scenario === "menu_unknown") {
+    let reads = 0;
+    fixture.api.getWorkbench = async () =>
+      reads++ === 0 ? success({ workbench: fixture.planning }) : unknown;
   }
   if (
     scenario === "menu_pantry_failed" ||

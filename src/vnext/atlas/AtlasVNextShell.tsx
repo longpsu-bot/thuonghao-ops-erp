@@ -185,6 +185,8 @@ export function AtlasVNextShell({
     onNavigate?.(id);
     if (fromDrawer) closeMenu();
   };
+  const activeModuleLabel =
+    navigation.find((item) => item.id === activeModule)?.label ?? "Atlas";
 
   const fullMenu = (
     <Stack minH="full" p="md" gap="lg">
@@ -259,18 +261,32 @@ export function AtlasVNextShell({
           );
         })}
       </Box>
-      <Text
-        mt="var(--atlas-layout-auto, auto)"
-        px="sm"
-        textStyle="helper"
-        color="fg.navMuted"
-      >
-        {mode === "reference"
-          ? "Bản tham chiếu · Dữ liệu minh họa"
-          : environmentLabel
-            ? `Môi trường · ${environmentLabel}`
-            : "Atlas"}
-      </Text>
+      <Box mt="var(--atlas-layout-auto, auto)" px="sm">
+        <Text textStyle="helper" color="fg.navMuted" overflowWrap="anywhere">
+          {mode === "reference"
+            ? "Bản tham chiếu · Dữ liệu minh họa"
+            : environmentLabel
+              ? `Môi trường · ${environmentLabel}`
+              : "Atlas"}
+        </Text>
+        {mode === "connected" && (
+          <Stack mt="sm" gap="xs" align="stretch">
+            <Text textStyle="helper" color="fg.inverse" overflowWrap="anywhere">
+              {userLabel}
+            </Text>
+            {onSignOut && (
+              <Button
+                variant="utility"
+                color="fg.inverse"
+                justifyContent="flex-start"
+                onClick={onSignOut}
+              >
+                Đăng xuất
+              </Button>
+            )}
+          </Stack>
+        )}
+      </Box>
     </Stack>
   );
 
@@ -282,7 +298,8 @@ export function AtlasVNextShell({
     >
       {!desktop && (
         <Flex
-          p="sm"
+          px="md"
+          minH="var(--atlas-layout-mobile-header-height, 56px)"
           bg="bg.navigation"
           color="fg.inverse"
           align="center"
@@ -440,7 +457,10 @@ export function AtlasVNextShell({
       <Box flex="1" minW="var(--atlas-layout-zero, 0)">
         <Flex
           as="header"
-          minH="var(--atlas-layout-header-height, 52px)"
+          minH={{
+            base: "var(--atlas-layout-mobile-context-height, 44px)",
+            lg: "var(--atlas-layout-header-height, 52px)",
+          }}
           px={{ base: "md", lg: "lg" }}
           py="sm"
           bg="bg.workbench"
@@ -450,30 +470,40 @@ export function AtlasVNextShell({
           gap="md"
           wrap="wrap"
         >
-          <Text textStyle="helper" color="fg.muted">
-            {mode === "reference"
-              ? "Hôm nay: 10/09/2026"
-              : formatVietnamBusinessDate(now)}
+          <Text fontSize="module" fontWeight="emphasis" color="fg.default">
+            {activeModuleLabel}
           </Text>
-          {mode === "connected" && (
-            <Flex align="center" gap="sm" wrap="wrap">
-              {environmentLabel && (
-                <Text
-                  textStyle="helper"
-                  color="fg.muted"
-                  overflowWrap="anywhere"
-                >
-                  Môi trường · {environmentLabel}
-                </Text>
-              )}
-              <Text textStyle="helper">{userLabel}</Text>
-              {onSignOut && (
-                <Button variant="utility" onClick={onSignOut}>
-                  Đăng xuất
-                </Button>
-              )}
-            </Flex>
-          )}
+          <Flex align="center" gap="sm" wrap="wrap" justify="flex-end">
+            <Text textStyle="helper" color="fg.muted">
+              {mode === "reference"
+                ? "10/09/2026"
+                : formatVietnamBusinessDate(now)}
+            </Text>
+            {mode === "connected" && (
+              <Flex
+                display={{ base: "none", lg: "flex" }}
+                align="center"
+                gap="sm"
+                wrap="wrap"
+              >
+                {environmentLabel && (
+                  <Text
+                    textStyle="helper"
+                    color="fg.muted"
+                    overflowWrap="anywhere"
+                  >
+                    Môi trường · {environmentLabel}
+                  </Text>
+                )}
+                <Text textStyle="helper">{userLabel}</Text>
+                {onSignOut && (
+                  <Button variant="utility" onClick={onSignOut}>
+                    Đăng xuất
+                  </Button>
+                )}
+              </Flex>
+            )}
+          </Flex>
         </Flex>
         <Box
           as="main"

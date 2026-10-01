@@ -13,10 +13,10 @@ const rejectedColor: SystemStyleObject = {
 };
 
 const palette = {
-  workspace: "#F2F4F2",
-  workbench: "#FAFBFA",
-  toolbar: "#F0F4F1",
-  subtle: "#F6F8F6",
+  workspace: "#EDF0ED",
+  workbench: "#FBFCFB",
+  toolbar: "#EEF3F0",
+  subtle: "#F5F7F5",
   selected: "#E7EFEB",
   context: "#DDE7E1",
   navigation: "#31413E",
@@ -25,11 +25,11 @@ const palette = {
   primary: "#35564C",
   primaryHover: "#2F4B43",
   text: "#2A3330",
-  muted: "#66726D",
+  muted: "#5C6964",
   clay: "#B47A56",
   clayText: "#915D3E",
-  border: "#D8DFDB",
-  borderSoft: "#E4E9E6",
+  border: "#CED8D3",
+  borderSoft: "#DCE4E0",
   focus: "#567A71",
   focusDark: "#E0B589",
   success: "#3F755E",
@@ -210,8 +210,19 @@ describe("Soft Mineral architecture", () => {
         minH: "var(--atlas-table-header-height, 38px)",
         bg: "bg.toolbar",
         color: "fg.default",
-        fontWeight: "semibold",
+        fontWeight: "emphasis",
         borderBottomColor: "border.default",
+        _after: {
+          w: "var(--atlas-layout-edge, 1px)",
+          bg: "border.subtle",
+        },
+      },
+      cell: {
+        _after: {
+          w: "var(--atlas-layout-edge, 1px)",
+          bg: "border.subtle",
+        },
+        "&[data-sticky-column]::after": { bg: "border.default" },
       },
       row: {
         borderBottomWidth: "var(--atlas-layout-edge, 1px)",

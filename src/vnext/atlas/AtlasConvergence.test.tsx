@@ -89,7 +89,7 @@ async function schools() {
   change(input, "123");
   return { input, read };
 }
-async function planning(job: "menu" | "attendance" | "pantry") {
+async function planning(job: "attendance" | "pantry") {
   const f = createPlanningStoryFixture(
     job === "pantry" ? "pantry_review" : job,
   );
@@ -106,19 +106,13 @@ async function planning(job: "menu" | "attendance" | "pantry") {
     </AtlasVNextProvider>,
   );
   await screen.findByRole("table");
-  if (job === "menu") {
-    fireEvent.click(button("Đồng bộ Google Sheet"));
-    await screen.findByText("Đang chỉnh sửa · chưa lưu");
-  } else
-    change(
-      await screen.findByRole("textbox", {
-        name:
-          job === "attendance"
-            ? "Học sinh Trường Nguyễn Du"
-            : "Số lượng dòng 1",
-      }),
-      "125",
-    );
+  change(
+    await screen.findByRole("textbox", {
+      name:
+        job === "attendance" ? "Học sinh Trường Nguyễn Du" : "Số lượng dòng 1",
+    }),
+    "125",
+  );
   fireEvent.click(button("Xem thay đổi"));
   const review = await screen.findByRole("complementary", {
     name: "Xem thay đổi",
@@ -331,7 +325,7 @@ describe("06B frozen Review safety and focus", () => {
     expect(button("Lưu thay đổi")).toBeEnabled();
     expect(primary()).toContain(button("Lưu thay đổi"));
   });
-  it.each(["menu", "attendance", "pantry"] as const)(
+  it.each(["attendance", "pantry"] as const)(
     "blocks routine refresh during %s Preview and restores it on back",
     async (job) => {
       const { read, pantryRead } = await planning(job);

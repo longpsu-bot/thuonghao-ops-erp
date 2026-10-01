@@ -138,12 +138,14 @@ export const atlasSystem = createSystem(
     theme: {
       tokens: {
         fonts: { body: { value: fontFamily }, heading: { value: fontFamily } },
+        fontSizes: { module: { value: "15px" } },
+        fontWeights: { emphasis: { value: "650" } },
         colors: {
           atlas: {
-            workspace: { value: "#F2F4F2" },
-            workbench: { value: "#FAFBFA" },
-            toolbar: { value: "#F0F4F1" },
-            subtle: { value: "#F6F8F6" },
+            workspace: { value: "#EDF0ED" },
+            workbench: { value: "#FBFCFB" },
+            toolbar: { value: "#EEF3F0" },
+            subtle: { value: "#F5F7F5" },
             selected: { value: "#E7EFEB" },
             context: { value: "#DDE7E1" },
             navigation: { value: "#31413E" },
@@ -152,11 +154,11 @@ export const atlasSystem = createSystem(
             primary: { value: "#35564C" },
             primaryHover: { value: "#2F4B43" },
             text: { value: "#2A3330" },
-            muted: { value: "#66726D" },
+            muted: { value: "#5C6964" },
             clay: { value: "#B47A56" },
             clayText: { value: "#915D3E" },
-            border: { value: "#D8DFDB" },
-            borderSoft: { value: "#E4E9E6" },
+            border: { value: "#CED8D3" },
+            borderSoft: { value: "#DCE4E0" },
             focus: { value: "#567A71" },
             focusDark: { value: "#E0B589" },
             success: { value: "#3F755E" },
@@ -179,6 +181,9 @@ export const atlasSystem = createSystem(
         },
         radii: { control: { value: "8px" }, workbench: { value: "6px" } },
         sizes: { control: { value: "40px" }, compact: { value: "36px" } },
+        shadows: {
+          notification: { value: "0 8px 24px rgba(49, 65, 62, 0.14)" },
+        },
       },
       semanticTokens: {
         colors: {
@@ -532,17 +537,41 @@ export const atlasSystem = createSystem(
           base: {
             root: { textStyle: "table", bg: "bg.workbench" },
             columnHeader: {
+              position: "relative",
               textStyle: "table",
               letterSpacing: "var(--atlas-layout-tracking, normal)",
               minH: "var(--atlas-table-header-height, 38px)",
               bg: "bg.toolbar",
               borderBottomColor: "border.default",
               color: "fg.default",
-              fontWeight: "semibold",
+              fontWeight: "emphasis",
               textTransform: "none",
+              _after: {
+                content: '\"\"',
+                position: "absolute",
+                insetBlock: "var(--atlas-layout-zero, 0)",
+                insetInlineEnd: "var(--atlas-layout-zero, 0)",
+                w: "var(--atlas-layout-edge, 1px)",
+                bg: "border.subtle",
+                pointerEvents: "none",
+              },
+              "&:last-child::after": { display: "none" },
+              "&[data-sticky-column]::after": { bg: "border.default" },
             },
             cell: {
+              position: "relative",
               borderColor: "border.subtle",
+              _after: {
+                content: '\"\"',
+                position: "absolute",
+                insetBlock: "var(--atlas-layout-zero, 0)",
+                insetInlineEnd: "var(--atlas-layout-zero, 0)",
+                w: "var(--atlas-layout-edge, 1px)",
+                bg: "border.subtle",
+                pointerEvents: "none",
+              },
+              "&:last-child::after": { display: "none" },
+              "&[data-sticky-column]::after": { bg: "border.default" },
               "& [data-selection-indicator]": {
                 position: "absolute",
                 insetY: "xs",
@@ -556,8 +585,18 @@ export const atlasSystem = createSystem(
               borderBottomColor: "border.subtle",
               transition:
                 "var(--atlas-layout-row-transition, background-color 140ms ease-out)",
-              _hover: { bg: "bg.subtle" },
-              _selected: { bg: "bg.selected", _hover: { bg: "bg.selected" } },
+              _hover: {
+                bg: "bg.subtle",
+                "& [data-sticky-column]": { bg: "bg.subtle" },
+              },
+              _selected: {
+                bg: "bg.selected",
+                "& [data-sticky-column]": { bg: "bg.selected" },
+                _hover: {
+                  bg: "bg.selected",
+                  "& [data-sticky-column]": { bg: "bg.selected" },
+                },
+              },
               _motionReduce: { transition: "var(--atlas-layout-motion, none)" },
               "&[aria-selected=true], &[data-attention=true]": {
                 "& [data-row-secondary], & button": { color: "fg.primary" },

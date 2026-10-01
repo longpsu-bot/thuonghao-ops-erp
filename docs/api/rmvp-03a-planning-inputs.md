@@ -248,6 +248,18 @@ command timestamp contract is unchanged.
 
 The backend may compose the established v1 implementation internally, but a browser invokes only the one consequential Save. It must not chain Save Draft, Validate, and Approve. Existing v1 functions and grants remain callable during the UI coexistence window. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
 
+For the current Weekly Menu operator path, `Đồng bộ Google Sheet` composes the
+read-only Edge fetch with `parseMenuMatrix`, automatically calls the v1 canonical
+Preview, requires `preview.can_save`, and submits the complete canonical rows
+and signatures through this v2 consequential Save. It adopts the authoritative
+readback after a successful command. Preview remains backend validation, not a
+separate operator approval stage; the UI exposes no Menu Review/Save action or
+Atlas Menu authoring. A consequential Save's downstream blocker is handled by
+the existing correction-impact read and only its authorized preparation action.
+Transport uncertainty triggers authoritative readback without an automatic Save
+retry. Attendance retains its existing operator Review/Save path. This UI
+composition adds no RPC, Edge write, schema change, or API envelope change.
+
 The current normal Attendance UI automatically overlays persisted active Attendance on Menu-covered default-derived working rows. Persisted values, including explicit zero, win; defaults fill only missing covered School/date pairs and remain unconfirmed until Review and consequential Save. The former manual `Tạo từ sĩ số mặc định` setup action is superseded by [PLANNING-UX-01B](../implementation-tasks/TASK-PLANNING-UX-01B-menu-attendance-operator-correction.md). The lower-level default-creation API remains callable support compatibility and does not represent a required operator stage.
 
 ## Dish lifecycle and Recipe readiness amendment

@@ -241,7 +241,7 @@ describe("Atlas vNext shell", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     await waitFor(() => expect(toggle).toHaveFocus());
   });
-  it("keeps environment identity visible in the compact connected header", () => {
+  it("prioritizes module identity and moves compact connected utilities into the drawer", async () => {
     render(
       <AtlasVNextProvider>
         <AtlasVNextShell
@@ -253,12 +253,20 @@ describe("Atlas vNext shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
+    const banner = within(screen.getByRole("banner"));
+    expect(banner.getByText("Kế hoạch mua hàng")).toBeVisible();
     expect(
-      within(screen.getByRole("banner")).getByText(
-        "Môi trường · Local · non-production",
-      ),
-    ).toBeVisible();
+      banner.getByText("Môi trường · Local · non-production"),
+    ).not.toBeVisible();
     expect(screen.getByRole("heading", { name: "Current job" })).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    );
+    const drawer = within(await screen.findByRole("dialog"));
+    expect(
+      drawer.getByText("Môi trường · Local · non-production"),
+    ).toBeVisible();
+    expect(drawer.getByText("operator@example.test")).toBeVisible();
   });
   it("retains the non-authoritative reference label in the drawer", async () => {
     render(
@@ -310,7 +318,7 @@ describe("Atlas vNext provider", () => {
     );
     const child = screen.getByText("var(--atlas-colors-bg-workspace)");
     expect(child.closest(".atlas-vnext")).toBeInTheDocument();
-    expect(atlasSystem.token("colors.atlas.workspace")).toBe("#F2F4F2");
+    expect(atlasSystem.token("colors.atlas.workspace")).toBe("#EDF0ED");
   });
 
   it("scopes resets, globals and variables without adopting global html/body selectors", () => {

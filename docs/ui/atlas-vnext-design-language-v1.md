@@ -14,10 +14,10 @@ Raw values belong only in the Chakra system. Components use semantic tokens and 
 
 | Raw foundation  | Value     |
 | --------------- | --------- |
-| workspace       | `#F2F4F2` |
-| workbench       | `#FAFBFA` |
-| toolbar         | `#F0F4F1` |
-| subtle          | `#F6F8F6` |
+| workspace       | `#EDF0ED` |
+| workbench       | `#FBFCFB` |
+| toolbar         | `#EEF3F0` |
+| subtle          | `#F5F7F5` |
 | selected        | `#E7EFEB` |
 | navigation      | `#31413E` |
 | navigationHover | `#3B4D49` |
@@ -25,11 +25,11 @@ Raw values belong only in the Chakra system. Components use semantic tokens and 
 | primary         | `#35564C` |
 | primaryHover    | `#2F4B43` |
 | text            | `#2A3330` |
-| muted           | `#66726D` |
+| muted           | `#5C6964` |
 | clay            | `#B47A56` |
 | clayText        | `#915D3E` |
-| border          | `#D8DFDB` |
-| borderSoft      | `#E4E9E6` |
+| border          | `#CED8D3` |
+| borderSoft      | `#DCE4E0` |
 | focus           | `#567A71` |
 | focusDark       | `#E0B589` |
 | success         | `#3F755E` |
@@ -42,7 +42,7 @@ Raw values belong only in the Chakra system. Components use semantic tokens and 
 | infoSoft        | `#E9F0F1` |
 | white           | `#FFFFFF` |
 
-Mineral surfaces dominate: workspace → off-white workbench → tinted toolbar → subtle attached detail, with no elevated workbench shadow. Eucalyptus owns `action.primary.default` / `.hover`; navigation has independent slate/eucalyptus default and hover values. Clay is limited to small identity cues such as the active navigation rail and selected-row rail. Never use clay for primary actions, whole rows, normal body text or warning/error meaning.
+Mineral surfaces dominate: workspace → off-white workbench → tinted toolbar → subtle attached detail, with no elevated workbench shadow. The adjusted luminance and border steps distinguish the primary work surface from workspace and controls while preserving the Soft Mineral palette. Eucalyptus owns `action.primary.default` / `.hover`; navigation has independent slate/eucalyptus default and hover values. Clay is limited to small identity cues such as the active navigation rail and selected-row rail. Never use clay for primary actions, whole rows, normal body text or warning/error meaning.
 
 Semantic authority: `bg.workspace/workbench/toolbar/subtle/selected/navigation/navigationHover/success/warning/danger/info`; `fg.default/muted/primary/accent/inverse/navMuted`; `border.default/subtle/accent`; `action.primary.default/hover`; `status.success/warning/danger/info`; `focus.ring/inverse`. Each status retains its own text and pale surface pair, independent of branding.
 
@@ -56,13 +56,19 @@ Inter / Segoe UI / Arial; title 24px/650, section 17px/600, body 14px, table 13p
 
 Workbench identity → scope/filter toolbar → exception/blocker when needed → primary dense table/editor → attached detail when selected → one dominant business command → authoritative feedback.
 
+The connected shell names the active module in its compact header. The workbench
+`h1` names the current operator job and remains the strongest heading. Business
+date, environment and user are secondary utilities; at narrow widths they must
+not force an extra header line or crowd out the job. The 72px desktop rail,
+mobile drawer, navigation behavior and portalled tooltips remain unchanged.
+
 No card-inside-card default, decorative KPI cards or dashboard. Use spacing, typography, Separator and subtle surface change before borders. Meaningful surfaces are workspace, workbench, toolbar, table, attached detail and signal; dialogs only for real decisions.
 
 Filter order: date/period → School → search → state/exception → refresh. Controls share height, radius and label typography, align at desktop and reflow at narrow widths. `AtlasDateInput` combines official Chakra 3.37 `DateInput` segmented keyboard entry with a non-native popup `DatePicker`, explicit `locale="vi-VN"`, day granularity and `shouldForceLeadingZeros`: visible segments are always **dd/mm/yyyy**, regardless of browser/OS locale. The Vietnamese popup uses Monday-first weeks (`startOfWeek={1}`), a clearly highlighted selection and a quieter today marker. The field and labeled calendar trigger open the popup; selection closes it and returns focus. Disabled state disables both entry and trigger. Calendar content uses Chakra Portal with the Atlas-scoped `[data-atlas-portal-root]` container inside `.atlas-vnext`, preserving theme scope and viewport bounds. Controlled business values remain canonical **YYYY-MM-DD**, using Chakra's public `parseDate` export and DateValue serialization. The resolved transitive `@internationalized/date@3.12.3` needs no additional direct dependency. No native date input, custom mask/parser or alternative date framework.
 
 Reference identity is module/context **Kế hoạch mua hàng** and active operator job / h1 **Phân bổ nhà cung ứng**, in a compact title region. Explicit row actions are **Phân bổ NCC** for allocation work and **Xem phân bổ** for persisted-allocation fixtures; ingredient identity is not a hidden navigation affordance.
 
-Tables: human identity → context → right-aligned quantity and adjacent Unit → relevant state → action. Compact rows, quiet headers, local horizontal scrolling. Selection combines a soft background, stable left geometric indicator and `aria-selected`, with no extra visible selection text line. No UUID/version/fingerprint columns. Desktop master/detail targets **62 / 38** (master 58–64%, detail 36–42%), with a 320px detail minimum and local table scrolling; below the desktop breakpoint they stack. Detail retains one header and a reachable action footer, without document-wide horizontal overflow.
+Tables: human identity → context → right-aligned quantity and adjacent Unit → relevant state → action. Compact rows, quiet headers, local horizontal scrolling and a shared 1px `border.subtle` vertical hairline between columns. Frozen identity boundaries use `border.default`; the shared treatment must preserve fixed column geometry, sticky header intersections, row hover, selection and local scrolling. Selection combines a soft background, stable left geometric indicator and `aria-selected`, with no extra visible selection text line. No UUID/version/fingerprint columns. Desktop master/detail targets **62 / 38** (master 58–64%, detail 36–42%), with a 320px detail minimum and local table scrolling; below the desktop breakpoint they stack. Detail attaches with one separator and retains one header and a reachable action footer, without document-wide horizontal overflow.
 
 Filtering and local sorting change the row projection, never semantic column geometry. Dense operational tables use `tableLayout="fixed"` with Chakra `Table.ColumnGroup` / `Table.Column` widths chosen for identity, context, numeric, state and action roles. Sorting is derived presentation state unless an authoritative read contract explicitly owns it: preserve the supplied business order as the default state, use a stable Vietnamese-aware comparison, never mutate input arrays, and compare exact quantities without floating-point conversion. Editable columns remain static when sorting could move a row during input.
 
@@ -75,6 +81,14 @@ Fixture quantities use human display literals such as `120`, `48,5`, `25,75`, wi
 ## Recipes and interactions
 
 Buttons: businessPrimary (solid eucalyptus), secondary (Soft Mineral toolbar surface with visible border), tertiary (subtle surface with low-emphasis border), utility (transparent navigation/link-like or intentional icon utility), destructive (danger). Business commands use a surfaced variant with distinct hover and pressed states; utility is not globally filled. All retain focus-visible and the neutral disabled treatment, without heavy shadows. Badge: neutral, success, warning, danger, information. No module-specific variants. State text always explains color. Unknown outcome uses uncertain/warning treatment, explicitly states that completion is uncertain and blocks mutation; it claims neither success nor failure. **Tải lại để xác nhận** is a separate labeled recovery control, visually and semantically distinct from routine toolbar refresh. Only this fixture recovery resets uncertain fixture state after loading; routine refresh cannot unblock it. Fixture actions never call business APIs or imply a real save.
+
+Atlas-scoped transient notifications live in the existing portal root, use
+semantic surfaces and status colors, announce politely without taking focus,
+and dismiss automatically with reduced-motion support. They acknowledge a
+confirmed consequence worth noticing; persistent blockers and unknown write
+outcomes remain inline until governed recovery. Weekly Menu replacement and
+removal after consequential Save/readback are the first bounded use; ordinary
+additions and unchanged assignments use quiet inline sync status.
 
 **Disabled controls are neutral but readable.** Disabled buttons and form controls use the existing Soft Mineral neutral tokens (`bg.subtle`, `fg.muted`, `border.subtle`) at full opacity, with no active hover treatment and an unavailable cursor where appropriate. A disabled `businessPrimary` or destructive action must no longer look primary or destructive. Disabled authoritative values remain legible; do not stack low opacity over already-muted text. `AtlasRefreshButton` keeps its 36×36 circular identity while following the same disabled grammar.
 

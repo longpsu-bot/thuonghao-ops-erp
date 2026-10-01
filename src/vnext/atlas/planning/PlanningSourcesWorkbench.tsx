@@ -30,6 +30,7 @@ import {
   type PlanningSourcesProps,
 } from "./usePlanningSources";
 import { AtlasTaskContext } from "../AtlasTaskContext";
+import { AtlasNotificationPortal } from "../AtlasNotificationPortal";
 import {
   focusFirstCompactFilter,
   preserveCompactFilterFocusOrder,
@@ -48,7 +49,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const reviewPanel = useRef<HTMLElement>(null);
   const reviewTrigger = useRef<HTMLButtonElement>(null);
   const wasReviewOpen = useRef(false);
-  const reviewOpen = Boolean(c.preview);
+  const reviewOpen = c.job !== "menu" && Boolean(c.preview);
   useEffect(() => {
     if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
   }, [filtersOpen]);
@@ -278,15 +279,16 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 Tuần {viDate(c.week)} · Ngày {dateSummary} · {scopeSummary}
               </Text>
             </Grid>
-            {c.outcome && (
-              <Text
-                role="status"
-                p="sm"
-                color={c.locked ? "status.warning" : "fg.muted"}
-              >
-                {c.outcome}
-              </Text>
-            )}
+            {c.outcome &&
+              !(c.job === "menu" && c.impact && !c.impact.save_allowed) && (
+                <Text
+                  role="status"
+                  p="sm"
+                  color={c.locked ? "status.warning" : "fg.muted"}
+                >
+                  {c.outcome}
+                </Text>
+              )}
             {c.readError && (
               <Text role="alert" p="sm" color="status.danger">
                 {c.readError}
@@ -334,7 +336,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                   }
                   templateColumns={{
                     base: "minmax(0, 1fr)",
-                    lg: c.preview
+                    lg: reviewOpen
                       ? "var(--atlas-planning-review-columns)"
                       : "minmax(0, 1fr)",
                   }}
@@ -367,7 +369,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                       <Text textStyle="helper" color="fg.muted">
                         {c.dirty ? "Đang chỉnh sửa · chưa lưu" : ""}
                       </Text>
-                      {c.candidate && (
+                      {c.job !== "menu" && c.candidate && (
                         <Button
                           ref={reviewTrigger}
                           display={c.preview ? "none" : "inline-flex"}
@@ -382,7 +384,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                       )}
                     </Flex>
                   </Box>
-                  {c.preview && (
+                  {reviewOpen && (
                     <PlanningSourceReview c={c} reviewRef={reviewPanel} />
                   )}
                 </Grid>
@@ -399,6 +401,10 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
           </Tabs.Root>
         </Box>
       </Grid>
+      <AtlasNotificationPortal
+        message={c.menuNotification}
+        onDismiss={c.dismissMenuNotification}
+      />
     </Box>
   );
 }

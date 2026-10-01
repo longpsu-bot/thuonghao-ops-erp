@@ -8,6 +8,7 @@ import {
   unknown,
   stale,
   safeImpact,
+  menuPreview,
 } from "./planningReviewFixtures";
 afterEach(cleanup);
 async function setup() {
@@ -66,18 +67,15 @@ describe("Planning source safety", () => {
     const { result, fixture } = await setup();
     fixture.api.previewMenu = async () => success({});
     await act(() => result.current.syncGoogle("google-1"));
-    await act(() => result.current.previewChanges());
     expect(result.current.outcome).not.toContain("Đã hoàn tất");
     expect(result.current.locked).toBe(true);
   });
-  it.each(["menu", "pantry"])(
-    "protects all context transitions for %s",
+  it.each(["pantry"])(
+    "protects all context transitions for dirty %s drafts",
     async (job) => {
       const { result } = await setup();
       act(() => result.current.transition({ job }));
-      if (job === "menu")
-        await act(() => result.current.syncGoogle("google-1"));
-      else act(() => result.current.requestNoAdditions(true));
+      act(() => result.current.requestNoAdditions(true));
       for (const next of [
         { job: "attendance" },
         { week: "2026-09-14" },
@@ -93,6 +91,15 @@ describe("Planning source safety", () => {
       }
     },
   );
+  it("ends Menu synchronization without a local dirty candidate", async () => {
+    const { result } = await setup();
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(result.current.dirty).toBe(false);
+    expect(result.current.preview).toBeNull();
+    act(() => result.current.transition({ job: "attendance" }));
+    expect(result.current.pending).toBeNull();
+    expect(result.current.job).toBe("attendance");
+  });
   it("suppresses an obsolete Google response after context changes", async () => {
     const { result, fixture } = await setup();
     let resolve!: (r: ReturnType<typeof success>) => void;
@@ -222,13 +229,11 @@ describe("Planning source safety", () => {
     expect(result.current.pantryRows).toEqual([]);
     expect(result.current.dirty).toBe(false);
   });
-  it.each(["menu", "attendance", "pantry"])(
+  it.each(["attendance", "pantry"])(
     "honors correction authority for %s and re-previews after preparation",
     async (job) => {
       const { result, fixture } = await setup();
       act(() => result.current.transition({ job }));
-      if (job === "menu")
-        await act(() => result.current.syncGoogle("google-1"));
       if (job === "attendance")
         act(() => result.current.editAttendance(0, "student_portions", "0"));
       if (job === "pantry") act(() => result.current.requestNoAdditions(true));
@@ -280,6 +285,62 @@ describe("Planning source safety", () => {
       expect(result.current.impact?.save_allowed).toBe(true);
     },
   );
+  it("exposes governed correction detail only after the Menu Save is rejected", async () => {
+    const { result, fixture } = await setup();
+    const chain = {
+      need_generation_run_id: "chain-1",
+      need_generation_run_version: 7,
+      run_status: "COMPLETED",
+      period_start: reviewWeek,
+      period_end: reviewWeek,
+      is_legacy_range: false,
+      confirmed_need_batch_id: "confirmed-1",
+      confirmed_need_batch_version: 8,
+      confirmed_need_status: "RELEASED_FOR_PURCHASE_HANDOFF",
+      planning_release_occurred: true,
+      active_purchase_handoff_exists: false,
+      later_downstream_commitment_exists: false,
+    };
+    fixture.api.saveCompletedMenu = async () => ({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "PLANNING_RELEASE_CORRECTION_REQUIRED",
+        retryable: false,
+        safe_message: "Cần chuẩn bị hiệu chỉnh.",
+      },
+    });
+    const impact = vi
+      .spyOn(fixture.api, "getCorrectionImpact")
+      .mockResolvedValue(
+        success({
+          impact: {
+            ...safeImpact,
+            save_allowed: false,
+            save_blocker_code: "PLANNING_RELEASE_CORRECTION_REQUIRED",
+            date_impacts: [
+              {
+                service_date: reviewWeek,
+                correction_policy: "PLANNING_RELEASE_CORRECTION_REQUIRED",
+                operator_message: "Cần mở lại cam kết.",
+                chains: [chain],
+              },
+            ],
+          },
+        }),
+      );
+    const prepare = vi.spyOn(fixture.api, "prepareCorrection");
+
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(impact).toHaveBeenCalledOnce();
+    expect(result.current.impact?.save_allowed).toBe(false);
+    expect(result.current.menuRows[0].dish_id).toBe("dish-1");
+    expect(result.current.menuNotification).toBeNull();
+    await act(() => result.current.prepareCorrection(chain));
+    expect(prepare).toHaveBeenCalledOnce();
+    expect(result.current.impact).toBeNull();
+    expect(result.current.outcome).toContain("Đã chuẩn bị hiệu chỉnh");
+  });
   it.each(["attendance", "pantry"])(
     "locks %s unknown writes until explicit successful recovery",
     async (job) => {
@@ -329,14 +390,15 @@ describe("Planning source safety", () => {
     act(() => result.current.discardTransition());
     expect(result.current.dirty).toBe(false);
   });
-  it("fetches Google into a local candidate, previews and saves exact canonical authority", async () => {
+  it("performs fetch, preview and canonical Save from one Google action", async () => {
     const { result, fixture } = await setup();
+    const fetch = vi.spyOn(fixture.api, "syncMenuFromGoogle");
+    const preview = vi.spyOn(fixture.api, "previewMenu");
     const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    act(() => result.current.transition({ schoolIds: ["school-1"] }));
     await act(() => result.current.syncGoogle("google-1"));
-    expect(result.current.dirty).toBe(true);
-    expect(save).not.toHaveBeenCalled();
-    await act(() => result.current.previewChanges());
-    await act(() => result.current.save());
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(preview).toHaveBeenCalledOnce();
     expect(save).toHaveBeenCalledWith(
       expect.objectContaining({
         expected_version: 4,
@@ -354,17 +416,105 @@ describe("Planning source safety", () => {
         }),
       }),
     );
-    expect(result.current.menuRows[0].dish_id).toBe("dish-1");
+    expect(result.current.menuRows[0].dish_id).toBe("dish-2");
     expect(result.current.dirty).toBe(false);
+    expect(result.current.preview).toBeNull();
   });
-  it.each([unknown, stale, success({})])(
-    "locks uncertain/stale/missing readback and retains failed recovery",
+  it("stops parser and backend preview blockers before Save", async () => {
+    const { result, fixture } = await setup();
+    const preview = vi.spyOn(fixture.api, "previewMenu");
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    fixture.api.syncMenuFromGoogle = async () =>
+      success({
+        source: { source_name: "Thực đơn chính thức", sheet_name: "Tuần 37" },
+        rows: [["Không có tiêu đề hợp lệ"]],
+      });
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(preview).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+
+    fixture.api.syncMenuFromGoogle =
+      createPlanningReviewFixture().api.syncMenuFromGoogle;
+    fixture.api.previewMenu = async () =>
+      success({
+        preview: {
+          ...menuPreview(),
+          can_save: false,
+          issues: {
+            blockers: [
+              { code: "UNKNOWN_DISH", message: "Món chưa nhận diện." },
+            ],
+            warnings: [],
+          },
+        },
+      });
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(save).not.toHaveBeenCalled();
+    expect(result.current.errors).toContain("Món chưa nhận diện.");
+  });
+  it("keeps additions quiet and announces replacement/removal only after readback", async () => {
+    const { result, fixture } = await setup();
+    const before = fixture.planning.weekly_menu!.lines;
+    const after = before
+      .slice(1)
+      .map((row, index) => (index === 0 ? { ...row, dish_id: "dish-2" } : row));
+    fixture.api.previewMenu = async () =>
+      success({
+        preview: {
+          ...menuPreview(),
+          canonical_rows: after,
+          row_count: after.length,
+        },
+      });
+    const readback = structuredClone(fixture.planning);
+    readback.weekly_menu!.lines = after;
+    readback.weekly_menu!.source_signature = "menu-preview";
+    fixture.api.saveCompletedMenu = async () =>
+      success({ authoritative_readback: { planning_inputs: readback } });
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(result.current.menuNotification?.description).toBe(
+      "1 món đã được thay đổi · 1 món đã được bỏ.",
+    );
+
+    const added = [...after, { ...before[0], menu_slot_code: "main" }];
+    fixture.api.previewMenu = async () =>
+      success({
+        preview: {
+          ...menuPreview(),
+          canonical_rows: added,
+          row_count: added.length,
+        },
+      });
+    const addedReadback = structuredClone(readback);
+    addedReadback.weekly_menu!.lines = added;
+    fixture.api.saveCompletedMenu = async () =>
+      success({ authoritative_readback: { planning_inputs: addedReadback } });
+    act(() => result.current.dismissMenuNotification());
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(result.current.menuNotification).toBeNull();
+  });
+  it("saves an exact NO_CHANGE candidate without a popup", async () => {
+    const { result, fixture } = await setup();
+    fixture.api.previewMenu = async () =>
+      success({
+        preview: {
+          ...menuPreview(),
+          canonical_rows: fixture.planning.weekly_menu!.lines,
+          row_count: fixture.planning.weekly_menu!.lines.length,
+        },
+      });
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(save).toHaveBeenCalledOnce();
+    expect(result.current.menuNotification).toBeNull();
+    expect(result.current.menuSyncedAt).not.toBe("");
+  });
+  it.each([stale, success({})])(
+    "locks stale or missing authoritative readback and retains failed recovery",
     async (response) => {
       const { result, fixture } = await setup();
       fixture.api.saveCompletedMenu = async () => response;
       await act(() => result.current.syncGoogle("google-1"));
-      await act(() => result.current.previewChanges());
-      await act(() => result.current.save());
       expect(result.current.locked).toBe(true);
       fixture.api.getWorkbench = async () => unknown;
       await act(() => result.current.recover());
@@ -376,6 +526,58 @@ describe("Planning source safety", () => {
       expect(result.current.locked).toBe(false);
     },
   );
+  it("resolves an uncertain Save with one authoritative read and no blind retry", async () => {
+    const { result, fixture } = await setup();
+    fixture.api.saveCompletedMenu = async () => unknown;
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    const read = vi.spyOn(fixture.api, "getWorkbench");
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(save).toHaveBeenCalledOnce();
+    expect(read).toHaveBeenCalledOnce();
+    expect(result.current.locked).toBe(false);
+    expect(result.current.outcome).toContain("chưa được xác nhận");
+    expect(result.current.menuNotification).toBeNull();
+  });
+  it("keeps matching transport-uncertain readback quiet and never retries Save", async () => {
+    const { result, fixture } = await setup();
+    fixture.api.saveCompletedMenu = async () => unknown;
+    const reconciled = structuredClone(fixture.planning);
+    reconciled.weekly_menu!.lines = menuPreview().canonical_rows;
+    fixture.api.getWorkbench = async () => success({ workbench: reconciled });
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(save).toHaveBeenCalledOnce();
+    expect(result.current.outcome).toContain("không tự lưu lần nữa");
+    expect(result.current.menuNotification).toBeNull();
+    expect(result.current.menuSyncedAt).toBe("");
+  });
+  it("does not request correction impact for unrelated Save failures", async () => {
+    const { result, fixture } = await setup();
+    fixture.api.saveCompletedMenu = async () => ({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "PERMISSION_DENIED",
+        retryable: false,
+        safe_message: "Không có quyền lưu.",
+      },
+    });
+    const impact = vi.spyOn(fixture.api, "getCorrectionImpact");
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(impact).not.toHaveBeenCalled();
+    expect(result.current.menuNotification).toBeNull();
+  });
+  it("treats a successful Save with mismatched readback as uncertain", async () => {
+    const { result, fixture } = await setup();
+    fixture.api.saveCompletedMenu = async () =>
+      success({
+        authoritative_readback: { planning_inputs: fixture.planning },
+      });
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(result.current.locked).toBe(true);
+    expect(result.current.menuNotification).toBeNull();
+    expect(result.current.outcome).toContain("không khớp");
+  });
   it("preserves zero, rejects malformed counts, and keeps unresolved paste errors", async () => {
     const { result } = await setup();
     act(() => result.current.transition({ job: "attendance" }));

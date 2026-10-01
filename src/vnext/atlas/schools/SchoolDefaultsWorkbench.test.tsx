@@ -174,7 +174,7 @@ describe("Chakra School default portions workbench", () => {
     expect(table).toHaveStyle({
       tableLayout: "fixed",
       minWidth: "var(--atlas-layout-school-table-min, 1154px)",
-      width: "var(--atlas-layout-school-table-width, 1154px)",
+      width: "100%",
     });
 
     const schoolHeader = within(table).getByRole("columnheader", {

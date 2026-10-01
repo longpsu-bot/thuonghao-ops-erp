@@ -13,6 +13,7 @@ import { useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { useAtlasPortalContainer } from "../AtlasVNextProvider";
+import { viDate } from "../bridges/planning";
 export function PlanningMenuStage({
   c,
   visibleSchoolIds,
@@ -29,13 +30,40 @@ export function PlanningMenuStage({
     c.data?.dish_types
       .filter((t) => t.dish_type_status === "ACTIVE")
       .sort((a, b) => a.display_order - b.display_order) ?? [];
+  const correctionDates = c.impact?.date_impacts ?? [];
+  const correctionChain = correctionDates
+    .filter((impact) =>
+      [
+        "PLANNING_RELEASE_CORRECTION_REQUIRED",
+        "LEGACY_RANGE_CORRECTION_REQUIRED",
+      ].includes(impact.correction_policy),
+    )
+    .flatMap((impact) => impact.chains)
+    .find((chain) => chain.confirmed_need_batch_id);
   return (
     <>
-      <Flex p="sm" gap="sm" align="center" wrap="wrap">
-        <Text textStyle="helper" color="fg.muted">
-          Google Sheets ·{" "}
-          {c.menuSource.name || sources[0]?.source_name || "Chưa có nguồn"}
-        </Text>
+      <Flex
+        px={{ base: "sm", md: "md" }}
+        py="sm"
+        gap="sm"
+        align={{ base: "stretch", md: "center" }}
+        justify="space-between"
+        direction={{ base: "column", md: "row" }}
+        bg="bg.toolbar"
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.default"
+      >
+        <Box minW="var(--atlas-layout-zero, 0)">
+          <Text textStyle="label" color="fg.default">
+            Google Sheets ·{" "}
+            {c.menuSource.name || sources[0]?.source_name || "Chưa có nguồn"}
+          </Text>
+          <Text textStyle="helper" color="fg.muted">
+            {c.menuSyncedAt
+              ? `Đã đồng bộ lúc ${c.menuSyncedAt}`
+              : "Nguồn soạn thực đơn chính thức"}
+          </Text>
+        </Box>
         {sources.length ? (
           <Popover.Root
             open={choose}
@@ -45,7 +73,11 @@ export function PlanningMenuStage({
           >
             {sources.length > 1 ? (
               <Popover.Trigger asChild>
-                <Button size="sm" disabled={!c.canEdit}>
+                <Button
+                  size="sm"
+                  variant="businessPrimary"
+                  disabled={!c.canEdit || c.syncing}
+                >
                   <SheetIcon />
                   Đồng bộ Google Sheet
                 </Button>
@@ -53,6 +85,7 @@ export function PlanningMenuStage({
             ) : (
               <Button
                 size="sm"
+                variant="businessPrimary"
                 disabled={!c.canEdit || c.syncing}
                 onClick={() =>
                   void c.syncGoogle(sources[0].weekly_menu_google_source_id)
@@ -70,6 +103,7 @@ export function PlanningMenuStage({
                       {sources.map((s) => (
                         <Button
                           key={s.weekly_menu_google_source_id}
+                          variant="secondary"
                           onClick={() => {
                             setChoose(false);
                             void c.syncGoogle(s.weekly_menu_google_source_id);
@@ -91,10 +125,48 @@ export function PlanningMenuStage({
         )}
         {c.syncing && (
           <Text role="status" textStyle="helper">
-            Đang lấy dữ liệu Google Sheet…
+            Đang kiểm tra và đồng bộ Google Sheet…
           </Text>
         )}
       </Flex>
+      {c.job === "menu" && c.impact && !c.impact.save_allowed && (
+        <Box
+          role="alert"
+          aria-label="Chưa thể đồng bộ thực đơn"
+          px={{ base: "sm", md: "md" }}
+          py="sm"
+          bg="bg.warning"
+          color="status.warning"
+          borderBottomWidth="var(--atlas-layout-edge, 1px)"
+          borderColor="border.default"
+        >
+          <Flex
+            direction={{ base: "column", md: "row" }}
+            justify="space-between"
+            align={{ base: "stretch", md: "center" }}
+            gap="sm"
+          >
+            <Box>
+              <Text textStyle="label">Chưa thể đồng bộ thực đơn</Text>
+              {correctionDates.map((impact) => (
+                <Text key={impact.service_date} mt="xs" textStyle="helper">
+                  {viDate(impact.service_date)} · {impact.operator_message}
+                </Text>
+              ))}
+            </Box>
+            {correctionChain && (
+              <Button
+                variant="businessPrimary"
+                flexShrink="0"
+                disabled={!c.canEdit}
+                onClick={() => void c.prepareCorrection(correctionChain)}
+              >
+                Chuẩn bị hiệu chỉnh
+              </Button>
+            )}
+          </Flex>
+        </Box>
+      )}
       <AtlasTableViewport
         label="Bảng thực đơn theo trường"
         data-testid="weekly-menu-scroll"

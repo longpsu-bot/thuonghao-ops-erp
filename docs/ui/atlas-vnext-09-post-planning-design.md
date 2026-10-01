@@ -1,5 +1,12 @@
 # Atlas vNext 09 — Post-Planning Station Convergence
 
+> **Current Menu presentation:** The generic source Review/Save language below
+> remains historical UI-09 direction. Weekly Menu now has one Google Sheet sync
+> action with automatic backend Preview, consequential Save and authoritative
+> readback; only governed correction is an exceptional review path. Attendance
+> and Pantry keep their applicable Review/Save flows. See
+> [the current UI inventory](./atlas-current-ui-inventory.md).
+
 **Status:** Approved implementation authority
 
 **Date:** 27/09/2026
