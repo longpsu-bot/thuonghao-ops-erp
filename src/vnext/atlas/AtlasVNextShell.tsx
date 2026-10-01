@@ -5,8 +5,10 @@ import {
   Flex,
   Heading,
   Icon,
+  Portal,
   Stack,
   Text,
+  Tooltip,
 } from "@chakra-ui/react";
 import {
   Buildings,
@@ -19,7 +21,15 @@ import {
   Truck,
   X,
 } from "@phosphor-icons/react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import { useAtlasPortalContainer } from "./AtlasVNextProvider";
 import { formatVietnamBusinessDate } from "./businessDate";
 
 const navigation = [
@@ -52,47 +62,79 @@ function RailTooltip({
   children,
 }: {
   label: string;
-  children: ReactNode;
+  children: ReactElement;
 }) {
+  const portalContainer = useAtlasPortalContainer();
   const [open, setOpen] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearHoverTimer = () => {
+    if (hoverTimer.current === null) return;
+    clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+  };
+  useEffect(() => clearHoverTimer, []);
   return (
     <Box
-      position="relative"
-      onPointerEnter={() => setOpen(true)}
-      onPointerLeave={() => setOpen(false)}
-      onFocusCapture={() => setOpen(true)}
+      display="contents"
+      onPointerEnter={() => {
+        clearHoverTimer();
+        hoverTimer.current = setTimeout(() => {
+          hoverTimer.current = null;
+          setOpen(true);
+        }, 250);
+      }}
+      onPointerLeave={() => {
+        clearHoverTimer();
+        setOpen(false);
+      }}
+      onFocusCapture={() => {
+        clearHoverTimer();
+        setOpen(true);
+      }}
       onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          clearHoverTimer();
           setOpen(false);
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          clearHoverTimer();
+          setOpen(false);
+        }
       }}
     >
-      {children}
-      {open && (
-        <Box
-          role="tooltip"
-          position="absolute"
-          style={{
-            left: "calc(100% + var(--atlas-spacing-xs))",
-            top: "50%",
-          }}
-          transform="translateY(-50%)"
-          zIndex="tooltip"
-          px="sm"
-          py="xs"
-          borderRadius="control"
-          bg="bg.navigation"
-          color="fg.inverse"
-          borderWidth="var(--atlas-layout-edge, 1px)"
-          borderColor="border.subtle"
-          textStyle="helper"
-          fontWeight="semibold"
-          boxShadow="var(--atlas-layout-shadow, none)"
-          whiteSpace="nowrap"
-          pointerEvents="none"
-        >
-          {label}
-        </Box>
-      )}
+      <Tooltip.Root
+        open={open}
+        onOpenChange={({ open: nextOpen }) => setOpen(nextOpen)}
+        openDelay={250}
+        closeDelay={0}
+        lazyMount
+        unmountOnExit
+        positioning={{ placement: "right", gutter: 6, overflowPadding: 10 }}
+      >
+        <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+        <Portal container={portalContainer}>
+          <Tooltip.Positioner>
+            <Tooltip.Content
+              px="sm"
+              py="xs"
+              borderRadius="control"
+              bg="bg.navigation"
+              color="fg.inverse"
+              borderWidth="var(--atlas-layout-edge, 1px)"
+              borderColor="border.subtle"
+              textStyle="helper"
+              fontWeight="semibold"
+              boxShadow="var(--atlas-layout-shadow, none)"
+              whiteSpace="nowrap"
+              pointerEvents="none"
+            >
+              {label}
+            </Tooltip.Content>
+          </Tooltip.Positioner>
+        </Portal>
+      </Tooltip.Root>
     </Box>
   );
 }

@@ -380,7 +380,9 @@ describe("Planning sources Chakra workbench", () => {
     expect(viewport).toHaveAttribute("tabindex", "0");
     expect(viewport).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-menu-table-min-width, max-content)",
+      minWidth: "var(--atlas-layout-menu-table-width, max-content)",
+      width: "var(--atlas-layout-menu-table-width, max-content)",
+      tableLayout: "fixed",
     });
     const schoolHeader = within(table).getByRole("columnheader", {
       name: "Trường / điểm giao",
@@ -510,7 +512,9 @@ describe("Planning sources Chakra workbench", () => {
     expect(attendanceViewport).toHaveAttribute("tabindex", "0");
     expect(attendanceViewport).toContainElement(attendanceTable);
     expect(attendanceTable).toHaveStyle({
-      minWidth: "var(--atlas-layout-attendance-table-min, 620px)",
+      minWidth: "var(--atlas-attendance-table-width, 630px)",
+      width: "var(--atlas-attendance-table-width, 630px)",
+      tableLayout: "fixed",
     });
     fireEvent.change(input, { target: { value: "0" } });
     expect(input).toHaveValue("0");
@@ -557,7 +561,9 @@ describe("Planning sources Chakra workbench", () => {
     expect(pantryViewport).toHaveAttribute("tabindex", "0");
     expect(pantryViewport).toContainElement(pantryTable);
     expect(pantryTable).toHaveStyle({
-      minWidth: "var(--atlas-layout-pantry-table-min, 1200px)",
+      minWidth: "var(--atlas-pantry-table-width, 1156px)",
+      width: "var(--atlas-pantry-table-width, 1156px)",
+      tableLayout: "fixed",
     });
     fireEvent.change(
       await screen.findByRole("combobox", { name: "Trường thêm dòng" }),

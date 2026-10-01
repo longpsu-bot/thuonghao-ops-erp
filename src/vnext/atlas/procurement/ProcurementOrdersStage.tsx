@@ -171,7 +171,23 @@ export function ProcurementOrdersStage({
             }}
             overflow="auto"
           >
-            <Table.Root aria-label="Đơn mua" size="sm" stickyHeader>
+            <Table.Root
+              aria-label="Đơn mua"
+              size="sm"
+              stickyHeader
+              tableLayout="fixed"
+              w="var(--atlas-orders-table-width, 1040px)"
+              minW="var(--atlas-orders-table-width, 1040px)"
+            >
+              <Table.ColumnGroup>
+                <Table.Column w="var(--atlas-orders-supplier-width, 180px)" />
+                <Table.Column w="var(--atlas-orders-date-width, 120px)" />
+                <Table.Column w="var(--atlas-orders-school-width, 220px)" />
+                <Table.Column w="var(--atlas-orders-lines-width, 90px)" />
+                <Table.Column w="var(--atlas-orders-state-width, 160px)" />
+                <Table.Column w="var(--atlas-orders-number-width, 150px)" />
+                <Table.Column w="var(--atlas-orders-action-width, 120px)" />
+              </Table.ColumnGroup>
               <Table.Header>
                 <Table.Row>
                   {[

@@ -1,7 +1,15 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
-import { Fragment, type CSSProperties } from "react";
+import { Fragment, useState, type CSSProperties } from "react";
 import type { IngredientMasterData } from "../bridges/ingredientSupplierMasterData";
+import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import {
+  atlasDefaultSort,
+  compareAtlasText,
+  nextAtlasSort,
+  sortAtlasRows,
+  type AtlasSortState,
+} from "../atlasTableSort";
 import { formatVietnameseDecimal } from "./ingredientSupplierModel";
 
 const status = {
@@ -23,6 +31,31 @@ export function IngredientCatalogue({
   selectedId?: string;
   onSelect: (id: string, trigger: HTMLButtonElement) => void;
 }) {
+  type SortKey = "ingredient" | "status" | "unit" | "type" | "supplier";
+  const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
+  const sortedIngredients = sortAtlasRows(ingredients, sort, {
+    ingredient: (left, right) =>
+      compareAtlasText(left.ingredient_name, right.ingredient_name),
+    status: (left, right) =>
+      compareAtlasText(left.ingredient_status, right.ingredient_status),
+    unit: (left, right) =>
+      compareAtlasText(left.purchase_unit_name, right.purchase_unit_name),
+    type: (left, right) =>
+      compareAtlasText(
+        `${left.ingredient_type_name ?? ""} ${left.ingredient_order_group_name ?? ""}`,
+        `${right.ingredient_type_name ?? ""} ${right.ingredient_order_group_name ?? ""}`,
+      ),
+    supplier: (left, right) =>
+      compareAtlasText(
+        [...left.supplier_priorities].sort((a, b) => a.priority - b.priority)[0]
+          ?.supplier_name,
+        [...right.supplier_priorities].sort(
+          (a, b) => a.priority - b.priority,
+        )[0]?.supplier_name,
+      ),
+  });
+  const onSort = (key: SortKey) =>
+    setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
       {!countUnavailable && (
@@ -45,18 +78,33 @@ export function IngredientCatalogue({
               {
                 "--atlas-table-header-height": "38px",
                 "--atlas-table-row-height": "42px",
-                "--atlas-table-identity-width": "178px",
+                "--atlas-table-identity-width": "220px",
               } as CSSProperties
             }
-            minW="var(--atlas-layout-ingredient-table-min, 940px)"
+            minW="var(--atlas-layout-ingredient-table-min, 1050px)"
+            w="var(--atlas-layout-ingredient-table-width, 1050px)"
+            tableLayout="fixed"
             stickyHeader
           >
+            <Table.ColumnGroup>
+              <Table.Column w="var(--atlas-ingredient-identity-width, 220px)" />
+              <Table.Column w="var(--atlas-ingredient-state-width, 110px)" />
+              <Table.Column w="var(--atlas-ingredient-unit-width, 110px)" />
+              <Table.Column w="var(--atlas-ingredient-type-width, 200px)" />
+              <Table.Column w="var(--atlas-ingredient-rounding-width, 100px)" />
+              <Table.Column w="var(--atlas-ingredient-supplier-width, 200px)" />
+              <Table.Column w="var(--atlas-ingredient-action-width, 110px)" />
+            </Table.ColumnGroup>
             <Table.Header>
               <Table.Row
                 h="var(--atlas-table-header-height)"
                 zIndex="var(--atlas-layout-sticky-header-z, 3)"
               >
-                <Table.ColumnHeader
+                <AtlasSortableColumnHeader
+                  label="Nguyên liệu"
+                  columnKey="ingredient"
+                  sort={sort}
+                  onSort={onSort}
                   position={{ base: "sticky", lg: "static" }}
                   left={{
                     base: "var(--atlas-layout-zero, 0)",
@@ -65,21 +113,39 @@ export function IngredientCatalogue({
                   zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
                   bg="bg.toolbar"
                   minW="var(--atlas-table-identity-width)"
-                >
-                  Nguyên liệu
-                </Table.ColumnHeader>
-                <Table.ColumnHeader>Trạng thái</Table.ColumnHeader>
-                <Table.ColumnHeader>Đơn vị mua</Table.ColumnHeader>
-                <Table.ColumnHeader>Loại / nhóm đặt hàng</Table.ColumnHeader>
+                />
+                <AtlasSortableColumnHeader
+                  label="Trạng thái"
+                  columnKey="status"
+                  sort={sort}
+                  onSort={onSort}
+                />
+                <AtlasSortableColumnHeader
+                  label="Đơn vị mua"
+                  columnKey="unit"
+                  sort={sort}
+                  onSort={onSort}
+                />
+                <AtlasSortableColumnHeader
+                  label="Loại / nhóm đặt hàng"
+                  columnKey="type"
+                  sort={sort}
+                  onSort={onSort}
+                />
                 <Table.ColumnHeader textAlign="right">
                   Mức làm tròn
                 </Table.ColumnHeader>
-                <Table.ColumnHeader>Ưu tiên NCC</Table.ColumnHeader>
+                <AtlasSortableColumnHeader
+                  label="Ưu tiên NCC"
+                  columnKey="supplier"
+                  sort={sort}
+                  onSort={onSort}
+                />
                 <Table.ColumnHeader>Thao tác</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {ingredients.map((item) => {
+              {sortedIngredients.map((item) => {
                 const chosen = item.ingredient_id === selectedId;
                 const priorities = [...item.supplier_priorities].sort(
                   (a, b) => a.priority - b.priority,

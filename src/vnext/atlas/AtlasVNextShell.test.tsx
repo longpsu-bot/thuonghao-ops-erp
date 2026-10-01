@@ -8,14 +8,97 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { atlasSystem } from "./system";
 import { AtlasVNextShell } from "./AtlasVNextShell";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("Atlas vNext shell", () => {
+  it("portals desktop rail tooltips for hover and keyboard focus, then closes them", async () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as unknown as MediaQueryList),
+    );
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell activeModule="schools">
+          <p>Dense workbench</p>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+
+    const ingredients = screen.getByRole("button", {
+      name: "Nguyên liệu và Nhà cung ứng",
+    });
+    fireEvent.keyDown(document.body, { key: "Tab" });
+    ingredients.focus();
+    expect(
+      await screen.findByRole("tooltip", {
+        name: "Nguyên liệu và Nhà cung ứng",
+      }),
+    ).toBeVisible();
+    fireEvent.keyDown(ingredients, { key: "Escape" });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("tooltip", {
+          name: "Nguyên liệu và Nhà cung ứng",
+        }),
+      ).not.toBeInTheDocument(),
+    );
+    ingredients.blur();
+    ingredients.focus();
+    expect(
+      await screen.findByRole("tooltip", {
+        name: "Nguyên liệu và Nhà cung ứng",
+      }),
+    ).toBeVisible();
+    ingredients.blur();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("tooltip", {
+          name: "Nguyên liệu và Nhà cung ứng",
+        }),
+      ).toHaveAttribute("data-state", "closed"),
+    );
+    expect(ingredients).not.toHaveAttribute("aria-describedby");
+
+    const school = screen.getByRole("button", { name: "Trường học" });
+    fireEvent.pointerEnter(school);
+    const hovered = await screen.findByRole("tooltip", {
+      name: "Trường học",
+    });
+    expect(hovered.parentElement?.parentElement).toHaveAttribute(
+      "data-atlas-portal-root",
+    );
+    expect(school).toHaveAttribute("aria-describedby", hovered.id);
+
+    fireEvent.pointerLeave(school);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("tooltip", { name: "Trường học" }),
+      ).toHaveAttribute("data-state", "closed"),
+    );
+    expect(school).not.toHaveAttribute("aria-describedby");
+  });
   it("marks the review-only Ingredient and Supplier module active", async () => {
     render(
       <AtlasVNextProvider>

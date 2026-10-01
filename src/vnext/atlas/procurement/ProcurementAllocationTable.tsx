@@ -1,7 +1,16 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
+import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
+import {
+  atlasDefaultSort,
+  compareAtlasBigInt,
+  compareAtlasText,
+  nextAtlasSort,
+  sortAtlasRows,
+  type AtlasSortState,
+} from "../atlasTableSort";
 import {
   formatExactQuantityForOperator as quantity,
   parseExactQuantity,
@@ -18,6 +27,17 @@ function allocationIssue(row: AllocationFamilyRow, remainder: bigint | null) {
   if (remainder < 0n) return `Vượt ${quantity(-remainder)} ${row.unit_code}`;
   return "Cần phân bổ lại";
 }
+
+function allocationRemainder(row: AllocationFamilyRow) {
+  const total = sumExactQuantities(
+    row.splits.map((split) => split.allocated_quantity),
+  );
+  const need =
+    row.complete === false || row.family_quantity === null
+      ? null
+      : parseExactQuantity(row.family_quantity);
+  return total === null || need === null ? null : need - total;
+}
 export function ProcurementAllocationTable({
   rows,
   selectedKey,
@@ -29,6 +49,42 @@ export function ProcurementAllocationTable({
   disabled: boolean;
   onSelect: (row: AllocationFamilyRow, trigger: HTMLButtonElement) => void;
 }) {
+  type SortKey = "ingredient" | "school" | "need" | "supplier" | "issue";
+  const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
+  const sortedRows = sortAtlasRows(rows, sort, {
+    ingredient: (left, right) =>
+      compareAtlasText(left.ingredient_name, right.ingredient_name),
+    school: (left, right) =>
+      compareAtlasText(
+        left.schools?.map((school) => school.school_name).join(", ") ||
+          left.school_name ||
+          left.location_name,
+        right.schools?.map((school) => school.school_name).join(", ") ||
+          right.school_name ||
+          right.location_name,
+      ),
+    need: (left, right) =>
+      compareAtlasBigInt(
+        left.complete === false || left.family_quantity === null
+          ? null
+          : parseExactQuantity(left.family_quantity),
+        right.complete === false || right.family_quantity === null
+          ? null
+          : parseExactQuantity(right.family_quantity),
+      ),
+    supplier: (left, right) =>
+      compareAtlasText(
+        left.splits.map((split) => split.supplier_name).join(", "),
+        right.splits.map((split) => split.supplier_name).join(", "),
+      ),
+    issue: (left, right) =>
+      compareAtlasText(
+        allocationIssue(left, allocationRemainder(left)),
+        allocationIssue(right, allocationRemainder(right)),
+      ),
+  });
+  const onSort = (key: SortKey) =>
+    setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
       <AtlasTableViewport
@@ -44,66 +100,89 @@ export function ProcurementAllocationTable({
             {
               "--atlas-table-header-height": "38px",
               "--atlas-table-row-height": "46px",
-              "--atlas-table-identity-width": "190px",
+              "--atlas-table-identity-width": "200px",
             } as CSSProperties
           }
-          minW="var(--atlas-layout-procurement-table-min, 880px)"
+          minW="var(--atlas-layout-procurement-table-min, 1050px)"
+          w="var(--atlas-layout-procurement-table-width, 1050px)"
+          tableLayout="fixed"
           size="sm"
           stickyHeader
         >
+          <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-allocation-identity-width, 200px)" />
+            <Table.Column w="var(--atlas-allocation-school-width, 230px)" />
+            <Table.Column w="var(--atlas-allocation-quantity-width, 130px)" />
+            <Table.Column w="var(--atlas-allocation-supplier-width, 190px)" />
+            <Table.Column w="var(--atlas-allocation-state-width, 170px)" />
+            <Table.Column w="var(--atlas-allocation-action-width, 130px)" />
+          </Table.ColumnGroup>
           <Table.Header>
             <Table.Row
               h="var(--atlas-table-header-height)"
               zIndex="var(--atlas-layout-sticky-header-z, 3)"
             >
-              {[
-                "Nguyên liệu",
-                "Trường / điểm giao",
-                "Nhu cầu",
-                "Nhà cung ứng",
-                "Tình trạng / vấn đề",
-                "Thao tác",
-              ].map((label, index) => (
-                <Table.ColumnHeader
-                  key={label}
-                  textAlign={index === 2 ? "end" : "start"}
-                  position={
-                    index === 0 ? { base: "sticky", lg: "static" } : undefined
-                  }
-                  left={
-                    index === 0
-                      ? {
-                          base: "var(--atlas-layout-zero, 0)",
-                          lg: "var(--atlas-layout-auto, auto)",
-                        }
-                      : undefined
-                  }
-                  zIndex={
-                    index === 0
-                      ? "var(--atlas-layout-sticky-identity-header-z, 5)"
-                      : undefined
-                  }
-                  bg={index === 0 ? "bg.toolbar" : undefined}
-                  h="var(--atlas-table-header-height)"
-                  py="var(--atlas-layout-zero, 0)"
-                >
-                  {label}
-                </Table.ColumnHeader>
-              ))}
+              <AtlasSortableColumnHeader
+                label="Nguyên liệu"
+                columnKey="ingredient"
+                sort={sort}
+                onSort={onSort}
+                position="sticky"
+                left="var(--atlas-layout-zero, 0)"
+                zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
+                bg="bg.toolbar"
+                h="var(--atlas-table-header-height)"
+                py="var(--atlas-layout-zero, 0)"
+              />
+              <AtlasSortableColumnHeader
+                label="Trường / điểm giao"
+                columnKey="school"
+                sort={sort}
+                onSort={onSort}
+                h="var(--atlas-table-header-height)"
+                py="var(--atlas-layout-zero, 0)"
+              />
+              <AtlasSortableColumnHeader
+                label="Nhu cầu"
+                columnKey="need"
+                sort={sort}
+                onSort={onSort}
+                textAlign="end"
+                h="var(--atlas-table-header-height)"
+                py="var(--atlas-layout-zero, 0)"
+              />
+              <AtlasSortableColumnHeader
+                label="Nhà cung ứng"
+                columnKey="supplier"
+                sort={sort}
+                onSort={onSort}
+                h="var(--atlas-table-header-height)"
+                py="var(--atlas-layout-zero, 0)"
+              />
+              <AtlasSortableColumnHeader
+                label="Tình trạng / vấn đề"
+                columnKey="issue"
+                sort={sort}
+                onSort={onSort}
+                h="var(--atlas-table-header-height)"
+                py="var(--atlas-layout-zero, 0)"
+              />
+              <Table.ColumnHeader
+                h="var(--atlas-table-header-height)"
+                py="var(--atlas-layout-zero, 0)"
+              >
+                Thao tác
+              </Table.ColumnHeader>
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {rows.map((row) => {
+            {sortedRows.map((row) => {
               const key = row.family.source_fingerprint;
-              const total = sumExactQuantities(
-                row.splits.map((split) => split.allocated_quantity),
-              );
               const need =
                 row.complete === false || row.family_quantity === null
                   ? null
                   : parseExactQuantity(row.family_quantity);
-              const rest =
-                total === null || need === null ? null : need - total;
+              const rest = allocationRemainder(row);
               const attention = row.state !== "BALANCED";
               const issue = allocationIssue(row, rest);
               const action =
@@ -116,7 +195,7 @@ export function ProcurementAllocationTable({
                   h="var(--atlas-table-row-height)"
                 >
                   <Table.Cell
-                    position={{ base: "sticky", lg: "relative" }}
+                    position="sticky"
                     left="var(--atlas-layout-zero, 0)"
                     zIndex="var(--atlas-layout-sticky-cell-z, 1)"
                     style={{ background: "inherit" }}
