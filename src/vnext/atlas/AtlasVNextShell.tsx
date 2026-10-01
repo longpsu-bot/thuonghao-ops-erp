@@ -279,7 +279,10 @@ export function AtlasVNextShell({
                 variant="utility"
                 color="fg.inverse"
                 justifyContent="flex-start"
-                onClick={onSignOut}
+                onClick={() => {
+                  closeMenu();
+                  onSignOut();
+                }}
               >
                 Đăng xuất
               </Button>
