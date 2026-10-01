@@ -13,7 +13,7 @@ import { useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { useAtlasPortalContainer } from "../AtlasVNextProvider";
-import { viDate } from "../bridges/planning";
+import { viDate, planningIssueMessage } from "../bridges/planning";
 export function PlanningMenuStage({
   c,
   visibleSchoolIds,
@@ -31,6 +31,12 @@ export function PlanningMenuStage({
       .filter((t) => t.dish_type_status === "ACTIVE")
       .sort((a, b) => a.display_order - b.display_order) ?? [];
   const correctionDates = c.impact?.date_impacts ?? [];
+  const issueGroups = new Map<string, number>();
+  for (const issue of c.menuSyncIssues) {
+    const cause =
+      issue.code === "INVALID_DISH_ID" ? "UNKNOWN_DISH" : issue.code;
+    issueGroups.set(cause, (issueGroups.get(cause) ?? 0) + 1);
+  }
   const correctionChain = correctionDates
     .filter((impact) =>
       [
@@ -129,6 +135,92 @@ export function PlanningMenuStage({
           </Text>
         )}
       </Flex>
+      {(c.errors.length > 0 || c.menuSyncIssues.length > 0) && (
+        <Box
+          role="alert"
+          aria-label="Không thể đồng bộ thực đơn"
+          px={{ base: "sm", md: "md" }}
+          py="sm"
+          bg="bg.warning"
+          borderBottomWidth="var(--atlas-layout-edge, 1px)"
+          borderColor="border.default"
+        >
+          <Text textStyle="label" color="status.danger">
+            Không thể đồng bộ thực đơn
+          </Text>
+          {Array.from(issueGroups, ([code, count]) => (
+            <Text key={code} textStyle="helper" color="fg.default">
+              {code === "UNKNOWN_DISH" || code === "INVALID_DISH_ID"
+                ? `${count} ô chưa xác định được món ăn.`
+                : code === "AMBIGUOUS_DISH"
+                  ? `${count} ô có tên món trùng và cần kiểm tra.`
+                  : `${count} lỗi: ${planningIssueMessage({ code, message: "", source_row_reference: null })}`}
+            </Text>
+          ))}
+          {!c.menuSyncIssues.length &&
+            Array.from(new Set(c.errors)).map((error) => (
+              <Text key={error} textStyle="helper">
+                {error}
+              </Text>
+            ))}
+          {c.menuSyncIssues.some((issue) => issue.source_value) && (
+            <Box as="details" mt="xs">
+              <Box
+                as="summary"
+                textStyle="helper"
+                cursor="var(--atlas-layout-cursor, pointer)"
+              >
+                Xem ô cần kiểm tra
+              </Box>
+              <Stack
+                gap="xs"
+                mt="xs"
+                maxH="var(--atlas-menu-issues-height, 160px)"
+                overflowY="auto"
+              >
+                {c.menuSyncIssues
+                  .filter((issue) => issue.source_value)
+                  .map((issue, index) => (
+                    <Box
+                      key={`${issue.source_row_reference}:${issue.code}:${index}`}
+                    >
+                      <Text textStyle="label">{issue.source_value}</Text>
+                      <Text textStyle="helper" color="fg.muted">
+                        {issue.menu_slot_name} · dòng {issue.source_row_number}
+                      </Text>
+                      <Text textStyle="helper">
+                        {planningIssueMessage({ ...issue, message: "" })}
+                      </Text>
+                    </Box>
+                  ))}
+              </Stack>
+            </Box>
+          )}
+        </Box>
+      )}
+      {!!c.importWarnings.length && (
+        <Box as="details" px={{ base: "sm", md: "md" }} py="xs">
+          <Box
+            as="summary"
+            textStyle="helper"
+            color="status.warning"
+            cursor="var(--atlas-layout-cursor, pointer)"
+          >
+            Lưu ý nguồn ({c.importWarnings.length})
+          </Box>
+          <Stack
+            gap="xs"
+            maxH="var(--atlas-menu-issues-height, 160px)"
+            overflowY="auto"
+          >
+            {Array.from(new Set(c.importWarnings)).map((warning) => (
+              <Text key={warning} textStyle="helper">
+                {warning}
+              </Text>
+            ))}
+          </Stack>
+        </Box>
+      )}
       {c.job === "menu" && c.impact && !c.impact.save_allowed && (
         <Box
           role="alert"

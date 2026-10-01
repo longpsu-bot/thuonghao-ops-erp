@@ -59,6 +59,85 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("groups backend codes in Vietnamese while keeping the Menu table and retry accessible", async () => {
+    const { fixture } = await show();
+    const preview = menuPreview();
+    preview.can_save = false;
+    preview.issues.blockers = Array.from({ length: 18 }, (_, index) => ({
+      code: index % 2 ? "UNKNOWN_DISH" : "INVALID_DISH_ID",
+      message: "A row does not identify a valid dish.",
+      source_row_reference: null,
+    }));
+    fixture.api.previewMenu = async () => success({ preview });
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    );
+    const summary = await screen.findByRole("alert", {
+      name: "Không thể đồng bộ thực đơn",
+    });
+    expect(
+      within(summary).getAllByText(/18 ô chưa xác định được món ăn/),
+    ).toHaveLength(1);
+    expect(
+      screen.queryByText("A row does not identify a valid dish."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("table", { name: "Thực đơn theo trường" }),
+    ).toBeVisible();
+    expect(screen.getByText(/Google Sheets ·/)).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Xem thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Đã đồng bộ thực đơn")).not.toBeInTheDocument();
+    expect(save).not.toHaveBeenCalled();
+  });
+  it.each(["UNKNOWN_DISH", "AMBIGUOUS_DISH"])(
+    "shows %s source evidence in bounded details",
+    async (code) => {
+      const { fixture } = await show();
+      const name = "Sâm bổ lượng";
+      if (code === "AMBIGUOUS_DISH")
+        fixture.planning.dishes.push(
+          ...["dup-1", "dup-2"].map((dish_id) => ({
+            ...fixture.planning.dishes[0],
+            dish_id,
+            dish_code: dish_id,
+            dish_name: name,
+          })),
+        );
+      fixture.api.syncMenuFromGoogle = async () =>
+        success({
+          source: { source_name: "Google", sheet_name: "Tuần" },
+          rows: [
+            ["Tên trường", "Ngày", "Món mặn"],
+            ["TH001", reviewWeek, name],
+          ],
+        });
+      fireEvent.click(
+        screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+      );
+      const summary = await screen.findByRole("alert", {
+        name: "Không thể đồng bộ thực đơn",
+      });
+      fireEvent.click(within(summary).getByText("Xem ô cần kiểm tra"));
+      expect(within(summary).getByText(name)).toBeVisible();
+      expect(within(summary).getByText("Món mặn · dòng 4")).toBeVisible();
+      expect(
+        within(summary).getByText(
+          code === "UNKNOWN_DISH"
+            ? "Không tìm thấy món này trong danh mục Atlas."
+            : "Có nhiều món trùng tên; chưa thể xác định món chuẩn.",
+        ),
+      ).toBeVisible();
+    },
+  );
   it("places a visible current-job context before source tabs and the ordered workbar", async () => {
     await show();
 

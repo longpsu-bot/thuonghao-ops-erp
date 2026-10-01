@@ -307,7 +307,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                     : "Tải lại để xác nhận"}
               </Button>
             )}
-            {(c.job === "pantry" ? [] : c.errors).map((error, i) => (
+            {(c.job === "attendance" ? c.errors : []).map((error, i) => (
               <Text
                 role="alert"
                 key={i}
@@ -318,12 +318,6 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 {error}
               </Text>
             ))}
-            {c.job === "menu" &&
-              c.importWarnings.map((warning, i) => (
-                <Text key={i} px="sm" color="status.warning" textStyle="helper">
-                  {warning}
-                </Text>
-              ))}
             <Tabs.Content value={c.job} p="var(--atlas-layout-zero, 0)">
               {c.authority ? (
                 <Grid

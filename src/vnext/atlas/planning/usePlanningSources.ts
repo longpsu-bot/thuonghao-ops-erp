@@ -13,6 +13,7 @@ import {
   planningReadbackFromResult,
   pantryReadbackFromResult,
   planningResultMessage,
+  planningIssueMessage,
   parseMenuMatrix,
   parseAttendancePaste,
   pantryRowsFromBatch,
@@ -39,6 +40,8 @@ import {
   type JsonValue,
   type AtlasRpcResult,
   type SourceMatrix,
+  type MenuSourceCell,
+  type PlanningIssue,
 } from "../bridges/planning";
 import type { AtlasNotificationMessage } from "../AtlasNotificationPortal";
 import {
@@ -186,6 +189,10 @@ export function usePlanningSources({
   });
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [menuSyncIssues, setMenuSyncIssues] = useState<
+    (Pick<PlanningIssue, "code" | "source_row_reference"> &
+      Partial<Omit<MenuSourceCell, "source_row_reference">>)[]
+  >([]);
   const [preview, setPreview] = useState<
     PlanningPreview<MenuLine | AttendanceLine> | PantryPreview | null
   >(null);
@@ -241,6 +248,7 @@ export function usePlanningSources({
     });
     setImportErrors([]);
     setImportWarnings([]);
+    setMenuSyncIssues([]);
   }, []);
   const resetPantry = useCallback((b: PantryWorkbenchData | null) => {
     setPantryRows(pantryRowsFromBatch(b?.batch ?? null));
@@ -551,6 +559,8 @@ export function usePlanningSources({
     setMenuCandidate(false);
     setImportErrors([]);
     setImportWarnings([]);
+    setMenuSyncIssues([]);
+    setMenuNotification(null);
     setOutcome("");
     const persistedRows = activeMenuRows(data.weekly_menu);
     const stillCurrent = () =>
@@ -615,6 +625,15 @@ export function usePlanningSources({
           setOutcome("Google Sheet có lỗi cấu trúc. Dữ liệu chưa được lưu.");
           return;
         }
+        if (parsed.diagnostics.length) {
+          setMenuSyncIssues(parsed.diagnostics);
+          setImportErrors(
+            parsed.diagnostics.map((issue) =>
+              planningIssueMessage({ ...issue, message: "" }),
+            ),
+          );
+          return;
+        }
 
         const previewResult = await invoke(() =>
           api.previewMenu(
@@ -637,15 +656,22 @@ export function usePlanningSources({
         }
         if (!nextPreview.can_save || nextPreview.issues.blockers.length) {
           setImportErrors(
-            nextPreview.issues.blockers.map((issue) => issue.message),
+            nextPreview.issues.blockers.map(planningIssueMessage),
+          );
+          setMenuSyncIssues(
+            nextPreview.issues.blockers.map((issue) => ({
+              code: issue.code,
+              source_row_reference: issue.source_row_reference,
+              ...parsed.sourceCells.find(
+                (cell) =>
+                  cell.source_row_reference === issue.source_row_reference,
+              ),
+            })),
           );
           setImportWarnings((warnings) => [
             ...warnings,
-            ...nextPreview.issues.warnings.map((issue) => issue.message),
+            ...nextPreview.issues.warnings.map(planningIssueMessage),
           ]);
-          setOutcome(
-            "Thực đơn chưa đạt kiểm tra dữ liệu. Dữ liệu chưa được lưu.",
-          );
           return;
         }
 
@@ -1041,6 +1067,7 @@ export function usePlanningSources({
     setMode,
     requestNoAdditions,
     syncGoogle,
+    menuSyncIssues,
     dismissMenuNotification: () => setMenuNotification(null),
     previewChanges,
     save,

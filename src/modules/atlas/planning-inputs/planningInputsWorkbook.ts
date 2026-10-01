@@ -108,26 +108,32 @@ function reference<T>(
   return labelMatches.length === 1 ? labelMatches[0] : undefined;
 }
 
-function typedDishReference(
+function canonicalDishReference(
   value: string,
   dishType: PlanningDishType,
   dishes: PlanningDish[],
 ) {
   const key = normalized(value);
-  const candidates = dishes.filter(
+  const candidates = dishes.filter((dish) => dish.dish_status === "ACTIVE");
+  const codeMatches = candidates.filter(
+    (dish) => normalized(dish.dish_code) === key,
+  );
+  if (codeMatches.length === 1) return { dish: codeMatches[0] };
+  if (codeMatches.length > 1) return { code: "AMBIGUOUS_DISH" as const };
+  const nameMatches = candidates.filter(
+    (dish) => normalized(dish.dish_name) === key,
+  );
+  // Slot compatibility is only a transitional tie-breaker for duplicate names.
+  if (nameMatches.length === 1) return { dish: nameMatches[0] };
+  if (!nameMatches.length) return { code: "UNKNOWN_DISH" as const };
+  const legacyMatches = nameMatches.filter(
     (dish) =>
       dish.dish_type_id === dishType.dish_type_id ||
       dish.dish_type_code === dishType.dish_type_code,
   );
-  const codeMatches = candidates.filter(
-    (dish) => normalized(dish.dish_code) === key,
-  );
-  if (codeMatches.length === 1) return codeMatches[0];
-  if (codeMatches.length > 1) return undefined;
-  const nameMatches = candidates.filter(
-    (dish) => normalized(dish.dish_name) === key,
-  );
-  return nameMatches.length === 1 ? nameMatches[0] : undefined;
+  return legacyMatches.length === 1
+    ? { dish: legacyMatches[0], compatibility: true }
+    : { code: "AMBIGUOUS_DISH" as const };
 }
 
 function isoDate(value: MatrixCell | undefined): string {
@@ -162,6 +168,20 @@ export type MenuMatrixReview = {
   warnings: string[];
   sourceRowCount: number;
   headerRowNumber: number | null;
+  sourceCells: MenuSourceCell[];
+  diagnostics: MenuSourceDiagnostic[];
+  compatibilityResolutions: (MenuSourceCell & { dish_id: string })[];
+};
+
+export type MenuSourceCell = {
+  source_row_reference: string;
+  source_row_number: number;
+  menu_slot_code: string;
+  menu_slot_name: string;
+  source_value: string;
+};
+export type MenuSourceDiagnostic = MenuSourceCell & {
+  code: "UNKNOWN_DISH" | "AMBIGUOUS_DISH";
 };
 
 export type MenuWorkbookReview = MenuMatrixReview & {
@@ -280,6 +300,10 @@ export async function parseMenuMatrix(
     warnings,
   );
   const rows: MenuLine[] = [];
+  const sourceCells: MenuSourceCell[] = [];
+  const diagnostics: MenuSourceDiagnostic[] = [];
+  const compatibilityResolutions: MenuMatrixReview["compatibilityResolutions"] =
+    [];
   const dataRows = sheet.slice(Math.max(headerOffset + 1, 0));
   for (const [offset, sourceRow] of (errors.length ? [] : dataRows).entries()) {
     if (sourceRow.every((value) => normalized(value) === "")) continue;
@@ -299,15 +323,27 @@ export async function parseMenuMatrix(
     for (const { dishType, index } of typeColumns) {
       const dishText = cellAt(sourceRow, index);
       if (!dishText) continue;
-      const dish = typedDishReference(dishText, dishType, dishes);
+      const resolved = canonicalDishReference(dishText, dishType, dishes);
+      const evidence: MenuSourceCell = {
+        source_row_reference: `${source.sourceName}:${source.sheetName}:row:${rowNumber}:${dishType.dish_type_code}`,
+        source_row_number: rowNumber,
+        menu_slot_code: dishType.dish_type_code,
+        menu_slot_name: dishType.dish_type_name,
+        source_value: dishText,
+      };
+      sourceCells.push(evidence);
+      if (resolved.code) diagnostics.push({ ...evidence, code: resolved.code });
+      if (resolved.compatibility && resolved.dish)
+        compatibilityResolutions.push({
+          ...evidence,
+          dish_id: resolved.dish.dish_id,
+        });
       rows.push({
         school_id: school?.school_id ?? unresolved("school", schoolText),
         service_date: serviceDate,
         menu_slot_code: dishType.dish_type_code,
-        dish_id: dish?.dish_id ?? unresolved("dish", dishText),
-        source_row_reference:
-          `${source.sourceName}:${source.sheetName}:row:${rowNumber}:` +
-          dishType.dish_type_code,
+        dish_id: resolved.dish?.dish_id ?? unresolved("dish", dishText),
+        source_row_reference: evidence.source_row_reference,
       });
     }
   }
@@ -320,6 +356,9 @@ export async function parseMenuMatrix(
     ),
     errors,
     warnings,
+    sourceCells,
+    diagnostics,
+    compatibilityResolutions,
     sourceRowCount: dataRows.filter((row) =>
       row.some((value) => normalized(value) !== ""),
     ).length,

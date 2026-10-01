@@ -222,6 +222,7 @@ jobs:
           node scripts/test-local-purchase-review.mjs purchase_review_confirm_release.sql
           pnpm exec supabase test db supabase/tests/pantry_02_connected_pantry_source.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_03b_connected_planning_input_readiness.sql --local
+          pnpm exec supabase test db supabase/tests/rmvp_03a_connected_weekly_menu_attendance.sql --local
           pnpm exec supabase test db supabase/tests/planning_contract_01_atomic_planning_boundaries.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h0a3a_weekly_menu_persistence_foundation.sql supabase/tests/weekly_menu_save_scale.sql --local
           pnpm exec supabase test db supabase/tests/planning_contract_02b_selective_confirmation_continuity.sql --local

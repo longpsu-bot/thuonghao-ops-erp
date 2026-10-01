@@ -1,5 +1,22 @@
 # RMVP-03A — Connected Weekly Menu and Attendance
 
+## Menu slot / Dish identity amendment — 01/10/2026
+
+The owner-authorized MENU-SLOT-DISH-DECOUPLING-01 task supersedes the historical
+column-to-Dish eligibility restriction below. A Menu slot is contextual assignment
+data; canonical Dish identity is independent. The current physical `dish_types`
+catalog still supplies active slot codes/names. A unique active Dish may occupy
+any valid slot, including multiple distinct slots for the same School/date, and
+may have null legacy classification. No Dish ID, Recipe root, history or master
+mapping is rewritten. The retained multi-slot warning remains informational.
+
+Code-first/global-unique-name resolution precedes a transitional duplicate-name
+legacy slot tie-breaker. Unresolved identities block before backend Preview;
+backend validation continues protecting all other invariants and Recipe/BOM
+readiness through the same helper used by Preview and consequential Save.
+See the [current API amendment](../api/rmvp-03a-planning-inputs.md) and
+[implementation/audit record](../implementation-tasks/TASK-MENU-SLOT-DISH-DECOUPLING.md).
+
 ## Current Weekly Menu operator path — 01/10/2026
 
 The original draft/review/approve journey and the transport amendment below
@@ -49,7 +66,7 @@ The active Atlas navigation item is `Nguồn kế hoạch`. The page has only tw
 
 The selected week is always visible as a Monday-start period. Changing weeks with unsaved edits requires confirmation. Browser close/refresh also warns about unsaved work.
 
-Weekly Menu uses a compact School/date grid whose columns come from active `dish_types`, ordered by database `display_order`, stable code, and identifier. A label, order, addition, or inactivation changes the connected grid after authoritative refresh without a React catalog. Each selector shows only Dishes whose `dish_type_id` matches that column. Historical unmapped Dishes remain explainable but cannot be newly assigned.
+Weekly Menu uses a compact School/date grid whose columns come from active `dish_types`, ordered by database `display_order`, stable code, and identifier. A label, order, addition, or inactivation changes the connected grid after authoritative refresh without a React catalog. Historically, each selector showed only Dishes whose `dish_type_id` matched that column and blocked unmapped Dishes. This eligibility restriction is superseded by the Menu slot / Dish identity amendment above; the current Menu is Google-governed and read-only.
 
 The initial database seed contains six stable codes: `soup`, `savory`, `stir_fry`, `dessert`, `afternoon_snack`, and `beverage`. These values exist in the migration seed, not as a permanent React array.
 
