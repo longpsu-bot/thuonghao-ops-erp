@@ -1,0 +1,28 @@
+[
+  {
+    "kind": "recipe",
+    "errors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  },
+  {
+    "kind": "procurement",
+    "errors": [
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation",
+      "Illegal invocation"
+    ]
+  }
+]

@@ -449,6 +449,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   <Flex
                     px="md"
                     py="sm"
+                    bg="bg.toolbar"
+                    borderYWidth="var(--atlas-layout-edge, 1px)"
+                    borderColor="border.subtle"
                     align="center"
                     justify="space-between"
                     gap="sm"
@@ -490,13 +493,15 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     data-testid="procurement-master-detail"
                     style={
                       {
-                        "--atlas-attached-detail-width": "320px",
+                        "--atlas-attached-detail-width": "390px",
                       } as CSSProperties
                     }
                     minW="var(--atlas-layout-zero, 0)"
+                    gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
+                    p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
                     templateColumns={{
                       base: "minmax(0, 1fr)",
-                      lg: selected
+                      xl: selected
                         ? "minmax(0, 1fr) var(--atlas-attached-detail-width)"
                         : "minmax(0, 1fr)",
                     }}

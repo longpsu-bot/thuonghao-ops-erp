@@ -79,11 +79,27 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
       ) : (
         <Text mt="sm">Số suất áp dụng cho định lượng: {draft.basis}</Text>
       )}
-      <Box overflow="auto" mt="sm">
+      <Box
+        overflow="auto"
+        mt="sm"
+        borderYWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+      >
         <Table.Root
           aria-label="Công thức gốc"
-          minW="var(--atlas-layout-recipe-table-min, 510px)"
+          minW="var(--atlas-layout-recipe-table-min, 650px)"
+          w="full"
+          tableLayout="fixed"
         >
+          <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-recipe-ingredient-width, 160px)" />
+            <Table.Column w="var(--atlas-recipe-quantity-width, 110px)" />
+            <Table.Column w="var(--atlas-recipe-unit-width, 140px)" />
+            <Table.Column />
+            {editable && (
+              <Table.Column w="var(--atlas-recipe-action-width, 80px)" />
+            )}
+          </Table.ColumnGroup>
           <Table.Header>
             <Table.Row>
               {[
@@ -110,7 +126,7 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
               );
               return (
                 <Table.Row key={line.id}>
-                  <Table.Cell>{name}</Table.Cell>
+                  <Table.Cell overflowWrap="anywhere">{name}</Table.Cell>
                   <Table.Cell textAlign="right">
                     {editable ? (
                       <Input

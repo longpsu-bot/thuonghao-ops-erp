@@ -1,5 +1,5 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
 export const dishStatusLabel = {
   ACTIVE: "Đang dùng",
@@ -39,17 +39,47 @@ export function DishCatalogue({
   c,
   onSelect,
   compact,
+  toolbar,
 }: {
   c: DishRecipeController;
   compact: boolean;
+  toolbar?: ReactNode;
   onSelect: (id: string, button: HTMLButtonElement) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const viewport = useRef<HTMLDivElement>(null);
   useEffect(() => setExpanded(false), [c.context?.dishId, compact]);
+  useEffect(() => {
+    if (!compact) return;
+    const container = viewport.current;
+    const selected = container?.querySelector<HTMLButtonElement>(
+      'button[aria-pressed="true"]',
+    );
+    if (!container || !selected) return;
+    const reveal = () => {
+      const frame = container.getBoundingClientRect();
+      const item = selected.getBoundingClientRect();
+      if (item.top < frame.top) container.scrollTop += item.top - frame.top;
+      else if (item.bottom > frame.bottom)
+        container.scrollTop += item.bottom - frame.bottom;
+    };
+    reveal();
+    // Table-to-list reflow and browser scroll anchoring settle after commit.
+    const frame = window.requestAnimationFrame(reveal);
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(reveal);
+    observer?.observe(container);
+    if (container.firstElementChild)
+      observer?.observe(container.firstElementChild);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, [compact, c.context?.dishId, c.visibleDishes, expanded]);
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
       {compact && c.context && (
-        <Box display={{ base: "block", lg: "none" }} px="sm" py="xs">
+        <Box display={{ base: "block", xl: "none" }} px="sm" py="xs">
           <Button
             variant="tertiary"
             size="sm"
@@ -60,7 +90,13 @@ export function DishCatalogue({
           </Button>
         </Box>
       )}
+      {compact && (
+        <Box display={{ base: expanded ? "block" : "none", xl: "block" }}>
+          {toolbar}
+        </Box>
+      )}
       <Box
+        ref={viewport}
         overflow="auto"
         maxH={{
           base: compact
@@ -71,7 +107,82 @@ export function DishCatalogue({
             : "var(--atlas-layout-catalog-height, calc(100dvh - 290px))",
         }}
       >
-        {!c.visibleDishes.length ? (
+        {compact ? (
+          <Box
+            as="ul"
+            aria-label="Điều hướng món"
+            m="var(--atlas-layout-zero, 0)"
+            p="var(--atlas-layout-zero, 0)"
+            listStyleType="none"
+          >
+            {!c.visibleDishes.length && (
+              <Box as="li">
+                <Text p="md">Không có món phù hợp bộ lọc.</Text>
+              </Box>
+            )}
+            {c.visibleDishes.map((dish) => {
+              const selected = dish.dish_id === c.context?.dishId;
+              const action =
+                dishBaseRecipeState(c, dish.dish_id) === "LOCKED"
+                  ? "Xem"
+                  : "Sửa";
+              return (
+                <Box
+                  as="li"
+                  key={dish.dish_id}
+                  display={{
+                    base: !expanded && !selected ? "none" : "block",
+                    xl: "block",
+                  }}
+                >
+                  <Button
+                    variant="tertiary"
+                    w="full"
+                    h="var(--atlas-layout-content-height, auto)"
+                    minH="control"
+                    px="md"
+                    py="sm"
+                    justifyContent="flex-start"
+                    textAlign="left"
+                    whiteSpace="normal"
+                    borderRadius="var(--atlas-layout-zero, 0)"
+                    borderBottomWidth="var(--atlas-layout-edge, 1px)"
+                    borderColor="border.subtle"
+                    bg={selected ? "bg.selected" : "bg.workbench"}
+                    aria-pressed={selected}
+                    aria-label={`${action} công thức ${dish.dish_name}`}
+                    data-dish-select={dish.dish_id}
+                    disabled={c.busy || Boolean(c.lock)}
+                    onClick={(event) =>
+                      onSelect(dish.dish_id, event.currentTarget)
+                    }
+                  >
+                    <Box
+                      minW="var(--atlas-layout-zero, 0)"
+                      borderLeftWidth="var(--atlas-layout-edge, 1px)"
+                      borderColor={selected ? "border.accent" : "border.subtle"}
+                      pl="sm"
+                    >
+                      <Text fontWeight="semibold" overflowWrap="anywhere">
+                        {dish.dish_name}
+                      </Text>
+                      <Text
+                        textStyle="helper"
+                        color="fg.muted"
+                        mt="xs"
+                        overflowWrap="anywhere"
+                      >
+                        {dish.dish_type_name ?? "Chưa phân loại"} ·{" "}
+                        {dishStatusLabel[dish.dish_status]}
+                        {selected && " · Đang chọn"}
+                      </Text>
+                    </Box>
+                  </Button>
+                </Box>
+              );
+            })}
+          </Box>
+        ) : !c.visibleDishes.length ? (
           <Text p="md">
             {c.catalog.dishes.length
               ? "Không có món phù hợp bộ lọc."
@@ -198,6 +309,7 @@ export function DishCatalogue({
                         size="sm"
                         variant="tertiary"
                         aria-label={`${actionLabel} ${dish.dish_name}`}
+                        data-dish-select={dish.dish_id}
                         disabled={c.busy || Boolean(c.lock)}
                         onClick={(e) => {
                           onSelect(dish.dish_id, e.currentTarget);

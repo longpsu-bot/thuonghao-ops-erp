@@ -95,7 +95,7 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("procurement-master-detail")).toHaveStyle({
-      "--atlas-attached-detail-width": "320px",
+      "--atlas-attached-detail-width": "390px",
     });
   });
 

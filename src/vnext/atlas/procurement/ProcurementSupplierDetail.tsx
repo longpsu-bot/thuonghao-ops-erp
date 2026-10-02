@@ -196,27 +196,28 @@ export function ProcurementSupplierDetail({
       style={
         {
           "--atlas-procurement-detail-desktop-max-height":
-            "var(--atlas-procurement-desktop-surface-max-height, calc(100dvh - 400px))",
+            "var(--atlas-procurement-editor-max-height, max(360px, calc(100dvh - 320px)))",
         } as CSSProperties
       }
       minW="var(--atlas-layout-zero, 0)"
+      alignSelf="start"
       bg="bg.subtle"
       borderColor="border.subtle"
-      borderLeftWidth={{
-        base: "var(--atlas-layout-zero, 0)",
-        lg: "var(--atlas-layout-edge, 1px)",
-      }}
-      borderTopWidth={{
-        base: "var(--atlas-layout-edge, 1px)",
-        lg: "var(--atlas-layout-zero, 0)",
-      }}
+      borderWidth="var(--atlas-layout-edge, 1px)"
+      borderRadius="workbench"
       maxH={{
         base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
-        lg: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
+        xl: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
       }}
     >
-      <Box p="md" pb="sm">
-        <Heading as="h2" textStyle="section" tabIndex={-1} ref={heading}>
+      <Box p="md" pb="sm" flexShrink="0">
+        <Heading
+          as="h2"
+          textStyle="section"
+          tabIndex={-1}
+          ref={heading}
+          overflowWrap="anywhere"
+        >
           {row.ingredient_name}
         </Heading>
         <Text color="fg.muted" textStyle="helper" mt="xs">
@@ -233,6 +234,7 @@ export function ProcurementSupplierDetail({
         pb="sm"
         borderBottomWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
+        flexShrink="0"
       >
         {reconciliationQuantity && reconciliationOutcome ? (
           <Flex aria-label={reconciliation} align="baseline" wrap="wrap">
@@ -259,7 +261,8 @@ export function ProcurementSupplierDetail({
         gap="md"
         overflowY="auto"
         minH="var(--atlas-layout-zero, 0)"
-        flex="1"
+        flex="0 1 auto"
+        minW="var(--atlas-layout-zero, 0)"
       >
         {row.splits
           .filter((split) => !eligible(split.supplier_id))
@@ -287,7 +290,9 @@ export function ProcurementSupplierDetail({
           const invalid = parseExactQuantity(split.allocated_quantity) === null;
           return (
             <Field.Root key={split.supplier_id} invalid={invalid}>
-              <Field.Label>{supplier.supplier_name}</Field.Label>
+              <Field.Label overflowWrap="anywhere">
+                {supplier.supplier_name}
+              </Field.Label>
               <Flex gap="xs" w="full" align="center">
                 <Input
                   aria-label={`Phân bổ ${supplier.supplier_name}`}
@@ -340,6 +345,8 @@ export function ProcurementSupplierDetail({
               >
                 <Field.Label textStyle="helper">Ghi chú cho NCC</Field.Label>
                 <Textarea
+                  w="full"
+                  minW="var(--atlas-layout-zero, 0)"
                   aria-label={`Ghi chú cho ${supplier.supplier_name}`}
                   value={split.supplier_note ?? ""}
                   maxLength={500}
@@ -447,7 +454,13 @@ export function ProcurementSupplierDetail({
         ))}
       </Stack>
       {dirty && (
-        <Text px="md" pt="xs" textStyle="helper" color="fg.muted">
+        <Text
+          px="md"
+          pt="xs"
+          textStyle="helper"
+          color="fg.muted"
+          flexShrink="0"
+        >
           Đang chỉnh sửa · chưa lưu
         </Text>
       )}
@@ -456,6 +469,7 @@ export function ProcurementSupplierDetail({
         justify="space-between"
         gap="sm"
         p="md"
+        bg="bg.toolbar"
         borderTopWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
         flexShrink="0"
