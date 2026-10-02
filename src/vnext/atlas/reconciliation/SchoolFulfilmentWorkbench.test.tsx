@@ -62,6 +62,141 @@ async function openFirst() {
   return buttons[0];
 }
 describe("read-only reconciliation operator workbench", () => {
+  it.each([
+    ["BLOCKED", ["PROCUREMENT_NOT_CURRENT"], "Đang bị chặn"],
+    [
+      "REPLACEMENT_REQUIRED",
+      ["PXK_REPLACEMENT_REQUIRED"],
+      "Cần phiếu thay thế",
+    ],
+    ["BLOCKED", [], "Đang bị chặn"],
+    ["REPLACEMENT_REQUIRED", [], "Cần phiếu thay thế"],
+    ["CURRENT", ["PROCUREMENT_NOT_CURRENT"], "Cần xử lý vận hành"],
+  ] as const)(
+    "keeps OK with %s and blockers %j in default attention",
+    async (state, blockers, label) => {
+      const row = fulfilmentRow({
+        comparison_status: "OK",
+        pxk_state: state,
+        blockers: [...blockers],
+      });
+      const h = show("OK", {
+        getWorkbench: vi
+          .fn()
+          .mockResolvedValue(
+            fulfilmentSuccess(
+              fulfilmentData([row], "2026-09-24", "2026-09-26"),
+            ),
+          ),
+      });
+      await screen.findByText("Cần xử lý 1 · Khớp 1");
+      expect(within(table()).getByText("Khớp")).toBeVisible();
+      expect(within(table()).getByText(label)).toBeVisible();
+      expect(table()).not.toHaveTextContent(
+        /PROCUREMENT_NOT_CURRENT|PXK_REPLACEMENT_REQUIRED/,
+      );
+      filter("OK");
+      expect(within(table()).getByText("Khớp")).toBeVisible();
+      expect(within(table()).getByText(label)).toBeVisible();
+      await openFirst();
+      expect(
+        within(
+          screen.getByRole("region", { name: "Chi tiết đối chiếu" }),
+        ).getByText("Khớp"),
+      ).toBeVisible();
+      const select = screen.getByRole("combobox", { name: "Tình trạng" });
+      select.focus();
+      filter("MISMATCH");
+      expect(
+        screen.queryByRole("region", { name: "Chi tiết đối chiếu" }),
+      ).toBeNull();
+      expect(select).toHaveFocus();
+      fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+        target: { value: "Nguyễn" },
+      });
+      expect(h.read).toHaveBeenCalledTimes(1);
+    },
+  );
+  it("counts overlapping attention and OK dimensions and sorts attention stably first", async () => {
+    const rows = [
+      fulfilmentRow({
+        school_id: "clean",
+        school_name: "Clean OK",
+        comparison_status: "OK",
+      }),
+      fulfilmentRow({
+        school_id: "blocked",
+        school_name: "Blocked OK",
+        comparison_status: "OK",
+        pxk_state: "BLOCKED",
+        blockers: ["PROCUREMENT_NOT_CURRENT"],
+      }),
+      fulfilmentRow({
+        school_id: "replacement",
+        school_name: "Replacement OK",
+        comparison_status: "OK",
+        pxk_state: "REPLACEMENT_REQUIRED",
+        blockers: ["PXK_REPLACEMENT_REQUIRED"],
+      }),
+      fulfilmentRow({ school_id: "mismatch", school_name: "Mismatch" }),
+    ];
+    const h = show("ALL", {
+      getWorkbench: vi
+        .fn()
+        .mockResolvedValue(
+          fulfilmentSuccess(fulfilmentData(rows, "2026-09-24", "2026-09-26")),
+        ),
+    });
+    await screen.findByText("Cần xử lý 3 · Khớp 3");
+    const names = () =>
+      within(table())
+        .getAllByRole("row")
+        .slice(1)
+        .map((r) => within(r).getAllByRole("cell")[1].textContent);
+    expect(names()).toEqual(
+      rows.slice(1).map((r) => r.school_name + r.delivery_location_name),
+    );
+    expect(within(table()).queryByText("Clean OK")).toBeNull();
+    filter("all");
+    expect(names()).toEqual(
+      [...rows.slice(1), rows[0]].map(
+        (r) => r.school_name + r.delivery_location_name,
+      ),
+    );
+    filter("OK");
+    expect(within(table()).getAllByText("Khớp")).toHaveLength(3);
+    expect(within(table()).queryByText("Mismatch")).toBeNull();
+    expect(h.read).toHaveBeenCalledTimes(1);
+  });
+  it.each([{ warnings: [] }, { warnings: ["SOURCE_WARNING"] }])(
+    "excludes healthy OK with warnings %j from attention but retains detail warnings",
+    async ({ warnings }) => {
+      const row = fulfilmentRow({ comparison_status: "OK", warnings });
+      const h = show("OK", {
+        getWorkbench: vi
+          .fn()
+          .mockResolvedValue(
+            fulfilmentSuccess(
+              fulfilmentData([row], "2026-09-24", "2026-09-26"),
+            ),
+          ),
+      });
+      await screen.findByText("Cần xử lý 0 · Khớp 1");
+      expect(within(table()).queryByText("Khớp")).toBeNull();
+      filter("all");
+      await openFirst();
+      expect(within(table()).getByText("Khớp")).toBeVisible();
+      if (warnings.length) {
+        const detail = screen.getByRole("region", {
+          name: "Chi tiết đối chiếu",
+        });
+        expect(within(detail).getByText("Lưu ý vận hành")).toBeVisible();
+        expect(detail).not.toHaveTextContent("SOURCE_WARNING");
+      }
+      expect(h.read).toHaveBeenCalledTimes(1);
+    },
+  );
+
   it("opens the replacement-required fixture with specific blocker copy and independent comparison", async () => {
     show("PXK_REPLACEMENT_REQUIRED");
     await openFirst();

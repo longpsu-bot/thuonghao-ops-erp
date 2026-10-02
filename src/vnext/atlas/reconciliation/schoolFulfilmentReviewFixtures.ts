@@ -63,6 +63,9 @@ export function fulfilmentSuccess(
 }
 export type SchoolFulfilmentScenario =
   | "ALL"
+  | "ATTENTION_MIXED"
+  | "REPLACEMENT_REQUIRED_OK"
+  | "WARNING_ONLY_OK"
   | "OK"
   | "NO_PO"
   | "NO_PXK"
@@ -174,6 +177,35 @@ function snapshots(scenario: SchoolFulfilmentScenario): SchoolFulfilmentRow[] {
       },
     ],
   });
+  if (scenario === "REPLACEMENT_REQUIRED_OK")
+    return [
+      {
+        ...ok,
+        pxk_state: "REPLACEMENT_REQUIRED",
+        blockers: ["PXK_REPLACEMENT_REQUIRED"],
+      },
+    ];
+  if (scenario === "WARNING_ONLY_OK")
+    return [{ ...ok, warnings: ["SOURCE_WARNING"] }];
+  if (scenario === "ATTENTION_MIXED")
+    return [
+      ok,
+      {
+        ...ok,
+        school_id: "school-blocked",
+        school_name: "Trường Tiểu học Lê Quý Đôn",
+        pxk_state: "BLOCKED",
+        blockers: ["PROCUREMENT_NOT_CURRENT"],
+      },
+      {
+        ...ok,
+        school_id: "school-replacement",
+        school_name: "Trường THCS Nguyễn Trãi",
+        pxk_state: "REPLACEMENT_REQUIRED",
+        blockers: ["PXK_REPLACEMENT_REQUIRED"],
+      },
+      fulfilmentRow(),
+    ];
   if (scenario === "EMPTY") return [];
   if (scenario === "OK" || scenario === "PXK_CURRENT") return [ok];
   if (scenario === "NO_PO") return [noPo];

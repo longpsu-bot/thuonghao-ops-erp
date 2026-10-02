@@ -10,6 +10,7 @@ import {
   isSchoolFulfilmentAuthority,
   reconciliationRangeError,
 } from "./schoolFulfilmentAuthority";
+import { needsAttention } from "./schoolFulfilmentAttention";
 type School = { school_id: string; school_name: string };
 export type SchoolFulfilmentWorkbenchProps = {
   api: SchoolFulfilmentReconciliationApi;
@@ -138,7 +139,7 @@ export function useSchoolFulfilmentWorkbench({
       (r) =>
         (filter === "all" ||
           (filter === "exceptions"
-            ? r.comparison_status !== "OK"
+            ? needsAttention(r)
             : r.comparison_status === filter)) &&
         foldVietnameseSearch(
           [
@@ -151,10 +152,10 @@ export function useSchoolFulfilmentWorkbench({
           ].join(" "),
         ).includes(foldVietnameseSearch(search)),
     )
-    .sort(
-      (a, b) =>
-        (a.comparison_status === "OK" ? 1 : 0) -
-        (b.comparison_status === "OK" ? 1 : 0),
+    .sort((a, b) =>
+      filter === "all"
+        ? Number(needsAttention(b)) - Number(needsAttention(a))
+        : 0,
     );
   const selected =
     visibleRows.find((r) => fulfilmentRowKey(r) === selection) ?? null;
