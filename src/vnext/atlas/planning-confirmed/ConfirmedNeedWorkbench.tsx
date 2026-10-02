@@ -1,4 +1,5 @@
 import { AtlasOperationStatus } from "../AtlasOperationStatus";
+import { confirmedNeedShoppingListImportErrorMessage } from "../bridges/confirmedNeed";
 import {
   Box,
   Button,
@@ -347,6 +348,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     <input
                       ref={workbookInput}
                       type="file"
+                      disabled={workbookBusy || c.released}
                       accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                       aria-label="Nhập Phiếu đi chợ .xlsx"
                       style={{
@@ -363,7 +365,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         event.target.value = "";
-                        if (!file) return;
+                        if (!file || workbookBusy || c.released) return;
                         setWorkbookError(null);
                         setWorkbookBusy(true);
                         void props.onImportShoppingList!(
@@ -374,9 +376,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                           .then(c.applyShoppingListImport)
                           .catch((error: unknown) =>
                             setWorkbookError(
-                              error instanceof Error
-                                ? error.message
-                                : "Không thể nhập Phiếu đi chợ.",
+                              confirmedNeedShoppingListImportErrorMessage(
+                                error,
+                              ),
                             ),
                           )
                           .finally(() => setWorkbookBusy(false));
