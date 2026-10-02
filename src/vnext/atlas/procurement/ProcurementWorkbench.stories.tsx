@@ -16,9 +16,11 @@ import {
 export function ProcurementReview({
   scenario = "normal",
   allocationRowCount,
+  longContent = false,
 }: {
   scenario?: ProcurementReviewScenario;
   allocationRowCount?: number;
+  longContent?: boolean;
 }) {
   const fixture = useMemo(() => {
     const value = createProcurementReviewFixture(scenario);
@@ -89,8 +91,23 @@ export function ProcurementReview({
         }
       }
     }
+    if (longContent) {
+      const row = value.allocation.rows[0]!;
+      row.ingredient_name =
+        "Gạo thơm tuyển chọn theo quy cách đóng gói và giao nhận tại các bếp trường bán trú";
+      for (const supplier of row.eligible_suppliers) {
+        supplier.supplier_name +=
+          " · Chi nhánh phân phối thực phẩm trường học khu vực phía Đông";
+      }
+      for (const split of row.splits) {
+        split.supplier_note =
+          "Kiểm tra quy cách đóng gói, chất lượng nguyên liệu và xác nhận với bếp trước khi giao. "
+            .repeat(5)
+            .trim();
+      }
+    }
     return value;
-  }, [scenario, allocationRowCount]);
+  }, [scenario, allocationRowCount, longContent]);
   const [exportMessage, setExportMessage] = useState("");
   const orderScenario =
     scenario.startsWith("po_") ||
@@ -142,6 +159,13 @@ export const LongAllocation: Story = {
   args: { scenario: "normal", allocationRowCount: 248 },
 };
 export const SavedManualSplit: Story = { args: { scenario: "manual_split" } };
+export const CompositionOneRow: Story = {
+  args: { scenario: "ready", allocationRowCount: 1 },
+};
+export const CompositionShortEditor: Story = { args: { scenario: "blocked" } };
+export const CompositionLongContent: Story = {
+  args: { scenario: "manual_split", longContent: true },
+};
 export const Rebalance: Story = { args: { scenario: "rebalance" } };
 export const NeedsReallocation: Story = {
   args: { scenario: "needs_reallocation" },

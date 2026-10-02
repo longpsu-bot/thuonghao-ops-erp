@@ -43,11 +43,24 @@ export function DishRecipeWorkbench(props: {
   }));
   const workspace = useRef<HTMLDivElement>(null),
     origin = useRef<HTMLButtonElement | null>(null);
+  const catalogue = useRef<HTMLDivElement>(null);
+  const originDishId = useRef<string | null>(null);
   const open = Boolean(c.context || c.surface === "create");
   const wasOpen = useRef(false);
   useEffect(() => {
     if (open) workspace.current?.focus();
-    else if (wasOpen.current) origin.current?.focus();
+    else if (wasOpen.current) {
+      const trigger = origin.current?.isConnected
+        ? origin.current
+        : Array.from(
+            catalogue.current?.querySelectorAll<HTMLButtonElement>(
+              "button[data-dish-select]",
+            ) ?? [],
+          ).find(
+            (button) => button.dataset.dishSelect === originDishId.current,
+          );
+      trigger?.focus();
+    }
     wasOpen.current = open;
   }, [open, c.context?.dishId, c.surface]);
   const modal = ["copy", "import", "lifecycle"].includes(c.surface ?? "");
@@ -60,15 +73,7 @@ export function DishRecipeWorkbench(props: {
     props.onOpenChangeOrders,
   );
   const catalogueToolbar = (
-    <Flex
-      display={{ base: open ? "none" : "flex", lg: "flex" }}
-      px="md"
-      py="sm"
-      bg="bg.toolbar"
-      gap="sm"
-      align="flex-end"
-      wrap="wrap"
-    >
+    <Flex px="md" py="sm" bg="bg.toolbar" gap="sm" align="flex-end" wrap="wrap">
       <Field.Root flex="var(--atlas-layout-search-grow, 1 1 200px)">
         <Field.Label>Tìm món</Field.Label>
         <Input
@@ -192,17 +197,20 @@ export function DishRecipeWorkbench(props: {
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
-          lg: open ? "minmax(260px, 290px) minmax(0, 1fr)" : "minmax(0, 1fr)",
+          xl: open ? "320px minmax(0, 1fr)" : "minmax(0, 1fr)",
         }}
+        gap={open ? "md" : "var(--atlas-layout-zero, 0)"}
+        p={open ? "sm" : "var(--atlas-layout-zero, 0)"}
         minW="var(--atlas-layout-zero, 0)"
       >
-        <Box minW="var(--atlas-layout-zero, 0)">
-          {open && catalogueToolbar}
+        <Box ref={catalogue} minW="var(--atlas-layout-zero, 0)">
           <DishCatalogue
             c={c}
             compact={open}
+            toolbar={catalogueToolbar}
             onSelect={(id, button) => {
               origin.current = button;
+              originDishId.current = id;
               c.transition({ kind: "select", dishId: id });
             }}
           />
@@ -214,16 +222,30 @@ export function DishRecipeWorkbench(props: {
             aria-label="Không gian công thức"
             p="md"
             minW="var(--atlas-layout-zero, 0)"
-            borderLeftWidth="var(--atlas-layout-edge, 1px)"
+            borderWidth="var(--atlas-layout-edge, 1px)"
+            borderRadius="workbench"
             borderColor="border.subtle"
           >
-            <Flex justify="space-between" align="center" gap="sm">
+            <Flex
+              justify="space-between"
+              align="flex-start"
+              gap="sm"
+              pb="sm"
+              borderBottomWidth="var(--atlas-layout-edge, 1px)"
+              borderColor="border.subtle"
+            >
               {!c.dishDraft && (
-                <Box>
-                  <Heading as="h2" textStyle="section">
+                <Box minW="var(--atlas-layout-zero, 0)">
+                  <Heading as="h2" textStyle="section" overflowWrap="anywhere">
                     {c.dish?.dish_name}
                   </Heading>
-                  <Flex gap="sm" mt="xs" color="fg.muted" textStyle="helper">
+                  <Flex
+                    gap="sm"
+                    mt="xs"
+                    wrap="wrap"
+                    color="fg.muted"
+                    textStyle="helper"
+                  >
                     <Text>{c.dish?.dish_type_name ?? "Chưa phân loại"}</Text>
                     <Text>{c.dish && dishStatusLabel[c.dish.dish_status]}</Text>
                   </Flex>
@@ -232,6 +254,7 @@ export function DishRecipeWorkbench(props: {
               <Button
                 variant="tertiary"
                 size="sm"
+                flexShrink="var(--atlas-layout-zero, 0)"
                 aria-label="Đóng công thức"
                 disabled={c.busy || Boolean(c.lock)}
                 onClick={() => c.transition({ kind: "close" })}
@@ -239,6 +262,27 @@ export function DishRecipeWorkbench(props: {
                 Đóng
               </Button>
             </Flex>
+            {!c.dishDraft && (
+              <Flex gap="xs" wrap="wrap" mt="sm" justify="flex-end">
+                <Button
+                  size="sm"
+                  variant="tertiary"
+                  disabled={!c.canCommand}
+                  onClick={() => c.transition({ kind: "edit" })}
+                >
+                  Sửa thông tin món
+                </Button>
+                {c.canCopy && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => c.transition({ kind: "copy" })}
+                  >
+                    Sao chép công thức
+                  </Button>
+                )}
+              </Flex>
+            )}
             {c.dishDraft ? (
               <>
                 {feedback}
@@ -246,7 +290,14 @@ export function DishRecipeWorkbench(props: {
               </>
             ) : (
               <>
-                <Flex mt="sm" gap="sm" wrap="wrap" align="flex-end">
+                <Flex
+                  mt="sm"
+                  p="sm"
+                  bg="bg.toolbar"
+                  gap="sm"
+                  wrap="wrap"
+                  align="flex-end"
+                >
                   <Field.Root w="var(--atlas-layout-context-width, 160px)">
                     <Field.Label>Loại công thức</Field.Label>
                     <NativeSelect.Root disabled={c.busy || Boolean(c.lock)}>
@@ -281,32 +332,6 @@ export function DishRecipeWorkbench(props: {
                       }
                     />
                   </Box>
-                  <Flex
-                    gap="xs"
-                    wrap="wrap"
-                    ml={{
-                      base: "var(--atlas-layout-zero, 0)",
-                      lg: "var(--atlas-layout-utility-margin, auto)",
-                    }}
-                  >
-                    <Button
-                      size="sm"
-                      variant="tertiary"
-                      disabled={!c.canCommand}
-                      onClick={() => c.transition({ kind: "edit" })}
-                    >
-                      Sửa thông tin món
-                    </Button>
-                    {c.canCopy && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => c.transition({ kind: "copy" })}
-                      >
-                        Sao chép công thức
-                      </Button>
-                    )}
-                  </Flex>
                 </Flex>
                 {feedback}
                 {operationallyLocked && (
@@ -342,7 +367,16 @@ export function DishRecipeWorkbench(props: {
                 )}
                 <EffectiveRecipeView effective={c.effective} />
                 {c.recipeDraft && (c.review || c.canEdit) && (
-                  <Flex mt="md" gap="sm" wrap="wrap" justify="flex-end">
+                  <Flex
+                    as="footer"
+                    mt="md"
+                    pt="md"
+                    borderTopWidth="var(--atlas-layout-edge, 1px)"
+                    borderColor="border.subtle"
+                    gap="sm"
+                    wrap="wrap"
+                    justify="flex-end"
+                  >
                     {c.review ? (
                       <>
                         <Button

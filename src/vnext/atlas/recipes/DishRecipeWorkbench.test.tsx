@@ -123,7 +123,21 @@ describe("Công thức operator workbench", () => {
       screen.queryByLabelText("Không gian công thức"),
     ).not.toBeInTheDocument();
     await select();
-    expect(columns()).toEqual(["Món", "Thao tác"]);
+    expect(
+      screen.queryByRole("table", { name: "Danh mục món" }),
+    ).not.toBeInTheDocument();
+    const navigator = screen.getByRole("list", { name: "Điều hướng món" });
+    fireEvent.click(screen.getByRole("button", { name: "Chọn món khác" }));
+    expect(
+      within(navigator).getByRole("button", {
+        name: "Sửa công thức Canh bí đỏ thịt bằm",
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(navigator).getByRole("button", {
+        name: "Sửa công thức Thịt heo kho",
+      }),
+    ).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
     expect(columns()).toEqual([
       "Món",
@@ -226,10 +240,7 @@ describe("Công thức operator workbench", () => {
     const button = screen.getByRole("button", {
       name: "Sửa công thức Canh bí đỏ thịt bằm",
     });
-    expect(button.closest("tr")).toHaveAttribute("aria-selected", "true");
-    expect(
-      button.closest("tr")?.querySelector("[data-selection-indicator]"),
-    ).toBeTruthy();
+    expect(button).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByRole("heading", { name: "Công thức hiệu lực" }),
     ).toBeInTheDocument();
@@ -237,7 +248,13 @@ describe("Công thức operator workbench", () => {
       "Khối nhỏ",
     );
     fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
-    await waitFor(() => expect(button).toHaveFocus());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: "Sửa công thức Canh bí đỏ thịt bằm",
+        }),
+      ).toHaveFocus(),
+    );
   });
   it("shows searchable active Ingredient add, validates quantity/basis and protects removal as a local draft", async () => {
     const f = await setup();

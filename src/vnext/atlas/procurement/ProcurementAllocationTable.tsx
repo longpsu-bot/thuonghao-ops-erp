@@ -269,6 +269,9 @@ export function ProcurementAllocationTable({
                     <Button
                       variant="tableAction"
                       size="sm"
+                      w="full"
+                      minW="var(--atlas-layout-zero, 0)"
+                      px="xs"
                       aria-label={`${action} ${row.ingredient_name} · ${row.schools?.map((school) => school.school_name).join(", ") || row.school_name || row.location_name} · ${row.location_name}`}
                       aria-expanded={selectedKey === key}
                       disabled={

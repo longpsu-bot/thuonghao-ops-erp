@@ -13,13 +13,32 @@ import {
 import { recipeReviewWorkbook } from "./recipeReviewWorkbook";
 function Review({
   scenario = "DISH_ACTIVE_EDITABLE",
+  longContent = false,
 }: {
   scenario?: RecipeScenario;
+  longContent?: boolean;
 }) {
-  const fixture = useMemo(
-    () => createRecipeReviewFixture(scenario),
-    [scenario],
-  );
+  const fixture = useMemo(() => {
+    const fixture = createRecipeReviewFixture(scenario);
+    if (longContent) {
+      fixture.data.dishes[0]!.dish_name =
+        "Canh bí đỏ thịt bằm với rau củ theo mùa dành cho suất ăn bán trú của học sinh";
+      fixture.data.ingredients[0]!.ingredient_name =
+        "Bí đỏ tuyển chọn đã sơ chế theo quy cách giao bếp trường";
+      for (const version of fixture.data.recipe_versions) {
+        version.composition[0]!.operational_note =
+          "Cắt miếng vừa, kiểm tra chất lượng và chia theo định lượng từng điểm bếp trước giờ phục vụ.";
+        version.composition.push(
+          ...[1, 2, 3].map((index) => ({
+            ...version.composition[0]!,
+            recipe_line_id: `${version.recipe_version_id}-extra-${index}`,
+            ingredient_id: `ingredient-${index}`,
+          })),
+        );
+      }
+    }
+    return fixture;
+  }, [scenario, longContent]);
   const [subject, setSubject] = useState("review-operator");
   useEffect(() => {
     if (scenario !== "AUTH_CHANGE_DELAYED_RESPONSE") return;
@@ -119,6 +138,7 @@ const imported =
     }
   };
 export const Catalogue: Story = {};
+export const CompositionLongContent: Story = { args: { longContent: true } };
 export const LockedCatalogue: Story = {
   args: { scenario: "DISH_ACTIVE_LOCKED" },
 };

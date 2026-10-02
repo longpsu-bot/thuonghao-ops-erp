@@ -67,11 +67,12 @@ export function EffectiveRecipeView({
   return (
     <Box
       mt="md"
-      pt="sm"
+      p="sm"
+      bg="bg.subtle"
       borderTopWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.subtle"
     >
-      <Heading as="h3" textStyle="section">
+      <Heading as="h3" textStyle="body" fontWeight="semibold">
         Công thức hiệu lực
       </Heading>
       {!effective ? (
