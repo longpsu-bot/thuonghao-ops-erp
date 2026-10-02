@@ -1,37 +1,25 @@
 [
   {
     "kind": "recipe",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "errors": [],
     "keyboardFocusOrNoteDirtyClose": "PASS"
   },
   {
     "kind": "recipe",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "errors": [],
     "keyboardFocusOrNoteDirtyClose": "PASS"
   },
   {
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "errors": [],
     "keyboardFocusOrNoteDirtyClose": "PASS"
   },
   {
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "errors": [],
     "keyboardFocusOrNoteDirtyClose": "PASS"
   }

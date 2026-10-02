@@ -1,10 +1,7 @@
 [
   {
     "kind": "recipe",
-    "viewport": [
-      1440,
-      900
-    ],
+    "viewport": [1440, 900],
     "navigator": {
       "x": 107,
       "y": 368.5625,
@@ -36,10 +33,7 @@
   },
   {
     "kind": "recipe",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "navigator": {
       "x": 107,
       "y": 299.5625,
@@ -71,10 +65,7 @@
   },
   {
     "kind": "recipe",
-    "viewport": [
-      1024,
-      768
-    ],
+    "viewport": [1024, 768],
     "navigator": {
       "x": 99,
       "y": 254.1875,
@@ -106,10 +97,7 @@
   },
   {
     "kind": "recipe",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "navigator": {
       "x": 21,
       "y": 312.1875,
@@ -141,10 +129,7 @@
   },
   {
     "kind": "recipe",
-    "viewport": [
-      768,
-      1024
-    ],
+    "viewport": [768, 1024],
     "navigator": {
       "x": 27,
       "y": 318.1875,
@@ -176,10 +161,7 @@
   },
   {
     "kind": "recipe",
-    "viewport": [
-      360,
-      800
-    ],
+    "viewport": [360, 800],
     "navigator": {
       "x": 21,
       "y": 301.1875,
@@ -211,10 +193,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      1440,
-      900
-    ],
+    "viewport": [1440, 900],
     "editor": {
       "x": 1015,
       "y": 405.1875,
@@ -258,10 +237,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -305,10 +281,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      1024,
-      768
-    ],
+    "viewport": [1024, 768],
     "editor": {
       "x": 99,
       "y": 381.375,
@@ -352,10 +325,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 419.1875,
@@ -399,10 +369,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      768,
-      1024
-    ],
+    "viewport": [768, 1024],
     "editor": {
       "x": 27,
       "y": 509.5625,
@@ -446,10 +413,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      360,
-      800
-    ],
+    "viewport": [360, 800],
     "editor": {
       "x": 21,
       "y": 397.1875,
@@ -494,10 +458,7 @@
   {
     "scenario": "recipe-short",
     "kind": "recipe",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "navigator": {
       "x": 107,
       "y": 404.5625,
@@ -530,10 +491,7 @@
   {
     "scenario": "recipe-short",
     "kind": "recipe",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "navigator": {
       "x": 21,
       "y": 183.1875,
@@ -566,10 +524,7 @@
   {
     "scenario": "recipe-long",
     "kind": "recipe",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "navigator": {
       "x": 107,
       "y": 299.5625,
@@ -602,10 +557,7 @@
   {
     "scenario": "recipe-long",
     "kind": "recipe",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "navigator": {
       "x": 21,
       "y": 277.1875,
@@ -638,10 +590,7 @@
   {
     "scenario": "recipe-locked",
     "kind": "recipe",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "navigator": {
       "x": 107,
       "y": 372.5625,
@@ -674,10 +623,7 @@
   {
     "scenario": "recipe-locked",
     "kind": "recipe",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "navigator": {
       "x": 21,
       "y": 312.1875,
@@ -710,10 +656,7 @@
   {
     "scenario": "recipe-review",
     "kind": "recipe",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "navigator": {
       "x": 107,
       "y": 404.5625,
@@ -746,10 +689,7 @@
   {
     "scenario": "recipe-review",
     "kind": "recipe",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "navigator": {
       "x": 21,
       "y": 49.1875,
@@ -782,10 +722,7 @@
   {
     "scenario": "procurement-none",
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -823,10 +760,7 @@
   {
     "scenario": "procurement-none",
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 423.1875,
@@ -864,10 +798,7 @@
   {
     "scenario": "procurement-one",
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -912,10 +843,7 @@
   {
     "scenario": "procurement-one",
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 423.1875,
@@ -960,10 +888,7 @@
   {
     "scenario": "procurement-one-row",
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -1008,10 +933,7 @@
   {
     "scenario": "procurement-one-row",
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 572.6875,
@@ -1056,10 +978,7 @@
   {
     "scenario": "procurement-rebalance",
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -1104,10 +1023,7 @@
   {
     "scenario": "procurement-rebalance",
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 419.1875,
@@ -1152,10 +1068,7 @@
   {
     "scenario": "procurement-dense",
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -1193,10 +1106,7 @@
   {
     "scenario": "procurement-dense",
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 423.1875,
@@ -1234,10 +1144,7 @@
   {
     "scenario": "procurement-note-dirty",
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -1282,10 +1189,7 @@
   {
     "scenario": "procurement-note-dirty",
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 419.1875,
@@ -1330,10 +1234,7 @@
   {
     "scenario": "recipe-200-percent-reflow",
     "kind": "recipe",
-    "viewport": [
-      720,
-      450
-    ],
+    "viewport": [720, 450],
     "navigator": {
       "x": 21,
       "y": 3.1875,
@@ -1383,10 +1284,7 @@
   {
     "scenario": "procurement-long",
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -1431,10 +1329,7 @@
   {
     "scenario": "procurement-long",
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 395.1875,
@@ -1479,10 +1374,7 @@
   {
     "scenario": "recipe-last-selected",
     "kind": "recipe",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "navigator": {
       "x": 107,
       "y": -132.4375,
@@ -1532,10 +1424,7 @@
   {
     "scenario": "recipe-last-selected",
     "kind": "recipe",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "navigator": {
       "x": 21,
       "y": 312.1875,
@@ -1585,10 +1474,7 @@
   {
     "scenario": "procurement-short-editor",
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 855,
       "y": 405.1875,
@@ -1631,10 +1517,7 @@
   {
     "scenario": "procurement-short-editor",
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 21,
       "y": 524.1875,

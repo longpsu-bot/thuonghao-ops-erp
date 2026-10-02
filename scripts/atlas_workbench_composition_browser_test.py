@@ -171,10 +171,9 @@ def main():
             page.close()
         browser.close()
     results=list({(item['kind'],item.get('scenario'),tuple(item['viewport'])):item for item in results}.values())
-    (root / 'geometry.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
+    (root / 'geometry.json').write_text(json.dumps(results, indent=2) + "\n", encoding='utf-8')
     print(json.dumps(results, indent=2))
 
 
 if __name__ == '__main__':
     main()
-

@@ -1,10 +1,7 @@
 [
   {
     "kind": "recipe",
-    "viewport": [
-      1440,
-      900
-    ],
+    "viewport": [1440, 900],
     "navigator": {
       "x": 97,
       "y": 412.5625,
@@ -35,10 +32,7 @@
   },
   {
     "kind": "recipe",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "navigator": {
       "x": 97,
       "y": 384.5625,
@@ -69,10 +63,7 @@
   },
   {
     "kind": "recipe",
-    "viewport": [
-      1024,
-      768
-    ],
+    "viewport": [1024, 768],
     "navigator": {
       "x": 89,
       "y": 295.5625,
@@ -103,10 +94,7 @@
   },
   {
     "kind": "recipe",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "navigator": {
       "x": 11,
       "y": 302.1875,
@@ -137,10 +125,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      1440,
-      900
-    ],
+    "viewport": [1440, 900],
     "editor": {
       "x": 1095,
       "y": 393.1875,
@@ -179,10 +164,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      1280,
-      800
-    ],
+    "viewport": [1280, 800],
     "editor": {
       "x": 935,
       "y": 393.1875,
@@ -221,10 +203,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      1024,
-      768
-    ],
+    "viewport": [1024, 768],
     "editor": {
       "x": 687,
       "y": 505.375,
@@ -263,10 +242,7 @@
   },
   {
     "kind": "procurement",
-    "viewport": [
-      390,
-      844
-    ],
+    "viewport": [390, 844],
     "editor": {
       "x": 11,
       "y": 393.1875,
