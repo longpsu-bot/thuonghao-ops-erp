@@ -1,4 +1,9 @@
 import "@testing-library/jest-dom/vitest";
+import ExcelJS from "exceljs";
+import {
+  createConfirmedNeedShoppingListXlsx,
+  parseConfirmedNeedShoppingListXlsx,
+} from "../bridges/confirmedNeed";
 import {
   act,
   cleanup,
@@ -73,6 +78,182 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
+  it.each([
+    new Error("End of data reached (data length = 5). JSZip parser"),
+    "TypeError: internal/parser.ts",
+  ])(
+    "hides unexpected import failures and allows retrying the same file",
+    async (failure) => {
+      const onImportShoppingList = vi.fn().mockRejectedValue(failure);
+      const h = show("normal", {
+        onExportShoppingList: async () => {},
+        onImportShoppingList,
+      });
+      await quantity();
+      const input = screen.getByLabelText(
+        "Nhập Phiếu đi chợ .xlsx",
+      ) as HTMLInputElement;
+      const file = new File(["invalid"], "shopping.xlsx");
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        await userEvent.upload(input, file);
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+          "Không thể đọc Phiếu đi chợ. Hãy kiểm tra tệp .xlsx và thử lại.",
+        );
+        expect(document.body.textContent).not.toMatch(
+          /End of data|JSZip|TypeError|internal\/parser/,
+        );
+        await waitFor(() =>
+          expect(
+            screen.getByRole("button", { name: "Nhập Phiếu đi chợ" }),
+          ).toBeEnabled(),
+        );
+        expect(input.value).toBe("");
+        expect(onImportShoppingList).toHaveBeenCalledTimes(attempt);
+        expect(await quantity()).toHaveValue("10,25");
+        expect(h.save).not.toHaveBeenCalled();
+        expect(
+          screen.queryByRole("button", { name: "Lưu" }),
+        ).not.toBeInTheDocument();
+      }
+    },
+  );
+  it.each([
+    [
+      "stale identity",
+      (sheet: ExcelJS.Worksheet) => {
+        sheet.getCell("F4").value = "stale";
+      },
+      /không còn khớp/,
+    ],
+    [
+      "duplicate line",
+      (sheet: ExcelJS.Worksheet) => {
+        sheet.getCell("J5").value = sheet.getCell("J4").value;
+      },
+      /trùng dòng/,
+    ],
+    [
+      "invalid quantity",
+      (sheet: ExcelJS.Worksheet) => {
+        sheet.getCell("D4").value = -1;
+      },
+      /Số lượng.*số không âm/,
+    ],
+    [
+      "missing note",
+      (sheet: ExcelJS.Worksheet) => {
+        sheet.getCell("D4").value = 12.5;
+      },
+      /cần ghi chú/,
+    ],
+    [
+      "invalid reason",
+      (sheet: ExcelJS.Worksheet) => {
+        sheet.getCell("U4").value = "INVALID";
+      },
+      /Mã lý do.*không hợp lệ/,
+    ],
+    [
+      "missing line",
+      (sheet: ExcelJS.Worksheet) => {
+        sheet.spliceRows(5, 1);
+      },
+      /thiếu dòng/,
+    ],
+  ] as const)(
+    "keeps %s workbook validation actionable without changing drafts",
+    async (_case, tamper, message) => {
+      const h = show("normal", {
+        onExportShoppingList: async () => {},
+        onImportShoppingList: async (_file, workbench, drafts) => {
+          const book = new ExcelJS.Workbook();
+          await book.xlsx.load(
+            await createConfirmedNeedShoppingListXlsx(workbench, drafts),
+          );
+          tamper(book.worksheets[0]!);
+          return parseConfirmedNeedShoppingListXlsx(
+            new Uint8Array(await book.xlsx.writeBuffer()),
+            workbench,
+            drafts,
+          );
+        },
+      });
+      await quantity();
+      fireEvent.change(screen.getByLabelText("Nhập Phiếu đi chợ .xlsx"), {
+        target: { files: [new File(["fixture"], "shopping.xlsx")] },
+      });
+      expect(await screen.findByRole("alert")).toHaveTextContent(message);
+      expect(screen.getByRole("alert")).not.toHaveTextContent(
+        "Không thể đọc Phiếu đi chợ.",
+      );
+      expect(await quantity()).toHaveValue("10,25");
+      expect(h.save).not.toHaveBeenCalled();
+      expect(
+        screen.queryByRole("button", { name: "Lưu" }),
+      ).not.toBeInTheDocument();
+    },
+  );
+  it("keeps export exceptions operator-safe", async () => {
+    show("normal", {
+      onExportShoppingList: async () => {
+        throw new Error("ExcelJS technical export failure");
+      },
+      onImportShoppingList: async () => ({ drafts: {}, changedLineIds: [] }),
+    });
+    await quantity();
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Phiếu đi chợ" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Không thể xuất Phiếu đi chợ. Hãy thử lại.",
+    );
+    expect(document.body.textContent).not.toContain("ExcelJS");
+  });
+  it("disables Shopping List import and export for released authority", async () => {
+    const onExportShoppingList = vi.fn();
+    const onImportShoppingList = vi.fn();
+    show("released", { onExportShoppingList, onImportShoppingList });
+    await quantity();
+    expect(
+      screen.getByRole("button", { name: "Xuất Phiếu đi chợ" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Nhập Phiếu đi chợ" }),
+    ).toBeDisabled();
+    const input = screen.getByLabelText("Nhập Phiếu đi chợ .xlsx");
+    expect(input).toBeDisabled();
+    fireEvent.change(input, {
+      target: { files: [new File(["fixture"], "shopping.xlsx")] },
+    });
+    expect(onExportShoppingList).not.toHaveBeenCalled();
+    expect(onImportShoppingList).not.toHaveBeenCalled();
+  });
+  it("locks the file input during import and rejects overlapping selections", async () => {
+    let fail!: (error: Error) => void;
+    const onImportShoppingList = vi.fn().mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    show("normal", {
+      onExportShoppingList: async () => {},
+      onImportShoppingList,
+    });
+    await quantity();
+    const input = screen.getByLabelText("Nhập Phiếu đi chợ .xlsx");
+    const files = [new File(["fixture"], "shopping.xlsx")];
+    fireEvent.change(input, { target: { files } });
+    expect(input).toBeDisabled();
+    fireEvent.change(input, { target: { files } });
+    expect(onImportShoppingList).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      fail(new Error("JSZip technical failure"));
+    });
+    expect(input).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Nhập Phiếu đi chợ" }),
+    ).toBeEnabled();
+    expect(await quantity()).toHaveValue("10,25");
+  });
   it("reveals a partially clipped authoring control at the nearest local horizontal edge", async () => {
     show();
     await editValid();
@@ -507,6 +688,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(await quantity()).toHaveValue("12,5");
     expect(h.save).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    ).toBeDisabled();
   });
   it("displays an exact cent delta beyond binary floating-point precision", async () => {
     const h = show();

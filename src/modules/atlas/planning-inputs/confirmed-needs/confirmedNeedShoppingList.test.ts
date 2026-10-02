@@ -4,6 +4,8 @@ import { initialConfirmedNeedDraft } from "./confirmedNeedModel";
 import { reviewBatch } from "../../../../vnext/atlas/planning-confirmed/confirmedNeedReviewFixtures";
 import {
   createConfirmedNeedShoppingListXlsx,
+  confirmedNeedShoppingListImportErrorMessage,
+  importConfirmedNeedShoppingList,
   parseConfirmedNeedShoppingListXlsx,
 } from "./confirmedNeedShoppingList";
 
@@ -19,6 +21,50 @@ function fixture() {
 }
 
 describe("Confirmed Need Shopping List workbook", () => {
+  it("normalizes unexpected browser file-read failures", async () => {
+    const { workbench, drafts } = fixture();
+    const file = new File(["invalid"], "shopping.xlsx");
+    Object.defineProperty(file, "arrayBuffer", {
+      value: async () => {
+        throw new Error("NotReadableError: internal file reader");
+      },
+    });
+    await expect(
+      importConfirmedNeedShoppingList(file, workbench, drafts),
+    ).rejects.toThrow(
+      "Không thể đọc Phiếu đi chợ. Hãy kiểm tra tệp .xlsx và thử lại.",
+    );
+  });
+  it("keeps missing current draft guidance safe and actionable", async () => {
+    const { workbench, drafts } = fixture();
+    const bytes = await createConfirmedNeedShoppingListXlsx(workbench, drafts);
+    delete drafts["line-0"];
+    const error = await parseConfirmedNeedShoppingListXlsx(
+      new Uint8Array(bytes),
+      workbench,
+      drafts,
+    ).catch((failure: unknown) => failure);
+    expect(confirmedNeedShoppingListImportErrorMessage(error)).toBe(
+      "Phiếu đi chợ không còn khớp bản nháp hiện tại. Hãy xuất tệp mới và thử lại.",
+    );
+  });
+  it("rejects corrupt XLSX bytes with operator-safe copy and preserves drafts", async () => {
+    const { workbench, drafts } = fixture();
+    const before = structuredClone(drafts);
+    const error = await parseConfirmedNeedShoppingListXlsx(
+      new Uint8Array([80, 75, 3, 4, 0]),
+      workbench,
+      drafts,
+    ).catch((failure: unknown) => failure);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe(
+      "Không thể đọc Phiếu đi chợ. Hãy kiểm tra tệp .xlsx và thử lại.",
+    );
+    expect((error as Error).message).not.toMatch(
+      /ExcelJS|JSZip|ZIP|central directory|https?:/i,
+    );
+    expect(drafts).toEqual(before);
+  });
   it("matches the approved continuous School-grouped working layout", async () => {
     const { workbench, drafts } = fixture();
     const bytes = await createConfirmedNeedShoppingListXlsx(

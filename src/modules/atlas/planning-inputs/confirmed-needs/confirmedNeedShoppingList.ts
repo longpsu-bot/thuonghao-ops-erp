@@ -34,6 +34,22 @@ const firstDataRow = 4;
 const quantityColumn = 4;
 const noteColumn = 5;
 
+// Only curated workbook validation failures may supply operator-facing copy.
+export class ConfirmedNeedShoppingListValidationError extends Error {}
+
+export function confirmedNeedShoppingListImportErrorMessage(error: unknown) {
+  return error instanceof ConfirmedNeedShoppingListValidationError
+    ? error.message
+    : "Không thể đọc Phiếu đi chợ. Hãy kiểm tra tệp .xlsx và thử lại.";
+}
+
+function rethrowShoppingListImportError(error: unknown): never {
+  if (error instanceof ConfirmedNeedShoppingListValidationError) throw error;
+  throw new Error(confirmedNeedShoppingListImportErrorMessage(error), {
+    cause: error,
+  });
+}
+
 function cellText(value: ExcelJS.CellValue | undefined | null) {
   if (value === null || value === undefined) return "";
   if (typeof value === "object") {
@@ -242,6 +258,18 @@ export async function parseConfirmedNeedShoppingListXlsx(
   workbench: ConfirmedNeedWorkbenchData,
   currentDrafts: Record<string, ConfirmedNeedDraftLine>,
 ): Promise<ConfirmedNeedShoppingListImport> {
+  try {
+    return await parseShoppingListWorkbook(bytes, workbench, currentDrafts);
+  } catch (error: unknown) {
+    rethrowShoppingListImportError(error);
+  }
+}
+
+async function parseShoppingListWorkbook(
+  bytes: ArrayBuffer | Uint8Array,
+  workbench: ConfirmedNeedWorkbenchData,
+  currentDrafts: Record<string, ConfirmedNeedDraftLine>,
+): Promise<ConfirmedNeedShoppingListImport> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(
     bytes as unknown as Parameters<typeof workbook.xlsx.load>[0],
@@ -286,7 +314,9 @@ export async function parseConfirmedNeedShoppingListXlsx(
         workbookMarker,
       ] = values;
       if (seen.has(lineId!))
-        throw new Error(`Workbook có trùng dòng Atlas ${lineId}.`);
+        throw new ConfirmedNeedShoppingListValidationError(
+          `Phiếu đi chợ có trùng dòng tại dòng ${rowNumber}. Hãy kiểm tra tệp và thử lại.`,
+        );
       const line = linesById.get(lineId!);
       if (
         workbookMarker !== marker ||
@@ -306,15 +336,15 @@ export async function parseConfirmedNeedShoppingListXlsx(
         ingredientId !== line.ingredient.id ||
         unitId !== line.controlled_unit.id
       )
-        throw new Error(
-          `Workbook không còn khớp dữ liệu Atlas hiện tại (dòng ${rowNumber}).`,
+        throw new ConfirmedNeedShoppingListValidationError(
+          `Phiếu đi chợ không còn khớp dữ liệu Atlas hiện tại (dòng ${rowNumber}). Hãy xuất tệp mới và thử lại.`,
         );
       seen.add(lineId!);
 
       const exportedExact = normalizeConfirmedNeedQuantity(exportedQuantity!);
       if (!exportedExact)
-        throw new Error(
-          `Số lượng trong siêu dữ liệu không còn khớp tại dòng ${rowNumber}.`,
+        throw new ConfirmedNeedShoppingListValidationError(
+          `Thông tin đối chiếu số lượng không còn khớp tại dòng ${rowNumber}. Hãy xuất tệp mới và thử lại.`,
         );
       const rawQuantity = cellText(row.getCell(quantityColumn).value);
       // Untouched numeric(20,6) is evidence, not newly entered operator precision.
@@ -326,16 +356,20 @@ export async function parseConfirmedNeedShoppingListXlsx(
         !normalizedQuantity ||
         (quantityChanged && !normalizeConfirmedNeedEntry(rawQuantity))
       )
-        throw new Error(
+        throw new ConfirmedNeedShoppingListValidationError(
           `Số lượng tại dòng ${rowNumber} phải là số không âm, tối đa 2 chữ số thập phân khi thay đổi.`,
         );
       const note = cellText(row.getCell(noteColumn).value);
       if (quantityChanged && !note)
-        throw new Error(`Dòng ${rowNumber} cần ghi chú khi thay đổi số lượng.`);
+        throw new ConfirmedNeedShoppingListValidationError(
+          `Dòng ${rowNumber} cần ghi chú khi thay đổi số lượng.`,
+        );
 
       const existing = currentDrafts[lineId!];
       if (!existing)
-        throw new Error(`Không tìm thấy bản nháp Atlas cho dòng ${lineId}.`);
+        throw new ConfirmedNeedShoppingListValidationError(
+          "Phiếu đi chợ không còn khớp bản nháp hiện tại. Hãy xuất tệp mới và thử lại.",
+        );
       const reasonCode = quantityChanged
         ? "OPERATIONAL_QUANTITY_ADJUSTMENT"
         : (exportedReasonCode as ConfirmedNeedDraftLine["reason_code"]);
@@ -347,8 +381,8 @@ export async function parseConfirmedNeedShoppingListXlsx(
           "OTHER",
         ].includes(reasonCode)
       )
-        throw new Error(
-          `Mã lý do trong workbook không hợp lệ tại dòng ${rowNumber}.`,
+        throw new ConfirmedNeedShoppingListValidationError(
+          `Mã lý do trong Phiếu đi chợ không hợp lệ tại dòng ${rowNumber}.`,
         );
       nextDrafts[lineId!] = {
         ...existing,
@@ -374,7 +408,9 @@ export async function parseConfirmedNeedShoppingListXlsx(
     }
   }
   if (seen.size !== workbench.lines.length)
-    throw new Error("Workbook thiếu dòng Atlas nên không thể nhập một phần.");
+    throw new ConfirmedNeedShoppingListValidationError(
+      "Phiếu đi chợ thiếu dòng nên không thể nhập một phần. Hãy xuất tệp mới và thử lại.",
+    );
   return { drafts: nextDrafts, changedLineIds };
 }
 
@@ -399,9 +435,13 @@ export async function importConfirmedNeedShoppingList(
   workbench: ConfirmedNeedWorkbenchData,
   drafts: Record<string, ConfirmedNeedDraftLine>,
 ) {
-  return parseConfirmedNeedShoppingListXlsx(
-    await file.arrayBuffer(),
-    workbench,
-    drafts,
-  );
+  try {
+    return await parseConfirmedNeedShoppingListXlsx(
+      await file.arrayBuffer(),
+      workbench,
+      drafts,
+    );
+  } catch (error: unknown) {
+    rethrowShoppingListImportError(error);
+  }
 }
