@@ -1,0 +1,1189 @@
+{
+  "browser": "151.0.7922.34",
+  "results": [
+    {
+      "case": "clean-mismatch",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "geometry": {
+        "viewport": 1280,
+        "document": 1280,
+        "body": 1280,
+        "table": {
+          "width": 1020,
+          "scroll": 1158,
+          "client": 1158
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Tiểu học Nguyễn Du\n\nBếp chính Nguyễn Du",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "△Lệch số lượng",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 98 · Δ +2",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 54,
+            "scrollHeight": 54
+          },
+          {
+            "text": "Trường Tiểu học Lê Quý Đôn\n\nBếp Lê Quý Đôn",
+            "width": 220,
+            "scroll": 220,
+            "height": 54,
+            "scrollHeight": 54
+          },
+          {
+            "text": "△Chưa có PO\n\nĐang bị chặn",
+            "width": 140,
+            "scroll": 140,
+            "height": 54,
+            "scrollHeight": 54
+          },
+          {
+            "text": "Chưa có PO\n\nPXK-20260924-C",
+            "width": 180,
+            "scroll": 180,
+            "height": 54,
+            "scrollHeight": 54
+          },
+          {
+            "text": "kg · PO 0 · PXK 98 · Δ -98",
+            "width": 240,
+            "scroll": 240,
+            "height": 54,
+            "scrollHeight": 54
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 54,
+            "scrollHeight": 54
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường THCS Nguyễn Trãi\n\nBếp Nguyễn Trãi",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "△Khác nguyên liệu",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-D",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Tiểu học và Trung học cơ sở Đoàn Thị Điểm\n\nBếp Đoàn Thị Điểm",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "△Chưa có PXK",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nChưa có PXK",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 0 · Δ +100",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học Nguyễn Du\n\nBếp chính Nguyễn Du\n\n\t\n\n△Lệch số lượng\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 98 · Δ +2\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học Lê Quý Đôn\n\nBếp Lê Quý Đôn\n\n\t\n\n△Chưa có PO\n\nĐang bị chặn\n\n\t\n\nChưa có PO\n\nPXK-20260924-C\n\n\t\n\nkg · PO 0 · PXK 98 · Δ -98\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường THCS Nguyễn Trãi\n\nBếp Nguyễn Trãi\n\n\t\n\n△Khác nguyên liệu\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-D\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học và Trung học cơ sở Đoàn Thị Điểm\n\nBếp Đoàn Thị Điểm\n\n\t\n\n△Chưa có PXK\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nChưa có PXK\n\n\t\n\nkg · PO 100 · PXK 0 · Δ +100\n\n\tXem đối chiếu",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": false,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "blocked-ok",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "geometry": {
+        "viewport": 1280,
+        "document": 1280,
+        "body": 1280,
+        "table": {
+          "width": 1020,
+          "scroll": 1158,
+          "client": 1158
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Mầm non Hoa Sen\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp\n\nĐang bị chặn",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác\n\n\n24/09/2026\n\n\t\n\nTrường Mầm non Hoa Sen\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\nĐang bị chặn\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": true,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "replacement-ok",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "geometry": {
+        "viewport": 1280,
+        "document": 1280,
+        "body": 1280,
+        "table": {
+          "width": 1020,
+          "scroll": 1158,
+          "client": 1158
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Mầm non Hoa Sen\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp\n\nCần phiếu thay thế",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác\n\n\n24/09/2026\n\n\t\n\nTrường Mầm non Hoa Sen\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\nCần phiếu thay thế\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": true,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "all",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "geometry": {
+        "viewport": 1280,
+        "document": 1280,
+        "body": 1280,
+        "table": {
+          "width": 1020,
+          "scroll": 1158,
+          "client": 1158
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Tiểu học Lê Quý Đôn\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp\n\nĐang bị chặn",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường THCS Nguyễn Trãi\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp\n\nCần phiếu thay thế",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Tiểu học Nguyễn Du\n\nBếp chính Nguyễn Du",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "△Lệch số lượng",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 98 · Δ +2",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Mầm non Hoa Sen\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học Lê Quý Đôn\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\nĐang bị chặn\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường THCS Nguyễn Trãi\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\nCần phiếu thay thế\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học Nguyễn Du\n\nBếp chính Nguyễn Du\n\n\t\n\n△Lệch số lượng\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 98 · Δ +2\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường Mầm non Hoa Sen\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": false,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "warning-only",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "geometry": {
+        "viewport": 1280,
+        "document": 1280,
+        "body": 1280,
+        "table": {
+          "width": 1020,
+          "scroll": 1158,
+          "client": 1158
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Mầm non Hoa Sen\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": false,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "clean-mismatch",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390,
+        "table": {
+          "width": 1020,
+          "scroll": 1020,
+          "client": 368
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Tiểu học Nguyễn Du\n\nBếp chính Nguyễn Du",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "△Lệch số lượng",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 98 · Δ +2",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 56,
+            "scrollHeight": 56
+          },
+          {
+            "text": "Trường Tiểu học Lê Quý Đôn\n\nBếp Lê Quý Đôn",
+            "width": 220,
+            "scroll": 220,
+            "height": 56,
+            "scrollHeight": 56
+          },
+          {
+            "text": "△Chưa có PO\n\nĐang bị chặn",
+            "width": 140,
+            "scroll": 140,
+            "height": 56,
+            "scrollHeight": 56
+          },
+          {
+            "text": "Chưa có PO\n\nPXK-20260924-C",
+            "width": 180,
+            "scroll": 180,
+            "height": 56,
+            "scrollHeight": 56
+          },
+          {
+            "text": "kg · PO 0 · PXK 98 · Δ -98",
+            "width": 240,
+            "scroll": 240,
+            "height": 56,
+            "scrollHeight": 56
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 56,
+            "scrollHeight": 56
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường THCS Nguyễn Trãi\n\nBếp Nguyễn Trãi",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "△Khác nguyên liệu",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-D",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Tiểu học và Trung học cơ sở Đoàn Thị Điểm\n\nBếp Đoàn Thị Điểm",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "△Chưa có PXK",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nChưa có PXK",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 0 · Δ +100",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học Nguyễn Du\n\nBếp chính Nguyễn Du\n\n\t\n\n△Lệch số lượng\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 98 · Δ +2\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học Lê Quý Đôn\n\nBếp Lê Quý Đôn\n\n\t\n\n△Chưa có PO\n\nĐang bị chặn\n\n\t\n\nChưa có PO\n\nPXK-20260924-C\n\n\t\n\nkg · PO 0 · PXK 98 · Δ -98\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường THCS Nguyễn Trãi\n\nBếp Nguyễn Trãi\n\n\t\n\n△Khác nguyên liệu\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-D\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học và Trung học cơ sở Đoàn Thị Điểm\n\nBếp Đoàn Thị Điểm\n\n\t\n\n△Chưa có PXK\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nChưa có PXK\n\n\t\n\nkg · PO 100 · PXK 0 · Δ +100\n\n\tXem đối chiếu",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": false,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "blocked-ok",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390,
+        "table": {
+          "width": 1020,
+          "scroll": 1020,
+          "client": 368
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Mầm non Hoa Sen\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp\n\nĐang bị chặn",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác\n\n\n24/09/2026\n\n\t\n\nTrường Mầm non Hoa Sen\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\nĐang bị chặn\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": true,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "replacement-ok",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390,
+        "table": {
+          "width": 1020,
+          "scroll": 1020,
+          "client": 368
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Mầm non Hoa Sen\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp\n\nCần phiếu thay thế",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác\n\n\n24/09/2026\n\n\t\n\nTrường Mầm non Hoa Sen\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\nCần phiếu thay thế\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": true,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "all",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390,
+        "table": {
+          "width": 1020,
+          "scroll": 1020,
+          "client": 368
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Tiểu học Lê Quý Đôn\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp\n\nĐang bị chặn",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường THCS Nguyễn Trãi\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp\n\nCần phiếu thay thế",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Tiểu học Nguyễn Du\n\nBếp chính Nguyễn Du",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "△Lệch số lượng",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 98 · Δ +2",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Mầm non Hoa Sen\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học Lê Quý Đôn\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\nĐang bị chặn\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường THCS Nguyễn Trãi\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\nCần phiếu thay thế\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường Tiểu học Nguyễn Du\n\nBếp chính Nguyễn Du\n\n\t\n\n△Lệch số lượng\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 98 · Δ +2\n\n\tXem đối chiếu\n\n\n24/09/2026\n\n\t\n\nTrường Mầm non Hoa Sen\n\nBếp Hoa Sen\n\n\t\n\nKhớp\n\n\t\n\nPO-20260924-A · PO-20260924-B\n\nPXK-20260924-A\n\n\t\n\nkg · PO 100 · PXK 100 · Δ 0\n\n\tXem đối chiếu",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": false,
+      "errors": [],
+      "externalRequests": []
+    },
+    {
+      "case": "warning-only",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390,
+        "table": {
+          "width": 1020,
+          "scroll": 1020,
+          "client": 368
+        },
+        "cells": [
+          {
+            "text": "24/09/2026",
+            "width": 110,
+            "scroll": 110,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Trường Mầm non Hoa Sen\n\nBếp Hoa Sen",
+            "width": 220,
+            "scroll": 220,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Khớp",
+            "width": 140,
+            "scroll": 140,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "PO-20260924-A · PO-20260924-B\n\nPXK-20260924-A",
+            "width": 180,
+            "scroll": 180,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "kg · PO 100 · PXK 100 · Δ 0",
+            "width": 240,
+            "scroll": 240,
+            "height": 66,
+            "scrollHeight": 66
+          },
+          {
+            "text": "Xem đối chiếu",
+            "width": 130,
+            "scroll": 130,
+            "height": 66,
+            "scrollHeight": 66
+          }
+        ]
+      },
+      "tableText": "Ngày\tTrường / điểm giao\tĐối chiếu\tPO / PXK\tSố lượng\tThao tác",
+      "reads": 1,
+      "keyboardDetailFocus": true,
+      "closeFocusReturn": true,
+      "hiddenDetailFilterFocus": false,
+      "errors": [],
+      "externalRequests": []
+    }
+  ]
+}

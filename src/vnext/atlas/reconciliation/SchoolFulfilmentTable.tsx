@@ -4,6 +4,7 @@ import {
   type SchoolFulfilmentComparisonStatus,
   type SchoolFulfilmentRow,
 } from "../bridges/schoolFulfilment";
+import { SCHOOL_DISPATCH_STATE_LABELS } from "../bridges/schoolDispatch";
 import { formatExactQuantity, formatExactDelta } from "../formatExactQuantity";
 import { fulfilmentRowKey } from "./useSchoolFulfilmentWorkbench";
 export const fulfilmentDate = (value: string) =>
@@ -99,6 +100,21 @@ export function SchoolFulfilmentTable({
               </Table.Cell>
               <Table.Cell minW="var(--atlas-layout-comparison-min, 105px)">
                 <ComparisonResult status={row.comparison_status} />
+                {(row.pxk_state === "REPLACEMENT_REQUIRED" ||
+                  row.pxk_state === "BLOCKED" ||
+                  row.blockers.length > 0) && (
+                  <Text
+                    textStyle="helper"
+                    color="status.warning"
+                    fontWeight="semibold"
+                    mt="xs"
+                  >
+                    {row.pxk_state === "REPLACEMENT_REQUIRED" ||
+                    row.pxk_state === "BLOCKED"
+                      ? SCHOOL_DISPATCH_STATE_LABELS[row.pxk_state]
+                      : "Cần xử lý vận hành"}
+                  </Text>
+                )}
               </Table.Cell>
               <Table.Cell minW="var(--atlas-layout-documents-min, 120px)">
                 <Text textStyle="helper" overflowWrap="anywhere">

@@ -17,6 +17,7 @@ import {
   fulfilmentRowKey,
   type SchoolFulfilmentWorkbenchProps,
 } from "./useSchoolFulfilmentWorkbench";
+import { needsAttention } from "./schoolFulfilmentAttention";
 import { SchoolFulfilmentTable } from "./SchoolFulfilmentTable";
 import { SchoolFulfilmentDetail } from "./SchoolFulfilmentDetail";
 import {
@@ -161,9 +162,12 @@ export function SchoolFulfilmentWorkbench(
             <OperationalSignals blockers={c.blockers} warnings={c.warnings} />
           </Box>
           <Text px="md" py="sm" textStyle="helper" color="fg.muted">
-            Cần xử lý{" "}
-            {c.rows.filter((r) => r.comparison_status !== "OK").length} · Khớp{" "}
+            Cần xử lý {c.rows.filter(needsAttention).length} · Khớp{" "}
             {c.rows.filter((r) => r.comparison_status === "OK").length}
+          </Text>
+          <Text px="md" pb="sm" textStyle="helper" color="fg.muted">
+            Cần xử lý gồm chênh lệch đối chiếu hoặc vướng mắc vận hành. Dòng
+            khớp vẫn có thể cần xử lý.
           </Text>
           <Grid
             templateColumns={{
