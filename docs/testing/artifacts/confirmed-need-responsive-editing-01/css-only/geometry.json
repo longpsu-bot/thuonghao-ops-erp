@@ -1,0 +1,5197 @@
+{
+  "browser": "151.0.7922.34",
+  "phase": "after",
+  "cases": [
+    {
+      "size": "1440x900",
+      "state": "normal",
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 298.1875,
+        "bottom": 654.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1318,
+        "scrollWidth": 1318,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 426.5,
+        "top": 336.1875,
+        "bottom": 389.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 426.5,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1415,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 342.6875,
+        "bottom": 382.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "1440x900",
+      "state": "quantity-focus",
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 298.1875,
+        "bottom": 654.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1318,
+        "scrollWidth": 1318,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 426.5,
+        "top": 336.1875,
+        "bottom": 389.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 426.5,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1415,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 342.6875,
+        "bottom": 382.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "1440x900",
+      "state": "dirty-quantity",
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 748.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1318,
+        "scrollWidth": 1318,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 426.5,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 426.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 765.6875,
+        "bottom": 805.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1440x900",
+      "state": "reason-focus",
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 748.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1318,
+        "scrollWidth": 1318,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 426.5,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 426.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "active": "Lý do Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 765.6875,
+        "bottom": 805.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1440x900",
+      "state": "note-edit",
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 724.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1318,
+        "scrollWidth": 1318,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 426.5,
+        "top": 360.1875,
+        "bottom": 459.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 426.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 389.6875,
+        "bottom": 429.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 741.6875,
+        "bottom": 781.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1440x900",
+      "state": "dirty-save",
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 724.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1318,
+        "scrollWidth": 1318,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 426.5,
+        "top": 360.1875,
+        "bottom": 459.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 426.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 389.6875,
+        "bottom": 429.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 741.6875,
+        "bottom": 781.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1440x900",
+      "state": "invalid",
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 748.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1318,
+        "scrollWidth": 1318,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 426.5,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 426.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 765.6875,
+        "bottom": 805.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1440x900",
+      "state": "local-scroll",
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 748.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1318,
+        "scrollWidth": 1318,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 426.5,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 426.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1415,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 765.6875,
+        "bottom": 805.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1366x768",
+      "state": "normal",
+      "viewport": {
+        "left": 97,
+        "right": 1341,
+        "top": 298.1875,
+        "bottom": 641.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1244,
+        "scrollWidth": 1244,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 408,
+        "top": 336.1875,
+        "bottom": 389.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 408,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1341,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 599.421875,
+        "right": 771.6875,
+        "top": 342.6875,
+        "bottom": 382.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 1366,
+      "pageScrollWidth": 1366,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "1366x768",
+      "state": "quantity-focus",
+      "viewport": {
+        "left": 97,
+        "right": 1341,
+        "top": 298.1875,
+        "bottom": 641.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1244,
+        "scrollWidth": 1244,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 408,
+        "top": 336.1875,
+        "bottom": 389.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 408,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1341,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 599.421875,
+        "right": 771.6875,
+        "top": 342.6875,
+        "bottom": 382.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 1366,
+      "pageScrollWidth": 1366,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "1366x768",
+      "state": "dirty-quantity",
+      "viewport": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 665.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1244,
+        "scrollWidth": 1244,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 408,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 408,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 599.421875,
+        "right": 771.6875,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1366,
+      "pageScrollWidth": 1366,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 1084.1875,
+        "right": 1141.9375,
+        "top": 682.1875,
+        "bottom": 722.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1366x768",
+      "state": "reason-focus",
+      "viewport": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 665.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1244,
+        "scrollWidth": 1244,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 408,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 408,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 599.421875,
+        "right": 771.6875,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1366,
+      "pageScrollWidth": 1366,
+      "active": "Lý do Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 1084.1875,
+        "right": 1141.9375,
+        "top": 682.1875,
+        "bottom": 722.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1366x768",
+      "state": "note-edit",
+      "viewport": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 665.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1244,
+        "scrollWidth": 1244,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 408,
+        "top": 360.1875,
+        "bottom": 459.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 408,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 599.421875,
+        "right": 771.6875,
+        "top": 389.6875,
+        "bottom": 429.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1366,
+      "pageScrollWidth": 1366,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 1084.1875,
+        "right": 1141.9375,
+        "top": 682.1875,
+        "bottom": 722.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1366x768",
+      "state": "dirty-save",
+      "viewport": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 665.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1244,
+        "scrollWidth": 1244,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 408,
+        "top": 360.1875,
+        "bottom": 459.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 408,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 599.421875,
+        "right": 771.6875,
+        "top": 389.6875,
+        "bottom": 429.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1366,
+      "pageScrollWidth": 1366,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 1084.1875,
+        "right": 1141.9375,
+        "top": 682.1875,
+        "bottom": 722.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1366x768",
+      "state": "invalid",
+      "viewport": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 665.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1244,
+        "scrollWidth": 1244,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 408,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 408,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 599.421875,
+        "right": 771.6875,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1366,
+      "pageScrollWidth": 1366,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 1084.1875,
+        "right": 1141.9375,
+        "top": 682.1875,
+        "bottom": 722.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1366x768",
+      "state": "local-scroll",
+      "viewport": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 665.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1244,
+        "scrollWidth": 1244,
+        "scrollLeft": 0,
+        "scrollTop": 30
+      },
+      "identity": {
+        "left": 97,
+        "right": 408,
+        "top": 330.1875,
+        "bottom": 453.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 408,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1341,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 599.421875,
+        "right": 771.6875,
+        "top": 371.6875,
+        "bottom": 411.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 336.6875,
+        "bottom": 376.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 970.21875,
+        "right": 1329,
+        "top": 382.6875,
+        "bottom": 422.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1366,
+      "pageScrollWidth": 1366,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 1084.1875,
+        "right": 1141.9375,
+        "top": 682.1875,
+        "bottom": 722.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1280x800",
+      "state": "normal",
+      "viewport": {
+        "left": 97,
+        "right": 1255,
+        "top": 298.1875,
+        "bottom": 654.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1158,
+        "scrollWidth": 1158,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 386.5,
+        "top": 336.1875,
+        "bottom": 389.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 386.5,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1255,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 565.515625,
+        "right": 722.90625,
+        "top": 342.6875,
+        "bottom": 382.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 1280,
+      "pageScrollWidth": 1280,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "1280x800",
+      "state": "quantity-focus",
+      "viewport": {
+        "left": 97,
+        "right": 1255,
+        "top": 298.1875,
+        "bottom": 654.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1158,
+        "scrollWidth": 1158,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 386.5,
+        "top": 336.1875,
+        "bottom": 389.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 386.5,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1255,
+        "top": 298.1875,
+        "bottom": 336.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 565.515625,
+        "right": 722.90625,
+        "top": 342.6875,
+        "bottom": 382.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 1280,
+      "pageScrollWidth": 1280,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "1280x800",
+      "state": "dirty-quantity",
+      "viewport": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 697.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1158,
+        "scrollWidth": 1158,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 386.5,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 386.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 565.515625,
+        "right": 722.90625,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1280,
+      "pageScrollWidth": 1280,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 998.1875,
+        "right": 1055.9375,
+        "top": 714.1875,
+        "bottom": 754.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1280x800",
+      "state": "reason-focus",
+      "viewport": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 697.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1158,
+        "scrollWidth": 1158,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 386.5,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 386.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 565.515625,
+        "right": 722.90625,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1280,
+      "pageScrollWidth": 1280,
+      "active": "Lý do Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 998.1875,
+        "right": 1055.9375,
+        "top": 714.1875,
+        "bottom": 754.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1280x800",
+      "state": "note-edit",
+      "viewport": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 697.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1158,
+        "scrollWidth": 1158,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 386.5,
+        "top": 360.1875,
+        "bottom": 459.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 386.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 565.515625,
+        "right": 722.90625,
+        "top": 389.6875,
+        "bottom": 429.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1280,
+      "pageScrollWidth": 1280,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 998.1875,
+        "right": 1055.9375,
+        "top": 714.1875,
+        "bottom": 754.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1280x800",
+      "state": "dirty-save",
+      "viewport": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 697.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1158,
+        "scrollWidth": 1158,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 386.5,
+        "top": 360.1875,
+        "bottom": 459.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 386.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 565.515625,
+        "right": 722.90625,
+        "top": 389.6875,
+        "bottom": 429.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1280,
+      "pageScrollWidth": 1280,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 998.1875,
+        "right": 1055.9375,
+        "top": 714.1875,
+        "bottom": 754.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1280x800",
+      "state": "invalid",
+      "viewport": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 697.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1158,
+        "scrollWidth": 1158,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 97,
+        "right": 386.5,
+        "top": 360.1875,
+        "bottom": 483.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 386.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 565.515625,
+        "right": 722.90625,
+        "top": 401.6875,
+        "bottom": 441.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 366.6875,
+        "bottom": 406.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 412.6875,
+        "bottom": 452.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1280,
+      "pageScrollWidth": 1280,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 998.1875,
+        "right": 1055.9375,
+        "top": 714.1875,
+        "bottom": 754.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1280x800",
+      "state": "local-scroll",
+      "viewport": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 697.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 1158,
+        "scrollWidth": 1158,
+        "scrollLeft": 0,
+        "scrollTop": 30
+      },
+      "identity": {
+        "left": 97,
+        "right": 386.5,
+        "top": 330.1875,
+        "bottom": 453.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 97,
+        "right": 386.5,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "0px",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 97,
+        "right": 1255,
+        "top": 322.1875,
+        "bottom": 360.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 565.515625,
+        "right": 722.90625,
+        "top": 371.6875,
+        "bottom": 411.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 336.6875,
+        "bottom": 376.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 910.6875,
+        "right": 1243,
+        "top": 382.6875,
+        "bottom": 422.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1280,
+      "pageScrollWidth": 1280,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 998.1875,
+        "right": 1055.9375,
+        "top": 714.1875,
+        "bottom": 754.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1024x768",
+      "state": "normal",
+      "viewport": {
+        "left": 89,
+        "right": 1007,
+        "top": 432.5625,
+        "bottom": 789.0625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 918,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 89,
+        "right": 349,
+        "top": 470.5625,
+        "bottom": 523.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 89,
+        "right": 349,
+        "top": 432.5625,
+        "bottom": 470.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 89,
+        "right": 1129,
+        "top": 432.5625,
+        "bottom": 470.5625,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 511,
+        "right": 647.96875,
+        "top": 477.0625,
+        "bottom": 517.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 1024,
+      "pageScrollWidth": 1024,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "1024x768",
+      "state": "quantity-focus",
+      "viewport": {
+        "left": 89,
+        "right": 1007,
+        "top": 432.5625,
+        "bottom": 789.0625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 918,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 89,
+        "right": 349,
+        "top": 470.5625,
+        "bottom": 523.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 89,
+        "right": 349,
+        "top": 432.5625,
+        "bottom": 470.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 89,
+        "right": 1129,
+        "top": 432.5625,
+        "bottom": 470.5625,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 511,
+        "right": 647.96875,
+        "top": 477.0625,
+        "bottom": 517.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 1024,
+      "pageScrollWidth": 1024,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "1024x768",
+      "state": "dirty-quantity",
+      "viewport": {
+        "left": 89,
+        "right": 1007,
+        "top": 456.5625,
+        "bottom": 671.59375,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 918,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 89,
+        "right": 349,
+        "top": 494.5625,
+        "bottom": 617.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 89,
+        "right": 349,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 89,
+        "right": 1129,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 511,
+        "right": 647.96875,
+        "top": 536.0625,
+        "bottom": 576.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 821,
+        "right": 1117,
+        "top": 501.0625,
+        "bottom": 541.0625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 821,
+        "right": 1117,
+        "top": 547.0625,
+        "bottom": 587.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1024,
+      "pageScrollWidth": 1024,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 750.1875,
+        "right": 807.9375,
+        "top": 688.59375,
+        "bottom": 728.59375,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1024x768",
+      "state": "reason-focus",
+      "viewport": {
+        "left": 89,
+        "right": 1007,
+        "top": 456.5625,
+        "bottom": 671.59375,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 918,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 89,
+        "right": 349,
+        "top": 494.5625,
+        "bottom": 617.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 89,
+        "right": 349,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 89,
+        "right": 1129,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 511,
+        "right": 647.96875,
+        "top": 536.0625,
+        "bottom": 576.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 821,
+        "right": 1117,
+        "top": 501.0625,
+        "bottom": 541.0625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 821,
+        "right": 1117,
+        "top": 547.0625,
+        "bottom": 587.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1024,
+      "pageScrollWidth": 1024,
+      "active": "Lý do Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 750.1875,
+        "right": 807.9375,
+        "top": 688.59375,
+        "bottom": 728.59375,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1024x768",
+      "state": "note-edit",
+      "viewport": {
+        "left": 89,
+        "right": 1007,
+        "top": 456.5625,
+        "bottom": 671.59375,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 918,
+        "scrollWidth": 1040,
+        "scrollLeft": 110,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -21,
+        "right": 239,
+        "top": 494.5625,
+        "bottom": 593.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -21,
+        "right": 239,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -21,
+        "right": 1019,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 401,
+        "right": 537.96875,
+        "top": 524.0625,
+        "bottom": 564.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 711,
+        "right": 1007,
+        "top": 501.0625,
+        "bottom": 541.0625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 711,
+        "right": 1007,
+        "top": 547.0625,
+        "bottom": 587.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1024,
+      "pageScrollWidth": 1024,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 750.1875,
+        "right": 807.9375,
+        "top": 688.59375,
+        "bottom": 728.59375,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1024x768",
+      "state": "dirty-save",
+      "viewport": {
+        "left": 89,
+        "right": 1007,
+        "top": 456.5625,
+        "bottom": 671.59375,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 918,
+        "scrollWidth": 1040,
+        "scrollLeft": 110,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -21,
+        "right": 239,
+        "top": 494.5625,
+        "bottom": 593.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -21,
+        "right": 239,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -21,
+        "right": 1019,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 401,
+        "right": 537.96875,
+        "top": 524.0625,
+        "bottom": 564.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 711,
+        "right": 1007,
+        "top": 501.0625,
+        "bottom": 541.0625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 711,
+        "right": 1007,
+        "top": 547.0625,
+        "bottom": 587.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1024,
+      "pageScrollWidth": 1024,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 750.1875,
+        "right": 807.9375,
+        "top": 688.59375,
+        "bottom": 728.59375,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1024x768",
+      "state": "invalid",
+      "viewport": {
+        "left": 89,
+        "right": 1007,
+        "top": 456.5625,
+        "bottom": 671.59375,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 918,
+        "scrollWidth": 1040,
+        "scrollLeft": 110,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -21,
+        "right": 239,
+        "top": 494.5625,
+        "bottom": 617.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -21,
+        "right": 239,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -21,
+        "right": 1019,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 401,
+        "right": 537.96875,
+        "top": 536.0625,
+        "bottom": 576.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 711,
+        "right": 1007,
+        "top": 501.0625,
+        "bottom": 541.0625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 711,
+        "right": 1007,
+        "top": 547.0625,
+        "bottom": 587.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1024,
+      "pageScrollWidth": 1024,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 750.1875,
+        "right": 807.9375,
+        "top": 688.59375,
+        "bottom": 728.59375,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "1024x768",
+      "state": "local-scroll",
+      "viewport": {
+        "left": 89,
+        "right": 1007,
+        "top": 456.5625,
+        "bottom": 671.59375,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 918,
+        "scrollWidth": 1040,
+        "scrollLeft": 122,
+        "scrollTop": 30
+      },
+      "identity": {
+        "left": -33,
+        "right": 227,
+        "top": 464.5625,
+        "bottom": 587.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -33,
+        "right": 227,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -33,
+        "right": 1007,
+        "top": 456.5625,
+        "bottom": 494.5625,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 389,
+        "right": 525.96875,
+        "top": 506.0625,
+        "bottom": 546.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 699,
+        "right": 995,
+        "top": 471.0625,
+        "bottom": 511.0625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 699,
+        "right": 995,
+        "top": 517.0625,
+        "bottom": 557.0625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 1024,
+      "pageScrollWidth": 1024,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 750.1875,
+        "right": 807.9375,
+        "top": 688.59375,
+        "bottom": 728.59375,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "768x1024",
+      "state": "normal",
+      "viewport": {
+        "left": 17,
+        "right": 751,
+        "top": 394.1875,
+        "bottom": 774.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 734,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 17,
+        "right": 277,
+        "top": 432.1875,
+        "bottom": 489.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 17,
+        "right": 277,
+        "top": 394.1875,
+        "bottom": 432.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 17,
+        "right": 1057,
+        "top": 394.1875,
+        "bottom": 432.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 439,
+        "right": 575.96875,
+        "top": 438.6875,
+        "bottom": 482.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 768,
+      "pageScrollWidth": 768,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "768x1024",
+      "state": "quantity-focus",
+      "viewport": {
+        "left": 17,
+        "right": 751,
+        "top": 394.1875,
+        "bottom": 774.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 734,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 17,
+        "right": 277,
+        "top": 432.1875,
+        "bottom": 489.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 17,
+        "right": 277,
+        "top": 394.1875,
+        "bottom": 432.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 17,
+        "right": 1057,
+        "top": 394.1875,
+        "bottom": 432.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 439,
+        "right": 575.96875,
+        "top": 438.6875,
+        "bottom": 482.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 768,
+      "pageScrollWidth": 768,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "768x1024",
+      "state": "dirty-quantity",
+      "viewport": {
+        "left": 17,
+        "right": 751,
+        "top": 418.1875,
+        "bottom": 704.90625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 734,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 17,
+        "right": 277,
+        "top": 456.1875,
+        "bottom": 587.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 17,
+        "right": 277,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 17,
+        "right": 1057,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 439,
+        "right": 575.96875,
+        "top": 499.6875,
+        "bottom": 543.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 749,
+        "right": 1045,
+        "top": 462.6875,
+        "bottom": 506.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 749,
+        "right": 1045,
+        "top": 512.6875,
+        "bottom": 556.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 768,
+      "pageScrollWidth": 768,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 494.1875,
+        "right": 551.9375,
+        "top": 721.90625,
+        "bottom": 765.90625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "768x1024",
+      "state": "reason-focus",
+      "viewport": {
+        "left": 17,
+        "right": 751,
+        "top": 418.1875,
+        "bottom": 704.90625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 734,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 17,
+        "right": 277,
+        "top": 456.1875,
+        "bottom": 587.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 17,
+        "right": 277,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 17,
+        "right": 1057,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 439,
+        "right": 575.96875,
+        "top": 499.6875,
+        "bottom": 543.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 749,
+        "right": 1045,
+        "top": 462.6875,
+        "bottom": 506.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 749,
+        "right": 1045,
+        "top": 512.6875,
+        "bottom": 556.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 768,
+      "pageScrollWidth": 768,
+      "active": "Lý do Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 494.1875,
+        "right": 551.9375,
+        "top": 721.90625,
+        "bottom": 765.90625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "768x1024",
+      "state": "note-edit",
+      "viewport": {
+        "left": 17,
+        "right": 751,
+        "top": 418.1875,
+        "bottom": 704.90625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 734,
+        "scrollWidth": 1040,
+        "scrollLeft": 294,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -277,
+        "right": -17,
+        "top": 456.1875,
+        "bottom": 563.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -277,
+        "right": -17,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -277,
+        "right": 763,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 145,
+        "right": 281.96875,
+        "top": 487.6875,
+        "bottom": 531.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 455,
+        "right": 751,
+        "top": 462.6875,
+        "bottom": 506.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 455,
+        "right": 751,
+        "top": 512.6875,
+        "bottom": 556.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 768,
+      "pageScrollWidth": 768,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 494.1875,
+        "right": 551.9375,
+        "top": 721.90625,
+        "bottom": 765.90625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "768x1024",
+      "state": "dirty-save",
+      "viewport": {
+        "left": 17,
+        "right": 751,
+        "top": 418.1875,
+        "bottom": 704.90625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 734,
+        "scrollWidth": 1040,
+        "scrollLeft": 294,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -277,
+        "right": -17,
+        "top": 456.1875,
+        "bottom": 563.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -277,
+        "right": -17,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -277,
+        "right": 763,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 145,
+        "right": 281.96875,
+        "top": 487.6875,
+        "bottom": 531.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 455,
+        "right": 751,
+        "top": 462.6875,
+        "bottom": 506.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 455,
+        "right": 751,
+        "top": 512.6875,
+        "bottom": 556.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 768,
+      "pageScrollWidth": 768,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 494.1875,
+        "right": 551.9375,
+        "top": 721.90625,
+        "bottom": 765.90625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "768x1024",
+      "state": "invalid",
+      "viewport": {
+        "left": 17,
+        "right": 751,
+        "top": 418.1875,
+        "bottom": 704.90625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 734,
+        "scrollWidth": 1040,
+        "scrollLeft": 294,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -277,
+        "right": -17,
+        "top": 456.1875,
+        "bottom": 587.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -277,
+        "right": -17,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -277,
+        "right": 763,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 145,
+        "right": 281.96875,
+        "top": 499.6875,
+        "bottom": 543.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 455,
+        "right": 751,
+        "top": 462.6875,
+        "bottom": 506.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 455,
+        "right": 751,
+        "top": 512.6875,
+        "bottom": 556.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 768,
+      "pageScrollWidth": 768,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 494.1875,
+        "right": 551.9375,
+        "top": 721.90625,
+        "bottom": 765.90625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "768x1024",
+      "state": "local-scroll",
+      "viewport": {
+        "left": 17,
+        "right": 751,
+        "top": 418.1875,
+        "bottom": 704.90625,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 734,
+        "scrollWidth": 1040,
+        "scrollLeft": 306,
+        "scrollTop": 30
+      },
+      "identity": {
+        "left": -289,
+        "right": -29,
+        "top": 426.1875,
+        "bottom": 557.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -289,
+        "right": -29,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -289,
+        "right": 751,
+        "top": 418.1875,
+        "bottom": 456.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 133,
+        "right": 269.96875,
+        "top": 469.6875,
+        "bottom": 513.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 443,
+        "right": 739,
+        "top": 432.6875,
+        "bottom": 476.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 443,
+        "right": 739,
+        "top": 482.6875,
+        "bottom": 526.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 768,
+      "pageScrollWidth": 768,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 494.1875,
+        "right": 551.9375,
+        "top": 721.90625,
+        "bottom": 765.90625,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "390x844",
+      "state": "normal",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 430.1875,
+        "bottom": 810.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 11,
+        "right": 271,
+        "top": 468.1875,
+        "bottom": 525.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 11,
+        "right": 271,
+        "top": 430.1875,
+        "bottom": 468.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 11,
+        "right": 1051,
+        "top": 430.1875,
+        "bottom": 468.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 433,
+        "right": 569.96875,
+        "top": 474.6875,
+        "bottom": 518.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "390x844",
+      "state": "quantity-focus",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 430.1875,
+        "bottom": 810.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 306,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -295,
+        "right": -35,
+        "top": 468.1875,
+        "bottom": 525.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -295,
+        "right": -35,
+        "top": 430.1875,
+        "bottom": 468.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -295,
+        "right": 745,
+        "top": 430.1875,
+        "bottom": 468.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 127,
+        "right": 263.96875,
+        "top": 474.6875,
+        "bottom": 518.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "390x844",
+      "state": "dirty-quantity",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 690.5,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 306,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -295,
+        "right": -35,
+        "top": 492.1875,
+        "bottom": 623.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -295,
+        "right": -35,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -295,
+        "right": 745,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 127,
+        "right": 263.96875,
+        "top": 535.6875,
+        "bottom": 579.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 437,
+        "right": 733,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 437,
+        "right": 733,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 707.5,
+        "bottom": 751.5,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "390x844",
+      "state": "reason-focus",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 690.5,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 672,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -661,
+        "right": -401,
+        "top": 492.1875,
+        "bottom": 623.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -661,
+        "right": -401,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -661,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": -239,
+        "right": -102.03125,
+        "top": 535.6875,
+        "bottom": 579.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 71,
+        "right": 367,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 71,
+        "right": 367,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": "Lý do Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 707.5,
+        "bottom": 751.5,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "390x844",
+      "state": "note-edit",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 690.5,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 672,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -661,
+        "right": -401,
+        "top": 492.1875,
+        "bottom": 599.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -661,
+        "right": -401,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -661,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": -239,
+        "right": -102.03125,
+        "top": 523.6875,
+        "bottom": 567.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 71,
+        "right": 367,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 71,
+        "right": 367,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 707.5,
+        "bottom": 751.5,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "390x844",
+      "state": "dirty-save",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 690.5,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 672,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -661,
+        "right": -401,
+        "top": 492.1875,
+        "bottom": 599.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -661,
+        "right": -401,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -661,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": -239,
+        "right": -102.03125,
+        "top": 523.6875,
+        "bottom": 567.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 71,
+        "right": 367,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 71,
+        "right": 367,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 707.5,
+        "bottom": 751.5,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "390x844",
+      "state": "invalid",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 690.5,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 546,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -535,
+        "right": -275,
+        "top": 492.1875,
+        "bottom": 623.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -535,
+        "right": -275,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -535,
+        "right": 505,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": -113,
+        "right": 23.96875,
+        "top": 535.6875,
+        "bottom": 579.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 197,
+        "right": 493,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 197,
+        "right": 493,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 707.5,
+        "bottom": 751.5,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "390x844",
+      "state": "local-scroll",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 454.1875,
+        "bottom": 690.5,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 400,
+        "scrollTop": 30
+      },
+      "identity": {
+        "left": -389,
+        "right": -129,
+        "top": 462.1875,
+        "bottom": 593.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -389,
+        "right": -129,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -389,
+        "right": 651,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 33,
+        "right": 169.96875,
+        "top": 505.6875,
+        "bottom": 549.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 343,
+        "right": 639,
+        "top": 468.6875,
+        "bottom": 512.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 343,
+        "right": 639,
+        "top": 518.6875,
+        "bottom": 562.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 707.5,
+        "bottom": 751.5,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "360x800",
+      "state": "normal",
+      "viewport": {
+        "left": 11,
+        "right": 349,
+        "top": 430.1875,
+        "bottom": 810.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 338,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 11,
+        "right": 271,
+        "top": 468.1875,
+        "bottom": 525.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 11,
+        "right": 271,
+        "top": 430.1875,
+        "bottom": 468.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 11,
+        "right": 1051,
+        "top": 430.1875,
+        "bottom": 468.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 433,
+        "right": 569.96875,
+        "top": 474.6875,
+        "bottom": 518.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 360,
+      "pageScrollWidth": 360,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "360x800",
+      "state": "quantity-focus",
+      "viewport": {
+        "left": 11,
+        "right": 349,
+        "top": 430.1875,
+        "bottom": 810.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 338,
+        "scrollWidth": 1040,
+        "scrollLeft": 321,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -310,
+        "right": -50,
+        "top": 468.1875,
+        "bottom": 525.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -310,
+        "right": -50,
+        "top": 430.1875,
+        "bottom": 468.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -310,
+        "right": 730,
+        "top": 430.1875,
+        "bottom": 468.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 112,
+        "right": 248.96875,
+        "top": 474.6875,
+        "bottom": 518.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 360,
+      "pageScrollWidth": 360,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "360x800",
+      "state": "dirty-quantity",
+      "viewport": {
+        "left": 11,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 678.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 338,
+        "scrollWidth": 1040,
+        "scrollLeft": 321,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -310,
+        "right": -50,
+        "top": 492.1875,
+        "bottom": 623.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -310,
+        "right": -50,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -310,
+        "right": 730,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 112,
+        "right": 248.96875,
+        "top": 535.6875,
+        "bottom": 579.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 422,
+        "right": 718,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 422,
+        "right": 718,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 360,
+      "pageScrollWidth": 360,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 92.1875,
+        "right": 149.9375,
+        "top": 695.1875,
+        "bottom": 739.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "360x800",
+      "state": "reason-focus",
+      "viewport": {
+        "left": 11,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 678.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 338,
+        "scrollWidth": 1040,
+        "scrollLeft": 702,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -691,
+        "right": -431,
+        "top": 492.1875,
+        "bottom": 623.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -691,
+        "right": -431,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -691,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": -269,
+        "right": -132.03125,
+        "top": 535.6875,
+        "bottom": 579.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 41,
+        "right": 337,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 41,
+        "right": 337,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 360,
+      "pageScrollWidth": 360,
+      "active": "Lý do Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 92.1875,
+        "right": 149.9375,
+        "top": 695.1875,
+        "bottom": 739.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "360x800",
+      "state": "note-edit",
+      "viewport": {
+        "left": 11,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 678.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 338,
+        "scrollWidth": 1040,
+        "scrollLeft": 702,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -691,
+        "right": -431,
+        "top": 492.1875,
+        "bottom": 599.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -691,
+        "right": -431,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -691,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": -269,
+        "right": -132.03125,
+        "top": 523.6875,
+        "bottom": 567.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 41,
+        "right": 337,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 41,
+        "right": 337,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 360,
+      "pageScrollWidth": 360,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 92.1875,
+        "right": 149.9375,
+        "top": 695.1875,
+        "bottom": 739.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "360x800",
+      "state": "dirty-save",
+      "viewport": {
+        "left": 11,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 678.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 338,
+        "scrollWidth": 1040,
+        "scrollLeft": 702,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -691,
+        "right": -431,
+        "top": 492.1875,
+        "bottom": 599.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -691,
+        "right": -431,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -691,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": -269,
+        "right": -132.03125,
+        "top": 523.6875,
+        "bottom": 567.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 41,
+        "right": 337,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 41,
+        "right": 337,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 360,
+      "pageScrollWidth": 360,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 92.1875,
+        "right": 149.9375,
+        "top": 695.1875,
+        "bottom": 739.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "360x800",
+      "state": "invalid",
+      "viewport": {
+        "left": 11,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 678.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 338,
+        "scrollWidth": 1040,
+        "scrollLeft": 546,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -535,
+        "right": -275,
+        "top": 492.1875,
+        "bottom": 623.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -535,
+        "right": -275,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -535,
+        "right": 505,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": -113,
+        "right": 23.96875,
+        "top": 535.6875,
+        "bottom": 579.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 197,
+        "right": 493,
+        "top": 498.6875,
+        "bottom": 542.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 197,
+        "right": 493,
+        "top": 548.6875,
+        "bottom": 592.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 360,
+      "pageScrollWidth": 360,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 92.1875,
+        "right": 149.9375,
+        "top": 695.1875,
+        "bottom": 739.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "360x800",
+      "state": "local-scroll",
+      "viewport": {
+        "left": 11,
+        "right": 349,
+        "top": 454.1875,
+        "bottom": 678.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 338,
+        "scrollWidth": 1040,
+        "scrollLeft": 400,
+        "scrollTop": 30
+      },
+      "identity": {
+        "left": -389,
+        "right": -129,
+        "top": 462.1875,
+        "bottom": 593.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -389,
+        "right": -129,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -389,
+        "right": 651,
+        "top": 454.1875,
+        "bottom": 492.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 33,
+        "right": 169.96875,
+        "top": 505.6875,
+        "bottom": 549.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 343,
+        "right": 639,
+        "top": 468.6875,
+        "bottom": 512.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 343,
+        "right": 639,
+        "top": 518.6875,
+        "bottom": 562.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 360,
+      "pageScrollWidth": 360,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 92.1875,
+        "right": 149.9375,
+        "top": 695.1875,
+        "bottom": 739.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "720x450-reflow200",
+      "state": "normal",
+      "viewport": {
+        "left": 11,
+        "right": 709,
+        "top": 384.1875,
+        "bottom": 631.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 698,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 11,
+        "right": 271,
+        "top": 422.1875,
+        "bottom": 479.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 11,
+        "right": 271,
+        "top": 384.1875,
+        "bottom": 422.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 11,
+        "right": 1051,
+        "top": 384.1875,
+        "bottom": 422.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 433,
+        "right": 569.96875,
+        "top": 428.6875,
+        "bottom": 472.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 720,
+      "pageScrollWidth": 720,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "720x450-reflow200",
+      "state": "quantity-focus",
+      "viewport": {
+        "left": 11,
+        "right": 709,
+        "top": 361.1875,
+        "bottom": 608.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 698,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 11,
+        "right": 271,
+        "top": 399.1875,
+        "bottom": 456.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 11,
+        "right": 271,
+        "top": 361.1875,
+        "bottom": 399.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 11,
+        "right": 1051,
+        "top": 361.1875,
+        "bottom": 399.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 433,
+        "right": 569.96875,
+        "top": 405.6875,
+        "bottom": 449.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 720,
+      "pageScrollWidth": 720,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,25",
+      "save": null
+    },
+    {
+      "size": "720x450-reflow200",
+      "state": "dirty-quantity",
+      "viewport": {
+        "left": 11,
+        "right": 709,
+        "top": 385.1875,
+        "bottom": 511.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 698,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 11,
+        "right": 271,
+        "top": 423.1875,
+        "bottom": 554.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 11,
+        "right": 271,
+        "top": 385.1875,
+        "bottom": 423.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 11,
+        "right": 1051,
+        "top": 385.1875,
+        "bottom": 423.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 433,
+        "right": 569.96875,
+        "top": 466.6875,
+        "bottom": 510.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 743,
+        "right": 1039,
+        "top": 429.6875,
+        "bottom": 473.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 743,
+        "right": 1039,
+        "top": 479.6875,
+        "bottom": 523.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 720,
+      "pageScrollWidth": 720,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 452.1875,
+        "right": 509.9375,
+        "top": 528.1875,
+        "bottom": 572.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "720x450-reflow200",
+      "state": "reason-focus",
+      "viewport": {
+        "left": 11,
+        "right": 709,
+        "top": 361.1875,
+        "bottom": 487.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 698,
+        "scrollWidth": 1040,
+        "scrollLeft": 342,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": -331,
+        "right": -71,
+        "top": 399.1875,
+        "bottom": 530.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -331,
+        "right": -71,
+        "top": 361.1875,
+        "bottom": 399.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -331,
+        "right": 709,
+        "top": 361.1875,
+        "bottom": 399.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 91,
+        "right": 227.96875,
+        "top": 442.6875,
+        "bottom": 486.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 401,
+        "right": 697,
+        "top": 405.6875,
+        "bottom": 449.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 401,
+        "right": 697,
+        "top": 455.6875,
+        "bottom": 499.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 720,
+      "pageScrollWidth": 720,
+      "active": "Lý do Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 452.1875,
+        "right": 509.9375,
+        "top": 504.1875,
+        "bottom": 548.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "720x450-reflow200",
+      "state": "note-edit",
+      "viewport": {
+        "left": 11,
+        "right": 709,
+        "top": 324.1875,
+        "bottom": 450.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 698,
+        "scrollWidth": 1040,
+        "scrollLeft": 342,
+        "scrollTop": 13
+      },
+      "identity": {
+        "left": -331,
+        "right": -71,
+        "top": 349.1875,
+        "bottom": 456.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -331,
+        "right": -71,
+        "top": 324.1875,
+        "bottom": 362.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -331,
+        "right": 709,
+        "top": 324.1875,
+        "bottom": 362.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 91,
+        "right": 227.96875,
+        "top": 380.6875,
+        "bottom": 424.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 401,
+        "right": 697,
+        "top": 355.6875,
+        "bottom": 399.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 401,
+        "right": 697,
+        "top": 405.6875,
+        "bottom": 449.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 720,
+      "pageScrollWidth": 720,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 452.1875,
+        "right": 509.9375,
+        "top": 467.1875,
+        "bottom": 511.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "720x450-reflow200",
+      "state": "dirty-save",
+      "viewport": {
+        "left": 11,
+        "right": 709,
+        "top": 236.1875,
+        "bottom": 362.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 698,
+        "scrollWidth": 1040,
+        "scrollLeft": 342,
+        "scrollTop": 13
+      },
+      "identity": {
+        "left": -331,
+        "right": -71,
+        "top": 261.1875,
+        "bottom": 368.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -331,
+        "right": -71,
+        "top": 236.1875,
+        "bottom": 274.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -331,
+        "right": 709,
+        "top": 236.1875,
+        "bottom": 274.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 91,
+        "right": 227.96875,
+        "top": 292.6875,
+        "bottom": 336.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 401,
+        "right": 697,
+        "top": 267.6875,
+        "bottom": 311.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 401,
+        "right": 697,
+        "top": 317.6875,
+        "bottom": 361.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 720,
+      "pageScrollWidth": 720,
+      "active": "Ghi chú Gạo thơm",
+      "value": "12,5",
+      "save": {
+        "left": 452.1875,
+        "right": 509.9375,
+        "top": 379.1875,
+        "bottom": 423.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "720x450-reflow200",
+      "state": "invalid",
+      "viewport": {
+        "left": 11,
+        "right": 709,
+        "top": 236.1875,
+        "bottom": 362.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 698,
+        "scrollWidth": 1040,
+        "scrollLeft": 342,
+        "scrollTop": 13
+      },
+      "identity": {
+        "left": -331,
+        "right": -71,
+        "top": 261.1875,
+        "bottom": 392.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -331,
+        "right": -71,
+        "top": 236.1875,
+        "bottom": 274.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -331,
+        "right": 709,
+        "top": 236.1875,
+        "bottom": 274.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 91,
+        "right": 227.96875,
+        "top": 304.6875,
+        "bottom": 348.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 401,
+        "right": 697,
+        "top": 267.6875,
+        "bottom": 311.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 401,
+        "right": 697,
+        "top": 317.6875,
+        "bottom": 361.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 720,
+      "pageScrollWidth": 720,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 452.1875,
+        "right": 509.9375,
+        "top": 379.1875,
+        "bottom": 423.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "720x450-reflow200",
+      "state": "local-scroll",
+      "viewport": {
+        "left": 11,
+        "right": 709,
+        "top": 236.1875,
+        "bottom": 362.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 698,
+        "scrollWidth": 1040,
+        "scrollLeft": 342,
+        "scrollTop": 30
+      },
+      "identity": {
+        "left": -331,
+        "right": -71,
+        "top": 244.1875,
+        "bottom": 375.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": -331,
+        "right": -71,
+        "top": 236.1875,
+        "bottom": 274.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": -331,
+        "right": 709,
+        "top": 236.1875,
+        "bottom": 274.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 91,
+        "right": 227.96875,
+        "top": 287.6875,
+        "bottom": 331.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": {
+        "left": 401,
+        "right": 697,
+        "top": 250.6875,
+        "bottom": 294.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto"
+      },
+      "note": {
+        "left": 401,
+        "right": 697,
+        "top": 300.6875,
+        "bottom": 344.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": false,
+      "pageWidth": 720,
+      "pageScrollWidth": 720,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "value": "10,123",
+      "save": {
+        "left": 452.1875,
+        "right": 509.9375,
+        "top": 379.1875,
+        "bottom": 423.1875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      }
+    },
+    {
+      "size": "390x844",
+      "state": "released",
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 458.1875,
+        "bottom": 838.6875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "auto",
+        "clientWidth": 368,
+        "scrollWidth": 1040,
+        "scrollLeft": 0,
+        "scrollTop": 0
+      },
+      "identity": {
+        "left": 11,
+        "right": 271,
+        "top": 496.1875,
+        "bottom": 553.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "2"
+      },
+      "header": {
+        "left": 11,
+        "right": 271,
+        "top": 458.1875,
+        "bottom": 496.1875,
+        "position": "static",
+        "insetLeft": "auto",
+        "zIndex": "5"
+      },
+      "headerRow": {
+        "left": 11,
+        "right": 1051,
+        "top": 458.1875,
+        "bottom": 496.1875,
+        "position": "sticky",
+        "insetLeft": "auto",
+        "zIndex": "3"
+      },
+      "quantity": {
+        "left": 433,
+        "right": 569.96875,
+        "top": 502.6875,
+        "bottom": 546.6875,
+        "position": "relative",
+        "insetLeft": "0px",
+        "zIndex": "auto"
+      },
+      "reason": null,
+      "note": null,
+      "identityOverlapsQuantity": false,
+      "identityOverlapsReason": null,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "active": null,
+      "value": "10,25",
+      "save": null
+    }
+  ],
+  "failures": [
+    "1024x768: native focus reason visibility",
+    "1024x768: identity scrolls away",
+    "768x1024: native focus reason visibility",
+    "390x844: invalid quantity reveal",
+    "360x800: invalid quantity reveal"
+  ],
+  "pageErrors": [],
+  "blockedExternalRequests": []
+}
