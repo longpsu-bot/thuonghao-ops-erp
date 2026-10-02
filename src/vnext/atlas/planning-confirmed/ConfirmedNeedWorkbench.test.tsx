@@ -73,7 +73,39 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
-  it("composes Confirmed Need as a Station with a named local table viewport", async () => {
+  it("reveals a partially clipped authoring control at the nearest local horizontal edge", async () => {
+    show();
+    await editValid();
+    const viewport = screen.getByRole("region", {
+      name: "Bảng xác nhận nhu cầu",
+    });
+    const reason = screen.getByRole("combobox", { name: "Lý do Gạo thơm" });
+    vi.spyOn(viewport, "getBoundingClientRect").mockReturnValue({
+      left: 10,
+      right: 378,
+    } as DOMRect);
+    vi.spyOn(reason, "getBoundingClientRect").mockReturnValue({
+      left: 320,
+      right: 616,
+    } as DOMRect);
+    fireEvent.focus(reason);
+    expect(viewport.scrollLeft).toBe(238);
+    expect(viewport.scrollTop).toBe(0);
+    vi.spyOn(reason, "getBoundingClientRect").mockReturnValue({
+      left: 22,
+      right: 318,
+    } as DOMRect);
+    fireEvent.focus(reason);
+    expect(viewport.scrollLeft).toBe(238);
+    vi.spyOn(reason, "getBoundingClientRect").mockReturnValue({
+      left: -90,
+      right: 206,
+    } as DOMRect);
+    fireEvent.focus(reason);
+    expect(viewport.scrollLeft).toBe(138);
+    expect(await quantity()).toHaveValue("12,5");
+  });
+  it("composes a local table with unpinned narrow identity and a vertical sticky header", async () => {
     show();
     await quantity();
 
@@ -104,16 +136,16 @@ describe("Confirmed Need Chakra operator surface", () => {
         name: "Nguyên liệu / nơi nhận",
       }),
     ).toHaveStyle({
-      position: "sticky",
-      left: "var(--atlas-layout-zero, 0)",
+      position: "static",
+      left: "var(--atlas-layout-auto, auto)",
       background: "var(--atlas-colors-bg-toolbar)",
       zIndex: "var(--atlas-layout-sticky-identity-header-z, 5)",
     });
     expect(
       within(viewport).getByText("Gạo thơm").closest('[data-field="identity"]'),
     ).toHaveStyle({
-      position: "sticky",
-      left: "var(--atlas-layout-zero, 0)",
+      position: "static",
+      left: "var(--atlas-layout-auto, auto)",
       background: "var(--atlas-colors-bg-workbench)",
       zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
     });
@@ -762,6 +794,49 @@ describe("Confirmed Need Chakra operator surface", () => {
       screen.getByText("Có 1 thay đổi chưa lưu ngoài bộ lọc hiện tại."),
     ).toBeVisible();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+  it("retains exact draft and reason through table panning, sorting and local filtering", async () => {
+    show();
+    await editValid();
+    const viewport = screen.getByRole("region", {
+      name: "Bảng xác nhận nhu cầu",
+    });
+    viewport.scrollLeft = 400;
+    fireEvent.scroll(viewport);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Sắp xếp theo Nguyên liệu / nơi nhận",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sắp xếp theo Đề xuất vận hành" }),
+    );
+    expect(await quantity()).toHaveValue("12,5");
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "thit" },
+    });
+    expect(
+      screen.getByText("Có 1 thay đổi chưa lưu ngoài bộ lọc hiện tại."),
+    ).toBeVisible();
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "" },
+    });
+    expect(await quantity()).toHaveValue("12,5");
+    expect(
+      screen.getByRole("combobox", { name: "Lý do Gạo thơm" }),
+    ).toHaveValue("OTHER");
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
+    ).toHaveValue("Bếp yêu cầu");
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "Chỉ hiển thị thay đổi chưa lưu" }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole("textbox", { name: /^Số lượng xác nhận/ }),
+      ).toHaveLength(1),
+    );
+    expect(await quantity()).toHaveValue("12,5");
   });
   it.each(["stale", "unknown", "recovery_failed"] as const)(
     "exposes accessible %s recovery and locks writes",

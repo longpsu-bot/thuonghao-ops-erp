@@ -68,6 +68,23 @@ export function ConfirmedNeedTable({
   return (
     <AtlasTableViewport
       label="Bảng xác nhận nhu cầu"
+      onFocusCapture={(event) => {
+        const control = event.target;
+        if (
+          !(control instanceof HTMLElement) ||
+          !control.matches("input, select")
+        )
+          return;
+        const viewport = event.currentTarget;
+        const visible = viewport.getBoundingClientRect();
+        const bounds = control.getBoundingClientRect();
+        // Native focus can leave a partially visible field clipped. Reveal only
+        // its nearest horizontal edge within this table, without moving the page.
+        if (bounds.left < visible.left)
+          viewport.scrollLeft += bounds.left - visible.left;
+        else if (bounds.right > visible.right)
+          viewport.scrollLeft += bounds.right - visible.right;
+      }}
       style={
         {
           "--atlas-confirmed-need-table-mobile-max-height": compactEditing
@@ -108,8 +125,11 @@ export function ConfirmedNeedTable({
               columnKey="identity"
               sort={sort}
               onSort={onSort}
-              position="sticky"
-              left="var(--atlas-layout-zero, 0)"
+              position={{ base: "static", xl: "sticky" }}
+              left={{
+                base: "var(--atlas-layout-auto, auto)",
+                xl: "var(--atlas-layout-zero, 0)",
+              }}
               zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
               bg="bg.toolbar"
               h="var(--atlas-confirmed-need-header-height)"
@@ -191,9 +211,12 @@ export function ConfirmedNeedTable({
                 <Table.Cell
                   data-field="identity"
                   minW="var(--atlas-layout-identity-width, 210px)"
+                  position={{ base: "static", xl: "sticky" }}
+                  left={{
+                    base: "var(--atlas-layout-auto, auto)",
+                    xl: "var(--atlas-layout-zero, 0)",
+                  }}
                   style={{
-                    position: "sticky",
-                    left: "var(--atlas-layout-zero, 0)",
                     zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
                     background: "var(--atlas-colors-bg-workbench)",
                   }}
