@@ -182,7 +182,7 @@ def verify(files):
         require(float(header_row.get("ht")) == print_layout["headerRowPt"], "Compact header height")
         row_heights = {int(item.get("r")): float(item.get("ht", "0")) for item in data_rows if int(item.get("r")) >= 4}
         all_body_heights.extend(row_heights.values())
-        require(max(row_heights.values()) <= 36, "Hard 36 pt body height cap")
+        require(max(row_heights.values()) <= print_layout["bodyHardCapPt"], "Hard body height cap")
         seen = set()
         by_id = {row["confirmed_need_line_id"]: row for row in rows}
         locations = {}
@@ -500,7 +500,12 @@ def main(path):
             sheets.append(copy.deepcopy(sheets[0]))
             sheets[-1].set("name", "2026-04-23")
         elif operation in ["oversize", "height_drift"]:
-            root.find(f'm:sheetData/m:row[@r="{4 if operation == "oversize" else 5}"]', NS).set("ht", "37" if operation == "oversize" else "25")
+            root.find(f'm:sheetData/m:row[@r="{4 if operation == "oversize" else 5}"]', NS).set(
+                "ht",
+                str(SCHEMA["x-atlas-layout"]["print"]["bodyHardCapPt"] + 1)
+                if operation == "oversize"
+                else str(SCHEMA["x-atlas-layout"]["print"]["normalRowPt"] + 1),
+            )
         else:
             root[0].set("ContentType", "application/vnd.ms-excel.sheet.macroEnabled.main+xml")
         mutated[target] = ET.tostring(root)
