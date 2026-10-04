@@ -9,7 +9,7 @@ def identity(value):
     return str(UUID(int=value))
 
 
-dates = ["2026-04-20", "2026-04-21"]
+dates = ["2026-04-20", "2026-04-21", "2026-04-22"]
 schools = [
     (10, "Trường Nguyễn Du - Cơ sở phía Đông", 14),
     (20, "Tân Định", 5),
@@ -63,7 +63,7 @@ for index in range(6, len(names)):
 quantities = ["0.2", "1", "3", "7", "31", "0.5", "25", "12.5", "60", "2.5", "0.5", "1.5"]
 rows = []
 for date_index, service_date in enumerate(dates):
-    school_specs = schools if date_index == 0 else [(20, "Tân Định", 5), (30, "Tân Bình", 7)]
+    school_specs = schools if date_index == 0 else ([(20, "Tân Định", 5), (30, "Tân Bình", 7)] if date_index == 1 else [(20, "Tân Định", 3)])
     for display_order, school_name, count in school_specs:
         for ingredient_index in range(count):
             number = len(rows) + 1
@@ -77,8 +77,8 @@ for date_index, service_date in enumerate(dates):
                 "school_id": identity(100 + display_order),
                 "school_name": school_name,
                 "school_display_order": display_order,
-                "delivery_location_id": identity(200 + display_order),
-                "delivery_location_name": "Bếp chính",
+                "delivery_location_id": identity(900) if date_index == 2 and ingredient_index > 0 else identity(200 + display_order),
+                "delivery_location_name": "Bếp phụ" if date_index == 2 and ingredient_index > 0 else "Bếp chính",
                 "ingredient_id": identity(400 + ingredient_index),
                 "ingredient_name": names[ingredient_index],
                 "unit_id": units[unit],
@@ -92,7 +92,7 @@ for date_index, service_date in enumerate(dates):
 
 fixture = {
     "synthetic": True,
-    "description": "Synthetic existing-batch shape; print-page and supplier-eligibility stress fixture, never production data.",
+    "description": "Synthetic three-date collection of distinct authoritative daily batches; print-page and supplier-eligibility stress fixture, never production data.",
     "print_cases": {
         "two_line_school_ids": [identity(110)],
         "two_line_ingredient_ids": [identity(404)],
@@ -104,11 +104,17 @@ fixture = {
         "exported_at": "2026-04-19T10:00:00.000Z",
         "service_period_start": dates[0],
         "service_period_end": dates[-1],
-        "confirmed_need_batch_id": identity(1),
-        "batch_version": 7,
-        "need_generation_run_id": identity(2),
-        "release_snapshot_id": identity(3),
     },
+    "daily_batches": [
+        {
+            "service_date": service_date,
+            "confirmed_need_batch_id": identity(1 + index * 10),
+            "batch_version": 7 + index,
+            "need_generation_run_id": identity(2 + index * 10),
+            "release_snapshot_id": identity(3 + index * 10),
+        }
+        for index, service_date in enumerate(dates)
+    ],
     "suppliers": suppliers,
     "supplier_eligibilities": eligibilities,
     "rows": sorted(rows, key=lambda row: (row["service_date"], row["school_display_order"], row["source_order"], row["confirmed_need_line_id"])),

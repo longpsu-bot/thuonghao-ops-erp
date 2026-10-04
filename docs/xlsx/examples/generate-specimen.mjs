@@ -67,11 +67,12 @@ function preferredSupplier(row) {
     return "";
   return supplierById.get(candidates[0].supplier_id).supplier_name;
 }
-function bodyRowClass(row, startsSchool) {
+function bodyRowClass(row, startsSchool, multiLocation) {
   const cases = fixture.print_cases;
   if (
     cases.two_line_ingredient_ids.includes(row.ingredient_id) ||
-    (startsSchool && cases.two_line_school_ids.includes(row.school_id))
+    (startsSchool &&
+      (multiLocation || cases.two_line_school_ids.includes(row.school_id)))
   )
     return "twoLineRowPt";
   return startsSchool ? "schoolRowPt" : "normalRowPt";
@@ -88,12 +89,12 @@ for (const date of dates) {
   sheet.showGridLines = false;
   sheet.freezePanes.freezeRows(3);
   const end = rows.length + 3;
-  sheet.getRange(`A1:Q${end}`).format.font = {
+  sheet.getRange(`A1:O${end}`).format.font = {
     name: "Times New Roman",
     size: print.bodyFontPt,
     color: "#000000",
   };
-  sheet.getRange(`A1:Q${end}`).format.verticalAlignment = "center";
+  sheet.getRange(`A1:O${end}`).format.verticalAlignment = "center";
   const title = `${weekdays[new Date(`${date}T00:00:00Z`).getUTCDay()]} (${date.split("-").reverse().join("/")})`;
   sheet.mergeCells("A1:E1");
   sheet.getRange("A1").values = [[title]];
@@ -106,7 +107,7 @@ for (const date of dates) {
   sheet.getRange("A1:E1").format.horizontalAlignment = "center";
   sheet.getRange("A1:E1").format.rowHeight = print.titleRowPt;
   sheet.getRange("A2:E2").format.rowHeight = print.spacerRowPt;
-  sheet.getRange("A3:Q3").values = [
+  sheet.getRange("A3:O3").values = [
     [...layout.visibleHeaders, ...layout.hiddenHeaders],
   ];
   let precedingSchool;
@@ -137,8 +138,6 @@ for (const date of dates) {
       row.ingredient_id,
       row.unit_id,
       row.exact_quantity,
-      row.reason_code,
-      supplier,
     ];
   });
   const visibleKeys = rows.map((row) =>
@@ -155,9 +154,9 @@ for (const date of dates) {
     throw new Error(
       `Ambiguous canonical visible tuple on ${date}; never collapse rows.`,
     );
-  sheet.getRange(`A4:Q${end}`).values = data;
+  sheet.getRange(`A4:O${end}`).values = data;
   const table = sheet.tables.add(
-    `A3:Q${end}`,
+    `A3:O${end}`,
     true,
     `AtlasNeed_${date.replaceAll("-", "")}`,
   );
@@ -198,7 +197,9 @@ for (const date of dates) {
     const rowNumber = index + 4;
     const startsSchool = Boolean(data[index][0]);
     sheet.getRange(`A${rowNumber}:E${rowNumber}`).format.rowHeight =
-      print[bodyRowClass(row, startsSchool)];
+      print[
+        bodyRowClass(row, startsSchool, locations.get(row.school_id).size > 1)
+      ];
     if (!row.exact_quantity.includes("."))
       sheet.getRange(`D${rowNumber}`).setNumberFormat("0");
     const group = `${row.school_id}:${row.delivery_location_id}`;
@@ -264,12 +265,34 @@ for (const date of dates) {
   };
 }
 const meta = workbook.worksheets.add(layout.metadataSheet);
-meta.getRange("A1:B10").values = Object.entries(fixture.metadata).map(
+meta.getRange("A1:B6").values = Object.entries(fixture.metadata).map(
   ([key, value]) => [key, String(value)],
 );
-meta.getRange("A1:B10").format.font = { name: "Arial", size: 11 };
-meta.getRange("A1:A10").format.columnWidth = 30;
-meta.getRange("B1:B10").format.columnWidth = 42;
+meta.getRange("A8:E8").values = [
+  [
+    "service_date",
+    "confirmed_need_batch_id",
+    "batch_version",
+    "need_generation_run_id",
+    "release_snapshot_id",
+  ],
+];
+meta.getRange(`A9:E${8 + fixture.daily_batches.length}`).values =
+  fixture.daily_batches.map((batch) => [
+    batch.service_date,
+    batch.confirmed_need_batch_id,
+    String(batch.batch_version),
+    batch.need_generation_run_id,
+    batch.release_snapshot_id,
+  ]);
+meta.getRange(`A1:E${8 + fixture.daily_batches.length}`).format.font = {
+  name: "Arial",
+  size: 11,
+};
+meta.getRange("A1:A6").format.columnWidth = 30;
+meta.getRange("B1:B6").format.columnWidth = 42;
+meta.getRange(`A8:E${8 + fixture.daily_batches.length}`).format.columnWidth =
+  42;
 workbook.recalculate();
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await (await SpreadsheetFile.exportXlsx(workbook)).save(outputPath);

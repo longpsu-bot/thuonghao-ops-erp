@@ -163,7 +163,7 @@ def finalize(path):
                 quantity.set("t", "inlineStr")
                 ET.SubElement(ET.SubElement(quantity, tag("is")), tag("t")).text = text
                 quantity.set("s", str(text_quantity_styles[int(quantity.get("s", "0"))]))
-            hidden_values = [fixture["metadata"]["workbook_marker"], row["confirmed_need_line_id"], row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"], row["reason_code"], preferred_supplier(row, fixture)]
+            hidden_values = [fixture["metadata"]["workbook_marker"], row["confirmed_need_line_id"], row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"]]
             for column, value in enumerate(hidden_values, 5):
                 cell = sheet.find(f'.//m:c[@r="{chr(65 + column)}{row_index}"]', NS)
                 for child in list(cell):
@@ -186,7 +186,7 @@ def finalize(path):
                 cols.remove(col)
             elif int(col.get("max")) > 5:
                 col.set("max", "5")
-        ET.SubElement(cols, tag("col"), min="6", max="17", width="1", customWidth="1", hidden="1")
+        ET.SubElement(cols, tag("col"), min="6", max="15", width="1", customWidth="1", hidden="1")
         sheet_data = sheet.find("m:sheetData", NS)
         breaks, continuation = page_breaks(rows, sheet_data, layout)
         for position in continuation:
@@ -202,9 +202,14 @@ def finalize(path):
                 cell.remove(child)
             cell.set("t", "inlineStr")
             cell.set("s", first_cell.get("s", "0"))
-            ET.SubElement(ET.SubElement(cell, tag("is")), tag("t")).text = f'{row["school_name"]} (tiếp)'
+            multi_location = len({candidate["delivery_location_id"] for candidate in rows if candidate["school_id"] == row["school_id"]}) > 1
+            label = f'{row["school_name"]} (tiếp)'
+            if multi_location:
+                label += f'\nĐiểm giao: {row["delivery_location_name"]}'
+            ET.SubElement(ET.SubElement(cell, tag("is")), tag("t")).text = label
             row_node = sheet_data.find(f'm:row[@r="{position + 4}"]', NS)
-            row_node.set("ht", str(max(float(row_node.get("ht", "0")), layout["schoolRowPt"])))
+            minimum = layout["twoLineRowPt"] if multi_location else layout["schoolRowPt"]
+            row_node.set("ht", str(max(float(row_node.get("ht", "0")), minimum)))
         for name in ["sheetProtection", "autoFilter", "printOptions", "pageMargins", "pageSetup", "headerFooter", "rowBreaks"]:
             for node in sheet.findall(f"m:{name}", NS):
                 sheet.remove(node)
@@ -259,6 +264,17 @@ def finalize(path):
     for index, (key, value) in enumerate(fixture["metadata"].items(), 1):
         for column, content in [("A", key), ("B", str(value))]:
             cell = meta_sheet.find(f'.//m:c[@r="{column}{index}"]', NS)
+            for child in list(cell):
+                cell.remove(child)
+            cell.set("t", "inlineStr")
+            ET.SubElement(ET.SubElement(cell, tag("is")), tag("t")).text = content
+    daily_headers = ["service_date", "confirmed_need_batch_id", "batch_version", "need_generation_run_id", "release_snapshot_id"]
+    for row_index, values in [(8, daily_headers)] + [
+        (index + 9, [str(batch[key]) for key in daily_headers])
+        for index, batch in enumerate(fixture["daily_batches"])
+    ]:
+        for column, content in enumerate(values):
+            cell = meta_sheet.find(f'.//m:c[@r="{chr(65 + column)}{row_index}"]', NS)
             for child in list(cell):
                 cell.remove(child)
             cell.set("t", "inlineStr")

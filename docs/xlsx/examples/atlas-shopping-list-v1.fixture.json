@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "description": "Synthetic existing-batch shape; print-page and supplier-eligibility stress fixture, never production data.",
+  "description": "Synthetic three-date collection of distinct authoritative daily batches; print-page and supplier-eligibility stress fixture, never production data.",
   "print_cases": {
     "two_line_school_ids": ["00000000-0000-0000-0000-00000000006e"],
     "two_line_ingredient_ids": ["00000000-0000-0000-0000-000000000194"]
@@ -11,12 +11,31 @@
     "workbook_marker": "00000000-0000-0000-0000-000000002328",
     "exported_at": "2026-04-19T10:00:00.000Z",
     "service_period_start": "2026-04-20",
-    "service_period_end": "2026-04-21",
-    "confirmed_need_batch_id": "00000000-0000-0000-0000-000000000001",
-    "batch_version": 7,
-    "need_generation_run_id": "00000000-0000-0000-0000-000000000002",
-    "release_snapshot_id": "00000000-0000-0000-0000-000000000003"
+    "service_period_end": "2026-04-22"
   },
+  "daily_batches": [
+    {
+      "service_date": "2026-04-20",
+      "confirmed_need_batch_id": "00000000-0000-0000-0000-000000000001",
+      "batch_version": 7,
+      "need_generation_run_id": "00000000-0000-0000-0000-000000000002",
+      "release_snapshot_id": "00000000-0000-0000-0000-000000000003"
+    },
+    {
+      "service_date": "2026-04-21",
+      "confirmed_need_batch_id": "00000000-0000-0000-0000-00000000000b",
+      "batch_version": 8,
+      "need_generation_run_id": "00000000-0000-0000-0000-00000000000c",
+      "release_snapshot_id": "00000000-0000-0000-0000-00000000000d"
+    },
+    {
+      "service_date": "2026-04-22",
+      "confirmed_need_batch_id": "00000000-0000-0000-0000-000000000015",
+      "batch_version": 9,
+      "need_generation_run_id": "00000000-0000-0000-0000-000000000016",
+      "release_snapshot_id": "00000000-0000-0000-0000-000000000017"
+    }
+  ],
   "suppliers": [
     {
       "supplier_id": "00000000-0000-0000-0000-0000000001f5",
@@ -1453,6 +1472,66 @@
       "reason_note": "",
       "planning_step": "0.1",
       "source_order": 56
+    },
+    {
+      "confirmed_need_line_id": "00000000-0000-0000-0000-000000000421",
+      "current_revision_id": "00000000-0000-0000-0000-000000000809",
+      "current_decision_id": null,
+      "service_date": "2026-04-22",
+      "school_id": "00000000-0000-0000-0000-000000000078",
+      "school_name": "Tân Định",
+      "school_display_order": 20,
+      "delivery_location_id": "00000000-0000-0000-0000-0000000000dc",
+      "delivery_location_name": "Bếp chính",
+      "ingredient_id": "00000000-0000-0000-0000-000000000190",
+      "ingredient_name": "Ớt hiểm đỏ",
+      "unit_id": "00000000-0000-0000-0000-00000000012d",
+      "unit_code": "Kg",
+      "exact_quantity": "0.2",
+      "reason_code": "PROPOSAL_ACCEPTED",
+      "reason_note": "",
+      "planning_step": "0.1",
+      "source_order": 57
+    },
+    {
+      "confirmed_need_line_id": "00000000-0000-0000-0000-000000000422",
+      "current_revision_id": "00000000-0000-0000-0000-00000000080a",
+      "current_decision_id": "00000000-0000-0000-0000-000000000bf2",
+      "service_date": "2026-04-22",
+      "school_id": "00000000-0000-0000-0000-000000000078",
+      "school_name": "Tân Định",
+      "school_display_order": 20,
+      "delivery_location_id": "00000000-0000-0000-0000-000000000384",
+      "delivery_location_name": "Bếp phụ",
+      "ingredient_id": "00000000-0000-0000-0000-000000000191",
+      "ingredient_name": "Tỏi",
+      "unit_id": "00000000-0000-0000-0000-00000000012d",
+      "unit_code": "Kg",
+      "exact_quantity": "1",
+      "reason_code": "OPERATIONAL_QUANTITY_ADJUSTMENT",
+      "reason_note": "Điều chỉnh theo số suất đã xác nhận",
+      "planning_step": "0.1",
+      "source_order": 58
+    },
+    {
+      "confirmed_need_line_id": "00000000-0000-0000-0000-000000000423",
+      "current_revision_id": "00000000-0000-0000-0000-00000000080b",
+      "current_decision_id": null,
+      "service_date": "2026-04-22",
+      "school_id": "00000000-0000-0000-0000-000000000078",
+      "school_name": "Tân Định",
+      "school_display_order": 20,
+      "delivery_location_id": "00000000-0000-0000-0000-000000000384",
+      "delivery_location_name": "Bếp phụ",
+      "ingredient_id": "00000000-0000-0000-0000-000000000192",
+      "ingredient_name": "Cà rốt",
+      "unit_id": "00000000-0000-0000-0000-00000000012d",
+      "unit_code": "Kg",
+      "exact_quantity": "3",
+      "reason_code": "PROPOSAL_ACCEPTED",
+      "reason_note": "",
+      "planning_step": "0.1",
+      "source_order": 59
     }
   ]
 }

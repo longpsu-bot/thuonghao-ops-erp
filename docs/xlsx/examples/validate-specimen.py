@@ -43,8 +43,15 @@ def text(cell, strings):
 def verify_presentation(fixture):
     """Reject genuinely ambiguous canonical displays before specimen export."""
     locations = {}
+    location_labels = {}
     for row in fixture["rows"]:
         locations.setdefault((row["service_date"], row["school_id"]), set()).add(row["delivery_location_id"])
+        label_key = (row["service_date"], row["school_id"], row["delivery_location_id"])
+        require(label_key not in location_labels or location_labels[label_key] == row["delivery_location_name"], "One canonical label per Location")
+        location_labels[label_key] = row["delivery_location_name"]
+    for day_school, ids in locations.items():
+        labels = [location_labels[(*day_school, location_id)] for location_id in ids]
+        require(len(labels) == len(set(labels)), "Ambiguous canonical Location labels must block export")
     seen = set()
     for row in fixture["rows"]:
         school_display = row["school_name"]
@@ -74,12 +81,13 @@ def preferred_supplier(row):
 
 
 def verify(files):
+    date_count = len(FIXTURE["daily_batches"])
     allowed_parts = {
         "[Content_Types].xml", "_rels/.rels", "xl/_rels/workbook.xml.rels",
         "xl/workbook.xml", "xl/styles.xml", "xl/sharedStrings.xml", "xl/theme/theme1.xml",
-        *[f"xl/worksheets/sheet{i}.xml" for i in range(1, 4)],
-        *[f"xl/worksheets/_rels/sheet{i}.xml.rels" for i in range(1, 3)],
-        *[f"xl/tables/table{i}.xml" for i in range(1, 3)],
+        *[f"xl/worksheets/sheet{i}.xml" for i in range(1, date_count + 2)],
+        *[f"xl/worksheets/_rels/sheet{i}.xml.rels" for i in range(1, date_count + 1)],
+        *[f"xl/tables/table{i}.xml" for i in range(1, date_count + 1)],
     }
     require(set(files) == allowed_parts, "Exact allowed synthetic specimen OPC part set")
     allowed_relationships = {
@@ -128,22 +136,22 @@ def verify(files):
         end = len(rows) + 3
         table = roots[f"xl/tables/table{index}.xml"]
         require(table.get("name") == f"AtlasNeed_{date.replace('-', '')}", "Table name")
-        require(table.get("ref") == f"A3:Q{end}", "Full identity-bound Table range")
-        require(table.find("m:autoFilter", NS).get("ref") == f"A3:Q{end}", "Whole Table filter")
+        require(table.get("ref") == f"A3:O{end}", "Full identity-bound Table range")
+        require(table.find("m:autoFilter", NS).get("ref") == f"A3:O{end}", "Whole Table filter")
         require([col.get("name") for col in table.find("m:tableColumns", NS)] == visible + hidden, "Exact Table columns")
         require(table.find("m:tableStyleInfo", NS).get("showRowStripes") == "0", "Restrained table styling")
         cells = {cell.get("r"): cell for cell in sheet.findall(".//m:c", NS)}
         require(len(files[f"xl/worksheets/sheet{index}.xml"]) < 250_000, "Bounded worksheet XML")
-        require(len(cells) <= 17 * (end + 1), "Bounded used range")
+        require(len(cells) <= 15 * (end + 1), "Bounded used range")
         for address, cell in cells.items():
             if text(cell, strings):
                 match = re.fullmatch(r"([A-Z]+)([0-9]+)", address)
                 require(match is not None, "Canonical cell address")
                 column, row_number = match.group(1), int(match.group(2))
-                require(len(column) == 1 and "A" <= column <= "Q" and 1 <= row_number <= end, "No nonempty out-of-region cells")
+                require(len(column) == 1 and "A" <= column <= "O" and 1 <= row_number <= end, "No nonempty out-of-region cells")
                 if row_number < 3:
                     require(column == "A" and row_number == 1, "Only quiet date title above headings")
-        require([text(cells.get(f"{chr(65 + col)}3"), strings) for col in range(17)] == visible + hidden, "Exact header cells")
+        require([text(cells.get(f"{chr(65 + col)}3"), strings) for col in range(15)] == visible + hidden, "Exact header cells")
         require(text(cells.get("A1"), strings).endswith(date.split("-")[2] + "/" + date.split("-")[1] + "/" + date.split("-")[0] + ")"), "Date title")
         for address in ["A1", "A3", "B3", "C3", "D3", "E3"]:
             cell = cells[address]
@@ -188,24 +196,24 @@ def verify(files):
             == (rows[break_id - 4]["school_id"], rows[break_id - 4]["delivery_location_id"])
         }
         for row_index in range(4, end + 1):
-            values = [text(cells.get(f"{chr(65 + col)}{row_index}"), strings) for col in range(17)]
+            values = [text(cells.get(f"{chr(65 + col)}{row_index}"), strings) for col in range(15)]
             row_id = values[6]
             require(row_id in by_id and row_id not in seen, "Unknown/duplicate line")
             seen.add(row_id)
             row = by_id[row_id]
             supplier = preferred_supplier(row)
-            expected_hidden = [FIXTURE["metadata"]["workbook_marker"], row_id, row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"], row["reason_code"], supplier]
+            expected_hidden = [FIXTURE["metadata"]["workbook_marker"], row_id, row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"]]
             require(values[5:] == expected_hidden, "Canonical row-bound evidence")
             first_in_school = row_index == 4 or (
                 rows[row_index - 5]["school_id"], rows[row_index - 5]["delivery_location_id"]
             ) != (row["school_id"], row["delivery_location_id"])
             expected_school = row["school_name"] + (f"\nĐiểm giao: {row['delivery_location_name']}" if len(locations[row["school_id"]]) > 1 else "") if first_in_school else ""
             if row_index in continuation_rows:
-                expected_school = f'{row["school_name"]} (tiếp)'
+                expected_school = f'{row["school_name"]} (tiếp)' + (f"\nĐiểm giao: {row['delivery_location_name']}" if len(locations[row["school_id"]]) > 1 else "")
             require(values[:3] == [expected_school, row["ingredient_name"], row["unit_code"]], "Canonical visible labels")
             starts_school = first_in_school or row_index in continuation_rows
             two_line = row["ingredient_id"] in print_cases["two_line_ingredient_ids"] or (
-                starts_school and row["school_id"] in print_cases["two_line_school_ids"]
+                starts_school and (row["school_id"] in print_cases["two_line_school_ids"] or len(locations[row["school_id"]]) > 1)
             )
             height_class = "two_line" if two_line else ("school_start" if starts_school else "normal")
             expected_height = print_layout[{"normal": "normalRowPt", "school_start": "schoolRowPt", "two_line": "twoLineRowPt"}[height_class]]
@@ -216,7 +224,7 @@ def verify(files):
                 require(fonts[int(xf.get("fontId", "0"))].find("m:b", NS) is not None, "First/continued School bold")
             require(Decimal(values[3]) == Decimal(row["exact_quantity"]), "Exact quantity XML")
             require(values[4] == supplier, "Only first eligible supplier suggestion")
-            for col in range(17):
+            for col in range(15):
                 cell = cells[f"{chr(65 + col)}{row_index}"]
                 protection = styles[int(cell.get("s", "0"))].find("m:protection", NS)
                 is_unlocked = protection is not None and protection.get("locked") == "0"
@@ -255,7 +263,7 @@ def verify(files):
         require(seen == set(by_id), "Every-and-only line set")
         require([text(cells[f"G{row_index}"], strings) for row_index in range(4, end + 1)] == [row["confirmed_need_line_id"] for row in rows], "Deterministic specimen export order")
         cols = sheet.find("m:cols", NS)
-        require(any(col.get("min") == "6" and col.get("max") == "17" and col.get("hidden") == "1" for col in cols), "Hidden F:Q")
+        require(any(col.get("min") == "6" and col.get("max") == "15" and col.get("hidden") == "1" for col in cols), "Hidden F:O")
         for col_index, expected in enumerate(print_layout["columnWidths"], 1):
             match = [col for col in cols if int(col.get("min")) <= col_index <= int(col.get("max"))]
             require(len(match) == 1 and abs(float(match[0].get("width")) - expected) < 0.01, "A4 column proportions")
@@ -290,14 +298,23 @@ def verify(files):
     require(not meta.findall(".//m:f", NS), "No metadata formulas")
     require(meta.find("m:sheetProtection", NS) is not None, "Protected metadata")
     meta_cells = {cell.get("r"): cell for cell in meta.findall(".//m:c", NS)}
-    require(all(re.fullmatch(r"[AB](?:[1-9]|10)", address) for address, cell in meta_cells.items() if text(cell, strings)), "No nonempty metadata extras")
-    pairs = [(text(meta_cells.get(f"A{i}"), strings), text(meta_cells.get(f"B{i}"), strings)) for i in range(1, 11)]
+    allowed_meta_addresses = {f"{column}{row}" for row in range(1, 7) for column in "AB"} | {f"{column}{row}" for row in range(8, 9 + len(dates)) for column in "ABCDE"}
+    require(all(address in allowed_meta_addresses for address, cell in meta_cells.items() if text(cell, strings)), "No nonempty metadata extras")
+    pairs = [(text(meta_cells.get(f"A{i}"), strings), text(meta_cells.get(f"B{i}"), strings)) for i in range(1, 7)]
     require(pairs == [(key, str(value)) for key, value in FIXTURE["metadata"].items()], "Exact metadata contract")
     normalized_meta = dict(pairs)
-    normalized_meta["batch_version"] = int(normalized_meta["batch_version"])
+    daily_headers = ["service_date", "confirmed_need_batch_id", "batch_version", "need_generation_run_id", "release_snapshot_id"]
+    require([text(meta_cells.get(f"{column}8"), strings) for column in "ABCDE"] == daily_headers, "Exact daily authority headers")
+    daily_batches = []
+    for index, expected in enumerate(FIXTURE["daily_batches"], 9):
+        batch = dict(zip(daily_headers, [text(meta_cells.get(f"{column}{index}"), strings) for column in "ABCDE"]))
+        require(batch == {key: str(value) for key, value in expected.items()}, "Exact per-date batch evidence")
+        batch["batch_version"] = int(batch["batch_version"])
+        daily_batches.append(batch)
+    require([batch["service_date"] for batch in daily_batches] == dates, "One batch per date sheet")
     require(len(set(all_body_heights)) <= 3, "At most three body heights")
     require((height_counts["normal"] + height_counts["school_start"]) / len(all_body_heights) >= 0.8, "At least 80% single-line-height rows")
-    return {"metadata": normalized_meta, "rows": projected, "print_metrics": {
+    return {"metadata": normalized_meta, "daily_batches": daily_batches, "rows": projected, "print_metrics": {
         "normal_row_count": height_counts["normal"],
         "school_start_row_count": height_counts["school_start"],
         "two_line_row_count": height_counts["two_line"],
@@ -358,7 +375,7 @@ def check_schema(value, rule):
         for key, item in value.items():
             check_schema(item, rule["properties"][key])
     elif kind == "array":
-        require(isinstance(value, list) and len(value) >= rule.get("minItems", 0), "Schema array/minItems")
+        require(isinstance(value, list) and rule.get("minItems", 0) <= len(value) <= rule.get("maxItems", len(value)), "Schema array bounds")
         for item in value:
             check_schema(item, rule["items"])
     elif kind == "integer":
@@ -377,13 +394,59 @@ def check_schema(value, rule):
             require(datetime.fromisoformat(value.replace("Z", "+00:00")).tzinfo is not None, "Schema zoned timestamp")
 
 
+def validate_daily_currentness(workbook, authority, containing_sheet_dates=None, local_dirty_dates=None):
+    """Isolated contract model: validate every date before returning quantity proposals."""
+    dates = [batch["service_date"] for batch in workbook["daily_batches"]]
+    require(dates == sorted(set(dates)) == sorted(authority["batches"]), "Exact daily sheet/batch set")
+    require(not (set(dates) & set(local_dirty_dates or [])), "Do not overwrite an unsaved local draft")
+    require(workbook["metadata"]["service_period_start"] == dates[0] and workbook["metadata"]["service_period_end"] == dates[-1], "Exact collection bounds")
+    rows_by_date = {day: [] for day in dates}
+    for row in workbook["rows"]:
+        day = row["__service_date"]
+        require(day in rows_by_date, "Row bound to represented date")
+        if containing_sheet_dates is not None:
+            require(containing_sheet_dates[row["__line_id"]] == day, "Row remains on its bound date sheet")
+        rows_by_date[day].append(row)
+    proposals = {}
+    for batch in workbook["daily_batches"]:
+        day = batch["service_date"]
+        require(batch == authority["batches"][day], "Fresh daily batch/version/source evidence")
+        expected = authority["lines"][day]
+        seen = set()
+        for row in rows_by_date[day]:
+            line_id = row["__line_id"]
+            require(line_id in expected and line_id not in seen, "Every-and-only daily line")
+            seen.add(line_id)
+            current = expected[line_id]
+            for key in ["__workbook_marker", "__revision_id", "__decision_id", "__service_date", "__school_id", "__location_id", "__ingredient_id", "__unit_id", "__exported_quantity"]:
+                require(row[key] == current[key], "Fresh row identity/revision/quantity evidence")
+            if Decimal(row["quantity"].replace(",", ".")) != Decimal(current["__exported_quantity"]):
+                proposals[line_id] = row["quantity"]
+        require(seen == set(expected), "Complete daily row set")
+    return proposals
+
+
+def current_authority(normalized):
+    return {
+        "batches": {batch["service_date"]: copy.deepcopy(batch) for batch in normalized["daily_batches"]},
+        "lines": {
+            day: {row["__line_id"]: copy.deepcopy(row) for row in normalized["rows"] if row["__service_date"] == day}
+            for day in [batch["service_date"] for batch in normalized["daily_batches"]]
+        },
+    }
+
+
+def export_allowed(local_draft_dirty):
+    return not local_draft_dirty
+
+
 def main(path):
     verify_presentation(FIXTURE)
     with ZipFile(path) as archive:
         require(archive.testzip() is None, "Healthy ZIP")
         files = {name: archive.read(name) for name in archive.namelist()}
     normalized = verify(files)
-    check_schema({key: normalized[key] for key in ["metadata", "rows"]}, SCHEMA)
+    check_schema({key: normalized[key] for key in ["metadata", "daily_batches", "rows"]}, SCHEMA)
     # Negative controls test the static conformance validator, not production import.
     sheet = "xl/worksheets/sheet1.xml"
     controls = [
@@ -395,15 +458,14 @@ def main(path):
         (sheet, "H4", "00000000-0000-0000-0000-000000009999"),
         (sheet, "I4", "00000000-0000-0000-0000-000000009999"),
         (sheet, "J4", "2026-04-21"), (sheet, "N4", "00000000-0000-0000-0000-000000009999"),
-        (sheet, "O4", "9.123456"), (sheet, "P4", "OTHER"),
-        ("xl/worksheets/sheet3.xml", "B2", "ATLAS_SHOPPING_LIST_V2"),
-        ("xl/worksheets/sheet3.xml", "B8", "8"),
-        ("xl/worksheets/sheet3.xml", "B9", "00000000-0000-0000-0000-000000009999"),
-        ("xl/worksheets/sheet3.xml", "B10", "00000000-0000-0000-0000-000000009999"),
-        ("xl/worksheets/sheet3.xml", "B5", "2026-04-19"),
-        ("xl/worksheets/sheet3.xml", "B6", "2026-04-22"),
-        ("xl/worksheets/sheet3.xml", "C1", "unexpected metadata"),
-        (sheet, "R4", "unexpected column"), (sheet, "A48", "unexpected row"),
+        (sheet, "O4", "9.123456"),
+        ("xl/worksheets/sheet4.xml", "B2", "ATLAS_SHOPPING_LIST_V2"),
+        ("xl/worksheets/sheet4.xml", "B10", "9"),
+        ("xl/worksheets/sheet4.xml", "B11", "00000000-0000-0000-0000-000000009999"),
+        ("xl/worksheets/sheet4.xml", "B5", "2026-04-19"),
+        ("xl/worksheets/sheet4.xml", "B6", "2026-04-23"),
+        ("xl/worksheets/sheet4.xml", "C1", "unexpected metadata"),
+        (sheet, "P4", "unexpected column"), (sheet, "A48", "unexpected row"),
         (sheet, "A3", "SL"),
     ]
     rejected = 0
@@ -417,19 +479,26 @@ def main(path):
         else:
             raise AssertionError(f"Negative control unexpectedly passed: {address}")
     # Row removal and Table expansion are structural controls, not cell edits.
-    structural_controls = ["delete", "expand", "external", "macro_type", "oversize", "height_drift"]
+    structural_controls = ["delete", "expand", "external", "macro_type", "oversize", "height_drift", "missing_sheet", "extra_sheet"]
     for operation in structural_controls:
         mutated = copy.copy(files)
-        target = {"delete": sheet, "expand": "xl/tables/table1.xml", "external": "xl/worksheets/_rels/sheet1.xml.rels", "macro_type": "[Content_Types].xml", "oversize": sheet, "height_drift": sheet}[operation]
+        target = {"delete": sheet, "expand": "xl/tables/table1.xml", "external": "xl/worksheets/_rels/sheet1.xml.rels", "macro_type": "[Content_Types].xml", "oversize": sheet, "height_drift": sheet, "missing_sheet": "xl/workbook.xml", "extra_sheet": "xl/workbook.xml"}[operation]
         root = ET.fromstring(mutated[target])
         if operation == "delete":
             data = root.find("m:sheetData", NS)
             data.remove(data.find('m:row[@r="4"]', NS))
         elif operation == "expand":
-            root.set("ref", "A3:Q44")
+            root.set("ref", "A3:O44")
         elif operation == "external":
             root[0].set("TargetMode", "External")
             root[0].set("Target", "https://example.invalid/fixture-control")
+        elif operation == "missing_sheet":
+            sheets = root.find("m:sheets", NS)
+            sheets.remove(sheets[1])
+        elif operation == "extra_sheet":
+            sheets = root.find("m:sheets", NS)
+            sheets.append(copy.deepcopy(sheets[0]))
+            sheets[-1].set("name", "2026-04-23")
         elif operation in ["oversize", "height_drift"]:
             root.find(f'm:sheetData/m:row[@r="{4 if operation == "oversize" else 5}"]', NS).set("ht", "37" if operation == "oversize" else "25")
         else:
@@ -451,7 +520,18 @@ def main(path):
         rejected += 1
     else:
         raise AssertionError("Ambiguous canonical label control passed")
-    require(len(FIXTURE["rows"]) == 56 and len({row["school_id"] for row in FIXTURE["rows"]}) == 3, "Required fixture coverage")
+    ambiguous_location = copy.deepcopy(FIXTURE)
+    for row in ambiguous_location["rows"]:
+        if row["service_date"] == "2026-04-22" and row["delivery_location_name"] == "Bếp phụ":
+            row["delivery_location_name"] = "Bếp chính"
+    try:
+        verify_presentation(ambiguous_location)
+    except AssertionError:
+        rejected += 1
+    else:
+        raise AssertionError("Ambiguous Location label control passed")
+    require(len(FIXTURE["rows"]) == 59 and len({row["school_id"] for row in FIXTURE["rows"]}) == 3, "Required fixture coverage")
+    require(len(normalized["daily_batches"]) == 3 and len({batch["confirmed_need_batch_id"] for batch in normalized["daily_batches"]}) == 3, "Three independent daily batches")
     require(len({row["ingredient_id"] for row in FIXTURE["rows"]}) >= 8, "Ingredient coverage")
     first_date = [row for row in normalized["rows"] if row["__service_date"] == "2026-04-20"]
     reordered = list(reversed(first_date))
@@ -474,7 +554,55 @@ def main(path):
     require(any(preferred_supplier(row) == "" for row in FIXTURE["rows"]), "No supplier gives clean blank")
     notes = {row["note"] for row in normalized["rows"]}
     require("Nhà cung cấp thay thế A" not in notes and "Nhà cung cấp thay thế B" not in notes, "Alternative suppliers not visible")
-    print(f"PASS: static XLSX/fixture/schema conformance; {rejected}/{len(controls) + len(structural_controls) + 1} negative controls rejected.")
+    authority = current_authority(normalized)
+    require(validate_daily_currentness(normalized, authority) == {}, "Three current dates import unchanged after restart")
+    edited = copy.deepcopy(normalized)
+    edited["rows"][0]["quantity"] = "2"
+    require(validate_daily_currentness(edited, authority) == {edited["rows"][0]["__line_id"]: "2"}, "Quantity edit imports after restart")
+    note_only = copy.deepcopy(normalized)
+    note_only["rows"][0]["note"] = "handwritten working note"
+    require(validate_daily_currentness(note_only, authority) == {}, "GHI CHÚ edit produces no draft")
+    edited["rows"][0]["note"] = "another working note"
+    require(validate_daily_currentness(edited, authority) == {edited["rows"][0]["__line_id"]: "2"}, "Quantity plus GHI CHÚ equals quantity only")
+    supplier_changed = copy.deepcopy(normalized)
+    supplier_changed["rows"][0]["note"] = "Different current Supplier name"
+    require(validate_daily_currentness(supplier_changed, authority) == {}, "Supplier suggestion drift alone does not stale import")
+    try:
+        validate_daily_currentness(normalized, authority, local_dirty_dates={"2026-04-21"})
+    except AssertionError:
+        rejected += 1
+    else:
+        raise AssertionError("Unsaved local draft import control passed")
+    for scenario in ["stale_second_date", "wrong_daily_batch", "wrong_revision", "missing_row", "duplicate_row", "extra_row", "transplanted_row", "missing_daily_sheet", "extra_daily_sheet"]:
+        candidate = copy.deepcopy(normalized)
+        fresh = current_authority(normalized)
+        if scenario == "stale_second_date":
+            fresh["batches"]["2026-04-21"]["batch_version"] += 1
+        elif scenario == "wrong_daily_batch":
+            candidate["daily_batches"][1]["confirmed_need_batch_id"] = str(UUID(int=9999))
+        elif scenario == "wrong_revision":
+            fresh["lines"]["2026-04-21"][next(iter(fresh["lines"]["2026-04-21"]))]["__revision_id"] = str(UUID(int=9999))
+        elif scenario == "missing_row":
+            candidate["rows"].pop(0)
+        elif scenario == "duplicate_row":
+            candidate["rows"].append(copy.deepcopy(candidate["rows"][0]))
+        elif scenario == "extra_row":
+            candidate["rows"].append({**candidate["rows"][0], "__line_id": str(UUID(int=9999))})
+        elif scenario == "transplanted_row":
+            sheet_dates = {row["__line_id"]: row["__service_date"] for row in candidate["rows"]}
+            sheet_dates[candidate["rows"][0]["__line_id"]] = "2026-04-21"
+        elif scenario == "missing_daily_sheet":
+            candidate["daily_batches"].pop(1)
+        elif scenario == "extra_daily_sheet":
+            candidate["daily_batches"].append({**candidate["daily_batches"][0], "service_date": "2026-04-23"})
+        try:
+            validate_daily_currentness(candidate, fresh, sheet_dates if scenario == "transplanted_row" else None)
+        except AssertionError:
+            rejected += 1
+        else:
+            raise AssertionError(f"Multi-date currentness negative control passed: {scenario}")
+    require(export_allowed(False) and not export_allowed(True), "Only clean saved state permits export")
+    print(f"PASS: static XLSX/fixture/schema conformance; {rejected}/{len(controls) + len(structural_controls) + 2 + 9 + 1} negative controls rejected; three-date currentness/restart/quantity/note model checked.")
     print("ROW_RHYTHM: " + json.dumps(normalized["print_metrics"], sort_keys=True))
     print(f"SHA256: {hashlib.sha256(path.read_bytes()).hexdigest()}")
     print("Not tested here: connected V1 import, persistence, or native staff Excel behavior.")
