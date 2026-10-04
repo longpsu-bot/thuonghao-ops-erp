@@ -2,7 +2,7 @@
 
 ## Status and authority
 
-**TASK_STATUS: READY_FOR_PRODUCT_REVIEW.** This is a proposed V1 contract and synthetic specimen, not Product approval or connected implementation. Continue Draft PR #347 on `design/atlas-shopping-list-xlsx-contract-01`; do not merge. The reviewed starting head for this print-scale calibration was `bb038612bc80b6f065388c5403105657110334ac` (the prior architecture pass began at `778ab83ab84d4e720ad54cd8996d1b5f5ad25dff`). The user authorized the real `D:/Project/Repo/OPS/thuonghao-ops-erp` checkout. Git root, origin, fetched main, clean starting status, branch and `pnpm ops:workspace` were verified before edits.
+**TASK_STATUS: PRINT_GEOMETRY_BLOCKED.** Business decisions remain accepted; no replacement print geometry passed the new physical-size gate. Continue Draft PR #347 on `design/atlas-shopping-list-xlsx-contract-01`; do not merge. This native geometry review starts at `54602579eeff9b93b7eb176d6eddb9203c8fe113`. Earlier print calibration started at `bb038612bc80b6f065388c5403105657110334ac`; the architecture pass began at `778ab83ab84d4e720ad54cd8996d1b5f5ad25dff`. The user authorized the real `D:/Project/Repo/OPS/thuonghao-ops-erp` checkout. Git root, origin, fetched main, clean starting status, branch and `pnpm ops:workspace` were verified before edits.
 
 Allowed: this record, `docs/xlsx/` contract, evidence, schema, synthetic fixture, generator/finalizer/validator and specimen XLSX. Prohibited: production Shopping List code, connected UI, Supabase schema/RLS/RPC/migrations or data, Retool, OPS v1, hosted business data, dependencies and unrelated modules.
 
@@ -14,7 +14,7 @@ Import works after browser restart without a session manifest: parse, read every
 
 For multiple Delivery Locations under one School/date, print the School name and subordinate `Điểm giao: <Tên điểm giao>` on the subgroup's first row. One location prints School only. Hidden Location ID remains row-bound; ambiguous canonical labels block export. Protected filtering is best effort, never an identity requirement or Product blocker.
 
-The black/white Times A4 visual contract retains its borders, five-column order, portrait composition and page-break/continuation system. The print scale is calibrated to 20 pt title, 16 pt headings/body/School and 14 pt Supplier; rows 32/34/44 pt with ≤44 pt cap; widths `26 / 39 / 7 / 11 / 25`. The specimen paginator uses a conservative `0.95` fitted-height upper bound; the connected exporter must verify actual Excel print fit for real data. Extreme real names are a connected-exporter implementation acceptance test, not an open contract decision.
+The retained black/white Times A4 specimen has 20 pt title, 16 pt headings/body/School and 14 pt Supplier; rows 32/34/44 pt with ≤44 pt cap; widths `26 / 39 / 7 / 11 / 25`. These are historical baseline constants, not approved final physical scale. The new acceptance gate requires ≥95% native print scale and ≥17 pt effective body without clipped fixture values or hashed quantities. Borders, column order, portrait composition and business semantics remain unchanged. The existing fixture's text-fit conflict must be resolved before deferring extreme real names to connected-exporter certification.
 
 ## Specimen and verification
 
@@ -26,10 +26,20 @@ Earlier native Excel 16 review of the approved first two date sheets found no re
 
 Focused validation for this print-scale pass passed: specimen validator (41/41 negative controls), Shopping List and precision Vitest suites (2 authorized checkout files / 30 tests), `pnpm ui:vnext:check`, `pnpm typecheck`, targeted Prettier, `git diff --check`, and `pnpm ops:workspace`. The final committed specimen reopened read-only in native Excel 16 and printed four A4 portrait pages with no `######` quantity. GitHub Actions owns the required full `Frontend CI / Format, typecheck, test, build` workflow on the same Draft PR; inspect its final state after pushing.
 
+## Native geometry review from 54602579
+
+Temporary G1/G2/G3 used title/header/body/School/Supplier `20/18/18/18/16` pt, widths `19/41/7/9/17`, `18/42/7/9/16`, `20/40/7/9/17`, and fixed body classes `28/30/44`, `27/29/42`, `28/30/44` pt respectively. Long Supplier advice used the existing two-line class deterministically; no extra class or dynamic row height was authored. Margins were `0.20/0.20/0.25/0.25` inches. Native Excel 16 exported every candidate at explicit 100% and again at 95%. The latter produced five pages with 17.16 pt effective body; all candidates clipped the long School, multi-location line, Ingredient and Supplier, and each printed five `#####` quantities. G1/G3 at 100% additionally split horizontally. The minimum native indent of 1 in A/B/E worsened fit. All candidate pages were reviewed at matching A4 dimensions. No candidate is selected or committed.
+
+Times New Roman glyph measurements give a conservative lower bound of 692.97 pt for the five column contents under the required two-line labels and unwrapped Unit/quantity. Configured A4 with 0.20-inch side margins offers only 596.34 unscaled pt at 95%, before any cell padding. This is a fixture geometry conflict, not a future certification issue. See [native evidence](../xlsx/atlas-shopping-list-xlsx-v1-evidence.md#native-scale-review-at-54602579) for the complete measurements. The requested stop condition applies: retain the specimen/schema/tooling without lowering the print-size target or accepting clipping.
+
+This pass changes the contract's readiness statement, this task status and source evidence only. The retained XLSX SHA-256 is `e547d25ddd5cfeeab15b2ba4623d581adc864fd44144900ed9a17c3d83b703aa`. Structural and domain checks cannot certify the ≥17 pt physical print gate; native PDF review remains required.
+
+Fresh evidence-pass validation: retained specimen passes all 41 negative controls; focused Shopping List and precision suites pass 2 files / 30 tests; UI boundary, typecheck, targeted Prettier, diff whitespace and workspace checks pass. No identity, precision or print-layout assertion was weakened. Native candidate print acceptance fails independently of those successful checks. GitHub Actions validates the documentation commit on the same Draft PR.
+
 ## Security, rollback and future implementation
 
 Hidden/protected cells are operator guidance, never security. Fresh authorized backend reads, row/batch/currentness checks and existing Save privileges are decisive. No schema, migration, API, backend privilege, RLS, production importer/exporter or connected UI change occurs; rollback is documentation/specimen-only. A future bounded connected implementation may need an authorized shaped read for 1–7 daily batches and first preferred Supplier projection. No Supabase object is added here.
 
-No remaining architecture/Product question is intended to block the XLSX V1 contract; Product approval of this frozen proposal and successful CI remain required before merge. Print behavior with extreme real names, Excel cross-version protected filters and shaped-read implementation belong to later implementation/certification work.
+Remaining Product decision: resolve the conflict between portrait A4 at ≥95%/≥17 pt effective body, complete fixture names and six-decimal quantities, and the requested two-line/≤44 pt geometry. This genuinely blocks the current print contract. Business architecture is settled; protected filtering and future shaped reads remain implementation/certification concerns. No print geometry or Product approval is claimed by this pass.
 
 SUPABASE_WRITES: 0. RETOOL_WRITES: 0. OPS_V1_WRITES: 0. HOSTED_BUSINESS_WRITES: 0.

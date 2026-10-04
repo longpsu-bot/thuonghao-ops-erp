@@ -4,6 +4,8 @@ Original source audit 2026-10-02; Product redesign audit 2026-10-04.
 Repository baseline: `d81b60ca63349794d28b0dcc5d34f5fd3e1ebfa1`, PR #345.
 This records observations and proposed intentional differences. It does not amend an approved business contract or certify the current live Retool deployment.
 
+**Current print status: PRINT_GEOMETRY_BLOCKED.** The earlier selected refinement below is retained history. The native review from `54602579` supersedes its readiness claim: no tested replacement satisfies the new physical-size and complete-text gates together. Business/import decisions remain accepted.
+
 ## Sources inspected
 
 | Source                                     | Locator / evidence                                                                                                                                                                                                                                                                                           |
@@ -80,8 +82,56 @@ The prior `bb038612` specimen and the supplied workbook's isolated right-hand st
 
 Refinements after B tested School, Ingredient and Note widths against every printed page; a narrow Note clipped the long Supplier, while a wider Note reduced effective body scale. A further 17 pt body variant again clipped the long Ingredient and printed `######` quantities. B8 established the smallest tested width combination retaining 14 pt nominal Supplier text and complete long Supplier, School and Ingredient strings. After review found two-line Supplier advice crowded against the row rule, B16 raised the three body classes by 3/3/2 pt. A naive unscaled page budget produced a nearly empty fifth page; the final specimen instead models row heights with a conservative `0.95` fitted-height upper bound, against about `0.83` measured from native Excel's effective body font. The native PDF remains four A4 pages with first-date rows `22/22`; the 0.95 model leaves 2.69/27.39 pt on those pages, while native Excel's stronger width downscaling leaves additional physical space. All 52 populated workbook `GHI CHÚ` cells are present in the PDF text, including nine complete `Công ty Hoàng Dung Dairy` and ten complete `Nông sản Bình Minh - giao bếp trường mỗi sáng` suggestions. Page-1 effective body/Supplier sizes remain 13.32/11.64 pt, compared with 12.48/10.68 pt in the prior specimen. Dates 2 and 3 remain one page each; the short third date is deliberate multi-location test evidence. PDF inspection found no `######`, cut-off fixture text, orphan School heading or changed business content. The regenerated binary exactly matches selected candidate B16's SHA-256 and passes the 41 negative controls.
 
+## Native scale review at 54602579
+
+Starting PR head: `54602579eeff9b93b7eb176d6eddb9203c8fe113`. The previous note-clearance fix is retained, but its physical print size is not approved. The native acceptance floor is **PRINT_SCALE_PERCENT ≥95% and EFFECTIVE_BODY_FONT ≥17 pt**, together with complete fixture text, no hashed quantities, a single horizontal A4 page, bounded rows and safe identity evidence. Larger nominal fonts alone do not pass.
+
+### Native candidate results
+
+All three temporary candidates retained the three daily sheets, 59 synthetic lines, row-bound F:O identities, per-date metadata, black borders and repeating titles. Typography was Times New Roman title 20 pt bold, header/body/School 18 pt (School bold), Supplier 16 pt. G1/G3 used normal/School/two-line 28/30/44 pt; G2 used 27/29/42 pt. Long Supplier suggestions used the two-line class deterministically in the temporary builder. Margins were left/right 0.20 inch and top/bottom 0.25 inch. No unsaved or hosted business data was used.
+
+Native Excel 16 opened each XLSX read-only, exported it at its explicit 100% setting, then exported an in-memory 95% comparison; all workbooks closed without saving. PDF pages are 595.32 × 841.92 pt. Body font sizes come from PDF glyphs rather than the Excel ribbon. At configured 95%, native PDF quantization produced 17.16 pt body (about 95.3% of 18 pt) and 15.24 pt Supplier. This meets the size floor, but not the independent text-fit requirements.
+
+| Candidate | Widths A:E / sum  | Physical columns before scale      | 100% native result                     | 95% native result      | Body rows per 95% page | Disposition                                                |
+| --------- | ----------------- | ---------------------------------- | -------------------------------------- | ---------------------- | ---------------------- | ---------------------------------------------------------- |
+| G1        | 19/41/7/9/17 / 93 | 114/246/42/54/102 pt; 558 pt total | 18 pt body; 10 pages, horizontal split | 17.16 pt body; 5 pages | 19/21/4/12/3           | Reject: clipped names/location and five hashed quantities. |
+| G2        | 18/42/7/9/16 / 92 | 108/252/42/54/96 pt; 552 pt total  | 18 pt body; 5 pages                    | 17.16 pt body; 5 pages | 19/22/3/12/3           | Reject: clipped names/location and five hashed quantities. |
+| G3        | 20/40/7/9/17 / 93 | 120/240/42/54/102 pt; 558 pt total | 18 pt body; 10 pages, horizontal split | 17.16 pt body; 5 pages | 19/21/4/12/3           | Reject: clipped names/location and five hashed quantities. |
+
+The long School prints only its opening words; the multi-location rows lose the actual `Bếp chính`/`Bếp phụ` names. The long Ingredient loses its ending. None of the ten long `Nông sản Bình Minh - giao bếp trường mỗi sáng` suggestions prints completely. The narrow quantity column prints the five `1,234567` fixture values as `#####`; the underlying exact numeric XML remains intact. Narrow header cells also wrap/clip the Unit and quantity headings. The near-empty third page of the first date is poor packing and would need correction in an accepted design; it is not the reason for rejecting these candidates.
+
+The smallest native Excel alignment indent, level 1, was tested in A/B/E on G1 at 95%, read-only and without saving. It improved separation from the left rule but further reduced usable width, cut additional Ingredient/Supplier text and retained quantity hashes. No indent is selected. A margin reduction cannot repair text clipped within individual cells; all candidates already used the suggested minimum 0.20-inch side margins.
+
+### Why width redistribution cannot satisfy this fixture
+
+The following are **bare glyph widths**, measured from the installed Times New Roman regular/bold font files at the requested sizes. For long strings, every word-boundary split into two lines was evaluated and the narrowest possible maximum line width retained. These are conservative content-width minima: they exclude borders, padding, filter buttons and writing room. Required explicit School/location line separation is preserved.
+
+| Content                                          | Font          | Minimum content width |
+| ------------------------------------------------ | ------------- | --------------------- |
+| Long School, best two-line break                 | 18 pt bold    | 150.79 pt             |
+| `Điểm giao: Bếp chính` required second line      | 18 pt bold    | 165.51 pt; governs A  |
+| Long Ingredient, best two-line break             | 18 pt regular | 258.19 pt             |
+| Long Supplier, best two-line break               | 16 pt regular | 163.77 pt             |
+| Unwrapped `ĐVT` header                           | 18 pt bold    | 38.00 pt              |
+| Unwrapped `1,234567` quantity                    | 18 pt regular | 67.50 pt              |
+| Five columns, using the wider required A content |               | **692.97 pt**         |
+
+Configured A4 with 0.20-inch side margins supplies only `(595.32 − 2 × 0.20 × 72) / 0.95 = 596.34 pt` of unscaled width at 95%. The bare glyph requirement exceeds that budget by 96.63 pt before any padding. Even at zero side margins, which are prohibited, A4 at 95% supplies only 626.65 pt. With the configured margins, 692.97 pt would require about 81.75% scale before padding, below the requested 95% floor. Native Excel's quantity probe independently required D width 12 (75.75 physical pt) to display `1,234567`, and its long Supplier probe required E width 28 (171.75 physical pt) for a two-line fit. These measurements are diagnostics only; no automatic row heights were authored or committed.
+
+Even ignoring the location line and the entire Unit column, the long School + Ingredient + Supplier + quantity require 640.25 pt of bare content width. That already exceeds the 596.34 pt configured budget. Smaller subordinate location typography or a wrapped Unit heading cannot remove the conflict.
+
+The shorter reference/v1 values and blank Note columns do not exercise this simultaneous long-text requirement. The existing fixture does. The requested stop condition therefore applies: **no replacement geometry selected**, no font-floor reduction, no clipping accepted, no replacement specimen committed. Product must resolve the long-text/row-height constraint before a physically readable portrait geometry can be approved. This is not deferred to connected implementation as an extreme-name certification issue.
+
+### Equal-scale comparison and full-page review
+
+The supplied right-hand reference was bounded to its complete J1:Q42 table in memory. A comparable **first-42-row excerpt** of the retained March v1 form was bounded to A1:H42; the original v1 has 481 used rows and its original print area produces 15 pages. The reference and v1 excerpt were exported read-only on A4 portrait at explicit 100%, with 0.20-inch side margins for comparison, and each printed two pages with 18 pt effective body. The full original v1 PDF also has 18 pt body on page 1. These temporary print-area changes were never saved to the supplied files. The retained v1 columns occupy 516 pt; the current Atlas columns occupy 648 pt before fitting, with widths totaling 108 and a Normal style of Carlito 11 pt. Excel's UI character-width reporting differs slightly from stored OOXML widths; the physical point measurements are decisive.
+
+The current Atlas specimen prints four pages, body rows 22/22/12/3, at 13.32 pt effective body (83.25% of nominal 16 pt). Its complete fixture text remains readable at that smaller size, but it fails the new floor. G1/G2/G3 at 95% are physically comparable to the 18 pt reference and visibly larger than the current specimen. Every page was rendered at the same 85 dpi A4 dimensions and reviewed. School rules remain visible, but clipped labels, lost Supplier advice, quantity hashes and excessive wrapping prevent staff use; handwriting clearance is not acceptable in the overflowing Note cells. No final PDF passes review.
+
+QA artifacts are temporary local evidence, not additional Git specimens: `G1.pdf`, `G2.pdf`, `G3.pdf`, their `*-95.pdf` comparisons, `G1-indent-95.pdf`, `PREVIOUS.pdf`, `REFERENCE.pdf`, `V1-BOUNDED.pdf`, page PNGs and measurement JSON in the task's temporary native-scale directory. No raw reference business data or failed candidate workbook is checked in. The schema, fixture, generator, finalizer, validator and committed XLSX are retained unchanged; XLSX SHA-256 remains `e547d25ddd5cfeeab15b2ba4623d581adc864fd44144900ed9a17c3d83b703aa`.
+
 ## Review and implementation boundary
 
 The selected print calibration changes only central schema sizing, the deterministic specimen, print validator cap and the documented measurements. The validator still checks multi-date identity/currentness and all print layout invariants; real extreme-name fitting remains a connected-exporter acceptance test. Native protected filtering differs between Excel UI flags and COM criteria changes, so it is best effort, not a Product-blocking capability.
 
-Current RMVP-05 governed quantity reason/Save rules remain authoritative. A future shaped authorized read may be needed for 1–7 daily batches and first preferred Supplier projection. This contract task changes no API, source exporter/importer, database object, Supabase data, Retool state or OPS v1 state. Product approval of the proposed contract remains pending; there is no remaining open Product/architecture decision within XLSX V1 itself.
+Current RMVP-05 governed quantity reason/Save rules remain authoritative. A future shaped authorized read may be needed for 1–7 daily batches and first preferred Supplier projection. This contract task changes no API, source exporter/importer, database object, Supabase data, Retool state or OPS v1 state. Business architecture is settled. The native print review now leaves one genuine Product constraint to resolve: complete fixture text within the requested portrait/scale/font/two-line geometry. Draft PR #347 is not ready for Product print approval and remains unmerged.
