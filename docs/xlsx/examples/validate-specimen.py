@@ -289,8 +289,9 @@ def verify(files):
         )
         for first, last in zip([4] + [value + 1 for value in break_ids], break_ids + [end]):
             used = sum(row_heights[row_number] for row_number in range(first, last + 1))
-            require(used <= body_budget + 0.01, "Printed page respects A4 body budget")
-            printed_pages.append({"date": date, "rows": last - first + 1, "body_pt": used, "blank_pt": round(body_budget - used, 2)})
+            scaled = used * print_layout["pageHeightScaleUpperBound"]
+            require(scaled <= body_budget + 0.01, "Printed page respects fitted A4 body budget")
+            printed_pages.append({"date": date, "rows": last - first + 1, "body_pt": used, "scaled_body_pt": round(scaled, 2), "blank_pt": round(body_budget - scaled, 2)})
         definitions = {node.get("name"): node.text for node in wb.findall("m:definedNames/m:definedName", NS) if node.get("localSheetId") == str(index - 1)}
         require(definitions.get("_xlnm.Print_Area") == f"'{date}'!$A$1:$E${end}", "Visible print area")
         require(definitions.get("_xlnm.Print_Titles") == f"'{date}'!$1:$3", "Repeat date/header on pages")

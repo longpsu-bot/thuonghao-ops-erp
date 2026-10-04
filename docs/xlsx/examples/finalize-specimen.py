@@ -57,7 +57,9 @@ def body_height_budget(print_layout):
 def page_breaks(rows, sheet_data, print_layout):
     """Pack complete groups when they fit; split large groups after full rows."""
     heights = {int(item.get("r")): float(item.get("ht", "0")) for item in sheet_data.findall("m:row", NS)}
-    capacity = body_height_budget(print_layout)
+    # The A4 page is fitted to width; use a conservative upper bound on the
+    # resulting height scale instead of counting unscaled row points as print points.
+    capacity = body_height_budget(print_layout) / print_layout["pageHeightScaleUpperBound"]
     remaining = capacity
     breaks = []
     continuation = []
