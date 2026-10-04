@@ -93,6 +93,10 @@ for date_index, service_date in enumerate(dates):
 fixture = {
     "synthetic": True,
     "description": "Synthetic existing-batch shape; print-page and supplier-eligibility stress fixture, never production data.",
+    "print_cases": {
+        "two_line_school_ids": [identity(110)],
+        "two_line_ingredient_ids": [identity(404)],
+    },
     "metadata": {
         "contract_name": "ATLAS_SHOPPING_LIST",
         "contract_version": "ATLAS_SHOPPING_LIST_V1",

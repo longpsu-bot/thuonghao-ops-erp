@@ -1,6 +1,10 @@
 {
   "synthetic": true,
   "description": "Synthetic existing-batch shape; print-page and supplier-eligibility stress fixture, never production data.",
+  "print_cases": {
+    "two_line_school_ids": ["00000000-0000-0000-0000-00000000006e"],
+    "two_line_ingredient_ids": ["00000000-0000-0000-0000-000000000194"]
+  },
   "metadata": {
     "contract_name": "ATLAS_SHOPPING_LIST",
     "contract_version": "ATLAS_SHOPPING_LIST_V1",

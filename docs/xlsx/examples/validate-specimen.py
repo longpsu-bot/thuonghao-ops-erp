@@ -115,6 +115,11 @@ def verify(files):
     borders = style_root.find("m:borders", NS)
     visible = SCHEMA["x-atlas-layout"]["visibleHeaders"]
     hidden = SCHEMA["x-atlas-layout"]["hiddenHeaders"]
+    print_layout = SCHEMA["x-atlas-layout"]["print"]
+    print_cases = FIXTURE["print_cases"]
+    height_counts = {"normal": 0, "school_start": 0, "two_line": 0}
+    all_body_heights = []
+    printed_pages = []
     projected = []
     for index, date in enumerate(dates, 1):
         sheet = roots[f"xl/worksheets/sheet{index}.xml"]
@@ -146,6 +151,8 @@ def verify(files):
             font = fonts[int(xf.get("fontId", "0"))]
             require(font.find("m:name", NS).get("val") == "Times New Roman", "Title/header Times font")
             require(font.find("m:b", NS) is not None, "Title/header bold")
+            expected_size = print_layout["titleFontPt"] if address == "A1" else print_layout["headerFontPt"]
+            require(float(font.find("m:sz", NS).get("val")) == expected_size, "Title/header size hierarchy")
             require(font.find("m:color", NS).get("rgb") == "FF000000", "Title/header black")
             fill = fills[int(xf.get("fillId", "0"))].find("m:patternFill", NS)
             fg = fill.find("m:fgColor", NS) if fill is not None else None
@@ -159,10 +166,15 @@ def verify(files):
                 )
         data_rows = sheet.find("m:sheetData", NS).findall("m:row", NS)
         require([int(row.get("r")) for row in data_rows if int(row.get("r")) >= 4 and any(text(cell, strings) for cell in row)] == list(range(4, end + 1)), "Complete data rows")
-        require(
-            all(29 <= float(item.get("ht", "0")) <= 96 for item in data_rows if int(item.get("r")) >= 4),
-            "Handwriting and wrap row heights",
-        )
+        title_row = next(item for item in data_rows if item.get("r") == "1")
+        spacer_row = next(item for item in data_rows if item.get("r") == "2")
+        header_row = next(item for item in data_rows if item.get("r") == "3")
+        require(float(title_row.get("ht")) == print_layout["titleRowPt"], "Compact title height")
+        require(float(spacer_row.get("ht")) == print_layout["spacerRowPt"], "Controlled title spacing")
+        require(float(header_row.get("ht")) == print_layout["headerRowPt"], "Compact header height")
+        row_heights = {int(item.get("r")): float(item.get("ht", "0")) for item in data_rows if int(item.get("r")) >= 4}
+        all_body_heights.extend(row_heights.values())
+        require(max(row_heights.values()) <= 36, "Hard 36 pt body height cap")
         seen = set()
         by_id = {row["confirmed_need_line_id"]: row for row in rows}
         locations = {}
@@ -191,6 +203,14 @@ def verify(files):
             if row_index in continuation_rows:
                 expected_school = f'{row["school_name"]} (tiếp)'
             require(values[:3] == [expected_school, row["ingredient_name"], row["unit_code"]], "Canonical visible labels")
+            starts_school = first_in_school or row_index in continuation_rows
+            two_line = row["ingredient_id"] in print_cases["two_line_ingredient_ids"] or (
+                starts_school and row["school_id"] in print_cases["two_line_school_ids"]
+            )
+            height_class = "two_line" if two_line else ("school_start" if starts_school else "normal")
+            expected_height = print_layout[{"normal": "normalRowPt", "school_start": "schoolRowPt", "two_line": "twoLineRowPt"}[height_class]]
+            require(row_heights[row_index] == expected_height, f"Bounded {height_class} row height at {date} {row_index}")
+            height_counts[height_class] += 1
             if expected_school:
                 xf = styles[int(cells[f"A{row_index}"].get("s", "0"))]
                 require(fonts[int(xf.get("fontId", "0"))].find("m:b", NS) is not None, "First/continued School bold")
@@ -207,13 +227,26 @@ def verify(files):
                     xf = styles[int(cell.get("s", "0"))]
                     font = fonts[int(xf.get("fontId", "0"))]
                     require(font.find("m:name", NS).get("val") == "Times New Roman", "Print font")
+                    expected_size = print_layout[
+                        "supplierFontPt" if col == 4 else ("schoolFontPt" if col == 0 and expected_school else "bodyFontPt")
+                    ]
+                    require(float(font.find("m:sz", NS).get("val")) == expected_size, "Column typography")
                     color = font.find("m:color", NS)
                     require(color is not None and color.get("rgb") == "FF000000", "Black print text")
+                    alignment = xf.find("m:alignment", NS)
+                    require(alignment is not None and alignment.get("vertical") == "center", "Centered row baseline")
+                    require((alignment.get("wrapText") == "1") == (col in [0, 1, 4]), "Controlled wrap columns")
                     fill = fills[int(xf.get("fillId", "0"))].find("m:patternFill", NS)
                     fg = fill.find("m:fgColor", NS) if fill is not None else None
                     require(fg is None or fg.get("rgb") == "FFFFFFFF", "White/no printed fill")
                     border = borders[int(xf.get("borderId", "0"))]
                     top = border.find("m:top", NS)
+                    if col == 0:
+                        require(border.find("m:left", NS).get("style") == "medium", "Medium outer left edge")
+                    if col == 4:
+                        require(border.find("m:right", NS).get("style") == "medium", "Medium outer right edge")
+                    if row_index == end:
+                        require(border.find("m:bottom", NS).get("style") == "medium", "Medium outer bottom edge")
                     if first_in_school:
                         require(top is not None and top.get("style") == "medium", f"Strong School start at {date} {cell.get('r')}")
                     elif col == 0 and row_index not in continuation_rows:
@@ -223,7 +256,7 @@ def verify(files):
         require([text(cells[f"G{row_index}"], strings) for row_index in range(4, end + 1)] == [row["confirmed_need_line_id"] for row in rows], "Deterministic specimen export order")
         cols = sheet.find("m:cols", NS)
         require(any(col.get("min") == "6" and col.get("max") == "17" and col.get("hidden") == "1" for col in cols), "Hidden F:Q")
-        for col_index, expected in enumerate([17.5, 35, 7.5, 13, 20], 1):
+        for col_index, expected in enumerate(print_layout["columnWidths"], 1):
             match = [col for col in cols if int(col.get("min")) <= col_index <= int(col.get("max"))]
             require(len(match) == 1 and abs(float(match[0].get("width")) - expected) < 0.01, "A4 column proportions")
         pane = sheet.find(".//m:pane", NS)
@@ -235,10 +268,21 @@ def verify(files):
         setup = sheet.find("m:pageSetup", NS)
         require(setup.get("paperSize") == "9" and setup.get("orientation") == "portrait" and setup.get("fitToWidth") == "1" and setup.get("fitToHeight") == "0", "Portrait A4 page fit")
         if index == 1:
-            require(len(break_ids) == 2 and continuation_rows, "Small-group move and large-group continuation")
-            require(break_ids[0] == 17, "Small School group moves intact")
+            require(continuation_rows, "Large-group continuation")
         else:
             require(not break_ids, "Second-date fixture remains one page")
+        body_budget = (
+            print_layout["a4HeightPt"]
+            - 72 * (print_layout["topMarginIn"] + print_layout["bottomMarginIn"])
+            - print_layout["footerAllowancePt"]
+            - print_layout["titleRowPt"]
+            - print_layout["spacerRowPt"]
+            - print_layout["headerRowPt"]
+        )
+        for first, last in zip([4] + [value + 1 for value in break_ids], break_ids + [end]):
+            used = sum(row_heights[row_number] for row_number in range(first, last + 1))
+            require(used <= body_budget + 0.01, "Printed page respects A4 body budget")
+            printed_pages.append({"date": date, "rows": last - first + 1, "body_pt": used, "blank_pt": round(body_budget - used, 2)})
         definitions = {node.get("name"): node.text for node in wb.findall("m:definedNames/m:definedName", NS) if node.get("localSheetId") == str(index - 1)}
         require(definitions.get("_xlnm.Print_Area") == f"'{date}'!$A$1:$E${end}", "Visible print area")
         require(definitions.get("_xlnm.Print_Titles") == f"'{date}'!$1:$3", "Repeat date/header on pages")
@@ -251,7 +295,18 @@ def verify(files):
     require(pairs == [(key, str(value)) for key, value in FIXTURE["metadata"].items()], "Exact metadata contract")
     normalized_meta = dict(pairs)
     normalized_meta["batch_version"] = int(normalized_meta["batch_version"])
-    return {"metadata": normalized_meta, "rows": projected}
+    require(len(set(all_body_heights)) <= 3, "At most three body heights")
+    require((height_counts["normal"] + height_counts["school_start"]) / len(all_body_heights) >= 0.8, "At least 80% single-line-height rows")
+    return {"metadata": normalized_meta, "rows": projected, "print_metrics": {
+        "normal_row_count": height_counts["normal"],
+        "school_start_row_count": height_counts["school_start"],
+        "two_line_row_count": height_counts["two_line"],
+        "distinct_body_heights": len(set(all_body_heights)),
+        "min_body_height": min(all_body_heights),
+        "max_body_height": max(all_body_heights),
+        "body_budget_pt": round(body_budget, 2),
+        "pages": printed_pages,
+    }}
 
 
 def change_cell(files, sheet_path, address, value):
@@ -328,7 +383,7 @@ def main(path):
         require(archive.testzip() is None, "Healthy ZIP")
         files = {name: archive.read(name) for name in archive.namelist()}
     normalized = verify(files)
-    check_schema(normalized, SCHEMA)
+    check_schema({key: normalized[key] for key in ["metadata", "rows"]}, SCHEMA)
     # Negative controls test the static conformance validator, not production import.
     sheet = "xl/worksheets/sheet1.xml"
     controls = [
@@ -362,9 +417,10 @@ def main(path):
         else:
             raise AssertionError(f"Negative control unexpectedly passed: {address}")
     # Row removal and Table expansion are structural controls, not cell edits.
-    for operation in ["delete", "expand", "external", "macro_type"]:
+    structural_controls = ["delete", "expand", "external", "macro_type", "oversize", "height_drift"]
+    for operation in structural_controls:
         mutated = copy.copy(files)
-        target = {"delete": sheet, "expand": "xl/tables/table1.xml", "external": "xl/worksheets/_rels/sheet1.xml.rels", "macro_type": "[Content_Types].xml"}[operation]
+        target = {"delete": sheet, "expand": "xl/tables/table1.xml", "external": "xl/worksheets/_rels/sheet1.xml.rels", "macro_type": "[Content_Types].xml", "oversize": sheet, "height_drift": sheet}[operation]
         root = ET.fromstring(mutated[target])
         if operation == "delete":
             data = root.find("m:sheetData", NS)
@@ -374,6 +430,8 @@ def main(path):
         elif operation == "external":
             root[0].set("TargetMode", "External")
             root[0].set("Target", "https://example.invalid/fixture-control")
+        elif operation in ["oversize", "height_drift"]:
+            root.find(f'm:sheetData/m:row[@r="{4 if operation == "oversize" else 5}"]', NS).set("ht", "37" if operation == "oversize" else "25")
         else:
             root[0].set("ContentType", "application/vnd.ms-excel.sheet.macroEnabled.main+xml")
         mutated[target] = ET.tostring(root)
@@ -416,7 +474,8 @@ def main(path):
     require(any(preferred_supplier(row) == "" for row in FIXTURE["rows"]), "No supplier gives clean blank")
     notes = {row["note"] for row in normalized["rows"]}
     require("Nhà cung cấp thay thế A" not in notes and "Nhà cung cấp thay thế B" not in notes, "Alternative suppliers not visible")
-    print(f"PASS: static XLSX/fixture/schema conformance; {rejected}/{len(controls) + 5} negative controls rejected.")
+    print(f"PASS: static XLSX/fixture/schema conformance; {rejected}/{len(controls) + len(structural_controls) + 1} negative controls rejected.")
+    print("ROW_RHYTHM: " + json.dumps(normalized["print_metrics"], sort_keys=True))
     print(f"SHA256: {hashlib.sha256(path.read_bytes()).hexdigest()}")
     print("Not tested here: connected V1 import, persistence, or native staff Excel behavior.")
 

@@ -30,10 +30,10 @@ const schema = JSON.parse(
   ),
 );
 const layout = schema["x-atlas-layout"];
+const print = layout.print;
 const outputPath = path.resolve(
   process.argv[2] ?? path.join(here, "atlas-shopping-list-v1-example.xlsx"),
 );
-const previewDir = process.argv[3];
 const workbook = Workbook.create();
 const dates = [...new Set(fixture.rows.map((row) => row.service_date))].sort();
 const weekdays = [
@@ -67,22 +67,14 @@ function preferredSupplier(row) {
     return "";
   return supplierById.get(candidates[0].supplier_id).supplier_name;
 }
-function rowHeight(row, schoolName, supplierName) {
-  const lines = Math.max(
-    Math.ceil(schoolName.length / 12),
-    Math.ceil(row.ingredient_name.length / 31),
-    Math.ceil(supplierName.length / 18),
-    1,
-  );
-  return Math.min(
-    96,
-    Math.max(
-      schoolName ? 32 : 29,
-      lines * 18 + 6,
-      supplierName ? Math.ceil(supplierName.length / 18) * 18 + 16 : 0,
-      schoolName.length > 30 ? 96 : 0,
-    ),
-  );
+function bodyRowClass(row, startsSchool) {
+  const cases = fixture.print_cases;
+  if (
+    cases.two_line_ingredient_ids.includes(row.ingredient_id) ||
+    (startsSchool && cases.two_line_school_ids.includes(row.school_id))
+  )
+    return "twoLineRowPt";
+  return startsSchool ? "schoolRowPt" : "normalRowPt";
 }
 for (const date of dates) {
   const rows = fixture.rows.filter((row) => row.service_date === date);
@@ -98,7 +90,7 @@ for (const date of dates) {
   const end = rows.length + 3;
   sheet.getRange(`A1:Q${end}`).format.font = {
     name: "Times New Roman",
-    size: 15,
+    size: print.bodyFontPt,
     color: "#000000",
   };
   sheet.getRange(`A1:Q${end}`).format.verticalAlignment = "center";
@@ -107,13 +99,13 @@ for (const date of dates) {
   sheet.getRange("A1").values = [[title]];
   sheet.getRange("A1:E1").format.font = {
     name: "Times New Roman",
-    size: 20,
+    size: print.titleFontPt,
     bold: true,
     color: "#000000",
   };
   sheet.getRange("A1:E1").format.horizontalAlignment = "center";
-  sheet.getRange("A1:E1").format.rowHeight = 36;
-  sheet.getRange("A2:E2").format.rowHeight = 9;
+  sheet.getRange("A1:E1").format.rowHeight = print.titleRowPt;
+  sheet.getRange("A2:E2").format.rowHeight = print.spacerRowPt;
   sheet.getRange("A3:Q3").values = [
     [...layout.visibleHeaders, ...layout.hiddenHeaders],
   ];
@@ -172,15 +164,23 @@ for (const date of dates) {
   table.style = "TableStyleLight1";
   table.showTotals = false;
   table.showFilterButton = true;
-  const widths = [17.5, 35, 7.5, 13, 20];
+  const widths = print.columnWidths;
   for (let col = 0; col < widths.length; col++) {
     const letter = String.fromCharCode(65 + col);
     sheet.getRange(`${letter}1:${letter}${end}`).format.columnWidth =
       widths[col];
   }
-  sheet.getRange(`A3:E${end}`).format.wrapText = true;
-  sheet.getRange(`A4:E${end}`).format.rowHeight = 29;
+  sheet.getRange(`A4:A${end}`).format.wrapText = true;
+  sheet.getRange(`B4:B${end}`).format.wrapText = true;
+  sheet.getRange(`E4:E${end}`).format.wrapText = true;
+  sheet.getRange(`C4:D${end}`).format.wrapText = false;
+  sheet.getRange(`A4:E${end}`).format.rowHeight = print.normalRowPt;
   sheet.getRange(`A4:E${end}`).format.fill = "#FFFFFF";
+  sheet.getRange(`E4:E${end}`).format.font = {
+    name: "Times New Roman",
+    size: print.supplierFontPt,
+    color: "#000000",
+  };
   sheet.getRange(`D4:D${end}`).setNumberFormat("0.######");
   sheet.getRange(`D4:D${end}`).format.horizontalAlignment = "right";
   sheet.getRange(`C4:C${end}`).format.horizontalAlignment = "center";
@@ -196,11 +196,9 @@ for (const date of dates) {
   let school;
   rows.forEach((row, index) => {
     const rowNumber = index + 4;
-    sheet.getRange(`A${rowNumber}:E${rowNumber}`).format.rowHeight = rowHeight(
-      row,
-      data[index][0],
-      data[index][4],
-    );
+    const startsSchool = Boolean(data[index][0]);
+    sheet.getRange(`A${rowNumber}:E${rowNumber}`).format.rowHeight =
+      print[bodyRowClass(row, startsSchool)];
     if (!row.exact_quantity.includes("."))
       sheet.getRange(`D${rowNumber}`).setNumberFormat("0");
     const group = `${row.school_id}:${row.delivery_location_id}`;
@@ -210,19 +208,51 @@ for (const date of dates) {
       };
       sheet.getRange(`A${rowNumber}`).format.font = {
         name: "Times New Roman",
-        size: 15,
+        size: print.schoolFontPt,
         bold: true,
         color: "#000000",
       };
     }
     school = group;
   });
+  sheet.getRange(`A${end}:E${end}`).format.borders = {
+    bottom: { style: "medium", color: "#000000" },
+  };
+  rows.forEach((row, index) => {
+    const rowNumber = index + 4;
+    const first =
+      index === 0 ||
+      row.school_id !== rows[index - 1].school_id ||
+      row.delivery_location_id !== rows[index - 1].delivery_location_id;
+    const top = { style: first ? "medium" : "thin", color: "#000000" };
+    const bottom = {
+      style: index === rows.length - 1 ? "medium" : "thin",
+      color: "#000000",
+    };
+    sheet.getRange(`A${rowNumber}`).format.borders = {
+      top,
+      bottom,
+      left: { style: "medium", color: "#000000" },
+      right: { style: "thin", color: "#000000" },
+    };
+    sheet.getRange(`E${rowNumber}`).format.borders = {
+      top,
+      bottom,
+      left: { style: "thin", color: "#000000" },
+      right: { style: "medium", color: "#000000" },
+    };
+  });
   sheet.getRange("A3:E3").format = {
     fill: "#FFFFFF",
-    font: { name: "Times New Roman", size: 15, bold: true, color: "#000000" },
+    font: {
+      name: "Times New Roman",
+      size: print.headerFontPt,
+      bold: true,
+      color: "#000000",
+    },
     horizontalAlignment: "center",
     verticalAlignment: "center",
-    rowHeight: 39,
+    rowHeight: print.headerRowPt,
     wrapText: true,
     borders: {
       top: { style: "medium", color: "#000000" },
@@ -241,21 +271,6 @@ meta.getRange("A1:B10").format.font = { name: "Arial", size: 11 };
 meta.getRange("A1:A10").format.columnWidth = 30;
 meta.getRange("B1:B10").format.columnWidth = 42;
 workbook.recalculate();
-if (previewDir) {
-  await fs.mkdir(previewDir, { recursive: true });
-  for (const date of dates) {
-    const preview = await workbook.render({
-      sheetName: date,
-      range: "A1:E17",
-      scale: 1.3,
-      format: "png",
-    });
-    await fs.writeFile(
-      path.join(previewDir, `${date}.png`),
-      new Uint8Array(await preview.arrayBuffer()),
-    );
-  }
-}
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await (await SpreadsheetFile.exportXlsx(workbook)).save(outputPath);
 console.log(

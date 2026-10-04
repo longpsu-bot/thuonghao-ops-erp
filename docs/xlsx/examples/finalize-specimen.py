@@ -42,10 +42,22 @@ def preferred_supplier(row, fixture):
     return suppliers[eligible[0]["supplier_id"]]["supplier_name"]
 
 
-def page_breaks(rows, sheet_data):
-    """Pack whole small groups, then split oversized groups at row boundaries."""
-    heights = {int(item.get("r")): float(item.get("ht", "27")) for item in sheet_data.findall("m:row", NS)}
-    capacity = 800.0
+def body_height_budget(print_layout):
+    """A4 vertical budget in points after margins, repeated rows and footer."""
+    return (
+        print_layout["a4HeightPt"]
+        - 72 * (print_layout["topMarginIn"] + print_layout["bottomMarginIn"])
+        - print_layout["footerAllowancePt"]
+        - print_layout["titleRowPt"]
+        - print_layout["spacerRowPt"]
+        - print_layout["headerRowPt"]
+    )
+
+
+def page_breaks(rows, sheet_data, print_layout):
+    """Pack complete groups when they fit; split large groups after full rows."""
+    heights = {int(item.get("r")): float(item.get("ht", "0")) for item in sheet_data.findall("m:row", NS)}
+    capacity = body_height_budget(print_layout)
     remaining = capacity
     breaks = []
     continuation = []
@@ -55,20 +67,31 @@ def page_breaks(rows, sheet_data):
         end = index
         while end < len(rows) and (rows[end]["school_id"], rows[end]["delivery_location_id"]) == school:
             end += 1
-        total = sum(heights.get(i + 4, 27) for i in range(index, end))
-        if index and total <= capacity and total > remaining:
+        total = sum(heights[i + 4] for i in range(index, end))
+        small_group = end - index <= 8
+        if index and small_group and total > remaining:
             breaks.append(index + 3)
             remaining = capacity
-        elif index and total > capacity and remaining < capacity * 0.3:
-            breaks.append(index + 3)
-            remaining = capacity
-        for position in range(index, end):
-            height = heights.get(position + 4, 27)
-            if height > remaining and position:
-                breaks.append(position + 3)
-                continuation.append(position)
+        elif index and total > remaining and remaining < capacity:
+            fit = 0
+            space = remaining
+            for position in range(index, end):
+                if heights[position + 4] > space:
+                    break
+                space -= heights[position + 4]
+                fit += 1
+            if fit < 3:  # do not orphan one or two rows of a new School
+                breaks.append(index + 3)
                 remaining = capacity
-                height = max(height, 42)
+        for position in range(index, end):
+            height = heights[position + 4]
+            if height > remaining:
+                breaks.append(position + 3)
+                if position > index:
+                    continuation.append(position)
+                remaining = capacity
+                if position > index:
+                    height = max(height, print_layout["schoolRowPt"])
             remaining -= height
         index = end
     return breaks, continuation
@@ -77,6 +100,7 @@ def page_breaks(rows, sheet_data):
 def finalize(path):
     here = Path(__file__).parent
     fixture = json.loads((here / "atlas-shopping-list-v1.fixture.json").read_text(encoding="utf-8"))
+    layout = json.loads((here.parent / "atlas-shopping-list-xlsx-v1.schema.json").read_text(encoding="utf-8"))["x-atlas-layout"]["print"]
     dates = sorted({row["service_date"] for row in fixture["rows"]})
     with ZipFile(path) as archive:
         files = {name: archive.read(name) for name in archive.namelist()}
@@ -164,7 +188,7 @@ def finalize(path):
                 col.set("max", "5")
         ET.SubElement(cols, tag("col"), min="6", max="17", width="1", customWidth="1", hidden="1")
         sheet_data = sheet.find("m:sheetData", NS)
-        breaks, continuation = page_breaks(rows, sheet_data)
+        breaks, continuation = page_breaks(rows, sheet_data, layout)
         for position in continuation:
             row = rows[position]
             cell = sheet.find(f'.//m:c[@r="A{position + 4}"]', NS)
@@ -180,7 +204,7 @@ def finalize(path):
             cell.set("s", first_cell.get("s", "0"))
             ET.SubElement(ET.SubElement(cell, tag("is")), tag("t")).text = f'{row["school_name"]} (tiếp)'
             row_node = sheet_data.find(f'm:row[@r="{position + 4}"]', NS)
-            row_node.set("ht", str(max(float(row_node.get("ht", "29")), 42)))
+            row_node.set("ht", str(max(float(row_node.get("ht", "0")), layout["schoolRowPt"])))
         for name in ["sheetProtection", "autoFilter", "printOptions", "pageMargins", "pageSetup", "headerFooter", "rowBreaks"]:
             for node in sheet.findall(f"m:{name}", NS):
                 sheet.remove(node)
