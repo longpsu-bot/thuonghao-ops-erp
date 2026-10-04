@@ -152,8 +152,7 @@
           },
           "school_display": {
             "type": "string",
-            "minLength": 1,
-            "description": "Canonical School display including the locked location suffix where required; not the canonical School name or a lookup key."
+            "description": "Presentation only: canonical School on first group row, blank on following rows, or School (tiếp) on a print continuation; never an identity key."
           }
         }
       }
@@ -192,6 +191,12 @@
     "editableColumns": ["D", "E"],
     "metadataSheet": "_ATLAS_META",
     "metadataState": "veryHidden",
+    "paper": "A4",
+    "orientation": "portrait",
+    "printAreaColumns": "A:E",
+    "printTitleRows": "1:3",
+    "font": "Times New Roman",
+    "colorSemantics": false,
     "maxPeriodDaysInclusive": 7,
     "scope": "one complete existing Confirmed Need batch",
     "tableNamePattern": "^AtlasNeed_[0-9]{8}$",
@@ -207,9 +212,11 @@
     "Each row marker equals metadata workbook_marker and trusted export instance.",
     "Ordered period span is at most 7 inclusive days; row date is in period and matches containing date worksheet and canonical line.",
     "Batch/version/run/snapshot/revision/decision and School/location/Ingredient/Unit bindings match current authorized evidence.",
-    "Visible tuples are unambiguous per date and labels match trusted canonical export display.",
+    "Blank visible School cells and print-only (tiếp) labels never drive identity; every row carries its own School/location/Ingredient/Unit IDs.",
+    "Visible labels match trusted canonical export presentation; line identity remains unambiguous per date.",
     "Retained export manifest required for quantity edits; coupled local quantity/reason/note conflicts validated; manifest-lost recovery is annotation-only with unchanged saved quantities/reason codes.",
     "Quantity equality is exact; only real edits apply two-decimal and current Planning-step rules.",
+    "A4 portrait black-and-white staff surface; repeated date/header rows, controlled School breaks, bounded print area and used range.",
     "Exact physical Table/meta/sheet set, no nonempty out-of-region cells, no formulas/executable parts.",
     "No partial apply, no import-time business write, no released-state import."
   ],

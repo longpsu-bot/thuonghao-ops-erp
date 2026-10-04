@@ -1,54 +1,57 @@
 # TASK-ATLAS-SHOPPING-LIST-XLSX-CONTRACT-01
 
-## Status and scope
+## Status and authority
 
-**TASK_STATUS: READY_FOR_PRODUCT_REVIEW.** Proposed format frozen for review; Product approval is pending. No connected implementation or merge.
+**TASK_STATUS: READY_FOR_PRODUCT_REVIEW.** Proposed V1 contract and redesigned synthetic specimen, not Product approval. Existing Draft PR #347 only; do not merge or implement connected XLSX yet.
 
-Starting SHA: `d81b60ca63349794d28b0dcc5d34f5fd3e1ebfa1`, exact fetched `origin/main`, PR #345. Branch: `design/atlas-shopping-list-xlsx-contract-01`. Authorized checkout: `E:/Project/OPS ERP/thuonghao-ops-erp`; origin is `https://github.com/longpsu-bot/thuonghao-ops-erp.git`. Incoming branch was clean; the new design branch was created directly from origin/main. `pnpm ops:workspace` passed with the pre-existing advisory old D: path warning; the task-authorized E: Git root/remote were verified. No other checkout was used or edited.
+PR head before the Product redesign: `df565d2f3b90dcee0f2da222c8cca2101d3a5f73`. Branch: `design/atlas-shopping-list-xlsx-contract-01`, based on exact fetched `origin/main` `d81b60ca63349794d28b0dcc5d34f5fd3e1ebfa1`. The Product Owner explicitly authorized the real `D:/Project/Repo/OPS/thuonghao-ops-erp` checkout for this continuation. Git root, origin, clean starting status, branch and `pnpm ops:workspace` passed before edits. Other worktrees were not edited.
 
-Allowed modules/files: this task record and `docs/xlsx/` contract, schema, synthetic fixture, isolated generator/finalizer/validator and specimen. Prohibited: production Shopping List exporter/parser, connected workbench/controller, app wiring, Supabase/RLS/RPC, migrations, dependencies, Retool/OPS v1, arithmetic, persistence, Procurement, Reconciliation, Dispatch and hosted business data.
+Allowed paths: this record and `docs/xlsx/` contract, evidence, schema, synthetic fixture, generator/finalizer/validator and one final XLSX. Prohibited: production Shopping List exporter/parser, connected UI, Supabase/RLS/RPC/migrations, Retool, OPS v1, hosted business data, dependencies and unrelated modules.
 
-## Deliverables and acceptance
+## Product design decision applied
 
-- [Canonical proposed contract](../xlsx/atlas-shopping-list-xlsx-v1.md): explicit resolution of 6.1–6.20, Vietnamese operator labels, complete metadata/evidence classification, compatibility, exact quantity/note rules, persistence boundary and acceptance matrix.
-- [Machine-readable schema](../xlsx/atlas-shopping-list-xlsx-v1.schema.json): closed per-object shapes, explicit cross-object invariants and physical layout annotations; not a connected parser.
-- [Evidence/comparison](../xlsx/atlas-shopping-list-xlsx-v1-evidence.md): current Atlas, named Retool scripts/PurchasePlanner, supplied right-hand layout and every intentional difference; source SHA256 provenance without business payload dumps.
-- [Specimen XLSX](../xlsx/examples/atlas-shopping-list-v1-example.xlsx): 80 fully synthetic lines, 2 dates, 3 schools, 13 Ingredient identities, integer/one/six-decimal/zero cases, long labels, notes, alternate-location display and separate ambiguous-label rejection control.
-- Isolated deterministic fixture creator, artifact-tool builder, standard-library native-feature finalizer, and static specimen/schema validator. No application import or wiring.
+The supplied `DanhSachMuaHang_2026-04-20_2026-04-25_ALL(1).xlsx` was inspected read-only at SHA256 `88b67577e8a06057c9d61b10ef8aeed9d587ed688733f0b06dbf8f5e54de612e`. Native Excel 16 exported its **right-hand** region to two A4 portrait PDF pages for comparison. The right region has one centered 20 pt Times date, 18 pt Times headings/body, roughly 23.25 pt ordinary rows, bold first School, blank School cells below, black group rules and compact column proportions. The reference's saved print area points at left A:H and its used range reaches row 1,048,575; both are defects.
 
-Acceptance for this **design task**: all requested contract questions have explicit proposed rules; specimen matches those rules; source comparison and limitations are honest; required artifacts are committed in a Draft PR; no production change or hosted business write. Product approval is a later checkpoint, not implied by successful fixture validation. The future-import acceptance matrix is a conformance requirement, not a passing production test suite.
+The original #347 specimen was printed before revision. Its Arial 11 text, dark Atlas header, beige D/E cells, 38/53/8/16/33 widths, 46 pt instructional row, School on every row and landscape composition read as an app export and made School text dominate scanning. It retained valuable technical identity and exact-quantity safeguards.
 
-## Validation
+The revised form uses Times New Roman 20 pt title, 15 pt headings/body, white paper, black text/rules, a 39 pt heading row, 29 pt ordinary rows and measured wrapping expansion. Supplier rows gain extra height for handwritten notes. Widths A:E are `17.5 / 35 / 7.5 / 13 / 20`. First School row is bold with a medium rule; later School cells are blank. A long School row expands to 96 pt; the continuation row says `Tân Bình (tiếp)` and retains the height needed by its supplier text. Only the first active/effective Supplier by authoritative priority appears in GHI CHÚ, with no prefix or alternatives. No valid Supplier gives a blank cell. A4 portrait print area is the exact A:E staff table and date/headings repeat on every page.
 
-Required focused checks:
+## Specimen and validation evidence
 
-1. Generate and finalize the specimen; independently inspect saved OOXML and normalized JSON Schema, expected date/school/Ingredient coverage, exact decimal cells, protected edit ranges, structured Tables including identities, very-hidden metadata, row/sheet binding, repeat-title/print area/page-break configuration and no formulas/macros/external links.
-2. Run static validator negative controls for locked visible-label edits, quantity/evidence corruption, marker/unknown/duplicate line, revision/decision/date/Unit/source/version evidence. These validate the synthetic static specimen, not the future connected importer.
-3. Regenerate to a temporary output and compare deterministic final bytes against the committed artifact using the same bundled artifact-tool release.
-4. Visually review both date sheets, long text, six-decimal quantities, group boundaries, location suffix and notes. Inspect native Excel behavior if available; distinguish structural/render proof from staff acceptance.
-5. Run the existing focused Atlas Shopping List/precision tests to show baseline remains unchanged, format changed Markdown/JSON/JS and check diff whitespace. GitHub Actions owns the full routine frontend suite.
-6. Verify changed paths are only the permitted documentation/specimen scope before commit/push/Draft PR.
+The fixture has 56 entirely synthetic lines over two dates, three Schools and 25 Ingredient identities. The first date has a 14-line medium group, a five-line small group moved to the next page, and a 25-line oversized group that spans pages. It covers integer, decimal, six-decimal and zero quantities, long School/Ingredient/Supplier names, one/three eligible Suppliers, inactive Supplier/eligibility, future and expired priority-one relationship, and no Supplier. Every row retains marker, line/revision/decision/date, School/Location/Ingredient/Unit IDs, exact exported quantity, reason and suggestion baseline in hidden F:Q. No business data was copied into Git.
 
-Results are appended after execution below. No test, validation configuration or CI check is weakened.
+The isolated validator checks the closed schema, exact row set, all row-bound identities, suggestion selection, no alternative-name leak, Times/black/white styling, School labels and rules, hidden columns, Table range, bounded used range, A4 portrait, print area, repeat titles and continuation breaks. It rejects 28/28 negative controls. A complete-row reorder check proves ID fields stay attached to each line. Independent regeneration produced identical SHA256 `28055a41a740d615ee7041a1e34543f8b8a5e36074c83bcd6a89816ed3e96b84`; final file size is 14,844 bytes. This is specimen verification, not the future connected importer test suite.
 
-### Executed evidence
+Native Excel 16 opened the final XLSX without a reported repair. D4 quantity and E4 note edits saved to a disposable copy. A deliberate full A:Q Table sort after unprotecting, then SaveCopyAs, changed row order while preserving every visible/hidden tuple for all 44 first-date lines by stable line UUID. The committed specimen was not saved by Excel. Protected sorting remains unavailable by design. Excel reports `ProtectContents=True` and `AllowFiltering=True`, but COM `Range.AutoFilter` rejected a criteria change on the protected Table; the actual dropdown interaction remains a Product/staff check.
 
-- Existing `confirmedNeedShoppingList.test.ts` and `confirmedNeedShoppingListPrecision.test.ts`: **30/30 passed** in the focused Vitest run. Production behavior remains unchanged.
-- Static specimen/fixture/schema validation: **28/28 negative controls rejected**, including source run/snapshot/period, row deletion/duplication/unknown IDs, stale evidence, visible labels, outside-range data, Table expansion, canonical display ambiguity, external OPC relationship and macro content type. This is an isolated export-fixture verifier, not future connected V1 import acceptance.
-- Same bundled artifact-tool release regenerated an independently finalized temporary XLSX with identical SHA256: `05ca567917b04fa2697dc207045131ff39817f561fb869114394133f1626e1f3`. Fixed ZIP timestamps, core timestamps and normalized scoped relationship IDs remove authoring-tool randomness. The specimen is 17,865 bytes.
-- Native **Excel 16.0 / Excel 2019** opened all sheets without repair. Both date sheets allowed protected D/E edits, rejected locked A edits, retained full-row technical bindings through full-Table sorting after deliberate unprotect, and filtered 13/40 rows after unprotect. Very-hidden metadata/workbook structure protection remained present. The committed file was never saved by Excel.
-- Native unchanged SaveCopyAs and D4/E4 edit + SaveCopyAs to external temporary files preserved every other contractual cell, six-decimal `1.234567`, Table ranges and very-hidden metadata. Excel added only benign `docProps/app.xml` and `docProps/core.xml`, which V1 permits. Other Excel builds can add permitted internal printer settings; staff compatibility review remains necessary.
-- Native PDF print export produced **6 A4 landscape pages**, three School groups per date. All six pages were visually inspected: long School/Ingredient names and supplier notes wrap, six-decimal values remain visible, School/location labels repeat, title/help/header repeat, print area excludes identities and footer numbers all pages. Review PDF/PNGs and retained source dumps remain outside Git; the XLSX is the review deliverable.
-- Protected filtering limitation: native `AllowFiltering=true`, but COM `Range.AutoFilter` on the protected Table failed. Unprotected filtering passed; protected dropdown interaction remains an explicit staff/Product check. No claim of protected filter certification.
-- Independent design review uses the requested GPT-5.6 model family with Extra High reasoning. Findings tightened display ambiguity, coupled-draft conflicts, cross-session limits, decimal locale/large-entry wording, schema semantics, package validation and supplier-note persistence guidance. Product approval remains pending.
-- Focused formatting and diff-whitespace checks apply to the new files. GitHub Actions owns the routine full frontend validation after Draft PR creation; no full local suite rerun is needed.
+Native Excel PDF review: **four A4 portrait pages**, three for 2026-04-20 and one for 2026-04-21. Page 1 has only the long-name medium School; page 2 starts with the intact small Tân Định group and then Tân Bình; page 3 starts `Tân Bình (tiếp)`; page 4 has the second date's two Schools. Every page includes its date and five headings. Long School/Ingredient/Supplier text wraps without overlap after the second design pass; `1,234567` is visible with no `####`. Staff note cells remain white and writable. Only A:E prints; F:Q do not. Excel reports print areas `$A$1:$E$47` and `$A$1:$E$15`, title rows `$1:$3`, and bounded used ranges `$A$1:$Q$47` and `$A$1:$Q$15`. The file size is small and open/scroll performance was normal.
 
-## Security, rollback and review gate
+Focused repository checks: `pnpm ui:vnext:check` passed; `pnpm typecheck` passed; the requested Shopping List and precision Vitest invocation reported **5 files / 42 tests passed**; `pnpm ops:workspace`, affected-file Prettier check and `git diff --check` passed. GitHub Actions owns the routine full frontend workflow on the updated PR.
 
-Zero schema/migration/API changes; no migration rollback. Rollback of the review proposal is documentation/fixture-only. Hidden/protected workbook content is not security. Stable backend identity, currentness, authorization and exact transactional Save remain authoritative. The local manifest is ephemeral export evidence, no durable business authority; quantity edits fail closed without the retained manifest; restart recovery is annotation-only. No client service-role credential or hosted connection is introduced.
+### Visual self-review
 
-SUPABASE_WRITES: 0. RETOOL_WRITES: 0. OPS_V1_WRITES: 0. HOSTED_BUSINESS_WRITES: 0. GitHub branch/commit/Draft PR publication is explicitly requested and is the only external publication.
+| Criterion                | Score / 5 | Rationale                                                    |
+| ------------------------ | --------: | ------------------------------------------------------------ |
+| Date/title hierarchy     |         5 | Quiet centered date on every page.                           |
+| Column-header hierarchy  |         4 | Strong black rules; full SỐ LƯỢNG wraps cleanly.             |
+| School-group readability |         5 | Bold first label, blank continuation cells, strong boundary. |
+| Ingredient scanning      |         5 | Widest data column and compact School/Unit/Quantity columns. |
+| Quantity readability     |         4 | Six-decimal quantity visible and right aligned.              |
+| Handwriting space        |         4 | 29 pt ordinary rows, expandable white note cells.            |
+| Supplier suggestion      |         4 | One name, no prefix or alternatives, long name wraps.        |
+| Page density             |         4 | Small group moves intact without half-page waste.            |
+| Continuation clarity     |         5 | Repeated date/headings and explicit Tân Bình (tiếp).         |
+| Monochrome quality       |         5 | Black text/rules on white with zero color semantics.         |
+| Professional finish      |         4 | Restrained operational form, no UI tint/instruction band.    |
 
-Product must approve the contract and specimen, including repeated School/location display, SỐ LƯỢNG wording, seven-day existing-batch limit, protected sorting/filter dropdown review, closed compatibility and baseline/conflict handling. The user's in-task clarification that staff put supplier names in GHI CHÚ is preserved: proposed notes are free local/workbook annotations, not governed reason notes or supplier allocations. Quantity changes require an explanation entered in Atlas before Lưu. Persisting supplier annotations, changing equal-proposal reason semantics, historical read-only export and a workbook collecting independent daily batches are excluded extensions, not implicit V1 permissions.
+Average: **4.45 / 5**; no criterion below 4. This is a self-review, not Product acceptance.
 
-**Next gate: Product Owner contract/specimen review. Stop before production implementation. Do not merge.**
+## Security, rollback and remaining decisions
+
+No schema, migration, API, backend privilege, RLS, production importer/exporter or connected UI change. No migration rollback is required. Reverting the proposed contract/specimen is documentation-only. Hidden and protected cells are operator guidance, not security; the future importer must use fresh authorized backend evidence, complete-set/currentness validation and no partial apply. Import applies only to a local draft; explicit `Lưu` remains the sole backend business write.
+
+**FUTURE CONNECTED IMPLEMENTATION REQUIREMENT:** an authorized shaped read must expose the derived first active/effective Supplier at the Confirmed Need export boundary. This PR does not add that read or another preferred-Supplier fact.
+
+Product review remains required for the form, multi-location subgroup wording, protected filter behavior, exact-single-batch/seven-day scope, strict compatibility, local manifest/restart limits, Supplier annotation persistence choice and controlled page-break behavior in connected export. Historical export and multi-daily-batch collection remain separate decisions. Do not merge #347 until product/architecture review and current GitHub Actions pass.
+
+SUPABASE_WRITES: 0. RETOOL_WRITES: 0. OPS_V1_WRITES: 0. HOSTED_BUSINESS_WRITES: 0.

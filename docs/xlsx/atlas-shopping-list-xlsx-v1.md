@@ -45,21 +45,21 @@ Worksheet name: exact ISO date `YYYY-MM-DD`; date is also bound per row. Excel n
 
 One data row is one current stable Confirmed Need line, identified by its stable UUID. Its operational grain is batch + service date + School + Delivery Location + Ingredient + controlled Unit (Customer lineage stays in Atlas). Two identical Ingredient display names must not collapse. Distinct locations, Units or Ingredient UUIDs remain distinct even if visible labels coincide. No subtotals, spacer rows, School-band rows, `X` markers or merged cells occur inside the Table.
 
-School appears **on every line**. This intentionally improves the supplied right-hand first-line-only layout: filtering, copying, page continuation and sorting retain context. A medium top border at the initial School boundary provides separation without an extra row. Borders are presentation; identity never depends on them.
+Within each contiguous School group, print the canonical School name in the first row and leave subsequent School cells blank. Do not merge data cells. A medium black top rule and bold School name mark each new group. If a group spans printed pages, the first row of each continuation page prints `<School> (tiếp)`; following rows on that page are blank again. These labels and borders are presentation only. Every row carries independent hidden School, Delivery Location, Ingredient, Unit and stable line identity. A complete-Table sort can change visual grouping without changing import mapping.
 
-When a School has more than one Delivery Location on the same date, its locked `TRƯỜNG` cell contains the canonical School name, a newline, and `Điểm giao: <canonical location name>` on **every** such row. This makes otherwise identical rows understandable without adding an editable field. With one location, show only the School name. Duplicate canonical location names within that School/date make this five-column export ambiguous and block export pending master-data correction or a separately approved display amendment. Do not silently label using an identifier or aggregate the locations.
+When a School has more than one Delivery Location on the same date, keep each location contiguous and use a separate visual subgroup. Its first `TRƯỜNG` cell contains the canonical School name, a newline, and `Điểm giao: <canonical location name>`; following cells in that subgroup are blank. With one location, show only the School name. Hidden location ID remains on every row. Duplicate canonical location names within that School/date make this five-column export ambiguous and block export pending master-data correction or a separately approved display amendment. Do not silently label using an identifier or aggregate the locations.
 
 After applying that location presentation, distinct lines on the same date must have distinct visible `(TRƯỜNG, THÀNH PHẦN, ĐVT)` tuples. If different Ingredient/School/Unit identities still produce the same tuple, **block export**, never merge rows or invent a technical code. The current authorized read has no operator-facing Ingredient code to disambiguate them. Product/master-data review must provide a meaningful canonical display distinction through a separately approved change before those lines are exportable. Identical Ingredient names across visibly distinct Schools/locations are allowed and retain their stable identities. The specimen uses distinguishable labels; the isolated validator includes an ambiguous-label negative control.
 
 ### Visible columns
 
-| Column | Exact label | Value                                                           | Editable? |
-| ------ | ----------- | --------------------------------------------------------------- | --------- |
-| A      | TRƯỜNG      | Canonical School display; location suffix only as defined above | No        |
-| B      | THÀNH PHẦN  | Canonical Ingredient name                                       | No        |
-| C      | ĐVT         | Controlled Unit code                                            | No        |
-| D      | SỐ LƯỢNG    | Exact current local draft quantity                              | Yes       |
-| E      | GHI CHÚ     | Local shopping annotation, including a proposed supplier        | Yes       |
+| Column | Exact label | Value                                                                                                    | Editable? |
+| ------ | ----------- | -------------------------------------------------------------------------------------------------------- | --------- |
+| A      | TRƯỜNG      | First-row School / blank continuation / print-only `(tiếp)` label; location suffix only as defined above | No        |
+| B      | THÀNH PHẦN  | Canonical Ingredient name                                                                                | No        |
+| C      | ĐVT         | Controlled Unit code                                                                                     | No        |
+| D      | SỐ LƯỢNG    | Exact current local draft quantity                                                                       | Yes       |
+| E      | GHI CHÚ     | First eligible preferred Supplier name as an editable suggestion, or blank; operator may annotate        | Yes       |
 
 Choose **SỐ LƯỢNG**, not `SL`, for clarity. `THÀNH PHẦN` and `ĐVT` retain staff vocabulary. All normal operator headings, help and errors are Vietnamese. Technical hidden keys are exempt. No additional operator-editable column is legitimate in this bounded artifact; reason type, identity, policy and status stay in Atlas.
 
@@ -97,33 +97,33 @@ Marker uniqueness binds row sets to the particular exported artifact; it is not 
 
 Hidden F:Q are members of the **same Excel Table** as A:E. All row evidence cells are locked text, including exact decimal quantity and blank/null decision evidence.
 
-| Current field / concept            | V1 key / destination                               | Classification                       | Reason                                                                          |
-| ---------------------------------- | -------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
-| Batch ID                           | `confirmed_need_batch_id` in metadata              | REQUIRED, WORKBOOK-LEVEL             | Exact aggregate; row repetition redundant                                       |
-| Batch version                      | `batch_version` in metadata                        | REQUIRED, WORKBOOK-LEVEL             | Whole-batch stale detection                                                     |
-| Need Generation run                | `need_generation_run_id` in metadata               | REQUIRED, WORKBOOK-LEVEL             | Wrong source detection                                                          |
-| Source release snapshot            | `release_snapshot_id` in metadata                  | REQUIRED, WORKBOOK-LEVEL             | Exact source release binding                                                    |
-| Stable Confirmed Need line         | `__line_id` (G)                                    | REQUIRED, ROW-LEVEL                  | Mapping, duplicates and missing-set checks                                      |
-| Current revision UUID              | `__revision_id` (H)                                | REQUIRED, ROW-LEVEL                  | Stale revision                                                                  |
-| Revision number                    | Omitted                                            | REDUNDANT                            | UUID already identifies immutable revision; number remains in Atlas             |
-| Current decision UUID/null         | `__decision_id` (I)                                | REQUIRED, ROW-LEVEL                  | Stale decision; empty text means null                                           |
-| Decision number                    | Omitted                                            | REDUNDANT                            | UUID/null is sufficient; number remains in Atlas                                |
-| Service date                       | `__service_date` (J)                               | REQUIRED, ROW-LEVEL                  | Must match canonical line and containing worksheet                              |
-| School UUID                        | `__school_id` (K)                                  | REQUIRED, ROW-LEVEL                  | Validate immutable identity cross-check                                         |
-| Delivery Location UUID             | `__location_id` (L)                                | REQUIRED, ROW-LEVEL                  | Preserve distinct operational targets                                           |
-| Ingredient UUID                    | `__ingredient_id` (M)                              | REQUIRED, ROW-LEVEL                  | No name-based retargeting                                                       |
-| Controlled Unit UUID               | `__unit_id` (N)                                    | REQUIRED, ROW-LEVEL                  | No code-based conversion or retargeting                                         |
-| Exact exported quantity            | `__exported_quantity` (O)                          | REQUIRED, ROW-LEVEL                  | AUD-003 equality baseline; never a replacement quantity                         |
-| Exported reason code               | `__exported_reason_code` (P)                       | REQUIRED, ROW-LEVEL                  | Preserve original local draft decision meaning                                  |
-| Exported shopping annotation (new) | `__exported_note` (Q)                              | REQUIRED, ROW-LEVEL                  | Detect note-only edit and prevent old file overwriting a newer local annotation |
-| Old constant workbook marker       | Replaced by format ID plus `__workbook_marker` (F) | REQUIRED, ROW-LEVEL + WORKBOOK-LEVEL | Format and export-instance identity are different concerns                      |
-| Lifecycle, H1A policy and step     | Not stored                                         | REDUNDANT as XLSX authority          | Resolve from current Atlas; cannot be edited/imported                           |
+| Current field / concept           | V1 key / destination                               | Classification                       | Reason                                                                                                 |
+| --------------------------------- | -------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Batch ID                          | `confirmed_need_batch_id` in metadata              | REQUIRED, WORKBOOK-LEVEL             | Exact aggregate; row repetition redundant                                                              |
+| Batch version                     | `batch_version` in metadata                        | REQUIRED, WORKBOOK-LEVEL             | Whole-batch stale detection                                                                            |
+| Need Generation run               | `need_generation_run_id` in metadata               | REQUIRED, WORKBOOK-LEVEL             | Wrong source detection                                                                                 |
+| Source release snapshot           | `release_snapshot_id` in metadata                  | REQUIRED, WORKBOOK-LEVEL             | Exact source release binding                                                                           |
+| Stable Confirmed Need line        | `__line_id` (G)                                    | REQUIRED, ROW-LEVEL                  | Mapping, duplicates and missing-set checks                                                             |
+| Current revision UUID             | `__revision_id` (H)                                | REQUIRED, ROW-LEVEL                  | Stale revision                                                                                         |
+| Revision number                   | Omitted                                            | REDUNDANT                            | UUID already identifies immutable revision; number remains in Atlas                                    |
+| Current decision UUID/null        | `__decision_id` (I)                                | REQUIRED, ROW-LEVEL                  | Stale decision; empty text means null                                                                  |
+| Decision number                   | Omitted                                            | REDUNDANT                            | UUID/null is sufficient; number remains in Atlas                                                       |
+| Service date                      | `__service_date` (J)                               | REQUIRED, ROW-LEVEL                  | Must match canonical line and containing worksheet                                                     |
+| School UUID                       | `__school_id` (K)                                  | REQUIRED, ROW-LEVEL                  | Validate immutable identity cross-check                                                                |
+| Delivery Location UUID            | `__location_id` (L)                                | REQUIRED, ROW-LEVEL                  | Preserve distinct operational targets                                                                  |
+| Ingredient UUID                   | `__ingredient_id` (M)                              | REQUIRED, ROW-LEVEL                  | No name-based retargeting                                                                              |
+| Controlled Unit UUID              | `__unit_id` (N)                                    | REQUIRED, ROW-LEVEL                  | No code-based conversion or retargeting                                                                |
+| Exact exported quantity           | `__exported_quantity` (O)                          | REQUIRED, ROW-LEVEL                  | AUD-003 equality baseline; never a replacement quantity                                                |
+| Exported reason code              | `__exported_reason_code` (P)                       | REQUIRED, ROW-LEVEL                  | Preserve original local draft decision meaning                                                         |
+| Exported suggestion/note baseline | `__exported_note` (Q)                              | REQUIRED, ROW-LEVEL                  | Distinguish unchanged Supplier suggestion from a staff note edit and detect local annotation conflicts |
+| Old constant workbook marker      | Replaced by format ID plus `__workbook_marker` (F) | REQUIRED, ROW-LEVEL + WORKBOOK-LEVEL | Format and export-instance identity are different concerns                                             |
+| Lifecycle, H1A policy and step    | Not stored                                         | REDUNDANT as XLSX authority          | Resolve from current Atlas; cannot be edited/imported                                                  |
 
-School/Ingredient/Unit IDs are derivable from stable line identity but deliberately retained as row-bound cross-checks. They are not alternate lookup keys. Conversely revision/decision numbers add no independent check beyond their UUIDs and current backend bindings.
+School/Ingredient/Unit IDs are derivable from stable line identity but deliberately retained as row-bound cross-checks. They are not alternate lookup keys. No identity is inferred from a visible School value, fill-down, previous row, position or page break. Revision/decision numbers add no independent check beyond their UUIDs and current backend bindings.
 
 ### Trusted export baseline and reopening
 
-A future exporter must retain an ephemeral in-memory export manifest keyed by marker: metadata, expected complete row IDs, canonical visible labels and each exported local quantity/reason code/governed reason note/shopping annotation. Governed reason notes remain in the existing Atlas draft; they are not replaced by workbook annotations. This manifest and an ancillary annotation map keyed by stable line UUID are local supporting evidence, not persisted business state or supplier allocation. Import compares hidden baselines against the manifest and independently checks every canonical identity against a fresh complete backend read. A workbook-supplied checksum would not make its baseline trustworthy.
+A future exporter must retain the minimum ephemeral in-memory export evidence keyed by marker: metadata, complete row IDs, per-line canonical display, exported quantity, reason and governed explanation, and the original suggested Supplier/annotation text. This is necessary to distinguish genuine edits from a changed local draft and to validate Q without trusting a workbook-authored baseline. Governed explanations stay in the existing Atlas draft. A local annotation map keyed by stable line UUID carries only staff notes during the session; it creates no Supplier preference or allocation fact and is never sent in Confirmed Need Save. Import independently checks every identity against a fresh complete backend read. A workbook-supplied checksum would not create trust.
 
 When the local export manifest is unavailable (for example after browser restart), **quantity edits cannot be imported**. The workbook does not carry a trustworthy exported governed reason-note/entry-flag baseline, so V1 does not reconstruct the coupled Confirmed Need draft. A narrowly allowed annotation-only recovery requires every visible quantity and O baseline to equal current saved backend/default quantity, P to equal the saved/default reason code, all currentness checks to pass, and every row marker to equal the workbook marker. Preserve the current local quantity, entry flag, reason code and governed explanation exactly. Lost unsaved governed notes/flags cannot be proven from the file and are never restored or treated as a saved baseline. Any differing file quantity/exported quantity/reason rejects the whole import and requires a fresh export from the current session. A future durable export-evidence mechanism would need separate Product/architecture approval.
 
@@ -141,7 +141,7 @@ Use a real structured Table named `AtlasNeed_YYYYMMDD`, covering **A3:Q(last dat
 
 Table benefits: complete-column filter range, full-row sort association, stable formatting and an explicit data boundary. Table risks: automatic row insertion, totals/column changes and protected sorting restrictions. Protection blocks ordinary structural changes; validation rejects them even when protection is removed. No reliance on Excel's visible row number or Table-relative index for identity.
 
-Protect date worksheets with the public operator-safety password `ATLAS_SHOPPING_LIST_V1`. Protect workbook structure against accidental sheet addition/rename/deletion. Lock A:C, F:Q, title/help/header and all cells outside the data region; unlock only D/E data cells. Allow selecting locked and unlocked cells and using existing filters. Deny formatting, inserting/deleting rows/columns, hyperlinks, objects, scenarios, pivot-table changes and **sorting while protected**.
+Protect date worksheets with the public operator-safety password `ATLAS_SHOPPING_LIST_V1`. Protect workbook structure against accidental sheet addition/rename/deletion. Lock A:C, F:Q, date title/header and all cells outside the data region; unlock only D/E data cells. Allow selecting locked and unlocked cells and using existing filters. Deny formatting, inserting/deleting rows/columns, hyperlinks, objects, scenarios, pivot-table changes and **sorting while protected**.
 
 Excel will not sort a protected range containing locked identity cells even when its `sort` permission flag is set. V1 therefore does not advertise protected sorting. An operator who intentionally unprotects with the disclosed password may sort the **entire Table**; the resulting workbook is importable if all evidence remains bound correctly. Do not unlock identities to make sort work. Import does not require the protection flag to survive another editor; it validates content independently. Filtering that merely hides rows is valid; deleting filtered rows or importing a visible-only copy is incomplete and rejected. Microsoft's [worksheet protection guidance](https://support.microsoft.com/en-au/excel/protect-a-worksheet?nochrome=true) distinguishes changing existing filter criteria from creating/removing AutoFilter and confirms the locked-cell sort limitation. Native Excel reports `AllowFiltering=true` for this specimen, but the COM `Range.AutoFilter` command was rejected on its protected Table; staff dropdown filtering is an explicit Product review check. Do not claim this COM check proves protected filtering works or unlock identity/header cells to hide that limitation.
 
@@ -149,17 +149,20 @@ Protection, hidden columns and the very-hidden sheet are **not security mechanis
 
 ### Print and appearance
 
-Preserve the right-hand reference's continuous table. Use a restrained Soft Mineral translation: white paper, eucalyptus header `#35564C`, dark text `#2A3330`, subtle horizontal rules `#DCE4E0`, medium School-start rule `#567A71`, pale amber editable cells `#F8F1DF`. No decorative summaries, logos, School banners, macros, VBA or conditional business calculations.
+The supplied workbook's **right-hand** table is the visual benchmark; its left-hand table is not. Recover its date hierarchy, Times typography, compact five-column proportion, bold first School, blank School continuation cells and strong black separators. Do not copy its gray header fill, wrong A:H print area or accidental A1:Q1048575 used range. This V1 is a white-paper, black-text, black-rule working form; color carries no information. No Atlas green, beige input tint, stripes, logo, instruction block or dashboard treatment appears on the printed area.
 
-- A1:E1 merged date/title only, outside Table: `PHIẾU ĐI CHỢ · Thứ Hai (20/04/2026)`.
-- A2:E2 compact Vietnamese editing/persistence instruction in 9-point Arial over three lines; explicitly states GHI CHÚ stays in the file/session and Atlas Lưu does not persist it, plus text-entry instructions for large/comma quantities and a warning to keep the exporting Atlas session open for quantity edits. Specimen identifies itself as `Mẫu minh họa`.
-- Row 3 headers, first data row 4; freeze first three rows; gridlines hidden.
-- Arial 11 body/header and 17 title for ordinary staff Excel compatibility. This intentionally replaces the current 18-point Times New Roman body for more usable notes and six-decimal quantities.
-- Column widths A:E: `38 / 53 / 8 / 16 / 33` Excel character units. Wrap School, Ingredient and note; right-align quantities; center Unit. Increase height when needed; no shrink-to-fit. Specimen data rows are 34 points.
-- A4 landscape, fit to one page wide and unlimited pages tall; margins `0.25 / 0.25 / 0.4 / 0.4` inches (left/right/top/bottom); print area A1:E(last row), repeated rows 1:3, page-number footer.
-- Prefer page breaks at School boundaries when a whole group fits; large groups may continue across pages with repeated headers and School on every row. No one-page-high compression. Filter state affects Excel printing, so clear filters when printing all lines.
+- A1:E1 contains only the centered date, for example `Thứ Hai (20/04/2026)`, Times New Roman 20 pt bold. Row 2 is a quiet 9 pt spacer. Row 3 contains the five exact white/black, centered, bold headings; first data row is 4. Freeze rows 1:3 and hide gridlines.
+- Times New Roman 15 pt body/header is the selected A4 scale after native PDF review. The specimen uses 29 pt ordinary rows, 32 pt short School starts, extra handwriting height where a Supplier name occupies the Note, and measured expansion for School/Ingredient/Supplier wrapping; the long School fixture needs 96 pt. A continuation row retains whichever height its wrapped content needs. The heading row is 39 pt. No shrink-to-fit.
+- Visible widths A:E are `17.5 / 35 / 7.5 / 13 / 20` Excel character units. Ingredient is widest, Unit compact, Quantity wide enough to display `1,234567`, and Note has room for the first Supplier plus pen annotation. Wrap A/B/E; center C, right-align D, left-align E.
+- Ordinary rows use thin black rules. A new School/location subgroup uses a medium black top rule and bold School name. Header has medium black top/bottom rules. Keep the outer form edge black and avoid decorative fills.
+- A4 portrait, fit one page wide with unlimited pages tall; margins `0.28 / 0.28 / 0.35 / 0.35` inches (left/right/top/bottom), minimal header/footer margins, page-number footer. Print area is exactly `A1:E<last-real-row>`; hidden F:Q never prints. Repeat rows 1:3 on every page so date and headings remain obvious.
+- Before a School/location subgroup that fits on a fresh page but not the remaining page, insert a break before it. Oversized groups fill the current page where useful and may span. At each intentional within-group break put `<School> (tiếp)` on the first following row, bold; keep the hidden identity unchanged. The specimen's small Tân Định group moves intact, while Tân Bình spans pages. Excel automatic breaks for other data sizes require the same continuation-label logic in connected implementation.
 
-The committed specimen has explicit School-boundary page breaks and native print configuration. Automated range renders and OOXML inspection are evidence; staff Excel print preview, filter/edit and full-Table sorting remain part of Product review, not claimed native-Excel certification.
+The committed specimen and native Excel PDF must be reviewed together. Page-break geometry is part of this design contract, not inferred from OOXML assertions alone. Filter state affects printing; clear filters to print all lines.
+
+### Preferred Supplier suggestion
+
+Derive `GHI CHÚ` from existing `atlas_admin.supplier_eligibilities` and `atlas_admin.suppliers` at the line's service date. Require active Supplier and eligibility, inclusive `effective_from`, exclusive optional `effective_to`; order surviving relationships by authoritative ascending priority and use the unique first Supplier's canonical `supplier_name`. Absent, null or tied first priority gives a clean blank suggestion pending authoritative data correction. Display only the name: no `NCC dự kiến:` prefix, alternatives, warning, eligibility status or allocation claim. The fixture covers one/three eligible Suppliers, inactive Supplier/eligibility, future/expired top priority and none. The suggestion is not a saved preference, allocation or Procurement decision. **FUTURE CONNECTED IMPLEMENTATION REQUIREMENT:** expose this derived first Supplier through an authorized shaped read at the Confirmed Need export boundary, without a browser direct-table read or schema/RPC change in this PR.
 
 ## 5. Quantity and note rules (questions 6.12–6.13)
 
@@ -254,32 +257,32 @@ These are **future V1 conformance requirements**, not a claim that connected V1 
 
 ## 8. Decision index for task questions
 
-| Question              | Frozen proposal                                                                      | Detail                |
-| --------------------- | ------------------------------------------------------------------------------------ | --------------------- |
-| 6.1 Scope             | Complete single existing batch, exact period up to 7 days, date sheets, fixed names  | §2 Scope              |
-| 6.2 Grain             | Stable line; date/School/location/Ingredient/controlled Unit, never name aggregation | §2 Row grain          |
-| 6.3 Visible columns   | TRƯỜNG, THÀNH PHẦN, ĐVT, SỐ LƯỢNG, GHI CHÚ                                           | §2 Visible columns    |
-| 6.4 Editable          | Quantity and shopping annotation only                                                | §2 Visible columns    |
-| 6.5 School            | Every line, locked location suffix when needed; ambiguous tuples block export        | §2 Row grain          |
-| 6.6 Order             | Date, available canonical School rank, original source sequence, stable UUID         | §2 Ordering           |
-| 6.7 Row identity      | Required F:Q evidence; revision/decision numbers redundant                           | §3 Classification     |
-| 6.8 Metadata          | Very-hidden closed _ATLAS_META map, no authority                                     | §3 Metadata           |
-| 6.9 Version           | Exact ATLAS_SHOPPING_LIST_V1, reject legacy/future drift                             | §3 Compatibility      |
-| 6.10 Table            | Full A:Q structured Table including identities                                       | §4 Table              |
-| 6.11 Protection       | Select/filter permissions, D/E edits, no protected sorting; safety only              | §4 Protection         |
-| 6.12 Quantity         | Exact decimals; six-place display, unchanged evidence, two-place/step-valid edits    | §5 Quantity           |
-| 6.13 Notes            | Supplier annotation separate from governed reason; quantity explanation in Atlas     | §5 Notes              |
-| 6.14 Deletion         | Reject incomplete artifact, never infer zero                                         | §6 Validation         |
-| 6.15 Additions        | Unknown rows rejected; cannot create Needs                                           | §6 Validation         |
-| 6.16 Sort/filter      | Accept intact full-row identities, including hidden/filtered rows                    | §4 and §6             |
-| 6.17 Visible text     | Reject canonical label mismatch, no retargeting                                      | §6 step 4             |
-| 6.18 Released/history | Neither editable V1 export nor import; reference format excluded                     | §6 Lifecycle          |
-| 6.19 Partial import   | None; atomic complete artifact and local conflict validation                         | §6 Atomic application |
-| 6.20 Persistence      | Local draft/annotations only; explicit Lưu saves governed decisions only             | §1 and §6             |
+| Question              | Frozen proposal                                                                               | Detail                |
+| --------------------- | --------------------------------------------------------------------------------------------- | --------------------- |
+| 6.1 Scope             | Complete single existing batch, exact period up to 7 days, date sheets, fixed names           | §2 Scope              |
+| 6.2 Grain             | Stable line; date/School/location/Ingredient/controlled Unit, never name aggregation          | §2 Row grain          |
+| 6.3 Visible columns   | TRƯỜNG, THÀNH PHẦN, ĐVT, SỐ LƯỢNG, GHI CHÚ                                                    | §2 Visible columns    |
+| 6.4 Editable          | Quantity and shopping annotation only                                                         | §2 Visible columns    |
+| 6.5 School            | First row and page continuation only; hidden ID on every row; ambiguous display blocks export | §2 Row grain          |
+| 6.6 Order             | Date, available canonical School rank, original source sequence, stable UUID                  | §2 Ordering           |
+| 6.7 Row identity      | Required F:Q evidence; revision/decision numbers redundant                                    | §3 Classification     |
+| 6.8 Metadata          | Very-hidden closed _ATLAS_META map, no authority                                              | §3 Metadata           |
+| 6.9 Version           | Exact ATLAS_SHOPPING_LIST_V1, reject legacy/future drift                                      | §3 Compatibility      |
+| 6.10 Table            | Full A:Q structured Table including identities                                                | §4 Table              |
+| 6.11 Protection       | Select/filter permissions, D/E edits, no protected sorting; safety only                       | §4 Protection         |
+| 6.12 Quantity         | Exact decimals; six-place display, unchanged evidence, two-place/step-valid edits             | §5 Quantity           |
+| 6.13 Notes            | Supplier annotation separate from governed reason; quantity explanation in Atlas              | §5 Notes              |
+| 6.14 Deletion         | Reject incomplete artifact, never infer zero                                                  | §6 Validation         |
+| 6.15 Additions        | Unknown rows rejected; cannot create Needs                                                    | §6 Validation         |
+| 6.16 Sort/filter      | Accept intact full-row identities, including hidden/filtered rows                             | §4 and §6             |
+| 6.17 Visible text     | Reject canonical label mismatch, no retargeting                                               | §6 step 4             |
+| 6.18 Released/history | Neither editable V1 export nor import; reference format excluded                              | §6 Lifecycle          |
+| 6.19 Partial import   | None; atomic complete artifact and local conflict validation                                  | §6 Atomic application |
+| 6.20 Persistence      | Local draft/annotations only; explicit Lưu saves governed decisions only                      | §1 and §6             |
 
 ## 9. Specimen, reproduction and review gate
 
-[Specimen](examples/atlas-shopping-list-v1-example.xlsx): 2 service dates, 3 synthetic schools, 13 distinct Ingredient identities and labels, 80 lines, multiple lines per School, integer/one-decimal/six-decimal/zero quantities, long School/Ingredient names, blank and existing notes, multiple locations and separate ambiguous-label rejection coverage. No production data was copied. UUIDs and timestamp are deliberately fixed in this review fixture only. Repeated groups and native page breaks exercise continuation/print layout.
+[Specimen](examples/atlas-shopping-list-v1-example.xlsx): 2 service dates, 3 synthetic Schools, 25 Ingredient identities, 56 lines, integer/decimal/six-decimal/zero quantities, a long School/Ingredient/Supplier, blank and first-preferred Supplier notes, a 14-line medium group, a five-line group moved intact to a fresh page, and a 25-line group spanning pages with `Tân Bình (tiếp)`. Eligibility fixtures cover one/three Suppliers, inactive Supplier/eligibility, future/expired priority one and none. Every line has F:Q identity evidence; no production data was copied. UUIDs and timestamp are fixed only for this review fixture. An ambiguous-label negative control is separate.
 
 No repository policy prohibits XLSX binaries; `.gitignore` has no XLSX exclusion. Commit this small deterministic binary and its fixture/generator, not the supplied business workbook or Retool source dumps. The generator uses the supplied bundled `@oai/artifact-tool` for authoring; the standard-library Python finalizer supplies native protection, hiding, exact numeric XML and print configuration absent from the documented artifact API. Neither is imported by the app. No new repository dependency.
 
@@ -295,8 +298,8 @@ $env:ATLAS_ARTIFACT_NODE_MODULES = 'C:/Users/HOME/.cache/codex-runtimes/codex-pr
 & $taskPython docs/xlsx/examples/validate-specimen.py
 ```
 
-The artifact tool may create an `.xlsx.inspect.ndjson` sidecar; keep it outside version control. An optional third argument to the JS builder writes range-preview PNGs outside the repository. Regeneration depends on the bundled tool version; deterministic fixture and normalized XML/ZIP are tested, and byte reproducibility is recorded in the task record. No claim of determinism across different artifact-tool releases.
+An optional third argument to the JS builder writes range-preview PNGs outside the repository. Regeneration depends on the bundled tool version; deterministic fixture and normalized XML/ZIP are tested, and byte reproducibility is recorded in the task record. No claim of determinism across different artifact-tool releases.
 
-Product review must approve the proposed wording/layout, repeated School labels/location suffix, seven-day exact-single-batch scope, protected-sort limitation, strict compatibility and local baseline/conflict behavior. It must approve supplier annotations being separate from governed reasons and remaining local/workbook-only, with explicit adjustment explanation in Atlas before Save. Decide separately whether persisted supplier notes, historical read-only export or multi-daily-batch collection is needed. The matrix already freezes V1 behavior for those cases; optional extensions are excluded, not parser ambiguities.
+Product review must approve the black-and-white A4 form, first-row-only School and `(tiếp)` presentation, multi-location subgroup wording, seven-day exact-single-batch scope, protected-sort limitation, strict compatibility and local baseline/conflict behavior. It must approve derived first-Supplier suggestions and staff annotations remaining local/workbook-only, with explicit adjustment explanation in Atlas before Save. Decide separately whether persisted supplier notes, historical read-only export or multi-daily-batch collection is needed.
 
 **Stop here.** No connected importer/exporter implementation or merge is authorized by this design task. Product approval of this contract/specimen precedes a separately bounded implementation PR.

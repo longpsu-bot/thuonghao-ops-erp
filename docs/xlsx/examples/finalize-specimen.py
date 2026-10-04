@@ -24,6 +24,56 @@ def xml(root):
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
+def preferred_supplier(row, fixture):
+    suppliers = {item["supplier_id"]: item for item in fixture["suppliers"]}
+    eligible = sorted(
+        (
+            item for item in fixture["supplier_eligibilities"]
+            if item["ingredient_id"] == row["ingredient_id"]
+            and item["eligibility_status"] == "ACTIVE"
+            and item["effective_from"] <= row["service_date"]
+            and (item["effective_to"] is None or row["service_date"] < item["effective_to"])
+            and suppliers[item["supplier_id"]]["supplier_status"] == "ACTIVE"
+        ),
+        key=lambda item: item["priority"],
+    )
+    if not eligible or (len(eligible) > 1 and eligible[0]["priority"] == eligible[1]["priority"]):
+        return ""
+    return suppliers[eligible[0]["supplier_id"]]["supplier_name"]
+
+
+def page_breaks(rows, sheet_data):
+    """Pack whole small groups, then split oversized groups at row boundaries."""
+    heights = {int(item.get("r")): float(item.get("ht", "27")) for item in sheet_data.findall("m:row", NS)}
+    capacity = 800.0
+    remaining = capacity
+    breaks = []
+    continuation = []
+    index = 0
+    while index < len(rows):
+        school = (rows[index]["school_id"], rows[index]["delivery_location_id"])
+        end = index
+        while end < len(rows) and (rows[end]["school_id"], rows[end]["delivery_location_id"]) == school:
+            end += 1
+        total = sum(heights.get(i + 4, 27) for i in range(index, end))
+        if index and total <= capacity and total > remaining:
+            breaks.append(index + 3)
+            remaining = capacity
+        elif index and total > capacity and remaining < capacity * 0.3:
+            breaks.append(index + 3)
+            remaining = capacity
+        for position in range(index, end):
+            height = heights.get(position + 4, 27)
+            if height > remaining and position:
+                breaks.append(position + 3)
+                continuation.append(position)
+                remaining = capacity
+                height = max(height, 42)
+            remaining -= height
+        index = end
+    return breaks, continuation
+
+
 def finalize(path):
     here = Path(__file__).parent
     fixture = json.loads((here / "atlas-shopping-list-v1.fixture.json").read_text(encoding="utf-8"))
@@ -89,7 +139,7 @@ def finalize(path):
                 quantity.set("t", "inlineStr")
                 ET.SubElement(ET.SubElement(quantity, tag("is")), tag("t")).text = text
                 quantity.set("s", str(text_quantity_styles[int(quantity.get("s", "0"))]))
-            hidden_values = [fixture["metadata"]["workbook_marker"], row["confirmed_need_line_id"], row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"], row["reason_code"], row["shopping_note"]]
+            hidden_values = [fixture["metadata"]["workbook_marker"], row["confirmed_need_line_id"], row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"], row["reason_code"], preferred_supplier(row, fixture)]
             for column, value in enumerate(hidden_values, 5):
                 cell = sheet.find(f'.//m:c[@r="{chr(65 + column)}{row_index}"]', NS)
                 for child in list(cell):
@@ -114,6 +164,23 @@ def finalize(path):
                 col.set("max", "5")
         ET.SubElement(cols, tag("col"), min="6", max="17", width="1", customWidth="1", hidden="1")
         sheet_data = sheet.find("m:sheetData", NS)
+        breaks, continuation = page_breaks(rows, sheet_data)
+        for position in continuation:
+            row = rows[position]
+            cell = sheet.find(f'.//m:c[@r="A{position + 4}"]', NS)
+            first = next(
+                i for i, candidate in enumerate(rows)
+                if (candidate["school_id"], candidate["delivery_location_id"])
+                == (row["school_id"], row["delivery_location_id"])
+            )
+            first_cell = sheet.find(f'.//m:c[@r="A{first + 4}"]', NS)
+            for child in list(cell):
+                cell.remove(child)
+            cell.set("t", "inlineStr")
+            cell.set("s", first_cell.get("s", "0"))
+            ET.SubElement(ET.SubElement(cell, tag("is")), tag("t")).text = f'{row["school_name"]} (tiếp)'
+            row_node = sheet_data.find(f'm:row[@r="{position + 4}"]', NS)
+            row_node.set("ht", str(max(float(row_node.get("ht", "29")), 42)))
         for name in ["sheetProtection", "autoFilter", "printOptions", "pageMargins", "pageSetup", "headerFooter", "rowBreaks"]:
             for node in sheet.findall(f"m:{name}", NS):
                 sheet.remove(node)
@@ -138,17 +205,16 @@ def finalize(path):
         insertion = list(sheet).index(sheet.find("m:tableParts", NS))
         native = [
             ET.Element(tag("printOptions"), horizontalCentered="1"),
-            ET.Element(tag("pageMargins"), left="0.25", right="0.25", top="0.4", bottom="0.4", header="0.15", footer="0.15"),
-            ET.Element(tag("pageSetup"), paperSize="9", orientation="landscape", fitToWidth="1", fitToHeight="0"),
+            ET.Element(tag("pageMargins"), left="0.28", right="0.28", top="0.35", bottom="0.35", header="0.12", footer="0.12"),
+            ET.Element(tag("pageSetup"), paperSize="9", orientation="portrait", fitToWidth="1", fitToHeight="0"),
         ]
         footer = ET.Element(tag("headerFooter"))
-        ET.SubElement(footer, tag("oddFooter")).text = "&LPhiếu đi chợ – Mẫu minh họa&RTrang &P / &N"
+        ET.SubElement(footer, tag("oddFooter")).text = "&RTrang &P / &N"
         native.append(footer)
-        breaks = [i + 3 for i in range(1, len(rows)) if rows[i]["school_id"] != rows[i - 1]["school_id"]]
-        page_breaks = ET.Element(tag("rowBreaks"), count=str(len(breaks)), manualBreakCount=str(len(breaks)))
+        breaks_element = ET.Element(tag("rowBreaks"), count=str(len(breaks)), manualBreakCount=str(len(breaks)))
         for value in breaks:
-            ET.SubElement(page_breaks, tag("brk"), id=str(value), min="0", max="16383", man="1")
-        native.append(page_breaks)
+            ET.SubElement(breaks_element, tag("brk"), id=str(value), min="0", max="16383", man="1")
+        native.append(breaks_element)
         for node in native:
             sheet.insert(insertion, node)
             insertion += 1

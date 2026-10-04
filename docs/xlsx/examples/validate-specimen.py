@@ -55,6 +55,24 @@ def verify_presentation(fixture):
         seen.add(key)
 
 
+def preferred_supplier(row):
+    suppliers = {item["supplier_id"]: item for item in FIXTURE["suppliers"]}
+    candidates = sorted(
+        (
+            item for item in FIXTURE["supplier_eligibilities"]
+            if item["ingredient_id"] == row["ingredient_id"]
+            and item["eligibility_status"] == "ACTIVE"
+            and item["effective_from"] <= row["service_date"]
+            and (item["effective_to"] is None or row["service_date"] < item["effective_to"])
+            and suppliers[item["supplier_id"]]["supplier_status"] == "ACTIVE"
+        ),
+        key=lambda item: item["priority"],
+    )
+    if not candidates or (len(candidates) > 1 and candidates[0]["priority"] == candidates[1]["priority"]):
+        return ""
+    return suppliers[candidates[0]["supplier_id"]]["supplier_name"]
+
+
 def verify(files):
     allowed_parts = {
         "[Content_Types].xml", "_rels/.rels", "xl/_rels/workbook.xml.rels",
@@ -90,7 +108,11 @@ def verify(files):
     require(sheets[-1].get("state") == "veryHidden", "Very-hidden metadata")
     require(wb.find("m:workbookProtection", NS).get("lockStructure") == "1", "Workbook structure protection")
     require(not any("vba" in name.lower() or "externallink" in name.lower() for name in files), "No VBA/external links")
-    styles = roots["xl/styles.xml"].find("m:cellXfs", NS)
+    style_root = roots["xl/styles.xml"]
+    styles = style_root.find("m:cellXfs", NS)
+    fonts = style_root.find("m:fonts", NS)
+    fills = style_root.find("m:fills", NS)
+    borders = style_root.find("m:borders", NS)
     visible = SCHEMA["x-atlas-layout"]["visibleHeaders"]
     hidden = SCHEMA["x-atlas-layout"]["hiddenHeaders"]
     projected = []
@@ -106,6 +128,8 @@ def verify(files):
         require([col.get("name") for col in table.find("m:tableColumns", NS)] == visible + hidden, "Exact Table columns")
         require(table.find("m:tableStyleInfo", NS).get("showRowStripes") == "0", "Restrained table styling")
         cells = {cell.get("r"): cell for cell in sheet.findall(".//m:c", NS)}
+        require(len(files[f"xl/worksheets/sheet{index}.xml"]) < 250_000, "Bounded worksheet XML")
+        require(len(cells) <= 17 * (end + 1), "Bounded used range")
         for address, cell in cells.items():
             if text(cell, strings):
                 match = re.fullmatch(r"([A-Z]+)([0-9]+)", address)
@@ -113,27 +137,65 @@ def verify(files):
                 column, row_number = match.group(1), int(match.group(2))
                 require(len(column) == 1 and "A" <= column <= "Q" and 1 <= row_number <= end, "No nonempty out-of-region cells")
                 if row_number < 3:
-                    require(column == "A", "Only merged title/help anchors contain values")
+                    require(column == "A" and row_number == 1, "Only quiet date title above headings")
         require([text(cells.get(f"{chr(65 + col)}3"), strings) for col in range(17)] == visible + hidden, "Exact header cells")
+        require(text(cells.get("A1"), strings).endswith(date.split("-")[2] + "/" + date.split("-")[1] + "/" + date.split("-")[0] + ")"), "Date title")
+        for address in ["A1", "A3", "B3", "C3", "D3", "E3"]:
+            cell = cells[address]
+            xf = styles[int(cell.get("s", "0"))]
+            font = fonts[int(xf.get("fontId", "0"))]
+            require(font.find("m:name", NS).get("val") == "Times New Roman", "Title/header Times font")
+            require(font.find("m:b", NS) is not None, "Title/header bold")
+            require(font.find("m:color", NS).get("rgb") == "FF000000", "Title/header black")
+            fill = fills[int(xf.get("fillId", "0"))].find("m:patternFill", NS)
+            fg = fill.find("m:fgColor", NS) if fill is not None else None
+            require(fg is None or fg.get("rgb") == "FFFFFFFF", "Title/header white/no fill")
+            if address.endswith("3"):
+                border = borders[int(xf.get("borderId", "0"))]
+                require(
+                    border.find("m:top", NS).get("style") == "medium"
+                    and border.find("m:bottom", NS).get("style") == "medium",
+                    "Strong black heading rules",
+                )
         data_rows = sheet.find("m:sheetData", NS).findall("m:row", NS)
         require([int(row.get("r")) for row in data_rows if int(row.get("r")) >= 4 and any(text(cell, strings) for cell in row)] == list(range(4, end + 1)), "Complete data rows")
+        require(
+            all(29 <= float(item.get("ht", "0")) <= 96 for item in data_rows if int(item.get("r")) >= 4),
+            "Handwriting and wrap row heights",
+        )
         seen = set()
         by_id = {row["confirmed_need_line_id"]: row for row in rows}
         locations = {}
         for row in rows:
             locations.setdefault(row["school_id"], set()).add(row["delivery_location_id"])
+        break_ids = [int(node.get("id")) for node in sheet.findall("m:rowBreaks/m:brk", NS)]
+        continuation_rows = {
+            break_id + 1 for break_id in break_ids
+            if 4 <= break_id < end
+            and (rows[break_id - 3]["school_id"], rows[break_id - 3]["delivery_location_id"])
+            == (rows[break_id - 4]["school_id"], rows[break_id - 4]["delivery_location_id"])
+        }
         for row_index in range(4, end + 1):
             values = [text(cells.get(f"{chr(65 + col)}{row_index}"), strings) for col in range(17)]
             row_id = values[6]
             require(row_id in by_id and row_id not in seen, "Unknown/duplicate line")
             seen.add(row_id)
             row = by_id[row_id]
-            expected_hidden = [FIXTURE["metadata"]["workbook_marker"], row_id, row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"], row["reason_code"], row["shopping_note"]]
+            supplier = preferred_supplier(row)
+            expected_hidden = [FIXTURE["metadata"]["workbook_marker"], row_id, row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"], row["reason_code"], supplier]
             require(values[5:] == expected_hidden, "Canonical row-bound evidence")
-            expected_school = row["school_name"] + (f"\nĐiểm giao: {row['delivery_location_name']}" if len(locations[row["school_id"]]) > 1 else "")
+            first_in_school = row_index == 4 or (
+                rows[row_index - 5]["school_id"], rows[row_index - 5]["delivery_location_id"]
+            ) != (row["school_id"], row["delivery_location_id"])
+            expected_school = row["school_name"] + (f"\nĐiểm giao: {row['delivery_location_name']}" if len(locations[row["school_id"]]) > 1 else "") if first_in_school else ""
+            if row_index in continuation_rows:
+                expected_school = f'{row["school_name"]} (tiếp)'
             require(values[:3] == [expected_school, row["ingredient_name"], row["unit_code"]], "Canonical visible labels")
+            if expected_school:
+                xf = styles[int(cells[f"A{row_index}"].get("s", "0"))]
+                require(fonts[int(xf.get("fontId", "0"))].find("m:b", NS) is not None, "First/continued School bold")
             require(Decimal(values[3]) == Decimal(row["exact_quantity"]), "Exact quantity XML")
-            require(values[4] == row["shopping_note"], "Exported supplier annotation")
+            require(values[4] == supplier, "Only first eligible supplier suggestion")
             for col in range(17):
                 cell = cells[f"{chr(65 + col)}{row_index}"]
                 protection = styles[int(cell.get("s", "0"))].find("m:protection", NS)
@@ -141,20 +203,42 @@ def verify(files):
                 require(is_unlocked == (col in [3, 4]), "Only D/E editable")
                 if col >= 5:
                     require(cell.get("t") in ["s", "inlineStr"], "Hidden evidence stored as text")
+                else:
+                    xf = styles[int(cell.get("s", "0"))]
+                    font = fonts[int(xf.get("fontId", "0"))]
+                    require(font.find("m:name", NS).get("val") == "Times New Roman", "Print font")
+                    color = font.find("m:color", NS)
+                    require(color is not None and color.get("rgb") == "FF000000", "Black print text")
+                    fill = fills[int(xf.get("fillId", "0"))].find("m:patternFill", NS)
+                    fg = fill.find("m:fgColor", NS) if fill is not None else None
+                    require(fg is None or fg.get("rgb") == "FFFFFFFF", "White/no printed fill")
+                    border = borders[int(xf.get("borderId", "0"))]
+                    top = border.find("m:top", NS)
+                    if first_in_school:
+                        require(top is not None and top.get("style") == "medium", f"Strong School start at {date} {cell.get('r')}")
+                    elif col == 0 and row_index not in continuation_rows:
+                        require(top is None or top.get("style") in (None, "thin"), "Ordinary line weight")
             projected.append(dict(zip(["school_display", "ingredient_name", "unit_code", "quantity", "note"] + hidden, values)))
         require(seen == set(by_id), "Every-and-only line set")
         require([text(cells[f"G{row_index}"], strings) for row_index in range(4, end + 1)] == [row["confirmed_need_line_id"] for row in rows], "Deterministic specimen export order")
         cols = sheet.find("m:cols", NS)
         require(any(col.get("min") == "6" and col.get("max") == "17" and col.get("hidden") == "1" for col in cols), "Hidden F:Q")
+        for col_index, expected in enumerate([17.5, 35, 7.5, 13, 20], 1):
+            match = [col for col in cols if int(col.get("min")) <= col_index <= int(col.get("max"))]
+            require(len(match) == 1 and abs(float(match[0].get("width")) - expected) < 0.01, "A4 column proportions")
         pane = sheet.find(".//m:pane", NS)
         require(pane.get("ySplit") == "3" and pane.get("state") == "frozen", "Frozen header")
-        require([node.get("ref") for node in sheet.findall("m:mergeCells/m:mergeCell", NS)] == ["A1:E1", "A2:E2"], "No merged data cells")
+        require([node.get("ref") for node in sheet.findall("m:mergeCells/m:mergeCell", NS)] == ["A1:E1"], "No merged data cells")
         protection = sheet.find("m:sheetProtection", NS)
         require(protection.get("sheet") == "1" and protection.get("autoFilter") == "0" and protection.get("sort") == "1", "Protected filter; sort denied")
         require(protection.get("selectLockedCells") == "0" and protection.get("selectUnlockedCells") == "0", "Both cell selections allowed")
         setup = sheet.find("m:pageSetup", NS)
-        require(setup.get("orientation") == "landscape" and setup.get("fitToWidth") == "1" and setup.get("fitToHeight") == "0", "Readable page fit")
-        require(len(sheet.findall("m:rowBreaks/m:brk", NS)) == 2, "School page breaks")
+        require(setup.get("paperSize") == "9" and setup.get("orientation") == "portrait" and setup.get("fitToWidth") == "1" and setup.get("fitToHeight") == "0", "Portrait A4 page fit")
+        if index == 1:
+            require(len(break_ids) == 2 and continuation_rows, "Small-group move and large-group continuation")
+            require(break_ids[0] == 17, "Small School group moves intact")
+        else:
+            require(not break_ids, "Second-date fixture remains one page")
         definitions = {node.get("name"): node.text for node in wb.findall("m:definedNames/m:definedName", NS) if node.get("localSheetId") == str(index - 1)}
         require(definitions.get("_xlnm.Print_Area") == f"'{date}'!$A$1:$E${end}", "Visible print area")
         require(definitions.get("_xlnm.Print_Titles") == f"'{date}'!$1:$3", "Repeat date/header on pages")
@@ -264,7 +348,7 @@ def main(path):
         ("xl/worksheets/sheet3.xml", "B5", "2026-04-19"),
         ("xl/worksheets/sheet3.xml", "B6", "2026-04-22"),
         ("xl/worksheets/sheet3.xml", "C1", "unexpected metadata"),
-        (sheet, "R4", "unexpected column"), (sheet, "A44", "unexpected row"),
+        (sheet, "R4", "unexpected column"), (sheet, "A48", "unexpected row"),
         (sheet, "A3", "SL"),
     ]
     rejected = 0
@@ -301,16 +385,37 @@ def main(path):
             raise AssertionError(f"Structural negative control passed: {operation}")
     ambiguous = copy.deepcopy(FIXTURE)
     for row in ambiguous["rows"]:
-        if row["ingredient_name"] == "Gạo tẻ hạt dài":
-            row["ingredient_name"] = "Gạo tẻ"
+        if row["ingredient_name"] == "Cà rốt":
+            row["ingredient_name"] = "Tỏi"
     try:
         verify_presentation(ambiguous)
     except AssertionError:
         rejected += 1
     else:
         raise AssertionError("Ambiguous canonical label control passed")
-    require(len(FIXTURE["rows"]) == 80 and len({row["school_id"] for row in FIXTURE["rows"]}) == 3, "Required fixture coverage")
+    require(len(FIXTURE["rows"]) == 56 and len({row["school_id"] for row in FIXTURE["rows"]}) == 3, "Required fixture coverage")
     require(len({row["ingredient_id"] for row in FIXTURE["rows"]}) >= 8, "Ingredient coverage")
+    first_date = [row for row in normalized["rows"] if row["__service_date"] == "2026-04-20"]
+    reordered = list(reversed(first_date))
+    by_id = {row["confirmed_need_line_id"]: row for row in FIXTURE["rows"]}
+    require(
+        all(
+            row["__school_id"] == by_id[row["__line_id"]]["school_id"]
+            and row["__location_id"] == by_id[row["__line_id"]]["delivery_location_id"]
+            and row["__ingredient_id"] == by_id[row["__line_id"]]["ingredient_id"]
+            and row["__unit_id"] == by_id[row["__line_id"]]["unit_id"]
+            for row in reordered
+        ),
+        "Complete-row reorder retains independent identity",
+    )
+    require(preferred_supplier(FIXTURE["rows"][0]) == "Công ty Hoàng Dung Dairy", "One supplier")
+    require(preferred_supplier(FIXTURE["rows"][1]) == "An Phú", "First of three eligible suppliers")
+    require(preferred_supplier(FIXTURE["rows"][2]) == "Nông sản Bình Minh - giao bếp trường mỗi sáng", "Inactive first supplier skipped")
+    require(preferred_supplier(FIXTURE["rows"][4]) == "Tân Thành", "Future first supplier skipped")
+    require(preferred_supplier(FIXTURE["rows"][5]) == "Chợ A", "Expired first supplier skipped")
+    require(any(preferred_supplier(row) == "" for row in FIXTURE["rows"]), "No supplier gives clean blank")
+    notes = {row["note"] for row in normalized["rows"]}
+    require("Nhà cung cấp thay thế A" not in notes and "Nhà cung cấp thay thế B" not in notes, "Alternative suppliers not visible")
     print(f"PASS: static XLSX/fixture/schema conformance; {rejected}/{len(controls) + 5} negative controls rejected.")
     print(f"SHA256: {hashlib.sha256(path.read_bytes()).hexdigest()}")
     print("Not tested here: connected V1 import, persistence, or native staff Excel behavior.")
