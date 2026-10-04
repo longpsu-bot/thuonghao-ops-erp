@@ -69,13 +69,16 @@ function preferredSupplier(row) {
 }
 function bodyRowClass(row, startsSchool, multiLocation) {
   const cases = fixture.print_cases;
+  if (startsSchool && multiLocation) return "multiLocationRowPt";
   if (
-    cases.two_line_ingredient_ids.includes(row.ingredient_id) ||
-    (startsSchool &&
-      (multiLocation || cases.two_line_school_ids.includes(row.school_id)))
+    cases.wrapped_ingredient_ids.includes(row.ingredient_id) ||
+    cases.wrapped_supplier_ids.some(
+      (id) => supplierById.get(id)?.supplier_name === preferredSupplier(row),
+    ) ||
+    (startsSchool && cases.wrapped_school_ids.includes(row.school_id))
   )
-    return "twoLineRowPt";
-  return startsSchool ? "schoolRowPt" : "normalRowPt";
+    return "wrappedRowPt";
+  return "normalRowPt";
 }
 for (const date of dates) {
   const rows = fixture.rows.filter((row) => row.service_date === date);
@@ -162,7 +165,7 @@ for (const date of dates) {
   );
   table.style = "TableStyleLight1";
   table.showTotals = false;
-  table.showFilterButton = true;
+  table.showFilterButton = false;
   const widths = print.columnWidths;
   for (let col = 0; col < widths.length; col++) {
     const letter = String.fromCharCode(65 + col);

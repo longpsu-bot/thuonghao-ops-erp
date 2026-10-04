@@ -57,11 +57,23 @@
           "release_snapshot_id"
         ],
         "properties": {
-          "service_date": { "type": "string", "format": "date" },
-          "confirmed_need_batch_id": { "$ref": "#/$defs/uuid" },
-          "batch_version": { "type": "integer", "minimum": 1 },
-          "need_generation_run_id": { "$ref": "#/$defs/uuid" },
-          "release_snapshot_id": { "$ref": "#/$defs/uuid" }
+          "service_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "confirmed_need_batch_id": {
+            "$ref": "#/$defs/uuid"
+          },
+          "batch_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "need_generation_run_id": {
+            "$ref": "#/$defs/uuid"
+          },
+          "release_snapshot_id": {
+            "$ref": "#/$defs/uuid"
+          }
         }
       }
     },
@@ -189,23 +201,26 @@
     "colorSemantics": false,
     "print": {
       "titleFontPt": 20,
-      "headerFontPt": 16,
-      "bodyFontPt": 16,
-      "schoolFontPt": 16,
-      "supplierFontPt": 14,
+      "headerFontPt": 18,
+      "bodyFontPt": 18,
+      "schoolFontPt": 18,
+      "supplierFontPt": 16,
       "titleRowPt": 32,
       "spacerRowPt": 5,
-      "headerRowPt": 33,
-      "normalRowPt": 32,
-      "schoolRowPt": 34,
-      "twoLineRowPt": 44,
-      "bodyHardCapPt": 44,
-      "columnWidths": [26, 39, 7, 11, 25],
-      "pageHeightScaleUpperBound": 0.95,
+      "headerRowPt": 48,
+      "normalRowPt": 27,
+      "bodyHardCapPt": 168,
+      "columnWidths": [20, 33, 7, 19, 14],
+      "pageHeightScaleUpperBound": 0.96,
       "a4HeightPt": 841.89,
-      "topMarginIn": 0.35,
-      "bottomMarginIn": 0.35,
-      "footerAllowancePt": 12
+      "topMarginIn": 0.25,
+      "bottomMarginIn": 0.25,
+      "footerAllowancePt": 12,
+      "wrappedRowPt": 72,
+      "multiLocationRowPt": 168,
+      "leftMarginIn": 0.2,
+      "rightMarginIn": 0.2,
+      "scalePercent": 95
     },
     "maxServiceDates": 7,
     "scope": "generated collection of 1–7 service dates, each bound to its authoritative daily Confirmed Need batch",
@@ -230,7 +245,8 @@
     "Quantity equality is exact; only real edits apply two-decimal and current Planning-step rules.",
     "A4 portrait black-and-white staff surface; repeated date/header rows, controlled School breaks, bounded print area and used range.",
     "Exact physical Table/meta/sheet set, no nonempty out-of-region cells, no formulas/executable parts.",
-    "No partial apply, no import-time business write, no released-state import."
+    "No partial apply, no import-time business write, no released-state import.",
+    "Print certification covers the documented 84-character row envelope and independent field stresses, not arbitrary unbounded text or database validation."
   ],
   "x-atlas-resource-limits": {
     "compressedBytes": 10485760,
@@ -241,5 +257,23 @@
     "dateSheets": 7,
     "maximumLargeEntryRatio": 200,
     "largeEntryThresholdBytes": 1048576
+  },
+  "x-atlas-print-certification": {
+    "combinedCharEnvelope": 84,
+    "guardBandPercent": 25,
+    "fieldMaxChars": {
+      "school": 32,
+      "location": 32,
+      "ingredient": 48,
+      "supplier": 25,
+      "quantity": 12
+    },
+    "minimumPrintScalePercent": 95,
+    "minimumEffectiveBodyPt": 17,
+    "qaOnly": true,
+    "runtimeBusinessConstraint": false,
+    "combinedMetric": "Expanded canonical School display, including the location prefix/name only for multiple locations; Ingredient, Unit, shortest exact quantity display and derived Supplier. Count Unicode code points including spaces within cells, excluding line breaks, blank-group suppression, continuation suffix and inter-column spacing.",
+    "independentMaxima": "Test row-level envelope plus isolated field stresses; do not combine independent catalog maxima unless observed domain evidence supports the combination.",
+    "overflow": "Outside this QA envelope needs connected-exporter overflow handling/certification or a clear export warning/block; never silently clip. No database name-length rule."
   }
 }

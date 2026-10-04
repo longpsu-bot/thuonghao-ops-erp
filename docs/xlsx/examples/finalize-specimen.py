@@ -57,8 +57,8 @@ def body_height_budget(print_layout):
 def page_breaks(rows, sheet_data, print_layout):
     """Pack complete groups when they fit; split large groups after full rows."""
     heights = {int(item.get("r")): float(item.get("ht", "0")) for item in sheet_data.findall("m:row", NS)}
-    # The A4 page is fitted to width; use a conservative upper bound on the
-    # resulting height scale instead of counting unscaled row points as print points.
+    # Explicit native 95% scale, with a conservative 96% height bound for
+    # printer rounding; only the three fixed authored body classes are packed.
     capacity = body_height_budget(print_layout) / print_layout["pageHeightScaleUpperBound"]
     remaining = capacity
     breaks = []
@@ -93,7 +93,7 @@ def page_breaks(rows, sheet_data, print_layout):
                     continuation.append(position)
                 remaining = capacity
                 if position > index:
-                    height = max(height, print_layout["schoolRowPt"])
+                    height = max(height, print_layout["wrappedRowPt"])
             remaining -= height
         index = end
     return breaks, continuation
@@ -189,6 +189,12 @@ def finalize(path):
             elif int(col.get("max")) > 5:
                 col.set("max", "5")
         ET.SubElement(cols, tag("col"), min="6", max="15", width="1", customWidth="1", hidden="1")
+        for address in ["C3"]:
+            cell = sheet.find(f'.//m:c[@r="{address}"]', NS)
+            style = copy.deepcopy(xfs[int(cell.get("s", "0"))])
+            style.find("m:alignment", NS).set("wrapText", "0")
+            cell.set("s", str(len(xfs)))
+            xfs.append(style)
         sheet_data = sheet.find("m:sheetData", NS)
         breaks, continuation = page_breaks(rows, sheet_data, layout)
         for position in continuation:
@@ -210,7 +216,7 @@ def finalize(path):
                 label += f'\nĐiểm giao: {row["delivery_location_name"]}'
             ET.SubElement(ET.SubElement(cell, tag("is")), tag("t")).text = label
             row_node = sheet_data.find(f'm:row[@r="{position + 4}"]', NS)
-            minimum = layout["twoLineRowPt"] if multi_location else layout["schoolRowPt"]
+            minimum = layout["multiLocationRowPt"] if multi_location else layout["wrappedRowPt"]
             row_node.set("ht", str(max(float(row_node.get("ht", "0")), minimum)))
         for name in ["sheetProtection", "autoFilter", "printOptions", "pageMargins", "pageSetup", "headerFooter", "rowBreaks"]:
             for node in sheet.findall(f"m:{name}", NS):
@@ -232,12 +238,12 @@ def finalize(path):
             sheet.insert(0, props)
         for setup in props.findall("m:pageSetUpPr", NS):
             props.remove(setup)
-        ET.SubElement(props, tag("pageSetUpPr"), fitToPage="1")
+        ET.SubElement(props, tag("pageSetUpPr"), fitToPage="0")
         insertion = list(sheet).index(sheet.find("m:tableParts", NS))
         native = [
             ET.Element(tag("printOptions"), horizontalCentered="1"),
-            ET.Element(tag("pageMargins"), left="0.28", right="0.28", top="0.35", bottom="0.35", header="0.12", footer="0.12"),
-            ET.Element(tag("pageSetup"), paperSize="9", orientation="portrait", fitToWidth="1", fitToHeight="0"),
+            ET.Element(tag("pageMargins"), left=str(layout["leftMarginIn"]), right=str(layout["rightMarginIn"]), top=str(layout["topMarginIn"]), bottom=str(layout["bottomMarginIn"]), header="0.12", footer="0.12"),
+            ET.Element(tag("pageSetup"), paperSize="9", orientation="portrait", scale=str(layout["scalePercent"])),
         ]
         footer = ET.Element(tag("headerFooter"))
         ET.SubElement(footer, tag("oddFooter")).text = "&RTrang &P / &N"
@@ -252,6 +258,14 @@ def finalize(path):
         files[sheet_path] = xml(sheet)
         table_path = f"xl/tables/table{index + 1}.xml"
         table = ET.fromstring(files[table_path])
+        # Preserve a whole-Table filter definition while hiding buttons so compact
+        # print headings retain their full cell width. Filtering is BEST_EFFORT.
+        auto_filter = table.find("m:autoFilter", NS)
+        if auto_filter is None:
+            auto_filter = ET.Element(tag("autoFilter"), ref=table.get("ref"))
+            table.insert(0, auto_filter)
+        for column in range(15):
+            ET.SubElement(auto_filter, tag("filterColumn"), colId=str(column), hiddenButton="1", showButton="0")
         style_info = table.find("m:tableStyleInfo", NS)
         if style_info is not None:
             style_info.set("showRowStripes", "0")
@@ -259,6 +273,8 @@ def finalize(path):
         files[table_path] = xml(table)
         for name, content in [("_xlnm.Print_Area", f"'{date}'!$A$1:$E${end}"), ("_xlnm.Print_Titles", f"'{date}'!$1:$3")]:
             ET.SubElement(defined, tag("definedName"), name=name, localSheetId=str(index)).text = content
+    xfs.set("count", str(len(xfs)))
+    files["xl/styles.xml"] = xml(styles)
     files["xl/workbook.xml"] = xml(wb)
     meta_path = f"xl/worksheets/sheet{len(dates) + 1}.xml"
     meta_sheet = ET.fromstring(files[meta_path])

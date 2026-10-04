@@ -4,7 +4,7 @@ Original source audit 2026-10-02; Product redesign audit 2026-10-04.
 Repository baseline: `d81b60ca63349794d28b0dcc5d34f5fd3e1ebfa1`, PR #345.
 This records observations and proposed intentional differences. It does not amend an approved business contract or certify the current live Retool deployment.
 
-**Current print status: PRINT_GEOMETRY_BLOCKED.** The earlier selected refinement below is retained history. The native review from `54602579` supersedes its readiness claim: no tested replacement satisfies the new physical-size and complete-text gates together. Business/import decisions remain accepted.
+**Current print status: READY_FOR_PRODUCT_REVIEW.** The calibrated-envelope review from `8567299` below supersedes the earlier blocked result. Historical native measurements remain evidence for the old severe fixture; they do not constrain the newly authorized QA envelope. Business/import decisions are unchanged; Product approval has not been granted.
 
 ## Sources inspected
 
@@ -37,7 +37,7 @@ The retained later `js_ppwb_export_xlsx` prefers table/master-state rows, uses s
 
 ## Current Atlas observations
 
-The current workbook has five visible contiguous columns A:E, `SL` in D, ISO-date sheets, date title row 1, blank row 2, header row 3, and no School bands or data-region merges. School appears only on the first row of each group. Font is Times New Roman 18 body/header and 20 title; widths are `17.57 / 42 / 8 / 11 / 12`; prominent black cell borders; landscape page fitting and frozen first three rows. The simple filter currently covers A3:E3. No structured Table, `_ATLAS_META`, explicit print area or repeat-title definition is written by this module.
+The unchanged production workbook has five visible contiguous columns A:E, `SL` in D, ISO-date sheets, date title row 1, blank row 2, header row 3, and no School bands or data-region merges. School appears only on the first row of each group. Font is Times New Roman 18 body/header and 20 title; widths are `17.57 / 42 / 8 / 11 / 12`; prominent black cell borders; landscape page fitting and frozen first three rows. The simple filter currently covers A3:E3. No structured Table, `_ATLAS_META`, explicit print area or repeat-title definition is written by this module.
 
 Seventeen hidden F:V columns repeat batch/version, run/release snapshot, stable line, revision UUID/number, decision UUID/number, date, School, Location, Ingredient, Unit, exported draft quantity/reason and constant marker. D/E alone are unlocked; sheet protection allows selecting and filtering. File name uses English `Shopping-List-<start>-<end>.xlsx`.
 
@@ -68,7 +68,7 @@ Current connected import callback returns drafts, `applyShoppingListImport` sets
 
 Retool supplies useful workflow evidence for local import followed by explicit Save. Its date/numeric School/Ingredient lookup, skipped unmatched rows, epsilon comparison and potential duplicate overwrite are inadequate for Atlas's stable line, Delivery Location, controlled Unit and per-date currentness requirements. The supplied right-hand form remains visual evidence only. No live Retool or hosted business data was written.
 
-## Native A4 print-scale calibration
+## Historical native A4 print-scale calibration
 
 The prior `bb038612` specimen and the supplied workbook's isolated right-hand staff table were exported read-only through native Excel 16 to A4 portrait PDF. The prior specimen printed four pages, with 12.48 pt effective body and 10.68 pt effective Supplier text on page 1 after Excel's fit-to-width scaling. The supplied table printed two pages for 39 rows with 18 pt effective body text; its blank Note column and shorter names leave more room than Atlas's derived Supplier suggestions and long-name fixture. The intended V1 change was a larger staff form while retaining exact identity, black rules, repeating titles, A4 portrait and deterministic row classes.
 
@@ -83,6 +83,8 @@ The prior `bb038612` specimen and the supplied workbook's isolated right-hand st
 Refinements after B tested School, Ingredient and Note widths against every printed page; a narrow Note clipped the long Supplier, while a wider Note reduced effective body scale. A further 17 pt body variant again clipped the long Ingredient and printed `######` quantities. B8 established the smallest tested width combination retaining 14 pt nominal Supplier text and complete long Supplier, School and Ingredient strings. After review found two-line Supplier advice crowded against the row rule, B16 raised the three body classes by 3/3/2 pt. A naive unscaled page budget produced a nearly empty fifth page; the final specimen instead models row heights with a conservative `0.95` fitted-height upper bound, against about `0.83` measured from native Excel's effective body font. The native PDF remains four A4 pages with first-date rows `22/22`; the 0.95 model leaves 2.69/27.39 pt on those pages, while native Excel's stronger width downscaling leaves additional physical space. All 52 populated workbook `GHI CHÚ` cells are present in the PDF text, including nine complete `Công ty Hoàng Dung Dairy` and ten complete `Nông sản Bình Minh - giao bếp trường mỗi sáng` suggestions. Page-1 effective body/Supplier sizes remain 13.32/11.64 pt, compared with 12.48/10.68 pt in the prior specimen. Dates 2 and 3 remain one page each; the short third date is deliberate multi-location test evidence. PDF inspection found no `######`, cut-off fixture text, orphan School heading or changed business content. The regenerated binary exactly matches selected candidate B16's SHA-256 and passes the 41 negative controls.
 
 ## Native scale review at 54602579
+
+**Historical blocked review, superseded by the calibrated-envelope review below.**
 
 Starting PR head: `54602579eeff9b93b7eb176d6eddb9203c8fe113`. The previous note-clearance fix is retained, but its physical print size is not approved. The native acceptance floor is **PRINT_SCALE_PERCENT ≥95% and EFFECTIVE_BODY_FONT ≥17 pt**, together with complete fixture text, no hashed quantities, a single horizontal A4 page, bounded rows and safe identity evidence. Larger nominal fonts alone do not pass.
 
@@ -130,8 +132,38 @@ The current Atlas specimen prints four pages, body rows 22/22/12/3, at 13.32 pt 
 
 QA artifacts are temporary local evidence, not additional Git specimens: `G1.pdf`, `G2.pdf`, `G3.pdf`, their `*-95.pdf` comparisons, `G1-indent-95.pdf`, `PREVIOUS.pdf`, `REFERENCE.pdf`, `V1-BOUNDED.pdf`, page PNGs and measurement JSON in the task's temporary native-scale directory. No raw reference business data or failed candidate workbook is checked in. The schema, fixture, generator, finalizer, validator and committed XLSX are retained unchanged; XLSX SHA-256 remains `e547d25ddd5cfeeab15b2ba4623d581adc864fd44144900ed9a17c3d83b703aa`.
 
+## Calibrated-envelope review from 8567299
+
+Starting head `8567299f7c0227eafbea4b7b3ded40a014e631ce`. Product supplied a read-only design snapshot (248 rows, P95 58, P99 65.53, maximum 67 combined characters; individual maxima School/Location 28/28, Ingredient 38, Supplier 17, quantity 11). This task made no hosted read. The 25% guard gives **84** combined characters, with independent QA stresses School/Location 32/32, Ingredient 48, Supplier 25 and quantity 12. It is not a database/runtime validation limit or a guarantee about arbitrary glyph strings.
+
+The prior fixture was described by Product as approximately 142 combined characters. Recomputed with this pass's documented visible-display metric its maximum is **121**; summing raw fields including a hidden single-location label gives **130**. These are different counting definitions, not a revised Staging observation. The current maximum is 84, including the multi-location prefix, while the separate realistic composite is 79. Line breaks and generated continuation suffixes are excluded; spaces inside canonical cell labels are counted.
+
+All 59 source rows, three dates/batches and stable line/revision/decision IDs remain. Synthetic masters isolate the cases: four Schools, 29 Ingredient identities and 11 Supplier records. Date-three uses its own synthetic School to avoid repeating the longest School into Ingredient/Supplier stress rows. Case lengths are School 32, Location 32, Ingredient 48, Supplier 25, quantity 12. Five exact `1.234567` values, zero and decimal cases, active/inactive/future/expired eligibility and blank suggestions remain. No real business name is checked in. The named nonprinted `OUT_OF_CERTIFIED_PRINT_ENVELOPE` control retains a 68-character Ingredient and 46-character synthetic Supplier (approximately 45); its combined count is 158 and the detector rejects it. It does not set normal geometry.
+
+### Exact G1/G2/G3 rerun on the calibrated fixture
+
+Times New Roman title/header/body/School/Supplier `20/18/18/18/16` pt. G1/G3 retained 28/30/44 pt fixed classes; G2 27/29/42. Every workbook was opened read-only in native Excel 16, printed at 100% and 95%, and closed without saving.
+
+| Candidate | A:E widths   | Native 100%                           | Native 95%             | Result                                                            |
+| --------- | ------------ | ------------------------------------- | ---------------------- | ----------------------------------------------------------------- |
+| G1        | 19/41/7/9/17 | 8 pages, horizontal split, body 18 pt | 4 pages, body 17.16 pt | Reject: 7 hashed quantities and clipped School/Location/Supplier. |
+| G2        | 18/42/7/9/16 | 4 pages, body 18 pt                   | 4 pages, body 17.16 pt | Reject: same 7 hashes and incomplete wrapped labels.              |
+| G3        | 20/40/7/9/17 | 8 pages, horizontal split, body 18 pt | 4 pages, body 17.16 pt | Reject: same 7 hashes and incomplete wrapped labels.              |
+
+Calibration alone does not make D width 9 sufficient: the five six-decimal quantities and the two 11/12-character quantities print hashes. The original 44 pt wrapped cap also cannot display complete School + Location. The latest task freezes at most three bounded classes, rather than that historical cap. Wider-D refinements were therefore tested. Initial 28/96/192 classes printed complete text but produced five pages with a sparse first-date third page; refining fixed heights to 27/72/168 restores four pages.
+
+### Selected G3-Q and final specimen review
+
+A:E widths **20/33/7/19/14**, total 93. D 19 gives space for every certified quantity; A 20 retains the School/location stress, B 33 retains the 48-character Ingredient, E 14 retains the 25-character Supplier with a fixed wrapped class. Title/header/body/School/Supplier remain `20/18/18/18/16` pt, header row 48 pt, title/gap 32/5 pt. Body classes **NORMAL 27 / WRAPPED 72 / MULTI_LOCATION 168 pt**, hard cap 168; 52 normal, five wrapped, two multi-location rows. This is an explicit proposal above the previous 44 pt cap, awaiting Product approval. There is no automatic row height, fourth class or per-string unbounded expansion.
+
+Explicit 95% (automatic fit disabled), A4 portrait, margins 0.20/0.20/0.25/0.25 inch, repeat rows 1:3. Model body budget 708.89 pt with conservative height factor 0.96. The whole-Table filter remains in XML with hidden buttons; filtering stays BEST_EFFORT. Black rules, fixed print area, hidden F:O, very-hidden metadata, protection and exact numeric XML remain.
+
+The regenerated final XLSX reopened without repair in Excel 16, read-only; its native PDF passes [validate-native-print.py](examples/validate-native-print.py): four A4 pages, **22/22/12/3** body rows, every A:E cell complete, all **59 quantities** including `1,234567` and `1234567890,1`, no hashes, no printed hidden IDs, no horizontal split, repeated date/headings on every page. Native glyph sizes are **17.16 pt normal body**, **15.24 pt Supplier**, observed scale **95.33%** at configured 95%. All four pages were rendered at 100 dpi and visually reviewed for text clearance, black group rules, the continuation heading and School/location comprehension. Seven-line School/location and three-line Supplier cases fit their bounded cells; no clipped text or accidental blank overflow page remains. Dates two/three are deliberately short stress sheets.
+
+Final XLSX SHA-256: `c76fa81af48f0f7b5bbbef50e3f338857eb75055ff74ec0f662a1ea23b4f34f3`. Temporary G candidates/PDFs/page PNGs remain local QA artifacts, not extra Git specimens. Native artifacts are in `C:/Users/hp/AppData/Local/Temp/atlas-envelope-347-8567299`, with final evidence `FINAL.pdf`. The native checker uses bundled pdfplumber; no dependency was added to the application.
+
 ## Review and implementation boundary
 
-The selected print calibration changes only central schema sizing, the deterministic specimen, print validator cap and the documented measurements. The validator still checks multi-date identity/currentness and all print layout invariants; real extreme-name fitting remains a connected-exporter acceptance test. Native protected filtering differs between Excel UI flags and COM criteria changes, so it is best effort, not a Product-blocking capability.
+All 41 prior negative controls remain, including multi-date atomicity/currentness, restart, stable row sorting, note-ignored import, source identities and precision. Seven additional QA controls reject missing/undersized stress cases, oversized Supplier, a weak composite, an artificial all-maxima row, an inside-envelope extreme control and a one-character boundary overflow. Authored geometry and physical size are separately validated; static success alone never certifies native printing.
 
-Current RMVP-05 governed quantity reason/Save rules remain authoritative. A future shaped authorized read may be needed for 1–7 daily batches and first preferred Supplier projection. This contract task changes no API, source exporter/importer, database object, Supabase data, Retool state or OPS v1 state. Business architecture is settled. The native print review now leaves one genuine Product constraint to resolve: complete fixture text within the requested portrait/scale/font/two-line geometry. Draft PR #347 is not ready for Product print approval and remains unmerged.
+Business architecture is settled. Protected filtering, actual glyph overflow handling, real-data page breaks and cross-version certification are future implementation acceptance concerns. Outside-envelope content and actual overflow even inside it must trigger approved handling or a clear warning/block, never clipping or a new database limit. Any shaped daily-batch/Supplier read requires a separate authorized implementation. No API, production module, database object, Supabase data, Retool or OPS v1 state changes. SUPABASE_WRITES = RETOOL_WRITES = OPS_V1_WRITES = HOSTED_BUSINESS_WRITES = 0. Draft PR #347 remains unmerged. No remaining Product question blocks review of the complete proposed contract; Product approval itself remains pending.

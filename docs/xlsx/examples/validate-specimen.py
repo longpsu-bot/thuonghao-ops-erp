@@ -62,11 +62,12 @@ def verify_presentation(fixture):
         seen.add(key)
 
 
-def preferred_supplier(row):
-    suppliers = {item["supplier_id"]: item for item in FIXTURE["suppliers"]}
+def preferred_supplier(row, fixture=None):
+    fixture = FIXTURE if fixture is None else fixture
+    suppliers = {item["supplier_id"]: item for item in fixture["suppliers"]}
     candidates = sorted(
         (
-            item for item in FIXTURE["supplier_eligibilities"]
+            item for item in fixture["supplier_eligibilities"]
             if item["ingredient_id"] == row["ingredient_id"]
             and item["eligibility_status"] == "ACTIVE"
             and item["effective_from"] <= row["service_date"]
@@ -78,6 +79,74 @@ def preferred_supplier(row):
     if not candidates or (len(candidates) > 1 and candidates[0]["priority"] == candidates[1]["priority"]):
         return ""
     return suppliers[candidates[0]["supplier_id"]]["supplier_name"]
+
+
+def print_content(row, fixture):
+    """QA display metric, never an identity key or runtime business constraint."""
+    locations = {item["delivery_location_id"] for item in fixture["rows"]
+                 if (item["service_date"], item["school_id"]) == (row["service_date"], row["school_id"])}
+    display = row["school_name"]
+    if len(locations) > 1:
+        display += f"\nĐiểm giao: {row['delivery_location_name']}"
+    quantity = row["exact_quantity"]
+    if "." in quantity:
+        quantity = quantity.rstrip("0").rstrip(".")
+    return {"school": row["school_name"], "location": row["delivery_location_name"],
+            "school_display": display, "ingredient": row["ingredient_name"],
+            "supplier": preferred_supplier(row, fixture), "quantity": quantity, "unit": row["unit_code"]}
+
+
+def combined_print_chars(content):
+    return sum(len(content[key].replace("\n", "")) for key in
+               ["school_display", "ingredient", "supplier", "quantity", "unit"])
+
+
+def within_print_envelope(content):
+    envelope = SCHEMA["x-atlas-print-certification"]
+    return (all(len(content[key]) <= limit for key, limit in envelope["fieldMaxChars"].items())
+            and combined_print_chars(content) <= envelope["combinedCharEnvelope"])
+
+
+def verify_print_certification(fixture):
+    cert = fixture["print_certification"]
+    envelope = SCHEMA["x-atlas-print-certification"]
+    require(envelope["qaOnly"] and not envelope["runtimeBusinessConstraint"], "Print envelope is QA only")
+    require(cert["combined_char_envelope"] == envelope["combinedCharEnvelope"] == 84, "84-character QA envelope")
+    require(cert["field_envelopes"] == envelope["fieldMaxChars"], "Matching independent field envelopes")
+    snapshot = cert["observed_snapshot"]
+    require((snapshot["row_count"], snapshot["p95_combined"], snapshot["p99_combined"], snapshot["max_combined"]) ==
+            (248, 58, 65.53, 67), "Supplied calibration snapshot, not a hosted read or runtime rule")
+    require(cert["guard_band_percent"] == envelope["guardBandPercent"] == 25, "25-percent design guard band")
+    require(cert["combined_char_envelope"] == (snapshot["max_combined"] * 125 + 99) // 100, "Ceiling of guarded maximum")
+    by_id = {row["confirmed_need_line_id"]: row for row in fixture["rows"]}
+    cases = cert["stress_lines"]
+    require(set(cases) == {"school", "location", "ingredient", "supplier", "quantity", "composite"}, "All six stress cases")
+    contents = {key: print_content(by_id[value], fixture) for key, value in cases.items()}
+    for key in ["school", "location", "ingredient", "supplier", "quantity"]:
+        require(envelope["fieldMaxChars"][key] - 1 <= len(contents[key][key]) <= envelope["fieldMaxChars"][key],
+                f"Independent {key} boundary stress")
+    require(75 <= combined_print_chars(contents["composite"]) <= 84, "True 75–84-character composite stress")
+    require(len(contents["school"]["ingredient"]) <= 16 and len(contents["school"]["supplier"]) <= 12, "School stress uses ordinary other labels")
+    require(len(contents["location"]["ingredient"]) <= 16 and len(contents["location"]["supplier"]) <= 12, "Location stress uses ordinary other labels")
+    for key in ["ingredient", "supplier", "quantity"]:
+        require(len(contents[key]["school"]) <= 16, f"{key} stress has an ordinary School")
+    require(len(contents["ingredient"]["supplier"]) <= 12 and len(contents["ingredient"]["quantity"]) <= 4, "Ingredient stress is isolated")
+    require(len(contents["supplier"]["ingredient"]) <= 16 and len(contents["supplier"]["quantity"]) <= 4, "Supplier stress is isolated")
+    require(len(contents["quantity"]["ingredient"]) <= 16 and len(contents["quantity"]["supplier"]) <= 12, "Quantity stress is isolated")
+    all_contents = [print_content(row, fixture) for row in fixture["rows"]]
+    require(all(within_print_envelope(content) for content in all_contents), "Every normal fixture row is inside the certified QA envelope")
+    require(not any(all(len(content[key]) >= limit - 1 for key, limit in envelope["fieldMaxChars"].items())
+                    for content in all_contents), "No artificial all-maxima composite")
+    control = cert["out_of_envelope_control"]
+    require(control["name"] == "OUT_OF_CERTIFIED_PRINT_ENVELOPE", "Named isolated overflow control")
+    outside = {"school": control["school_display"], "location": "", "school_display": control["school_display"],
+               "ingredient": control["ingredient_name"], "supplier": control["supplier_name"],
+               "unit": control["unit_code"], "quantity": control["quantity"]}
+    require(len(outside["ingredient"]) == 68 and len(outside["supplier"]) == 46, "Retained isolated extreme concepts")
+    require(not within_print_envelope(outside), "Detector recognizes out-of-certified content without changing normal geometry")
+    return {"max_combined_chars": max(map(combined_print_chars, all_contents)),
+            "stress_combined_chars": {key: combined_print_chars(content) for key, content in contents.items()},
+            "out_of_envelope_combined_chars": combined_print_chars(outside)}
 
 
 def verify(files):
@@ -125,7 +194,7 @@ def verify(files):
     hidden = SCHEMA["x-atlas-layout"]["hiddenHeaders"]
     print_layout = SCHEMA["x-atlas-layout"]["print"]
     print_cases = FIXTURE["print_cases"]
-    height_counts = {"normal": 0, "school_start": 0, "two_line": 0}
+    height_counts = {"normal": 0, "wrapped": 0, "multi_location": 0}
     all_body_heights = []
     printed_pages = []
     projected = []
@@ -212,11 +281,15 @@ def verify(files):
                 expected_school = f'{row["school_name"]} (tiếp)' + (f"\nĐiểm giao: {row['delivery_location_name']}" if len(locations[row["school_id"]]) > 1 else "")
             require(values[:3] == [expected_school, row["ingredient_name"], row["unit_code"]], "Canonical visible labels")
             starts_school = first_in_school or row_index in continuation_rows
-            two_line = row["ingredient_id"] in print_cases["two_line_ingredient_ids"] or (
-                starts_school and (row["school_id"] in print_cases["two_line_school_ids"] or len(locations[row["school_id"]]) > 1)
-            )
-            height_class = "two_line" if two_line else ("school_start" if starts_school else "normal")
-            expected_height = print_layout[{"normal": "normalRowPt", "school_start": "schoolRowPt", "two_line": "twoLineRowPt"}[height_class]]
+            if starts_school and len(locations[row["school_id"]]) > 1:
+                height_class = "multi_location"
+            elif (row_index in continuation_rows or row["ingredient_id"] in print_cases["wrapped_ingredient_ids"]
+                  or any(item["supplier_id"] in print_cases["wrapped_supplier_ids"] and item["supplier_name"] == supplier for item in FIXTURE["suppliers"])
+                  or (starts_school and row["school_id"] in print_cases["wrapped_school_ids"])):
+                height_class = "wrapped"
+            else:
+                height_class = "normal"
+            expected_height = print_layout[{"normal": "normalRowPt", "wrapped": "wrappedRowPt", "multi_location": "multiLocationRowPt"}[height_class]]
             require(row_heights[row_index] == expected_height, f"Bounded {height_class} row height at {date} {row_index}")
             height_counts[height_class] += 1
             if expected_school:
@@ -274,7 +347,17 @@ def verify(files):
         require(protection.get("sheet") == "1" and protection.get("autoFilter") == "0" and protection.get("sort") == "1", "Protected filter; sort denied")
         require(protection.get("selectLockedCells") == "0" and protection.get("selectUnlockedCells") == "0", "Both cell selections allowed")
         setup = sheet.find("m:pageSetup", NS)
-        require(setup.get("paperSize") == "9" and setup.get("orientation") == "portrait" and setup.get("fitToWidth") == "1" and setup.get("fitToHeight") == "0", "Portrait A4 page fit")
+        require(setup.get("paperSize") == "9" and setup.get("orientation") == "portrait"
+                and setup.get("scale") == str(print_layout["scalePercent"])
+                and setup.get("fitToWidth") is None and setup.get("fitToHeight") is None, "Portrait A4 explicit scale")
+        require(sheet.find("m:sheetPr/m:pageSetUpPr", NS).get("fitToPage") == "0", "No automatic fit-to-width")
+        gate = SCHEMA["x-atlas-print-certification"]
+        require(print_layout["scalePercent"] >= gate["minimumPrintScalePercent"]
+                and print_layout["bodyFontPt"] * print_layout["scalePercent"] / 100 >= gate["minimumEffectiveBodyPt"],
+                "Authored scale floor; native PDF must independently confirm it")
+        margins = sheet.find("m:pageMargins", NS)
+        for side in ["left", "right", "top", "bottom"]:
+            require(float(margins.get(side)) == print_layout[f"{side}MarginIn"], "Centralized A4 margins")
         if index == 1:
             require(continuation_rows, "Large-group continuation")
         else:
@@ -314,11 +397,11 @@ def verify(files):
         daily_batches.append(batch)
     require([batch["service_date"] for batch in daily_batches] == dates, "One batch per date sheet")
     require(len(set(all_body_heights)) <= 3, "At most three body heights")
-    require((height_counts["normal"] + height_counts["school_start"]) / len(all_body_heights) >= 0.8, "At least 80% single-line-height rows")
+    require(height_counts["normal"] / len(all_body_heights) >= 0.8, "At least 80% normal-height rows")
     return {"metadata": normalized_meta, "daily_batches": daily_batches, "rows": projected, "print_metrics": {
         "normal_row_count": height_counts["normal"],
-        "school_start_row_count": height_counts["school_start"],
-        "two_line_row_count": height_counts["two_line"],
+        "wrapped_row_count": height_counts["wrapped"],
+        "multi_location_row_count": height_counts["multi_location"],
         "distinct_body_heights": len(set(all_body_heights)),
         "min_body_height": min(all_body_heights),
         "max_body_height": max(all_body_heights),
@@ -527,16 +610,19 @@ def main(path):
     else:
         raise AssertionError("Ambiguous canonical label control passed")
     ambiguous_location = copy.deepcopy(FIXTURE)
+    location_rows = [row for row in ambiguous_location["rows"] if row["service_date"] == "2026-04-22"]
+    first_location = location_rows[0]["delivery_location_id"]
+    first_label = location_rows[0]["delivery_location_name"]
     for row in ambiguous_location["rows"]:
-        if row["service_date"] == "2026-04-22" and row["delivery_location_name"] == "Bếp phụ":
-            row["delivery_location_name"] = "Bếp chính"
+        if row["service_date"] == "2026-04-22" and row["delivery_location_id"] != first_location:
+            row["delivery_location_name"] = first_label
     try:
         verify_presentation(ambiguous_location)
     except AssertionError:
         rejected += 1
     else:
         raise AssertionError("Ambiguous Location label control passed")
-    require(len(FIXTURE["rows"]) == 59 and len({row["school_id"] for row in FIXTURE["rows"]}) == 3, "Required fixture coverage")
+    require(len(FIXTURE["rows"]) == 59 and len({row["school_id"] for row in FIXTURE["rows"]}) == 4, "Required fixture coverage, with isolated School/Location stress")
     require(len(normalized["daily_batches"]) == 3 and len({batch["confirmed_need_batch_id"] for batch in normalized["daily_batches"]}) == 3, "Three independent daily batches")
     require(len({row["ingredient_id"] for row in FIXTURE["rows"]}) >= 8, "Ingredient coverage")
     first_date = [row for row in normalized["rows"] if row["__service_date"] == "2026-04-20"]
@@ -552,11 +638,11 @@ def main(path):
         ),
         "Complete-row reorder retains independent identity",
     )
-    require(preferred_supplier(FIXTURE["rows"][0]) == "Công ty Hoàng Dung Dairy", "One supplier")
-    require(preferred_supplier(FIXTURE["rows"][1]) == "An Phú", "First of three eligible suppliers")
-    require(preferred_supplier(FIXTURE["rows"][2]) == "Nông sản Bình Minh - giao bếp trường mỗi sáng", "Inactive first supplier skipped")
-    require(preferred_supplier(FIXTURE["rows"][4]) == "Tân Thành", "Future first supplier skipped")
-    require(preferred_supplier(FIXTURE["rows"][5]) == "Chợ A", "Expired first supplier skipped")
+    require(preferred_supplier(FIXTURE["rows"][0]) == "Kho mẫu A", "One supplier")
+    require(preferred_supplier(FIXTURE["rows"][1]) == "Kho mẫu D", "First of three eligible suppliers")
+    require(preferred_supplier(FIXTURE["rows"][2]) == "Kho mẫu B", "Inactive first supplier skipped")
+    require(preferred_supplier(FIXTURE["rows"][4]) == "Kho mẫu C", "Future first supplier skipped")
+    require(preferred_supplier(FIXTURE["rows"][5]) == "Kho mẫu E", "Expired first supplier skipped")
     require(any(preferred_supplier(row) == "" for row in FIXTURE["rows"]), "No supplier gives clean blank")
     notes = {row["note"] for row in normalized["rows"]}
     require("Nhà cung cấp thay thế A" not in notes and "Nhà cung cấp thay thế B" not in notes, "Alternative suppliers not visible")
@@ -608,7 +694,38 @@ def main(path):
         else:
             raise AssertionError(f"Multi-date currentness negative control passed: {scenario}")
     require(export_allowed(False) and not export_allowed(True), "Only clean saved state permits export")
+    calibration = verify_print_certification(FIXTURE)
+    calibration_rejected = 0
+    for scenario in ["missing_school_case", "short_ingredient_case", "oversize_supplier", "short_composite",
+                     "artificial_all_maxima", "control_inside_envelope", "one_over_boundary"]:
+        candidate = copy.deepcopy(FIXTURE)
+        by_id = {row["confirmed_need_line_id"]: row for row in candidate["rows"]}
+        cases = candidate["print_certification"]["stress_lines"]
+        if scenario == "missing_school_case":
+            cases.pop("school")
+        elif scenario == "short_ingredient_case":
+            by_id[cases["ingredient"]]["ingredient_name"] = "Rau"
+        elif scenario == "oversize_supplier":
+            next(item for item in candidate["suppliers"] if item["supplier_id"] in candidate["print_cases"]["wrapped_supplier_ids"])["supplier_name"] += "A"
+        elif scenario == "short_composite":
+            by_id[cases["composite"]]["exact_quantity"] = "1"
+        elif scenario == "artificial_all_maxima":
+            row = by_id[cases["composite"]]
+            row["school_name"] = by_id[cases["school"]]["school_name"]
+            row["ingredient_name"] = by_id[cases["ingredient"]]["ingredient_name"]
+            row["exact_quantity"] = by_id[cases["quantity"]]["exact_quantity"]
+        elif scenario == "control_inside_envelope":
+            candidate["print_certification"]["out_of_envelope_control"].update(school_display="Mẫu", ingredient_name="Rau", supplier_name="Kho")
+        elif scenario == "one_over_boundary":
+            by_id[cases["location"]]["exact_quantity"] = "11"
+        try:
+            verify_print_certification(candidate)
+        except (AssertionError, KeyError):
+            calibration_rejected += 1
+        else:
+            raise AssertionError(f"Print calibration negative control passed: {scenario}")
     print(f"PASS: static XLSX/fixture/schema conformance; {rejected}/{len(controls) + len(structural_controls) + 2 + 9 + 1} negative controls rejected; three-date currentness/restart/quantity/note model checked.")
+    print(f"PRINT_CERTIFICATION: {calibration_rejected}/7 additional QA controls rejected; " + json.dumps(calibration, sort_keys=True))
     print("ROW_RHYTHM: " + json.dumps(normalized["print_metrics"], sort_keys=True))
     print(f"SHA256: {hashlib.sha256(path.read_bytes()).hexdigest()}")
     print("Not tested here: connected V1 import, persistence, or native staff Excel behavior.")
