@@ -244,14 +244,18 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       expect.objectContaining({ unsaved: true }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
+    const discard = await screen.findByRole("dialog");
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(discard).getByRole("button", {
         name: "Tiếp tục chỉnh sửa",
       }),
     );
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(discard).toHaveAttribute("data-state", "closed");
+      // jsdom does not run the CSS exit animation; deliver its native completion.
+      fireEvent(discard, new Event("animationcancel", { bubbles: true }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
     expect(screen.getByLabelText("Tên món")).toHaveValue("Canh đổi tên");
     expect(status).toHaveBeenLastCalledWith(
       expect.objectContaining({ unsaved: true, blocked: false }),
