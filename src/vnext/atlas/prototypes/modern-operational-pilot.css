@@ -1,0 +1,541 @@
+/* Review-only composition overrides. Never imported by production. Palette and
+   controls retain Atlas semantic authority; geometry is the candidate decision. */
+.atlas-vnext .atlas-modern-prototype {
+  min-height: 100dvh;
+  padding-bottom: 0;
+  --atlas-layout-workbench-height: auto;
+  --atlas-confirmed-need-station-height: auto;
+  --atlas-procurement-station-height: auto;
+  --atlas-layout-table-height: calc(100dvh - 440px);
+  --atlas-procurement-editor-max-height: max(280px, calc(100dvh - 445px));
+  --atlas-layout-catalog-height: calc(100dvh - 280px);
+  --atlas-layout-navigator-height: calc(100dvh - 360px);
+  --atlas-layout-confirmed-need-table-width: 100%;
+  --atlas-layout-row-transition: none;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-review-bar {
+  min-height: 42px;
+  padding: 4px 20px;
+  background: var(--atlas-colors-bg-subtle);
+  border-bottom: 1px solid var(--atlas-colors-border-subtle);
+}
+.atlas-vnext .atlas-modern-prototype .pilot-shell {
+  display: grid;
+  grid-template-columns: 204px minmax(0, 1fr);
+  min-height: calc(100dvh - 104px);
+}
+.atlas-vnext .atlas-modern-prototype .pilot-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--atlas-colors-bg-workbench);
+  border-right: 1px solid var(--atlas-colors-border-default);
+  padding: 20px 12px;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 28px;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-brand strong {
+  font-size: 24px;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-brand small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--atlas-colors-fg-muted);
+}
+.atlas-vnext .atlas-modern-prototype .pilot-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--atlas-colors-action-primary-default);
+  color: var(--atlas-colors-fg-inverse);
+  font-size: 22px;
+  font-weight: 650;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-sidebar nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  min-height: 44px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+  color: var(--atlas-colors-fg-muted);
+}
+.atlas-vnext .atlas-modern-prototype .pilot-sidebar nav button:hover {
+  background: var(--atlas-colors-bg-subtle);
+}
+.atlas-vnext .atlas-modern-prototype .pilot-sidebar nav button[aria-current] {
+  background: var(--atlas-colors-bg-selected);
+  color: var(--atlas-colors-fg-primary);
+  font-weight: 650;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-sidebar-footer {
+  margin-top: auto;
+  padding: 24px 10px 0;
+  font-size: 12px;
+  color: var(--atlas-colors-fg-muted);
+}
+.atlas-vnext .atlas-modern-prototype .pilot-sidebar-footer small {
+  display: block;
+  margin-top: 4px;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-stage {
+  min-width: 0;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--atlas-colors-border-subtle);
+  background: var(--atlas-colors-bg-workbench);
+}
+.atlas-vnext .atlas-modern-prototype .pilot-app-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-environment {
+  color: var(--atlas-colors-fg-muted);
+  font-size: 12px;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-menu-trigger {
+  display: none;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-workspace {
+  padding: 16px;
+  min-width: 0;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-workspace > section {
+  border-radius: 4px;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-workspace header[role="region"] {
+  min-height: 62px;
+  padding: 10px 16px;
+  background: var(--atlas-colors-bg-workbench);
+}
+.atlas-vnext
+  .atlas-modern-prototype
+  .pilot-workspace
+  header[role="region"]
+  > div
+  > div
+  > p {
+  display: none;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-workspace h1 {
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.atlas-vnext .atlas-modern-prototype table {
+  font-variant-numeric: tabular-nums;
+}
+.atlas-vnext .atlas-modern-prototype .pilot-switcher {
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--atlas-colors-bg-workbench);
+}
+.atlas-vnext .atlas-modern-prototype [data-atlas-persistent-actions] {
+  bottom: 0;
+}
+
+/* A: flat, continuous work plane and a conventional light labeled sidebar. */
+.atlas-vnext .atlas-modern-prototype[data-variant="A"] .pilot-workspace {
+  padding: 0;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="A"]
+  .pilot-workspace
+  > section {
+  border: 0;
+  border-radius: 0;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="A"]
+  [data-testid="procurement-master-detail"] {
+  gap: 0;
+  padding: 0;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="A"]
+  [data-testid="procurement-master-detail"]
+  > aside {
+  border-radius: 0;
+  border-width: 0 0 0 1px;
+}
+
+/* B: inset modern work plane, darker navigation, composed header and panels. */
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-shell {
+  grid-template-columns: 228px minmax(0, 1fr);
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-sidebar {
+  background: var(--atlas-colors-bg-navigation);
+  color: var(--atlas-colors-fg-inverse);
+  padding: 28px 16px;
+  border: 0;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-brand {
+  padding-bottom: 36px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-brand strong {
+  font-size: 28px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-brand small,
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-sidebar-footer,
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  .pilot-sidebar
+  nav
+  button {
+  color: var(--atlas-colors-fg-nav-muted);
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-mark {
+  background: var(--atlas-colors-bg-navigation-hover);
+  border: 1px solid var(--atlas-colors-fg-nav-muted);
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-sidebar nav {
+  gap: 8px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  .pilot-sidebar
+  nav
+  button {
+  border-radius: 8px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  .pilot-sidebar
+  nav
+  button:hover,
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  .pilot-sidebar
+  nav
+  button[aria-current] {
+  background: var(--atlas-colors-bg-navigation-hover);
+  color: var(--atlas-colors-fg-inverse);
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-workspace {
+  padding: 24px 28px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  .pilot-workspace
+  > section {
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 3px 14px
+    color-mix(in srgb, var(--atlas-colors-fg-default) 7%, transparent);
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  .pilot-workspace
+  header[role="region"] {
+  min-height: 76px;
+  padding: 16px 20px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-workspace h1 {
+  font-size: 28px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  [data-testid="procurement-master-detail"] {
+  gap: 16px;
+  padding: 12px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  [data-testid="procurement-master-detail"]
+  > aside {
+  border: 0;
+  border-radius: 8px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  [aria-label="Không gian công thức"] {
+  background: var(--atlas-colors-bg-subtle);
+  border: 0;
+  border-radius: 8px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  [data-pxk-master-detail]
+  > :nth-child(2) {
+  background: var(--atlas-colors-bg-subtle);
+}
+
+/* C: full-width professional tool, horizontal application navigation, compact
+   table rhythm; input and mobile targets stay at the Atlas accessible sizes. */
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] {
+  --atlas-workbar-y: 6px;
+  --atlas-table-cell-x: 10px;
+  --atlas-layout-table-height: calc(100dvh - 450px);
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-shell {
+  display: flex;
+  flex-direction: column;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-sidebar {
+  flex-direction: row;
+  align-items: center;
+  gap: 28px;
+  padding: 8px 16px;
+  background: var(--atlas-colors-bg-workbench);
+  border-width: 0 0 1px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-brand {
+  padding: 0;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-brand small,
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-sidebar-footer {
+  display: none;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-sidebar nav {
+  flex-direction: row;
+  gap: 8px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="C"]
+  .pilot-sidebar
+  nav
+  button {
+  min-height: 36px;
+  font-size: 13px;
+  padding: 6px 10px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-app-header {
+  min-height: 36px;
+  padding: 6px 16px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-workspace {
+  padding: 8px 12px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="C"]
+  .pilot-workspace
+  > section {
+  border-radius: 2px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="C"]
+  .pilot-workspace
+  header[role="region"] {
+  min-height: 50px;
+  padding: 8px 12px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-workspace h1 {
+  font-size: 21px;
+}
+.atlas-vnext .atlas-modern-prototype[data-variant="C"] table td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="C"]
+  [data-testid="procurement-master-detail"] {
+  gap: 6px;
+  padding: 6px;
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="C"]
+  [data-testid="procurement-master-detail"]
+  > aside {
+  border-radius: 2px;
+}
+
+@media (min-width: 1280px) {
+  .atlas-vnext
+    .atlas-modern-prototype[data-variant="B"]
+    [data-testid="procurement-master-detail"]:has(> aside) {
+    grid-template-columns: minmax(0, 1fr) 410px;
+  }
+  .atlas-vnext
+    .atlas-modern-prototype[data-variant="C"]
+    [data-testid="procurement-master-detail"]:has(> aside) {
+    grid-template-columns: minmax(0, 1fr) 370px;
+  }
+}
+@media (max-width: 1023px) {
+  .atlas-vnext .atlas-modern-prototype .pilot-shell,
+  .atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-shell {
+    display: block;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-sidebar,
+  .atlas-vnext .atlas-modern-prototype[data-variant="C"] .pilot-sidebar {
+    display: none;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-sidebar[data-open="true"] {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-sidebar[data-open="true"] nav {
+    flex-direction: column;
+  }
+  .atlas-vnext
+    .atlas-modern-prototype
+    .pilot-sidebar[data-open="true"]
+    .pilot-brand {
+    padding: 0;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-sidebar-footer {
+    display: none;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-menu-trigger {
+    display: inline-flex;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-app-header {
+    padding: 8px 10px;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-environment {
+    display: none;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-review-bar {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-review-bar > p {
+    font-size: 11px;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-workspace,
+  .atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-workspace {
+    padding: 10px;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-workspace h1,
+  .atlas-vnext .atlas-modern-prototype[data-variant="B"] .pilot-workspace h1 {
+    font-size: 22px;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-variant-name {
+    display: none;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-switcher button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-workspace header[role="region"],
+  .atlas-vnext
+    .atlas-modern-prototype[data-variant="B"]
+    .pilot-workspace
+    header[role="region"] {
+    min-height: 64px;
+    padding: 10px 12px;
+  }
+  .atlas-vnext
+    .atlas-modern-prototype
+    [data-testid="procurement-master-detail"],
+  .atlas-vnext .atlas-modern-prototype [data-pxk-master-detail] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.atlas-vnext
+  .atlas-modern-prototype[data-variant="B"]
+  .pilot-sidebar
+  nav
+  button:focus-visible {
+  outline: 2px solid var(--atlas-colors-focus-inverse);
+  outline-offset: 2px;
+}
+@media (min-width: 1280px) {
+  .atlas-vnext .atlas-modern-prototype [aria-label="Phạm vi xác nhận nhu cầu"] {
+    grid-template-columns:
+      minmax(145px, 1fr) minmax(245px, 1.3fr) minmax(130px, 0.85fr)
+      minmax(170px, 1.05fr) minmax(140px, 0.9fr) auto;
+  }
+}
+@media (max-width: 1023px) {
+  .atlas-vnext .atlas-modern-prototype .pilot-review-bar > p:first-child {
+    flex-basis: 100%;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-switcher {
+    margin-left: auto;
+    gap: 0;
+    padding: 0;
+  }
+  .atlas-vnext .atlas-modern-prototype .pilot-switcher button:first-child,
+  .atlas-vnext .atlas-modern-prototype .pilot-switcher button:last-child {
+    display: none;
+  }
+  .atlas-vnext .atlas-modern-prototype [data-atlas-action-priority="tertiary"] {
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+  .atlas-vnext
+    .atlas-modern-prototype[data-variant="C"]
+    .pilot-sidebar
+    nav
+    button {
+    min-height: 44px;
+  }
+}
+
+/* ponytail: viewport deductions cover this fixed review chrome; use bounded
+   workbench flex slots in v2 if expanded warning/filter bands need more space. */
+.atlas-vnext .atlas-modern-prototype[data-variant="B"] {
+  --atlas-layout-table-height: calc(100dvh - 480px);
+}
+.atlas-vnext .atlas-modern-prototype [data-pxk-master-detail] td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.atlas-vnext .atlas-modern-prototype [aria-label="Nội dung phiếu"] table {
+  min-width: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+.atlas-vnext
+  .atlas-modern-prototype
+  [aria-label="Nội dung phiếu"]
+  table
+  th:first-child {
+  width: 56%;
+}
+.atlas-vnext
+  .atlas-modern-prototype
+  [aria-label="Nội dung phiếu"]
+  table
+  th:nth-child(2) {
+  width: 28%;
+}
+.atlas-vnext
+  .atlas-modern-prototype
+  [aria-label="Nội dung phiếu"]
+  table
+  th:nth-child(3) {
+  width: 16%;
+}
+.atlas-vnext
+  .atlas-modern-prototype
+  [aria-label="Nội dung phiếu"]
+  table
+  td:nth-child(2) {
+  white-space: nowrap;
+}
