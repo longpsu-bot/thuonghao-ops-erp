@@ -162,7 +162,7 @@ Dispatch adds exactly two browser-callable functions:
 `get_school_dispatch_release_workbench` and
 `release_school_dispatch_document`, taking the reviewed browser registry to 110
 functions at the D-044 frontier. The 06D-E document-output amendment retains those
-entry-point names, brings the current reviewed browser registry to 111 functions,
+entry-point names, brings the reviewed browser registry at that frontier to 111 functions,
 and brings the physical `atlas_api` schema to 114 functions. The three additional
 physical functions are non-browser-callable PO/PXK predecessor read implementations
 retained behind the shaped public wrappers.
@@ -171,6 +171,17 @@ capabilities, and no role or scope kind; all 112 authoritative tables remain for
 RLS. Existing read/Dispatch/Procurement runtimes are reused.
 The exact PXK envelope, lineage, readiness, security, immutable replacement and
 no-stock boundary are specified in [School Dispatch Release API Contract](school-dispatch-release.md).
+
+## 4N. Shopping List V1 read projection
+
+`atlas_api.get_confirmed_need_shopping_list_export(jsonb)` adds an authorized
+read-only export projection to the existing Confirmed Need review contract. It
+uses existing backend Supplier advice and writes no business fact. With this
+addition the exact platform catalog contains 115 physical `atlas_api` functions
+and 112 authenticated browser-callable functions. The three predecessor reads
+remain non-browser-callable; existing privilege denials and RLS remain enforced.
+The request, projection and security are specified in
+[Connected Confirmed Need Review](rmvp-05-connected-confirmed-need-review.md#shopping-list-v1-export-projection).
 
 ## 5. Contract template
 

@@ -69,6 +69,9 @@ allowlist: transport 18/18 and whole-platform security catalog 28/28 PASS. The
 grant fingerprint changes by exactly two nongrantable EXECUTE rows (dedicated
 owner and authenticated); table/RLS/policy/private-helper fingerprints remain
 unchanged. No production code or migration change was needed for this correction.
+The staging catalog parser's dependent snapshot was also updated to the same
+115 physical / 112 authenticated functions with explicit export-RPC membership.
+Its 110 focused tests pass; compatibility-read exclusions remain in force.
 
 ## Production certification and closeout
 
