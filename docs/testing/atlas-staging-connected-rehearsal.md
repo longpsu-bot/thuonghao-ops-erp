@@ -1,7 +1,9 @@
 # Atlas Staging parity and connected rehearsal
 
-**Task:** ATLAS-STAGING-PARITY-REHEARSAL-01  
-**Observation date:** 5 October 2026 (UTC; operator timezone Asia/Bangkok)  
+**Task:** ATLAS-STAGING-PARITY-REHEARSAL-01
+
+**Observation date:** 5 October 2026 (UTC; operator timezone Asia/Bangkok)
+
 **Verdict:** Staging parity verified; hosted operator rehearsal blocked on approved operator sign-in. **PLANNING-PROCUREMENT-FREEZE-01 is NOT READY.**
 
 ## 1. Repository and authority
