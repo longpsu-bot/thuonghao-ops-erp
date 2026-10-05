@@ -77,12 +77,11 @@ for date_index, service_date in enumerate(dates):
                 "school_id": identity(100 + display_order),
                 "school_name": school_name,
                 "school_display_order": display_order,
-                "delivery_location_id": identity(900) if date_index == 2 and ingredient_index > 0 else identity(200 + display_order),
-                "delivery_location_name": "Bếp phụ" if date_index == 2 and ingredient_index > 0 else "Bếp chính",
+                "delivery_location_id": identity(200 + display_order),
                 "ingredient_id": identity(400 + ingredient_index),
                 "ingredient_name": names[ingredient_index],
                 "unit_id": units[unit],
-                "unit_code": unit,
+                "unit_display": unit,
                 "exact_quantity": quantity,
                 "reason_code": "OPERATIONAL_QUANTITY_ADJUSTMENT" if ingredient_index == 1 else "PROPOSAL_ACCEPTED",
                 "reason_note": "Điều chỉnh theo số suất đã xác nhận" if ingredient_index == 1 else "",
@@ -94,12 +93,11 @@ for date_index, service_date in enumerate(dates):
 # Separate presentation stress rows: no artificial all-field-maxima row.
 by_source = {row["source_order"]: row for row in rows}
 stress_school = "Trường mẫu khu vực phía đông nam"
-stress_location = "Bếp mô phỏng khu vực phía đông A"
 stress_ingredient = "Rau củ mô phỏng sơ chế theo quy cách bếp số mười"
 stress_supplier = "Cơ sở thực phẩm giả lập A"
 composite_ingredient = "Rau củ mô phỏng theo quy cách bếp mẫu"
 composite_supplier = "Kho mẫu phía đông"
-assert len(stress_school) == 32 and len(stress_location) == 32
+assert len(stress_school) == 32
 assert len(stress_ingredient) == 48
 # Supplier/Ingredient strings remain wholly synthetic.
 assert len(stress_supplier) == 25
@@ -123,16 +121,13 @@ stress_line(22, 701, "Ớt mẫu", 509)
 by_source[21]["exact_quantity"] = "1234567890.1"
 # Ingredient stress occurs under an ordinary School with short Supplier and quantity.
 stress_line(50, 702, stress_ingredient, 510)
-# Date 3 keeps two Delivery Locations and separate daily authority.
+# Date 3 retains separate daily authority and hidden location lineage only.
 for row in rows:
     if row["service_date"] == dates[2]:
         row["school_id"] = identity(140)
         row["school_name"] = "Trường mẫu khu vực phía đông bắc"
         row["school_display_order"] = 40
-        row["delivery_location_id"] = identity(240) if row["source_order"] == 57 else identity(940)
-        row["delivery_location_name"] = stress_location if row["source_order"] == 57 else "Bếp mẫu B"
-location = stress_line(57, 703, "Rau", 510)
-location["exact_quantity"] = "1"
+        row["delivery_location_id"] = identity(240)
 
 fixture = {
     "synthetic": True,
@@ -170,15 +165,19 @@ fixture["print_certification"] = {
     "guard_band_percent": 25,
     "observed_snapshot": {"source": "User-supplied read-only non-rehearsal Atlas Staging calibration; no hosted access in this task",
         "row_count": 248, "p95_combined": 58, "p99_combined": 65.53, "max_combined": 67,
-        "max_school": 28, "max_location": 28, "max_ingredient": 38, "max_supplier": 17, "max_quantity": 11},
-    "field_envelopes": {"school": 32, "location": 32, "ingredient": 48, "supplier": 25, "quantity": 12},
-    "stress_lines": {"school": identity(1001), "location": identity(1057), "ingredient": identity(1050),
+        "max_school": 28, "max_ingredient": 38, "max_supplier": 17, "max_quantity": 11},
+    "location_evidence": {"source": "User-supplied read-only Atlas Staging evidence; not queried in this pass",
+        "current_need_generation_lines": 256, "school_default_location_lines": 256,
+        "non_default_location_lines": 0, "school_date_multi_location_groups": 0,
+        "database_invariant": False},
+    "field_envelopes": {"school": 32, "ingredient": 48, "supplier": 25, "quantity": 12},
+    "stress_lines": {"school": identity(1001), "ingredient": identity(1050),
         "supplier": identity(1022), "quantity": identity(1021), "composite": identity(1020)},
     "out_of_envelope_control": {"name": "OUT_OF_CERTIFIED_PRINT_ENVELOPE",
         "school_display": "Trường Nguyễn Du - Cơ sở phía Đông",
         "ingredient_name": "Đu đủ hường sơ chế, bỏ vỏ và hạt, cắt miếng theo quy cách bếp trường",
         "supplier_name": "Nông sản mô phỏng - giao bếp trường mỗi sáng A",
-        "unit_code": "Kg", "quantity": "1.234567"},
+        "unit_display": "Kg", "quantity": "1.234567"},
 }
 
 Path(__file__).with_name("atlas-shopping-list-v1.fixture.json").write_text(

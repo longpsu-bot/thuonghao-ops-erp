@@ -5,6 +5,7 @@ Standard library only. Operates on the isolated synthetic specimen, never produc
 
 import copy
 import json
+import os
 import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -57,17 +58,17 @@ def body_height_budget(print_layout):
 def page_breaks(rows, sheet_data, print_layout):
     """Pack complete groups when they fit; split large groups after full rows."""
     heights = {int(item.get("r")): float(item.get("ht", "0")) for item in sheet_data.findall("m:row", NS)}
-    # Explicit native 95% scale, with a conservative 96% height bound for
-    # printer rounding; only the three fixed authored body classes are packed.
+    # Explicit native scale with the configured conservative height bound for
+    # printer rounding; only the two fixed authored body classes are packed.
     capacity = body_height_budget(print_layout) / print_layout["pageHeightScaleUpperBound"]
     remaining = capacity
     breaks = []
     continuation = []
     index = 0
     while index < len(rows):
-        school = (rows[index]["school_id"], rows[index]["delivery_location_id"])
+        school = rows[index]["school_id"]
         end = index
-        while end < len(rows) and (rows[end]["school_id"], rows[end]["delivery_location_id"]) == school:
+        while end < len(rows) and rows[end]["school_id"] == school:
             end += 1
         total = sum(heights[i + 4] for i in range(index, end))
         small_group = end - index <= 8
@@ -101,8 +102,8 @@ def page_breaks(rows, sheet_data, print_layout):
 
 def finalize(path):
     here = Path(__file__).parent
-    fixture = json.loads((here / "atlas-shopping-list-v1.fixture.json").read_text(encoding="utf-8"))
-    layout = json.loads((here.parent / "atlas-shopping-list-xlsx-v1.schema.json").read_text(encoding="utf-8"))["x-atlas-layout"]["print"]
+    fixture = json.loads(Path(os.environ.get("ATLAS_SPECIMEN_FIXTURE", here / "atlas-shopping-list-v1.fixture.json")).read_text(encoding="utf-8"))
+    layout = json.loads(Path(os.environ.get("ATLAS_SPECIMEN_SCHEMA", here.parent / "atlas-shopping-list-xlsx-v1.schema.json")).read_text(encoding="utf-8"))["x-atlas-layout"]["print"]
     dates = sorted({row["service_date"] for row in fixture["rows"]})
     with ZipFile(path) as archive:
         files = {name: archive.read(name) for name in archive.namelist()}
@@ -202,21 +203,17 @@ def finalize(path):
             cell = sheet.find(f'.//m:c[@r="A{position + 4}"]', NS)
             first = next(
                 i for i, candidate in enumerate(rows)
-                if (candidate["school_id"], candidate["delivery_location_id"])
-                == (row["school_id"], row["delivery_location_id"])
+                if candidate["school_id"] == row["school_id"]
             )
             first_cell = sheet.find(f'.//m:c[@r="A{first + 4}"]', NS)
             for child in list(cell):
                 cell.remove(child)
             cell.set("t", "inlineStr")
             cell.set("s", first_cell.get("s", "0"))
-            multi_location = len({candidate["delivery_location_id"] for candidate in rows if candidate["school_id"] == row["school_id"]}) > 1
             label = f'{row["school_name"]} (tiếp)'
-            if multi_location:
-                label += f'\nĐiểm giao: {row["delivery_location_name"]}'
             ET.SubElement(ET.SubElement(cell, tag("is")), tag("t")).text = label
             row_node = sheet_data.find(f'm:row[@r="{position + 4}"]', NS)
-            minimum = layout["multiLocationRowPt"] if multi_location else layout["wrappedRowPt"]
+            minimum = layout["wrappedRowPt"]
             row_node.set("ht", str(max(float(row_node.get("ht", "0")), minimum)))
         for name in ["sheetProtection", "autoFilter", "printOptions", "pageMargins", "pageSetup", "headerFooter", "rowBreaks"]:
             for node in sheet.findall(f"m:{name}", NS):

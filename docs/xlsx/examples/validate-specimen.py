@@ -9,6 +9,7 @@ import copy
 from datetime import date, datetime
 from decimal import Decimal
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import sys
@@ -42,24 +43,12 @@ def text(cell, strings):
 
 def verify_presentation(fixture):
     """Reject genuinely ambiguous canonical displays before specimen export."""
-    locations = {}
-    location_labels = {}
+    seen = {}
     for row in fixture["rows"]:
-        locations.setdefault((row["service_date"], row["school_id"]), set()).add(row["delivery_location_id"])
-        label_key = (row["service_date"], row["school_id"], row["delivery_location_id"])
-        require(label_key not in location_labels or location_labels[label_key] == row["delivery_location_name"], "One canonical label per Location")
-        location_labels[label_key] = row["delivery_location_name"]
-    for day_school, ids in locations.items():
-        labels = [location_labels[(*day_school, location_id)] for location_id in ids]
-        require(len(labels) == len(set(labels)), "Ambiguous canonical Location labels must block export")
-    seen = set()
-    for row in fixture["rows"]:
-        school_display = row["school_name"]
-        if len(locations[(row["service_date"], row["school_id"])]) > 1:
-            school_display += f"\nĐiểm giao: {row['delivery_location_name']}"
-        key = (row["service_date"], school_display, row["ingredient_name"], row["unit_code"])
-        require(key not in seen, "Ambiguous visible tuple must block export")
-        seen.add(key)
+        key = (row["service_date"], row["school_name"], row["ingredient_name"], row["unit_display"])
+        identity = (row["school_id"], row["ingredient_id"], row["unit_id"])
+        require(key not in seen or seen[key] == identity, "Ambiguous displayed business identities must block export")
+        seen[key] = identity
 
 
 def preferred_supplier(row, fixture=None):
@@ -83,17 +72,12 @@ def preferred_supplier(row, fixture=None):
 
 def print_content(row, fixture):
     """QA display metric, never an identity key or runtime business constraint."""
-    locations = {item["delivery_location_id"] for item in fixture["rows"]
-                 if (item["service_date"], item["school_id"]) == (row["service_date"], row["school_id"])}
-    display = row["school_name"]
-    if len(locations) > 1:
-        display += f"\nĐiểm giao: {row['delivery_location_name']}"
     quantity = row["exact_quantity"]
     if "." in quantity:
         quantity = quantity.rstrip("0").rstrip(".")
-    return {"school": row["school_name"], "location": row["delivery_location_name"],
-            "school_display": display, "ingredient": row["ingredient_name"],
-            "supplier": preferred_supplier(row, fixture), "quantity": quantity, "unit": row["unit_code"]}
+    return {"school": row["school_name"], "school_display": row["school_name"],
+            "ingredient": row["ingredient_name"], "supplier": preferred_supplier(row, fixture),
+            "quantity": quantity, "unit": row["unit_display"]}
 
 
 def combined_print_chars(content):
@@ -120,14 +104,13 @@ def verify_print_certification(fixture):
     require(cert["combined_char_envelope"] == (snapshot["max_combined"] * 125 + 99) // 100, "Ceiling of guarded maximum")
     by_id = {row["confirmed_need_line_id"]: row for row in fixture["rows"]}
     cases = cert["stress_lines"]
-    require(set(cases) == {"school", "location", "ingredient", "supplier", "quantity", "composite"}, "All six stress cases")
+    require(set(cases) == {"school", "ingredient", "supplier", "quantity", "composite"}, "All five visible stress cases")
     contents = {key: print_content(by_id[value], fixture) for key, value in cases.items()}
-    for key in ["school", "location", "ingredient", "supplier", "quantity"]:
+    for key in ["school", "ingredient", "supplier", "quantity"]:
         require(envelope["fieldMaxChars"][key] - 1 <= len(contents[key][key]) <= envelope["fieldMaxChars"][key],
                 f"Independent {key} boundary stress")
     require(75 <= combined_print_chars(contents["composite"]) <= 84, "True 75–84-character composite stress")
     require(len(contents["school"]["ingredient"]) <= 16 and len(contents["school"]["supplier"]) <= 12, "School stress uses ordinary other labels")
-    require(len(contents["location"]["ingredient"]) <= 16 and len(contents["location"]["supplier"]) <= 12, "Location stress uses ordinary other labels")
     for key in ["ingredient", "supplier", "quantity"]:
         require(len(contents[key]["school"]) <= 16, f"{key} stress has an ordinary School")
     require(len(contents["ingredient"]["supplier"]) <= 12 and len(contents["ingredient"]["quantity"]) <= 4, "Ingredient stress is isolated")
@@ -139,9 +122,9 @@ def verify_print_certification(fixture):
                     for content in all_contents), "No artificial all-maxima composite")
     control = cert["out_of_envelope_control"]
     require(control["name"] == "OUT_OF_CERTIFIED_PRINT_ENVELOPE", "Named isolated overflow control")
-    outside = {"school": control["school_display"], "location": "", "school_display": control["school_display"],
+    outside = {"school": control["school_display"], "school_display": control["school_display"],
                "ingredient": control["ingredient_name"], "supplier": control["supplier_name"],
-               "unit": control["unit_code"], "quantity": control["quantity"]}
+               "unit": control["unit_display"], "quantity": control["quantity"]}
     require(len(outside["ingredient"]) == 68 and len(outside["supplier"]) == 46, "Retained isolated extreme concepts")
     require(not within_print_envelope(outside), "Detector recognizes out-of-certified content without changing normal geometry")
     return {"max_combined_chars": max(map(combined_print_chars, all_contents)),
@@ -150,6 +133,11 @@ def verify_print_certification(fixture):
 
 
 def verify(files):
+    print_gate = SCHEMA["x-atlas-layout"]["print"]
+    require(print_gate["normalRowPt"] <= 30, "Normal rows <=30 pt")
+    require(print_gate["wrappedRowPt"] <= 44 and print_gate["bodyHardCapPt"] <= 44,
+            "Wrapped and absolute body rows <=44 pt")
+    require("multiLocationRowPt" not in print_gate, "No Location presentation row class")
     date_count = len(FIXTURE["daily_batches"])
     allowed_parts = {
         "[Content_Types].xml", "_rels/.rels", "xl/_rels/workbook.xml.rels",
@@ -194,7 +182,7 @@ def verify(files):
     hidden = SCHEMA["x-atlas-layout"]["hiddenHeaders"]
     print_layout = SCHEMA["x-atlas-layout"]["print"]
     print_cases = FIXTURE["print_cases"]
-    height_counts = {"normal": 0, "wrapped": 0, "multi_location": 0}
+    height_counts = {"normal": 0, "wrapped": 0}
     all_body_heights = []
     printed_pages = []
     projected = []
@@ -254,15 +242,11 @@ def verify(files):
         require(max(row_heights.values()) <= print_layout["bodyHardCapPt"], "Hard body height cap")
         seen = set()
         by_id = {row["confirmed_need_line_id"]: row for row in rows}
-        locations = {}
-        for row in rows:
-            locations.setdefault(row["school_id"], set()).add(row["delivery_location_id"])
         break_ids = [int(node.get("id")) for node in sheet.findall("m:rowBreaks/m:brk", NS)]
         continuation_rows = {
             break_id + 1 for break_id in break_ids
             if 4 <= break_id < end
-            and (rows[break_id - 3]["school_id"], rows[break_id - 3]["delivery_location_id"])
-            == (rows[break_id - 4]["school_id"], rows[break_id - 4]["delivery_location_id"])
+            and rows[break_id - 3]["school_id"] == rows[break_id - 4]["school_id"]
         }
         for row_index in range(4, end + 1):
             values = [text(cells.get(f"{chr(65 + col)}{row_index}"), strings) for col in range(15)]
@@ -273,23 +257,21 @@ def verify(files):
             supplier = preferred_supplier(row)
             expected_hidden = [FIXTURE["metadata"]["workbook_marker"], row_id, row["current_revision_id"], row["current_decision_id"] or "", date, row["school_id"], row["delivery_location_id"], row["ingredient_id"], row["unit_id"], row["exact_quantity"]]
             require(values[5:] == expected_hidden, "Canonical row-bound evidence")
-            first_in_school = row_index == 4 or (
-                rows[row_index - 5]["school_id"], rows[row_index - 5]["delivery_location_id"]
-            ) != (row["school_id"], row["delivery_location_id"])
-            expected_school = row["school_name"] + (f"\nĐiểm giao: {row['delivery_location_name']}" if len(locations[row["school_id"]]) > 1 else "") if first_in_school else ""
+            first_in_school = row_index == 4 or rows[row_index - 5]["school_id"] != row["school_id"]
+            expected_school = row["school_name"] if first_in_school else ""
             if row_index in continuation_rows:
-                expected_school = f'{row["school_name"]} (tiếp)' + (f"\nĐiểm giao: {row['delivery_location_name']}" if len(locations[row["school_id"]]) > 1 else "")
-            require(values[:3] == [expected_school, row["ingredient_name"], row["unit_code"]], "Canonical visible labels")
+                expected_school = f'{row["school_name"]} (tiếp)'
+            require(values[:3] == [expected_school, row["ingredient_name"], row["unit_display"]], "Canonical visible labels, School name only")
+            require("Điểm giao" not in values[0] and "Delivery Location" not in values[0], "No Location/address in School text")
+            require(not values[2].startswith("v1-unit-"), "Operator-facing Unit, not a migration identifier")
             starts_school = first_in_school or row_index in continuation_rows
-            if starts_school and len(locations[row["school_id"]]) > 1:
-                height_class = "multi_location"
-            elif (row_index in continuation_rows or row["ingredient_id"] in print_cases["wrapped_ingredient_ids"]
+            if (row_index in continuation_rows or row["ingredient_id"] in print_cases["wrapped_ingredient_ids"]
                   or any(item["supplier_id"] in print_cases["wrapped_supplier_ids"] and item["supplier_name"] == supplier for item in FIXTURE["suppliers"])
                   or (starts_school and row["school_id"] in print_cases["wrapped_school_ids"])):
                 height_class = "wrapped"
             else:
                 height_class = "normal"
-            expected_height = print_layout[{"normal": "normalRowPt", "wrapped": "wrappedRowPt", "multi_location": "multiLocationRowPt"}[height_class]]
+            expected_height = print_layout[{"normal": "normalRowPt", "wrapped": "wrappedRowPt"}[height_class]]
             require(row_heights[row_index] == expected_height, f"Bounded {height_class} row height at {date} {row_index}")
             height_counts[height_class] += 1
             if expected_school:
@@ -309,7 +291,7 @@ def verify(files):
                     font = fonts[int(xf.get("fontId", "0"))]
                     require(font.find("m:name", NS).get("val") == "Times New Roman", "Print font")
                     expected_size = print_layout[
-                        "supplierFontPt" if col == 4 else ("schoolFontPt" if col == 0 and expected_school else "bodyFontPt")
+                        "supplierFontPt" if col == 4 else ("quantityFontPt" if col == 3 else ("schoolFontPt" if col == 0 and expected_school else "bodyFontPt"))
                     ]
                     require(float(font.find("m:sz", NS).get("val")) == expected_size, "Column typography")
                     color = font.find("m:color", NS)
@@ -332,7 +314,7 @@ def verify(files):
                         require(top is not None and top.get("style") == "medium", f"Strong School start at {date} {cell.get('r')}")
                     elif col == 0 and row_index not in continuation_rows:
                         require(top is None or top.get("style") in (None, "thin"), "Ordinary line weight")
-            projected.append(dict(zip(["school_display", "ingredient_name", "unit_code", "quantity", "note"] + hidden, values)))
+            projected.append(dict(zip(["school_display", "ingredient_name", "unit_display", "quantity", "note"] + hidden, values)))
         require(seen == set(by_id), "Every-and-only line set")
         require([text(cells[f"G{row_index}"], strings) for row_index in range(4, end + 1)] == [row["confirmed_need_line_id"] for row in rows], "Deterministic specimen export order")
         cols = sheet.find("m:cols", NS)
@@ -396,12 +378,12 @@ def verify(files):
         batch["batch_version"] = int(batch["batch_version"])
         daily_batches.append(batch)
     require([batch["service_date"] for batch in daily_batches] == dates, "One batch per date sheet")
-    require(len(set(all_body_heights)) <= 3, "At most three body heights")
+    require(len(set(all_body_heights)) <= 2, "At most two body heights")
+    require(max(all_body_heights) <= 44 and not ({72, 168} & set(all_body_heights)), "No giant body rows")
     require(height_counts["normal"] / len(all_body_heights) >= 0.8, "At least 80% normal-height rows")
     return {"metadata": normalized_meta, "daily_batches": daily_batches, "rows": projected, "print_metrics": {
         "normal_row_count": height_counts["normal"],
         "wrapped_row_count": height_counts["wrapped"],
-        "multi_location_row_count": height_counts["multi_location"],
         "distinct_body_heights": len(set(all_body_heights)),
         "min_body_height": min(all_body_heights),
         "max_body_height": max(all_body_heights),
@@ -425,6 +407,32 @@ def change_cell(files, sheet_path, address, value):
     cell.set("t", "inlineStr")
     ET.SubElement(ET.SubElement(cell, f"{{{NS['m']}}}is"), f"{{{NS['m']}}}t").text = value
     files[sheet_path] = ET.tostring(root)
+
+
+def verify_location_invariance(original_path, probe_path):
+    """Compare independently regenerated XLSX files with changed hidden locations."""
+    def signature(path):
+        with ZipFile(path) as archive:
+            strings = ["".join(item.itertext()) for item in ET.fromstring(archive.read("xl/sharedStrings.xml"))]
+            visible = []
+            locations = []
+            for index in range(1, len(FIXTURE["daily_batches"]) + 1):
+                sheet = ET.fromstring(archive.read(f"xl/worksheets/sheet{index}.xml"))
+                cells = {cell.get("r"): cell for cell in sheet.findall(".//m:c", NS)}
+                visible.append({
+                    "cells": [(address, text(cell, strings), cell.get("s")) for address, cell in cells.items() if address[0] in "ABCDE"],
+                    "heights": [(row.get("r"), row.get("ht")) for row in sheet.findall("m:sheetData/m:row", NS)],
+                    "print": [ET.tostring(sheet.find(f"m:{key}", NS)) for key in
+                              ["cols", "sheetPr", "pageMargins", "pageSetup", "rowBreaks", "headerFooter", "mergeCells"]],
+                })
+                locations.extend(text(cell, strings) for address, cell in cells.items() if address.startswith("L") and int(address[1:]) >= 4)
+            return visible, locations, archive.read("xl/styles.xml")
+    original, original_locations, original_styles = signature(original_path)
+    probe, probe_locations, probe_styles = signature(probe_path)
+    require(original_locations != probe_locations, "Invariance probe actually changes hidden Location identities")
+    require(original == probe and original_styles == probe_styles,
+            "Changing hidden locations leaves visible cells, School borders, row heights, widths, wrapping and page setup/breaks identical")
+    print("PASS LOCATION_INVARIANCE: independently regenerated visible/print signatures are identical.")
 
 
 def check_schema(value, rule):
@@ -542,6 +550,9 @@ def main(path):
         (sheet, "H4", "00000000-0000-0000-0000-000000009999"),
         (sheet, "I4", "00000000-0000-0000-0000-000000009999"),
         (sheet, "J4", "2026-04-21"), (sheet, "N4", "00000000-0000-0000-0000-000000009999"),
+        (sheet, "K4", "00000000-0000-0000-0000-000000009999"),
+        (sheet, "L4", "00000000-0000-0000-0000-000000009999"),
+        (sheet, "M4", "00000000-0000-0000-0000-000000009999"),
         (sheet, "O4", "9.123456"),
         ("xl/worksheets/sheet4.xml", "B2", "ATLAS_SHOPPING_LIST_V2"),
         ("xl/worksheets/sheet4.xml", "B10", "9"),
@@ -609,20 +620,30 @@ def main(path):
         rejected += 1
     else:
         raise AssertionError("Ambiguous canonical label control passed")
-    ambiguous_location = copy.deepcopy(FIXTURE)
-    location_rows = [row for row in ambiguous_location["rows"] if row["service_date"] == "2026-04-22"]
-    first_location = location_rows[0]["delivery_location_id"]
-    first_label = location_rows[0]["delivery_location_name"]
-    for row in ambiguous_location["rows"]:
-        if row["service_date"] == "2026-04-22" and row["delivery_location_id"] != first_location:
-            row["delivery_location_name"] = first_label
-    try:
-        verify_presentation(ambiguous_location)
-    except AssertionError:
-        rejected += 1
-    else:
-        raise AssertionError("Ambiguous Location label control passed")
-    require(len(FIXTURE["rows"]) == 59 and len({row["school_id"] for row in FIXTURE["rows"]}) == 4, "Required fixture coverage, with isolated School/Location stress")
+    changed_locations = copy.deepcopy(FIXTURE)
+    for position, row in enumerate(changed_locations["rows"]):
+        row["delivery_location_id"] = str(UUID(int=90000 + position))
+        row["delivery_location_name"] = "UNPRINTED address " * 40
+    verify_presentation(changed_locations)
+    repeated_identity = copy.deepcopy(FIXTURE)
+    repeated_identity["rows"].append({**repeated_identity["rows"][0],
+        "confirmed_need_line_id": str(UUID(int=99990)), "delivery_location_id": str(UUID(int=99991))})
+    verify_presentation(repeated_identity)
+    require([print_content(row, changed_locations) for row in changed_locations["rows"]]
+            == [print_content(row, FIXTURE) for row in FIXTURE["rows"]],
+            "Location ID/name has zero visible envelope or ambiguity effect")
+    finalizer_spec = importlib.util.spec_from_file_location("specimen_finalizer", HERE / "finalize-specimen.py")
+    finalizer = importlib.util.module_from_spec(finalizer_spec)
+    finalizer_spec.loader.exec_module(finalizer)
+    page_breaks = finalizer.page_breaks
+    print_layout = SCHEMA["x-atlas-layout"]["print"]
+    for index, day in enumerate(sorted({row["service_date"] for row in FIXTURE["rows"]}), 1):
+        data = ET.fromstring(files[f"xl/worksheets/sheet{index}.xml"]).find("m:sheetData", NS)
+        original_rows = [row for row in FIXTURE["rows"] if row["service_date"] == day]
+        changed_rows = [row for row in changed_locations["rows"] if row["service_date"] == day]
+        require(page_breaks(original_rows, data, print_layout) == page_breaks(changed_rows, data, print_layout),
+                "Location ID/name has zero School grouping or pagination effect")
+    require(len(FIXTURE["rows"]) == 59 and len({row["school_id"] for row in FIXTURE["rows"]}) == 4, "Required daily and visible stress coverage")
     require(len(normalized["daily_batches"]) == 3 and len({batch["confirmed_need_batch_id"] for batch in normalized["daily_batches"]}) == 3, "Three independent daily batches")
     require(len({row["ingredient_id"] for row in FIXTURE["rows"]}) >= 8, "Ingredient coverage")
     first_date = [row for row in normalized["rows"] if row["__service_date"] == "2026-04-20"]
@@ -717,14 +738,14 @@ def main(path):
         elif scenario == "control_inside_envelope":
             candidate["print_certification"]["out_of_envelope_control"].update(school_display="Mẫu", ingredient_name="Rau", supplier_name="Kho")
         elif scenario == "one_over_boundary":
-            by_id[cases["location"]]["exact_quantity"] = "11"
+            by_id[cases["composite"]]["ingredient_name"] += "A" * (85 - combined_print_chars(print_content(by_id[cases["composite"]], candidate)))
         try:
             verify_print_certification(candidate)
         except (AssertionError, KeyError):
             calibration_rejected += 1
         else:
             raise AssertionError(f"Print calibration negative control passed: {scenario}")
-    print(f"PASS: static XLSX/fixture/schema conformance; {rejected}/{len(controls) + len(structural_controls) + 2 + 9 + 1} negative controls rejected; three-date currentness/restart/quantity/note model checked.")
+    print(f"PASS: static XLSX/fixture/schema conformance; {rejected}/{len(controls) + len(structural_controls) + 1 + 9 + 1} negative controls rejected; three-date currentness/restart/quantity/note model checked.")
     print(f"PRINT_CERTIFICATION: {calibration_rejected}/7 additional QA controls rejected; " + json.dumps(calibration, sort_keys=True))
     print("ROW_RHYTHM: " + json.dumps(normalized["print_metrics"], sort_keys=True))
     print(f"SHA256: {hashlib.sha256(path.read_bytes()).hexdigest()}")
@@ -732,4 +753,7 @@ def main(path):
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1] if len(sys.argv) > 1 else HERE / "atlas-shopping-list-v1-example.xlsx"))
+    specimen = Path(sys.argv[1] if len(sys.argv) > 1 else HERE / "atlas-shopping-list-v1-example.xlsx")
+    main(specimen)
+    if len(sys.argv) > 2:
+        verify_location_invariance(specimen, Path(sys.argv[2]))

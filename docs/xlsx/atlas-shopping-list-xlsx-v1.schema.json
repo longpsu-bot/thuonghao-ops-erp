@@ -86,7 +86,7 @@
         "required": [
           "school_display",
           "ingredient_name",
-          "unit_code",
+          "unit_display",
           "quantity",
           "note",
           "__workbook_marker",
@@ -105,9 +105,10 @@
             "type": "string",
             "minLength": 1
           },
-          "unit_code": {
+          "unit_display": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Operator-facing controlled_unit.name from the authoritative Confirmed Need read; never a technical migration identifier. A missing or unsuitable operator label blocks future connected export; this projection adds no database field."
           },
           "quantity": {
             "$ref": "#/$defs/decimal"
@@ -143,7 +144,8 @@
             "$ref": "#/$defs/uuid"
           },
           "__location_id": {
-            "$ref": "#/$defs/uuid"
+            "$ref": "#/$defs/uuid",
+            "description": "Required hidden row-bound lineage/currentness evidence. Zero effect on School text, groups, height, wrapping, width, page breaks or print certification."
           },
           "__ingredient_id": {
             "$ref": "#/$defs/uuid"
@@ -198,29 +200,31 @@
     "printAreaColumns": "A:E",
     "printTitleRows": "1:3",
     "font": "Times New Roman",
+    "schoolPresentation": "School name only on the first data row, blank following rows, School (tiếp) on continuation pages; no Delivery Location/address, subgroups, merged data cells or extra School row.",
+    "bodyHeightClasses": ["NORMAL", "WRAPPED"],
     "colorSemantics": false,
     "print": {
       "titleFontPt": 20,
-      "headerFontPt": 18,
+      "headerFontPt": 17,
       "bodyFontPt": 18,
       "schoolFontPt": 18,
-      "supplierFontPt": 16,
+      "supplierFontPt": 14,
+      "quantityFontPt": 16,
       "titleRowPt": 32,
       "spacerRowPt": 5,
       "headerRowPt": 48,
-      "normalRowPt": 27,
-      "bodyHardCapPt": 168,
-      "columnWidths": [20, 33, 7, 19, 14],
-      "pageHeightScaleUpperBound": 0.96,
+      "normalRowPt": 28,
+      "bodyHardCapPt": 44,
+      "columnWidths": [25, 32, 6, 16, 15],
+      "pageHeightScaleUpperBound": 0.97,
       "a4HeightPt": 841.89,
       "topMarginIn": 0.25,
       "bottomMarginIn": 0.25,
       "footerAllowancePt": 12,
-      "wrappedRowPt": 72,
-      "multiLocationRowPt": 168,
+      "wrappedRowPt": 44,
       "leftMarginIn": 0.2,
       "rightMarginIn": 0.2,
-      "scalePercent": 95
+      "scalePercent": 96
     },
     "maxServiceDates": 7,
     "scope": "generated collection of 1–7 service dates, each bound to its authoritative daily Confirmed Need batch",
@@ -238,6 +242,7 @@
     "There are 1–7 represented service dates; metadata bounds equal the first and last dates; each row date matches its containing worksheet and canonical line.",
     "Exactly one daily_batches entry per date sheet; its batch/version/run/snapshot and every row's revision/decision and School/location/Ingredient/Unit bindings match fresh authorized evidence.",
     "Blank visible School cells and print-only (tiếp) labels never drive identity; every row carries its own School/location/Ingredient/Unit IDs.",
+    "Delivery Location is required hidden row evidence with zero presentation effect; visible ambiguity and print certification never use Location text or identity.",
     "Visible School, Ingredient and Unit reference labels match fresh canonical saved facts; GHI CHÚ is ignored on import.",
     "Export requires saved/current authoritative state with no unsaved local draft; import after browser restart requires no session manifest.",
     "Import does not overwrite an unsaved local Confirmed Need draft on a represented date.",
@@ -263,7 +268,6 @@
     "guardBandPercent": 25,
     "fieldMaxChars": {
       "school": 32,
-      "location": 32,
       "ingredient": 48,
       "supplier": 25,
       "quantity": 12
@@ -272,7 +276,7 @@
     "minimumEffectiveBodyPt": 17,
     "qaOnly": true,
     "runtimeBusinessConstraint": false,
-    "combinedMetric": "Expanded canonical School display, including the location prefix/name only for multiple locations; Ingredient, Unit, shortest exact quantity display and derived Supplier. Count Unicode code points including spaces within cells, excluding line breaks, blank-group suppression, continuation suffix and inter-column spacing.",
+    "combinedMetric": "Canonical School name, Ingredient, authoritative operator-facing Unit display, shortest exact quantity display and derived Supplier. Count Unicode code points including spaces within cells, excluding line breaks, blank-group suppression, continuation suffix and inter-column spacing. Delivery Location is hidden lineage only and has zero presentation effect.",
     "independentMaxima": "Test row-level envelope plus isolated field stresses; do not combine independent catalog maxima unless observed domain evidence supports the combination.",
     "overflow": "Outside this QA envelope needs connected-exporter overflow handling/certification or a clear export warning/block; never silently clip. No database name-length rule."
   }

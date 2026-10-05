@@ -19,13 +19,15 @@ const { Workbook, SpreadsheetFile } = await import(
 );
 const fixture = JSON.parse(
   await fs.readFile(
-    path.join(here, "atlas-shopping-list-v1.fixture.json"),
+    process.env.ATLAS_SPECIMEN_FIXTURE ??
+      path.join(here, "atlas-shopping-list-v1.fixture.json"),
     "utf8",
   ),
 );
 const schema = JSON.parse(
   await fs.readFile(
-    path.join(here, "../atlas-shopping-list-xlsx-v1.schema.json"),
+    process.env.ATLAS_SPECIMEN_SCHEMA ??
+      path.join(here, "../atlas-shopping-list-xlsx-v1.schema.json"),
     "utf8",
   ),
 );
@@ -67,9 +69,8 @@ function preferredSupplier(row) {
     return "";
   return supplierById.get(candidates[0].supplier_id).supplier_name;
 }
-function bodyRowClass(row, startsSchool, multiLocation) {
+function bodyRowClass(row, startsSchool) {
   const cases = fixture.print_cases;
-  if (startsSchool && multiLocation) return "multiLocationRowPt";
   if (
     cases.wrapped_ingredient_ids.includes(row.ingredient_id) ||
     cases.wrapped_supplier_ids.some(
@@ -82,12 +83,6 @@ function bodyRowClass(row, startsSchool, multiLocation) {
 }
 for (const date of dates) {
   const rows = fixture.rows.filter((row) => row.service_date === date);
-  const locations = new Map();
-  for (const row of rows) {
-    const values = locations.get(row.school_id) ?? new Set();
-    values.add(row.delivery_location_id);
-    locations.set(row.school_id, values);
-  }
   const sheet = workbook.worksheets.add(date);
   sheet.showGridLines = false;
   sheet.freezePanes.freezeRows(3);
@@ -115,20 +110,15 @@ for (const date of dates) {
   ];
   let precedingSchool;
   const data = rows.map((row) => {
-    const group = `${row.school_id}:${row.delivery_location_id}`;
+    const group = row.school_id;
     const first = group !== precedingSchool;
     precedingSchool = group;
-    const school = first
-      ? row.school_name +
-        (locations.get(row.school_id).size > 1
-          ? `\nĐiểm giao: ${row.delivery_location_name}`
-          : "")
-      : "";
+    const school = first ? row.school_name : "";
     const supplier = preferredSupplier(row);
     return [
       school,
       row.ingredient_name,
-      row.unit_code,
+      row.unit_display,
       row.exact_quantity.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, ""),
       supplier,
       fixture.metadata.workbook_marker,
@@ -143,20 +133,24 @@ for (const date of dates) {
       row.exact_quantity,
     ];
   });
-  const visibleKeys = rows.map((row) =>
-    JSON.stringify([
-      row.school_name +
-        (locations.get(row.school_id).size > 1
-          ? `\nĐiểm giao: ${row.delivery_location_name}`
-          : ""),
+  const visibleIdentities = new Map();
+  for (const row of rows) {
+    const key = JSON.stringify([
+      row.school_name,
       row.ingredient_name,
-      row.unit_code,
-    ]),
-  );
-  if (new Set(visibleKeys).size !== data.length)
-    throw new Error(
-      `Ambiguous canonical visible tuple on ${date}; never collapse rows.`,
-    );
+      row.unit_display,
+    ]);
+    const identity = JSON.stringify([
+      row.school_id,
+      row.ingredient_id,
+      row.unit_id,
+    ]);
+    if (visibleIdentities.has(key) && visibleIdentities.get(key) !== identity)
+      throw new Error(
+        `Ambiguous canonical visible tuple on ${date}; never collapse rows.`,
+      );
+    visibleIdentities.set(key, identity);
+  }
   sheet.getRange(`A4:O${end}`).values = data;
   const table = sheet.tables.add(
     `A3:O${end}`,
@@ -183,6 +177,11 @@ for (const date of dates) {
     size: print.supplierFontPt,
     color: "#000000",
   };
+  sheet.getRange(`D4:D${end}`).format.font = {
+    name: "Times New Roman",
+    size: print.quantityFontPt,
+    color: "#000000",
+  };
   sheet.getRange(`D4:D${end}`).setNumberFormat("0.######");
   sheet.getRange(`D4:D${end}`).format.horizontalAlignment = "right";
   sheet.getRange(`C4:C${end}`).format.horizontalAlignment = "center";
@@ -200,12 +199,10 @@ for (const date of dates) {
     const rowNumber = index + 4;
     const startsSchool = Boolean(data[index][0]);
     sheet.getRange(`A${rowNumber}:E${rowNumber}`).format.rowHeight =
-      print[
-        bodyRowClass(row, startsSchool, locations.get(row.school_id).size > 1)
-      ];
+      print[bodyRowClass(row, startsSchool)];
     if (!row.exact_quantity.includes("."))
       sheet.getRange(`D${rowNumber}`).setNumberFormat("0");
-    const group = `${row.school_id}:${row.delivery_location_id}`;
+    const group = row.school_id;
     if (school !== group) {
       sheet.getRange(`A${rowNumber}:E${rowNumber}`).format.borders = {
         top: { style: "medium", color: "#000000" },
@@ -224,10 +221,7 @@ for (const date of dates) {
   };
   rows.forEach((row, index) => {
     const rowNumber = index + 4;
-    const first =
-      index === 0 ||
-      row.school_id !== rows[index - 1].school_id ||
-      row.delivery_location_id !== rows[index - 1].delivery_location_id;
+    const first = index === 0 || row.school_id !== rows[index - 1].school_id;
     const top = { style: first ? "medium" : "thin", color: "#000000" };
     const bottom = {
       style: index === rows.length - 1 ? "medium" : "thin",
@@ -297,6 +291,33 @@ meta.getRange("B1:B6").format.columnWidth = 42;
 meta.getRange(`A8:E${8 + fixture.daily_batches.length}`).format.columnWidth =
   42;
 workbook.recalculate();
+const inspection = await workbook.inspect({
+  kind: "table",
+  range: `${dates[0]}!A3:E8`,
+  include: "values,formulas",
+  tableMaxRows: 6,
+  tableMaxCols: 5,
+  maxChars: 1800,
+});
+console.log(inspection.ndjson);
+if (process.env.ATLAS_SPECIMEN_PREVIEW_DIR) {
+  await fs.mkdir(process.env.ATLAS_SPECIMEN_PREVIEW_DIR, { recursive: true });
+  for (const date of dates) {
+    const last = Math.min(
+      14,
+      fixture.rows.filter((row) => row.service_date === date).length + 3,
+    );
+    const preview = await workbook.render({
+      sheetName: date,
+      range: `A1:E${last}`,
+      scale: 1.5,
+    });
+    await fs.writeFile(
+      path.join(process.env.ATLAS_SPECIMEN_PREVIEW_DIR, `${date}.png`),
+      new Uint8Array(await preview.arrayBuffer()),
+    );
+  }
+}
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await (await SpreadsheetFile.exportXlsx(workbook)).save(outputPath);
 console.log(

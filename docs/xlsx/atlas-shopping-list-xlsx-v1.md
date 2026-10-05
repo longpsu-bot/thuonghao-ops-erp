@@ -1,6 +1,6 @@
 # Atlas Confirmed Need — Phiếu đi chợ XLSX V1
 
-**Status: READY_FOR_PRODUCT_REVIEW — calibrated native print gate passed; Product approval pending.**
+**Status: READY_FOR_PRODUCT_APPROVAL — final native print and identity gates passed; owner approval pending.**
 Task: `ATLAS-SHOPPING-LIST-XLSX-CONTRACT-01`.
 Baseline: `d81b60ca63349794d28b0dcc5d34f5fd3e1ebfa1` (PR #345).
 Format: `ATLAS_SHOPPING_LIST_V1`.
@@ -41,27 +41,29 @@ Export uses saved/current authoritative facts only. If the workbench has an unsa
 
 Worksheet name: exact ISO date `YYYY-MM-DD`; date is also bound per row. Excel names and table names must be unique. File name: `PhieuDiCho_YYYY-MM-DD_YYYY-MM-DD_ATLAS_V1.xlsx`. A file rename has no import significance. The committed review filename is deliberately `atlas-shopping-list-v1-example.xlsx`.
 
-### Row grain and location comprehension
+### Row grain and School presentation
 
-One data row is one current stable Confirmed Need line, identified by its stable UUID. Its operational grain is batch + service date + School + Delivery Location + Ingredient + controlled Unit (Customer lineage stays in Atlas). Two identical Ingredient display names must not collapse. Distinct locations, Units or Ingredient UUIDs remain distinct even if visible labels coincide. No subtotals, spacer rows, School-band rows, `X` markers or merged cells occur inside the Table.
+One data row is one current stable Confirmed Need line, identified primarily by `__line_id`. Its operational grain remains batch + service date + School + Delivery Location + Ingredient + controlled Unit (Customer lineage stays in Atlas). Distinct source lines remain distinct even when labels coincide. No subtotals, spacer rows, School-band rows, `X` markers or merged data cells occur inside the Table.
 
-Within each contiguous School group, print the canonical School name in the first row and leave subsequent School cells blank. Do not merge data cells. A medium black top rule and bold School name mark each new group. If a group spans printed pages, the first row of each continuation page prints `<School> (tiếp)`; for a School with multiple Delivery Locations on that date it also prints the subordinate `Điểm giao: <canonical location name>` line. Following rows on that page are blank again. These labels and borders are presentation only. Every row carries independent hidden School, Delivery Location, Ingredient, Unit and stable line identity. A complete-Table sort can change visual grouping without changing import mapping.
+**TRƯỜNG displays only the School name. Delivery address/location is not printed on Phiếu đi chợ. Each row retains hidden Delivery Location identity only as technical lineage/currentness evidence.** Delivery address belongs to the School operational context. Location IDs, names and addresses have zero presentation effect: no subgroup, extra row, suffix, height, width, wrapping, page-break, certification or visible-ambiguity effect.
 
-When a School has more than one Delivery Location on the same date, keep each location contiguous and use a separate visual subgroup. Its first `TRƯỜNG` cell contains the canonical School name, a newline, and `Điểm giao: <canonical location name>`; following cells in that subgroup are blank. With one location, show only the School name. Hidden location ID remains on every row. Duplicate canonical location names within that School/date make this five-column export ambiguous and block export pending master-data correction or a separately approved display amendment. Do not silently label using an identifier or aggregate the locations.
+Within each contiguous School group, print the canonical School name in the first row and leave subsequent School cells blank. A bold School name and medium black top rule mark the group; they do not create a separate height class. If a group spans pages, the first data row of each continuation page prints `<School> (tiếp)` and following School cells are blank again. Every line carries independent hidden School, Location, Ingredient, Unit and stable line identity. Complete-Table sorting can change grouping without changing import mapping.
 
-After applying that location presentation, distinct lines on the same date must have distinct visible `(TRƯỜNG, THÀNH PHẦN, ĐVT)` tuples. If different Ingredient/School/Unit identities still produce the same tuple, **block export**, never merge rows or invent a technical code. The current authorized read has no operator-facing Ingredient code to disambiguate them. Product/master-data review must provide a meaningful canonical display distinction through a separately approved change before those lines are exportable. Identical Ingredient names across visibly distinct Schools/locations are allowed and retain their stable identities. The specimen uses distinguishable labels; the isolated validator includes an ambiguous-label negative control.
+For visible ambiguity, compare the expanded canonical `(School name, Ingredient name, operator Unit display)` against business identities `(school_id, ingredient_id, unit_id)` within each date. If identical labels represent different business identities, block export pending meaningful authoritative display correction; never merge rows or invent a technical code. Multiple stable lines with the same business identity tuple are permitted, including lines differing only in hidden Location. Location and stable line ID do not participate in this display decision. Import always maps by stable line ID and cross-checks each hidden identity.
 
 ### Visible columns
 
-| Column | Exact label | Value                                                                                                    | Editable?          |
-| ------ | ----------- | -------------------------------------------------------------------------------------------------------- | ------------------ |
-| A      | TRƯỜNG      | First-row School / blank continuation / print-only `(tiếp)` label; location suffix only as defined above | No                 |
-| B      | THÀNH PHẦN  | Canonical Ingredient name                                                                                | No                 |
-| C      | ĐVT         | Controlled Unit code                                                                                     | No                 |
-| D      | SỐ LƯỢNG    | Exact current local draft quantity                                                                       | Yes                |
-| E      | GHI CHÚ     | First eligible preferred Supplier name at export, or blank; staff working space; never imported          | Working paper only |
+| Column | Exact label | Value                                                                                           | Editable?          |
+| ------ | ----------- | ----------------------------------------------------------------------------------------------- | ------------------ |
+| A      | TRƯỜNG      | Canonical School name on first row / blank following cells / print-only `(tiếp)` continuation   | No                 |
+| B      | THÀNH PHẦN  | Canonical Ingredient name                                                                       | No                 |
+| C      | ĐVT         | Operator-facing `controlled_unit.name` from the authoritative Confirmed Need read               | No                 |
+| D      | SỐ LƯỢNG    | Exact saved/current authoritative quantity                                                      | Yes                |
+| E      | GHI CHÚ     | First eligible preferred Supplier name at export, or blank; staff working space; never imported | Working paper only |
 
 Choose **SỐ LƯỢNG**, not `SL`, for clarity. `THÀNH PHẦN` and `ĐVT` retain staff vocabulary. All normal operator headings, help and errors are Vietnamese. Technical hidden keys are exempt. No additional operator-editable column is legitimate in this bounded artifact; reason type, identity, policy and status stay in Atlas.
+
+The existing RMVP-05 read supplies `controlled_unit` with `id`, `code`, `name` and `status`; use its operator-facing `name`, never technical migration codes such as `v1-unit-...`. The specimen's normalized `unit_display` is a design projection of that existing name, not a new database field. If a future connected read returns a missing or unsuitable operator label, block connected export and report that implementation blocker. Do not invent a database field or change the Unit model here.
 
 ### Deterministic export order
 
@@ -92,9 +94,9 @@ Hidden F:O are locked text members of the **same Excel Table** as A:E. Each reta
 | I      | `__decision_id`       | Detect a changed current decision; empty text means null.                                       |
 | J      | `__service_date`      | Bind the row to its worksheet and the date's batch record.                                      |
 | K      | `__school_id`         | Verify School identity despite blank repeated visible cells.                                    |
-| L      | `__location_id`       | Preserve the exact Delivery Location without visible technical codes.                           |
+| L      | `__location_id`       | Required exact Delivery Location lineage/currentness; zero presentation effect.                 |
 | M      | `__ingredient_id`     | Prevent name-based Ingredient retargeting.                                                      |
-| N      | `__unit_id`           | Prevent display-code-based Unit conversion or retargeting.                                      |
+| N      | `__unit_id`           | Prevent display-label-based Unit conversion or retargeting.                                     |
 | O      | `__exported_quantity` | Exact saved quantity baseline; compare with fresh authoritative quantity before interpreting D. |
 
 The date record supplies batch ID/version/run/snapshot without repeating four fields on every line. Row date, stable line and row-bound IDs link each row unambiguously to that record. Neither hidden cells nor the marker are trusted authority; fresh backend state and Save remain decisive. This unsigned workbook does not cryptographically prove its export history against coordinated technical rewriting; backend authorization and Save checks still apply. Revision/decision numbers, exported reason and exported note are omitted because they add no needed V1 quantity-edit evidence. Lifecycle, policy, step, Supplier and governed reason remain in Atlas.
@@ -125,23 +127,23 @@ Protection, hidden columns and the very-hidden sheet are **not security mechanis
 
 The supplied workbook's **right-hand** table is the visual benchmark; its left-hand table is not. Recover its date hierarchy, Times typography, compact five-column proportion, bold first School, blank School continuation cells and strong black separators. Do not copy its gray header fill, wrong A:H print area or accidental A1:Q1048575 used range. This V1 is a white-paper, black-text, black-rule working form; color carries no information. No Atlas green, beige input tint, stripes, logo, instruction block or dashboard treatment appears on the printed area.
 
-**Native print review from `8567299f7c0227eafbea4b7b3ded40a014e631ce`: passed for the calibrated synthetic fixture.** The selected G3-Q refinement prints at configured 95%, with 17.16 pt effective normal body and complete visible text on four A4 pages. This is a reviewable print proposal, not a claim of Product approval. The latest task permits at most three bounded body-height classes; this proposal replaces the historical 44 pt cap with the explicit classes below. [Calibration evidence](atlas-shopping-list-xlsx-v1-evidence.md#calibrated-envelope-review-from-8567299) records the rejected exact candidates and passing refinement.
+**Final native print review from `c802b8f0e8f4ac771b51f2b94405928e06b857dd`: passed.** Selected refinement **F13** restores compact rows and complete certified content at explicit 96%, with 17.28 pt effective primary body. The [finalization evidence](atlas-shopping-list-xlsx-v1-evidence.md#finalization-review-from-c802b8f) records the required F1/F2/F3 trials, rejected refinements, benchmarks and all-page review. This is ready for owner approval, not approval itself.
 
-- A1:E1 contains only the centered date, for example `Thứ Hai (20/04/2026)`, Times New Roman 20 pt bold in a 32 pt row. Row 2 is a 5 pt gap. Row 3 has the five exact centered 18 pt bold headings in a 48 pt row. Freeze rows 1:3; hide gridlines.
-- Body and School are Times New Roman 18 pt; School starts are bold. Supplier advice is subordinate 16 pt. Exactly three fixed body classes: **27 pt NORMAL / 72 pt WRAPPED / 168 pt MULTI_LOCATION**, with a hard 168 pt cap. Ordinary School starts use NORMAL. The specimen explicitly marks the isolated long School, Ingredient and Supplier cases as WRAPPED; continuation headings use WRAPPED. Required School + Location labels use MULTI_LOCATION. No dynamic character-count height, auto-fit or fourth class is used. Connected export must verify actual fit and select an approved fixed class or warn/block; it must never silently clip.
-- A:E widths are `20 / 33 / 7 / 19 / 14` Excel units, total 93. Wrap A/B/E, keep C/D unwrapped, center C and right-align D. Vertical centering and black rules remain. D accommodates the certified 12-character quantity; all five six-decimal `1,234567` values remain visible.
-- Thin black cell rules; medium black School/location boundaries and outer/header rules; no fills or stripes. All visible content fits one horizontal A4 page at explicit 95%, with unlimited vertical pages. Automatic fit-to-width is disabled because it may violate the physical-size floor. Margins left/right 0.20 inch, top/bottom 0.25 inch; header/footer 0.12 inch. Print A1:E(last real row), repeat rows 1:3, and print no hidden evidence.
-- Model the body budget as `841.89 − 72 × (0.25 + 0.25) − 12 footer − 32 title − 5 gap − 48 headings = 708.89 pt`. A conservative height-scale upper bound of 0.96 gives 738.43 raw row points; native glyph scale is about 0.9533. Keep groups of up to eight rows together where possible; large groups start only when at least three rows fit. Split at a complete row, add `<School> (tiếp)` and the required location presentation on continuation pages. The calibrated first date splits 22/22 rows; dates two/three print 12/3 rows. Verify native page breaks for future data, rather than treating modeled capacity as certification.
+- A1:E1 contains only the centered date, for example `Thứ Hai (20/04/2026)`, Times New Roman 20 pt bold in a 32 pt row. Row 2 is a 5 pt gap. Row 3 has the five exact centered 17 pt bold headings in a 48 pt row. Freeze rows 1:3; hide gridlines.
+- Body and School are Times New Roman 18 pt; School starts are bold. Dedicated quantity font is 16 pt and subordinate Supplier advice is 14 pt. Exactly two fixed body classes: **28 pt NORMAL / 44 pt WRAPPED**, with a hard 44 pt maximum. A School start uses the same two-class system; continuation headings use WRAPPED. No auto-fit, per-string height or additional class is permitted. Connected export must verify actual fit, choose an approved class or warn/block, and never silently clip.
+- A:E widths are **25 / 32 / 6 / 16 / 15 Excel units**, total **94**. Native Excel measured 150/192/36/96/90 pt, total 564 pt, before print scaling. Wrap A/B/E and headings as needed, keep C/D body unwrapped, center C and right-align D. All certified quantities, including five six-decimal `1,234567` values and the 12-character case, print completely.
+- Thin black cell rules; medium black School boundaries and outer/header rules; no fills or stripes. A4 portrait, one horizontal page, explicit **96%** scale; margins 0.20 inch left/right and 0.25 top/bottom, header/footer 0.12. Print only A1:E(last data row), repeat rows 1:3 and exclude hidden evidence. Configured and observed scale must be at least 95%; effective primary body must be at least 17 pt.
+- Model body budget as `841.89 − 72 × (0.25 + 0.25) − 12 footer − 32 title − 5 gap − 48 headings = 708.89 pt`. Conservative height-scale upper bound 0.97 gives 730.82 raw row points. Keep groups of up to eight rows together where practical; large groups start only when at least three rows fit. Split at a complete row and add `<School> (tiếp)` within WRAPPED. Native pagination is **24/20** rows on date one and **12/3** rows on dates two/three, four pages total. Future native page-break verification remains required; modeled capacity is not certification.
 
 ### Print certification envelope
 
-The user supplied a read-only Staging design snapshot: 248 rows, combined P95 58, P99 65.53, maximum 67 characters. No hosted system was accessed for this pass. A 25% QA guard band gives `ceil(67 × 1.25) = 84`. This is a **fixture certification envelope**, not a runtime business validator, database name limit or arbitrary-text fit guarantee.
+Retain the calibrated **84-character combined visible QA envelope**. The earlier user-supplied read-only 248-row design snapshot reported combined P95 58, P99 65.53 and maximum 67, with guard `ceil(67 × 1.25) = 84`. That historical observation is not a new measurement under this revised metric. No hosted system was accessed in this pass. Certification is fixture QA, not a runtime business validator, database length limit or arbitrary-text fit guarantee.
 
-Test independent School 32, Location 32, Ingredient 48, Supplier 25 and visible quantity 12-character stresses, plus a realistic 75–84-character composite. Do not combine all independent maxima in one normal row. Count canonical School display, including `Điểm giao: ` and Location only when shown, plus Ingredient, Unit, shortest exact quantity and Supplier; include spaces within cells, exclude line breaks, continuation suffix and inter-column whitespace. Expand canonical School even where its repeated cell is blank. The committed maximum is 84 and the separate composite is 79.
+Count only canonical School, Ingredient, operator Unit display, shortest exact visible quantity and Supplier suggestion. Include spaces within cells; exclude line breaks, continuation suffix and inter-column whitespace. Expand School even where its repeated visible cell is blank. **Delivery Location contributes nothing.** Independent stress limits are School 32, Ingredient 48, Supplier 25 and quantity 12 characters; retain a realistic 75–84-character composite rather than combining all independent maxima. The regenerated printed maximum and composite are 79.
 
-`OUT_OF_CERTIFIED_PRINT_ENVELOPE` retains the old 68-character Ingredient and approximately 45-character Supplier concept as an isolated nonprinted detector control. It does not force normal specimen geometry. Future connected export must detect content outside certification, and actual glyph/cell overflow even inside a character envelope, then use approved handling or a clear warning/block. Never silently clip text, hide quantity hashes, reduce below the size floor or introduce a database constraint here.
+`OUT_OF_CERTIFIED_PRINT_ENVELOPE` retains an isolated nonprinted 68-character Ingredient / 46-character Supplier control; its combined count is 158. It proves detection without setting normal geometry. Future connected export must detect both out-of-envelope content and actual glyph/cell overflow within the character envelope, then use approved handling or clear warning/block. Never silently clip, hide quantity hashes, reduce below the size floor or introduce a database constraint here.
 
-The committed specimen and native PDF must be reviewed together. Titles/headings repeat on every page; all 59 quantities and all 52 Supplier suggestions print completely. Filtering is BEST_EFFORT: the whole-Table filter definition remains, but this specimen hides its buttons to preserve heading width. Identity safety is independent of filtering. Clear any filters before printing all lines.
+The committed specimen and native PDF must be reviewed together. Titles/headings repeat on every page; all 59 quantities and all 52 Supplier suggestions print completely. Filtering is BEST_EFFORT: the whole-Table filter definition remains, but this specimen hides its buttons to preserve heading width. Identity safety is independent of filtering. Clear filters before printing all lines.
 
 ### Preferred Supplier suggestion
 
@@ -200,35 +202,37 @@ These are future connected V1 requirements. The isolated specimen validator mode
 
 ## 8. Decision index
 
-| Concern          | Frozen V1 decision                                                                                                                  |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Scope            | Generated 1–7 date collection; each worksheet binds to its own authoritative daily Confirmed Need batch.                            |
-| Authority        | Saved/current daily facts only; no weekly batch, aggregate, lifecycle object or cross-date command.                                 |
-| Metadata         | Six workbook-wide fields plus exact per-date batch/version/run/snapshot table.                                                      |
-| Row identity     | F:O marker, stable line, revision, decision, date, School, Location, Ingredient, Unit, exact quantity baseline.                     |
-| Import           | SỐ LƯỢNG only; fresh complete read after restart; no browser manifest; whole workbook or no local changes.                          |
-| GHI CHÚ          | Export-time first Supplier name plus working space; never imported/persisted.                                                       |
-| Reason           | Governed adjustment explanation entered in Atlas before explicit Save.                                                              |
-| Location display | One location: School only; multiple: School then subordinate `Điểm giao: <Tên điểm giao>`; ambiguous canonical labels block export. |
-| Filtering        | Protected filter controls best effort; identity independent of filters/sorting.                                                     |
-| Print            | Fixed 27/72/168 pt classes, widths `20/33/7/19/14`, explicit 95%; native body 17.16 pt, black rules retained.                       |
+| Concern          | Frozen V1 decision                                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Scope            | Generated 1–7 date collection; each worksheet binds to its own authoritative daily Confirmed Need batch.          |
+| Authority        | Saved/current daily facts only; no weekly batch, aggregate, lifecycle object or cross-date command.               |
+| Metadata         | Six workbook-wide fields plus exact per-date batch/version/run/snapshot table.                                    |
+| Row identity     | F:O marker, stable line, revision, decision, date, School, Location, Ingredient, Unit, exact quantity baseline.   |
+| Import           | SỐ LƯỢNG only; fresh complete read after restart; no browser manifest; whole workbook or no local changes.        |
+| GHI CHÚ          | Export-time first Supplier name plus working space; never imported/persisted.                                     |
+| Reason           | Governed adjustment explanation entered in Atlas before explicit Save.                                            |
+| Location display | School name only; hidden Location required for exact lineage/currentness, with zero presentation effect.          |
+| Filtering        | Protected filter controls best effort; identity independent of filters/sorting.                                   |
+| Print            | Fixed 28/44 pt classes, widths `25/32/6/16/15`, explicit 96%; native primary body 17.28 pt, black rules retained. |
 
 ## 9. Specimen, reproduction and review gate
 
-[Specimen](examples/atlas-shopping-list-v1-example.xlsx): three dates, three **distinct daily batches**, 59 synthetic lines, four Schools, 29 Ingredient identities and 11 Supplier master records. Date counts remain 44/12/3. The five-line School stays together; the large School continues with `(tiếp)`. Dedicated synthetic identities isolate long School/Location, Ingredient, Supplier and quantity stresses without all-maxima combinations. Exact quantities, source/revision/decision evidence and active/effective Supplier edge cases remain. Hidden F:O and the six global plus three daily metadata records are unchanged in structure. No business names were copied from the calibration snapshot.
+[Specimen](examples/atlas-shopping-list-v1-example.xlsx): three dates, three **distinct daily batches**, 59 synthetic lines, four Schools, 28 Ingredient identities and 11 Supplier master records. Date counts remain 44/12/3. The five-line School stays together; the large School continues with `(tiếp)`. Dedicated synthetic identities isolate School, Ingredient, Supplier and quantity stresses without all-maxima combinations. Every row retains hidden Location identity; none of its text influences print. Exact quantities, source/revision/decision evidence and active/effective Supplier edge cases remain. Hidden F:O and the six global plus three daily metadata records are unchanged in structure. No business names were copied from the calibration snapshot.
 
-The isolated validator checks all existing identity/currentness, exact quantity and print invariants, with 41 retained negative controls and seven additional certification controls. A separate [native PDF validator](examples/validate-native-print.py) compares all visible A:E content and exact quantities to the actual XLSX, verifies repeating headings, A4 single-horizontal-page geometry, hashes, hidden-ID exclusion and glyph size. Every rendered page still requires visual review.
+The isolated validator checks all existing identity/currentness, exact quantity and print invariants, with 43 negative controls and seven additional certification controls. A separate [native PDF validator](examples/validate-native-print.py) compares all visible A:E content and exact quantities to the actual XLSX, verifies repeating headings, A4 single-horizontal-page geometry, hashes, hidden-ID exclusion, glyph size and glyph bounds inside each cell. A separately regenerated Location-mutated probe must have identical visible cells/styles, row heights, widths and page setup/breaks. Every rendered page still requires visual review.
 
 The deterministic binary, fixture, generator, finalizer and validator are design evidence only. No production module consumes them. The builder uses the bundled `@oai/artifact-tool`; the standard-library Python finalizer supplies native hiding, protection, exact XML decimals and print configuration. No repository dependency or backend object is added. Reproduce from the repository root with the bundled Node/Python paths returned by `load_workspace_dependencies`:
 
 ```powershell
-$taskPython = 'C:/Users/hp/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
-$taskNode = 'C:/Users/hp/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe'
-$env:ATLAS_ARTIFACT_NODE_MODULES = 'C:/Users/hp/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'
+$taskPython = 'C:/Users/HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
+$taskNode = 'C:/Users/HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe'
+$env:ATLAS_ARTIFACT_NODE_MODULES = 'C:/Users/HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'
 & $taskPython docs/xlsx/examples/make-fixture.py
 & $taskNode docs/xlsx/examples/generate-specimen.mjs docs/xlsx/examples/atlas-shopping-list-v1-example.xlsx
 & $taskPython docs/xlsx/examples/finalize-specimen.py
 & $taskPython docs/xlsx/examples/validate-specimen.py
 ```
 
-Native Excel 16 opened the regenerated specimen read-only and exported four A4 pages without saving it. All text, location labels, continuation headings, Supplier advice and quantities are complete; no hashes or horizontal split occur. The proposed 27/72/168 pt classes exceed the earlier 44 pt cap under this task's bounded-class rule and await Product approval with the rest of the contract. Remaining connected work includes actual overflow handling, real-data pagination, cross-version certification and any authorized shaped read for daily batches/Supplier projection. These are implementation acceptance concerns. No architecture or business decision remains unresolved in V1. PR #347 remains Draft and unmerged; Product approval and CI are still required before merge.
+Native Excel 16 opened the regenerated specimen through normal Open without a repair request. On an isolated copy, D4 was edited to `2`, saved with Save As and reopened. A full 15-column Table sort after intentional unprotection reordered the 44 first-date rows while preserving all visible/hidden cells by stable line identity, including quantity and Location. Native page-break preview and PDF export confirmed four A4 pages with all content complete and no hashes or horizontal split. All four pages were visually reviewed against the preferred right-hand template, retained OPS v1 export and starting c802b8f G3-Q artifact.
+
+Remaining connected work includes actual overflow handling, real-data pagination, cross-version certification and authorized daily-batch/Supplier projection at the export boundary. These are future implementation acceptance concerns; the operator Unit name is already available in the authoritative read. No architecture or business decision remains unresolved in this V1 proposal. PR #347 remains Draft and unmerged; owner approval and passing CI are required before merge.

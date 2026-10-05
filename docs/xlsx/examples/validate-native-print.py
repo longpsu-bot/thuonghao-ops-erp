@@ -5,9 +5,9 @@ Run validate-specimen.py separately, and visually inspect every rendered page.
 Text extraction cannot independently certify the appearance of clipped glyphs.
 """
 
-from collections import Counter
 from decimal import Decimal
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -60,7 +60,7 @@ def expected_cells(path, date_count):
 
 
 def validate(pdf_path, workbook_path):
-    schema = json.loads((HERE.parent / "atlas-shopping-list-xlsx-v1.schema.json").read_text(encoding="utf-8"))
+    schema = json.loads(Path(os.environ.get("ATLAS_SPECIMEN_SCHEMA", HERE.parent / "atlas-shopping-list-xlsx-v1.schema.json")).read_text(encoding="utf-8"))
     fixture = json.loads((HERE / "atlas-shopping-list-v1.fixture.json").read_text(encoding="utf-8"))
     layout = schema["x-atlas-layout"]["print"]
     gate = schema["x-atlas-print-certification"]
@@ -79,25 +79,41 @@ def validate(pdf_path, workbook_path):
             assert len(horizontal) >= 2, "Date/header/table boundaries"
             repeated_header = norm(page.crop((0, 0, page.width, horizontal[1])).extract_text() or "")
             assert f"({row_title_dates[sum(row_counts)]})" in repeated_header, "Repeated date title for these rows"
-            for heading in ["TRƯỜNG", "THÀNH PHẦN", "ĐVT", "SỐ LƯỢNG", "GHI CHÚ"]:
-                assert norm(heading) in repeated_header, "Repeated complete column heading"
             body_top = horizontal[1] + 0.5
+            body_chars = [char for char in page.chars if char["size"] > 10 and char["top"] >= body_top
+                          and char["bottom"] < page.height - 30]
+            # Extracted characters can survive PDF clipping. Require their full
+            # boxes to remain within one row and column, then inspect raster pages.
+            for char in body_chars:
+                row_bounds = next(((top, bottom) for top, bottom in zip(horizontal[1:], horizontal[2:])
+                                   if top <= (char["top"] + char["bottom"]) / 2 <= bottom), None)
+                assert row_bounds is not None, "Every body glyph belongs to a complete table row"
+                assert char["top"] >= row_bounds[0] - 0.5 and char["bottom"] <= row_bounds[1] + 0.5, "No glyph clipped across a row rule"
+                column_bounds = next(((left, right) for left, right in zip(bounds, bounds[1:])
+                                      if left <= (char["x0"] + char["x1"]) / 2 <= right), None)
+                assert column_bounds is not None, "Every body glyph belongs to a visible column"
+                assert char["x0"] >= column_bounds[0] - 0.5 and char["x1"] <= column_bounds[1] + 0.5, "No glyph clipped across a column rule"
+            for index, heading in enumerate(["TRƯỜNG", "THÀNH PHẦN", "ĐVT", "SỐ LƯỢNG", "GHI CHÚ"]):
+                header = page.crop((bounds[index], horizontal[0], bounds[index + 1], horizontal[1])).extract_text() or ""
+                assert norm(heading) == norm(header), "Repeated complete column heading, including wrapped SỐ LƯỢNG"
             for index, column in enumerate("ABCDE"):
                 crop = page.crop((bounds[index] + 0.1, body_top, bounds[index + 1] - 0.1, page.height - 30))
-                # Exclude the small footer; body and Supplier are >=14 pt here.
-                content = crop.filter(lambda item: item.get("object_type") != "char" or item["size"] > 14)
+                # Exclude only the small footer, retaining 14 pt nominal Supplier
+                # advice at >=95% scale and dedicated quantity typography.
+                content = crop.filter(lambda item: item.get("object_type") != "char" or item["size"] > 10)
                 value = content.extract_text() or ""
                 assert "#" not in value, "No hashed quantities or clipped-number fallback"
                 actual[column].append(value if column == "D" else norm(value))
-                if column in "CD":
+                if column in "ABC":
                     body_sizes.extend(char["size"] for char in content.chars)
                 if column == "D":
                     row_counts.append(len(re.findall(r"\d+(?:[,\.]\d+)?", value)))
             assert not re.search(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", page.extract_text() or ""), "Hidden identities do not print"
+            assert "Điểm giao" not in (page.extract_text() or "") and "Delivery Location" not in (page.extract_text() or ""), "No Location/address presentation"
         for column in "ABCE":
             assert "".join(actual[column]) == "".join(map(norm, expected[column])), f"Complete, ordered visible {column} content"
         quantities = [token for value in actual["D"] for token in re.findall(r"\d+(?:[,\.]\d+)?", value)]
-        assert Counter(Decimal(value.replace(",", ".")) for value in quantities) == Counter(map(Decimal, expected["D"])), "Every exact quantity visible"
+        assert [Decimal(value.replace(",", ".")) for value in quantities] == list(map(Decimal, expected["D"])), "Every exact quantity visible in source row order"
         assert sum(row_counts) == len(fixture["rows"]), "Every-and-only printed row set"
         effective_body = min(body_sizes)
         observed_scale = effective_body / layout["bodyFontPt"] * 100
