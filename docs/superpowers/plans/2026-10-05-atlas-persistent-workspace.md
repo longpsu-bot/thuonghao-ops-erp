@@ -27,7 +27,7 @@
 
 - [x] Registry launcher, compact account utility, attached desktop tabs, mobile open selector and 12-descriptor fixture.
 - [x] Central v2 geometry/type adoption; bounded four-surface finish.
-- [ ] Screenshot matrix and Impeccable review, Ponytail review, requested validation, draft PR and exact-head CI.
+- [x] Screenshot matrix and Impeccable review, Ponytail review, requested validation, draft PR and exact-head CI. Local full regression: 2,404 tests / 183 files; [PR #351](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/351) remains draft for product/architecture review.
 
 ## Ownership / preflight
 

@@ -1,6 +1,6 @@
 # ATLAS-UI-VNEXT-03C — Persistent Workspace Production Implementation
 
-**Status:** IN_PROGRESS. Explicitly assigned on 5 October 2026 after #350 merged. Implementation starts at `7629ccfdcd88e41a2dfa094c6a7b9719a94d9659`; #349 remains draft evidence only.
+**Status:** READY_FOR_PRODUCT_REVIEW. 03C-A and 03C-B are implemented and reviewed; local validation and required frontend CI pass. Explicitly assigned on 5 October 2026 after #350 merged. Implementation starts at `7629ccfdcd88e41a2dfa094c6a7b9719a94d9659`; #349 remains draft evidence only. [Draft PR #351](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/351) records exact-head checks and awaits product/architecture acceptance.
 
 **Prerequisite:** Reviewed/merged [D-048](../decisions/decision-atlas-persistent-workspace.md) and [Design Language v2](../ui/atlas-vnext-design-language-v2.md), then explicit assignment of 03C.
 
@@ -140,3 +140,5 @@ Browser evidence uses the existing opt-in `atlas-vnext-review.html` fixture. Sto
 **Product clarification — 5 October 2026:** the owner superseded the initial NVDA selection and removed assistive-technology/speech certification from 03C. Gate 15 now covers browser interaction, date ownership, transient dismissal and focus/input isolation. The installed Chakra 3.37.0 / Ark 5.39.0 / Zag 1.43.3 source audit remains historical evidence; a specialized document/live-announcer adapter is not required. Existing date semantics and basic keyboard behavior remain intact. No screen-reader certification claim is made or needed for acceptance.
 
 03C-A is committed separately as `885201e`; 03C-B adopts the compact geometry/type/scroll behavior on all four pilot surfaces. [Implementation evidence](../ui/atlas-persistent-workspace-03c-evidence.md) records the twenty product gates, 173 checked after captures, browser-only DatePicker gate, independent Standards/Spec review, Impeccable/Ponytail verdicts, source scope, security boundaries and rollback. Final delivery remains draft-only and requires passing CI on its exact PR head.
+
+Completion validation: full local regression **2,404/2,404 tests across 183 files**, focused owner/workspace tests, UI boundary, typecheck, Storybook/app builds, formatting, workspace and whitespace checks pass. [Required frontend CI on the reviewed code head](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/37304875394) passes; PR #351 exposes the final delivery-head checks. No merge or deployment was manually triggered. The existing Cloudflare Pages Git integration automatically publishes branch previews after pushes; hosted business writes remain **0**.
