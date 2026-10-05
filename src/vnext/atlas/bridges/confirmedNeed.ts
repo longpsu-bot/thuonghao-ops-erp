@@ -48,6 +48,11 @@ export {
   confirmedNeedReasonLabels,
 } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedModel";
 export type { ConfirmedNeedShoppingListImport } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList";
+export {
+  confirmedNeedShoppingListImportErrorMessage,
+  createConfirmedNeedShoppingListXlsx,
+  parseConfirmedNeedShoppingListXlsx,
+} from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList";
 export type {
   ConfirmedNeedDraftLine,
   ConfirmedNeedLine,

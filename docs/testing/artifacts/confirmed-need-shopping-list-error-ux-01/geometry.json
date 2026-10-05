@@ -1,0 +1,530 @@
+{
+  "browser": "151.0.7922.34",
+  "cases": [
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "normal",
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 298.1875,
+        "bottom": 654.6875,
+        "width": 1318,
+        "height": 356.5
+      },
+      "scrollLeft": 0,
+      "identity": "sticky",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 342.6875,
+        "bottom": 382.6875,
+        "width": 185.078125,
+        "height": 40
+      },
+      "reason": null,
+      "alert": null,
+      "alertText": null,
+      "alertLineHeight": null,
+      "save": null,
+      "active": null,
+      "saveCalls": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "corrupt-error",
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 325.1875,
+        "bottom": 681.6875,
+        "width": 1318,
+        "height": 356.5
+      },
+      "scrollLeft": 0,
+      "identity": "sticky",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 369.6875,
+        "bottom": 409.6875,
+        "width": 185.078125,
+        "height": 40
+      },
+      "reason": null,
+      "alert": {
+        "left": 97,
+        "right": 1415,
+        "top": 298.1875,
+        "bottom": 325.1875,
+        "width": 1318,
+        "height": 27
+      },
+      "alertText": "Không thể đọc Phiếu đi chợ. Hãy kiểm tra tệp .xlsx và thử lại.",
+      "alertLineHeight": 21,
+      "save": null,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "stale-error",
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 325.1875,
+        "bottom": 681.6875,
+        "width": 1318,
+        "height": 356.5
+      },
+      "scrollLeft": 0,
+      "identity": "sticky",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 369.6875,
+        "bottom": 409.6875,
+        "width": 185.078125,
+        "height": 40
+      },
+      "reason": null,
+      "alert": {
+        "left": 97,
+        "right": 1415,
+        "top": 298.1875,
+        "bottom": 325.1875,
+        "width": 1318,
+        "height": 27
+      },
+      "alertText": "Phiếu đi chợ không còn khớp dữ liệu Atlas hiện tại (dòng 4). Hãy xuất tệp mới và thử lại.",
+      "alertLineHeight": 21,
+      "save": null,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "imported-dirty",
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 373.1875,
+        "bottom": 775.6875,
+        "width": 1318,
+        "height": 402.5
+      },
+      "scrollLeft": 0,
+      "identity": "sticky",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 440.6875,
+        "bottom": 480.6875,
+        "width": 185.078125,
+        "height": 40
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 417.6875,
+        "bottom": 457.6875,
+        "width": 381.546875,
+        "height": 40
+      },
+      "alert": null,
+      "alertText": null,
+      "alertLineHeight": null,
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 792.6875,
+        "bottom": 832.6875,
+        "width": 57.75,
+        "height": 40
+      },
+      "active": "Số lượng xác nhận Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "dirty-reason-focus",
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 373.1875,
+        "bottom": 775.6875,
+        "width": 1318,
+        "height": 402.5
+      },
+      "scrollLeft": 0,
+      "identity": "sticky",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 440.6875,
+        "bottom": 480.6875,
+        "width": 185.078125,
+        "height": 40
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 417.6875,
+        "bottom": 457.6875,
+        "width": 381.546875,
+        "height": 40
+      },
+      "alert": null,
+      "alertText": null,
+      "alertLineHeight": null,
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 792.6875,
+        "bottom": 832.6875,
+        "width": 57.75,
+        "height": 40
+      },
+      "active": "Lý do Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "dirty-corrupt-error",
+      "pageWidth": 1440,
+      "pageScrollWidth": 1440,
+      "viewport": {
+        "left": 97,
+        "right": 1415,
+        "top": 400.1875,
+        "bottom": 802.6875,
+        "width": 1318,
+        "height": 402.5
+      },
+      "scrollLeft": 0,
+      "identity": "sticky",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 628.59375,
+        "right": 813.671875,
+        "top": 467.6875,
+        "bottom": 507.6875,
+        "width": 185.078125,
+        "height": 40
+      },
+      "reason": {
+        "left": 1021.453125,
+        "right": 1403,
+        "top": 444.6875,
+        "bottom": 484.6875,
+        "width": 381.546875,
+        "height": 40
+      },
+      "alert": {
+        "left": 97,
+        "right": 1415,
+        "top": 349.1875,
+        "bottom": 376.1875,
+        "width": 1318,
+        "height": 27
+      },
+      "alertText": "Không thể đọc Phiếu đi chợ. Hãy kiểm tra tệp .xlsx và thử lại.",
+      "alertLineHeight": 21,
+      "save": {
+        "left": 1158.1875,
+        "right": 1215.9375,
+        "top": 819.6875,
+        "bottom": 859.6875,
+        "width": 57.75,
+        "height": 40
+      },
+      "active": "Lý do Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "normal",
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 484.1875,
+        "bottom": 864.6875,
+        "width": 368,
+        "height": 380.5
+      },
+      "scrollLeft": 0,
+      "identity": "static",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 433,
+        "right": 569.96875,
+        "top": 528.6875,
+        "bottom": 572.6875,
+        "width": 136.96875,
+        "height": 44
+      },
+      "reason": null,
+      "alert": null,
+      "alertText": null,
+      "alertLineHeight": null,
+      "save": null,
+      "active": null,
+      "saveCalls": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "corrupt-error",
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 532.1875,
+        "bottom": 912.6875,
+        "width": 368,
+        "height": 380.5
+      },
+      "scrollLeft": 306,
+      "identity": "static",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 127,
+        "right": 263.96875,
+        "top": 576.6875,
+        "bottom": 620.6875,
+        "width": 136.96875,
+        "height": 44
+      },
+      "reason": null,
+      "alert": {
+        "left": 11,
+        "right": 379,
+        "top": 484.1875,
+        "bottom": 532.1875,
+        "width": 368,
+        "height": 48
+      },
+      "alertText": "Không thể đọc Phiếu đi chợ. Hãy kiểm tra tệp .xlsx và thử lại.",
+      "alertLineHeight": 21,
+      "save": null,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "stale-error",
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 532.1875,
+        "bottom": 912.6875,
+        "width": 368,
+        "height": 380.5
+      },
+      "scrollLeft": 306,
+      "identity": "static",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 127,
+        "right": 263.96875,
+        "top": 576.6875,
+        "bottom": 620.6875,
+        "width": 136.96875,
+        "height": 44
+      },
+      "reason": null,
+      "alert": {
+        "left": 11,
+        "right": 379,
+        "top": 484.1875,
+        "bottom": 532.1875,
+        "width": 368,
+        "height": 48
+      },
+      "alertText": "Phiếu đi chợ không còn khớp dữ liệu Atlas hiện tại (dòng 4). Hãy xuất tệp mới và thử lại.",
+      "alertLineHeight": 21,
+      "save": null,
+      "active": "Số lượng xác nhận Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "imported-dirty",
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 546.1875,
+        "bottom": 782.5,
+        "width": 368,
+        "height": 236.3125
+      },
+      "scrollLeft": 306,
+      "identity": "static",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": 127,
+        "right": 263.96875,
+        "top": 615.6875,
+        "bottom": 659.6875,
+        "width": 136.96875,
+        "height": 44
+      },
+      "reason": {
+        "left": 437,
+        "right": 733,
+        "top": 590.6875,
+        "bottom": 634.6875,
+        "width": 296,
+        "height": 44
+      },
+      "alert": null,
+      "alertText": null,
+      "alertLineHeight": null,
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 799.5,
+        "bottom": 843.5,
+        "width": 57.75,
+        "height": 44
+      },
+      "active": "Số lượng xác nhận Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "dirty-reason-focus",
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 546.1875,
+        "bottom": 782.5,
+        "width": 368,
+        "height": 236.3125
+      },
+      "scrollLeft": 672,
+      "identity": "static",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": -239,
+        "right": -102.03125,
+        "top": 615.6875,
+        "bottom": 659.6875,
+        "width": 136.96875,
+        "height": 44
+      },
+      "reason": {
+        "left": 71,
+        "right": 367,
+        "top": 590.6875,
+        "bottom": 634.6875,
+        "width": 296,
+        "height": 44
+      },
+      "alert": null,
+      "alertText": null,
+      "alertLineHeight": null,
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 799.5,
+        "bottom": 843.5,
+        "width": 57.75,
+        "height": 44
+      },
+      "active": "Lý do Gạo thơm",
+      "saveCalls": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "dirty-corrupt-error",
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "viewport": {
+        "left": 11,
+        "right": 379,
+        "top": 594.1875,
+        "bottom": 830.5,
+        "width": 368,
+        "height": 236.3125
+      },
+      "scrollLeft": 672,
+      "identity": "static",
+      "headerRow": "sticky",
+      "quantity": {
+        "left": -239,
+        "right": -102.03125,
+        "top": 663.6875,
+        "bottom": 707.6875,
+        "width": 136.96875,
+        "height": 44
+      },
+      "reason": {
+        "left": 71,
+        "right": 367,
+        "top": 638.6875,
+        "bottom": 682.6875,
+        "width": 296,
+        "height": 44
+      },
+      "alert": {
+        "left": 11,
+        "right": 379,
+        "top": 522.1875,
+        "bottom": 570.1875,
+        "width": 368,
+        "height": 48
+      },
+      "alertText": "Không thể đọc Phiếu đi chợ. Hãy kiểm tra tệp .xlsx và thử lại.",
+      "alertLineHeight": 21,
+      "save": {
+        "left": 122.1875,
+        "right": 179.9375,
+        "top": 847.5,
+        "bottom": 891.5,
+        "width": 57.75,
+        "height": 44
+      },
+      "active": "Lý do Gạo thơm",
+      "saveCalls": 0
+    }
+  ],
+  "pageErrors": [],
+  "blockedExternalRequests": [],
+  "hostedBusinessWrites": 0
+}
