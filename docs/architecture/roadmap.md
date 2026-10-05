@@ -2,7 +2,7 @@
 
 **Purpose:** Concise delivery order and current status. Detailed contracts, decisions and implementation records remain the scope authority.
 
-**Current repository baseline:** `11408a0b0ed5d3938321c90f38fd8a2f9c1ad587`
+**Current repository baseline:** `e533f4c0c174389d209fbe361b725e12adaeeb4b`
 
 ## Status legend
 
@@ -54,6 +54,7 @@ Do not create persisted lifecycle/status machinery or operator ceremony merely b
 - ✅ Atomic Need Generation and bound calculation/source evidence
 - ✅ Selective Confirmed Need continuity
 - ✅ Confirmed Need Save and Release boundary
+- ✅ Exact-day Shopping List XLSX export and quantity-only local import proposal
 
 Normal Planning route:
 
@@ -76,36 +77,40 @@ Menu / Attendance / Pantry
 - ✅ PO freshness/release eligibility is derived
 - ✅ Each official PO release is an explicit supplier commitment with immutable released content
 
-## Current gate — Atlas Staging parity and hosted review
+### Persistent Workspace v2
+
+- ✅ D-048 production implementation merged in PR #351
+- ✅ Persistent mounted workbenches with local context, guarded close/sign-out and bounded Need → Procurement handoff
+- 🟡 Connected hosted operator certification remains pending
+
+## Current gate — connected hosted rehearsal
 
 ### Observed Staging state
 
 Atlas Staging project: `rnzxmxiiqgtdevzregff`
 
-Latest read-only observation on 6 September 2026:
+Verified on 5 October 2026 under ATLAS-STAGING-PARITY-REHEARSAL-01:
 
 ```text
-migration tip:                    20260904081048_master_data_creation_ux_02
-new effective Recipe APIs:        0 / 4
-canonical School Types active:    2 / 2
-active Dishes:                    2
-canonical typed Recipe contexts:  0 / 4 ready roots
-legacy/general Recipe roots:      2
-synthetic-type Recipe roots:      1
+migration tip:         20261005032608_atlas_shopping_list_export_read
+migration lineage:     91 / 91 repository migrations; no additional gap
+catalog/security:      verified; 115 Atlas API functions
+business-data writes:  0; all 113 Atlas table fingerprints unchanged
+hosted commit:         e533f4c0c174389d209fbe361b725e12adaeeb4b
+hosted target:         rnzxmxiiqgtdevzregff
+operator rehearsal:    pending approved operator sign-in
 ```
 
-The managed Staging identity/foundation records are already present. Do not create another elaborate seed/package layer merely to make the UI reviewable.
+The [connected Staging app](https://thuonghao-ops-erp.pages.dev/) already serves the baseline through the existing Cloudflare Pages integration. Managed identity, reference and historical review facts exist; no new seed layer is needed. See [parity and rehearsal evidence](../testing/atlas-staging-connected-rehearsal.md) for verification limits and the pending matrix.
 
 ### Current sequence
 
 ```text
-🟡 Staging migration + Recipe-data reconciliation audit
-→ separately authorized protected migration/data action
-→ read-only hosted verification
-→ persistent connected Atlas Staging web app
-→ Product Owner review on the hosted app
-→ bounded UI/UX PR from observed findings
-→ connected Admin → Planning → Procurement rehearsal
+✅ Staging parity + read-only verification
+→ ✅ persistent connected Staging deployment
+→ 🟡 approved operator sign-in
+→ connected Admin → Planning → Procurement / PO / PXK rehearsal
+→ bounded disposition of observed findings + Product/Architecture review
 → PLANNING-PROCUREMENT-FREEZE-01
 → Warehouse
 ```
@@ -146,7 +151,8 @@ Do not pre-build a generic warehouse-management lifecycle.
 
 ## Deferred / separately governed
 
-- ↘️ Attendance and Confirmed Need XLSX-assisted bulk authoring
+- ↘️ Attendance XLSX-assisted bulk authoring
+- ↘️ Multi-day Shopping List UI beyond the current exact-day workbench
 - ↘️ `DISH-RICE-01` Menu-derived rice accompaniment until Product semantics are defined
 - ↘️ Conditional supplier-removal semantics until a concrete operator case requires it
 - ↘️ Production/QA and Dispatch expansion
@@ -154,7 +160,7 @@ Do not pre-build a generic warehouse-management lifecycle.
 
 ## Environment boundary
 
-- Atlas Staging is non-production and remains **NOT READY** until the current parity/reconciliation gate is completed.
+- Atlas Staging parity is verified; **freeze readiness remains NOT READY** until the connected operator rehearsal and Product/Architecture review pass.
 - Live OPS project `qnthofvccilhnefdcxnz` is a forbidden Atlas deployment target.
 - OPS v1 / Retool remains operational continuity and workflow evidence, not Atlas architecture authority.
 
