@@ -34,7 +34,7 @@ export type AtlasProcurementContext = {
   date: string;
   stage: "allocation" | "orders";
 };
-type RenderContext = {
+export type RenderContext = {
   app: AtlasVNextAppProps;
   seed: string;
   exitRef: RefObject<AtlasModuleExitHandle | null>;

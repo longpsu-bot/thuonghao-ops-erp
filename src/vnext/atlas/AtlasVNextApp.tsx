@@ -1,6 +1,7 @@
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import {
   createRef,
+  memo,
   useCallback,
   useEffect,
   useId,
@@ -23,8 +24,10 @@ import type { SchoolPxkWorkbenchProps } from "./dispatch/useSchoolPxkWorkbench";
 import type { ConfirmedNeedWorkbenchProps } from "./planning-confirmed/useConfirmedNeedWorkbench";
 import {
   atlasWorkbenches,
+  type AtlasWorkbenchDefinition,
   type AtlasWorkbenchId,
   type AtlasProcurementContext,
+  type RenderContext,
 } from "./AtlasWorkbenchRegistry";
 import { atlasWorkspaceReducer } from "./atlasWorkspace";
 import { AtlasWorkbenchScope } from "./AtlasVNextProvider";
@@ -59,6 +62,13 @@ type WorkbenchEntry = {
   report: (status: AtlasWorkbenchStatus) => void;
 };
 
+const WorkbenchContent = memo(function WorkbenchContent({
+  definition,
+  ...context
+}: RenderContext & { definition: AtlasWorkbenchDefinition }) {
+  return definition.render(context);
+});
+
 function ApplicationSession(props: AtlasVNextAppProps) {
   const prefix = useId();
   const [workspace, dispatch] = useReducer(atlasWorkspaceReducer, {
@@ -77,22 +87,25 @@ function ApplicationSession(props: AtlasVNextAppProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const [signOutBlocked, setSignOutBlocked] = useState(false);
   const entries = useRef<Map<AtlasWorkbenchId, WorkbenchEntry> | null>(null);
-  const createEntry = (id: AtlasWorkbenchId, seed: string): WorkbenchEntry => ({
-    seed,
-    exitRef: createRef(),
-    panelRef: createRef(),
-    report: (status) =>
-      setStatuses((previous) => {
-        const old = previous[id];
-        if (
-          old?.unsaved === status.unsaved &&
-          old?.blocked === status.blocked &&
-          old?.attention === status.attention
-        )
-          return previous;
-        return { ...previous, [id]: status };
-      }),
-  });
+  const createEntry = useCallback(
+    (id: AtlasWorkbenchId, seed: string): WorkbenchEntry => ({
+      seed,
+      exitRef: createRef(),
+      panelRef: createRef(),
+      report: (status) =>
+        setStatuses((previous) => {
+          const old = previous[id];
+          if (
+            old?.unsaved === status.unsaved &&
+            old?.blocked === status.blocked &&
+            old?.attention === status.attention
+          )
+            return previous;
+          return { ...previous, [id]: status };
+        }),
+    }),
+    [],
+  );
   if (!entries.current)
     entries.current = new Map([
       ["schools", createEntry("schools", mountDate.current)],
@@ -120,11 +133,12 @@ function ApplicationSession(props: AtlasVNextAppProps) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [protectedSession]);
 
-  const canDeactivate = (target: AtlasWorkbenchId | null) => {
-    if (target === workspace.activeId) return true;
+  const canDeactivate = useCallback((target: AtlasWorkbenchId | null) => {
+    const activeId = currentWorkspace.current.activeId;
+    if (target === activeId) return true;
     // Modal presence is focus/portal safety, never a source of dirty metadata.
-    const panel = workspace.activeId
-      ? entries.current?.get(workspace.activeId)?.panelRef.current
+    const panel = activeId
+      ? entries.current?.get(activeId)?.panelRef.current
       : null;
     if (
       panel?.querySelector(
@@ -137,29 +151,35 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       return false;
     }
     return true;
-  };
-  const open = (id: AtlasWorkbenchId, seed?: string) => {
-    if (!canDeactivate(id)) return false;
-    if (!entries.current!.has(id))
-      entries.current!.set(id, createEntry(id, seed ?? mountDate.current));
-    setNotice(null);
-    dispatch({ type: "OPEN", id });
-    return true;
-  };
-  const continueAllocation = (date: string) => {
-    const retained = entries.current!.has("procurement");
-    if (!open("procurement", date)) return;
-    const context = procurementContext.current;
-    if (
-      retained &&
-      context &&
-      (context.date !== date || context.stage !== "allocation")
-    ) {
-      setNotice(
-        `Nhu cầu ngày ${date} yêu cầu Phân bổ NCC. Kế hoạch mua hàng đang mở giữ ngày ${context.date}, giai đoạn ${context.stage === "orders" ? "Đơn mua" : "Phân bổ NCC"}. Đổi ngày hoặc giai đoạn tại bàn làm việc này khi đã sẵn sàng.`,
-      );
-    }
-  };
+  }, []);
+  const open = useCallback(
+    (id: AtlasWorkbenchId, seed?: string) => {
+      if (!canDeactivate(id)) return false;
+      if (!entries.current!.has(id))
+        entries.current!.set(id, createEntry(id, seed ?? mountDate.current));
+      setNotice(null);
+      dispatch({ type: "OPEN", id });
+      return true;
+    },
+    [canDeactivate, createEntry],
+  );
+  const continueAllocation = useCallback(
+    (date: string) => {
+      const retained = entries.current!.has("procurement");
+      if (!open("procurement", date)) return;
+      const context = procurementContext.current;
+      if (
+        retained &&
+        context &&
+        (context.date !== date || context.stage !== "allocation")
+      ) {
+        setNotice(
+          `Nhu cầu ngày ${date} yêu cầu Phân bổ NCC. Kế hoạch mua hàng đang mở giữ ngày ${context.date}, giai đoạn ${context.stage === "orders" ? "Đơn mua" : "Phân bổ NCC"}. Đổi ngày hoặc giai đoạn tại bàn làm việc này khi đã sẵn sàng.`,
+        );
+      }
+    },
+    [open],
+  );
   const restoreNavigationFocus = () => {
     requestAnimationFrame(() => {
       const id = currentWorkspace.current.activeId;
@@ -278,15 +298,16 @@ function ApplicationSession(props: AtlasVNextAppProps) {
               {definition.label}
             </Box>
             <AtlasWorkbenchScope active={active}>
-              {definition.render({
-                app: props,
-                seed: entry.seed,
-                exitRef: entry.exitRef,
-                onWorkspaceStatus: entry.report,
-                onServiceDateChange: reportDate,
-                onContinueAllocation: continueAllocation,
-                onProcurementContextChange: reportProcurement,
-              })}
+              <WorkbenchContent
+                definition={definition}
+                app={props}
+                seed={entry.seed}
+                exitRef={entry.exitRef}
+                onWorkspaceStatus={entry.report}
+                onServiceDateChange={reportDate}
+                onContinueAllocation={continueAllocation}
+                onProcurementContextChange={reportProcurement}
+              />
             </AtlasWorkbenchScope>
           </Box>
         );

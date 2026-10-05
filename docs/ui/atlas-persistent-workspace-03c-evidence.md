@@ -45,6 +45,21 @@ Central titles now use 22px narrow/24px desktop, weight 650, with compact contex
 
 [Computed text contrast](../testing/artifacts/atlas-persistent-workspace-03c/text-contrast.json) records shared primary/muted text against workbench/toolbar surfaces: 7.89/7.23 and 5.58/5.11 respectively. This is a scoped operator-readability check, not a WCAG certification claim.
 
+## Workbench switching performance follow-up
+
+The owner reported lag when switching workbenches. The App previously rebuilt every open owner's render tree on each navigation/status update. One memo boundary now retains unchanged content; stable navigation callbacks read the current committed workspace. Active-context changes still reach DatePicker and modal consumers. No owners are unmounted, no reads or drafts move into a cache, and backend authority is unchanged.
+
+The same seven-owner fixture, four selected pilot surfaces, twenty measured switches per layout and 4× CPU throttling produced these results. Baseline production source is `617c083`; after evidence uses the final delivery implementation. Both runs use local Vite development and fixture APIs in Chromium 151.0.7922.34, measuring click to the second animation frame. These are same-machine comparative measurements, not absolute hosted-production latency guarantees.
+
+| Viewport | Median before | Median after | p95 before  | p95 after | Median reduction |
+| -------- | ------------- | ------------ | ----------- | --------- | ---------------- |
+| 1440×900 | 4,643.05 ms   | 181.00 ms    | 5,232.80 ms | 213.60 ms | 96.1%            |
+| 650×900  | 4,273.75 ms   | 126.45 ms    | 4,517.40 ms | 199.00 ms | 97.0%            |
+
+[Before measurements](../testing/artifacts/atlas-persistent-workspace-03c/performance-before.json) and [after measurements](../testing/artifacts/atlas-persistent-workspace-03c/performance-after.json) retain individual samples. Reproduce the current measurements with `python -X utf8 scripts/atlas_workspace_performance.py --phase after` against the local Vite review entry. All seven mounted owners, the correct active panel and hidden-focus isolation are asserted on every measured switch.
+
+After optimization, **36/36** focused App/workspace/handoff/DatePicker tests and the three-size native browser DatePicker gate pass. Independent Standards and Spec follow-up reviews report **PASS, zero findings**. A separate unchanged legacy Recipe Adjustment test helper clicked Create before its authority read enabled the button; waiting for actionable UI fixes that CI race, with **64/64** tests passing at the default timeout and no legacy production change.
+
 ## Review and validation
 
 Independent code-review axes used the fixed starting SHA and final working implementation. **Standards PASS; Spec PASS; zero unresolved findings.** The Spec review's two focus/keyboard findings were corrected at their shared handlers and left public regressions. The retired App animation tests now exercise the seven corresponding persistent-workspace journeys; no tests were disabled and existing domain protections remain asserted.
@@ -53,7 +68,7 @@ Ponytail FULL final challenge **PASS**: one static registry, two-field reducer, 
 
 Local UI boundary, typecheck, Storybook build, app build, workspace check and whitespace checks pass. Targeted formatting covers changed sources/documents/evidence. The full local regression run passed **2,404 tests across 183 files** in 619.51 seconds, using two workers and a 20-second local deadline after Windows resource-pressure timeouts; repository test/CI configuration is unchanged. A Recipe cancellation assertion now completes the native CSS exit boundary explicitly because jsdom does not execute animations; that complete file passes **24/24** with the default timeout. The required **Frontend CI / Format, typecheck, test, build** checks on draft PR #351 identify the exact validated delivery head.
 
-[Frontend CI on reviewed code head `5f0f95546d9270154c30751a15d90dd40329c2c5`](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/37304875394) passes frozen install, UI boundary/type generation, formatting, typecheck, full tests, app build and diff checks. Final documentation changes are verified again by PR delivery-head CI. All implementation gates and independent reviews pass; product/architecture acceptance is the remaining merge decision.
+[Frontend CI on reviewed code head before the performance follow-up, `5f0f95546d9270154c30751a15d90dd40329c2c5`](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/37304875394), passes frozen install, UI boundary/type generation, formatting, typecheck, full tests, app build and diff checks. PR delivery-head CI certifies the final implementation including the bounded switching optimization. Readiness requires green required checks on the current head; product/architecture acceptance remains a separate merge decision.
 
 The workspace checker still prints the historical D: checkout warning. The owner explicitly authorized E: for this task; root/origin/initial clean tree/base SHA were verified before implementation, and no other checkout was edited.
 
