@@ -46,6 +46,20 @@ async function select(action = "Sửa") {
   await screen.findByRole("heading", { name: "Công thức gốc" });
 }
 describe("Công thức operator workbench", () => {
+  it("shows pending catalogue loading instead of a false empty result", async () => {
+    const fixture = createRecipeReviewFixture("DISH_ACTIVE_EDITABLE");
+    fixture.api.getWorkbench = async () => new Promise(() => {});
+    render(
+      <AtlasVNextProvider>
+        <DishRecipeWorkbench authSubject="operator" api={fixture.api} />
+      </AtlasVNextProvider>,
+    );
+    expect(await screen.findByText("Đang tải danh mục món…")).toBeVisible();
+    expect(
+      screen.queryByText("Chưa có món. Tạo món mới để bắt đầu."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tạo món mới" })).toBeDisabled();
+  });
   it("surfaces latest-version lock state and catalogue action before selection", async () => {
     await setup("DISH_ACTIVE_LOCKED", (fixture) => {
       fixture.data.recipe_versions[0]!.recipe_version_status = "LOCKED";
@@ -271,6 +285,9 @@ describe("Công thức operator workbench", () => {
       "aria-invalid",
       "true",
     );
+    expect(
+      screen.getByLabelText("Định lượng Hành lá"),
+    ).toHaveAccessibleDescription("Nhập định lượng hợp lệ.");
     expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Định lượng Hành lá"), {
       target: { value: "0,5" },

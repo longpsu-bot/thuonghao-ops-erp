@@ -17,13 +17,11 @@ import {
 beforeEach(() => {
   vi.stubGlobal(
     "matchMedia",
-    vi
-      .fn()
-      .mockReturnValue({
-        matches: true,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      }),
+    vi.fn().mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
   );
 });
 afterEach(() => {

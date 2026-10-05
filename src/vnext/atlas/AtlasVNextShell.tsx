@@ -8,7 +8,7 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { CaretDown, UserCircle, X } from "@phosphor-icons/react";
+import { CaretDown, Circle, UserCircle, X } from "@phosphor-icons/react";
 import {
   useEffect,
   useId,
@@ -158,7 +158,9 @@ export function AtlasVNextShell({
           ? buttons.length - 1
           : event.key === "ArrowDown"
             ? (current + 1) % buttons.length
-            : (current - 1 + buttons.length) % buttons.length;
+            : current < 0
+              ? buttons.length - 1
+              : (current - 1 + buttons.length) % buttons.length;
     event.preventDefault();
     buttons[index]?.focus();
   };
@@ -214,7 +216,7 @@ export function AtlasVNextShell({
   } as const;
   return (
     <Flex
-      minH="var(--atlas-layout-viewport-height, 100dvh)"
+      h="var(--atlas-layout-viewport-height, 100dvh)"
       direction="column"
       bg="bg.workspace"
       minW="var(--atlas-layout-zero, 0)"
@@ -476,7 +478,12 @@ export function AtlasVNextShell({
                       color="status.warning"
                       title={marker(id)}
                     >
-                      •
+                      <Icon
+                        asChild
+                        boxSize="var(--atlas-workspace-marker-size, 6px)"
+                      >
+                        <Circle weight="fill" aria-hidden="true" />
+                      </Icon>
                     </Box>
                   )}
                 </Button>
@@ -567,7 +574,16 @@ export function AtlasVNextShell({
           )}
         </Box>
       )}
-      <Box as="main" minW="var(--atlas-layout-zero, 0)" flex="1" p="sm">
+      <Box
+        as="main"
+        display="flex"
+        flexDirection="column"
+        minH="var(--atlas-layout-zero, 0)"
+        overflow="auto"
+        minW="var(--atlas-layout-zero, 0)"
+        flex="1"
+        p="sm"
+      >
         {children}
       </Box>
     </Flex>

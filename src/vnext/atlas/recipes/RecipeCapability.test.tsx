@@ -71,34 +71,45 @@ async function editor(action = "REPLACE") {
     expect(screen.getByRole("button", { name: "Xem tác động" })).toBeEnabled(),
   );
 }
+async function retainedWorkspace(initialJob: "recipes" | "changes") {
+  const f = createChangeOrderFixture(),
+    base = createRecipeReviewFixture("DISH_ACTIVE_EDITABLE"),
+    status = vi.fn();
+  const view = (active: boolean) => (
+    <AtlasVNextProvider>
+      <button>Other workbench</button>
+      <AtlasWorkbenchScope active={active}>
+        <div hidden={!active} inert={!active}>
+          <RecipeCapability
+            authSubject="operator"
+            recipeApi={base.api}
+            adjustmentApi={f.api}
+            initialDate="2026-09-12"
+            initialJob={initialJob}
+            onWorkspaceStatus={status}
+          />
+        </div>
+      </AtlasWorkbenchScope>
+    </AtlasVNextProvider>
+  );
+  const ui = render(view(true));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", {
+        name: initialJob === "changes" ? "Tạo lệnh điều chỉnh" : "Tạo món mới",
+      }),
+    ).toBeEnabled(),
+  );
+  return {
+    ...f,
+    status,
+    setActive: (active: boolean) => ui.rerender(view(active)),
+  };
+}
+
 describe("Unified Recipe capability and Change Order operator job", () => {
   it("retains a delayed Change Order Preview without opening a hidden modal, then shows it on activation", async () => {
-    const f = createChangeOrderFixture(),
-      base = createRecipeReviewFixture("DISH_ACTIVE_EDITABLE"),
-      status = vi.fn();
-    const view = (active: boolean) => (
-      <AtlasVNextProvider>
-        <button>Other workbench</button>
-        <AtlasWorkbenchScope active={active}>
-          <div hidden={!active} inert={!active}>
-            <RecipeCapability
-              authSubject="operator"
-              recipeApi={base.api}
-              adjustmentApi={f.api}
-              initialDate="2026-09-12"
-              initialJob="changes"
-              onWorkspaceStatus={status}
-            />
-          </div>
-        </AtlasWorkbenchScope>
-      </AtlasVNextProvider>
-    );
-    const ui = render(view(true));
-    await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Tạo lệnh điều chỉnh" }),
-      ).toBeEnabled(),
-    );
+    const f = await retainedWorkspace("changes");
     await editor();
     const original = f.api.preview;
     let finish!: () => void;
@@ -110,7 +121,7 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     };
     fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
     await waitFor(() => expect(finish).toBeTypeOf("function"));
-    ui.rerender(view(false));
+    f.setActive(false);
     const other = screen.getByRole("button", { name: "Other workbench" });
     other.focus();
     await act(async () => {
@@ -120,10 +131,10 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       document.querySelector('[role="dialog"][data-state="open"]'),
     ).toBeNull();
     expect(other).toHaveFocus();
-    expect(status).toHaveBeenLastCalledWith(
+    expect(f.status).toHaveBeenLastCalledWith(
       expect.objectContaining({ unsaved: true, blocked: true }),
     );
-    ui.rerender(view(true));
+    f.setActive(true);
     const dialog = await screen.findByRole("dialog", { name: "Xem tác động" });
     expect(
       within(dialog).getByRole("button", { name: "Lưu lệnh điều chỉnh" }),
@@ -132,6 +143,31 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       "Điều chỉnh theo thực đơn",
     );
     expect(f.calls.filter((call) => call.name === "preview")).toHaveLength(1);
+  });
+  it("defers utility modal activation when accepted discard completes in an inactive workbench", async () => {
+    const f = await retainedWorkspace("recipes");
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
+    choose("Tên món", "Bỏ thay đổi này");
+    fireEvent.click(screen.getByRole("button", { name: "Nhập workbook" }));
+    const discard = await screen.findByRole("dialog");
+    fireEvent.click(
+      within(discard).getByRole("button", { name: "Bỏ thay đổi" }),
+    );
+    await waitFor(() =>
+      expect(discard).toHaveAttribute("data-state", "closed"),
+    );
+    f.setActive(false);
+    fireEvent(discard, new Event("animationcancel", { bubbles: true }));
+    await waitFor(() =>
+      expect(screen.queryByLabelText("Tên món")).not.toBeInTheDocument(),
+    );
+    expect(
+      document.querySelector('[role="dialog"][data-state="open"]'),
+    ).toBeNull();
+    f.setActive(true);
+    expect(
+      await screen.findByRole("dialog", { name: "Nhập workbook" }),
+    ).toBeInTheDocument();
   });
   it("reports actual utility reason edits and their revert before modal dismissal", async () => {
     const status = vi.fn();

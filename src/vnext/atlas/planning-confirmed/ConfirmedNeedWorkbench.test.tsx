@@ -139,7 +139,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(context.parentElement).toHaveStyle({
       gridTemplateRows: "auto minmax(0, 1fr)",
     });
-    expect(context).toHaveTextContent("Lập nhu cầu");
+    expect(
+      within(context).getByRole("heading", { level: 1 }),
+    ).toHaveAccessibleDescription("Lập nhu cầu");
     expect(context).toHaveTextContent("Xác nhận nhu cầu");
     expect(context).toHaveTextContent("07/09/2026 · Tất cả trường");
 

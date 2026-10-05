@@ -179,8 +179,7 @@ describe("Planning sources Chakra workbench", () => {
       name: "Ngữ cảnh nguồn lập nhu cầu",
     });
     expect(context).toHaveStyle({
-      "--atlas-task-context-desktop-min-height": "68px",
-      "--atlas-task-context-desktop-target-height": "72px",
+      minHeight: "var(--atlas-task-context-min-height, 56px)",
     });
     expect(context.parentElement).toHaveStyle({
       gridTemplateRows: "auto minmax(0, 1fr)",
@@ -190,7 +189,6 @@ describe("Planning sources Chakra workbench", () => {
         "Tóm tắt công việc: 07/09/2026 · Tất cả trường",
       ),
     ).toBeInTheDocument();
-    const module = within(context).getByText("Lập nhu cầu");
     const heading = screen.getByRole("heading", {
       level: 1,
       name: "Thực đơn",
@@ -200,10 +198,8 @@ describe("Planning sources Chakra workbench", () => {
       name: "Phạm vi nguồn lập nhu cầu",
     });
     expect(heading).toBeVisible();
-    expect(
-      module.compareDocumentPosition(heading) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(heading).toHaveAccessibleDescription("Lập nhu cầu");
+    expect(context).toContainElement(heading);
     expect(
       heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();

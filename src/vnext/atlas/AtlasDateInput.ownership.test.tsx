@@ -94,7 +94,7 @@ it("dismisses the owned calendar on deactivation while retaining its date", asyn
   ).toEqual(["05", "09", "2026"]);
 });
 
-it("disconnects a pending selected-date announcement when its owner deactivates", async () => {
+it("preserves independent dates after keyboard selection and a delayed switch", async () => {
   render(<PersistentDates />);
   const trigger = screen.getByRole("button", { name: "Mở lịch — Need" });
   trigger.focus();
@@ -117,52 +117,57 @@ it("disconnects a pending selected-date announcement when its owner deactivates"
   );
   fireEvent.keyDown(document.activeElement!, { key: "Enter" });
   await waitFor(() =>
-    expect(document.querySelector("[data-live-announcer]")).not.toBeNull(),
+    expect(screen.getAllByRole("spinbutton")[0]).toHaveTextContent("06"),
   );
-  const pendingRegion = document.querySelector("[data-live-announcer]")!;
-  expect(pendingRegion.textContent).toBe("");
   fireEvent.click(screen.getByRole("button", { name: "Switch owner" }));
-  await waitFor(() => expect(pendingRegion.isConnected).toBe(false));
-  // The upstream callback checks isConnected rather than cancelling its timer.
   await new Promise((resolve) => window.setTimeout(resolve, 3100));
-  expect(pendingRegion.textContent).toBe("");
+  expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+  expect(
+    screen.getAllByRole("spinbutton").map((segment) => segment.textContent),
+  ).toEqual(["02", "10", "2026"]);
+  fireEvent.click(screen.getByRole("button", { name: "Switch owner" }));
+  expect(
+    screen.getAllByRole("spinbutton").map((segment) => segment.textContent),
+  ).toEqual(["06", "09", "2026"]);
 }, 10000);
 
-it("does not queue an inactive date update to announce after reactivation", async () => {
-  const { container } = render(<PersistentDates />);
+it("blocks hidden editing while accepting an explicit owner date update", async () => {
+  render(<PersistentDates />);
+  const segment = screen.getAllByRole("spinbutton")[0];
   fireEvent.click(screen.getByRole("button", { name: "Switch owner" }));
+  expect(segment).toHaveAttribute("aria-disabled", "true");
+  expect(segment.tabIndex).toBe(-1);
+  fireEvent.keyDown(segment, { key: "ArrowUp" });
+  fireEvent.click(segment);
+  expect(segment).toHaveTextContent("05");
+  expect(screen.queryByRole("grid")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Set hidden Need date" }));
-  await waitFor(() =>
-    expect(
-      container.querySelector('[data-owner="Need"] [data-type="day"]'),
-    ).toHaveTextContent("18"),
-  );
-  expect(document.querySelector("[data-live-announcer]")).toBeNull();
+  await waitFor(() => expect(segment).toHaveTextContent("18"));
   fireEvent.click(screen.getByRole("button", { name: "Switch owner" }));
-  await new Promise((resolve) => window.setTimeout(resolve, 3100));
-  expect(document.querySelector("[data-live-announcer]")).toBeNull();
+  expect(screen.getAllByRole("spinbutton")[0]).toBe(segment);
   expect(
     screen.getAllByRole("spinbutton").map((segment) => segment.textContent),
   ).toEqual(["18", "12", "2026"]);
-}, 10000);
+});
 
-it("closing an inactive owner does not erase the active owner's pending announcement", async () => {
+it("closing an inactive owner does not corrupt the active calendar or selected date", async () => {
   render(<PersistentDates />);
   fireEvent.click(screen.getByRole("button", { name: "Switch owner" }));
   fireEvent.click(screen.getByRole("button", { name: "Mở lịch — Purchase" }));
   const grid = await screen.findByRole("grid");
+  fireEvent.click(screen.getByRole("button", { name: "Close inactive Need" }));
+  expect(screen.getByRole("grid")).toBe(grid);
   fireEvent.click(
     grid.querySelector<HTMLElement>(
       '[data-value="2026-10-13"][data-part="table-cell-trigger"]',
     )!,
   );
   await waitFor(() =>
-    expect(document.querySelector("[data-live-announcer]")).not.toBeNull(),
+    expect(screen.getAllByRole("spinbutton")[0]).toHaveTextContent("13"),
   );
-  const pendingRegion = document.querySelector("[data-live-announcer]")!;
-  fireEvent.click(screen.getByRole("button", { name: "Close inactive Need" }));
-  expect(pendingRegion.isConnected).toBe(true);
-  await waitFor(() => expect(pendingRegion).toHaveTextContent("13"), {
-    timeout: 4000,
-  });
+  await new Promise((resolve) => window.setTimeout(resolve, 3100));
+  expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+  expect(
+    screen.getAllByRole("spinbutton").map((segment) => segment.textContent),
+  ).toEqual(["13", "10", "2026"]);
 }, 10000);

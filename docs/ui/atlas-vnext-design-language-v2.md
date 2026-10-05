@@ -196,11 +196,11 @@ Preserve 44px touch targets, long Vietnamese labels, local table overflow and fo
 
 ## 24. Accessibility
 
-Use named tablist/tab/tabpanel relationships, selected state and roving keyboard focus. ArrowLeft/Right and Home/End traverse tabs; activation is immediate because it performs no initialization read. Tab enters the active workbench; contextual close is keyboard reachable and named. A Delete close shortcut, if retained, invokes the same owner guard. Preserve clear focus on navigation, mineral and selected surfaces, WCAG AA text contrast, labels and row-error association.
+Use named tablist/tab/tabpanel relationships, selected state and roving keyboard focus. ArrowLeft/Right and Home/End traverse tabs; activation is immediate because it performs no initialization read. Tab enters the active workbench; contextual close is keyboard reachable and named. A Delete close shortcut, if retained, invokes the same owner guard. Preserve clear focus, readable contrast, labels and row-error association.
 
 Inactive panels and escaping portals must be absent from focus, active landmarks and operator interaction. Nonmodal transient UI is dismissed; a modal is resolved before deactivation. Launcher, guard cancellation, approved close and mobile switching all have visible focus destinations; do not leave focus on a removed tab or let deferred dialog cleanup steal it.
 
-**DatePicker production gate:** the pinned Chakra/Zag live announcer may create shared, delayed document-body announcements outside the Atlas portal container. Investigate and certify multiple persistently mounted date workbenches, including switch/close during pending announcements. Portal containment and hidden/inert panels alone are not proof of announcement isolation. Record the tested dependency/browser/assistive-technology versions and residual limits. Resolve this as a bounded UI/accessibility concern; Supabase/business architecture must not change to solve it.
+**DATEPICKER_WORKSPACE_GATE — owner clarification, 5 October 2026:** only the active workbench may expose a calendar. Switching dismisses transient date UI; inactive panels cannot receive input or focus. Selection belongs to its owner, activation never changes a date, and no hidden popup/focus trap survives switching or closing. Browser checks must pass with several mounted date controls. NVDA/JAWS, screen-reader journeys, spoken-date verification, live-announcer human certification and WCAG certification are not release requirements for the current operator population. Keep the existing library's semantics; no specialized speech adapter is required. Supabase/business architecture remains unchanged.
 
 ## 25. Motion
 

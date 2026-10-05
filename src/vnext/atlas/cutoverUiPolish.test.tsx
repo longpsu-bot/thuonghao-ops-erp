@@ -19,13 +19,11 @@ import {
 beforeEach(() => {
   vi.stubGlobal(
     "matchMedia",
-    vi
-      .fn()
-      .mockReturnValue({
-        matches: true,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      }),
+    vi.fn().mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
   );
   vi.stubGlobal(
     "ResizeObserver",
@@ -190,12 +188,12 @@ describe("Atlas pre-cutover UI polish", () => {
     });
     expect(tabs).toHaveAttribute("data-tab-tier", "primary");
     expect(tabs).toHaveAttribute("data-tab-align", "start");
-    expect(within(section).getByText("Kế hoạch mua hàng")).toBeVisible();
     const heading = within(section).getByRole("heading", {
       level: 1,
       name: "Phân bổ nhà cung ứng",
     });
     expect(heading).toBeVisible();
+    expect(heading).toHaveAccessibleDescription("Kế hoạch mua hàng");
     expect(within(section).getAllByRole("heading", { level: 1 })).toEqual([
       heading,
     ]);

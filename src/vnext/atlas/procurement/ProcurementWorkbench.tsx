@@ -187,24 +187,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       borderWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
-      minH={{
-        base: "var(--atlas-layout-workbench-mobile-height, calc(100dvh - 132px))",
-        lg: "var(--atlas-layout-workbench-height, calc(100dvh - 100px))",
-      }}
     >
       <Grid
-        style={
-          {
-            minHeight:
-              "var(--atlas-procurement-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))",
-          } as CSSProperties
-        }
-        css={{
-          "--atlas-procurement-station-height": {
-            base: "var(--atlas-layout-workbench-mobile-height, calc(100dvh - 132px))",
-            lg: "var(--atlas-layout-workbench-height, calc(100dvh - 100px))",
-          },
-        }}
         templateColumns="minmax(0, 1fr)"
         templateRows="auto minmax(0, 1fr)"
         alignContent="start"

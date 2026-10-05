@@ -65,6 +65,14 @@ describe("Atlas v2 workspace shell", () => {
     fireEvent.click(trigger);
     const input = screen.getByRole("textbox", { name: "Tìm bàn làm việc" });
     expect(input).toHaveFocus();
+    fireEvent.keyDown(input, { key: "ArrowUp" });
+    expect(
+      within(screen.getByRole("dialog", { name: "Bàn làm việc" })).getByRole(
+        "button",
+        { name: "Công thức" },
+      ),
+    ).toHaveFocus();
+    input.focus();
     fireEvent.change(input, { target: { value: "khong tim thay" } });
     expect(screen.getByRole("status")).toHaveTextContent("Không tìm thấy");
     fireEvent.change(input, { target: { value: "cong thuc" } });

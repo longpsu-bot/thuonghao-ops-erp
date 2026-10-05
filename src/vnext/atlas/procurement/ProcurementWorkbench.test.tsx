@@ -115,15 +115,12 @@ describe("Procurement vNext operator workbench", () => {
       name: "Ngữ cảnh công việc mua hàng",
     });
     expect(station).toHaveStyle({
-      minHeight:
-        "var(--atlas-procurement-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))",
       alignContent: "start",
       gridTemplateRows: "auto minmax(0, 1fr)",
     });
     expect(context.parentElement).toBe(station);
     expect(context).toHaveStyle({
-      "--atlas-task-context-desktop-min-height": "68px",
-      "--atlas-task-context-desktop-target-height": "72px",
+      minHeight: "var(--atlas-task-context-min-height, 56px)",
     });
     expect(
       within(context).getByLabelText(
@@ -147,7 +144,9 @@ describe("Procurement vNext operator workbench", () => {
     show("ready");
     await action();
 
-    const context = screen.getByText("Kế hoạch mua hàng");
+    const context = screen.getByRole("region", {
+      name: "Ngữ cảnh công việc mua hàng",
+    });
     const allocationHeading = screen.getByRole("heading", {
       level: 1,
       name: "Phân bổ nhà cung ứng",

@@ -17,16 +17,16 @@
 
 ## 03C-A
 
-- [ ] Static registry, ordered-ID reducer and stable persistent panels in App; owner-scoped portals and hidden/inert panels.
-- [ ] Explicit status callbacks from every editable owner; Planning owns its mount-seeded date. Procurement reports date/stage only for truthful navigation disclosure.
-- [ ] Recipe exact metadata/BOM/change-order dirty status and timer audit.
-- [ ] DatePicker source audit, smallest bounded correction, keyboard/pending-announcement tests.
-- [ ] App integration tests: retention, reads, close, sign-out, identity, handoff, modal safety and accessibility.
+- [x] Static registry, ordered-ID reducer and stable persistent panels in App; owner-scoped portals and hidden/inert panels.
+- [x] Explicit status callbacks from every editable owner; Planning owns its mount-seeded date. Procurement reports date/stage only for truthful navigation disclosure.
+- [x] Recipe exact metadata/BOM/change-order dirty status and timer audit.
+- [x] DatePicker source audit and browser keyboard/date/focus/isolation gate. Owner removed speech/human certification requirements; specialized adapter deleted.
+- [x] App integration tests: retention, reads, close, sign-out, identity, handoff, modal safety and accessibility basics.
 
 ## 03C-B
 
-- [ ] Registry launcher, compact account utility, attached desktop tabs, mobile open selector and 12-descriptor fixture.
-- [ ] Central v2 geometry/type adoption; bounded four-surface finish.
+- [x] Registry launcher, compact account utility, attached desktop tabs, mobile open selector and 12-descriptor fixture.
+- [x] Central v2 geometry/type adoption; bounded four-surface finish.
 - [ ] Screenshot matrix and Impeccable review, Ponytail review, requested validation, draft PR and exact-head CI.
 
 ## Ownership / preflight

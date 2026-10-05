@@ -1,0 +1,74 @@
+{
+  "result": "PASS",
+  "results": [
+    {
+      "result": "PASS",
+      "browser": "151.0.7922.34",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "actualTouch": false,
+      "mountedDateControls": 5,
+      "dailyKeyboard": "ArrowRight / Enter, retained segment DOM identity and date",
+      "weekKeyboard": "ArrowDown / Enter, retained field and canonical week",
+      "weekSelectionFocus": {
+        "tag": "INPUT",
+        "label": "Tuần phục vụ",
+        "hidden": false
+      },
+      "delayedSwitch": "after 3100ms: dates retained, hidden input blocked, calendar stays dismissed",
+      "delayedClose": "after 3100ms: remaining owner dates unchanged, calendar stays dismissed",
+      "inactiveClose": "retained active date and segment identity; calendar reopens and selects correctly",
+      "dismissal": "Escape returns trigger focus; outside pointer closes calendar",
+      "calendarGeometry": "popup and focused cell within viewport and scroll clipping ancestors",
+      "pageErrors": []
+    },
+    {
+      "result": "PASS",
+      "browser": "151.0.7922.34",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "actualTouch": false,
+      "mountedDateControls": 5,
+      "dailyKeyboard": "ArrowRight / Enter, retained segment DOM identity and date",
+      "weekKeyboard": "ArrowDown / Enter, retained field and canonical week",
+      "weekSelectionFocus": {
+        "tag": "INPUT",
+        "label": "Tuần phục vụ",
+        "hidden": false
+      },
+      "delayedSwitch": "after 3100ms: dates retained, hidden input blocked, calendar stays dismissed",
+      "delayedClose": "after 3100ms: remaining owner dates unchanged, calendar stays dismissed",
+      "inactiveClose": "retained active date and segment identity; calendar reopens and selects correctly",
+      "dismissal": "Escape returns trigger focus; outside pointer closes calendar",
+      "calendarGeometry": "popup and focused cell within viewport and scroll clipping ancestors",
+      "pageErrors": []
+    },
+    {
+      "result": "PASS",
+      "browser": "151.0.7922.34",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "actualTouch": false,
+      "mountedDateControls": 5,
+      "dailyKeyboard": "ArrowRight / Enter, retained segment DOM identity and date",
+      "weekKeyboard": "ArrowDown / Enter, retained field and canonical week",
+      "weekSelectionFocus": {
+        "tag": "INPUT",
+        "label": "Tuần phục vụ",
+        "hidden": false
+      },
+      "delayedSwitch": "after 3100ms: dates retained, hidden input blocked, calendar stays dismissed",
+      "delayedClose": "after 3100ms: remaining owner dates unchanged, calendar stays dismissed",
+      "inactiveClose": "retained active date and segment identity; calendar reopens and selects correctly",
+      "dismissal": "Escape returns trigger focus; outside pointer closes calendar",
+      "calendarGeometry": "popup and focused cell within viewport and scroll clipping ancestors",
+      "pageErrors": []
+    }
+  ]
+}

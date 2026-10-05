@@ -32,7 +32,7 @@ export function RecipeCapability(
       borderRadius="workbench"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Heading as="h1" textStyle="workbenchTitle" px="md" pt="md" pb="sm">
+      <Heading as="h1" textStyle="workbenchTitle" px="md" pt="sm" pb="xs">
         Công thức
       </Heading>
       <Tabs.Root

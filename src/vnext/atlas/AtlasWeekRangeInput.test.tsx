@@ -52,7 +52,7 @@ function show(disabled = false) {
 }
 
 describe("Atlas week-range input", () => {
-  it("isolates pending week announcements across switch and inactive close without replacing the field", async () => {
+  it("retains week context across switch and closes the inactive owner without corrupting the active date", async () => {
     function Owners() {
       const [active, setActive] = useState(true);
       const [closed, setClosed] = useState(false);
@@ -95,13 +95,10 @@ describe("Atlas week-range input", () => {
       )!,
     );
     await waitFor(() => expect(field).toHaveValue("21/09/2026 – 27/09/2026"));
-    const pending = document.querySelector("[data-live-announcer]")!;
-    expect(pending).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Switch date owner" }));
     expect(container.querySelector('input[aria-label="Tuần phục vụ"]')).toBe(
       field,
     );
-    expect(pending.isConnected).toBe(false);
     expect(
       container.querySelector(
         '[data-scope="date-picker"][data-part="content"]',
@@ -111,14 +108,16 @@ describe("Atlas week-range input", () => {
     fireEvent.focus(segment);
     fireEvent.keyDown(segment, { key: "ArrowUp" });
     await waitFor(() => expect(segment).toHaveTextContent("03"));
-    const activeRegion = document.querySelector("[data-live-announcer]")!;
-    expect(activeRegion).not.toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở lịch — Ngày phục vụ" }),
+    );
+    const activeCalendar = await screen.findByRole("grid");
     fireEvent.click(screen.getByRole("button", { name: "Close hidden week" }));
-    expect(activeRegion.isConnected).toBe(true);
+    expect(screen.getByRole("grid")).toBe(activeCalendar);
     await new Promise((resolve) => window.setTimeout(resolve, 3100));
-    expect(pending.textContent).toBe("");
-    expect(activeRegion.textContent).not.toBe("");
-    expect(activeRegion.closest("[hidden], [inert]")).toBeNull();
+    expect(screen.getAllByRole("spinbutton")[0]).toBe(segment);
+    expect(segment).toHaveTextContent("03");
+    expect(screen.getByRole("grid")).toBe(activeCalendar);
   }, 10000);
 
   it("projects one canonical Monday as its full Vietnamese Monday-Sunday range", () => {

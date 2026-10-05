@@ -32,7 +32,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-function show(scenario: SchoolPxkScenario = "READY") {
+function show(scenario: SchoolPxkScenario = "READY", expandedFilters = true) {
   const api = createSchoolPxkReviewFixture(scenario);
   const read = vi.spyOn(api, "getWorkbench");
   const write = vi.spyOn(api, "releaseDocument");
@@ -51,6 +51,10 @@ function show(scenario: SchoolPxkScenario = "READY") {
       />
     </AtlasVNextProvider>,
   );
+  if (expandedFilters) {
+    const filters = screen.queryByRole("button", { name: "Bộ lọc" });
+    if (filters) fireEvent.click(filters);
+  }
   return { api, read, write, xlsx, pdf, groupedXlsx };
 }
 async function open(label = "Phát hành") {
@@ -59,6 +63,44 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("keeps compact search immediate and discloses the exact date, School and state filters", async () => {
+    show("READY", false);
+    await open();
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBeEnabled();
+    expect(
+      screen.queryByRole("combobox", { name: "Tình trạng" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Ngày 24/09/2026 · Tất cả trường · Tình trạng: Tất cả"),
+    ).toBeVisible();
+    fireEvent.click(disclosure);
+    const state = screen.getByRole("combobox", { name: "Tình trạng" });
+    fireEvent.change(state, { target: { value: "BLOCKED" } });
+    fireEvent.click(disclosure);
+    expect(screen.getByText(/Tình trạng: Bị chặn/)).toBeVisible();
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+  });
+  it("names keyboard table scrolling and describes row action identity without changing the action", async () => {
+    show();
+    const action = await open();
+    expect(action).toHaveAccessibleDescription(
+      /Trường Tiểu học Nguyễn Du.*Bếp chính/,
+    );
+    const viewport = screen.getByRole("region", {
+      name: "Bảng phiếu xuất kho theo trường",
+    });
+    expect(viewport).toHaveAttribute("tabindex", "0");
+    expect(viewport).toContainElement(
+      screen.getByRole("table", { name: "Phiếu xuất kho theo trường" }),
+    );
+    const lines = screen.getByRole("region", { name: "Bảng Nội dung dự kiến" });
+    expect(lines).toHaveAttribute("tabindex", "0");
+    expect(lines).toContainElement(
+      screen.getByRole("table", { name: "Nội dung dự kiến" }),
+    );
+  });
   it("reports local note edits without treating untouched selection as unsaved", async () => {
     const report = vi.fn();
     render(

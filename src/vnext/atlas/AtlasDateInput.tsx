@@ -6,23 +6,13 @@ import {
   useDateInput,
 } from "@chakra-ui/react";
 import { CalendarBlank } from "@phosphor-icons/react";
-import {
-  AtlasDateEnvironment,
-  AtlasDismissInactiveCalendar,
-} from "./AtlasDateEnvironment";
+import { AtlasDismissInactiveCalendar } from "./AtlasDateOwnership";
 import {
   useAtlasPortalContainer,
   useAtlasWorkbenchActive,
 } from "./AtlasVNextProvider";
 
 /** Vietnamese presentation; business-facing values remain ISO calendar dates. */
-export function AtlasDateInput(props: AtlasDateInputProps) {
-  return (
-    <AtlasDateEnvironment>
-      <AtlasDateInputControl {...props} />
-    </AtlasDateEnvironment>
-  );
-}
 
 type AtlasDateInputProps = {
   disabled?: boolean;
@@ -31,7 +21,7 @@ type AtlasDateInputProps = {
   onValueChange: (value: string) => void;
 };
 
-function AtlasDateInputControl({
+export function AtlasDateInput({
   label,
   value,
   onValueChange,

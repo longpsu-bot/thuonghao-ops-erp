@@ -40,6 +40,7 @@ export function PlanningCapability(
         value={phase}
         activationMode="manual"
         variant="line"
+        gap="var(--atlas-layout-zero, 0)"
         onValueChange={({ value }) => {
           if ((value === "sources" || value === "confirmed") && value !== phase)
             active.current?.requestExit(() => setPhase(value));
@@ -47,7 +48,7 @@ export function PlanningCapability(
       >
         <Tabs.List
           aria-label="Giai đoạn lập nhu cầu"
-          mb="sm"
+          mb="var(--atlas-layout-zero, 0)"
           {...atlasPrimaryTabList}
         >
           <Tabs.Trigger value="sources" {...atlasPrimaryTabTrigger}>

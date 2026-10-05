@@ -5,10 +5,7 @@ import {
   useAtlasPortalContainer,
   useAtlasWorkbenchActive,
 } from "./AtlasVNextProvider";
-import {
-  AtlasDateEnvironment,
-  AtlasDismissInactiveCalendar,
-} from "./AtlasDateEnvironment";
+import { AtlasDismissInactiveCalendar } from "./AtlasDateOwnership";
 
 function shiftIsoDate(value: string, days: number) {
   const date = new Date(`${value}T12:00:00Z`);
@@ -37,15 +34,7 @@ type AtlasWeekRangeInputProps = {
   onValueChange: (weekStart: string) => void;
 };
 
-export function AtlasWeekRangeInput(props: AtlasWeekRangeInputProps) {
-  return (
-    <AtlasDateEnvironment>
-      <AtlasWeekRangeInputControl {...props} />
-    </AtlasDateEnvironment>
-  );
-}
-
-function AtlasWeekRangeInputControl({
+export function AtlasWeekRangeInput({
   label,
   value,
   onValueChange,

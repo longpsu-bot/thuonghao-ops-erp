@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useReducer,
   useRef,
   useState,
@@ -27,6 +28,7 @@ import {
 } from "./AtlasWorkbenchRegistry";
 import { atlasWorkspaceReducer } from "./atlasWorkspace";
 import { AtlasWorkbenchScope } from "./AtlasVNextProvider";
+import { atlasVisuallyHidden } from "./AtlasTaskTabs";
 
 export type AtlasVNextAppProps = {
   authSubject: string;
@@ -63,6 +65,10 @@ function ApplicationSession(props: AtlasVNextAppProps) {
     openIds: ["schools"],
     activeId: "schools",
   });
+  const currentWorkspace = useRef(workspace);
+  useLayoutEffect(() => {
+    currentWorkspace.current = workspace;
+  }, [workspace]);
   const mountDate = useRef(vietnamServiceDate(props.now ?? new Date()));
   const procurementContext = useRef<AtlasProcurementContext | null>(null);
   const [statuses, setStatuses] = useState<
@@ -154,8 +160,9 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       );
     }
   };
-  const restoreNavigationFocus = (id: AtlasWorkbenchId | null) => {
+  const restoreNavigationFocus = () => {
     requestAnimationFrame(() => {
+      const id = currentWorkspace.current.activeId;
       const desktopTab = id
         ? document.getElementById(`${prefix}-tab-${id}`)
         : null;
@@ -172,10 +179,6 @@ function ApplicationSession(props: AtlasVNextAppProps) {
     if (!entry) return;
     flushSync(() => dispatch({ type: "ACTIVATE", id }));
     const approved = () => {
-      const next = atlasWorkspaceReducer(
-        { ...workspace, activeId: id },
-        { type: "CLOSE_APPROVED", id },
-      );
       flushSync(() => {
         dispatch({ type: "CLOSE_APPROVED", id });
         setStatuses((previous) => {
@@ -186,7 +189,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       });
       entries.current!.delete(id);
       if (id === "procurement") procurementContext.current = null;
-      restoreNavigationFocus(next.activeId);
+      restoreNavigationFocus();
     };
     if (id === "reconciliation") approved();
     else entry.exitRef.current?.requestExit(approved);
@@ -261,16 +264,16 @@ function ApplicationSession(props: AtlasVNextAppProps) {
             hidden={!active}
             inert={!active}
             tabIndex={0}
+            flex="1"
+            minH="var(--atlas-layout-zero, 0)"
+            overflow="auto"
+            bg="bg.workbench"
             minW="var(--atlas-layout-zero, 0)"
           >
             <Box
               as="span"
               id={`${prefix}-label-${id}`}
-              position="absolute"
-              width="var(--atlas-layout-edge, 1px)"
-              height="var(--atlas-layout-edge, 1px)"
-              overflow="hidden"
-              clipPath="inset(50%)"
+              {...atlasVisuallyHidden}
             >
               {definition.label}
             </Box>

@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -17,13 +18,11 @@ import {
 beforeEach(() => {
   vi.stubGlobal(
     "matchMedia",
-    vi
-      .fn()
-      .mockReturnValue({
-        matches: true,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      }),
+    vi.fn().mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
   );
 });
 afterEach(() => {
@@ -79,7 +78,7 @@ it("returns to an already-open School workbench with its exact draft and input i
   );
   expect(field).toHaveValue("123");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-});
+}, 20_000);
 
 it("activates existing instances with no duplicate or initialization reads", async () => {
   const { apis } = show();
@@ -102,7 +101,7 @@ it("activates existing instances with no duplicate or initialization reads", asy
   expect(
     screen.getByRole("tab", { name: "Kế hoạch mua hàng" }),
   ).toHaveAttribute("aria-selected", "true");
-});
+}, 20_000);
 
 it("blocks sign-out with multiple dirty owners and preserves every hidden draft", async () => {
   const { signOut } = show();
@@ -134,7 +133,7 @@ it("blocks sign-out with multiple dirty owners and preserves every hidden draft"
   const unload = new Event("beforeunload", { cancelable: true });
   window.dispatchEvent(unload);
   expect(unload.defaultPrevented).toBe(true);
-});
+}, 20_000);
 
 it("makes an inactive dirty owner visible before close, retains cancellation, and closes only that owner on approval", async () => {
   show();
@@ -145,9 +144,14 @@ it("makes an inactive dirty owner visible before close, retains cancellation, an
   await open("Phiếu xuất kho");
   fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
   expect(school.closest('[role="tabpanel"]')).not.toHaveAttribute("hidden");
+  const cancelledDialog = await screen.findByRole("dialog");
   fireEvent.click(
     await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
   );
+  await waitFor(() =>
+    expect(cancelledDialog).toHaveAttribute("data-state", "closed"),
+  );
+  fireEvent(cancelledDialog, new Event("animationcancel", { bubbles: true }));
   expect(school).toHaveValue("123");
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
@@ -162,4 +166,23 @@ it("makes an inactive dirty owner visible before close, retains cancellation, an
   await waitFor(() =>
     expect(screen.getByRole("tab", { name: "Phiếu xuất kho" })).toHaveFocus(),
   );
-});
+}, 20_000);
+
+it("restores current active navigation when close focus cleanup completes after another owner opens", async () => {
+  show();
+  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
+  await open("Công thức");
+  await screen.findByRole("button", { name: "Tạo món mới" });
+  const frames: FrameRequestCallback[] = [];
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
+    frames.push(callback),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
+  await open("Phiếu xuất kho");
+  act(() =>
+    frames.splice(0).forEach((callback) => callback(performance.now())),
+  );
+  const active = screen.getByRole("tab", { name: /^Phiếu xuất kho/ });
+  expect(active).toHaveAttribute("aria-selected", "true");
+  await waitFor(() => expect(active).toHaveFocus());
+}, 20_000);

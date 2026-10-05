@@ -1,11 +1,11 @@
 import "@testing-library/jest-dom/vitest";
 import {
-  act,
   cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AtlasVNextApp } from "./AtlasVNextApp";
@@ -16,19 +16,14 @@ import {
 } from "./atlasApplicationReviewFixtures";
 import { createRecipeReviewFixture } from "./recipes/recipeReviewFixtures";
 
-// jsdom has no animation timeline. Complete the browser boundary explicitly;
-// the application, domain guards, fixtures, and mounted workbenches stay real.
-const animations: {
-  target: Element;
-  frames: Keyframe[];
-  options: KeyframeAnimationOptions;
-  onfinish: (() => void) | null;
-  cancel: ReturnType<typeof vi.fn>;
-}[] = [];
+// D-048 / 03C supersedes replacement-page motion: activation retains real owners;
+// only an approved close is an exit. Observe the browser animation boundary
+// without mocking the application, fixtures or domain guards.
+const animate = vi.fn();
 let reduced = false;
 beforeEach(() => {
   reduced = false;
-  animations.length = 0;
+  animate.mockClear();
   vi.stubGlobal(
     "matchMedia",
     vi.fn((media: string) => ({
@@ -40,23 +35,17 @@ beforeEach(() => {
       removeEventListener: vi.fn(),
     })),
   );
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
   Object.defineProperty(Element.prototype, "animate", {
     configurable: true,
-    value: function (
-      this: Element,
-      frames: Keyframe[],
-      options: KeyframeAnimationOptions,
-    ) {
-      const animation = {
-        target: this,
-        frames,
-        options,
-        onfinish: null as (() => void) | null,
-        cancel: vi.fn(),
-      };
-      animations.push(animation);
-      return animation;
-    },
+    value: animate,
   });
 });
 afterEach(() => {
@@ -68,6 +57,8 @@ afterEach(() => {
 async function show(unknown = false) {
   const apis = createAtlasApplicationFixture();
   if (unknown) apis.recipe = createRecipeReviewFixture("SAVE_UNKNOWN").api;
+  const schoolsRead = vi.spyOn(apis.masterData, "getSchools");
+  const recipeRead = vi.spyOn(apis.recipe, "getWorkbench");
   const result = render(
     <AtlasVNextProvider>
       <AtlasVNextApp
@@ -81,178 +72,205 @@ async function show(unknown = false) {
     </AtlasVNextProvider>,
   );
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
-  return { apis, ...result };
+  return { apis, schoolsRead, recipeRead, ...result };
 }
-function nav(name: string) {
-  fireEvent.click(screen.getByRole("button", { name, hidden: true }));
-}
-function complete() {
-  const animation = animations.at(-1)!;
-  expect(animation.onfinish).toBeTypeOf("function");
-  act(() => animation.onfinish!());
-}
-function heading(name: string) {
-  return screen.getByRole("heading", {
-    level: 1,
-    name,
-
-    hidden: true,
-  });
-}
-async function settle(name: string) {
-  complete();
-  await screen.findByRole("heading", {
-    level: 1,
-    name,
-
-    hidden: true,
-  });
-  complete();
-  expect(heading(name)).toHaveFocus();
-}
-
-it("keeps Schools through exit, mounts only Recipe during entry, then focuses its heading", async () => {
-  await show();
-  const old = heading("Sĩ số mặc định");
-  nav("Công thức");
-  expect(old).toBeInTheDocument();
-  expect(
-    screen.queryByRole("heading", { level: 1, name: "Công thức" }),
-  ).not.toBeInTheDocument();
-  expect(animations).toHaveLength(1);
-  expect(animations[0]!.options.duration).toBe(60);
-  expect(animations[0]!.frames).toEqual([{ opacity: 1 }, { opacity: 0.15 }]);
-  complete();
-  expect(old).not.toBeInTheDocument();
-  expect(heading("Công thức")).not.toHaveFocus();
-  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-  expect(animations).toHaveLength(2);
-  expect(animations[1]!.options).toMatchObject({
-    duration: 180,
-    easing: "ease-out",
-  });
-  expect(animations[1]!.frames).toEqual([
-    { opacity: 0.15, transform: "translateY(6px)" },
-    { opacity: 1, transform: "translateY(0)" },
-  ]);
-  expect(animations[1]!.target).toBe(animations[0]!.target);
-  for (const animation of animations) {
-    for (const frame of animation.frames) {
-      expect(Number(frame.opacity)).toBeGreaterThanOrEqual(0.15);
-    }
-  }
-  complete();
-  expect(heading("Công thức")).toHaveFocus();
-  expect(animations[1]!.target).not.toHaveAttribute("inert");
-});
-
-it("does not move or activate the destination until the dirty domain authorizes discard", async () => {
-  await show();
-  fireEvent.change(
-    screen.getAllByRole("textbox", { name: /Học sinh mặc định/ })[0]!,
-    { target: { value: "123" } },
+function open(name: string) {
+  fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+  fireEvent.click(
+    within(screen.getByRole("dialog", { name: "Bàn làm việc" })).getByRole(
+      "button",
+      { name },
+    ),
   );
-  nav("Công thức");
-  await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" });
-  expect(animations).toHaveLength(0);
-  expect(heading("Sĩ số mặc định")).toBeInTheDocument();
-  expect(
-    screen.getByRole("button", {
-      name: "Trường học",
-
-      hidden: true,
-    }),
-  ).toHaveAttribute("aria-current", "page");
-  expect(
-    screen.queryByRole("heading", { level: 1, name: "Công thức" }),
-  ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Tiếp tục chỉnh sửa" }));
+}
+function activate(name: string) {
+  fireEvent.click(
+    within(
+      screen.getByRole("tablist", { name: "Bàn làm việc đang mở" }),
+    ).getByRole("tab", { name: new RegExp(`^${name}`) }),
+  );
+}
+function panel(name: string) {
+  const tab = within(
+    screen.getByRole("tablist", { name: "Bàn làm việc đang mở" }),
+  ).getByRole("tab", { name: new RegExp(`^${name}`) });
+  const owner = document.getElementById(tab.getAttribute("aria-controls")!);
+  expect(owner).toHaveAttribute("role", "tabpanel");
+  expect(owner).toHaveAccessibleName(name);
+  return owner!;
+}
+async function recipe() {
+  open("Công thức");
+  await screen.findByRole("button", {
+    name: "Sửa công thức Canh bí đỏ thịt bằm",
+  });
+}
+async function dismissed() {
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
-  expect(animations).toHaveLength(0);
-  nav("Công thức");
-  fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
-  expect(animations).toHaveLength(1);
-  expect(heading("Sĩ số mặc định")).toBeInTheDocument();
-  await settle("Công thức");
-}, 15000);
+}
 
-it("keeps UNKNOWN recovery intact with zero outgoing animation", async () => {
-  await show(true);
-  nav("Công thức");
-  await settle("Công thức");
+it("switches instantly without exit, animation or refresh and retains both owners' DOM", async () => {
+  const h = await show();
+  const schools = panel("Trường học");
+  const input = screen.getAllByRole("textbox", {
+    name: /Học sinh mặc định/,
+  })[0]!;
+  await recipe();
+  const recipes = panel("Công thức");
+  const edit = screen.getByRole("button", {
+    name: "Sửa công thức Canh bí đỏ thịt bằm",
+  });
+  const reads = [
+    h.schoolsRead.mock.calls.length,
+    h.recipeRead.mock.calls.length,
+  ];
+  expect(schools).toHaveAttribute("hidden");
+  expect(schools).toHaveAttribute("inert");
+  expect(input).toBeInTheDocument();
+  activate("Trường học");
+  expect(panel("Trường học")).toBe(schools);
+  expect(screen.getAllByRole("textbox", { name: /Học sinh mặc định/ })[0]).toBe(
+    input,
+  );
+  expect(recipes).toHaveAttribute("hidden");
+  open("Công thức");
+  expect(panel("Công thức")).toBe(recipes);
+  expect(
+    screen.getByRole("button", { name: "Sửa công thức Canh bí đỏ thịt bằm" }),
+  ).toBe(edit);
+  expect(h.schoolsRead).toHaveBeenCalledTimes(reads[0]!);
+  expect(h.recipeRead).toHaveBeenCalledTimes(reads[1]!);
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  expect(animate).not.toHaveBeenCalled();
+}, 20000);
+
+it("allows a dirty switch but activates an inactive owner and guards its explicit close", async () => {
+  await show();
+  const input = screen.getAllByRole("textbox", {
+    name: /Học sinh mặc định/,
+  })[0]!;
+  fireEvent.change(input, { target: { value: "123" } });
+  await recipe();
+  const recipes = panel("Công thức");
+  expect(input).toHaveValue("123");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
+  expect(panel("Trường học")).toBeVisible();
+  expect(recipes).toHaveAttribute("hidden");
   fireEvent.click(
-    await screen.findByRole("button", {
-      name: "Sửa công thức Canh bí đỏ thịt bằm",
-    }),
+    await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+  );
+  await dismissed();
+  expect(input).toHaveValue("123");
+  expect(
+    screen.getByRole("tab", { name: /Trường học.*Chưa lưu/ }),
+  ).toHaveAttribute("aria-selected", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
+  await waitFor(() => expect(input).not.toBeInTheDocument());
+  expect(panel("Công thức")).toBe(recipes);
+  expect(
+    screen.queryByRole("tab", { name: /Trường học/ }),
+  ).not.toBeInTheDocument();
+  expect(animate).not.toHaveBeenCalled();
+}, 20000);
+
+it("retains UNKNOWN recovery locally through activation and blocks its owner's close", async () => {
+  await show(true);
+  await recipe();
+  const recipes = panel("Công thức");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Sửa công thức Canh bí đỏ thịt bằm" }),
   );
   fireEvent.change(await screen.findByLabelText("Định lượng Bí đỏ"), {
     target: { value: "2,25" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
   fireEvent.click(screen.getByRole("button", { name: "Lưu công thức" }));
-  await screen.findByRole("button", { name: "Tải lại để xác nhận" });
-  nav("Trường học");
-  expect(animations).toHaveLength(2);
-  expect(heading("Công thức")).toBeInTheDocument();
+  const recovery = await screen.findByRole("button", {
+    name: "Tải lại để xác nhận",
+  });
+  activate("Trường học");
+  expect(recipes).toHaveAttribute("hidden");
+  expect(recipes).toHaveAttribute("inert");
+  expect(recovery).toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Tải lại để xác nhận" }),
-  ).toBeInTheDocument();
-  expect(
-    screen.queryByRole("heading", { level: 1, name: "Sĩ số mặc định" }),
+    screen.queryByRole("button", { name: "Tải lại để xác nhận" }),
   ).not.toBeInTheDocument();
-}, 15000);
+  fireEvent.click(screen.getByRole("button", { name: "Đóng Công thức" }));
+  expect(panel("Công thức")).toBe(recipes);
+  expect(screen.getByRole("button", { name: "Tải lại để xác nhận" })).toBe(
+    recovery,
+  );
+  expect(
+    within(
+      screen.getByRole("tablist", { name: "Bàn làm việc đang mở" }),
+    ).getByRole("tab", { name: /^Công thức/ }),
+  ).toHaveAttribute("aria-selected", "true");
+  expect(
+    screen.queryByRole("button", { name: "Bỏ thay đổi" }),
+  ).not.toBeInTheDocument();
+  expect(animate).not.toHaveBeenCalled();
+}, 20000);
 
-it("ignores rapid requests during both phases without queueing a stale destination", async () => {
+it("opens rapid destinations immediately and activates existing owners without duplicate panels", async () => {
   await show();
-  nav("Công thức");
-  nav("Lập nhu cầu");
-  expect(animations).toHaveLength(1);
-  complete();
-  nav("Phiếu xuất kho");
-  expect(animations).toHaveLength(2);
-  complete();
-  expect(heading("Công thức")).toHaveFocus();
+  open("Công thức");
+  const recipes = panel("Công thức");
+  open("Lập nhu cầu");
+  const planning = panel("Lập nhu cầu");
+  open("Phiếu xuất kho");
+  const pxk = panel("Phiếu xuất kho");
+  open("Công thức");
+  expect(panel("Công thức")).toBe(recipes);
+  expect(planning).toHaveAttribute("hidden");
+  expect(pxk).toHaveAttribute("hidden");
+  const tabs = within(
+    screen.getByRole("tablist", { name: "Bàn làm việc đang mở" }),
+  );
+  expect(tabs.getAllByRole("tab")).toHaveLength(4);
+  expect(tabs.getAllByRole("tab", { selected: true })).toHaveLength(1);
+  expect(tabs.getByRole("tab", { selected: true })).toBe(
+    tabs.getByRole("tab", { name: /^Công thức/ }),
+  );
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-  expect(
-    screen.queryByRole("heading", { level: 1, name: "Thực đơn" }),
-  ).not.toBeInTheDocument();
-  expect(
-    screen.getByRole("button", {
-      name: "Công thức",
+  expect(animate).not.toHaveBeenCalled();
+}, 20000);
 
-      hidden: true,
-    }),
-  ).toHaveAttribute("aria-current", "page");
-});
-
-it("reduced motion still guards dirty exit then mounts and focuses immediately with no animation", async () => {
+it("reduced motion preserves dirty switches and still guards an explicit close", async () => {
   reduced = true;
   await show();
-  fireEvent.change(
-    screen.getAllByRole("textbox", { name: /Học sinh mặc định/ })[0]!,
-    { target: { value: "123" } },
+  const input = screen.getAllByRole("textbox", {
+    name: /Học sinh mặc định/,
+  })[0]!;
+  fireEvent.change(input, { target: { value: "123" } });
+  await recipe();
+  const recipes = panel("Công thức");
+  expect(input).toHaveValue("123");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  activate("Trường học");
+  expect(screen.getAllByRole("textbox", { name: /Học sinh mặc định/ })[0]).toBe(
+    input,
   );
-  nav("Công thức");
-  await screen.findByRole("button", { name: "Bỏ thay đổi" });
-  expect(heading("Sĩ số mặc định")).toBeInTheDocument();
-  expect(animations).toHaveLength(0);
-  fireEvent.click(screen.getByRole("button", { name: "Bỏ thay đổi" }));
-  expect(heading("Công thức")).toHaveFocus();
-  expect(animations).toHaveLength(0);
-  expect(
-    screen.queryByRole("heading", { level: 1, name: "Sĩ số mặc định" }),
-  ).not.toBeInTheDocument();
-});
+  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
+  expect(input).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
+  await waitFor(() => expect(input).not.toBeInTheDocument());
+  expect(panel("Công thức")).toBe(recipes);
+  expect(animate).not.toHaveBeenCalled();
+}, 20000);
 
-it("uses the same two phases for Confirmed Need handoff, retaining date and allocation without a command", async () => {
+it("Confirmed Need opens Procurement at its exact local date and Allocation stage without a command", async () => {
   const { apis } = await show();
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
-  nav("Lập nhu cầu");
-  await settle("Thực đơn");
+  open("Lập nhu cầu");
+  await screen.findByRole("table", { name: "Thực đơn theo trường" });
+  const planning = panel("Lập nhu cầu");
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   fireEvent.change(
     await screen.findByRole("combobox", { name: "Ngày phục vụ" }),
@@ -263,12 +281,11 @@ it("uses the same two phases for Confirmed Need handoff, retaining date and allo
     name: "Tiếp tục phân bổ NCC",
   });
   await waitFor(() => expect(proceed).toBeEnabled());
-  expect(animations).toHaveLength(2);
-  fireEvent.click(proceed);
-  expect(animations).toHaveLength(3);
   expect(allocation).not.toHaveBeenCalled();
-  await settle("Phân bổ nhà cung ứng");
-  expect(animations).toHaveLength(4);
+  fireEvent.click(proceed);
+  expect(panel("Kế hoạch mua hàng")).toBeVisible();
+  expect(planning).toHaveAttribute("hidden");
+  expect(proceed).toBeInTheDocument();
   await waitFor(() =>
     expect(allocation).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -279,27 +296,51 @@ it("uses the same two phases for Confirmed Need handoff, retaining date and allo
       }),
     ),
   );
-  expect(screen.getByRole("tab", { name: /Phân bổ/ })).toHaveAttribute(
+  expect(allocation).toHaveBeenCalledOnce();
+  expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(
     "aria-selected",
     "true",
   );
   expect(save).not.toHaveBeenCalled();
   expect(prepare).not.toHaveBeenCalled();
-});
+  expect(animate).not.toHaveBeenCalled();
+}, 20000);
 
-it("keeps shell and session context DOM stationary while only one content surface animates", async () => {
+it("keeps shell and session context stationary with only the active owner's content visible", async () => {
   const { container } = await show();
-  const shell = [
-    screen.getByRole("navigation", { hidden: true }),
-    container.querySelector("header"),
-    screen.getByText("operator@example.test"),
-    screen.getByText("Môi trường · Local review"),
-  ];
-  nav("Công thức");
-  await settle("Công thức");
-  for (const node of shell) {
-    expect(node).toBeInTheDocument();
-    expect(animations.every(({ target }) => !target.contains(node))).toBe(true);
-  }
-  expect(animations[0]!.target).toBe(animations[1]!.target);
-});
+  const header = container.querySelector("header");
+  const main = screen.getByRole("main");
+  const launcher = screen.getByRole("button", { name: "Bàn làm việc" });
+  const account = screen.getByRole("button", {
+    name: "Tài khoản và môi trường",
+  });
+  const tabs = screen.getByRole("tablist", { name: "Bàn làm việc đang mở" });
+  const schools = panel("Trường học");
+  await recipe();
+  expect(container.querySelector("header")).toBe(header);
+  expect(screen.getByRole("main")).toBe(main);
+  expect(screen.getByRole("button", { name: "Bàn làm việc" })).toBe(launcher);
+  expect(screen.getByRole("button", { name: "Tài khoản và môi trường" })).toBe(
+    account,
+  );
+  expect(screen.getByRole("tablist", { name: "Bàn làm việc đang mở" })).toBe(
+    tabs,
+  );
+  expect(schools).toHaveAttribute("hidden");
+  expect(schools).toHaveAttribute("inert");
+  expect(
+    screen.queryByRole("heading", { level: 1, name: "Sĩ số mặc định" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  fireEvent.click(account);
+  const context = screen.getByRole("dialog", {
+    name: "Tài khoản và môi trường",
+  });
+  expect(within(context).getByText("operator@example.test")).toBeVisible();
+  expect(within(context).getByText("Môi trường · Local review")).toBeVisible();
+  fireEvent.click(account);
+  activate("Trường học");
+  expect(panel("Trường học")).toBe(schools);
+  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  expect(animate).not.toHaveBeenCalled();
+}, 20000);
