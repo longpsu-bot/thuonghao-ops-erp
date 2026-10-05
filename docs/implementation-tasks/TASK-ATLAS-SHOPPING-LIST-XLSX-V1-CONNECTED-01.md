@@ -63,6 +63,12 @@ table counts. Full routine validation belongs to the required GitHub PR check.
 The final connected-root factory assertion also passes (1/1), and the boundary
 checker regression suite passes (44/44). Targeted formatting and diff whitespace
 checks pass.
+The first PR CI run exposed stale exact registry/catalog snapshots for the new
+read RPC. Updated explicit entries/counts, owner mapping and authenticated
+allowlist: transport 18/18 and whole-platform security catalog 28/28 PASS. The
+grant fingerprint changes by exactly two nongrantable EXECUTE rows (dedicated
+owner and authenticated); table/RLS/policy/private-helper fingerprints remain
+unchanged. No production code or migration change was needed for this correction.
 
 ## Production certification and closeout
 
