@@ -1,6 +1,6 @@
 /**
  * THROWAWAY / DESIGN REVIEW ONLY — ATLAS-UI-VNEXT-03A.
- * Three compositions of the same current workbenches and in-memory fixtures.
+ * Four review directions using current workbenches and in-memory fixtures.
  * Storybook only. Never import this file into a production route.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -12,8 +12,21 @@ import {
   ClipboardText,
   Truck,
   Basket,
+  List,
+  X,
 } from "@phosphor-icons/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  createRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type Ref,
+  type ReactNode,
+} from "react";
+import type { AtlasModuleExitHandle } from "../AtlasModuleExit";
 import { fireEvent, userEvent, within } from "storybook/test";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ConfirmedNeedWorkbench } from "../planning-confirmed/ConfirmedNeedWorkbench";
@@ -40,7 +53,7 @@ import {
 } from "../dispatch/schoolPxkReviewFixtures";
 import "./modern-operational-pilot.css";
 
-const variants = ["A", "B", "C"] as const;
+const variants = ["A", "B", "C", "D"] as const;
 const surfaces = ["need", "procurement", "recipes", "dispatch"] as const;
 const states = [
   "normal",
@@ -59,6 +72,7 @@ const variantNames = {
   A: "Operational Saas UI",
   B: "Modern Operational",
   C: "Dense Modern ERP",
+  D: "Persistent Workspace",
 };
 const surfaceNames = {
   need: "Lập nhu cầu",
@@ -95,9 +109,19 @@ const pending = async (): Promise<never> => new Promise(() => {});
 function FixtureWorkbench({
   surface,
   state,
+  exitRef,
+  initialDate,
+  onDateChange,
+  onContinueAllocation,
+  onRead,
 }: {
   surface: Surface;
   state: State;
+  exitRef?: Ref<AtlasModuleExitHandle>;
+  initialDate?: string;
+  onDateChange?: (date: string) => void;
+  onContinueAllocation?: (date: string) => void;
+  onRead?: () => void;
 }) {
   const [notice, setNotice] = useState("");
   const fixtures = useMemo(() => {
@@ -187,8 +211,44 @@ function FixtureWorkbench({
       recipes.api.getWorkbench = pending;
       dispatch.getWorkbench = pending;
     }
-    return { need, procurement, recipes, dispatch };
-  }, [state]);
+    if (initialDate && surface === "procurement") {
+      procurement.allocation.date_start = initialDate;
+      procurement.allocation.date_end = initialDate;
+      procurement.orders.date_start = initialDate;
+      procurement.orders.date_end = initialDate;
+      for (const row of procurement.allocation.rows) {
+        row.service_date = initialDate;
+        row.family.service_date = initialDate;
+      }
+      for (const order of procurement.orders.purchase_orders) {
+        order.service_date = initialDate;
+        for (const line of order.lines) line.service_date = initialDate;
+      }
+      if (procurement.allocation.preparation)
+        procurement.allocation.preparation.service_date = initialDate;
+    }
+    // Review-only read evidence; fixture identities stay stable on visibility changes.
+    function counted<T extends object>(api: T): T {
+      if (!onRead) return api;
+      return new Proxy(api, {
+        get(target, key, receiver) {
+          const value = Reflect.get(target, key, receiver);
+          if (typeof value !== "function") return value;
+          return (...args: unknown[]) => {
+            if (String(key).startsWith("get") || key === "preflight") onRead();
+            return Reflect.apply(value, target, args);
+          };
+        },
+      });
+    }
+    need.preflightApi = counted(need.preflightApi);
+    need.confirmedNeedApi = counted(need.confirmedNeedApi);
+    need.needGenerationApi = counted(need.needGenerationApi);
+    procurement.purchaseReviewApi = counted(procurement.purchaseReviewApi);
+    procurement.procurementApi = counted(procurement.procurementApi);
+    recipes.api = counted(recipes.api);
+    return { need, procurement, recipes, dispatch: counted(dispatch) };
+  }, [state, surface, initialDate, onRead]);
   const simulatedExport = () =>
     setNotice("Xem thử: đã chọn xuất. Không tạo tệp hoặc chứng từ thật.");
   return (
@@ -197,7 +257,9 @@ function FixtureWorkbench({
         <ConfirmedNeedWorkbench
           {...fixtures.need}
           authSubject="fixture-operator"
-          initialServiceDate={needDate}
+          initialServiceDate={initialDate ?? needDate}
+          exitRef={exitRef}
+          onServiceDateChange={onDateChange}
           onExportShoppingList={async () => {
             simulatedExport();
           }}
@@ -207,8 +269,10 @@ function FixtureWorkbench({
             );
             return { drafts, changedLineIds: [] };
           }}
-          onContinueAllocation={() =>
-            setNotice("Xem thử: tiếp tục phân bổ NCC từ nhu cầu đã lưu.")
+          onContinueAllocation={
+            onContinueAllocation ??
+            (() =>
+              setNotice("Xem thử: tiếp tục phân bổ NCC từ nhu cầu đã lưu."))
           }
         />
       )}
@@ -217,7 +281,9 @@ function FixtureWorkbench({
           authSubject="fixture-operator"
           purchaseReviewApi={fixtures.procurement.purchaseReviewApi}
           procurementApi={fixtures.procurement.procurementApi}
-          initialServiceDate={purchaseDate}
+          initialServiceDate={initialDate ?? purchaseDate}
+          exitRef={exitRef}
+          onServiceDateChange={onDateChange}
           schools={reviewSchools}
           onExportXlsx={simulatedExport}
           onExportPdf={simulatedExport}
@@ -227,7 +293,8 @@ function FixtureWorkbench({
         <DishRecipeWorkbench
           authSubject="fixture-operator"
           api={fixtures.recipes.api}
-          initialDate={recipeFixtureDate}
+          initialDate={initialDate ?? recipeFixtureDate}
+          exitRef={exitRef}
           onOpenChangeOrders={() =>
             setNotice("Xem thử: mở Lệnh điều chỉnh. Không gọi lệnh thật.")
           }
@@ -237,7 +304,9 @@ function FixtureWorkbench({
         <SchoolPxkWorkbench
           authSubject="fixture-operator"
           api={fixtures.dispatch}
-          initialServiceDate={dispatchDate}
+          initialServiceDate={initialDate ?? dispatchDate}
+          exitRef={exitRef}
+          onServiceDateChange={onDateChange}
           onExportXlsx={simulatedExport}
           onExportPdf={simulatedExport}
           onExportGroupedXlsx={simulatedExport}
@@ -249,6 +318,536 @@ function FixtureWorkbench({
         </Text>
       )}
     </>
+  );
+}
+
+type WorkspaceId = Surface | `capacity-${number}`;
+type FixtureOptions = Omit<Parameters<typeof FixtureWorkbench>[0], "surface">;
+type WorkbenchDefinition = {
+  id: WorkspaceId;
+  label: string;
+  icon: typeof ClipboardText;
+  render: (options: FixtureOptions) => ReactNode;
+};
+// Static UI descriptors, not domain modules or serialized workbench state.
+const workbenchDefinitions: WorkbenchDefinition[] = [
+  ...surfaces.map((surface) => ({
+    id: surface,
+    label: surfaceNames[surface],
+    icon: icons[surface],
+    render: (options: FixtureOptions) => (
+      <FixtureWorkbench {...options} surface={surface} />
+    ),
+  })),
+  ...[
+    "Trường học",
+    "Nguyên liệu",
+    "Nhà cung ứng",
+    "Nhập kho",
+    "Đối chiếu PO / PXK",
+    "Kiểm tra chất lượng",
+    "Kế hoạch bếp",
+    "Suất ăn & nguồn",
+  ].map((label, index) => ({
+    id: `capacity-${index + 1}` as WorkspaceId,
+    label,
+    icon: List,
+    render: () => (
+      <section className="workspace-capacity">
+        <h1>{label}</h1>
+        <p>
+          Chỉ minh họa dung lượng thanh bàn làm việc. Không có chức năng hoặc
+          kết nối.
+        </p>
+      </section>
+    ),
+  })),
+];
+const definitionFor = (id: WorkspaceId) =>
+  workbenchDefinitions.find((d) => d.id === id)!;
+type WorkspaceState = { open: WorkspaceId[]; active: WorkspaceId | null };
+type WorkspaceAction = { type: "open" | "activate" | "close"; id: WorkspaceId };
+function workspaceReducer(
+  current: WorkspaceState,
+  action: WorkspaceAction,
+): WorkspaceState {
+  if (action.type === "open")
+    return {
+      open: current.open.includes(action.id)
+        ? current.open
+        : [...current.open, action.id],
+      active: action.id,
+    };
+  if (action.type === "activate")
+    return current.open.includes(action.id)
+      ? { ...current, active: action.id }
+      : current;
+  const index = current.open.indexOf(action.id);
+  const open = current.open.filter((id) => id !== action.id);
+  return {
+    open,
+    active:
+      current.active === action.id
+        ? (open[Math.max(0, index - 1)] ?? null)
+        : current.active,
+  };
+}
+type TabStatus = { dirty: boolean; modal: boolean; attention: boolean };
+const tabStatusText = (status?: TabStatus) =>
+  status?.dirty
+    ? " · thay đổi chưa lưu"
+    : status?.attention
+      ? " · biểu mẫu món đang mở, kiểm tra thay đổi"
+      : "";
+function WorkspacePanel({
+  definition,
+  active,
+  state,
+  initialDate,
+  exitRef,
+  onStatus,
+  onContinueAllocation,
+}: {
+  definition: WorkbenchDefinition;
+  active: boolean;
+  state: State;
+  initialDate?: string;
+  exitRef: Ref<AtlasModuleExitHandle>;
+  onStatus: (id: WorkspaceId, status: TabStatus) => void;
+  onContinueAllocation: (date: string) => void;
+}) {
+  const root = useRef<HTMLDivElement>(null);
+  const evidence = useRef({ mounts: 0, reads: 0 });
+  const [date, setDate] = useState(
+    initialDate ??
+      (
+        {
+          need: needDate,
+          procurement: purchaseDate,
+          recipes: recipeFixtureDate,
+          dispatch: dispatchDate,
+        } as Partial<Record<WorkspaceId, string>>
+      )[definition.id],
+  );
+  const read = useCallback(() => {
+    evidence.current.reads++;
+    if (root.current)
+      root.current.dataset.readCount = String(evidence.current.reads);
+  }, []);
+  const report = useCallback(() => {
+    const node = root.current;
+    if (!node) return;
+    // ponytail: presentation bridge to existing rendered dirty evidence, not an exit decision.
+    // Recipe metadata has no dirty signal: show truthful form-open attention instead.
+    // Production needs a narrow exact status callback, not this localized DOM bridge.
+    const note = node.querySelector<HTMLTextAreaElement>(
+      '[aria-label="Ghi chú trên phiếu"]',
+    );
+    onStatus(definition.id, {
+      dirty:
+        (node.textContent ?? "").includes("Đang chỉnh sửa · chưa lưu") ||
+        Boolean(note?.value.trim()),
+      attention:
+        definition.id === "recipes" &&
+        Array.from(node.querySelectorAll("h2")).some((heading) =>
+          ["Tạo món mới", "Sửa thông tin món"].includes(
+            heading.textContent ?? "",
+          ),
+        ),
+      modal: Boolean(
+        node.querySelector(
+          '[role="dialog"][aria-modal="true"]:not([data-state="closed"])',
+        ),
+      ),
+    });
+  }, [definition.id, onStatus]);
+  useEffect(() => {
+    evidence.current.mounts++;
+    root.current!.dataset.mountCount = String(evidence.current.mounts);
+    root.current!.dataset.readCount = String(evidence.current.reads);
+    const observer = new MutationObserver(report);
+    observer.observe(root.current!, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["data-state", "aria-modal"],
+    });
+    report();
+    return () => observer.disconnect();
+  }, [report]);
+  return (
+    <div
+      ref={root}
+      id={`workspace-panel-${definition.id}`}
+      data-testid={`workspace-panel-${definition.id}`}
+      data-service-date={date}
+      role="tabpanel"
+      aria-labelledby={`workspace-tab-${definition.id}`}
+      tabIndex={0}
+      hidden={!active}
+      inert={!active}
+      className="workspace-panel"
+      onChangeCapture={() => queueMicrotask(report)}
+    >
+      <AtlasVNextProvider>
+        {definition.render({
+          state,
+          exitRef,
+          initialDate,
+          onDateChange: setDate,
+          onRead: read,
+          onContinueAllocation,
+        })}
+      </AtlasVNextProvider>
+    </div>
+  );
+}
+
+function PersistentWorkspace({
+  surface,
+  state,
+}: {
+  surface: Surface;
+  state: State;
+}) {
+  const [workspace, dispatch] = useReducer(workspaceReducer, undefined, () => ({
+    open:
+      queryValue("workspace", ["single", "four", "stress"], "single") ===
+      "stress"
+        ? workbenchDefinitions.map((d) => d.id)
+        : queryValue("workspace", ["single", "four", "stress"], "single") ===
+            "four"
+          ? [...surfaces]
+          : [surface],
+    active: surface,
+  }));
+  const [statuses, setStatuses] = useState<
+    Partial<Record<WorkspaceId, TabStatus>>
+  >({});
+  const [launcherOpen, setLauncherOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+  const launcher = useRef<HTMLButtonElement>(null);
+  const launchMenu = useRef<HTMLElement>(null);
+  const strip = useRef<HTMLDivElement>(null);
+  const focusAfterClose = useRef<WorkspaceId | "launcher" | null>(null);
+  const guards = useMemo(
+    () =>
+      Object.fromEntries(
+        workbenchDefinitions.map((d) => [
+          d.id,
+          createRef<AtlasModuleExitHandle>(),
+        ]),
+      ),
+    [],
+  );
+  const seeds = useRef<Partial<Record<WorkspaceId, string>>>({});
+  const status = useCallback(
+    (id: WorkspaceId, next: TabStatus) =>
+      setStatuses((current) =>
+        current[id]?.dirty === next.dirty &&
+        current[id]?.modal === next.modal &&
+        current[id]?.attention === next.attention
+          ? current
+          : { ...current, [id]: next },
+      ),
+    [],
+  );
+  const tabElement = (id: WorkspaceId) =>
+    document.getElementById(`workspace-tab-${id}`);
+  function focusWorkbench(id: WorkspaceId) {
+    const tab = tabElement(id);
+    const mobile = document.querySelector<HTMLSelectElement>(
+      ".workspace-mobile-switcher select",
+    );
+    (tab?.getClientRects().length
+      ? tab
+      : mobile?.getClientRects().length
+        ? mobile
+        : launcher.current
+    )?.focus({ preventScroll: true });
+  }
+  const modalOpen = () =>
+    workspace.active &&
+    document.querySelector(
+      `#workspace-panel-${workspace.active} [role="dialog"][aria-modal="true"]:not([data-state="closed"])`,
+    );
+  function activate(id: WorkspaceId, open = false) {
+    if (modalOpen()) {
+      setNotice("Hãy hoàn tất hoặc đóng hộp thoại hiện tại trước khi đổi bàn.");
+      return;
+    }
+    focusWorkbench(id);
+    dispatch({ type: open ? "open" : "activate", id });
+    setLauncherOpen(false);
+  }
+  useEffect(() => {
+    if (!workspace.active) {
+      launcher.current?.focus();
+      return;
+    }
+    const tab = tabElement(workspace.active);
+    if (!tab || !strip.current) return;
+    const r = tab.parentElement!.getBoundingClientRect(),
+      s = strip.current.getBoundingClientRect();
+    const inset = Number.parseFloat(
+      getComputedStyle(strip.current).paddingRight,
+    );
+    if (r.right > s.right - inset)
+      strip.current.scrollLeft += r.right - s.right + inset;
+    if (r.left < s.left + inset)
+      strip.current.scrollLeft += r.left - s.left - inset;
+  }, [workspace.active, workspace.open]);
+  useEffect(() => {
+    if (launcherOpen)
+      launchMenu.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const dismiss = (event: PointerEvent) => {
+      if (!launcher.current?.parentElement?.contains(event.target as Node))
+        setLauncherOpen(false);
+    };
+    if (launcherOpen) document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [launcherOpen]);
+  useEffect(() => {
+    const target = focusAfterClose.current;
+    if (!target) return;
+    focusAfterClose.current = null;
+    // Run after commit and Zag's deferred return-focus cleanup for the removed dialog.
+    const timer = window.setTimeout(() => {
+      if (target === "launcher") launcher.current?.focus();
+      else focusWorkbench(target);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [workspace.open, workspace.active]);
+  function close(id: WorkspaceId) {
+    if (modalOpen()) return;
+    activate(id);
+    // Guard must be visible before it may open its own existing dialog.
+    requestAnimationFrame(() => {
+      const approved = () => {
+        const index = workspace.open.indexOf(id);
+        const remaining = workspace.open.filter((item) => item !== id);
+        focusAfterClose.current =
+          remaining[Math.max(0, index - 1)] ?? "launcher";
+        dispatch({ type: "close", id });
+        delete seeds.current[id];
+      };
+      if (guards[id]?.current) guards[id].current!.requestExit(approved);
+      else if (id.startsWith("capacity-")) approved();
+    });
+  }
+  const continueIntoProcurement = useCallback(
+    (date: string) => {
+      const existing = workspace.open.includes("procurement");
+      if (!existing) seeds.current.procurement = date;
+      activate("procurement", true);
+      const currentDate = document.getElementById("workspace-panel-procurement")
+        ?.dataset.serviceDate;
+      setNotice(
+        existing
+          ? `Nhu cầu ngày ${date.split("-").reverse().join("/")}. Tab mua đang giữ ngày ${currentDate?.split("-").reverse().join("/") ?? "đã chọn"}, giai đoạn và bản nháp. Không tự đổi ngữ cảnh; dùng Đóng chi tiết, ngày và Phân bổ NCC trong tab hiện tại.`
+          : `Đã mở Kế hoạch mua hàng từ nhu cầu ngày ${date.split("-").reverse().join("/")}. Chỉ dữ liệu minh họa.`,
+      );
+    },
+    [workspace.open, workspace.active],
+  );
+  const activeDefinition = workspace.active
+    ? definitionFor(workspace.active)
+    : null;
+  const modal = workspace.active ? statuses[workspace.active]?.modal : false;
+  return (
+    <div className="workspace-shell">
+      <header
+        className="workspace-header"
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget))
+            setLauncherOpen(false);
+        }}
+        onKeyDown={(event) => {
+          if (launcherOpen && event.key === "Escape") {
+            setLauncherOpen(false);
+            launcher.current?.focus();
+          }
+        }}
+      >
+        <strong className="workspace-brand">Atlas</strong>
+        <Button
+          ref={launcher}
+          size="sm"
+          variant="utility"
+          aria-expanded={launcherOpen}
+          aria-controls="workspace-launcher"
+          aria-label="Mở bàn làm việc"
+          title={`${workspace.open.length} bàn đang mở${workspace.open.length > 4 ? " · cuộn ngang thanh bàn" : ""}`}
+          disabled={modal}
+          onClick={() => setLauncherOpen(!launcherOpen)}
+        >
+          <List size={18} />
+          Mở bàn làm việc
+          <span className="workspace-open-count" aria-hidden="true">
+            {workspace.open.length}
+            {workspace.open.length > 4 ? " ↔" : ""}
+          </span>
+        </Button>
+        <span className="workspace-identity">Thượng Hảo · Vận hành</span>
+        {launcherOpen && (
+          <nav
+            ref={launchMenu}
+            id="workspace-launcher"
+            className="workspace-launcher"
+            aria-label="Mở bàn làm việc Atlas"
+          >
+            {workbenchDefinitions.map((definition) => (
+              <button
+                type="button"
+                key={definition.id}
+                aria-label={definition.label}
+                aria-describedby={`workspace-launch-status-${definition.id}`}
+                onClick={() => activate(definition.id, true)}
+              >
+                <definition.icon size={18} aria-hidden="true" />
+                <span>{definition.label}</span>
+                <small id={`workspace-launch-status-${definition.id}`}>
+                  {definition.id.startsWith("capacity-") ? "Minh họa · " : ""}
+                  {workspace.open.includes(definition.id) ? "Đang mở" : ""}
+                </small>
+              </button>
+            ))}
+          </nav>
+        )}
+      </header>
+      <div className="workspace-mobile-switcher">
+        <NativeSelect.Root disabled={modal || !workspace.open.length}>
+          <NativeSelect.Field
+            aria-label="Bàn đang mở"
+            value={workspace.active ?? ""}
+            onChange={(event) => {
+              const id = workspace.open.find(
+                (item) => item === event.target.value,
+              );
+              if (id) activate(id);
+            }}
+          >
+            {!workspace.open.length && <option value="">Chưa mở bàn</option>}
+            {workspace.open.map((id) => (
+              <option key={id} value={id}>
+                {definitionFor(id).label}
+                {tabStatusText(statuses[id])}
+              </option>
+            ))}
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
+        {workspace.active && (
+          <Button
+            size="sm"
+            variant="tertiary"
+            aria-label={`Đóng bàn ${activeDefinition!.label}`}
+            disabled={modal}
+            onClick={() => close(workspace.active!)}
+          >
+            <X size={18} />
+          </Button>
+        )}
+      </div>
+      <div
+        ref={strip}
+        role="tablist"
+        aria-label="Bàn làm việc đang mở"
+        className="workspace-tabs"
+      >
+        {workspace.open.map((id, index) => {
+          const d = definitionFor(id),
+            selected = id === workspace.active;
+          return (
+            <div className="workspace-tab" key={id} data-active={selected}>
+              <button
+                type="button"
+                id={`workspace-tab-${id}`}
+                role="tab"
+                aria-selected={selected}
+                aria-controls={`workspace-panel-${id}`}
+                aria-label={`${d.label}${tabStatusText(statuses[id])}`}
+                tabIndex={selected ? 0 : -1}
+                disabled={modal}
+                onClick={() => activate(id)}
+                onKeyDown={(event) => {
+                  const next =
+                    event.key === "ArrowRight"
+                      ? workspace.open[(index + 1) % workspace.open.length]
+                      : event.key === "ArrowLeft"
+                        ? workspace.open[
+                            (index - 1 + workspace.open.length) %
+                              workspace.open.length
+                          ]
+                        : event.key === "Home"
+                          ? workspace.open[0]
+                          : event.key === "End"
+                            ? workspace.open.at(-1)
+                            : null;
+                  if (next) {
+                    event.preventDefault();
+                    activate(next);
+                  }
+                  if (event.key === "Delete") {
+                    event.preventDefault();
+                    close(id);
+                  }
+                }}
+              >
+                <d.icon size={16} aria-hidden="true" />
+                <span>{d.label}</span>
+                {(statuses[id]?.dirty || statuses[id]?.attention) && (
+                  <span className="workspace-dirty-dot" aria-hidden="true" />
+                )}
+              </button>
+              <button
+                type="button"
+                className="workspace-tab-close"
+                tabIndex={selected ? 0 : -1}
+                disabled={modal}
+                aria-label={`Đóng bàn ${d.label}`}
+                onClick={() => close(id)}
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {notice && (
+        <div className="workspace-notice" role="status">
+          {notice}
+          <button
+            type="button"
+            aria-label="Đóng thông báo tiếp tục"
+            onClick={() => setNotice("")}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+      <main className="workspace-panels">
+        {workspace.open.map((id) => (
+          <WorkspacePanel
+            key={id}
+            definition={definitionFor(id)}
+            active={workspace.active === id}
+            state={state}
+            initialDate={seeds.current[id]}
+            exitRef={guards[id]}
+            onStatus={status}
+            onContinueAllocation={continueIntoProcurement}
+          />
+        ))}
+        {!workspace.open.length && (
+          <div className="workspace-empty">
+            <h1>Chọn bàn làm việc</h1>
+            <p>Mở một công việc từ danh mục để bắt đầu.</p>
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
 
@@ -327,7 +926,7 @@ export function ModernOperationalPilot({
           <Flex
             className="pilot-switcher"
             role="group"
-            aria-label="So sánh ba phương án"
+            aria-label="So sánh bốn phương án"
             onKeyDown={(event) => {
               if (
                 event.target !== event.currentTarget &&
@@ -351,6 +950,7 @@ export function ModernOperationalPilot({
             {variants.map((item) => (
               <Button
                 key={item}
+                title={variantNames[item]}
                 variant={variant === item ? "businessPrimary" : "utility"}
                 size="sm"
                 aria-pressed={variant === item}
@@ -372,70 +972,85 @@ export function ModernOperationalPilot({
               <ArrowRight size={16} />
             </Button>
           </Flex>
-        </Flex>
-        <div className="pilot-shell">
-          <aside className="pilot-sidebar" data-open={menuOpen}>
-            <div className="pilot-brand">
-              <span className="pilot-mark" aria-hidden="true">
-                A
-              </span>
-              <span>
-                <strong>Atlas</strong>
-                <small>Thượng Hảo · OPS ERP</small>
-              </span>
-            </div>
-            <nav
-              ref={nav}
-              id="pilot-navigation"
-              aria-label="Các bề mặt pilot (đặt lại dữ liệu)"
+          {variant === "D" && (
+            <Button
+              className="workspace-stress-trigger"
+              size="sm"
+              variant="utility"
+              title="Đặt lại dữ liệu minh họa với 12 bàn mở"
+              onClick={() => resetFixture("workspace", "stress")}
             >
-              {surfaces.map((item) => {
-                const Icon = icons[item];
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    aria-current={surface === item ? "page" : undefined}
-                    onClick={() => resetFixture("surface", item)}
-                  >
-                    <Icon
-                      size={20}
-                      weight={surface === item ? "bold" : "regular"}
-                      aria-hidden="true"
-                    />
-                    <span>{surfaceNames[item]}</span>
-                  </button>
-                );
-              })}
-            </nav>
-            <div className="pilot-sidebar-footer">
-              Thiết kế thử nghiệm<small>03A · Không kết nối hệ thống</small>
-            </div>
-          </aside>
-          <div className="pilot-stage">
-            <header className="pilot-app-header">
-              <div className="pilot-app-context">
-                <Button
-                  className="pilot-menu-trigger"
-                  variant="tertiary"
-                  size="sm"
-                  aria-controls="pilot-navigation"
-                  aria-expanded={menuOpen}
-                  onClick={() => setMenuOpen(!menuOpen)}
-                >
-                  Danh mục
-                </Button>
-                <span>{surfaceNames[surface]}</span>
+              Minh họa 12 bàn
+            </Button>
+          )}
+        </Flex>
+        {variant === "D" ? (
+          <PersistentWorkspace surface={surface} state={state} />
+        ) : (
+          <div className="pilot-shell">
+            <aside className="pilot-sidebar" data-open={menuOpen}>
+              <div className="pilot-brand">
+                <span className="pilot-mark" aria-hidden="true">
+                  A
+                </span>
+                <span>
+                  <strong>Atlas</strong>
+                  <small>Thượng Hảo · OPS ERP</small>
+                </span>
               </div>
-              <span className="pilot-environment">
-                Local review · Nhân viên vận hành
-              </span>
-            </header>
-            <main id="pilot-workbench" className="pilot-workspace">
-              <FixtureWorkbench surface={surface} state={state} />
-            </main>
+              <nav
+                ref={nav}
+                id="pilot-navigation"
+                aria-label="Các bề mặt pilot (đặt lại dữ liệu)"
+              >
+                {surfaces.map((item) => {
+                  const Icon = icons[item];
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      aria-current={surface === item ? "page" : undefined}
+                      onClick={() => resetFixture("surface", item)}
+                    >
+                      <Icon
+                        size={20}
+                        weight={surface === item ? "bold" : "regular"}
+                        aria-hidden="true"
+                      />
+                      <span>{surfaceNames[item]}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+              <div className="pilot-sidebar-footer">
+                Thiết kế thử nghiệm<small>03A · Không kết nối hệ thống</small>
+              </div>
+            </aside>
+            <div className="pilot-stage">
+              <header className="pilot-app-header">
+                <div className="pilot-app-context">
+                  <Button
+                    className="pilot-menu-trigger"
+                    variant="tertiary"
+                    size="sm"
+                    aria-controls="pilot-navigation"
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuOpen(!menuOpen)}
+                  >
+                    Danh mục
+                  </Button>
+                  <span>{surfaceNames[surface]}</span>
+                </div>
+                <span className="pilot-environment">
+                  Local review · Nhân viên vận hành
+                </span>
+              </header>
+              <main id="pilot-workbench" className="pilot-workspace">
+                <FixtureWorkbench surface={surface} state={state} />
+              </main>
+            </div>
           </div>
-        </div>
+        )}
       </Box>
     </AtlasVNextProvider>
   );

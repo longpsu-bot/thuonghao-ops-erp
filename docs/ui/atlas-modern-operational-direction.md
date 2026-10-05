@@ -91,7 +91,7 @@ Evidence targets 1920×1080, 1440×900, 1366×768, 650×900 and 360×800. Wide d
 
 ## Motion
 
-No decorative page entrances. Retain workbench state/focus behavior and reduced-motion support. Comparison is immediate and preserves the mounted workbench when switching A/B/C. Variant changes do not reset drafts.
+No decorative page entrances. Retain workbench state/focus behavior and reduced-motion support. Comparison is immediate and preserves the mounted workbench when switching A/B/C. Entering/leaving D resets its separate review workspace; switching workbench tabs within D preserves them. Review variant and fixture controls are outside proposed product navigation.
 
 ## Anti-patterns
 
@@ -119,3 +119,27 @@ Allowed files: the dedicated Storybook prototype and scoped CSS, a capture/check
 6. Run UI boundary, typecheck, Storybook build, workspace and targeted formatting; commit, push and create a draft review PR. Do not merge or deploy.
 
 Acceptance: four surfaces, structurally distinct A/B/C with identical functionality, post-#348 controls, state evidence, advisory scoring and owner decision retained. No backend/business/Retool change. No migration or rollback operation; removing the prototype/docs/script restores the baseline. Finalist adoption requires a separate approved Design Language v2 and production task.
+
+## Variant D — Persistent Workspace
+
+ATLAS-UI-VNEXT-03A-D extends draft #349 from `79cee68de5b80c7825d89289a85e156da4e6fc96`; it does not implement a production workspace or select a finalist. The owner requests C's usable width with B's Atlas finish and persistent workbench tabs.
+
+Direction contract: one compact slate/eucalyptus utility bar, a separate launcher, a locally scrolling open-tab strip and a full-width work plane. Active tabs attach visually to that plane; an Atlas semantic-warning dot and accessible text identify unsaved work or form attention. At 360px, a compact open-workbench selector replaces the desktop strip. Switching changes visibility; closing invokes the owning workbench's existing exit boundary.
+
+Bounded plan: extend the existing story/CSS and capture harness, add focused prototype-only interaction checks, then update these two documents and obtain independent visual/operator/accessibility/Ponytail reviews. Preserve A/B/C. No production components, dependencies, contracts, provider/system or backend changes. Acceptance covers all four mounted workbenches, retained drafts/filter/detail, no switch reads/remounts, guarded close, local twelve-tab overflow, mobile behavior and final-head CI.
+
+- **WORKSPACE_MODEL:** static typed workbench descriptors → open IDs/order and active ID in local `useReducer` → stable keyed React panels. Descriptors and instances are UI identities, not domain objects or classes.
+- **TAB_OPEN_RULE:** open once and activate; launch an already-open destination activates its existing instance.
+- **TAB_SWITCH_RULE:** activate without `requestExit`, reload or unmount. Resolve an existing modal before switching; focus the destination tab to dismiss nonmodal transient UI.
+- **TAB_CLOSE_RULE:** activate the guard owner, invoke its own `exitRef.requestExit`, and remove only inside the approval callback. Cancellation/blocking retains the panel. Choose a neighboring tab and restore focus after approved removal.
+- **DIRTY_TAB_RULE:** tab presentation mirrors existing rendered dirty evidence; the existing exit handle remains the only discard authority. Recipe metadata lacks an exact rendered dirty signal, so an open create/edit form carries truthful “biểu mẫu món đang mở, kiểm tra thay đổi” attention, including after switching. It never claims that form is clean or that every open form is dirty. Production needs a small explicit tab-status callback; no drafts or validation move into the reducer.
+- **SIGNOUT_RULE:** production must visit all open guards sequentially, with each owner visible, and sign out only after every approval. Cancellation stops the sequence. Existing approvals can already discard local work, so this is not an atomic preflight; earlier approved discards are not restored after a later cancellation. D has no real sign-out action.
+- **MOUNTING_RULE:** one keyed mounted panel per open ID; inactive panels are hidden/inert. Reuse an Atlas provider inside each panel to contain its existing calendar portals. Never hide an open modal with active document-level focus/scroll locks.
+- **FRESHNESS_RULE:** no refresh merely on activation. Stable Auth/API/context seeds preserve local state; existing scope reads, explicit refresh, write-time currentness, unknown/stale locks and command/readback remain authoritative. A future clean-return freshness policy may offer a check, but must not overwrite dirty/recovery state or imply cached authority is timeless.
+- **CURRENT_DATE_PROPAGATION:** production App owns a shared date; Planning, Procurement and PXK report local dates outward, and unmounting currently initializes the next module from it. Recipes has its own as-of date. The four initial date props are mount seeds, not controlled values.
+- **PERSISTENT_TAB_DATE_RISK:** changing the shared seed does not retarget an open Procurement; it would also describe whichever mounted module reported last. Date and stage must remain local.
+- **RECOMMENDED_V2_DATE_SEMANTIC:** opening seeds a local date; activation retains it. Need continuation opens an unopened Procurement at the exact Need date/Allocation stage. An existing Procurement is activated with its date, stage and draft intact; explicitly disclose mismatched source date or retained Orders stage. Use existing guarded detail/date/stage controls in D. A later production task can add a guarded `requestContext({date, stage})` interface; do not simulate retargeting by changing an initial prop or remounting.
+- **FUTURE_12_TAB_BEHAVIOR:** four real surfaces plus eight clearly illustrative capacity descriptors, one instance each, recognizable Vietnamese labels, local strip scrolling with active-tab reveal. No pinning, grouping or multi-instance dates.
+- **REDUX_DECISION:** `NOT_JUSTIFIED`. Workspace facts fit a local reducer; workbench state remains inside mounted components. No Zustand, cache, router, persistence framework, classes or additional tab library.
+
+Known dependency ceiling: DatePicker creates a shared, delayed document-body live announcer outside portal containers. Persistent tabs expose possible cross-tab announcement interference; this must be checked/documented and addressed in a separate production accessibility task, not by altering the Atlas provider here.
