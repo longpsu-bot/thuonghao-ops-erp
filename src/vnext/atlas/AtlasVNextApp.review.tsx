@@ -9,6 +9,7 @@ import {
   applicationReviewNow,
 } from "./atlasApplicationReviewFixtures";
 import { createProcurementReviewFixture } from "./procurement/procurementReviewFixtures";
+import { Capacity } from "./AtlasWorkspaceCapacity.stories";
 function Review() {
   const params = new URLSearchParams(window.location.search);
   const [signedIn, setSignedIn] = useState(
@@ -56,4 +57,10 @@ function Review() {
     </AtlasVNextProvider>
   );
 }
-createRoot(document.getElementById("root")!).render(<Review />);
+createRoot(document.getElementById("root")!).render(
+  new URLSearchParams(window.location.search).has("capacity") ? (
+    <Capacity />
+  ) : (
+    <Review />
+  ),
+);

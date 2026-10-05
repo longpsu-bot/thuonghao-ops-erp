@@ -7,7 +7,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
 
@@ -63,6 +63,12 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
   const [source, setSource] = useState("");
   const [date, setDate] = useState(c.date);
   const [reason, setReason] = useState("");
+  const initialDate = useRef(date);
+  useEffect(() => {
+    c.setUtilityDirty(
+      Boolean(source || reason || c.workbook) || date !== initialDate.current,
+    );
+  }, [source, date, reason, c.workbook, c.setUtilityDirty]);
   const cancel = useRef<HTMLButtonElement>(null);
   const kind = c.surface;
   const title =

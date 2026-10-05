@@ -59,6 +59,40 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("reports local attendance edits and frozen Review", async () => {
+    const fixture = createPlanningReviewFixture();
+    const report = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          onWorkspaceStatus={report}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("table", { name: "Thực đơn theo trường" });
+    await waitFor(() =>
+      expect(report).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: false, blocked: false }),
+      ),
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(
+      await screen.findByRole("textbox", { name: "Học sinh Trường Nguyễn Du" }),
+      { target: { value: "0" } },
+    );
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: false }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await waitFor(() =>
+      expect(report).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: true, blocked: true }),
+      ),
+    );
+  });
   it("groups backend codes in Vietnamese while keeping the Menu table and retry accessible", async () => {
     const { fixture } = await show();
     const preview = menuPreview();

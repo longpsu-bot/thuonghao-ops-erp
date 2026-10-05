@@ -59,6 +59,32 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("reports local note edits without treating untouched selection as unsaved", async () => {
+    const report = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <SchoolPxkWorkbench
+          api={createSchoolPxkReviewFixture("READY")}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          onWorkspaceStatus={report}
+        />
+      </AtlasVNextProvider>,
+    );
+    await open();
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+    const note = screen.getByRole("textbox", { name: "Ghi chú trên phiếu" });
+    fireEvent.change(note, { target: { value: "Giao trước 5h" } });
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true }),
+    );
+    fireEvent.change(note, { target: { value: "  " } });
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+  });
   it("Cancel restores the displayed date segments as well as the dirty note context", async () => {
     const h = show();
     await open();

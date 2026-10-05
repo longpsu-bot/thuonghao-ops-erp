@@ -11,6 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasWeekRangeInput } from "../AtlasWeekRangeInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
@@ -36,6 +37,15 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [workbookBusy, setWorkbookBusy] = useState(false);
   const [workbookError, setWorkbookError] = useState<string | null>(null);
+  useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
+    unsaved: c.dirty,
+    blocked: c.busy || Boolean(c.lock) || workbookBusy,
+    attention: c.lock
+      ? "Cần xác nhận dữ liệu hiện tại"
+      : c.busy || workbookBusy
+        ? "Đang xử lý"
+        : undefined,
+  });
   const workbookInput = useRef<HTMLInputElement>(null);
   const compactFilters = useRef<HTMLDivElement>(null);
   const compactFilterTrigger = useRef<HTMLButtonElement>(null);

@@ -131,6 +131,7 @@ export function useDishRecipeWorkbench({
   >(null);
   const [review, setReview] = useState(false);
   const [workbook, setWorkbook] = useState<RecipeWorkbookReview | null>(null);
+  const [utilityDirty, setUtilityDirty] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("");
@@ -871,6 +872,11 @@ export function useDishRecipeWorkbench({
     review: sameOwner && review,
     reviewBase: sameOwner ? authority.effective?.base_authoring : undefined,
     workbook: sameOwner ? workbook : null,
+    utilityDirty:
+      sameOwner &&
+      ["copy", "import", "lifecycle"].includes(surface ?? "") &&
+      utilityDirty,
+    setUtilityDirty,
     query,
     setQuery,
     statusFilter,

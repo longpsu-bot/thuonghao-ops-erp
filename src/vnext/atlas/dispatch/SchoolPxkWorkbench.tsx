@@ -10,6 +10,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
@@ -23,6 +24,15 @@ import { SchoolPxkDirtyExitDialog } from "./SchoolPxkDirtyExitDialog";
 import { SchoolPxkCommandFeedback } from "./SchoolPxkCommandFeedback";
 export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const c = useSchoolPxkWorkbench(props);
+  useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
+    unsaved: Boolean(c.note.trim()),
+    blocked: c.busy || Boolean(c.lock),
+    attention: c.lock
+      ? "Cần xác nhận dữ liệu hiện tại"
+      : c.busy
+        ? "Đang phát hành"
+        : undefined,
+  });
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const trigger = useRef<HTMLButtonElement | null>(null);
   const detail = useRef<HTMLDivElement>(null);

@@ -1,6 +1,8 @@
-import type {
-  AtlasModuleExitHandle,
-  AtlasModuleExitProps,
+import {
+  useAtlasWorkbenchStatus,
+  type AtlasWorkbenchStatus,
+  type AtlasModuleExitHandle,
+  type AtlasModuleExitProps,
 } from "../AtlasModuleExit";
 import { foldVietnameseSearch as fold } from "../foldVietnameseSearch";
 import {
@@ -46,6 +48,10 @@ export type ProcurementWorkbenchProps = ProcurementControllerProps &
     schools?: ProcurementSchoolOption[];
     onExportXlsx?: ProcurementExport;
     onExportPdf?: ProcurementExport;
+    onContextChange?: (context: {
+      date: string;
+      stage: "allocation" | "orders";
+    }) => void;
   };
 export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const controller = useProcurementWorkbench(props);
@@ -53,6 +59,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const [exception, setException] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [detailStatus, setDetailStatus] = useState<AtlasWorkbenchStatus>({
+    unsaved: false,
+    blocked: false,
+  });
+  useEffect(() => {
+    props.onContextChange?.({ date: controller.date, stage: controller.stage });
+  }, [props.onContextChange, controller.date, controller.stage]);
   const [catalogue, setCatalogue] = useState<ProcurementSchoolOption[]>(
     props.schools ?? [],
   );
@@ -97,6 +110,15 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     (row) => row.family.source_fingerprint === selectedKey,
   );
   const rows = controller.allocation?.rows ?? [];
+  useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
+    unsaved: Boolean(selected && detailStatus.unsaved),
+    blocked: controller.busy || controller.locked,
+    attention: controller.locked
+      ? "Cần xác nhận dữ liệu hiện tại"
+      : controller.busy
+        ? "Đang xử lý"
+        : undefined,
+  });
   const visible = rows.filter((row) => {
     if (exception === "unallocated" && row.state !== "UNALLOCATED")
       return false;
@@ -518,6 +540,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     {selected && (
                       <ProcurementSupplierDetail
                         exitRef={detailExit}
+                        onWorkspaceStatus={setDetailStatus}
                         key={`${selected.family.source_fingerprint}:${controller.revision}`}
                         row={selected}
                         disabled={commandDisabled}

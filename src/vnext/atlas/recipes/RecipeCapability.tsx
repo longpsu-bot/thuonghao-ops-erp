@@ -53,6 +53,7 @@ export function RecipeCapability(
             <DishRecipeWorkbench
               embedded
               exitRef={active}
+              onWorkspaceStatus={props.onWorkspaceStatus}
               authSubject={props.authSubject}
               api={props.recipeApi}
               initialDate={props.initialDate}
@@ -64,6 +65,7 @@ export function RecipeCapability(
           {job === "changes" && (
             <ChangeOrderWorkbench
               exitRef={active}
+              onWorkspaceStatus={props.onWorkspaceStatus}
               authSubject={props.authSubject}
               api={props.adjustmentApi}
               initialDate={props.initialDate}

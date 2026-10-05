@@ -1,6 +1,6 @@
 # ATLAS-UI-VNEXT-03C — Persistent Workspace Production Implementation
 
-**Status:** Next-task contract; implementation not started or authorized by the 03B documentation change.
+**Status:** IN_PROGRESS. Explicitly assigned on 5 October 2026 after #350 merged. Implementation starts at `7629ccfdcd88e41a2dfa094c6a7b9719a94d9659`; #349 remains draft evidence only.
 
 **Prerequisite:** Reviewed/merged [D-048](../decisions/decision-atlas-persistent-workspace.md) and [Design Language v2](../ui/atlas-vnext-design-language-v2.md), then explicit assignment of 03C.
 
@@ -128,3 +128,13 @@ Run focused production workspace/status/handoff/accessibility tests and affected
 Update this task with changed files, gate results, security review, browser/assistive-technology evidence, known limits and explicit A/B adoption status. Push meaningful bounded changes and open a draft PR; product/architecture review and passing exact-head CI are required before merge. Do not merge automatically or deploy without separate authorization. #349 remains draft/unmerged.
 
 No migration is expected. Repository rollback reverts the workspace presentation/wiring to the last reviewed shell; unchanged backend business facts, issued documents and contracts remain intact. In-memory work is not durably restorable: resolve unsaved owners before a session-ending rollout/reload. Record any separately approved migration and rollback impact if task scope later changes.
+
+## Implementation evidence
+
+03C-A implements the seven-entry registry, ordered-ID reducer, retained owner panels, explicit status/guard plumbing, mount-seeded dates, non-destructive sign-out, launcher/tabs/narrow selector, and a test-only 12-owner fixture. Scope includes all editable owners because hidden-owner sign-out requires their real dirty and command-lock sources. The shared School selector and Planning source popover dismiss on deactivation; scoped date controls also cover the Week picker because it uses the same installed announcer.
+
+Focused production App tests prove retained input identity, no switch initialization reads, close cancellation/approval and focus, Auth identity isolation, exact new-Procurement handoff, intact existing date/Orders/detail/note/search, discrepancy disclosure, and multi-owner sign-out including Recipe metadata and PXK notes. Owner regressions retain stale/unknown/currentness authority. A delayed Recipe Preview is retained while inactive and shown only when its owner is active.
+
+Browser evidence uses the existing opt-in `atlas-vnext-review.html` fixture. Storybook 10.5's focus instrumentation throws when Zag accesses `HTMLElement.prototype.focus`, including with the real document and no adapter. The uninstrumented Vite entry exercises production components without a focus shim. Before visual adoption, all four selected surfaces passed overflow/hidden-owner checks at the five required viewports; captures are under `docs/testing/artifacts/atlas-persistent-workspace-03c/before`.
+
+**DatePicker gate remains UNVERIFIED for assistive technology.** Chakra 3.37.0 / Ark 5.39.0 / Zag 1.43.3 source audit and owner-scoped browser/DOM checks are separate from actual speech output. User selected NVDA with Chrome for the human journey; native assistive-technology control is unavailable in this environment. No production adoption/ready claim is permitted until that evidence passes. 03C-B may be prepared for the same draft review while rollout remains blocked.

@@ -10,6 +10,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import type { CSSProperties } from "react";
 import { AtlasWeekRangeInput } from "../AtlasWeekRangeInput";
 import {
@@ -50,6 +51,17 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const reviewTrigger = useRef<HTMLButtonElement>(null);
   const wasReviewOpen = useRef(false);
   const reviewOpen = c.job !== "menu" && Boolean(c.preview);
+  useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
+    unsaved: c.dirty,
+    blocked: c.exitBlocked || c.syncing || reviewOpen,
+    attention: c.exitBlocked
+      ? "Cần hoàn tất xử lý nguồn"
+      : c.syncing
+        ? "Đang đồng bộ"
+        : reviewOpen
+          ? "Đang xem thay đổi"
+          : undefined,
+  });
   useEffect(() => {
     if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
   }, [filtersOpen]);

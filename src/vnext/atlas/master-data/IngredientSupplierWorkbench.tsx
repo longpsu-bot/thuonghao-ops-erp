@@ -1,6 +1,9 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import type { AtlasModuleExitProps } from "../AtlasModuleExit";
+import {
+  useAtlasWorkbenchStatus,
+  type AtlasModuleExitProps,
+} from "../AtlasModuleExit";
 import {
   Box,
   Button,
@@ -33,11 +36,23 @@ export function IngredientSupplierWorkbench({
   authSubject,
   api,
   exitRef,
+  onWorkspaceStatus,
 }: AtlasModuleExitProps & {
   authSubject: string | null;
   api: IngredientSupplierMasterDataApi;
 }) {
   const c = useIngredientSupplierWorkbench({ authSubject, api });
+  useAtlasWorkbenchStatus(onWorkspaceStatus, {
+    unsaved: c.dirty,
+    blocked: c.saving || c.loading || Boolean(c.lock || c.review),
+    attention: c.lock
+      ? "Cần xác nhận dữ liệu hiện tại"
+      : c.saving
+        ? "Đang lưu"
+        : c.review
+          ? "Đang xem thay đổi"
+          : undefined,
+  });
   useImperativeHandle(exitRef, () => ({ requestExit: c.requestExit }));
   const detailOpen = Boolean(c.activeSurface || c.review);
   const detailKind = c.review?.kind ?? c.activeSurface?.kind;

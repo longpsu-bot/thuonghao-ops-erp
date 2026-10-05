@@ -1,0 +1,667 @@
+{
+  "browser": "151.0.7922.34",
+  "reducedMotion": true,
+  "actualTouch": false,
+  "results": [
+    {
+      "capture": "need-selected-1920x1080",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "26px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "procurement-selected-1920x1080",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ nhà cung ứng",
+          "size": "26px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "recipes-selected-1920x1080",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "pxk-selected-1920x1080",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "need-selected-1440x900",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "26px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "procurement-selected-1440x900",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ nhà cung ứng",
+          "size": "26px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "recipes-selected-1440x900",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "pxk-selected-1440x900",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "need-selected-1366x768",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "26px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "procurement-selected-1366x768",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ nhà cung ứng",
+          "size": "26px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "recipes-selected-1366x768",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "pxk-selected-1366x768",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "need-selected-650x900",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "20px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Lập nhu cầu",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "procurement-selected-650x900",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ nhà cung ứng",
+          "size": "20px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Kế hoạch mua hàng",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "recipes-selected-650x900",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "pxk-selected-650x900",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Phiếu xuất kho",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "need-selected-360x800",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "20px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Lập nhu cầu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "procurement-selected-360x800",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ nhà cung ứng",
+          "size": "20px",
+          "weight": "700"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Kế hoạch mua hàng",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "recipes-selected-360x800",
+      "overflow": false,
+      "activePanels": 2,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "pxk-selected-360x800",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 141.78125,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Phiếu xuất kho",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    }
+  ]
+}

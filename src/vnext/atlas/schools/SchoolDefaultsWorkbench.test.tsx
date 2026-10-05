@@ -107,6 +107,32 @@ const teacher = (name = "Trường Trung học Beta") =>
   screen.getByLabelText(`Giáo viên mặc định — ${name}`);
 
 describe("Chakra School default portions workbench", () => {
+  it("reports exact local edits and reversion to the workspace", async () => {
+    const report = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <SchoolDefaultsWorkbench
+          authSubject="operator"
+          api={apiWith().api}
+          onWorkspaceStatus={report}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByText("Trường Tiểu học Ánh Dương");
+    await waitFor(() =>
+      expect(report).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: false, blocked: false }),
+      ),
+    );
+    fireEvent.change(student(), { target: { value: "421" } });
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true }),
+    );
+    fireEvent.change(student(), { target: { value: "420" } });
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+  });
   it("reads once, orders operationally, searches accents and filters School Type locally", async () => {
     const connected = apiWith();
     await renderReady(connected.api);
