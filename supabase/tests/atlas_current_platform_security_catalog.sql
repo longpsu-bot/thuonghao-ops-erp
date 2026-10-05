@@ -631,8 +631,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  114,
-  'CAT-14 physical atlas_api function count is exactly one hundred fourteen'
+  115,
+  'CAT-14 physical atlas_api function count is exactly one hundred fifteen'
 );
 
 select is(
@@ -678,6 +678,7 @@ select is(
     'execute_need_generation(request jsonb)',
     'get_command_audit_timeline(request jsonb)',
     'get_confirmed_need_review(request jsonb)',
+    'get_confirmed_need_shopping_list_export(request jsonb)',
     'get_confirmed_supplier_allocation_workbench(request jsonb)',
     'get_dish_recipe_operator_workbench(request jsonb)',
     'get_dish_recipe_workbench(request jsonb)',
@@ -761,7 +762,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly one hundred fourteen physical functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly one hundred fifteen physical functions'
 );
 
 select is(
@@ -899,6 +900,7 @@ select is(
     'execute_need_generation(request jsonb)=atlas_need_generation_runtime',
     'get_command_audit_timeline(request jsonb)=atlas_read_runtime',
     'get_confirmed_need_review(request jsonb)=atlas_confirmed_need_review_runtime',
+    'get_confirmed_need_shopping_list_export(request jsonb)=atlas_confirmed_need_review_runtime',
     'get_confirmed_supplier_allocation_workbench(request jsonb)=atlas_read_runtime',
     'get_dish_recipe_operator_workbench(request jsonb)=atlas_read_runtime',
     'get_dish_recipe_workbench(request jsonb)=atlas_read_runtime',
@@ -1029,6 +1031,7 @@ select is(
     'execute_need_generation(request jsonb)',
     'get_command_audit_timeline(request jsonb)',
     'get_confirmed_need_review(request jsonb)',
+    'get_confirmed_need_shopping_list_export(request jsonb)',
     'get_confirmed_supplier_allocation_workbench(request jsonb)',
     'get_dish_recipe_operator_workbench(request jsonb)',
     'get_dish_recipe_workbench(request jsonb)',
@@ -1109,7 +1112,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly one hundred ten functions'
+  'CAT-18 authenticated execute allowlist is exactly one hundred twelve functions'
 );
 
 select ok(
@@ -1174,6 +1177,7 @@ select ok(
           ('execute_need_generation', 'request jsonb'),
           ('get_command_audit_timeline', 'request jsonb'),
           ('get_confirmed_need_review', 'request jsonb'),
+          ('get_confirmed_need_shopping_list_export', 'request jsonb'),
           ('get_confirmed_supplier_allocation_workbench', 'request jsonb'),
           ('get_dispatch_evidence_readiness', 'request jsonb'),
           ('get_generated_purchase_review', 'request jsonb'),
@@ -1731,13 +1735,14 @@ select is(
     'private_function_catalog_md5', '2b8a48a2ecaa3abebe9dc03dcafbe364',
     'trigger_count', 112,
     'trigger_catalog_md5', '06e6cba439dc0c6c93fdbbd5a563627b',
-    'positive_target_grant_count', 1767,
-    'positive_target_grant_md5', '40ddc0dcb013e88e9cfdbb2062efda72',
+    -- Shopping List adds only owner/authenticated EXECUTE on its read RPC.
+    'positive_target_grant_count', 1769,
+    'positive_target_grant_md5', 'dcc09bebf1981fc0c92e3834d64ee60d',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 114,
+    'api_function_count', 115,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 111,
+    'authenticated_execute_count', 112,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),

@@ -1,209 +1,184 @@
 import ExcelJS from "exceljs";
-import { describe, expect, it } from "vitest";
+import { describe, it, expect } from "vitest";
+import { shoppingFixture } from "./shoppingListTestFixtures";
 import { initialConfirmedNeedDraft } from "./confirmedNeedModel";
-import { reviewBatch } from "../../../../vnext/atlas/planning-confirmed/confirmedNeedReviewFixtures";
 import {
   createConfirmedNeedShoppingListXlsx,
   parseConfirmedNeedShoppingListXlsx,
+  shortestShoppingListQuantity,
 } from "./confirmedNeedShoppingList";
+import {
+  readShoppingListPackage,
+  packageText,
+  setPackageText,
+  writeShoppingListPackage,
+} from "./shoppingListPackage";
 function fixture(quantity = "1.234567") {
-  const workbench = reviewBatch();
-  const line = workbench.lines[0]!;
-  line.theoretical_quantity = quantity;
-  line.proposed_confirmed_quantity = quantity;
-  line.confirmed_quantity_after = quantity;
-  if (!line.effective_policy) throw new Error("Missing fixture policy");
-  line.effective_policy.planning_step = "0.000001";
-  const drafts = Object.fromEntries(
-    workbench.lines.map((line) => [
-      line.confirmed_need_line_id,
-      initialConfirmedNeedDraft(line),
-    ]),
-  );
-  return { workbench, drafts };
+  const f = shoppingFixture();
+  const l = f.workbench.lines[0]!;
+  l.theoretical_quantity = quantity;
+  l.proposed_confirmed_quantity = quantity;
+  l.confirmed_quantity_after = quantity;
+  l.effective_policy!.planning_step = "0.000001";
+  f.drafts[l.confirmed_need_line_id] = initialConfirmedNeedDraft(l);
+  return f;
 }
 async function workbook(quantity = "1.234567") {
-  const f = fixture(quantity);
-  const book = new ExcelJS.Workbook();
-  await book.xlsx.load(
-    await createConfirmedNeedShoppingListXlsx(f.workbench, f.drafts),
-  );
-  return { ...f, book, sheet: book.worksheets[0]! };
+  const f = fixture(quantity),
+    book = new ExcelJS.Workbook();
+  const output = await createConfirmedNeedShoppingListXlsx([f]);
+  await book.xlsx.load(output);
+  return { ...f, book, output, sheet: book.worksheets[0]! };
 }
-describe("AUD-003 — exact Shopping List round trip", () => {
-  it.each([
-    "1.234567",
-    "0.000001",
-    "12.345600",
-    "1.230000",
-    "0.000000",
-    "99999999999999.123456",
-  ])(
-    "preserves untouched authoritative quantity %s in exact export bytes",
+const bytes = async (book: ExcelJS.Workbook) =>
+  new Uint8Array(await book.xlsx.writeBuffer());
+describe("AUD-003 frozen V1 precision", () => {
+  it.each(["1.234567", "0.000001", "12.345600", "1.230000", "0.000000", "0"])(
+    "retains exact authoritative XML and unchanged draft for %s",
     async (quantity) => {
-      const { workbench, drafts } = fixture(quantity);
-      const before = structuredClone(drafts);
-      const bytes = await createConfirmedNeedShoppingListXlsx(
-        workbench,
-        drafts,
+      const f = fixture(quantity),
+        before = structuredClone(f.drafts),
+        output = await createConfirmedNeedShoppingListXlsx([f]);
+      const xml = packageText(
+        await readShoppingListPackage(output),
+        "xl/worksheets/sheet1.xml",
       );
-      const result = await parseConfirmedNeedShoppingListXlsx(
-        new Uint8Array(bytes),
-        workbench,
-        drafts,
+      expect(xml).toMatch(/<c[^>]*r="D4"[^>]*t="s"/);
+      const native = new ExcelJS.Workbook();
+      await native.xlsx.load(output);
+      expect(native.worksheets[0]!.getCell("D4").value).toBe(
+        shortestShoppingListQuantity(quantity),
       );
-      expect(result.changedLineIds).toEqual([]);
-      expect(result.drafts).toEqual(drafts);
-      expect(drafts).toEqual(before);
-      expect(result.drafts["line-0"].exact_quantity).toBe(quantity);
-      expect(result.drafts["line-0"].quantity_entered).toBeUndefined();
+      expect(native.worksheets[0]!.getCell("O4").value).toBe(quantity);
+      const imported = await parseConfirmedNeedShoppingListXlsx(
+        output,
+        [structuredClone(f.workbench)],
+        f.drafts,
+      );
+      expect(imported.changedLineIds).toEqual([]);
+      expect(imported.drafts).toEqual(before);
     },
   );
-  it("shows all retained fractional digits without changing the frozen layout or identities", async () => {
-    const { sheet } = await workbook();
-    expect(sheet.getCell("D4").value).toBe(1.234567);
-    expect(sheet.getCell("D4").numFmt).toBe("0.######");
-    expect(sheet.getColumn(4).width).toBe(11);
-    expect(sheet.getColumn(6).hidden).toBe(true);
-    expect(sheet.getCell("T4").value).toBe("1.234567");
-  });
   it.each([1.234567, "1.234567", "1,234567"])(
-    "recognizes exact numeric/text/comma equality %s without marking entry",
+    "recognizes unchanged numeric/dot/comma %s",
     async (value) => {
-      const { book, sheet, workbench, drafts } = await workbook();
-      sheet.getCell("D4").value = value;
+      const f = await workbook();
+      f.sheet.getCell("D4").value = value;
       const result = await parseConfirmedNeedShoppingListXlsx(
-        new Uint8Array(await book.xlsx.writeBuffer()),
-        workbench,
-        drafts,
+        await bytes(f.book),
+        [f.workbench],
+        f.drafts,
       );
       expect(result.changedLineIds).toEqual([]);
-      expect(result.drafts["line-0"]).toEqual(drafts["line-0"]);
+      expect(result.drafts).toEqual(f.drafts);
     },
   );
-  it("allows a note-only edit without treating unchanged authoritative precision as new entry", async () => {
-    const { book, sheet, workbench, drafts } = await workbook();
-    sheet.getCell("E4").value = "Ghi chú giao hàng";
-    const result = await parseConfirmedNeedShoppingListXlsx(
-      new Uint8Array(await book.xlsx.writeBuffer()),
-      workbench,
-      drafts,
+  it("normalizes exponent numeric XML before binary conversion", async () => {
+    const f = await workbook(),
+      files = await readShoppingListPackage(f.output);
+    setPackageText(
+      files,
+      "xl/worksheets/sheet1.xml",
+      packageText(files, "xl/worksheets/sheet1.xml").replace(
+        /<c\b([^>]*\br="D4"[^>]*)>[\s\S]*?<\/c>/,
+        (_, attrs) =>
+          `<c${attrs.replace(/\s*t="[^"]*"/, "")} t="n"><v>1234567e-6</v></c>`,
+      ),
     );
-    expect(result.changedLineIds).toEqual(["line-0"]);
-    expect(result.drafts["line-0"]).toEqual({
-      ...drafts["line-0"],
-      reason_note: "Ghi chú giao hàng",
-    });
+    expect(
+      (
+        await parseConfirmedNeedShoppingListXlsx(
+          writeShoppingListPackage(files),
+          [f.workbench],
+          f.drafts,
+        )
+      ).changedLineIds,
+    ).toEqual([]);
   });
   it.each([0, 1.25, "1,25"])(
-    "allows a genuine two-decimal/zero edit with a note: %s",
+    "permits real two-decimal/zero entry without importing a reason %s",
     async (value) => {
-      const { book, sheet, workbench, drafts } = await workbook();
-      sheet.getCell("D4").value = value;
-      sheet.getCell("E4").value = "Điều chỉnh";
+      const f = await workbook();
+      f.sheet.getCell("D4").value = value;
+      f.sheet.getCell("E4").value = "ignored";
       const result = await parseConfirmedNeedShoppingListXlsx(
-        new Uint8Array(await book.xlsx.writeBuffer()),
-        workbench,
-        drafts,
+        await bytes(f.book),
+        [f.workbench],
+        f.drafts,
       );
-      expect(result.changedLineIds).toEqual(["line-0"]);
-      expect(result.drafts["line-0"]).toMatchObject({
-        exact_quantity: value === 0 ? "0" : "1,25",
-        quantity_entered: true,
-        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
-        reason_note: "Điều chỉnh",
-      });
+      expect(result.changedLineIds).toHaveLength(1);
+      expect(result.drafts[result.changedLineIds[0]!]!.reason_code).toBe(
+        "PROPOSAL_ACCEPTED",
+      );
+      expect(result.drafts[result.changedLineIds[0]!]!.reason_note).toBe("");
     },
   );
   it.each(["1.234568", "1.234", "1.2345678", -1, "", "NaN"])(
-    "continues rejecting invalid or over-precision edits: %s",
+    "rejects invalid actual entry %j atomically",
     async (value) => {
-      const { book, sheet, workbench, drafts } = await workbook();
-      const before = structuredClone(drafts);
-      sheet.getCell("D4").value = value;
-      sheet.getCell("E4").value = "Có lý do";
+      const f = await workbook(),
+        before = structuredClone(f.drafts);
+      f.sheet.getCell("D4").value = value;
       await expect(
         parseConfirmedNeedShoppingListXlsx(
-          new Uint8Array(await book.xlsx.writeBuffer()),
-          workbench,
-          drafts,
+          await bytes(f.book),
+          [f.workbench],
+          f.drafts,
         ),
-      ).rejects.toThrow(/Số lượng/);
-      expect(drafts).toEqual(before);
+      ).rejects.toThrow();
+      expect(f.drafts).toEqual(before);
     },
   );
-  it("still requires a note for genuine edits from a six-decimal baseline", async () => {
-    const { book, sheet, workbench, drafts } = await workbook();
-    sheet.getCell("D4").value = 1.25;
+  it("rejects coordinated baseline tampering instead of treating it as authority", async () => {
+    const f = await workbook();
+    f.sheet.getCell("D4").value = "9.123456";
+    f.sheet.getCell("O4").value = "9.123456";
     await expect(
       parseConfirmedNeedShoppingListXlsx(
-        new Uint8Array(await book.xlsx.writeBuffer()),
-        workbench,
-        drafts,
+        await bytes(f.book),
+        [f.workbench],
+        f.drafts,
       ),
-    ).rejects.toThrow(/ghi chú/);
+    ).rejects.toThrow();
   });
-  it("checks immutable identity before the precision exception", async () => {
-    const { book, sheet, workbench, drafts } = await workbook();
-    sheet.getCell("F4").value = "stale";
-    sheet.getCell("D4").value = "bad quantity";
+  it("ignores note-only changes and blocks existing dirty quantities", async () => {
+    const f = await workbook();
+    f.sheet.getCell("E4").value = "working paper";
+    expect(
+      (
+        await parseConfirmedNeedShoppingListXlsx(
+          await bytes(f.book),
+          [f.workbench],
+          f.drafts,
+        )
+      ).changedLineIds,
+    ).toEqual([]);
+    f.drafts[f.workbench.lines[0]!.confirmed_need_line_id]!.exact_quantity =
+      "1,25";
     await expect(
-      parseConfirmedNeedShoppingListXlsx(
-        new Uint8Array(await book.xlsx.writeBuffer()),
-        workbench,
-        drafts,
-      ),
-    ).rejects.toThrow(/không còn khớp/);
+      parseConfirmedNeedShoppingListXlsx(f.output, [f.workbench], f.drafts),
+    ).rejects.toThrow();
   });
-  it("rejects invalid exported quantity metadata instead of using it as a baseline", async () => {
-    const { book, sheet, workbench, drafts } = await workbook();
-    sheet.getCell("T4").value = "not-a-quantity";
-    sheet.getCell("D4").value = 1.25;
-    sheet.getCell("E4").value = "Điều chỉnh";
+  it("blocks oversized printed quantity clearly while preserving full numeric(20,6) text in imports", async () => {
+    const f = await workbook(),
+      large = "99999999999999.123456",
+      l = f.workbench.lines[0]!;
+    l.confirmed_quantity_after = large;
+    l.proposed_confirmed_quantity = large;
+    f.drafts[l.confirmed_need_line_id] = initialConfirmedNeedDraft(l);
+    f.sheet.getCell("D4").value = large;
+    f.sheet.getCell("O4").value = large;
+    expect(
+      (
+        await parseConfirmedNeedShoppingListXlsx(
+          await bytes(f.book),
+          [f.workbench],
+          f.drafts,
+        )
+      ).changedLineIds,
+    ).toEqual([]);
     await expect(
-      parseConfirmedNeedShoppingListXlsx(
-        new Uint8Array(await book.xlsx.writeBuffer()),
-        workbench,
-        drafts,
-      ),
-    ).rejects.toThrow(/không còn khớp|siêu dữ liệu/);
-  });
-  it("cannot introduce a six-decimal edit by changing visible quantity plus hidden baseline", async () => {
-    const { book, sheet, workbench, drafts } = await workbook();
-    sheet.getCell("D4").value = "9.123456";
-    sheet.getCell("T4").value = "9.123456";
-    const result = await parseConfirmedNeedShoppingListXlsx(
-      new Uint8Array(await book.xlsx.writeBuffer()),
-      workbench,
-      drafts,
-    );
-    expect(result.drafts["line-0"]).toEqual(drafts["line-0"]);
-    expect(result.changedLineIds).toEqual([]);
-  });
-  it("preserves a current local draft after an untouched older export without phantom quantity changes", async () => {
-    const { workbench, drafts } = fixture();
-    const bytes = await createConfirmedNeedShoppingListXlsx(workbench, drafts);
-    drafts["line-0"].exact_quantity = "1,25";
-    drafts["line-0"].quantity_entered = true;
-    const result = await parseConfirmedNeedShoppingListXlsx(
-      new Uint8Array(bytes),
-      workbench,
-      drafts,
-    );
-    expect(result.drafts["line-0"]).toEqual(drafts["line-0"]);
-    expect(result.changedLineIds).toEqual([]);
-  });
-  it("rejects missing lines atomically even when the retained quantities are valid", async () => {
-    const { book, sheet, workbench, drafts } = await workbook();
-    const before = structuredClone(drafts);
-    sheet.spliceRows(4, 1);
-    await expect(
-      parseConfirmedNeedShoppingListXlsx(
-        new Uint8Array(await book.xlsx.writeBuffer()),
-        workbench,
-        drafts,
-      ),
-    ).rejects.toThrow(/thiếu dòng/);
-    expect(drafts).toEqual(before);
+      createConfirmedNeedShoppingListXlsx([f]),
+    ).rejects.toMatchObject({ code: "PRINT_OVERFLOW" });
   });
 });

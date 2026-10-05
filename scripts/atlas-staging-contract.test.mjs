@@ -2053,9 +2053,15 @@ describe("Atlas staging hosted evidence", () => {
       "get_school_fulfilment_reconciliation_workbench(request jsonb)";
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(114);
-    expect(authority.apiOwners).toHaveLength(114);
-    expect(authority.authenticatedApiSignatures).toHaveLength(111);
+    expect(authority.apiSignatures).toHaveLength(115);
+    expect(authority.apiOwners).toHaveLength(115);
+    expect(authority.authenticatedApiSignatures).toHaveLength(112);
+    expect(authority.apiSignatures).toContain(
+      "get_confirmed_need_shopping_list_export(request jsonb)",
+    );
+    expect(authority.authenticatedApiSignatures).toContain(
+      "get_confirmed_need_shopping_list_export(request jsonb)",
+    );
     expect(authority.apiSignatures).toContain(compatibilityBase);
     expect(authority.authenticatedApiSignatures).not.toContain(
       compatibilityBase,

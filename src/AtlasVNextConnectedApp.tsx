@@ -30,18 +30,13 @@ import { AtlasVNextProvider } from "./vnext/atlas/AtlasVNextProvider";
 import { AtlasSessionGate } from "./vnext/atlas/AtlasSessionGate";
 import { AtlasVNextApp } from "./vnext/atlas/AtlasVNextApp";
 import type { AtlasVNextApis } from "./vnext/atlas/AtlasVNextApis";
-import {
-  downloadConfirmedNeedShoppingList,
-  importConfirmedNeedShoppingList,
-} from "./modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList";
+import { createConnectedShoppingListService } from "./modules/atlas/planning-inputs/confirmed-needs/shoppingListService";
 const exporters = {
   procurementXlsx: downloadPurchaseOrderXlsx,
   procurementPdf: downloadPurchaseOrderPdf,
   pxkXlsx: downloadSchoolDispatchXlsx,
   pxkPdf: downloadSchoolDispatchPdf,
   pxkGroupedXlsx: downloadGroupedSchoolDispatchXlsx,
-  shoppingListXlsx: downloadConfirmedNeedShoppingList,
-  shoppingListImport: importConfirmedNeedShoppingList,
 };
 export function AtlasVNextConnectedApp({
   connection: suppliedConnection,
@@ -80,6 +75,19 @@ export function AtlasVNextConnectedApp({
         : undefined,
     [transport],
   );
+  const connectedExporters = useMemo(() => {
+    if (!apis || auth.state.status !== "authenticated") return exporters;
+    const shopping = createConnectedShoppingListService(
+      apis.confirmedNeed,
+      apis.planningReadiness,
+      auth.state.authSubject,
+    );
+    return {
+      ...exporters,
+      shoppingListXlsx: shopping.export,
+      shoppingListImport: shopping.import,
+    };
+  }, [apis, auth.state]);
   return (
     <AtlasVNextProvider>
       <AtlasSessionGate
@@ -107,7 +115,7 @@ export function AtlasVNextConnectedApp({
               void auth.signOut();
             }}
             safeAuthError={auth.safeAuthError}
-            exporters={exporters}
+            exporters={connectedExporters}
           />
         )}
       </AtlasSessionGate>

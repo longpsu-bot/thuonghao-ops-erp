@@ -321,14 +321,23 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     <Button
                       variant="tertiary"
                       data-atlas-action-priority="tertiary"
-                      disabled={workbookBusy || c.released}
+                      disabled={
+                        workbookBusy ||
+                        c.released ||
+                        c.dirty ||
+                        c.busy ||
+                        Boolean(c.lock) ||
+                        !c.editable
+                      }
                       onClick={() => {
                         setWorkbookError(null);
                         setWorkbookBusy(true);
-                        void props.onExportShoppingList!(c.workbench!, c.drafts)
-                          .catch(() =>
+                        void props.onExportShoppingList!(c.workbench!)
+                          .catch((error: unknown) =>
                             setWorkbookError(
-                              "Không thể xuất Phiếu đi chợ. Hãy thử lại.",
+                              error instanceof Error
+                                ? error.message
+                                : "Không thể xuất Phiếu đi chợ. Hãy thử lại.",
                             ),
                           )
                           .finally(() => setWorkbookBusy(false));
@@ -339,7 +348,14 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     <Button
                       variant="tertiary"
                       data-atlas-action-priority="tertiary"
-                      disabled={workbookBusy || c.released}
+                      disabled={
+                        workbookBusy ||
+                        c.released ||
+                        c.dirty ||
+                        c.busy ||
+                        Boolean(c.lock) ||
+                        !c.editable
+                      }
                       onClick={() => workbookInput.current?.click()}
                     >
                       Nhập Phiếu đi chợ
@@ -363,7 +379,17 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         event.target.value = "";
-                        if (!file) return;
+                        if (
+                          !file ||
+                          c.dirty ||
+                          c.released ||
+                          c.busy ||
+                          c.lock ||
+                          !c.editable ||
+                          workbookBusy
+                        )
+                          return;
+                        const apply = c.captureShoppingListImport();
                         setWorkbookError(null);
                         setWorkbookBusy(true);
                         void props.onImportShoppingList!(
@@ -371,7 +397,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                           c.workbench!,
                           c.drafts,
                         )
-                          .then(c.applyShoppingListImport)
+                          .then(apply)
                           .catch((error: unknown) =>
                             setWorkbookError(
                               error instanceof Error
@@ -383,6 +409,12 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       }}
                     />
                   </Flex>
+                )}
+                {c.dirty && props.onExportShoppingList && (
+                  <Text fontSize="sm">
+                    Lưu hoặc tải lại để bỏ thay đổi trước khi xuất/nhập Phiếu đi
+                    chợ.
+                  </Text>
                 )}
               </Flex>
               {workbookError && (

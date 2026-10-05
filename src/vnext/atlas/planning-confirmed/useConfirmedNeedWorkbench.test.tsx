@@ -33,6 +33,47 @@ async function ready(scenario: ConfirmedReviewScenario = "normal") {
   return h;
 }
 describe("Confirmed Need date authority and generation", () => {
+  it("applies quantity proposals only locally, ignores note-only proposals and discards delayed imports", async () => {
+    const h = await ready();
+    const before = h.result.current.drafts;
+    act(() =>
+      h.result.current.captureShoppingListImport()({
+        drafts: structuredClone(before),
+        changedLineIds: [],
+      }),
+    );
+    expect(h.result.current.drafts).toBe(before);
+    expect(h.result.current.dirty).toBe(false);
+    const apply = h.result.current.captureShoppingListImport();
+    const imported = {
+      drafts: {
+        ...before,
+        "line-0": {
+          ...before["line-0"]!,
+          exact_quantity: "12,5",
+          quantity_entered: true,
+        },
+      },
+      changedLineIds: ["line-0"],
+    };
+    act(() => apply(imported));
+    expect(h.result.current.dirty).toBe(true);
+    expect(h.save).not.toHaveBeenCalled();
+    expect(h.result.current.drafts["line-0"]!.reason_code).toBe(
+      before["line-0"]!.reason_code,
+    );
+    expect(() => apply(imported)).toThrow("đã thay đổi");
+  });
+  it("discards an import after switching the exact service date", async () => {
+    const h = await ready(),
+      apply = h.result.current.captureShoppingListImport(),
+      drafts = h.result.current.drafts;
+    act(() => h.result.current.transition({ date: "2026-09-08" }));
+    expect(() => apply({ drafts, changedLineIds: ["line-0"] })).toThrow(
+      "đã thay đổi",
+    );
+    expect(h.save).not.toHaveBeenCalled();
+  });
   it("ignores a delayed read failure from a previous authenticated context", async () => {
     const fixture = createConfirmedNeedReviewFixture();
     let finish!: (r: ReturnType<typeof reviewFailure>) => void;

@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "fresh_authorized_reads": [
+    "atlas_api.get_confirmed_need_shopping_list_export",
+    "atlas_api.get_planning_input_preflight",
+    "atlas_api.get_confirmed_need_review",
+    "atlas_api.get_planning_input_preflight"
+  ],
+  "changedLineIds": ["b6560000-0000-0000-0000-000000000002"],
+  "import_commands": 0,
+  "fixture": "rolled-back RMVP-05 local fixture with operator display names",
+  "hosted_writes": 0
+}

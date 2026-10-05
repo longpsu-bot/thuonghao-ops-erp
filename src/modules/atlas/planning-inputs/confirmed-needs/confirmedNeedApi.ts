@@ -364,6 +364,12 @@ export function confirmedNeedPurchaseHandoffRequest(
 
 export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
   return {
+    getShoppingListExport(request: AtlasRpcRequest) {
+      return invoker.invoke(
+        "atlas_api.get_confirmed_need_shopping_list_export",
+        request,
+      );
+    },
     getReview(
       authSubject: string,
       correlationId: string,
@@ -414,4 +420,10 @@ export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
   };
 }
 
-export type ConfirmedNeedApi = ReturnType<typeof createConfirmedNeedApi>;
+export type ConfirmedNeedApi = Omit<
+  ReturnType<typeof createConfirmedNeedApi>,
+  "getShoppingListExport"
+> &
+  Partial<
+    Pick<ReturnType<typeof createConfirmedNeedApi>, "getShoppingListExport">
+  >;
