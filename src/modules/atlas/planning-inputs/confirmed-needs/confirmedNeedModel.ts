@@ -227,6 +227,21 @@ export function initialConfirmedNeedDraft(
   };
 }
 
+export function confirmedNeedDraftMatchesSaved(
+  line: ConfirmedNeedLine,
+  draft: ConfirmedNeedDraftLine,
+) {
+  const initial = initialConfirmedNeedDraft(line);
+  return (
+    exactDecimalEqual(
+      normalizeConfirmedNeedQuantity(draft.exact_quantity) ?? "",
+      initial.exact_quantity,
+    ) &&
+    draft.reason_code === initial.reason_code &&
+    draft.reason_note.trim() === initial.reason_note.trim()
+  );
+}
+
 export type ConfirmedNeedWorkbenchData = {
   confirmed_need_batch_id: string;
   source_kind: "NEED_GENERATION";

@@ -253,3 +253,20 @@ human decisions under the existing RMVP-05 semantics.
 Review continues to fail closed on stale bindings, Unit mismatch, invalid
 D-046 snapshots, missing/ambiguous H1A policy, or unauthorized state. It does
 not expose private adoption evidence or raw legacy source payloads.
+
+## Shopping List V1 export projection
+
+`atlas_api.get_confirmed_need_shopping_list_export(jsonb)` accepts the same
+RMVP-05.v1 read request, filters and pagination as `get_confirmed_need_review`.
+It delegates that read's Actor, JWT, capability and GLOBAL-scope authorization
+and returns the unchanged review response plus `shopping_list_supplier_advice`:
+an object mapping every authorized page line ID to its preferred Supplier name
+or an empty string. The existing `purchase_review_supplier_advice` backend helper
+decides active/effective eligibility and unique lowest priority. No allocation,
+decision, receipt or other business fact is written.
+
+The connected exporter loads complete coherent pages and fresh exact-day
+preflight before/after the read. Import uses the existing review RPC without
+Supplier advice; Supplier drift cannot stale quantities. The current UI accepts
+only its exact service date; the codec supports 1–7 independent daily batches.
+See the [connected task and certification](../implementation-tasks/TASK-ATLAS-SHOPPING-LIST-XLSX-V1-CONNECTED-01.md).

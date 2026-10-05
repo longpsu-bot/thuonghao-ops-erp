@@ -1,0 +1,35 @@
+{
+  "sheets": [
+    {
+      "name": "2026-04-20",
+      "paper": 9.0,
+      "breaks": 1,
+      "orientation": 1.0,
+      "zoom": 96,
+      "table": "$A$3:$O$47",
+      "area": "$A$1:$E$47"
+    },
+    {
+      "name": "2026-04-21",
+      "paper": 9.0,
+      "breaks": 0,
+      "orientation": 1.0,
+      "zoom": 96,
+      "table": "$A$3:$O$15",
+      "area": "$A$1:$E$15"
+    },
+    {
+      "name": "2026-04-22",
+      "paper": 9.0,
+      "breaks": 0,
+      "orientation": 1.0,
+      "zoom": 96,
+      "table": "$A$3:$O$6",
+      "area": "$A$1:$E$6"
+    }
+  ],
+  "open_without_repair": true,
+  "full_table_sort": true,
+  "reopened": true,
+  "version": "16.0"
+}

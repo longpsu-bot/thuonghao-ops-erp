@@ -45,6 +45,7 @@ const approvedLegacyBusinessModules = [
 const approvedVnextSharedAssets = new Set(["src/assets/thuong-hao-logo.jpg"]);
 // Application-to-technology composition only; normal vNext bridge rules are unchanged.
 const connectedRootModules = new Set([
+  "src/modules/atlas/planning-inputs/confirmed-needs/shoppingListService",
   "react",
   "src/vnext/atlas/AtlasVNextApp",
   "src/vnext/atlas/AtlasVNextProvider",

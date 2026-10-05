@@ -12,6 +12,7 @@ import * as pantryFactory from "./modules/atlas/planning-inputs/pantry/pantryApi
 import * as planningReadinessFactory from "./modules/atlas/planning-inputs/readiness/planningInputReadinessApi";
 import * as needGenerationFactory from "./modules/atlas/planning-inputs/need-generation/needGenerationApi";
 import * as confirmedNeedFactory from "./modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";
+import * as shoppingListFactory from "./modules/atlas/planning-inputs/confirmed-needs/shoppingListService";
 import * as purchaseReviewFactory from "./modules/atlas/procurement/purchaseReviewApi";
 import * as procurementFactory from "./modules/atlas/procurement/schoolCateringProcurementApi";
 import * as schoolDispatchFactory from "./modules/atlas/dispatch/schoolDispatchReleaseApi";
@@ -43,6 +44,10 @@ afterEach(() => {
   observed.props = null;
 });
 it("builds each reviewed API factory once, reuses its bundle, and supplies exporters", () => {
+  const shoppingList = vi.spyOn(
+    shoppingListFactory,
+    "createConnectedShoppingListService",
+  );
   const masterData = vi.spyOn(masterDataFactory, "createMasterDataApi");
   const recipe = vi.spyOn(recipeFactory, "createRecipeApi");
   const recipeAdjustment = vi.spyOn(
@@ -92,6 +97,11 @@ it("builds each reviewed API factory once, reuses its bundle, and supplies expor
     screen.getByRole("heading", { name: "Connected application" }),
   ).toBeInTheDocument();
   const apis = observed.props!.apis;
+  expect(shoppingList).toHaveBeenCalledWith(
+    apis.confirmedNeed,
+    apis.planningReadiness,
+    "subject-a",
+  );
   rerender(<AtlasVNextConnectedApp connection={connection} />);
   expect(observed.props!.apis).toBe(apis);
   expect(masterData).toHaveBeenCalledOnce();

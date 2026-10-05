@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const ATLAS_RPC_FUNCTIONS = {
+  "atlas_api.get_confirmed_need_shopping_list_export":
+    "get_confirmed_need_shopping_list_export",
   "atlas_api.record_wholesale_source": "record_wholesale_source",
   "atlas_api.release_wholesale_order": "release_wholesale_order",
   "atlas_api.release_purchase_handoff": "release_purchase_handoff",

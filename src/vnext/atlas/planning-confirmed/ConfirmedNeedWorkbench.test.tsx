@@ -476,8 +476,6 @@ describe("Confirmed Need Chakra operator surface", () => {
               ...drafts["line-0"]!,
               exact_quantity: "12,5",
               quantity_entered: true,
-              reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT" as const,
-              reason_note: "Điều chỉnh từ Phiếu đi chợ",
             },
           },
           changedLineIds: ["line-0"],
@@ -506,7 +504,19 @@ describe("Confirmed Need Chakra operator surface", () => {
     ).toBeVisible();
     expect(await quantity()).toHaveValue("12,5");
     expect(h.save).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(
+      screen.getByRole("combobox", { name: "Lý do Gạo thơm" }),
+    ).toHaveValue("PROPOSAL_ACCEPTED");
+    expect(
+      screen.getByRole("button", { name: "Xuất Phiếu đi chợ" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Nhập Phiếu đi chợ" }),
+    ).toBeDisabled();
+    await editValid();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
+    expect(h.save).not.toHaveBeenCalled();
   });
   it("displays an exact cent delta beyond binary floating-point precision", async () => {
     const h = show();

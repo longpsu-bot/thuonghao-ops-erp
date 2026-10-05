@@ -43,7 +43,6 @@ export type ConfirmedNeedWorkbenchProps = AtlasModuleExitProps & {
   onContinueAllocation?: (serviceDate: string) => void;
   onExportShoppingList?: (
     workbench: ConfirmedNeedWorkbenchData,
-    drafts: Record<string, ConfirmedNeedDraftLine>,
   ) => Promise<void>;
   onImportShoppingList?: (
     file: File,
@@ -112,6 +111,24 @@ export function useConfirmedNeedWorkbench({
     visibleLines,
     hiddenDirtyCount,
   } = useConfirmedNeedDraft(workbench, schoolIds);
+  const shoppingContext = useRef({
+    date,
+    workbench,
+    drafts,
+    dirty,
+    busy,
+    lock,
+    authSubject,
+  });
+  shoppingContext.current = {
+    date,
+    workbench,
+    drafts,
+    dirty,
+    busy,
+    lock,
+    authSubject,
+  };
   const adopt = useCallback(
     (b: ConfirmedNeedWorkbenchData) => {
       setWorkbench(b);
@@ -523,12 +540,32 @@ export function useConfirmedNeedWorkbench({
     continueAllocation: () => {
       if (canContinue && !inFlight.current) onContinueAllocation?.(date);
     },
-    applyShoppingListImport: (imported: ConfirmedNeedShoppingListImport) => {
-      setOperation({ status: "IDLE" });
-      setDrafts(imported.drafts);
-      setNotice(
-        `Đã nhập ${imported.changedLineIds.length} thay đổi vào bản nháp.`,
-      );
+    captureShoppingListImport: () => {
+      const expected = shoppingContext.current;
+      return (imported: ConfirmedNeedShoppingListImport) => {
+        const current = shoppingContext.current;
+        if (
+          expected.dirty ||
+          expected.busy ||
+          expected.lock ||
+          !expected.workbench?.editing_allowed ||
+          current.date !== expected.date ||
+          current.workbench !== expected.workbench ||
+          current.drafts !== expected.drafts ||
+          current.authSubject !== expected.authSubject ||
+          current.dirty ||
+          current.busy ||
+          current.lock
+        )
+          throw new Error(
+            "Dữ liệu hoặc bản nháp đã thay đổi trong khi nhập. Hãy tải lại và chọn file một lần nữa.",
+          );
+        setOperation({ status: "IDLE" });
+        if (imported.changedLineIds.length) setDrafts(imported.drafts);
+        setNotice(
+          `Đã nhập ${imported.changedLineIds.length} thay đổi vào bản nháp.`,
+        );
+      };
     },
   };
 }
