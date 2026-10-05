@@ -2,6 +2,8 @@
 
 Authority: [D-045](../decisions/decision-atlas-chakra-ui-foundation.md), D-034 visual architecture, D-035 workflow-first UX and OPS_SYSTEM_MAP v1.0. This is a presentation contract; it adds no business state or command.
 
+**Forward supersession:** [Design Language v2](atlas-vnext-design-language-v2.md) and [D-048](../decisions/decision-atlas-persistent-workspace.md) record the owner-selected Persistent Workspace direction, pending review and merge. Once effective, v2 supersedes this document's single-active-module shell, rail/drawer navigation, switch-as-exit composition, replacement-page motion and selected presentation geometry. The Chakra foundation and business safeguards remain authoritative. Production adoption is the separate [03C task](../implementation-tasks/TASK-ATLAS-UI-VNEXT-03C-PERSISTENT-WORKSPACE-PRODUCTION.md); this documentation change does not replace the running shell.
+
 ## Ownership
 
 Chakra UI v3 owns primitives; Atlas semantic tokens own visual meaning; recipes own sanctioned repeated variants; workbench grammar owns composition. Business/API/model contracts remain reusable and authoritative. Legacy Mantine is behavioral/reference evidence, not the new design system.
