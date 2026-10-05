@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useAtlasWorkbenchActive } from "../AtlasVNextProvider";
 import {
   adjustmentPreviewFromResult,
   adjustmentResultMessage,
@@ -80,6 +81,7 @@ export function useChangeOrderWorkbench({
   authSubject: string | null;
   initialDate?: string;
 }) {
+  const active = useAtlasWorkbenchActive();
   const identity = useRef({
     api,
     subject: authSubject,
@@ -131,6 +133,7 @@ export function useChangeOrderWorkbench({
   const [effectiveMessage, setEffectiveMessage] = useState("");
   const [cancelTarget, setCancelTarget] =
     useState<RecipeAdjustmentOperatorRecord | null>(null);
+  const [cancelDirty, setCancelDirty] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const pendingExit = useRef<(() => void) | null>(null),
     discardAccepted = useRef(false);
@@ -178,6 +181,7 @@ export function useChangeOrderWorkbench({
     setTargets(null);
     setTargetLoading(false);
     setCancelTarget(null);
+    setCancelDirty(false);
     setEffective(null);
     setEffectiveMessage("");
     invalidateReview();
@@ -259,14 +263,14 @@ export function useChangeOrderWorkbench({
     const timer = setInterval(() => {
       if (
         data.reference_date === vietnamLocalDate() ||
+        !active ||
         !current() ||
         loading ||
         busy ||
         lock
       )
         return;
-      if (dirty || preview || cancelTarget) {
-        invalidateReview();
+      if (draft || preview || previewLoading || cancelTarget || discardOpen) {
         setLock("stale");
         setMessage("Ngày làm việc đã thay đổi. Hãy tải lại dữ liệu hiện tại.");
       } else void read();
@@ -362,6 +366,7 @@ export function useChangeOrderWorkbench({
       transition(() => {
         setSelected(row);
         setCancelTarget(row);
+        setCancelDirty(false);
       });
   }
   function updateDraft(patch: Partial<ChangeDraft>) {
@@ -672,10 +677,12 @@ export function useChangeOrderWorkbench({
       setEffectiveMessage("");
     },
     cancelTarget,
+    cancelDirty,
+    setCancelDirty,
     cancel,
     openCancel,
     closeCancel: () => {
-      if (!busy && !lock) setCancelTarget(null);
+      if (!busy && (!lock || lock === "stale")) setCancelTarget(null);
     },
     openCreate,
     openCorrection,
@@ -683,7 +690,7 @@ export function useChangeOrderWorkbench({
     runPreview,
     save,
     backToEdit: () => {
-      if (!busy && !lock) invalidateReview();
+      if (!busy && (!lock || lock === "stale")) invalidateReview();
     },
     select: (row: RecipeAdjustmentOperatorRecord) => {
       if (canAct) transition(() => setSelected(row));

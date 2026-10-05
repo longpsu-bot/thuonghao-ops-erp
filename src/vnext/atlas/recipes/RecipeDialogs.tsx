@@ -7,8 +7,9 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
+import { useAtlasWorkbenchActive } from "../AtlasVNextProvider";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
 
 export function RecipeDirtyExitDialog({
@@ -60,9 +61,16 @@ export function RecipeDirtyExitDialog({
   );
 }
 export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
+  const active = useAtlasWorkbenchActive();
   const [source, setSource] = useState("");
   const [date, setDate] = useState(c.date);
   const [reason, setReason] = useState("");
+  const initialDate = useRef(date);
+  useEffect(() => {
+    c.setUtilityDirty(
+      Boolean(source || reason || c.workbook) || date !== initialDate.current,
+    );
+  }, [source, date, reason, c.workbook, c.setUtilityDirty]);
   const cancel = useRef<HTMLButtonElement>(null);
   const kind = c.surface;
   const title =
@@ -83,9 +91,9 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
   };
   return (
     <Dialog.Root
-      open={["copy", "import", "lifecycle"].includes(kind ?? "")}
+      open={active && ["copy", "import", "lifecycle"].includes(kind ?? "")}
       initialFocusEl={() => cancel.current}
-      onOpenChange={({ open }) => !open && close()}
+      onOpenChange={({ open }) => active && !open && close()}
       placement="center"
       lazyMount
       unmountOnExit

@@ -42,7 +42,7 @@ Attempted sign-out with any unsaved open owner blocks without discarding, identi
 
 Date seeds apply only on first mount. Need's **Tiếp tục phân bổ NCC** opens unopened Procurement at the exact Need service date/Allocation stage. Already-open Procurement is activated with date/stage/local work intact; discrepancies are explicitly disclosed. This application activation performs no backend business handoff. An explicit guarded `requestContext(...)` is deferred unless proven necessary.
 
-Activation never refreshes. Existing command/readback, currentness/version/concurrency and stale/unknown recovery remain in each workbench. Inspect hidden effects/timers; never overwrite local work with hidden or activation-time refresh. Inactive panels are hidden/inert and excluded from focus, commands and active landmarks; escaping transient UI and delayed DatePicker announcements require production certification.
+Activation never refreshes. Existing command/readback, currentness/version/concurrency and stale/unknown recovery remain in each workbench. Inspect hidden effects/timers; never overwrite local work with hidden or activation-time refresh. Inactive panels are hidden/inert and excluded from focus, commands and active landmarks; escaping transient UI and DatePicker focus/input ownership require browser verification.
 
 ## Visual decision and alternatives
 
@@ -62,7 +62,9 @@ One compact shell utility contains user/environment/sign-out; the launcher does 
 
 After review and merge, [Design Language v2](../ui/atlas-vnext-design-language-v2.md) supersedes v1's shell/navigation/lifetime, replacement-page motion and selected composition geometry. D-045's Chakra foundation, D-035's operator hierarchy and D-034's table-first/signal-only principles remain. This decision does not add modules or daily stages, alter API contracts, lifecycle/status authority, quantity rules, Auth/RLS, currentness or released history. Existing internal job guards remain; the persistence promise applies to workspace tabs, not a new unguarded internal job lifecycle.
 
-Benefits: immediate return to open work, preserved useful table width, visible unsaved attention. Costs: multiple retained React trees, explicit status/guard integration, local-date discrepancy disclosure and hidden-portal/accessibility audit. Required unresolved implementation gates are Recipe status accuracy, hidden timers, DatePicker live-announcer isolation, focus cleanup and mobile/12-tab acceptance. They must pass before production rollout; this documentation makes no runtime certification claim.
+Benefits: immediate return to open work, preserved useful table width, visible unsaved attention. Costs: multiple retained React trees, explicit status/guard integration, local-date discrepancy disclosure and hidden-portal interaction audit. Required implementation gates are Recipe status accuracy, hidden timers, DatePicker browser ownership, focus cleanup and mobile/12-tab acceptance. They must pass before production rollout; this documentation makes no runtime certification claim.
+
+**Owner clarification — 5 October 2026:** 03C does not require screen-reader/disability-assistance certification for the current Atlas operator population. Remove NVDA/JAWS, spoken-date/live-announcer human verification and WCAG certification as release gates. Retain browser input/focus isolation, date ownership, transient dismissal, predictable guarded dialogs/shortcuts and state-preserving navigation. This narrows presentation acceptance only; it changes no business/API/security contract.
 
 Implementation is separately bounded by [03C](../implementation-tasks/TASK-ATLAS-UI-VNEXT-03C-PERSISTENT-WORKSPACE-PRODUCTION.md): A Workspace Foundation, then B Visual Adoption of Need, Procurement, Recipes and School PXK without requiring every module to be restyled.
 

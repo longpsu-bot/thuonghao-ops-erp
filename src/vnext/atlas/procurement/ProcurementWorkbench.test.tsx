@@ -60,6 +60,50 @@ const openFilters = () => {
     fireEvent.click(disclosure);
 };
 describe("Procurement vNext operator workbench", () => {
+  it("aggregates selected Supplier draft status and reports retained date/stage context", async () => {
+    const fixture = createProcurementReviewFixture("manual_split");
+    const report = vi.fn();
+    const context = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          schools={reviewSchools}
+          onWorkspaceStatus={report}
+          onContextChange={context}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(await action());
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+    expect(context).toHaveBeenLastCalledWith({
+      date: reviewDate,
+      stage: "allocation",
+    });
+    const note = screen.getByRole("textbox", {
+      name: "Ghi chú cho NCC An Phú",
+    });
+    fireEvent.change(note, { target: { value: "Giao sớm" } });
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true }),
+    );
+    fireEvent.change(note, { target: { value: "" } });
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Đơn mua" }));
+    await waitFor(() =>
+      expect(context).toHaveBeenLastCalledWith({
+        date: reviewDate,
+        stage: "orders",
+      }),
+    );
+  });
   it("uses a horizontal Station masthead and attached-detail geometry", async () => {
     show("manual_split");
 
@@ -71,15 +115,12 @@ describe("Procurement vNext operator workbench", () => {
       name: "Ngữ cảnh công việc mua hàng",
     });
     expect(station).toHaveStyle({
-      minHeight:
-        "var(--atlas-procurement-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))",
       alignContent: "start",
       gridTemplateRows: "auto minmax(0, 1fr)",
     });
     expect(context.parentElement).toBe(station);
     expect(context).toHaveStyle({
-      "--atlas-task-context-desktop-min-height": "68px",
-      "--atlas-task-context-desktop-target-height": "72px",
+      minHeight: "var(--atlas-task-context-min-height, 56px)",
     });
     expect(
       within(context).getByLabelText(
@@ -103,7 +144,9 @@ describe("Procurement vNext operator workbench", () => {
     show("ready");
     await action();
 
-    const context = screen.getByText("Kế hoạch mua hàng");
+    const context = screen.getByRole("region", {
+      name: "Ngữ cảnh công việc mua hàng",
+    });
     const allocationHeading = screen.getByRole("heading", {
       level: 1,
       name: "Phân bổ nhà cung ứng",

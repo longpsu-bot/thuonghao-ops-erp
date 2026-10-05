@@ -1,5 +1,5 @@
 import { Box, Tabs } from "@chakra-ui/react";
-import { useImperativeHandle, useRef, useState } from "react";
+import { useCallback, useImperativeHandle, useRef, useState } from "react";
 import type {
   AtlasModuleExitHandle,
   AtlasModuleExitProps,
@@ -21,6 +21,14 @@ export function PlanningCapability(
   },
 ) {
   const [phase, setPhase] = useState("sources");
+  const [serviceDate, setServiceDate] = useState(props.serviceDate);
+  const onServiceDateChange = useCallback(
+    (date: string) => {
+      setServiceDate(date);
+      props.onServiceDateChange(date);
+    },
+    [props.onServiceDateChange],
+  );
   const active = useRef<AtlasModuleExitHandle>(null);
   const content = useRef<HTMLDivElement>(null);
   useImperativeHandle(props.exitRef, () => ({
@@ -32,6 +40,7 @@ export function PlanningCapability(
         value={phase}
         activationMode="manual"
         variant="line"
+        gap="var(--atlas-layout-zero, 0)"
         onValueChange={({ value }) => {
           if ((value === "sources" || value === "confirmed") && value !== phase)
             active.current?.requestExit(() => setPhase(value));
@@ -39,7 +48,7 @@ export function PlanningCapability(
       >
         <Tabs.List
           aria-label="Giai đoạn lập nhu cầu"
-          mb="sm"
+          mb="var(--atlas-layout-zero, 0)"
           {...atlasPrimaryTabList}
         >
           <Tabs.Trigger value="sources" {...atlasPrimaryTabTrigger}>
@@ -54,11 +63,12 @@ export function PlanningCapability(
             {phase === "sources" && (
               <PlanningSourcesWorkbench
                 exitRef={active}
+                onWorkspaceStatus={props.onWorkspaceStatus}
                 api={props.apis.planning}
                 pantryApi={props.apis.pantry}
                 authSubject={props.authSubject}
-                initialServiceDate={props.serviceDate}
-                onServiceDateChange={props.onServiceDateChange}
+                initialServiceDate={serviceDate}
+                onServiceDateChange={onServiceDateChange}
               />
             )}
           </Tabs.Content>
@@ -66,9 +76,10 @@ export function PlanningCapability(
             {phase === "confirmed" && (
               <ConfirmedNeedWorkbench
                 exitRef={active}
+                onWorkspaceStatus={props.onWorkspaceStatus}
                 authSubject={props.authSubject}
-                initialServiceDate={props.serviceDate}
-                onServiceDateChange={props.onServiceDateChange}
+                initialServiceDate={serviceDate}
+                onServiceDateChange={onServiceDateChange}
                 preflightApi={props.apis.planningReadiness}
                 needGenerationApi={props.apis.needGeneration}
                 confirmedNeedApi={props.apis.confirmedNeed}

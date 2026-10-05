@@ -15,6 +15,7 @@ import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
 import type { ConfirmedNeedWorkbenchProps } from "./useConfirmedNeedWorkbench";
 import {
   createConfirmedNeedReviewFixture,
+  reviewFailure,
   reviewDate,
   type ConfirmedReviewScenario,
 } from "./confirmedNeedReviewFixtures";
@@ -36,7 +37,7 @@ function show(
   scenario: ConfirmedReviewScenario = "normal",
   workbookProps: Pick<
     ConfirmedNeedWorkbenchProps,
-    "onExportShoppingList" | "onImportShoppingList"
+    "onExportShoppingList" | "onImportShoppingList" | "onWorkspaceStatus"
   > = {},
   prepare?: (
     fixture: ReturnType<typeof createConfirmedNeedReviewFixture>,
@@ -73,6 +74,29 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
+  it("reports local quantities and unknown Save recovery to the workspace", async () => {
+    const report = vi.fn();
+    show("normal", { onWorkspaceStatus: report }, (f) => {
+      f.confirmedNeedApi.save = async () =>
+        reviewFailure("UNREVIEWED_RESULT", "UNKNOWN");
+    });
+    await quantity();
+    await waitFor(() =>
+      expect(report).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: false, blocked: false }),
+      ),
+    );
+    await editValid();
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: false }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await waitFor(() =>
+      expect(report).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: true, blocked: true }),
+      ),
+    );
+  });
   it("reveals a partially clipped authoring control at the nearest local horizontal edge", async () => {
     show();
     await editValid();
@@ -115,7 +139,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(context.parentElement).toHaveStyle({
       gridTemplateRows: "auto minmax(0, 1fr)",
     });
-    expect(context).toHaveTextContent("Lập nhu cầu");
+    expect(
+      within(context).getByRole("heading", { level: 1 }),
+    ).toHaveAccessibleDescription("Lập nhu cầu");
     expect(context).toHaveTextContent("Xác nhận nhu cầu");
     expect(context).toHaveTextContent("07/09/2026 · Tất cả trường");
 

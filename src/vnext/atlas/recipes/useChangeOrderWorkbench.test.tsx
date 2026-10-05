@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useChangeOrderWorkbench } from "./useChangeOrderWorkbench";
+import { AtlasVNextProvider, AtlasWorkbenchScope } from "../AtlasVNextProvider";
 import {
   changeDate,
   createChangeOrderFixture,
@@ -11,7 +12,10 @@ import type {
   AtlasRpcResult,
   RecipeAdjustmentApi,
 } from "../bridges/recipeAdjustment";
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 async function setup(scenario: ChangeOrderScenario = "ACTIVE") {
   const f = createChangeOrderFixture(scenario);
   const hook = renderHook(
@@ -52,6 +56,73 @@ async function prepare(c: Awaited<ReturnType<typeof setup>>) {
   expect(c.result.current.preview?.can_save).toBe(true);
 }
 describe("Change Order authoritative controller", () => {
+  it.each(["draft", "review", "cancel", "hidden"] as const)(
+    "Vietnam midnight preserves %s without refresh or activation read",
+    async (state) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-09-12T16:59:40Z"));
+      const f = createChangeOrderFixture();
+      let active = state !== "hidden";
+      const c = renderHook(
+        () => useChangeOrderWorkbench({ api: f.api, authSubject: "operator" }),
+        {
+          wrapper: ({ children }) => (
+            <AtlasVNextProvider>
+              <AtlasWorkbenchScope active={active}>
+                {children}
+              </AtlasWorkbenchScope>
+            </AtlasVNextProvider>
+          ),
+        },
+      );
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(c.result.current.ready).toBe(true);
+      if (state === "draft") act(() => c.result.current.openCreate());
+      if (state === "cancel")
+        act(() => c.result.current.openCancel(f.data.operator_rows[0]));
+      if (state === "review") {
+        act(() => c.result.current.openCorrection(f.data.operator_rows[0]));
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        await act(() => c.result.current.runPreview());
+        expect(c.result.current.preview).not.toBeNull();
+      }
+      const draft = c.result.current.draft,
+        preview = c.result.current.preview;
+      const reads = f.calls.filter((call) => call.name === "read").length;
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30000);
+      });
+      expect(f.calls.filter((call) => call.name === "read")).toHaveLength(
+        reads,
+      );
+      expect(c.result.current.draft).toEqual(draft);
+      expect(c.result.current.preview).toEqual(preview);
+      if (state !== "hidden") expect(c.result.current.lock).toBe("stale");
+      active = true;
+      c.rerender();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(f.calls.filter((call) => call.name === "read")).toHaveLength(
+        reads,
+      );
+      if (state === "review") {
+        act(() => c.result.current.backToEdit());
+        expect(c.result.current.preview).toBeNull();
+        expect(c.result.current.draft).toEqual(draft);
+        expect(c.result.current.lock).toBe("stale");
+      }
+      if (state === "cancel") {
+        act(() => c.result.current.closeCancel());
+        expect(c.result.current.cancelTarget).toBeNull();
+        expect(c.result.current.lock).toBe("stale");
+      }
+    },
+  );
   it("uses operator date and target reads then freezes exact Preview before a single Create/readback", async () => {
     const c = await setup();
     await prepare(c);

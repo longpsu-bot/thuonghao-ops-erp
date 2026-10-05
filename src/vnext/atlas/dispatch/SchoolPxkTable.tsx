@@ -1,6 +1,7 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import type { SchoolDispatchWorkbenchRow } from "../bridges/schoolDispatch";
 import { schoolPxkRowKey } from "./useSchoolPxkWorkbench";
+import { useId } from "react";
 export const pxkLabels = {
   READY: "Cần phát hành",
   CURRENT: "Đã phát hành",
@@ -27,14 +28,20 @@ export function SchoolPxkTable({
     trigger: HTMLButtonElement,
   ) => void;
 }) {
+  const identityPrefix = useId();
   return (
-    <Box minW="var(--atlas-layout-zero, 0)">
+    <Box
+      minW="var(--atlas-layout-zero, 0)"
+      minH="var(--atlas-layout-zero, 0)"
+      h="full"
+    >
       <Table.ScrollArea
+        role="region"
+        aria-label="Bảng phiếu xuất kho theo trường"
+        tabIndex={0}
         overflow="auto"
-        maxH={{
-          base: "var(--atlas-layout-pxk-mobile-table, 50dvh)",
-          lg: "var(--atlas-layout-pxk-table, calc(100dvh - 290px))",
-        }}
+        h="full"
+        maxH="full"
       >
         <Table.Root
           aria-label="Phiếu xuất kho theo trường"
@@ -71,6 +78,7 @@ export function SchoolPxkTable({
                 aria-selected={selectedKey === schoolPxkRowKey(row)}
               >
                 <Table.Cell
+                  id={`${identityPrefix}-${schoolPxkRowKey(row)}`}
                   position="relative"
                   minW="var(--atlas-layout-pxk-school-min, 170px)"
                 >
@@ -110,6 +118,11 @@ export function SchoolPxkTable({
                     variant="tertiary"
                     size="sm"
                     whiteSpace="normal"
+                    aria-describedby={`${identityPrefix}-${schoolPxkRowKey(row)}`}
+                    minH={{
+                      base: "var(--atlas-layout-mobile-target, 44px)",
+                      lg: "compact",
+                    }}
                     disabled={disabled}
                     onClick={(e) => onSelect(row, e.currentTarget)}
                   >

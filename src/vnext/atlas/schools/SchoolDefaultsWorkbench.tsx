@@ -13,6 +13,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useImperativeHandle, useState } from "react";
+import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
@@ -33,6 +34,15 @@ import {
 
 export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   const c = useSchoolDefaultsWorkbench(props);
+  useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
+    unsaved: c.dirtyCount > 0,
+    blocked: c.saving || c.loading || Boolean(c.lock),
+    attention: c.lock
+      ? "Cần xác nhận dữ liệu hiện tại"
+      : c.saving
+        ? "Đang lưu"
+        : undefined,
+  });
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const editingDisabled =
     c.saving || c.lock === "unknown" || c.lock === "readback";

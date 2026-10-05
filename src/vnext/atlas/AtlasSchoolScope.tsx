@@ -9,7 +9,8 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { useAtlasWorkbenchActive } from "./AtlasVNextProvider";
 type AtlasSchoolOption = { school_id: string; school_name: string };
 
 export function AtlasSchoolScope({
@@ -24,6 +25,10 @@ export function AtlasSchoolScope({
   onApply: (ids: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const active = useAtlasWorkbenchActive();
+  useLayoutEffect(() => {
+    if (!active) setOpen(false);
+  }, [active]);
   const [draft, setDraft] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const trigger = useRef<HTMLButtonElement>(null);
@@ -41,7 +46,7 @@ export function AtlasSchoolScope({
   };
   return (
     <Popover.Root
-      open={open}
+      open={active && open}
       onOpenChange={({ open: next }) => {
         if (next) {
           setDraft(

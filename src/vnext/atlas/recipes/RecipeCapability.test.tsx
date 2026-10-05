@@ -1,14 +1,16 @@
 import "@testing-library/jest-dom/vitest";
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import { AtlasVNextProvider } from "../AtlasVNextProvider";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { AtlasWorkbenchStatus } from "../AtlasModuleExit";
+import { AtlasVNextProvider, AtlasWorkbenchScope } from "../AtlasVNextProvider";
 import { RecipeCapability } from "./RecipeCapability";
 import { createRecipeReviewFixture } from "./recipeReviewFixtures";
 import {
@@ -19,6 +21,7 @@ afterEach(cleanup);
 async function setup(
   scenario: ChangeOrderScenario = "ACTIVE",
   initialJob: "recipes" | "changes" = "changes",
+  onWorkspaceStatus?: (status: AtlasWorkbenchStatus) => void,
 ) {
   const f = createChangeOrderFixture(scenario),
     base = createRecipeReviewFixture("DISH_ACTIVE_EDITABLE");
@@ -30,6 +33,7 @@ async function setup(
         adjustmentApi={f.api}
         initialDate="2026-09-12"
         initialJob={initialJob}
+        onWorkspaceStatus={onWorkspaceStatus}
       />
     </AtlasVNextProvider>,
   );
@@ -67,7 +71,333 @@ async function editor(action = "REPLACE") {
     expect(screen.getByRole("button", { name: "Xem tác động" })).toBeEnabled(),
   );
 }
+async function retainedWorkspace(initialJob: "recipes" | "changes") {
+  const f = createChangeOrderFixture(),
+    base = createRecipeReviewFixture("DISH_ACTIVE_EDITABLE"),
+    status = vi.fn();
+  const view = (active: boolean) => (
+    <AtlasVNextProvider>
+      <button>Other workbench</button>
+      <AtlasWorkbenchScope active={active}>
+        <div hidden={!active} inert={!active}>
+          <RecipeCapability
+            authSubject="operator"
+            recipeApi={base.api}
+            adjustmentApi={f.api}
+            initialDate="2026-09-12"
+            initialJob={initialJob}
+            onWorkspaceStatus={status}
+          />
+        </div>
+      </AtlasWorkbenchScope>
+    </AtlasVNextProvider>
+  );
+  const ui = render(view(true));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", {
+        name: initialJob === "changes" ? "Tạo lệnh điều chỉnh" : "Tạo món mới",
+      }),
+    ).toBeEnabled(),
+  );
+  return {
+    ...f,
+    status,
+    setActive: (active: boolean) => ui.rerender(view(active)),
+  };
+}
+
 describe("Unified Recipe capability and Change Order operator job", () => {
+  it("retains a delayed Change Order Preview without opening a hidden modal, then shows it on activation", async () => {
+    const f = await retainedWorkspace("changes");
+    await editor();
+    const original = f.api.preview;
+    let finish!: () => void;
+    f.api.preview = async (...args) => {
+      const response = await original(...args);
+      return new Promise((resolve) => {
+        finish = () => resolve(response);
+      });
+    };
+    fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    f.setActive(false);
+    const other = screen.getByRole("button", { name: "Other workbench" });
+    other.focus();
+    await act(async () => {
+      finish();
+    });
+    expect(
+      document.querySelector('[role="dialog"][data-state="open"]'),
+    ).toBeNull();
+    expect(other).toHaveFocus();
+    expect(f.status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: true }),
+    );
+    f.setActive(true);
+    const dialog = await screen.findByRole("dialog", { name: "Xem tác động" });
+    expect(
+      within(dialog).getByRole("button", { name: "Lưu lệnh điều chỉnh" }),
+    ).toBeEnabled();
+    expect(screen.getByLabelText("Lý do điều chỉnh")).toHaveValue(
+      "Điều chỉnh theo thực đơn",
+    );
+    expect(f.calls.filter((call) => call.name === "preview")).toHaveLength(1);
+  });
+  it("defers utility modal activation when accepted discard completes in an inactive workbench", async () => {
+    const f = await retainedWorkspace("recipes");
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
+    choose("Tên món", "Bỏ thay đổi này");
+    fireEvent.click(screen.getByRole("button", { name: "Nhập workbook" }));
+    const discard = await screen.findByRole("dialog");
+    fireEvent.click(
+      within(discard).getByRole("button", { name: "Bỏ thay đổi" }),
+    );
+    await waitFor(() =>
+      expect(discard).toHaveAttribute("data-state", "closed"),
+    );
+    f.setActive(false);
+    fireEvent(discard, new Event("animationcancel", { bubbles: true }));
+    await waitFor(() =>
+      expect(screen.queryByLabelText("Tên món")).not.toBeInTheDocument(),
+    );
+    expect(
+      document.querySelector('[role="dialog"][data-state="open"]'),
+    ).toBeNull();
+    f.setActive(true);
+    expect(
+      await screen.findByRole("dialog", { name: "Nhập workbook" }),
+    ).toBeInTheDocument();
+  });
+  it("reports actual utility reason edits and their revert before modal dismissal", async () => {
+    const status = vi.fn();
+    await setup("ACTIVE", "recipes", status);
+    fireEvent.click(screen.getByRole("button", { name: "Nhập workbook" }));
+    const dialog = await screen.findByRole("dialog", { name: "Nhập workbook" });
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: true }),
+    );
+    const reason = within(dialog).getByLabelText("Lý do nhập workbook");
+    fireEvent.change(reason, { target: { value: "Nhập thành phần" } });
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: true }),
+    );
+    fireEvent.change(reason, { target: { value: "" } });
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: true }),
+    );
+  });
+  it("reports untouched create and each metadata field edit/revert through the capability", async () => {
+    const status = vi.fn();
+    await setup("ACTIVE", "recipes", status);
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+    for (const label of [
+      "Tên món",
+      "Loại món của món",
+      "Phân loại / nhóm món",
+      "Ghi chú vận hành (không bắt buộc)",
+    ]) {
+      const field = screen.getByLabelText(label);
+      const baseline = (field as HTMLInputElement).value;
+      const value =
+        label === "Loại món của món"
+          ? (within(field).getAllByRole("option")[1] as HTMLOptionElement).value
+          : "Thay đổi";
+      choose(label, value);
+      expect(status).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: true }),
+      );
+      choose(label, baseline);
+      expect(status).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: false }),
+      );
+    }
+  });
+  it("reports edit metadata baseline, revert, canceled close and authoritative Save", async () => {
+    const status = vi.fn();
+    await setup("ACTIVE", "recipes", status);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sửa công thức Canh bí đỏ thịt bằm" }),
+    );
+    await screen.findByLabelText("Định lượng Bí đỏ");
+    fireEvent.click(screen.getByRole("button", { name: "Sửa thông tin món" }));
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+    const name = (screen.getByLabelText("Tên món") as HTMLInputElement).value;
+    choose("Tên món", "Tên tạm");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true }),
+    );
+    choose("Tên món", name);
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+    choose("Tên món", "Canh đổi tên");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
+    const discard = await screen.findByRole("dialog");
+    fireEvent.click(
+      within(discard).getByRole("button", {
+        name: "Tiếp tục chỉnh sửa",
+      }),
+    );
+    await waitFor(() => {
+      expect(discard).toHaveAttribute("data-state", "closed");
+      // jsdom does not run the CSS exit animation; deliver its native completion.
+      fireEvent(discard, new Event("animationcancel", { bubbles: true }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(screen.getByLabelText("Tên món")).toHaveValue("Canh đổi tên");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: false }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thông tin món" }));
+    await screen.findByText("Đã lưu thông tin món.");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+  });
+  it("clears metadata status only after approved discard completes", async () => {
+    const status = vi.fn();
+    await setup("ACTIVE", "recipes", status);
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
+    choose("Tên món", "Bỏ tên này");
+    fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Bỏ thay đổi",
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByLabelText("Tên món")).not.toBeInTheDocument(),
+    );
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+  });
+  it("reports BOM work, frozen Review and successful authoritative Save", async () => {
+    const status = vi.fn();
+    await setup("ACTIVE", "recipes", status);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sửa công thức Canh bí đỏ thịt bằm" }),
+    );
+    const field = await screen.findByLabelText("Định lượng Bí đỏ");
+    const baseline = (field as HTMLInputElement).value;
+    choose("Định lượng Bí đỏ", "2,25");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: false }),
+    );
+    choose("Định lượng Bí đỏ", baseline);
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+    choose("Định lượng Bí đỏ", "2,25");
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: true }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu công thức" }));
+    await screen.findByText("Đã lưu công thức · Sẵn sàng cho Lập nhu cầu");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+  });
+  it("reports Change Order baseline, edited/reverted reason and cancellation fields", async () => {
+    const status = vi.fn();
+    await setup("ACTIVE", "changes", status);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tạo lệnh điều chỉnh" }),
+    );
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+    choose("Lý do điều chỉnh", "Thay đổi");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true }),
+    );
+    choose("Lý do điều chỉnh", "");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Đóng lệnh" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Xem lệnh Thay nguyên liệu Canh bí đỏ thịt bằm",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Hủy lệnh" }));
+    await screen.findByRole("dialog", { name: "Hủy lệnh" });
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: true }),
+    );
+    choose("Lý do hủy", "Không còn áp dụng");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: true }),
+    );
+    choose("Lý do hủy", "");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: true }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục xem lệnh" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+  });
+  it.each(["ACTIVE", "UNKNOWN_CREATE"] as const)(
+    "reports Change Order %s Review and readback resolution",
+    async (scenario) => {
+      const status = vi.fn();
+      const f = await setup(scenario, "changes", status);
+      await editor();
+      expect(status).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: true, blocked: false }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
+      const dialog = await screen.findByRole("dialog", {
+        name: "Xem tác động",
+      });
+      expect(status).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: true, blocked: true }),
+      );
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Lưu lệnh điều chỉnh" }),
+      );
+      if (scenario === "UNKNOWN_CREATE") {
+        const recover = await screen.findByRole("button", {
+          name: "Tải lại để xác nhận",
+        });
+        expect(status).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            unsaved: true,
+            blocked: true,
+            attention: "Atlas chưa thể xác nhận thao tác đã hoàn tất hay chưa.",
+          }),
+        );
+        await waitFor(() =>
+          expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+        );
+        fireEvent.click(recover);
+      }
+      await waitFor(() =>
+        expect(status).toHaveBeenLastCalledWith(
+          expect.objectContaining({ unsaved: false, blocked: false }),
+        ),
+      );
+      expect(f.calls.filter((c) => c.name === "create")).toHaveLength(1);
+    },
+  );
   it("has one capability heading and peer jobs above the full-width base catalogue", async () => {
     const f = await setup("ACTIVE", "recipes");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

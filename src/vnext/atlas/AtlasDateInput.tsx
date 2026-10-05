@@ -6,26 +6,34 @@ import {
   useDateInput,
 } from "@chakra-ui/react";
 import { CalendarBlank } from "@phosphor-icons/react";
-import { useAtlasPortalContainer } from "./AtlasVNextProvider";
+import { AtlasDismissInactiveCalendar } from "./AtlasDateOwnership";
+import {
+  useAtlasPortalContainer,
+  useAtlasWorkbenchActive,
+} from "./AtlasVNextProvider";
 
 /** Vietnamese presentation; business-facing values remain ISO calendar dates. */
+
+type AtlasDateInputProps = {
+  disabled?: boolean;
+  label: string;
+  value: string;
+  onValueChange: (value: string) => void;
+};
+
 export function AtlasDateInput({
   label,
   value,
   onValueChange,
   disabled,
-}: {
-  disabled?: boolean;
-  label: string;
-  value: string;
-  onValueChange: (value: string) => void;
-}) {
+}: AtlasDateInputProps) {
+  const active = useAtlasWorkbenchActive();
   const dates = [parseDate(value)];
   const change = ({ value: next }: { value: DateInput.DateValue[] }) => {
     if (next[0]) onValueChange(next[0].toString());
   };
   const dateInput = useDateInput({
-    disabled,
+    disabled: disabled || !active,
     locale: "vi-VN",
     shouldForceLeadingZeros: true,
     granularity: "day",
@@ -35,7 +43,7 @@ export function AtlasDateInput({
   const portalContainer = useAtlasPortalContainer();
   return (
     <DatePicker.Root
-      disabled={disabled}
+      disabled={disabled || !active}
       locale="vi-VN"
       startOfWeek={1}
       openOnClick
@@ -66,6 +74,7 @@ export function AtlasDateInput({
         viewTrigger: (view) => (view === "day" ? "Chọn tháng" : "Chọn năm"),
       }}
     >
+      <AtlasDismissInactiveCalendar />
       <DateInput.RootProvider value={dateInput}>
         <DateInput.Label>{label}</DateInput.Label>
         <DatePicker.Control>
@@ -76,7 +85,7 @@ export function AtlasDateInput({
                 minW="var(--atlas-layout-zero, 0)"
                 // DateInput segments do not consume DatePicker.Input's click handler.
                 onClick={() => {
-                  if (!disabled) picker.setOpen(true);
+                  if (!disabled && active) picker.setOpen(true);
                 }}
               >
                 <DateInput.Segments pe="var(--atlas-layout-calendar-inset, 40px)" />
@@ -91,24 +100,26 @@ export function AtlasDateInput({
         </DatePicker.Control>
         <DateInput.HiddenInput />
       </DateInput.RootProvider>
-      <Portal container={portalContainer}>
-        <DatePicker.Positioner>
-          <DatePicker.Content>
-            <DatePicker.View view="day">
-              <DatePicker.Header />
-              <DatePicker.DayTable />
-            </DatePicker.View>
-            <DatePicker.View view="month">
-              <DatePicker.Header />
-              <DatePicker.MonthTable />
-            </DatePicker.View>
-            <DatePicker.View view="year">
-              <DatePicker.Header />
-              <DatePicker.YearTable />
-            </DatePicker.View>
-          </DatePicker.Content>
-        </DatePicker.Positioner>
-      </Portal>
+      {active && (
+        <Portal container={portalContainer}>
+          <DatePicker.Positioner>
+            <DatePicker.Content>
+              <DatePicker.View view="day">
+                <DatePicker.Header />
+                <DatePicker.DayTable />
+              </DatePicker.View>
+              <DatePicker.View view="month">
+                <DatePicker.Header />
+                <DatePicker.MonthTable />
+              </DatePicker.View>
+              <DatePicker.View view="year">
+                <DatePicker.Header />
+                <DatePicker.YearTable />
+              </DatePicker.View>
+            </DatePicker.Content>
+          </DatePicker.Positioner>
+        </Portal>
+      )}
     </DatePicker.Root>
   );
 }

@@ -241,7 +241,11 @@ export const atlasSystem = createSystem(
         brandCompact: { value: { fontSize: "20px", fontWeight: "650" } },
         quantity: { value: { fontSize: "22px", fontWeight: "600" } },
         workbenchTitle: {
-          value: { fontSize: "24px", fontWeight: "650", lineHeight: "1.3" },
+          value: {
+            fontSize: { base: "22px", lg: "24px" },
+            fontWeight: "650",
+            lineHeight: "1.3",
+          },
         },
         section: {
           value: {

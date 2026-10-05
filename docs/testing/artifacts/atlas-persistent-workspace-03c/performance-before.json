@@ -1,0 +1,184 @@
+{
+  "phase": "before",
+  "browser": "151.0.7922.34",
+  "cpu_throttle": 4,
+  "environment": "local Vite development / fixtures; browser click to two animation frames",
+  "results": [
+    {
+      "width": 1440,
+      "owners": 7,
+      "samples": [
+        {
+          "owner": "Trường học",
+          "paint_ms": 5081.1
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 5232.8
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4669.8
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4571.1
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 5008.7
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4616.3
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 5321.1
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4599.6
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 4528.2
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4788.4
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4502.6
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4918.4
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 5231.4
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4515.4
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4493
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4468.8
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 4561.5
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4969.3
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4524.3
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 5065.2
+        }
+      ],
+      "median_ms": 4643.05,
+      "p95_ms": 5232.8
+    },
+    {
+      "width": 650,
+      "owners": 7,
+      "samples": [
+        {
+          "owner": "Trường học",
+          "paint_ms": 4392.8
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4270.1
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4379.4
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4080.3
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 4517.4
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4137.7
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4189.9
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4277.4
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 4335.7
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4788.2
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4290
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4131.6
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 4161.6
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4280.8
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4162.5
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4164.7
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 4293.5
+        },
+        {
+          "owner": "Kế hoạch mua hàng",
+          "paint_ms": 4465.6
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 4136.7
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 4189.7
+        }
+      ],
+      "median_ms": 4273.75,
+      "p95_ms": 4517.4
+    }
+  ]
+}

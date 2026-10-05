@@ -27,7 +27,12 @@ function Lines({
   label: string;
 }) {
   return (
-    <Table.ScrollArea overflowX="auto">
+    <Table.ScrollArea
+      overflowX="auto"
+      role="region"
+      aria-label={`Bảng ${label}`}
+      tabIndex={0}
+    >
       <Table.Root size="sm" aria-label={label}>
         <Table.Header>
           <Table.Row>
@@ -189,10 +194,10 @@ export function SchoolPxkDetail({
       direction="column"
       bg="bg.subtle"
       minW="var(--atlas-layout-zero, 0)"
-      maxH={{
-        base: "var(--atlas-layout-pxk-mobile-detail, none)",
-        lg: "var(--atlas-layout-pxk-detail, calc(100dvh - 290px))",
-      }}
+      minH="var(--atlas-layout-zero, 0)"
+      maxH="full"
+      h="full"
+      overflow="hidden"
       borderLeftWidth={{
         base: "var(--atlas-layout-zero, 0)",
         lg: "var(--atlas-layout-edge, 1px)",
@@ -204,7 +209,14 @@ export function SchoolPxkDetail({
         outlineColor: "focus.ring",
       }}
     >
-      <Flex px="md" pt="sm" justify="space-between" align="start" gap="xs">
+      <Flex
+        px="md"
+        pt="sm"
+        justify="space-between"
+        align="start"
+        gap="xs"
+        flexShrink="0"
+      >
         <Box>
           <Heading as="h2" textStyle="section">
             {identity.school_name}
@@ -219,6 +231,10 @@ export function SchoolPxkDetail({
           aria-label="Đóng chi tiết"
           disabled={busy || locked}
           onClick={onClose}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "compact",
+          }}
         >
           Đóng
         </Button>
@@ -229,6 +245,7 @@ export function SchoolPxkDetail({
         gap="sm"
         overflowY="auto"
         minH="var(--atlas-layout-zero, 0)"
+        flex="1"
       >
         <Box>
           <Text>
@@ -328,6 +345,7 @@ export function SchoolPxkDetail({
           mt="var(--atlas-layout-auto, auto)"
           borderTopWidth="var(--atlas-layout-edge, 1px)"
           borderColor="border.subtle"
+          flexShrink="0"
         >
           <Button
             w="full"

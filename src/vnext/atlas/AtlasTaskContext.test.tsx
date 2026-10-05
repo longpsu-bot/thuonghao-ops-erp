@@ -57,10 +57,7 @@ it("owns a compact horizontal masthead without a desktop side-rail width", () =>
     screen.getByRole("region", {
       name: "Ngữ cảnh công việc mua hàng",
     }),
-  ).toHaveStyle({
-    "--atlas-task-context-desktop-min-height": "68px",
-    "--atlas-task-context-desktop-target-height": "72px",
-  });
+  ).toHaveStyle({ minHeight: "var(--atlas-task-context-min-height, 56px)" });
   expect(document.body.innerHTML).not.toContain(
     "--atlas-task-context-desktop-width",
   );

@@ -32,7 +32,7 @@ export function RecipeCapability(
       borderRadius="workbench"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Heading as="h1" textStyle="workbenchTitle" px="md" pt="md" pb="sm">
+      <Heading as="h1" textStyle="workbenchTitle" px="md" pt="sm" pb="xs">
         Công thức
       </Heading>
       <Tabs.Root
@@ -53,6 +53,7 @@ export function RecipeCapability(
             <DishRecipeWorkbench
               embedded
               exitRef={active}
+              onWorkspaceStatus={props.onWorkspaceStatus}
               authSubject={props.authSubject}
               api={props.recipeApi}
               initialDate={props.initialDate}
@@ -64,6 +65,7 @@ export function RecipeCapability(
           {job === "changes" && (
             <ChangeOrderWorkbench
               exitRef={active}
+              onWorkspaceStatus={props.onWorkspaceStatus}
               authSubject={props.authSubject}
               api={props.adjustmentApi}
               initialDate={props.initialDate}

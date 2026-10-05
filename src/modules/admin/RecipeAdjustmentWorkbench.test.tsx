@@ -89,9 +89,9 @@ function renderWorkbench(
 }
 
 async function openCreateDialog() {
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Tạo điều chỉnh" }),
-  );
+  const create = await screen.findByRole("button", { name: "Tạo điều chỉnh" });
+  await waitFor(() => expect(create).toBeEnabled());
+  fireEvent.click(create);
   return screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
 }
 

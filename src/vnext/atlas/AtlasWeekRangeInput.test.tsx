@@ -8,7 +8,8 @@ import {
 } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AtlasVNextProvider } from "./AtlasVNextProvider";
+import { AtlasVNextProvider, AtlasWorkbenchScope } from "./AtlasVNextProvider";
+import { AtlasDateInput } from "./AtlasDateInput";
 import { AtlasWeekRangeInput } from "./AtlasWeekRangeInput";
 
 beforeEach(() => {
@@ -51,6 +52,74 @@ function show(disabled = false) {
 }
 
 describe("Atlas week-range input", () => {
+  it("retains week context across switch and closes the inactive owner without corrupting the active date", async () => {
+    function Owners() {
+      const [active, setActive] = useState(true);
+      const [closed, setClosed] = useState(false);
+      const [week, setWeek] = useState("2026-09-14");
+      const [day, setDay] = useState("2026-10-02");
+      return (
+        <AtlasVNextProvider>
+          <button onClick={() => setActive(!active)}>Switch date owner</button>
+          <button onClick={() => setClosed(true)}>Close hidden week</button>
+          {!closed && (
+            <section hidden={!active} inert={!active}>
+              <AtlasWorkbenchScope active={active}>
+                <AtlasWeekRangeInput
+                  label="Tuần phục vụ"
+                  value={week}
+                  onValueChange={setWeek}
+                />
+              </AtlasWorkbenchScope>
+            </section>
+          )}
+          <section hidden={active} inert={active}>
+            <AtlasWorkbenchScope active={!active}>
+              <AtlasDateInput
+                label="Ngày phục vụ"
+                value={day}
+                onValueChange={setDay}
+              />
+            </AtlasWorkbenchScope>
+          </section>
+        </AtlasVNextProvider>
+      );
+    }
+    const { container } = render(<Owners />);
+    const field = screen.getByRole("textbox", { name: "Tuần phục vụ" });
+    fireEvent.keyDown(field, { key: "ArrowDown" });
+    const grid = await screen.findByRole("grid");
+    fireEvent.click(
+      grid.querySelector<HTMLElement>(
+        '[data-value="2026-09-23"][data-part="table-cell-trigger"]',
+      )!,
+    );
+    await waitFor(() => expect(field).toHaveValue("21/09/2026 – 27/09/2026"));
+    fireEvent.click(screen.getByRole("button", { name: "Switch date owner" }));
+    expect(container.querySelector('input[aria-label="Tuần phục vụ"]')).toBe(
+      field,
+    );
+    expect(
+      container.querySelector(
+        '[data-scope="date-picker"][data-part="content"]',
+      ),
+    ).toBeNull();
+    const segment = screen.getAllByRole("spinbutton")[0];
+    fireEvent.focus(segment);
+    fireEvent.keyDown(segment, { key: "ArrowUp" });
+    await waitFor(() => expect(segment).toHaveTextContent("03"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở lịch — Ngày phục vụ" }),
+    );
+    const activeCalendar = await screen.findByRole("grid");
+    fireEvent.click(screen.getByRole("button", { name: "Close hidden week" }));
+    expect(screen.getByRole("grid")).toBe(activeCalendar);
+    await new Promise((resolve) => window.setTimeout(resolve, 3100));
+    expect(screen.getAllByRole("spinbutton")[0]).toBe(segment);
+    expect(segment).toHaveTextContent("03");
+    expect(screen.getByRole("grid")).toBe(activeCalendar);
+  }, 10000);
+
   it("projects one canonical Monday as its full Vietnamese Monday-Sunday range", () => {
     show();
     expect(screen.getByRole("textbox", { name: "Tuần phục vụ" })).toHaveValue(

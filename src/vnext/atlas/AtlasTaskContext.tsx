@@ -1,5 +1,5 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
-import type { CSSProperties, ReactNode, Ref } from "react";
+import type { ReactNode, Ref } from "react";
 
 export type AtlasTaskContextDetail = {
   label: string;
@@ -22,27 +22,18 @@ export function AtlasTaskContext({
   compactSummary,
   headingRef,
 }: AtlasTaskContextProps) {
-  const geometry = {
-    "--atlas-task-context-desktop-min-height": "68px",
-    "--atlas-task-context-desktop-target-height": "72px",
-  } as CSSProperties;
-
   return (
     <Box
       as="header"
       role="region"
       aria-label={ariaLabel}
-      style={geometry}
       bg="bg.context"
       borderBottomWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.default"
       flex="none"
       w="full"
-      minH={{
-        base: "var(--atlas-task-context-desktop-min-height)",
-        lg: "var(--atlas-task-context-desktop-target-height)",
-      }}
-      px={{ base: "md", lg: "lg" }}
+      minH="var(--atlas-task-context-min-height, 56px)"
+      px={{ base: "sm", lg: "md" }}
       py="sm"
     >
       <Flex
@@ -53,20 +44,12 @@ export function AtlasTaskContext({
         gap={{ base: "xs", lg: "lg" }}
       >
         <Box minW="var(--atlas-layout-zero, 0)">
-          <Text textStyle="helper" fontWeight="semibold" color="fg.muted">
-            {moduleLabel}
-          </Text>
           <Heading
             as="h1"
             ref={headingRef}
             tabIndex={-1}
-            fontSize={{
-              base: "var(--atlas-context-title-compact, 20px)",
-              lg: "var(--atlas-context-title-desktop, 26px)",
-            }}
-            lineHeight="var(--atlas-context-title-line-height, 1.15)"
-            fontWeight="var(--atlas-context-title-weight, 700)"
-            letterSpacing="var(--atlas-context-title-tracking, -0.01em)"
+            textStyle="workbenchTitle"
+            aria-description={moduleLabel}
           >
             {jobLabel}
           </Heading>

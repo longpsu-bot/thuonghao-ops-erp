@@ -9,7 +9,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { ingredientLabel, unitLabel } from "../bridges/dishRecipe";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
 import { parseQuantity } from "./recipeDraftModel";
@@ -17,6 +17,7 @@ import type { DishRecipeController } from "./useDishRecipeWorkbench";
 
 export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
   const [search, setSearch] = useState("");
+  const errorPrefix = useId();
   const draft = c.recipeDraft;
   if (!draft) return null;
   const locked =
@@ -80,6 +81,9 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
         <Text mt="sm">Số suất áp dụng cho định lượng: {draft.basis}</Text>
       )}
       <Box
+        role="region"
+        aria-label="Bảng công thức gốc"
+        tabIndex={0}
         overflow="auto"
         mt="sm"
         borderYWidth="var(--atlas-layout-edge, 1px)"
@@ -132,6 +136,11 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                       <Input
                         aria-label={`Định lượng ${name}`}
                         aria-invalid={parseQuantity(line.quantity) === null}
+                        aria-describedby={
+                          parseQuantity(line.quantity) === null
+                            ? `${errorPrefix}-${line.id}`
+                            : undefined
+                        }
                         value={line.quantity}
                         inputMode="decimal"
                         w="var(--atlas-layout-quantity-width, 86px)"
@@ -142,6 +151,15 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                       />
                     ) : (
                       line.quantity
+                    )}
+                    {editable && parseQuantity(line.quantity) === null && (
+                      <Text
+                        id={`${errorPrefix}-${line.id}`}
+                        textStyle="helper"
+                        color="status.danger"
+                      >
+                        Nhập định lượng hợp lệ.
+                      </Text>
                     )}
                   </Table.Cell>
                   <Table.Cell>

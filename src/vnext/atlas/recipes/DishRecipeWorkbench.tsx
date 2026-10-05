@@ -11,6 +11,10 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useRef, useImperativeHandle, type Ref } from "react";
 import type { RecipeJobHandle } from "./useChangeOrderWorkbench";
+import {
+  useAtlasWorkbenchStatus,
+  type AtlasModuleExitProps,
+} from "../AtlasModuleExit";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import type { DishRecipeApi } from "../bridges/dishRecipe";
@@ -22,15 +26,29 @@ import { RecipeDirtyExitDialog, RecipeUtilityDialog } from "./RecipeDialogs";
 import { RecipeReview } from "./RecipeReview";
 import { useDishRecipeWorkbench } from "./useDishRecipeWorkbench";
 
-export function DishRecipeWorkbench(props: {
-  authSubject: string | null;
-  api: DishRecipeApi;
-  initialDate?: string;
-  embedded?: boolean;
-  exitRef?: Ref<RecipeJobHandle>;
-  onOpenChangeOrders?: () => void;
-}) {
+export function DishRecipeWorkbench(
+  props: AtlasModuleExitProps & {
+    authSubject: string | null;
+    api: DishRecipeApi;
+    initialDate?: string;
+    embedded?: boolean;
+    exitRef?: Ref<RecipeJobHandle>;
+    onOpenChangeOrders?: () => void;
+  },
+) {
   const c = useDishRecipeWorkbench(props);
+  useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
+    unsaved: c.dirty || c.utilityDirty,
+    blocked: Boolean(
+      c.loading ||
+      c.busy ||
+      c.lock ||
+      c.review ||
+      c.discardOpen ||
+      ["copy", "import", "lifecycle"].includes(c.surface ?? ""),
+    ),
+    attention: c.lock ? (c.notice ?? undefined) : (c.error ?? undefined),
+  });
   useImperativeHandle(props.exitRef, () => ({
     requestExit: (next) => {
       if (

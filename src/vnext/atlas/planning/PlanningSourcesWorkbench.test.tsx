@@ -59,6 +59,40 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("reports local attendance edits and frozen Review", async () => {
+    const fixture = createPlanningReviewFixture();
+    const report = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          onWorkspaceStatus={report}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("table", { name: "Thực đơn theo trường" });
+    await waitFor(() =>
+      expect(report).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: false, blocked: false }),
+      ),
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(
+      await screen.findByRole("textbox", { name: "Học sinh Trường Nguyễn Du" }),
+      { target: { value: "0" } },
+    );
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: false }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await waitFor(() =>
+      expect(report).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: true, blocked: true }),
+      ),
+    );
+  });
   it("groups backend codes in Vietnamese while keeping the Menu table and retry accessible", async () => {
     const { fixture } = await show();
     const preview = menuPreview();
@@ -145,8 +179,7 @@ describe("Planning sources Chakra workbench", () => {
       name: "Ngữ cảnh nguồn lập nhu cầu",
     });
     expect(context).toHaveStyle({
-      "--atlas-task-context-desktop-min-height": "68px",
-      "--atlas-task-context-desktop-target-height": "72px",
+      minHeight: "var(--atlas-task-context-min-height, 56px)",
     });
     expect(context.parentElement).toHaveStyle({
       gridTemplateRows: "auto minmax(0, 1fr)",
@@ -156,7 +189,6 @@ describe("Planning sources Chakra workbench", () => {
         "Tóm tắt công việc: 07/09/2026 · Tất cả trường",
       ),
     ).toBeInTheDocument();
-    const module = within(context).getByText("Lập nhu cầu");
     const heading = screen.getByRole("heading", {
       level: 1,
       name: "Thực đơn",
@@ -166,10 +198,8 @@ describe("Planning sources Chakra workbench", () => {
       name: "Phạm vi nguồn lập nhu cầu",
     });
     expect(heading).toBeVisible();
-    expect(
-      module.compareDocumentPosition(heading) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(heading).toHaveAccessibleDescription("Lập nhu cầu");
+    expect(context).toContainElement(heading);
     expect(
       heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();

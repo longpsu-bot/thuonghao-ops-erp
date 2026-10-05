@@ -418,6 +418,9 @@ export function usePlanningSources({
           );
   const effectiveModes = pantryModesForRows(pantryRows, modes);
   const canEdit = !locked && !busy && !loading && !readError && !!authority;
+  const exitBlocked =
+    busy ||
+    Object.values(sourceStates).some((state) => state.recovery !== null);
   const applyTransition = (next: PlanningTransition) => {
     if (next.exit) {
       next.exit();
@@ -1038,6 +1041,7 @@ export function usePlanningSources({
     impact,
     pending,
     locked,
+    exitBlocked,
     outcome,
     readError,
     loading,
@@ -1045,12 +1049,7 @@ export function usePlanningSources({
     syncing,
     canEdit,
     requestExit: (exit: () => void) => {
-      if (
-        busy ||
-        writeBusy.current ||
-        Object.values(sourceStates).some((s) => s.recovery)
-      )
-        return;
+      if (exitBlocked || writeBusy.current) return;
       transition({ exit });
     },
     transition,

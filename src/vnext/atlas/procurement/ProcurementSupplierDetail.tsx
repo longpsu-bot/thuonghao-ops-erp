@@ -1,4 +1,7 @@
-import type { AtlasModuleExitProps } from "../AtlasModuleExit";
+import {
+  useAtlasWorkbenchStatus,
+  type AtlasModuleExitProps,
+} from "../AtlasModuleExit";
 import {
   Box,
   Button,
@@ -33,6 +36,7 @@ export function ProcurementSupplierDetail({
   onSave,
   onClose,
   exitRef,
+  onWorkspaceStatus,
 }: AtlasModuleExitProps & {
   row: AllocationFamilyRow;
   disabled: boolean;
@@ -113,6 +117,10 @@ export function ProcurementSupplierDetail({
         (split.supplier_note ?? "").trim() !== (original.supplier_note ?? "")
       );
     });
+  useAtlasWorkbenchStatus(onWorkspaceStatus, {
+    unsaved: dirty,
+    blocked: disabled,
+  });
   const requestExit = (next: () => void) => {
     if (disabled) return;
     if (dirty) {

@@ -4,39 +4,29 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { AtlasVNextShell } from "./AtlasVNextShell";
+import { capacityDestinations } from "./AtlasWorkspaceCapacity.stories";
 
-beforeEach(() => {
+beforeEach(() =>
   vi.stubGlobal(
     "matchMedia",
-    vi.fn().mockImplementation((query: string) => ({
-      matches: query === "(min-width: 64rem)",
-      media: query,
+    vi.fn().mockReturnValue({
+      matches: true,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
-    })),
-  );
-  vi.stubGlobal(
-    "ResizeObserver",
-    class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    },
-  );
-});
-
+    }),
+  ),
+);
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
 
-it("uses stable IDs, invokes navigation, and closes the overlay menu", async () => {
+it("uses stable IDs, selects via the launcher, and restores trigger focus", async () => {
   const navigate = vi.fn();
   render(
     <AtlasVNextProvider>
@@ -45,19 +35,19 @@ it("uses stable IDs, invokes navigation, and closes the overlay menu", async () 
       </AtlasVNextShell>
     </AtlasVNextProvider>,
   );
-  const toggle = screen.getByRole("button", { name: "Mở điều hướng Atlas" });
-  fireEvent.click(toggle);
-  const menu = await screen.findByRole("dialog", { name: "Điều hướng Atlas" });
+  const trigger = screen.getByRole("button", { name: "Bàn làm việc" });
+  fireEvent.click(trigger);
+  const launcher = screen.getByRole("dialog", { name: "Bàn làm việc" });
   expect(
-    within(menu).getByRole("button", { name: "Trường học" }),
+    within(launcher).getByRole("button", { name: "Trường học" }),
   ).toHaveAttribute("aria-current", "page");
-  fireEvent.click(within(menu).getByRole("button", { name: "Công thức" }));
+  fireEvent.click(within(launcher).getByRole("button", { name: "Công thức" }));
   expect(navigate).toHaveBeenCalledExactlyOnceWith("recipes");
-  await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
-  expect(toggle).toHaveFocus();
+  expect(trigger).toHaveAttribute("aria-expanded", "false");
+  expect(trigger).toHaveFocus();
 });
 
-it("shows safe connected context and the injected Vietnam date across UTC midnight", async () => {
+it("retains the injected Vietnam clock and one account/environment utility", () => {
   const signOut = vi.fn();
   render(
     <AtlasVNextProvider>
@@ -72,98 +62,117 @@ it("shows safe connected context and the injected Vietnam date across UTC midnig
       </AtlasVNextShell>
     </AtlasVNextProvider>,
   );
-  expect(screen.getByText("Hôm nay: 13/09/2026")).toBeInTheDocument();
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(
-    within(screen.getByRole("banner")).getByText("Môi trường · Staging"),
-  ).toBeInTheDocument();
-  expect(screen.queryByText("Vận hành trường học")).not.toBeInTheDocument();
-  expect(screen.getByText("operator@example.test")).toBeInTheDocument();
-  expect(screen.queryByText(/Bản tham chiếu/)).not.toBeInTheDocument();
-  expect(screen.queryByText(/10\/09\/2026/)).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng Atlas" }));
-  const drawer = await screen.findByRole("dialog", {
-    name: "Điều hướng Atlas",
+  expect(screen.getByText("Hôm nay: 13/09/2026")).toBeVisible();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Tài khoản và môi trường" }),
+  );
+  const account = screen.getByRole("dialog", {
+    name: "Tài khoản và môi trường",
   });
-  fireEvent.click(within(drawer).getByRole("button", { name: "Đăng xuất" }));
+  expect(within(account).getByText("Môi trường · Staging")).toBeVisible();
+  expect(screen.getAllByText("operator@example.test")).toHaveLength(1);
+  fireEvent.click(within(account).getByRole("button", { name: "Đăng xuất" }));
   expect(signOut).toHaveBeenCalledOnce();
 });
 
-it("keeps connected environment identity mounted while the drawer opens and closes", async () => {
+it("uses attached tabs with roving Arrow/Home/End and Delete guarded close", () => {
+  const navigate = vi.fn(),
+    close = vi.fn();
   render(
     <AtlasVNextProvider>
       <AtlasVNextShell
-        mode="connected"
-        environmentLabel="Atlas staging · non-production"
-        userLabel="operator@example.test"
-        onNavigate={vi.fn()}
+        activeModule="schools"
+        openIds={["schools", "planning", "procurement"]}
+        onNavigate={navigate}
+        onClose={close}
       >
         <h1>Schools</h1>
       </AtlasVNextShell>
     </AtlasVNextProvider>,
   );
-  const header = screen.getByRole("banner");
-  const environment = within(header).getByText(
-    "Môi trường · Atlas staging · non-production",
+  const school = screen.getByRole("tab", { name: "Trường học" });
+  expect(school).toHaveAttribute("tabindex", "0");
+  expect(screen.getByRole("tab", { name: "Lập nhu cầu" })).toHaveAttribute(
+    "tabindex",
+    "-1",
   );
-  const toggle = screen.getByRole("button", { name: "Mở điều hướng Atlas" });
-  expect(environment).toBeInTheDocument();
-  toggle.focus();
-  fireEvent.click(toggle);
-  const drawer = await screen.findByRole("dialog", {
-    name: "Điều hướng Atlas",
+  fireEvent.keyDown(school, { key: "ArrowRight" });
+  expect(navigate).toHaveBeenLastCalledWith("planning");
+  expect(screen.getByRole("tab", { name: "Lập nhu cầu" })).toHaveFocus();
+  fireEvent.keyDown(school, { key: "End" });
+  expect(navigate).toHaveBeenLastCalledWith("procurement");
+  fireEvent.keyDown(screen.getByRole("tab", { name: "Kế hoạch mua hàng" }), {
+    key: "Home",
   });
-  expect(environment).toBeInTheDocument();
-  expect(
-    within(drawer).getByText("Môi trường · Atlas staging · non-production"),
-  ).toBeVisible();
-  expect(within(drawer).getByText("operator@example.test")).toBeVisible();
-  expect(within(header).getByText("operator@example.test")).toBeInTheDocument();
-  fireEvent.click(
-    within(drawer).getByRole("button", { name: "Đóng điều hướng" }),
-  );
-  await waitFor(() => expect(toggle).toHaveFocus());
-  expect(environment).toBeInTheDocument();
+  expect(navigate).toHaveBeenLastCalledWith("schools");
+  fireEvent.keyDown(school, { key: "Delete" });
+  expect(close).toHaveBeenCalledExactlyOnceWith("schools");
 });
 
-it("keeps a 72px desktop rail and opens a 272px overlay without changing the workspace width", async () => {
+it("opens launcher without changing workspace geometry and removes the primary rail", () => {
   render(
     <AtlasVNextProvider>
-      <AtlasVNextShell onNavigate={vi.fn()}>
+      <AtlasVNextShell>
         <h1>Schools</h1>
       </AtlasVNextShell>
     </AtlasVNextProvider>,
   );
-  const rail = screen.getByRole("complementary", {
-    name: "Điều hướng nhanh Atlas",
-  });
-  expect(rail).toHaveStyle({
-    width: "var(--atlas-layout-nav-rail-width, 72px)",
-  });
-  expect(
-    within(rail).getByRole("button", { name: "Kế hoạch mua hàng" }),
-  ).toHaveAttribute("aria-current", "page");
-  const planning = within(rail).getByRole("button", { name: "Lập nhu cầu" });
-  fireEvent.focus(planning);
-  expect(
-    await screen.findByRole("tooltip", { name: "Lập nhu cầu" }),
-  ).toBeVisible();
-  fireEvent.blur(planning);
-  await waitFor(() =>
-    expect(
-      screen.queryByRole("tooltip", { name: "Lập nhu cầu" }),
-    ).not.toBeInTheDocument(),
+  expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  const main = screen.getByRole("main"),
+    before = main.getAttribute("class");
+  const tabs = screen.getByRole("tablist", { name: "Bàn làm việc đang mở" });
+  expect(getComputedStyle(tabs).overflowX).toBe("auto");
+  fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+  expect(main.getAttribute("class")).toBe(before);
+  expect(screen.getByRole("dialog", { name: "Bàn làm việc" })).toBeVisible();
+});
+
+it("keeps all twelve test destinations reachable on desktop and in the narrow selector", () => {
+  const navigate = vi.fn();
+  const props = {
+    destinations: capacityDestinations,
+    openIds: capacityDestinations.map((w) => w.id),
+    activeModule: capacityDestinations[0]!.id,
+    onNavigate: navigate,
+  };
+  const { unmount } = render(
+    <AtlasVNextProvider>
+      <AtlasVNextShell {...props}>
+        <h1>Capacity</h1>
+      </AtlasVNextShell>
+    </AtlasVNextProvider>,
   );
-  const workspace = screen.getByRole("main").parentElement!;
-  const before = workspace.getAttribute("style");
+  expect(screen.getAllByRole("tab")).toHaveLength(12);
+  fireEvent.keyDown(screen.getAllByRole("tab")[0]!, { key: "End" });
+  expect(navigate).toHaveBeenLastCalledWith(capacityDestinations[11]!.id);
+  unmount();
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn().mockReturnValue({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
+  );
+  render(
+    <AtlasVNextProvider>
+      <AtlasVNextShell {...props}>
+        <h1>Capacity</h1>
+      </AtlasVNextShell>
+    </AtlasVNextProvider>,
+  );
   fireEvent.click(
-    within(rail).getByRole("button", { name: "Mở điều hướng Atlas" }),
+    screen.getByRole("button", {
+      name: `Đang mở: ${capacityDestinations[0]!.label}`,
+    }),
   );
-  const dialog = await screen.findByRole("dialog", {
-    name: "Điều hướng Atlas",
-  });
-  expect(dialog).toHaveStyle({
-    width: "var(--atlas-layout-nav-drawer-width, 272px)",
-  });
-  expect(workspace.getAttribute("style")).toBe(before);
+  const selector = screen.getByRole("dialog", { name: "Bàn làm việc đang mở" });
+  for (const item of capacityDestinations) {
+    expect(
+      within(selector).getByRole("button", { name: item.label }),
+    ).toBeVisible();
+    expect(
+      within(selector).getByRole("button", { name: `Đóng ${item.label}` }),
+    ).toBeVisible();
+  }
 });

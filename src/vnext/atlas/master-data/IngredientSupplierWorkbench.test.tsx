@@ -202,6 +202,42 @@ async function ready() {
 }
 
 describe("IngredientSupplierWorkbench", () => {
+  it("reports untouched, edited, reverted and frozen Review state", async () => {
+    const report = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <IngredientSupplierWorkbench
+          authSubject="operator"
+          api={createApi()}
+          onWorkspaceStatus={report}
+        />
+      </AtlasVNextProvider>,
+    );
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    );
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: "Bí đỏ" },
+    });
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: false }),
+    );
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: "Bí mật" },
+    });
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false }),
+    );
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: "Bí đỏ" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true, blocked: true }),
+    );
+  });
   it("uses the locked Station context/detail geometry and returns focus to the exact Ingredient action", async () => {
     renderWorkbench();
     await ready();
@@ -209,8 +245,7 @@ describe("IngredientSupplierWorkbench", () => {
       name: "Ngữ cảnh công việc dữ liệu gốc",
     });
     expect(context).toHaveStyle({
-      "--atlas-task-context-desktop-min-height": "68px",
-      "--atlas-task-context-desktop-target-height": "72px",
+      minHeight: "var(--atlas-task-context-min-height, 56px)",
     });
     expect(context.parentElement).toHaveStyle({
       gridTemplateRows: "auto minmax(0, 1fr)",
@@ -241,11 +276,14 @@ describe("IngredientSupplierWorkbench", () => {
     renderWorkbench();
     await ready();
 
-    const context = screen.getByText("Nguyên liệu và Nhà cung ứng");
+    const context = screen.getByRole("region", {
+      name: "Ngữ cảnh công việc dữ liệu gốc",
+    });
     const heading = screen.getByRole("heading", {
       level: 1,
       name: "Nguyên liệu",
     });
+    expect(heading).toHaveAccessibleDescription("Nguyên liệu và Nhà cung ứng");
     const tabs = screen.getByRole("tablist", {
       name: "Công việc dữ liệu gốc",
     });

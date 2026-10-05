@@ -1,0 +1,32 @@
+{
+  "result": "PASS",
+  "colors": {
+    "fg-primary": "#35564C",
+    "fg-muted": "#5C6964",
+    "bg-workbench": "#FBFCFB",
+    "bg-toolbar": "#EEF3F0"
+  },
+  "ratios": [
+    {
+      "foreground": "fg-primary",
+      "background": "bg-workbench",
+      "ratio": 7.89
+    },
+    {
+      "foreground": "fg-primary",
+      "background": "bg-toolbar",
+      "ratio": 7.23
+    },
+    {
+      "foreground": "fg-muted",
+      "background": "bg-workbench",
+      "ratio": 5.58
+    },
+    {
+      "foreground": "fg-muted",
+      "background": "bg-toolbar",
+      "ratio": 5.11
+    }
+  ],
+  "scope": "Computed shared text/surface tones; readability check, no WCAG certification."
+}

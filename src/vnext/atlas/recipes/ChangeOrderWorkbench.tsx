@@ -17,6 +17,10 @@ import {
   type Ref,
 } from "react";
 import type { RecipeAdjustmentApi } from "../bridges/recipeAdjustment";
+import {
+  useAtlasWorkbenchStatus,
+  type AtlasModuleExitProps,
+} from "../AtlasModuleExit";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { RecipeDirtyExitDialog } from "./RecipeDialogs";
 import { ChangeOrderEditor, ChangeSelect } from "./ChangeOrderEditor";
@@ -34,13 +38,28 @@ import {
   useChangeOrderWorkbench,
   type RecipeJobHandle,
 } from "./useChangeOrderWorkbench";
-export function ChangeOrderWorkbench(props: {
-  authSubject: string | null;
-  api: RecipeAdjustmentApi;
-  initialDate?: string;
-  exitRef?: Ref<RecipeJobHandle>;
-}) {
+export function ChangeOrderWorkbench(
+  props: AtlasModuleExitProps & {
+    authSubject: string | null;
+    api: RecipeAdjustmentApi;
+    initialDate?: string;
+    exitRef?: Ref<RecipeJobHandle>;
+  },
+) {
   const c = useChangeOrderWorkbench(props);
+  useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
+    unsaved: c.dirty || (Boolean(c.cancelTarget) && c.cancelDirty),
+    blocked: Boolean(
+      c.loading ||
+      c.busy ||
+      c.lock ||
+      c.preview ||
+      c.previewLoading ||
+      c.cancelTarget ||
+      c.discardOpen,
+    ),
+    attention: c.lock ? c.message : undefined,
+  });
   const [query, setQuery] = useState(""),
     [temporal, setTemporal] = useState("current"),
     [scope, setScope] = useState("");

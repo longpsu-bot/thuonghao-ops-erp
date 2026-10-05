@@ -1,0 +1,81 @@
+# Atlas persistent workspace — 03C implementation evidence
+
+Prepared 5 October 2026 against starting main `7629ccfdcd88e41a2dfa094c6a7b9719a94d9659`, in the explicitly authorized `E:/Project/OPS ERP/thuonghao-ops-erp` checkout. Production branch: `feat/atlas-ui-vnext-03c-persistent-workspace`. #350 is merged; #349 remains draft prototype evidence and was not used as the implementation base.
+
+03C-A is separately committed as `885201e`: registry/reducer, retained owners, explicit status, guarded close/sign-out, dates, portal ownership and production integration tests. 03C-B applies the approved visual language to the launcher/shell and four pilot surfaces. This document records implementation evidence; the draft PR checks identify the exact validated delivery head. Product/architecture approval remains a separate merge decision.
+
+## Production gates
+
+| Gate                    | Result | Evidence                                                                                                                                                                                      |
+| ----------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Explicit status      | PASS   | Every editable owner reports only actual unsaved/blocked/optional attention. No DOM dirty scraping or business payloads in workspace state.                                                   |
+| 2. Recipe accuracy      | PASS   | Capability tests cover untouched create/edit, every field edit/revert, BOM, Change Order, frozen Review, authoritative Save/readback, cancellation and approved discard.                      |
+| 3. No switch remount    | PASS   | App tests retain exact panel/input identity. Close/reopen creates the distinct new lifetime.                                                                                                  |
+| 4. No switch reads      | PASS   | Actual initialization-read spies and retained Recipe/Procurement/School journeys; activation does not refresh.                                                                                |
+| 5. Local state          | PASS   | Need quantity/reason/note; Procurement date/stage/detail/note/search; Recipe metadata/BOM/date; PXK selection/note remain owner-local.                                                        |
+| 6. Dirty switch         | PASS   | Switching preserves drafts without invoking exit/discard. Active modals must first resolve.                                                                                                   |
+| 7. Guarded close        | PASS   | Inactive close activates its owner; cancel/block retains it; approval removes only it. Deferred focus reads the current committed active ID inside the frame.                                 |
+| 8. Sign-out             | PASS   | Multiple hidden dirty owners are listed without any discard or sign-out call; unresolved busy/Review/unknown/readback state also blocks.                                                      |
+| 9. Need handoff         | PASS   | Closed Procurement gets exact Need date/Allocation seed. Existing same/different date/Orders/detail/search/draft remains intact, with discrepancy disclosure.                                 |
+| 10. Freshness           | PASS   | No activation polling/read. Recipe midnight skips inactive owners and retains dirty/Review/recovery state; late Preview and utility dialogs defer until active.                               |
+| 11. Hidden ownership    | PASS   | Stable hidden/inert panels and local portals. Native hidden focus is blocked; calendars/popovers dismiss; hidden-owner unload protection remains.                                             |
+| 12. Keyboard navigation | PASS   | Launcher search, empty results, Arrow/Home/End/Escape/trigger return; tab roving, Delete close, whole active-tab reveal, and post-close focus. ArrowUp from search enters at the last result. |
+| 13. Narrow workspace    | PASS   | Separate launcher/open selector at 650×900 and 360×800, reachable labels/status/close/account, 44px shell targets and no document overflow.                                                   |
+| 14. Capacity            | PASS   | Test-only twelve descriptors: local desktop strip scroll, whole active item/close reveal, all twelve narrow options/close controls reachable. Production retains seven real destinations.     |
+| 15. DatePicker          | PASS   | Browser-only gate at 1440×900, 650×900 and 360×800 with five mounted controls, native keyboard selection, retained input/date, switch/close/delayed callbacks, dismissal and clipping checks. |
+| 16. Currentness         | PASS   | Existing stale, unknown, readback, retry/currentness protections remain owned by the existing hooks/bridges. Native stale PXK and unknown Procurement remain locked after switching.          |
+| 17. Supabase            | PASS   | Zero migration, schema, RPC, RLS, grant, credential or hosted business-data change.                                                                                                           |
+| 18. Retool              | PASS   | Zero Retool or live OPS change/write.                                                                                                                                                         |
+| 19. State dependencies  | PASS   | Reducer holds ordered open IDs and active ID only. No Redux, Zustand, cache or upward drafts; package/lockfile unchanged.                                                                     |
+| 20. Tab dependencies    | PASS   | Existing React, Chakra and native controls. No new router, tab library, persistence or navigation framework.                                                                                  |
+
+The owner clarification replaces all NVDA/JAWS, spoken-date, screen-reader/live-announcer human certification and WCAG certification release requirements. Gate 15 covers application correctness. The specialized document Proxy adapter was removed; installed Chakra ARIA/announcer behavior is untouched. One twelve-line shared helper dismisses inactive calendars.
+
+## Browser and visual evidence
+
+[Before geometry](../testing/artifacts/atlas-persistent-workspace-03c/before/geometry.json) contains twenty selected captures after A, before B. [After geometry](../testing/artifacts/atlas-persistent-workspace-03c/after/geometry.json) records 173 checked captures: four pilot surfaces × five required viewports × normal/selected/dirty/blocked/loading/error/empty/ready, plus desktop/narrow capacity, launcher, open selector, multi-owner sign-out/guarded close and representative stale/unknown recovery. Two supplementary PXK captures document its local reflow. All checked captures have one active owner, zero document horizontal overflow, no focus in a hidden owner and inert hidden siblings.
+
+Viewports: 1920×1080, 1440×900, 1366×768, 650×900 and 360×800. Chromium `151.0.7922.34`, reduced motion. These are browser viewport checks, not physical-touch or mobile software-keyboard certification. All content/API responses come from existing explicit local fixtures; no hosted business calls are made.
+
+Runnable checks: `python -X utf8 scripts/atlas_persistent_workspace_browser_test.py --phase after` and `python -X utf8 scripts/atlas_date_ownership_browser_test.py` with `pnpm exec vite --port 3000`. [Date ownership evidence](../testing/artifacts/atlas-persistent-workspace-03c/date-ownership.json) records all three native journeys and zero page errors. The existing opt-in review entry exercises production components; it is not imported by the production entrypoint. Storybook's focus instrumentation issue is avoided through this existing uninstrumented harness, without a focus shim.
+
+Impeccable pre-read compared the pinned selected D evidence and incumbent production geometry. Its final desktop/narrow review answers all six required questions **PASS**: one product, cleaner launcher, attached Atlas tabs, preserved operating density, no generic/decorative dashboard treatment, and shippable within this scope. The final App/Shell detector emitted no findings; PXK's bounded scan returned no findings. No further visual redesign is proposed.
+
+Central titles now use 22px narrow/24px desktop, weight 650, with compact context/gutters. Need filter DOM/visual ordering is consistent; dirty Save remains visible/enabled on 1366×768 through the correct scroll container. Procurement retains its table/detail allocation geometry. Recipes retain the compact navigator/dominant editor, associate quantity errors with fields, name the scroll region and distinguish pending catalogue loading from an empty result. Narrow PXK brings the table from roughly y680 to y370 and keeps the explicit release footer visible.
+
+[Computed text contrast](../testing/artifacts/atlas-persistent-workspace-03c/text-contrast.json) records shared primary/muted text against workbench/toolbar surfaces: 7.89/7.23 and 5.58/5.11 respectively. This is a scoped operator-readability check, not a WCAG certification claim.
+
+## Workbench switching performance follow-up
+
+The owner reported lag when switching workbenches. The App previously rebuilt every open owner's render tree on each navigation/status update. One memo boundary now retains unchanged content; stable navigation callbacks read the current committed workspace. Active-context changes still reach DatePicker and modal consumers. No owners are unmounted, no reads or drafts move into a cache, and backend authority is unchanged.
+
+The same seven-owner fixture, four selected pilot surfaces, twenty measured switches per layout and 4× CPU throttling produced these results. Baseline production source is `617c083`; after evidence uses the final delivery implementation. Both runs use local Vite development and fixture APIs in Chromium 151.0.7922.34, measuring click to the second animation frame. These are same-machine comparative measurements, not absolute hosted-production latency guarantees.
+
+| Viewport | Median before | Median after | p95 before  | p95 after | Median reduction |
+| -------- | ------------- | ------------ | ----------- | --------- | ---------------- |
+| 1440×900 | 4,643.05 ms   | 181.00 ms    | 5,232.80 ms | 213.60 ms | 96.1%            |
+| 650×900  | 4,273.75 ms   | 126.45 ms    | 4,517.40 ms | 199.00 ms | 97.0%            |
+
+[Before measurements](../testing/artifacts/atlas-persistent-workspace-03c/performance-before.json) and [after measurements](../testing/artifacts/atlas-persistent-workspace-03c/performance-after.json) retain individual samples. Reproduce the current measurements with `python -X utf8 scripts/atlas_workspace_performance.py --phase after` against the local Vite review entry. All seven mounted owners, the correct active panel and hidden-focus isolation are asserted on every measured switch.
+
+After optimization, **36/36** focused App/workspace/handoff/DatePicker tests and the three-size native browser DatePicker gate pass. Independent Standards and Spec follow-up reviews report **PASS, zero findings**. A separate unchanged legacy Recipe Adjustment test helper clicked Create before its authority read enabled the button; waiting for actionable UI fixes that CI race, with **64/64** tests passing at the default timeout and no legacy production change.
+
+## Review and validation
+
+Independent code-review axes used the fixed starting SHA and final working implementation. **Standards PASS; Spec PASS; zero unresolved findings.** The Spec review's two focus/keyboard findings were corrected at their shared handlers and left public regressions. The retired App animation tests now exercise the seven corresponding persistent-workspace journeys; no tests were disabled and existing domain protections remain asserted.
+
+Ponytail FULL final challenge **PASS**: one static registry, two-field reducer, owner-local state, existing portal scope plus one active-visibility context, native hidden/inert and local menu state suffice. No duplicate primary navigation, speculative registry fields, future production destinations, global cache, requestContext interface, dependency or persistence layer. The announcer adapter and redundant picker wrappers were deleted.
+
+Local UI boundary, typecheck, Storybook build, app build, workspace check and whitespace checks pass. Targeted formatting covers changed sources/documents/evidence. The full local regression run passed **2,404 tests across 183 files** in 619.51 seconds, using two workers and a 20-second local deadline after Windows resource-pressure timeouts; repository test/CI configuration is unchanged. A Recipe cancellation assertion now completes the native CSS exit boundary explicitly because jsdom does not execute animations; that complete file passes **24/24** with the default timeout. The required **Frontend CI / Format, typecheck, test, build** checks on draft PR #351 identify the exact validated delivery head.
+
+[Frontend CI on reviewed code head before the performance follow-up, `5f0f95546d9270154c30751a15d90dd40329c2c5`](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/37304875394), passes frozen install, UI boundary/type generation, formatting, typecheck, full tests, app build and diff checks. PR delivery-head CI certifies the final implementation including the bounded switching optimization. Readiness requires green required checks on the current head; product/architecture acceptance remains a separate merge decision.
+
+The workspace checker still prints the historical D: checkout warning. The owner explicitly authorized E: for this task; root/origin/initial clean tree/base SHA were verified before implementation, and no other checkout was edited.
+
+## Changed production files and boundaries
+
+33 production source files are affected. Composition: App, Shell, Registry, reducer, ModuleExit, Provider, DateInput, WeekRangeInput, new DateOwnership, SchoolScope, TaskContext and system. Owners: SchoolDefaultsWorkbench, IngredientSupplierWorkbench, PlanningCapability/MenuStage/SourcesWorkbench/usePlanningSources, ConfirmedNeedWorkbench, ProcurementWorkbench/SupplierDetail, PXK Workbench/Table/Detail, and Recipe Capability/DishWorkbench/Catalogue/BaseEditor/Dialogs/ChangeOrderWorkbench/Dialogs/local hooks. Tests, the capacity story, opt-in review fixture, browser scripts and documentation/evidence are separate.
+
+Supabase changes **0**; Retool changes **0**; business-contract changes **0**; hosted business writes **0**; dependencies **0**. Security review confirms Auth-subject-keyed session ownership, backend/RLS authorization and exact transactional commands remain authoritative. Visibility does not grant permissions. Existing importer/exporter injections and all seven destinations remain connected.
+
+No migration or database rollback is needed. Repository rollback reverts the presentation/wiring while backend facts and issued documents remain unchanged. Workspace state is in-memory and is not restored after reload/sign-out; resolve unsaved owners before session-ending rollout/reload. No deployment was manually triggered. GitHub review/deploy workflows are manual, but the existing Cloudflare Pages Git integration automatically publishes branch previews after pushes. No hosted business-data actions were performed. [Draft PR #351](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/351) and product/architecture review govern subsequent acceptance and merge.

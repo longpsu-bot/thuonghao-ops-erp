@@ -18,6 +18,14 @@ import {
 
 beforeEach(() => {
   vi.stubGlobal(
+    "matchMedia",
+    vi.fn().mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
+  );
+  vi.stubGlobal(
     "ResizeObserver",
     class {
       observe() {}
@@ -64,13 +72,11 @@ function show() {
 }
 
 async function nav(label: string) {
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Mở điều hướng Atlas" }),
-  );
+  fireEvent.click(await screen.findByRole("button", { name: "Bàn làm việc" }));
   fireEvent.click(await screen.findByRole("button", { name: label }));
   await waitFor(() =>
     expect(
-      screen.queryByRole("dialog", { name: "Điều hướng Atlas" }),
+      screen.queryByRole("dialog", { name: "Bàn làm việc" }),
     ).not.toBeInTheDocument(),
   );
 }
@@ -81,9 +87,7 @@ describe("Atlas pre-cutover UI polish", () => {
     expect(screen.queryByText("Vận hành trường học")).not.toBeInTheDocument();
     expect(screen.getByText("Hôm nay: 07/09/2026")).toBeVisible();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
     const procurement = await screen.findByRole("button", {
       name: "Kế hoạch mua hàng",
     });
@@ -184,12 +188,12 @@ describe("Atlas pre-cutover UI polish", () => {
     });
     expect(tabs).toHaveAttribute("data-tab-tier", "primary");
     expect(tabs).toHaveAttribute("data-tab-align", "start");
-    expect(within(section).getByText("Kế hoạch mua hàng")).toBeVisible();
     const heading = within(section).getByRole("heading", {
       level: 1,
       name: "Phân bổ nhà cung ứng",
     });
     expect(heading).toBeVisible();
+    expect(heading).toHaveAccessibleDescription("Kế hoạch mua hàng");
     expect(within(section).getAllByRole("heading", { level: 1 })).toEqual([
       heading,
     ]);

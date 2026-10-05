@@ -11,6 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasWeekRangeInput } from "../AtlasWeekRangeInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
@@ -36,6 +37,15 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [workbookBusy, setWorkbookBusy] = useState(false);
   const [workbookError, setWorkbookError] = useState<string | null>(null);
+  useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
+    unsaved: c.dirty,
+    blocked: c.busy || Boolean(c.lock) || workbookBusy,
+    attention: c.lock
+      ? "Cần xác nhận dữ liệu hiện tại"
+      : c.busy || workbookBusy
+        ? "Đang xử lý"
+        : undefined,
+  });
   const workbookInput = useRef<HTMLInputElement>(null);
   const compactFilters = useRef<HTMLDivElement>(null);
   const compactFilterTrigger = useRef<HTMLButtonElement>(null);
@@ -68,13 +78,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
       borderWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
-      overflow="hidden"
+      overflow="clip"
     >
-      <Grid
-        templateColumns="minmax(0, 1fr)"
-        templateRows="auto minmax(0, 1fr)"
-        minH="var(--atlas-confirmed-need-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))"
-      >
+      <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh xác nhận nhu cầu"
           moduleLabel="Lập nhu cầu"
@@ -165,8 +171,28 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 />
               </Box>
               <Field.Root
+                order={{ base: filtersOpen ? 7 : 0, lg: 4 }}
+                gridColumn={{ base: filtersOpen ? "1 / -1" : "1", lg: "auto" }}
+              >
+                <Field.Label
+                  display={{
+                    base: filtersOpen ? "block" : "none",
+                    lg: "block",
+                  }}
+                  color="fg.default"
+                >
+                  Tìm kiếm
+                </Field.Label>
+                <Input
+                  aria-label="Tìm kiếm"
+                  placeholder="Nguyên liệu, nơi nhận…"
+                  value={c.search}
+                  onChange={(e) => c.setSearch(e.target.value)}
+                />
+              </Field.Root>
+              <Field.Root
                 display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
-                order={{ base: 7, lg: 5 }}
+                order={{ base: 8, lg: 5 }}
                 gridColumn={{ base: "1 / -1", lg: "auto" }}
               >
                 <Field.Label>Tình trạng</Field.Label>
@@ -184,20 +210,6 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 </NativeSelect.Root>
               </Field.Root>
             </Box>
-            <Field.Root>
-              <Field.Label
-                display={{ base: "none", lg: "block" }}
-                color="fg.default"
-              >
-                Tìm kiếm
-              </Field.Label>
-              <Input
-                aria-label="Tìm kiếm"
-                placeholder="Nguyên liệu, nơi nhận…"
-                value={c.search}
-                onChange={(e) => c.setSearch(e.target.value)}
-              />
-            </Field.Root>
             <Button
               ref={compactFilterTrigger}
               display={{ base: "inline-flex", lg: "none" }}

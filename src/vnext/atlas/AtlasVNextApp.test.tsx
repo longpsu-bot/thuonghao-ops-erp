@@ -1,6 +1,5 @@
 import "@testing-library/jest-dom/vitest";
 import {
-  act,
   cleanup,
   fireEvent,
   render,
@@ -8,14 +7,27 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { AtlasVNextApp } from "./AtlasVNextApp";
 import {
   createAtlasApplicationFixture,
   applicationReviewNow,
 } from "./atlasApplicationReviewFixtures";
-afterEach(cleanup);
+beforeEach(() => {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn().mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
+  );
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 const modules = [
   ["Trường học", "Sĩ số mặc định"],
   ["Nguyên liệu và Nhà cung ứng", "Nguyên liệu"],
@@ -42,9 +54,7 @@ function show() {
   return { apis, signOut, ...result };
 }
 async function nav(label: string) {
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Mở điều hướng Atlas" }),
-  );
+  fireEvent.click(await screen.findByRole("button", { name: "Bàn làm việc" }));
   fireEvent.click(await screen.findByRole("button", { name: label }));
   await waitFor(() =>
     expect(
@@ -53,26 +63,19 @@ async function nav(label: string) {
   );
 }
 async function clickSignOut() {
-  if (
-    screen
-      .queryByRole("dialog", { name: "Điều hướng Atlas", hidden: true })
-      ?.getAttribute("data-state") !== "open"
-  )
-    fireEvent.click(
-      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
-    );
-  const drawer = await screen.findByRole("dialog", {
-    name: "Điều hướng Atlas",
+  fireEvent.click(
+    screen.getByRole("button", { name: "Tài khoản và môi trường" }),
+  );
+  const account = await screen.findByRole("dialog", {
+    name: "Tài khoản và môi trường",
   });
-  fireEvent.click(within(drawer).getByRole("button", { name: "Đăng xuất" }));
+  fireEvent.click(within(account).getByRole("button", { name: "Đăng xuất" }));
 }
-it("renders exactly one vNext capability for every primary navigation entry", async () => {
-  show();
-  for (const [label, heading] of modules) {
-    await waitFor(() =>
-      expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1),
-    );
-    await act(async () => {});
+it.each(modules)(
+  "launches %s with one active heading",
+  async (label, heading) => {
+    show();
+    await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
     await nav(label!);
     expect(
       await screen.findByRole("heading", { level: 1, name: heading! }),
@@ -80,22 +83,21 @@ it("renders exactly one vNext capability for every primary navigation entry", as
     await waitFor(() =>
       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1),
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
     expect(await screen.findByRole("button", { name: label! })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Đóng điều hướng" }));
+    fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
     await waitFor(() =>
       expect(
         document.querySelector('[role="dialog"][data-state="open"]'),
       ).toBeNull(),
     );
-  }
-}, 60000);
-it("guards sign out with the active School discard interaction", async () => {
+  },
+  20000,
+);
+it("blocks dirty sign-out without discarding and resolves School through its close guard", async () => {
   const { signOut } = show();
   const fields = await screen.findAllByRole("textbox", {
     name: /Học sinh mặc định/,
@@ -103,17 +105,25 @@ it("guards sign out with the active School discard interaction", async () => {
   fireEvent.change(fields[0]!, { target: { value: "123" } });
   await clickSignOut();
   expect(signOut).not.toHaveBeenCalled();
+  expect(
+    await screen.findByRole("button", { name: "Trường học — Chưa lưu" }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: "Bỏ thay đổi" }),
+  ).not.toBeInTheDocument();
+  expect(fields[0]).toHaveValue("123");
+  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
   fireEvent.click(
     await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
   );
-  expect(signOut).not.toHaveBeenCalled();
+  expect(fields[0]).toHaveValue("123");
   await waitFor(() =>
-    expect(
-      document.querySelector('[role="dialog"][data-state="open"]'),
-    ).toBeNull(),
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
-  await clickSignOut();
+  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
   fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
+  await waitFor(() => expect(fields[0]!.isConnected).toBe(false));
+  await clickSignOut();
   expect(signOut).toHaveBeenCalledOnce();
 });
 it("Confirmed Need continues to supplier allocation with no hidden write", async () => {

@@ -1,4 +1,5 @@
 import { AtlasDateInput } from "../AtlasDateInput";
+import { useAtlasWorkbenchActive } from "../AtlasVNextProvider";
 import {
   Box,
   Button,
@@ -9,7 +10,7 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   EffectiveCompositionResult,
   RecipeAdjustmentWorkbenchData,
@@ -85,12 +86,13 @@ export function ChangeComposition({
   );
 }
 export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
+  const active = useAtlasWorkbenchActive();
   const back = useRef<HTMLButtonElement>(null),
     p = c.preview;
   return (
     <Dialog.Root
-      open={Boolean(p)}
-      onOpenChange={({ open }) => !open && c.backToEdit()}
+      open={active && Boolean(p)}
+      onOpenChange={({ open }) => active && !open && c.backToEdit()}
       initialFocusEl={() => back.current}
       placement="center"
       lazyMount
@@ -110,6 +112,11 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
             <Dialog.Title>Xem tác động</Dialog.Title>
           </Dialog.Header>
           <Dialog.Body overflowY="auto">
+            {c.lock && c.message && (
+              <Text role="alert" mb="sm">
+                {c.message}
+              </Text>
+            )}
             {p && (
               <>
                 <Text textStyle="helper" mb="sm">
@@ -203,7 +210,7 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
             <Button
               ref={back}
               onClick={c.backToEdit}
-              disabled={c.busy || Boolean(c.lock)}
+              disabled={c.busy || (Boolean(c.lock) && c.lock !== "stale")}
             >
               Tiếp tục chỉnh sửa
             </Button>
@@ -231,6 +238,10 @@ export function ChangeOrderCancel({ c }: { c: ChangeOrderController }) {
     ),
     [reason, setReason] = useState("");
   const back = useRef<HTMLButtonElement>(null);
+  const initialDate = useRef(date);
+  useEffect(() => {
+    c.setCancelDirty(date !== initialDate.current || reason !== "");
+  }, [date, reason, c.setCancelDirty]);
   const valid =
     validDate(date) &&
     date >= from &&

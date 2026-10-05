@@ -9,10 +9,13 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Table as SheetIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
-import { useAtlasPortalContainer } from "../AtlasVNextProvider";
+import {
+  useAtlasPortalContainer,
+  useAtlasWorkbenchActive,
+} from "../AtlasVNextProvider";
 import { viDate, planningIssueMessage } from "../bridges/planning";
 export function PlanningMenuStage({
   c,
@@ -22,6 +25,10 @@ export function PlanningMenuStage({
   visibleSchoolIds: string[];
 }) {
   const [choose, setChoose] = useState(false);
+  const active = useAtlasWorkbenchActive();
+  useLayoutEffect(() => {
+    if (!active) setChoose(false);
+  }, [active]);
   const portalContainer = useAtlasPortalContainer();
   const sources =
     c.data?.google_sheet_sources.filter((s) => s.source_status === "ACTIVE") ??
@@ -72,7 +79,7 @@ export function PlanningMenuStage({
         </Box>
         {sources.length ? (
           <Popover.Root
-            open={choose}
+            open={active && choose}
             onOpenChange={(d) => setChoose(d.open)}
             lazyMount
             unmountOnExit

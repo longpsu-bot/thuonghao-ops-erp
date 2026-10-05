@@ -1,7 +1,11 @@
 import { DatePicker, Field, Input, Portal, parseDate } from "@chakra-ui/react";
 import { CalendarBlank } from "@phosphor-icons/react";
 import { useId } from "react";
-import { useAtlasPortalContainer } from "./AtlasVNextProvider";
+import {
+  useAtlasPortalContainer,
+  useAtlasWorkbenchActive,
+} from "./AtlasVNextProvider";
+import { AtlasDismissInactiveCalendar } from "./AtlasDateOwnership";
 
 function shiftIsoDate(value: string, days: number) {
   const date = new Date(`${value}T12:00:00Z`);
@@ -23,17 +27,21 @@ export function formatAtlasWeekRange(value: string) {
   return `${viDate(monday)} – ${viDate(shiftIsoDate(monday, 6))}`;
 }
 
+type AtlasWeekRangeInputProps = {
+  disabled?: boolean;
+  label: string;
+  value: string;
+  onValueChange: (weekStart: string) => void;
+};
+
 export function AtlasWeekRangeInput({
   label,
   value,
   onValueChange,
   disabled,
-}: {
-  disabled?: boolean;
-  label: string;
-  value: string;
-  onValueChange: (weekStart: string) => void;
-}) {
+}: AtlasWeekRangeInputProps) {
+  const active = useAtlasWorkbenchActive();
+  const unavailable = disabled || !active;
   const inputId = useId();
   const monday = normalizeIsoWeekStart(value);
   const dates = [parseDate(monday)];
@@ -42,10 +50,10 @@ export function AtlasWeekRangeInput({
     if (next[0]) onValueChange(normalizeIsoWeekStart(next[0].toString()));
   };
   return (
-    <Field.Root disabled={disabled}>
+    <Field.Root disabled={unavailable}>
       <Field.Label htmlFor={inputId}>{label}</Field.Label>
       <DatePicker.Root
-        disabled={disabled}
+        disabled={unavailable}
         locale="vi-VN"
         startOfWeek={1}
         openOnClick
@@ -76,6 +84,7 @@ export function AtlasWeekRangeInput({
           viewTrigger: (view) => (view === "day" ? "Chọn tháng" : "Chọn năm"),
         }}
       >
+        <AtlasDismissInactiveCalendar />
         <DatePicker.Control>
           <DatePicker.Context>
             {(picker) => (
@@ -84,17 +93,19 @@ export function AtlasWeekRangeInput({
                 aria-label={label}
                 value={formatAtlasWeekRange(monday)}
                 readOnly
-                disabled={disabled}
+                disabled={unavailable}
                 cursor={
-                  disabled ? "disabled" : "var(--atlas-layout-cursor, pointer)"
+                  unavailable
+                    ? "disabled"
+                    : "var(--atlas-layout-cursor, pointer)"
                 }
                 pe="var(--atlas-layout-calendar-inset, 40px)"
                 onClick={() => {
-                  if (!disabled) picker.setOpen(true);
+                  if (!unavailable) picker.setOpen(true);
                 }}
                 onKeyDown={(event) => {
                   if (
-                    !disabled &&
+                    !unavailable &&
                     ["ArrowDown", "Enter", " "].includes(event.key)
                   ) {
                     event.preventDefault();
@@ -110,24 +121,26 @@ export function AtlasWeekRangeInput({
             </DatePicker.Trigger>
           </DatePicker.IndicatorGroup>
         </DatePicker.Control>
-        <Portal container={portalContainer}>
-          <DatePicker.Positioner>
-            <DatePicker.Content>
-              <DatePicker.View view="day">
-                <DatePicker.Header />
-                <DatePicker.DayTable />
-              </DatePicker.View>
-              <DatePicker.View view="month">
-                <DatePicker.Header />
-                <DatePicker.MonthTable />
-              </DatePicker.View>
-              <DatePicker.View view="year">
-                <DatePicker.Header />
-                <DatePicker.YearTable />
-              </DatePicker.View>
-            </DatePicker.Content>
-          </DatePicker.Positioner>
-        </Portal>
+        {active && (
+          <Portal container={portalContainer}>
+            <DatePicker.Positioner>
+              <DatePicker.Content>
+                <DatePicker.View view="day">
+                  <DatePicker.Header />
+                  <DatePicker.DayTable />
+                </DatePicker.View>
+                <DatePicker.View view="month">
+                  <DatePicker.Header />
+                  <DatePicker.MonthTable />
+                </DatePicker.View>
+                <DatePicker.View view="year">
+                  <DatePicker.Header />
+                  <DatePicker.YearTable />
+                </DatePicker.View>
+              </DatePicker.Content>
+            </DatePicker.Positioner>
+          </Portal>
+        )}
       </DatePicker.Root>
     </Field.Root>
   );

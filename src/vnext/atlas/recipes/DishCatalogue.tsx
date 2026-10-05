@@ -107,7 +107,11 @@ export function DishCatalogue({
             : "var(--atlas-layout-catalog-height, calc(100dvh - 290px))",
         }}
       >
-        {compact ? (
+        {c.loading && !c.visibleDishes.length ? (
+          <Text p="md" role="status">
+            Đang tải danh mục món…
+          </Text>
+        ) : compact ? (
           <Box
             as="ul"
             aria-label="Điều hướng món"
