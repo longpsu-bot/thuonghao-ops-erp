@@ -1,0 +1,14 @@
+matrix 1920x1080
+matrix 1440x900
+matrix 1366x768
+matrix 650x900
+matrix 360x800
+pair recipe 1440
+pair planning 1440
+pair procurement 1440
+pair master 1440
+pair recipe 360
+pair planning 360
+pair procurement 360
+pair master 360
+{"captures": 131, "proofs": 10, "status": "PASS"}

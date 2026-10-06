@@ -1,0 +1,137 @@
+starting 1440
+eleven owners ready at 1440
+1440 0 Trường học: 380.4ms
+1440 0 Thực đơn: 633.5ms
+1440 0 Xác nhận nhu cầu: 684.6ms
+1440 0 Phân bổ NCC: 257.6ms
+1440 0 Đơn mua: 225.7ms
+1440 0 Công thức: 214.3ms
+1440 0 Lệnh điều chỉnh: 249.2ms
+1440 0 Nguyên liệu: 1496.7ms
+1440 0 Nhà cung ứng: 261.9ms
+1440 0 Phiếu xuất kho: 205.0ms
+1440 0 Đối chiếu PO / Phiếu xuất kho: 248.4ms
+1440 1 Trường học: 357.9ms
+1440 1 Thực đơn: 584.5ms
+1440 1 Xác nhận nhu cầu: 677.7ms
+1440 1 Phân bổ NCC: 305.9ms
+1440 1 Đơn mua: 241.7ms
+1440 1 Công thức: 233.6ms
+1440 1 Lệnh điều chỉnh: 313.1ms
+1440 1 Nguyên liệu: 1307.3ms
+1440 1 Nhà cung ứng: 324.9ms
+1440 1 Phiếu xuất kho: 359.5ms
+1440 1 Đối chiếu PO / Phiếu xuất kho: 283.2ms
+1440 2 Trường học: 363.5ms
+1440 2 Thực đơn: 635.3ms
+1440 2 Xác nhận nhu cầu: 645.5ms
+1440 2 Phân bổ NCC: 255.0ms
+1440 2 Đơn mua: 212.3ms
+1440 2 Công thức: 271.1ms
+1440 2 Lệnh điều chỉnh: 262.9ms
+1440 2 Nguyên liệu: 1400.9ms
+1440 2 Nhà cung ứng: 328.3ms
+1440 2 Phiếu xuất kho: 193.7ms
+1440 2 Đối chiếu PO / Phiếu xuất kho: 270.7ms
+1440 3 Trường học: 333.4ms
+1440 3 Thực đơn: 665.7ms
+1440 3 Xác nhận nhu cầu: 774.4ms
+1440 3 Phân bổ NCC: 279.9ms
+1440 3 Đơn mua: 235.4ms
+1440 3 Công thức: 276.9ms
+1440 3 Lệnh điều chỉnh: 270.0ms
+1440 3 Nguyên liệu: 1499.9ms
+1440 3 Nhà cung ứng: 283.3ms
+1440 3 Phiếu xuất kho: 217.1ms
+1440 3 Đối chiếu PO / Phiếu xuất kho: 289.8ms
+1440 4 Trường học: 365.3ms
+1440 4 Thực đơn: 674.8ms
+1440 4 Xác nhận nhu cầu: 705.2ms
+1440 4 Phân bổ NCC: 397.8ms
+1440 4 Đơn mua: 356.4ms
+1440 4 Công thức: 295.4ms
+1440 4 Lệnh điều chỉnh: 314.1ms
+1440 4 Nguyên liệu: 1609.8ms
+1440 4 Nhà cung ứng: 370.0ms
+1440 4 Phiếu xuất kho: 187.5ms
+1440 4 Đối chiếu PO / Phiếu xuất kho: 271.0ms
+1440 5 Trường học: 461.5ms
+1440 5 Thực đơn: 643.8ms
+1440 5 Xác nhận nhu cầu: 1090.6ms
+1440 5 Phân bổ NCC: 237.3ms
+1440 5 Đơn mua: 304.6ms
+1440 5 Công thức: 212.5ms
+1440 5 Lệnh điều chỉnh: 270.1ms
+1440 5 Nguyên liệu: 1337.5ms
+1440 5 Nhà cung ứng: 568.7ms
+1440 5 Phiếu xuất kho: 245.7ms
+1440 5 Đối chiếu PO / Phiếu xuất kho: 254.3ms
+starting 650
+eleven owners ready at 650
+650 0 Trường học: 263.0ms
+650 0 Thực đơn: 616.1ms
+650 0 Xác nhận nhu cầu: 538.9ms
+650 0 Phân bổ NCC: 186.0ms
+650 0 Đơn mua: 215.5ms
+650 0 Công thức: 158.0ms
+650 0 Lệnh điều chỉnh: 197.7ms
+650 0 Nguyên liệu: 1279.5ms
+650 0 Nhà cung ứng: 242.8ms
+650 0 Phiếu xuất kho: 160.5ms
+650 0 Đối chiếu PO / Phiếu xuất kho: 189.5ms
+650 1 Trường học: 397.5ms
+650 1 Thực đơn: 565.9ms
+650 1 Xác nhận nhu cầu: 662.8ms
+650 1 Phân bổ NCC: 183.9ms
+650 1 Đơn mua: 151.7ms
+650 1 Công thức: 142.1ms
+650 1 Lệnh điều chỉnh: 173.7ms
+650 1 Nguyên liệu: 1310.1ms
+650 1 Nhà cung ứng: 277.4ms
+650 1 Phiếu xuất kho: 140.3ms
+650 1 Đối chiếu PO / Phiếu xuất kho: 294.5ms
+650 2 Trường học: 285.4ms
+650 2 Thực đơn: 575.9ms
+650 2 Xác nhận nhu cầu: 619.9ms
+650 2 Phân bổ NCC: 186.6ms
+650 2 Đơn mua: 168.9ms
+650 2 Công thức: 143.3ms
+650 2 Lệnh điều chỉnh: 191.8ms
+650 2 Nguyên liệu: 1732.5ms
+650 2 Nhà cung ứng: 234.8ms
+650 2 Phiếu xuất kho: 156.3ms
+650 2 Đối chiếu PO / Phiếu xuất kho: 207.0ms
+650 3 Trường học: 358.4ms
+650 3 Thực đơn: 644.7ms
+650 3 Xác nhận nhu cầu: 724.1ms
+650 3 Phân bổ NCC: 186.9ms
+650 3 Đơn mua: 154.3ms
+650 3 Công thức: 159.4ms
+650 3 Lệnh điều chỉnh: 220.9ms
+650 3 Nguyên liệu: 1246.5ms
+650 3 Nhà cung ứng: 316.4ms
+650 3 Phiếu xuất kho: 156.0ms
+650 3 Đối chiếu PO / Phiếu xuất kho: 240.9ms
+650 4 Trường học: 284.7ms
+650 4 Thực đơn: 604.7ms
+650 4 Xác nhận nhu cầu: 592.3ms
+650 4 Phân bổ NCC: 166.7ms
+650 4 Đơn mua: 165.5ms
+650 4 Công thức: 153.1ms
+650 4 Lệnh điều chỉnh: 181.3ms
+650 4 Nguyên liệu: 1270.4ms
+650 4 Nhà cung ứng: 262.7ms
+650 4 Phiếu xuất kho: 181.5ms
+650 4 Đối chiếu PO / Phiếu xuất kho: 177.8ms
+650 5 Trường học: 257.5ms
+650 5 Thực đơn: 520.7ms
+650 5 Xác nhận nhu cầu: 558.7ms
+650 5 Phân bổ NCC: 254.8ms
+650 5 Đơn mua: 157.2ms
+650 5 Công thức: 158.6ms
+650 5 Lệnh điều chỉnh: 180.0ms
+650 5 Nguyên liệu: 1395.8ms
+650 5 Nhà cung ứng: 247.1ms
+650 5 Phiếu xuất kho: 150.5ms
+650 5 Đối chiếu PO / Phiếu xuất kho: 211.5ms
+{"phase": "product-corrections", "results": [{"width": 1440, "owners": 11, "sample_count": 55, "median_ms": 314.1, "p95_ms": 1337.5, "legacy_four_owner_subset": {"labels": ["Tr\u01b0\u1eddng h\u1ecdc", "Ph\u00e2n b\u1ed5 NCC", "C\u00f4ng th\u1ee9c", "Phi\u1ebfu xu\u1ea5t kho"], "sample_count": 20, "median_ms": 278.4, "p95_ms": 397.8}}, {"width": 650, "owners": 11, "sample_count": 55, "median_ms": 234.8, "p95_ms": 1270.4, "legacy_four_owner_subset": {"labels": ["Tr\u01b0\u1eddng h\u1ecdc", "Ph\u00e2n b\u1ed5 NCC", "C\u00f4ng th\u1ee9c", "Phi\u1ebfu xu\u1ea5t kho"], "sample_count": 20, "median_ms": 174.1, "p95_ms": 358.4}}]}

@@ -1,0 +1,418 @@
+BEGIN
+psql:/atlas-supabase/tests/recipe_effective_contract_01.sql:3: NOTICE:  schema "extensions" already exists, skipping
+CREATE SCHEMA
+CREATE EXTENSION
+ no_plan
+---------
+(0 rows)
+
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 5
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 6
+INSERT 0 3
+DROP INDEX
+INSERT 0 5
+INSERT 0 5
+INSERT 0 5
+INSERT 0 5
+SET CONSTRAINTS
+UPDATE 5
+UPDATE 5
+SET CONSTRAINTS
+INSERT 0 7
+INSERT 0 7
+UPDATE 7
+INSERT 0 1
+INSERT 0 3
+UPDATE 1
+INSERT 0 2
+INSERT 0 2
+UPDATE 2
+INSERT 0 1
+INSERT 0 3
+UPDATE 1
+CREATE FUNCTION
+                                is
+------------------------------------------------------------------
+ ok 1 - A. explicit Tiểu học selects its exact School-Type Recipe
+(1 row)
+
+                         is
+----------------------------------------------------
+ ok 2 - B. Tiểu học requires its exact typed Recipe
+(1 row)
+
+                  is
+--------------------------------------
+ ok 3 - C. ambiguity blocks selection
+(1 row)
+
+                                   is
+-------------------------------------------------------------------------
+ ok 4 - D. School and explicit School-Type resolution select identically
+(1 row)
+
+                            ok
+-----------------------------------------------------------
+ ok 5 - H. SYSTEM_DISH modifiers target a base Recipe line
+(1 row)
+
+                                 ok
+--------------------------------------------------------------------
+ ok 6 - I. SYSTEM_DISH modifiers target a prior ADD adjustment line
+(1 row)
+
+                            ok
+-----------------------------------------------------------
+ ok 7 - J. SCHOOL_DISH modifiers target a base Recipe line
+(1 row)
+
+                            ok
+----------------------------------------------------------
+ ok 8 - K. SCHOOL_DISH modifiers target a system ADD line
+(1 row)
+
+                                       ok
+--------------------------------------------------------------------------------
+ ok 9 - L. SCHOOL_DISH modifiers target a prior applicable SCHOOL_DISH ADD line
+(1 row)
+
+                           ok
+---------------------------------------------------------
+ ok 10 - M. both stable target IDs fail typed validation
+(1 row)
+
+                              ok
+--------------------------------------------------------------
+ ok 11 - N. a missing stable target ID fails typed validation
+(1 row)
+
+                              ok
+--------------------------------------------------------------
+ ok 12 - O. a non-effective adjustment-line target is blocked
+(1 row)
+
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 13 - P. target locks distinguish owners and serialize modifiers by stable origin
+(1 row)
+
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+SET
+              set_config
+--------------------------------------
+ c1000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 3
+RESET
+                                 ok
+--------------------------------------------------------------------
+ ok 14 - E. system effective composition includes SYSTEM_INGREDIENT
+(1 row)
+
+                              ok
+--------------------------------------------------------------
+ ok 15 - F. system effective composition includes SYSTEM_DISH
+(1 row)
+
+                                   ok
+-------------------------------------------------------------------------
+ ok 16 - G. system effective composition excludes SCHOOL and SCHOOL_DISH
+(1 row)
+
+                               is
+----------------------------------------------------------------
+ ok 17 - Q. typed lines appear for an explicit Tiểu học context
+(1 row)
+
+                                      ok
+-------------------------------------------------------------------------------
+ ok 18 - R. School context returns the final currently visible effective lines
+(1 row)
+
+CREATE FUNCTION
+CREATE FUNCTION
+SELECT 1
+GRANT
+SET
+INSERT 0 2
+RESET
+                                    ok
+--------------------------------------------------------------------------
+ ok 19 - S. stable target identity round-trips through Preview and Create
+(1 row)
+
+CREATE FUNCTION
+SELECT 1
+SET
+INSERT 0 3
+RESET
+                                        ok
+----------------------------------------------------------------------------------
+ ok 20 - T. unrelated system and School rules create no Dish history tag or panel
+(1 row)
+
+                                          ok
+--------------------------------------------------------------------------------------
+ ok 21 - U. School exception count includes only distinct materially applicable roots
+(1 row)
+
+                                  ok
+-----------------------------------------------------------------------
+ ok 22 - V. system history periods contain each complete effective BOM
+(1 row)
+
+                                       ok
+--------------------------------------------------------------------------------
+ ok 23 - W. School history includes system and School-specific full-BOM changes
+(1 row)
+
+                                     ok
+----------------------------------------------------------------------------
+ ok 24 - X. simultaneous Change Orders share one effective history boundary
+(1 row)
+
+                                ok
+------------------------------------------------------------------
+ ok 25 - Y. effective_to creates the next full-BOM history period
+(1 row)
+
+                                         ok
+------------------------------------------------------------------------------------
+ ok 26 - Z. cancelled and corrected revisions preserve their historical BOM periods
+(1 row)
+
+                                    ok
+---------------------------------------------------------------------------
+ ok 27 - A12-1/2. legacy effective history keeps issuer and issued_at null
+(1 row)
+
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 28 - A12-3. technical importer Actor and timestamp are retained but not surfaced
+(1 row)
+
+                                          ok
+--------------------------------------------------------------------------------------
+ ok 29 - A12-5. adjustment ledger and effective history share legacy provenance truth
+(1 row)
+
+                                        ok
+----------------------------------------------------------------------------------
+ ok 30 - A12-4/6. native correction retains its own Actor and immutable timestamp
+(1 row)
+
+                                          ok
+--------------------------------------------------------------------------------------
+ ok 31 - A12-7. native cancellation after legacy retains revision-specific provenance
+(1 row)
+
+                                         is
+------------------------------------------------------------------------------------
+ ok 32 - A12-11. authenticated history reads leave root and revision rows unchanged
+(1 row)
+
+                                       ok
+---------------------------------------------------------------------------------
+ ok 33 - A12-10. history execution remains behind the authenticated read wrapper
+(1 row)
+
+SET
+                            is
+----------------------------------------------------------
+ ok 34 - A12-10. a caller cannot assert a different Actor
+(1 row)
+
+              set_config
+--------------------------------------
+ c1000000-0000-0000-0000-000000000109
+(1 row)
+
+                                       is
+---------------------------------------------------------------------------------
+ ok 35 - A12-10. an authenticated Actor without Recipe read capability is denied
+(1 row)
+
+              set_config
+--------------------------------------
+ c1000000-0000-0000-0000-000000000101
+(1 row)
+
+RESET
+                                    is
+--------------------------------------------------------------------------
+ ok 36 - AA. is_effective_now is backend-derived for every temporal state
+(1 row)
+
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 37 - AB. backend effectiveness and effective_to remain independent ledger fields
+(1 row)
+
+INSERT 0 1
+INSERT 0 6
+INSERT 0 11
+INSERT 0 4
+INSERT 0 4
+INSERT 0 4
+UPDATE 4
+UPDATE 4
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+CREATE FUNCTION
+SET
+INSERT 0 6
+RESET
+                              ok
+--------------------------------------------------------------
+ ok 38 - AA. one command copies Tiểu học and Trung học scopes
+(1 row)
+
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 39 - AB. Tiểu học copy snapshots system-effective BOM and excludes School layers
+(1 row)
+
+                                    ok
+---------------------------------------------------------------------------
+ ok 40 - AC. Trung học copy snapshots its independent system-effective BOM
+(1 row)
+
+                                       ok
+---------------------------------------------------------------------------------
+ ok 41 - AD. a missing required source scope leaves every target scope unchanged
+(1 row)
+
+                                      ok
+-------------------------------------------------------------------------------
+ ok 42 - AE. an approved-menu-locked target rejects the command with no writes
+(1 row)
+
+                                          ok
+---------------------------------------------------------------------------------------
+ ok 43 - AF. a required second-scope failure rolls back both target Recipes atomically
+(1 row)
+
+                                   is
+------------------------------------------------------------------------
+ ok 44 - AG. an exact Dish-copy replay returns one authoritative result
+(1 row)
+
+                                     is
+-----------------------------------------------------------------------------
+ ok 45 - AH. changed payload with the same idempotency key remains protected
+(1 row)
+
+                                   ok
+------------------------------------------------------------------------
+ ok 46 - AI. Dish copy does not mutate either source base Recipe or BOM
+(1 row)
+
+                                        ok
+----------------------------------------------------------------------------------
+ ok 47 - AJ. copied RecipeVersion records distinct contributing system provenance
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+                                       ok
+--------------------------------------------------------------------------------
+ ok 48 - AK. a later source system rule cannot alter the copied target snapshot
+(1 row)
+
+CREATE FUNCTION
+INSERT 0 1
+SET
+INSERT 0 4
+INSERT 0 6
+RESET
+SELECT 1
+GRANT
+SET
+INSERT 0 10
+RESET
+UPDATE 1
+SET
+INSERT 0 1
+RESET
+DELETE 1
+SET
+INSERT 0 1
+RESET
+                                       ok
+---------------------------------------------------------------------------------
+ ok 49 - A07-1. SYSTEM_DISH Preview accepts Dish plus School Type without School
+(1 row)
+
+                                  ok
+----------------------------------------------------------------------
+ ok 50 - A07-2. system Preview excludes School and School-Dish layers
+(1 row)
+
+                                      ok
+-------------------------------------------------------------------------------
+ ok 51 - A07-3. a valid system Preview has no representative School dependency
+(1 row)
+
+                                     ok
+----------------------------------------------------------------------------
+ ok 52 - A07-4. base RecipeLine identity survives system Preview and Create
+(1 row)
+
+                                        ok
+----------------------------------------------------------------------------------
+ ok 53 - A07-5. prior SYSTEM_DISH ADD identity survives system Preview and Create
+(1 row)
+
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 54 - A07-6. Create persists one root, revision, receipt, event, and audit record
+(1 row)
+
+                                                  ok
+------------------------------------------------------------------------------------------------------
+ ok 55 - A07-7. Supersede preserves predecessor, version, target, system resolution, and old revision
+(1 row)
+
+                                                   ok
+--------------------------------------------------------------------------------------------------------
+ ok 56 - A07-8. mismatched, noncanonical, inactive, mixed, missing, and wrong-Dish contexts fail closed
+(1 row)
+
+                                    ok
+---------------------------------------------------------------------------
+ ok 57 - A07-9. existing School and School-Dish context remains compatible
+(1 row)
+
+                                           ok
+-----------------------------------------------------------------------------------------
+ ok 58 - A07-10. exact replay, context-hash conflict, and stale version remain protected
+(1 row)
+
+                                     ok
+-----------------------------------------------------------------------------
+ ok 59 - A07-11. browser-key execution retains authenticated-only RPC grants
+(1 row)
+
+ finish
+--------
+ 1..59
+(1 row)
+
+ROLLBACK

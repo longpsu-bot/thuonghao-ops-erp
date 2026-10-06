@@ -1,0 +1,6987 @@
+{
+  "browser": "151.0.7922.34",
+  "fixture_only": true,
+  "hosted_requests": 0,
+  "captures": [
+    {
+      "capture": "launcher-collapsed-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "launcher-open-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        },
+        {
+          "label": "Thực đơn",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Xác nhận nhu cầu",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Phân bổ NCC",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Đơn mua",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Phiếu xuất kho",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Đối chiếu PO / Phiếu xuất kho",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Trường học",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Nguyên liệu",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Nhà cung ứng",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Công thức",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Lệnh điều chỉnh",
+          "width": 418,
+          "height": 22
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eight-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eleven-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-00-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-01-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-02-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-03-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Phân bổ NCC",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ NCC",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-04-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-05-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-06-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-07-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-08-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-09-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-10-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "recipe-editor-unit-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "change-order-quantity-unit-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "menu-valid-readback-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "missingRecipeUnit-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "invalidMenuCell-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "pendingValidMenu-1920x1080",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "launcher-collapsed-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "launcher-open-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        },
+        {
+          "label": "Thực đơn",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Xác nhận nhu cầu",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Phân bổ NCC",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Đơn mua",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Phiếu xuất kho",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Đối chiếu PO / Phiếu xuất kho",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Trường học",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Nguyên liệu",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Nhà cung ứng",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Công thức",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Lệnh điều chỉnh",
+          "width": 418,
+          "height": 22
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eight-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eleven-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-00-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-01-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-02-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-03-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Phân bổ NCC",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ NCC",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-04-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-05-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-06-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-07-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-08-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-09-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-10-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "recipe-editor-unit-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "change-order-quantity-unit-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "menu-valid-readback-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "missingRecipeUnit-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "invalidMenuCell-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "pendingValidMenu-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "launcher-collapsed-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "launcher-open-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        },
+        {
+          "label": "Thực đơn",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Xác nhận nhu cầu",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Phân bổ NCC",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Đơn mua",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Phiếu xuất kho",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Đối chiếu PO / Phiếu xuất kho",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Trường học",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Nguyên liệu",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Nhà cung ứng",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Công thức",
+          "width": 418,
+          "height": 22
+        },
+        {
+          "label": "Lệnh điều chỉnh",
+          "width": 418,
+          "height": 22
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eight-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eleven-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-00-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-01-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-02-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-03-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Phân bổ NCC",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ NCC",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-04-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-05-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-06-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-07-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-08-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-09-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "owner-10-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "recipe-editor-unit-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "change-order-quantity-unit-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "menu-valid-readback-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "missingRecipeUnit-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "invalidMenuCell-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "pendingValidMenu-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "launcher-collapsed-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Trường học",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "launcher-open-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Thực đơn",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Xác nhận nhu cầu",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Phân bổ NCC",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Đơn mua",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Phiếu xuất kho",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Đối chiếu PO / Phiếu xuất kho",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Trường học",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Nguyên liệu",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Nhà cung ứng",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Công thức",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Lệnh điều chỉnh",
+          "width": 418,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Trường học",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eight-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nguyên liệu",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eleven-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Đối chiếu PO / Phiếu xuất kho",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-00-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Trường học",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-01-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-02-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Xác nhận nhu cầu",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-03-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Phân bổ NCC",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ NCC",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Phân bổ NCC",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-04-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Đơn mua",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-05-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-06-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Lệnh điều chỉnh",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-07-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nguyên liệu",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-08-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nhà cung ứng",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-09-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Phiếu xuất kho",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-10-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Đối chiếu PO / Phiếu xuất kho",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "recipe-editor-unit-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "change-order-quantity-unit-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Lệnh điều chỉnh — Chưa lưu",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "menu-valid-readback-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "missingRecipeUnit-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức — Chưa lưu",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "invalidMenuCell-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn — Chưa lưu",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "pendingValidMenu-650x900",
+      "viewport": {
+        "width": 650,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn — Chưa lưu",
+          "width": 630,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "launcher-collapsed-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Trường học",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "launcher-open-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Thực đơn",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Xác nhận nhu cầu",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Phân bổ NCC",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Đơn mua",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Phiếu xuất kho",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Đối chiếu PO / Phiếu xuất kho",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Trường học",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Nguyên liệu",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Nhà cung ứng",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Công thức",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Lệnh điều chỉnh",
+          "width": 318,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Trường học",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eight-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nguyên liệu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "tabs-eleven-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Đối chiếu PO / Phiếu xuất kho",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-00-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Trường học",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số mặc định",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Trường học",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-01-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-02-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Xác nhận nhu cầu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-03-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Phân bổ NCC",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ NCC",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Phân bổ NCC",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-04-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Đơn mua",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-05-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-06-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Lệnh điều chỉnh",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-07-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nguyên liệu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-08-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nhà cung ứng",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-09-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phiếu xuất kho",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Phiếu xuất kho",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "owner-10-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Đối chiếu PO / Phiếu xuất kho",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đối chiếu PO / Phiếu xuất kho",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Đối chiếu PO / Phiếu xuất kho",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "recipe-editor-unit-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "change-order-quantity-unit-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Lệnh điều chỉnh — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "menu-valid-readback-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "missingRecipeUnit-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "invalidMenuCell-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "pendingValidMenu-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    }
+  ],
+  "capture_correction": "browser-capture-correction.json"
+}

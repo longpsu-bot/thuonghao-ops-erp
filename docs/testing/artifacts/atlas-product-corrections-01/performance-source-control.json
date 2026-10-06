@@ -1,0 +1,391 @@
+{
+  "baseline_sha": "dd00f304e43de77b59288e32109db6fd8884c5f7",
+  "browser": "151.0.7922.34",
+  "cpu_throttle": 4,
+  "method": "Original starting-main benchmark loaded without source edits; URL only redirected to read-only archived main Vite at3001. Final source same seven equivalent owners/four-target sequence. Six cycles, warmup excluded,20samples per viewport/source; click to two RAF. All heavy jobs stopped before run.",
+  "results": [
+    {
+      "width": 1440,
+      "baseline": {
+        "width": 1440,
+        "owners": 7,
+        "samples": [
+          {
+            "owner": "Trường học",
+            "paint_ms": 310.9
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 216.6
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 222.9
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 196.7
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 325.1
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 191
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 226.2
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 220.7
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 301
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 168
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 234.3
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 220.7
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 372.2
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 189.6
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 252.8
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 213.2
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 275.1
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 194
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 231.1
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 196.4
+          }
+        ],
+        "median_ms": 221.8,
+        "p95_ms": 325.1
+      },
+      "final": {
+        "width": 1440,
+        "owners": 7,
+        "samples": [
+          {
+            "owner": "Trường học",
+            "paint_ms": 297.2
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 167.2
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 247.4
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 253
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 294.6
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 151.4
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 259.8
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 202.2
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 280.9
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 196.8
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 243.9
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 253.8
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 281.5
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 176
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 239.4
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 247.8
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 272.4
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 203.9
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 244.4
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 251.7
+          }
+        ],
+        "sample_count": 20,
+        "median_ms": 247.6,
+        "p95_ms": 294.6,
+        "legacy_four_owner_subset": {
+          "labels": [
+            "Trường học",
+            "Phân bổ NCC",
+            "Công thức",
+            "Phiếu xuất kho"
+          ],
+          "sample_count": 20,
+          "median_ms": 247.6,
+          "p95_ms": 294.6
+        }
+      }
+    },
+    {
+      "width": 650,
+      "baseline": {
+        "width": 650,
+        "owners": 7,
+        "samples": [
+          {
+            "owner": "Trường học",
+            "paint_ms": 250.9
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 133.4
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 191.7
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 157.4
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 211.7
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 145.2
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 161.4
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 138.7
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 247.3
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 131.8
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 159.8
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 173.1
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 207.6
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 157.5
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 190.2
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 145
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 376.9
+          },
+          {
+            "owner": "Kế hoạch mua hàng",
+            "paint_ms": 176.1
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 166.9
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 144.3
+          }
+        ],
+        "median_ms": 164.15,
+        "p95_ms": 250.9
+      },
+      "final": {
+        "width": 650,
+        "owners": 7,
+        "samples": [
+          {
+            "owner": "Trường học",
+            "paint_ms": 267.1
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 171.2
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 162.3
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 190.6
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 212.9
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 128.1
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 175.8
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 174.6
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 254.9
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 138.1
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 151.6
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 223.9
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 231
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 135.5
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 165.6
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 172.2
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 212.3
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 122.1
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 187.8
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 151.6
+          }
+        ],
+        "sample_count": 20,
+        "median_ms": 173.4,
+        "p95_ms": 254.9,
+        "legacy_four_owner_subset": {
+          "labels": [
+            "Trường học",
+            "Phân bổ NCC",
+            "Công thức",
+            "Phiếu xuất kho"
+          ],
+          "sample_count": 20,
+          "median_ms": 173.4,
+          "p95_ms": 254.9
+        }
+      }
+    }
+  ],
+  "runtime": "Both exact source trees served by the same Vite createServer wrapper with server.watch=null; archived baseline source unedited. No heavy jobs active."
+}

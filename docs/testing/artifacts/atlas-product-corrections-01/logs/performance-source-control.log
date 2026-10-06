@@ -1,0 +1,105 @@
+starting 1440
+seven owners ready at 1440
+1440 0 Trường học: 337.2ms
+1440 0 Kế hoạch mua hàng: 261.4ms
+1440 0 Công thức: 233.4ms
+1440 0 Phiếu xuất kho: 195.8ms
+1440 1 Trường học: 310.9ms
+1440 1 Kế hoạch mua hàng: 216.6ms
+1440 1 Công thức: 222.9ms
+1440 1 Phiếu xuất kho: 196.7ms
+1440 2 Trường học: 325.1ms
+1440 2 Kế hoạch mua hàng: 191.0ms
+1440 2 Công thức: 226.2ms
+1440 2 Phiếu xuất kho: 220.7ms
+1440 3 Trường học: 301.0ms
+1440 3 Kế hoạch mua hàng: 168.0ms
+1440 3 Công thức: 234.3ms
+1440 3 Phiếu xuất kho: 220.7ms
+1440 4 Trường học: 372.2ms
+1440 4 Kế hoạch mua hàng: 189.6ms
+1440 4 Công thức: 252.8ms
+1440 4 Phiếu xuất kho: 213.2ms
+1440 5 Trường học: 275.1ms
+1440 5 Kế hoạch mua hàng: 194.0ms
+1440 5 Công thức: 231.1ms
+1440 5 Phiếu xuất kho: 196.4ms
+starting 1440
+7 owners ready at 1440
+1440 0 Trường học: 369.9ms
+1440 0 Phân bổ NCC: 258.0ms
+1440 0 Công thức: 214.9ms
+1440 0 Phiếu xuất kho: 238.9ms
+1440 1 Trường học: 297.2ms
+1440 1 Phân bổ NCC: 167.2ms
+1440 1 Công thức: 247.4ms
+1440 1 Phiếu xuất kho: 253.0ms
+1440 2 Trường học: 294.6ms
+1440 2 Phân bổ NCC: 151.4ms
+1440 2 Công thức: 259.8ms
+1440 2 Phiếu xuất kho: 202.2ms
+1440 3 Trường học: 280.9ms
+1440 3 Phân bổ NCC: 196.8ms
+1440 3 Công thức: 243.9ms
+1440 3 Phiếu xuất kho: 253.8ms
+1440 4 Trường học: 281.5ms
+1440 4 Phân bổ NCC: 176.0ms
+1440 4 Công thức: 239.4ms
+1440 4 Phiếu xuất kho: 247.8ms
+1440 5 Trường học: 272.4ms
+1440 5 Phân bổ NCC: 203.9ms
+1440 5 Công thức: 244.4ms
+1440 5 Phiếu xuất kho: 251.7ms
+starting 650
+seven owners ready at 650
+650 0 Trường học: 280.5ms
+650 0 Kế hoạch mua hàng: 141.2ms
+650 0 Công thức: 153.2ms
+650 0 Phiếu xuất kho: 176.7ms
+650 1 Trường học: 250.9ms
+650 1 Kế hoạch mua hàng: 133.4ms
+650 1 Công thức: 191.7ms
+650 1 Phiếu xuất kho: 157.4ms
+650 2 Trường học: 211.7ms
+650 2 Kế hoạch mua hàng: 145.2ms
+650 2 Công thức: 161.4ms
+650 2 Phiếu xuất kho: 138.7ms
+650 3 Trường học: 247.3ms
+650 3 Kế hoạch mua hàng: 131.8ms
+650 3 Công thức: 159.8ms
+650 3 Phiếu xuất kho: 173.1ms
+650 4 Trường học: 207.6ms
+650 4 Kế hoạch mua hàng: 157.5ms
+650 4 Công thức: 190.2ms
+650 4 Phiếu xuất kho: 145.0ms
+650 5 Trường học: 376.9ms
+650 5 Kế hoạch mua hàng: 176.1ms
+650 5 Công thức: 166.9ms
+650 5 Phiếu xuất kho: 144.3ms
+starting 650
+7 owners ready at 650
+650 0 Trường học: 262.0ms
+650 0 Phân bổ NCC: 124.2ms
+650 0 Công thức: 194.0ms
+650 0 Phiếu xuất kho: 197.8ms
+650 1 Trường học: 267.1ms
+650 1 Phân bổ NCC: 171.2ms
+650 1 Công thức: 162.3ms
+650 1 Phiếu xuất kho: 190.6ms
+650 2 Trường học: 212.9ms
+650 2 Phân bổ NCC: 128.1ms
+650 2 Công thức: 175.8ms
+650 2 Phiếu xuất kho: 174.6ms
+650 3 Trường học: 254.9ms
+650 3 Phân bổ NCC: 138.1ms
+650 3 Công thức: 151.6ms
+650 3 Phiếu xuất kho: 223.9ms
+650 4 Trường học: 231.0ms
+650 4 Phân bổ NCC: 135.5ms
+650 4 Công thức: 165.6ms
+650 4 Phiếu xuất kho: 172.2ms
+650 5 Trường học: 212.3ms
+650 5 Phân bổ NCC: 122.1ms
+650 5 Công thức: 187.8ms
+650 5 Phiếu xuất kho: 151.6ms
+{"baseline_sha": "dd00f304e43de77b59288e32109db6fd8884c5f7", "browser": "151.0.7922.34", "cpu_throttle": 4, "method": "Original starting-main benchmark loaded without source edits; URL only redirected to read-only archived main Vite at3001. Final source same seven equivalent owners/four-target sequence. Six cycles, warmup excluded,20samples per viewport/source; click to two RAF. All heavy jobs stopped before run.", "results": [{"width": 1440, "baseline_median": 221.8, "baseline_p95": 325.1, "final_median": 247.6, "final_p95": 294.6}, {"width": 650, "baseline_median": 164.15, "baseline_p95": 250.9, "final_median": 173.4, "final_p95": 254.9}]}

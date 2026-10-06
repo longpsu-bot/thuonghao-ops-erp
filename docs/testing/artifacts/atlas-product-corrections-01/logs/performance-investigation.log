@@ -1,0 +1,4 @@
+{"width": 1440, "workload": "legacy-seven", "sample_count": 20, "median_ms": 314.45, "p95_ms": 447.1}
+{"width": 1440, "workload": "eleven-legacy-sequence", "sample_count": 20, "median_ms": 300.85, "p95_ms": 397.4}
+{"width": 650, "workload": "legacy-seven", "sample_count": 20, "median_ms": 249.1, "p95_ms": 405.2}
+{"width": 650, "workload": "eleven-legacy-sequence", "sample_count": 20, "median_ms": 212.85, "p95_ms": 326.4}

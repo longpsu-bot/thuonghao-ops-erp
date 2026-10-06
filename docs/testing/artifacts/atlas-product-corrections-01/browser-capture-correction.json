@@ -1,0 +1,169 @@
+{
+  "reason": "One bounded capture-framing correction after batched visual inspection: reveal quantity+Unit and Menu soup column using existing local horizontal scrolling; no production code changes",
+  "captures": [
+    {
+      "capture": "recipe-editor-unit-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "menu-valid-readback-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "pendingValidMenu-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "invalidMenuCell-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Thực đơn",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    }
+  ]
+}

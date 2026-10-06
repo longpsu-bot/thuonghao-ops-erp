@@ -1,0 +1,869 @@
+{
+  "method": "Same 4xCPU/six cycles/two RAF; exact historical four-target sequence; fresh pages; warmup excluded; idle Vite; current integrated source",
+  "results": [
+    {
+      "width": 1440,
+      "workload": "legacy-seven",
+      "dom": [
+        {
+          "owner": "Trường học",
+          "nodes": 575,
+          "rows": 35
+        },
+        {
+          "owner": "Xác nhận nhu cầu",
+          "nodes": 188,
+          "rows": 7
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "nodes": 140,
+          "rows": 2
+        },
+        {
+          "owner": "Công thức",
+          "nodes": 200,
+          "rows": 4
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "nodes": 119,
+          "rows": 6
+        },
+        {
+          "owner": "Nguyên liệu",
+          "nodes": 5994,
+          "rows": 361
+        },
+        {
+          "owner": "Đối chiếu PO / Phiếu xuất kho",
+          "nodes": 102,
+          "rows": 2
+        }
+      ],
+      "samples": [
+        {
+          "owner": "Trường học",
+          "paint_ms": 447.1,
+          "ScriptDuration": 180.42,
+          "LayoutDuration": 40.89,
+          "RecalcStyleDuration": 95.18,
+          "TaskDuration": 598.38
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 261.5,
+          "ScriptDuration": 190.65,
+          "LayoutDuration": 7.32,
+          "RecalcStyleDuration": 40.77,
+          "TaskDuration": 408.11
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 290.6,
+          "ScriptDuration": 230.85,
+          "LayoutDuration": 8.37,
+          "RecalcStyleDuration": 27.83,
+          "TaskDuration": 461.51
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 228.7,
+          "ScriptDuration": 173.45,
+          "LayoutDuration": 8.87,
+          "RecalcStyleDuration": 31.6,
+          "TaskDuration": 385.21
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 336.9,
+          "ScriptDuration": 160.63,
+          "LayoutDuration": 50.17,
+          "RecalcStyleDuration": 71.09,
+          "TaskDuration": 440.92
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 249.5,
+          "ScriptDuration": 175.76,
+          "LayoutDuration": 9.82,
+          "RecalcStyleDuration": 41.97,
+          "TaskDuration": 364.95
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 482.3,
+          "ScriptDuration": 400.75,
+          "LayoutDuration": 9.19,
+          "RecalcStyleDuration": 45.17,
+          "TaskDuration": 682.2
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 419.6,
+          "ScriptDuration": 352.61,
+          "LayoutDuration": 8.05,
+          "RecalcStyleDuration": 35.12,
+          "TaskDuration": 522.23
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 391.4,
+          "ScriptDuration": 201.31,
+          "LayoutDuration": 34.36,
+          "RecalcStyleDuration": 97.72,
+          "TaskDuration": 545.9
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 201.5,
+          "ScriptDuration": 141.56,
+          "LayoutDuration": 7.74,
+          "RecalcStyleDuration": 27.04,
+          "TaskDuration": 319.08
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 364.9,
+          "ScriptDuration": 291.56,
+          "LayoutDuration": 9.02,
+          "RecalcStyleDuration": 41.55,
+          "TaskDuration": 478.57
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 315.2,
+          "ScriptDuration": 258.13,
+          "LayoutDuration": 8.51,
+          "RecalcStyleDuration": 31.75,
+          "TaskDuration": 418.74
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 290.2,
+          "ScriptDuration": 148.36,
+          "LayoutDuration": 28.11,
+          "RecalcStyleDuration": 74.65,
+          "TaskDuration": 414.2
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 290.9,
+          "ScriptDuration": 239.82,
+          "LayoutDuration": 6.72,
+          "RecalcStyleDuration": 26.48,
+          "TaskDuration": 384.39
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 322.2,
+          "ScriptDuration": 253.38,
+          "LayoutDuration": 10.06,
+          "RecalcStyleDuration": 38.27,
+          "TaskDuration": 490.75
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 222.5,
+          "ScriptDuration": 166.25,
+          "LayoutDuration": 5.72,
+          "RecalcStyleDuration": 34.67,
+          "TaskDuration": 323.08
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 338.3,
+          "ScriptDuration": 202.79,
+          "LayoutDuration": 36.96,
+          "RecalcStyleDuration": 68.55,
+          "TaskDuration": 459.35
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 211.8,
+          "ScriptDuration": 134.77,
+          "LayoutDuration": 15.26,
+          "RecalcStyleDuration": 39.85,
+          "TaskDuration": 304.36
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 313.7,
+          "ScriptDuration": 226.57,
+          "LayoutDuration": 8.43,
+          "RecalcStyleDuration": 55.94,
+          "TaskDuration": 437.44
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 316.8,
+          "ScriptDuration": 187.17,
+          "LayoutDuration": 29.61,
+          "RecalcStyleDuration": 44.42,
+          "TaskDuration": 423.75
+        }
+      ],
+      "sample_count": 20,
+      "median_ms": 314.45,
+      "p95_ms": 447.1
+    },
+    {
+      "width": 1440,
+      "workload": "eleven-legacy-sequence",
+      "dom": [
+        {
+          "owner": "Trường học",
+          "nodes": 575,
+          "rows": 35
+        },
+        {
+          "owner": "Thực đơn",
+          "nodes": 351,
+          "rows": 34
+        },
+        {
+          "owner": "Xác nhận nhu cầu",
+          "nodes": 188,
+          "rows": 7
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "nodes": 140,
+          "rows": 2
+        },
+        {
+          "owner": "Đơn mua",
+          "nodes": 75,
+          "rows": 2
+        },
+        {
+          "owner": "Công thức",
+          "nodes": 200,
+          "rows": 4
+        },
+        {
+          "owner": "Lệnh điều chỉnh",
+          "nodes": 59,
+          "rows": 2
+        },
+        {
+          "owner": "Nguyên liệu",
+          "nodes": 5994,
+          "rows": 361
+        },
+        {
+          "owner": "Nhà cung ứng",
+          "nodes": 419,
+          "rows": 38
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "nodes": 119,
+          "rows": 6
+        },
+        {
+          "owner": "Đối chiếu PO / Phiếu xuất kho",
+          "nodes": 102,
+          "rows": 2
+        }
+      ],
+      "samples": [
+        {
+          "owner": "Trường học",
+          "paint_ms": 391.9,
+          "ScriptDuration": 184.44,
+          "LayoutDuration": 35.5,
+          "RecalcStyleDuration": 122.6,
+          "TaskDuration": 541.99
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 235,
+          "ScriptDuration": 186.38,
+          "LayoutDuration": 6.05,
+          "RecalcStyleDuration": 26.89,
+          "TaskDuration": 345.44
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 352.3,
+          "ScriptDuration": 295.46,
+          "LayoutDuration": 7.31,
+          "RecalcStyleDuration": 30.68,
+          "TaskDuration": 469.43
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 318.2,
+          "ScriptDuration": 258.45,
+          "LayoutDuration": 5.53,
+          "RecalcStyleDuration": 31.23,
+          "TaskDuration": 457.39
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 321,
+          "ScriptDuration": 169.78,
+          "LayoutDuration": 32.11,
+          "RecalcStyleDuration": 86.29,
+          "TaskDuration": 452.5
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 235,
+          "ScriptDuration": 169.25,
+          "LayoutDuration": 14.11,
+          "RecalcStyleDuration": 32.67,
+          "TaskDuration": 338.68
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 352.9,
+          "ScriptDuration": 294.2,
+          "LayoutDuration": 9.75,
+          "RecalcStyleDuration": 27.95,
+          "TaskDuration": 502.28
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 233.3,
+          "ScriptDuration": 188.74,
+          "LayoutDuration": 5.7,
+          "RecalcStyleDuration": 20.5,
+          "TaskDuration": 355.22
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 397.4,
+          "ScriptDuration": 242.08,
+          "LayoutDuration": 28.27,
+          "RecalcStyleDuration": 83.14,
+          "TaskDuration": 495.89
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 229.2,
+          "ScriptDuration": 165.33,
+          "LayoutDuration": 7.71,
+          "RecalcStyleDuration": 33.59,
+          "TaskDuration": 381.57
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 311.6,
+          "ScriptDuration": 230.29,
+          "LayoutDuration": 9.73,
+          "RecalcStyleDuration": 53.17,
+          "TaskDuration": 405.69
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 258.8,
+          "ScriptDuration": 213.99,
+          "LayoutDuration": 6.98,
+          "RecalcStyleDuration": 23.43,
+          "TaskDuration": 390.49
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 466.3,
+          "ScriptDuration": 299.7,
+          "LayoutDuration": 56.85,
+          "RecalcStyleDuration": 74.86,
+          "TaskDuration": 629.95
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 260.7,
+          "ScriptDuration": 208.22,
+          "LayoutDuration": 8.75,
+          "RecalcStyleDuration": 27.01,
+          "TaskDuration": 356.44
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 284.7,
+          "ScriptDuration": 234.16,
+          "LayoutDuration": 5.69,
+          "RecalcStyleDuration": 24.4,
+          "TaskDuration": 486.84
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 332.7,
+          "ScriptDuration": 248.25,
+          "LayoutDuration": 15.52,
+          "RecalcStyleDuration": 49.28,
+          "TaskDuration": 440.43
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 319.3,
+          "ScriptDuration": 167.77,
+          "LayoutDuration": 28.26,
+          "RecalcStyleDuration": 81.24,
+          "TaskDuration": 484.41
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 236.9,
+          "ScriptDuration": 184.7,
+          "LayoutDuration": 7.51,
+          "RecalcStyleDuration": 28.82,
+          "TaskDuration": 337.53
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 288.6,
+          "ScriptDuration": 214.38,
+          "LayoutDuration": 14.49,
+          "RecalcStyleDuration": 35.12,
+          "TaskDuration": 469.95
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 290.1,
+          "ScriptDuration": 226.44,
+          "LayoutDuration": 4.31,
+          "RecalcStyleDuration": 31.75,
+          "TaskDuration": 432.9
+        }
+      ],
+      "sample_count": 20,
+      "median_ms": 300.85,
+      "p95_ms": 397.4
+    },
+    {
+      "width": 650,
+      "workload": "legacy-seven",
+      "dom": [
+        {
+          "owner": "Trường học",
+          "nodes": 575,
+          "rows": 35
+        },
+        {
+          "owner": "Xác nhận nhu cầu",
+          "nodes": 188,
+          "rows": 7
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "nodes": 140,
+          "rows": 2
+        },
+        {
+          "owner": "Công thức",
+          "nodes": 200,
+          "rows": 4
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "nodes": 119,
+          "rows": 6
+        },
+        {
+          "owner": "Nguyên liệu",
+          "nodes": 5994,
+          "rows": 361
+        },
+        {
+          "owner": "Đối chiếu PO / Phiếu xuất kho",
+          "nodes": 102,
+          "rows": 2
+        }
+      ],
+      "samples": [
+        {
+          "owner": "Trường học",
+          "paint_ms": 405.2,
+          "ScriptDuration": 139.94,
+          "LayoutDuration": 80.19,
+          "RecalcStyleDuration": 92.35,
+          "TaskDuration": 509.04
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 162.4,
+          "ScriptDuration": 120.28,
+          "LayoutDuration": 6.1,
+          "RecalcStyleDuration": 21.32,
+          "TaskDuration": 280.89
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 290.2,
+          "ScriptDuration": 230.03,
+          "LayoutDuration": 7.68,
+          "RecalcStyleDuration": 36.13,
+          "TaskDuration": 383.58
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 207.5,
+          "ScriptDuration": 160.98,
+          "LayoutDuration": 6.67,
+          "RecalcStyleDuration": 25.39,
+          "TaskDuration": 296.09
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 415,
+          "ScriptDuration": 188.79,
+          "LayoutDuration": 45.94,
+          "RecalcStyleDuration": 97.07,
+          "TaskDuration": 522.65
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 200.8,
+          "ScriptDuration": 154.29,
+          "LayoutDuration": 5.51,
+          "RecalcStyleDuration": 24.84,
+          "TaskDuration": 303.27
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 253.8,
+          "ScriptDuration": 214.18,
+          "LayoutDuration": 5.55,
+          "RecalcStyleDuration": 18.55,
+          "TaskDuration": 371.5
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 181.3,
+          "ScriptDuration": 150.91,
+          "LayoutDuration": 4.87,
+          "RecalcStyleDuration": 15.64,
+          "TaskDuration": 297.91
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 290.6,
+          "ScriptDuration": 106.55,
+          "LayoutDuration": 41.52,
+          "RecalcStyleDuration": 67.82,
+          "TaskDuration": 419.2
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 188.7,
+          "ScriptDuration": 137.18,
+          "LayoutDuration": 5.3,
+          "RecalcStyleDuration": 34.37,
+          "TaskDuration": 309.52
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 196.3,
+          "ScriptDuration": 156.0,
+          "LayoutDuration": 6.16,
+          "RecalcStyleDuration": 19.63,
+          "TaskDuration": 361.98
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 256.4,
+          "ScriptDuration": 223.03,
+          "LayoutDuration": 4.9,
+          "RecalcStyleDuration": 16.56,
+          "TaskDuration": 380.68
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 393.9,
+          "ScriptDuration": 188.4,
+          "LayoutDuration": 37.3,
+          "RecalcStyleDuration": 110.24,
+          "TaskDuration": 532.4
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 229.9,
+          "ScriptDuration": 155.19,
+          "LayoutDuration": 11.13,
+          "RecalcStyleDuration": 34.98,
+          "TaskDuration": 331.26
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 351.1,
+          "ScriptDuration": 293.19,
+          "LayoutDuration": 7.06,
+          "RecalcStyleDuration": 23.81,
+          "TaskDuration": 470.83
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 247.5,
+          "ScriptDuration": 197.96,
+          "LayoutDuration": 4.89,
+          "RecalcStyleDuration": 29.01,
+          "TaskDuration": 339.79
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 265.2,
+          "ScriptDuration": 116.73,
+          "LayoutDuration": 35.67,
+          "RecalcStyleDuration": 69.78,
+          "TaskDuration": 379.91
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 246.5,
+          "ScriptDuration": 203.12,
+          "LayoutDuration": 6.25,
+          "RecalcStyleDuration": 21.31,
+          "TaskDuration": 369.07
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 250.7,
+          "ScriptDuration": 206.47,
+          "LayoutDuration": 9.53,
+          "RecalcStyleDuration": 23.54,
+          "TaskDuration": 369.28
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 197,
+          "ScriptDuration": 162.63,
+          "LayoutDuration": 4.08,
+          "RecalcStyleDuration": 18.15,
+          "TaskDuration": 294.68
+        }
+      ],
+      "sample_count": 20,
+      "median_ms": 249.1,
+      "p95_ms": 405.2
+    },
+    {
+      "width": 650,
+      "workload": "eleven-legacy-sequence",
+      "dom": [
+        {
+          "owner": "Trường học",
+          "nodes": 575,
+          "rows": 35
+        },
+        {
+          "owner": "Thực đơn",
+          "nodes": 351,
+          "rows": 34
+        },
+        {
+          "owner": "Xác nhận nhu cầu",
+          "nodes": 188,
+          "rows": 7
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "nodes": 140,
+          "rows": 2
+        },
+        {
+          "owner": "Đơn mua",
+          "nodes": 75,
+          "rows": 2
+        },
+        {
+          "owner": "Công thức",
+          "nodes": 200,
+          "rows": 4
+        },
+        {
+          "owner": "Lệnh điều chỉnh",
+          "nodes": 59,
+          "rows": 2
+        },
+        {
+          "owner": "Nguyên liệu",
+          "nodes": 5994,
+          "rows": 361
+        },
+        {
+          "owner": "Nhà cung ứng",
+          "nodes": 419,
+          "rows": 38
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "nodes": 119,
+          "rows": 6
+        },
+        {
+          "owner": "Đối chiếu PO / Phiếu xuất kho",
+          "nodes": 102,
+          "rows": 2
+        }
+      ],
+      "samples": [
+        {
+          "owner": "Trường học",
+          "paint_ms": 305.8,
+          "ScriptDuration": 138.83,
+          "LayoutDuration": 28.04,
+          "RecalcStyleDuration": 100.29,
+          "TaskDuration": 402.75
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 192.2,
+          "ScriptDuration": 136.43,
+          "LayoutDuration": 7.17,
+          "RecalcStyleDuration": 34.25,
+          "TaskDuration": 306.97
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 268.2,
+          "ScriptDuration": 217.63,
+          "LayoutDuration": 10.61,
+          "RecalcStyleDuration": 19.15,
+          "TaskDuration": 429.65
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 186,
+          "ScriptDuration": 157.04,
+          "LayoutDuration": 4.7,
+          "RecalcStyleDuration": 14.44,
+          "TaskDuration": 287.91
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 326.4,
+          "ScriptDuration": 134.71,
+          "LayoutDuration": 46.96,
+          "RecalcStyleDuration": 97.96,
+          "TaskDuration": 439.15
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 182.8,
+          "ScriptDuration": 136.1,
+          "LayoutDuration": 5.94,
+          "RecalcStyleDuration": 25.06,
+          "TaskDuration": 306.21
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 262.5,
+          "ScriptDuration": 200.5,
+          "LayoutDuration": 14.42,
+          "RecalcStyleDuration": 24.28,
+          "TaskDuration": 389.25
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 212.8,
+          "ScriptDuration": 174.77,
+          "LayoutDuration": 4.07,
+          "RecalcStyleDuration": 17.26,
+          "TaskDuration": 321.82
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 269,
+          "ScriptDuration": 127.01,
+          "LayoutDuration": 38.69,
+          "RecalcStyleDuration": 68.89,
+          "TaskDuration": 364.26
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 199,
+          "ScriptDuration": 155.82,
+          "LayoutDuration": 5.83,
+          "RecalcStyleDuration": 22.51,
+          "TaskDuration": 343.64
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 260,
+          "ScriptDuration": 210.39,
+          "LayoutDuration": 6.55,
+          "RecalcStyleDuration": 29.17,
+          "TaskDuration": 468.6
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 194.5,
+          "ScriptDuration": 147.12,
+          "LayoutDuration": 4.46,
+          "RecalcStyleDuration": 28.32,
+          "TaskDuration": 359.49
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 263.5,
+          "ScriptDuration": 117.84,
+          "LayoutDuration": 41.71,
+          "RecalcStyleDuration": 68.94,
+          "TaskDuration": 405.3
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 197,
+          "ScriptDuration": 136.72,
+          "LayoutDuration": 12.45,
+          "RecalcStyleDuration": 26.73,
+          "TaskDuration": 304.6
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 295,
+          "ScriptDuration": 218.7,
+          "LayoutDuration": 6.75,
+          "RecalcStyleDuration": 45.87,
+          "TaskDuration": 420.65
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 163.2,
+          "ScriptDuration": 132.95,
+          "LayoutDuration": 3.85,
+          "RecalcStyleDuration": 14.65,
+          "TaskDuration": 268.01
+        },
+        {
+          "owner": "Trường học",
+          "paint_ms": 338.2,
+          "ScriptDuration": 154.43,
+          "LayoutDuration": 30.03,
+          "RecalcStyleDuration": 103.32,
+          "TaskDuration": 472.01
+        },
+        {
+          "owner": "Phân bổ NCC",
+          "paint_ms": 166,
+          "ScriptDuration": 128.46,
+          "LayoutDuration": 5.51,
+          "RecalcStyleDuration": 19.12,
+          "TaskDuration": 281.4
+        },
+        {
+          "owner": "Công thức",
+          "paint_ms": 205,
+          "ScriptDuration": 153.3,
+          "LayoutDuration": 10.21,
+          "RecalcStyleDuration": 26.01,
+          "TaskDuration": 301.65
+        },
+        {
+          "owner": "Phiếu xuất kho",
+          "paint_ms": 212.9,
+          "ScriptDuration": 171.1,
+          "LayoutDuration": 4.08,
+          "RecalcStyleDuration": 22.43,
+          "TaskDuration": 349.24
+        }
+      ],
+      "sample_count": 20,
+      "median_ms": 212.85,
+      "p95_ms": 326.4
+    }
+  ]
+}

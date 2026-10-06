@@ -1,0 +1,1266 @@
+{
+  "browser": "151.0.7922.34",
+  "fixture_only": true,
+  "hosted_requests": 0,
+  "captures": [
+    {
+      "capture": "retained-recipe-0-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "retained-recipe-1-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "signout-recipe-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "retained-planning-0-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "retained-planning-1-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "signout-planning-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "retained-procurement-0-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Phân bổ NCC",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ NCC",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "retained-procurement-1-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "signout-procurement-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "retained-master-0-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "retained-master-1-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "signout-master-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "retained-recipe-0-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Công thức — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "retained-recipe-1-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Lệnh điều chỉnh — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "signout-recipe-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Lệnh điều chỉnh",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Công thức",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Lệnh điều chỉnh",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Lệnh điều chỉnh — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "retained-planning-0-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Sĩ số",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "retained-planning-1-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Xác nhận nhu cầu — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "signout-planning-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Xác nhận nhu cầu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Xác nhận nhu cầu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Xác nhận nhu cầu — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "retained-procurement-0-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Phân bổ NCC",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Phân bổ NCC",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Phân bổ NCC — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "retained-procurement-1-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Đơn mua",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "signout-procurement-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Đơn mua",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Đơn mua",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Đơn mua",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "retained-master-0-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Nguyên liệu",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nguyên liệu",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nguyên liệu — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "retained-master-1-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nhà cung ứng — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "signout-master-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Nhà cung ứng",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Nhà cung ứng",
+          "size": "22px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Nhà cung ứng — Chưa lưu",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "capture": "capacity-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "activeOwner": "Thực đơn 12",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Thực đơn 1",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu 2",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC 3",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua 4",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho 5",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho 6",
+          "inert": true
+        },
+        {
+          "name": "Trường học 7",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu 8",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng 9",
+          "inert": true
+        },
+        {
+          "name": "Công thức 10",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh 11",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ]
+    },
+    {
+      "capture": "capacity-360x800",
+      "viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "activeOwner": "Thực đơn 1",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Xác nhận nhu cầu 2",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC 3",
+          "inert": true
+        },
+        {
+          "name": "Đơn mua 4",
+          "inert": true
+        },
+        {
+          "name": "Phiếu xuất kho 5",
+          "inert": true
+        },
+        {
+          "name": "Đối chiếu PO / Phiếu xuất kho 6",
+          "inert": true
+        },
+        {
+          "name": "Trường học 7",
+          "inert": true
+        },
+        {
+          "name": "Nguyên liệu 8",
+          "inert": true
+        },
+        {
+          "name": "Nhà cung ứng 9",
+          "inert": true
+        },
+        {
+          "name": "Công thức 10",
+          "inert": true
+        },
+        {
+          "name": "Lệnh điều chỉnh 11",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn 12",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 70,
+          "height": 44
+        },
+        {
+          "label": "Đang mở: Thực đơn 1",
+          "width": 340,
+          "height": 44
+        }
+      ]
+    }
+  ],
+  "proofs": [
+    {
+      "pair": "recipe",
+      "width": 1440,
+      "same_dom": true,
+      "values": ["2,25", "Giữ lệnh riêng"],
+      "hidden_inert": true,
+      "signout_dirty_owners": ["Công thức", "Lệnh điều chỉnh"],
+      "owner_close_cancel": true,
+      "natural_dialog_exit": true
+    },
+    {
+      "pair": "planning",
+      "width": 1440,
+      "same_dom": true,
+      "values": ["123", "12,5"],
+      "hidden_inert": true,
+      "signout_dirty_owners": ["Thực đơn", "Xác nhận nhu cầu"],
+      "owner_close_cancel": true,
+      "natural_dialog_exit": true
+    },
+    {
+      "pair": "procurement",
+      "width": 1440,
+      "same_dom": true,
+      "values": ["Giao sớm", "An Phú"],
+      "hidden_inert": true,
+      "signout_dirty_owners": ["Phân bổ NCC"],
+      "owner_close_cancel": true,
+      "natural_dialog_exit": true
+    },
+    {
+      "pair": "master",
+      "width": 1440,
+      "same_dom": true,
+      "values": ["Nguyên liệu thử", "Nhà cung ứng thử"],
+      "hidden_inert": true,
+      "signout_dirty_owners": ["Nguyên liệu", "Nhà cung ứng"],
+      "owner_close_cancel": true,
+      "natural_dialog_exit": true
+    },
+    {
+      "pair": "recipe",
+      "width": 360,
+      "same_dom": true,
+      "values": ["2,25", "Giữ lệnh riêng"],
+      "hidden_inert": true,
+      "signout_dirty_owners": ["Công thức", "Lệnh điều chỉnh"],
+      "owner_close_cancel": true,
+      "natural_dialog_exit": true
+    },
+    {
+      "pair": "planning",
+      "width": 360,
+      "same_dom": true,
+      "values": ["123", "12,5"],
+      "hidden_inert": true,
+      "signout_dirty_owners": ["Thực đơn", "Xác nhận nhu cầu"],
+      "owner_close_cancel": true,
+      "natural_dialog_exit": true
+    },
+    {
+      "pair": "procurement",
+      "width": 360,
+      "same_dom": true,
+      "values": ["Giao sớm", "An Phú"],
+      "hidden_inert": true,
+      "signout_dirty_owners": ["Phân bổ NCC"],
+      "owner_close_cancel": true,
+      "natural_dialog_exit": true
+    },
+    {
+      "pair": "master",
+      "width": 360,
+      "same_dom": true,
+      "values": ["Nguyên liệu thử", "Nhà cung ứng thử"],
+      "hidden_inert": true,
+      "signout_dirty_owners": ["Nguyên liệu", "Nhà cung ứng"],
+      "owner_close_cancel": true,
+      "natural_dialog_exit": true
+    },
+    {
+      "discard_motion": "no-preference",
+      "metadata_unmounted": true,
+      "dialog_closed_naturally": true,
+      "synthetic_animation_event": false
+    },
+    {
+      "discard_motion": "reduce",
+      "metadata_unmounted": true,
+      "dialog_closed_naturally": true,
+      "synthetic_animation_event": false
+    }
+  ]
+}
