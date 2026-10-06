@@ -81,7 +81,7 @@ the earlier unchanged local backend certification.
 
 ## Migration, security and deployment sequence
 
-`20261006040547_atlas_recipe_purchase_unit_read.sql` changes only the existing
+`20261006112515_atlas_recipe_purchase_unit_read.sql` changes only the existing
 private `atlas_core.uiq03a_workbench_payload(uuid,uuid,uuid)` body. V2 Ingredient
 references, including successful Save readback, gain nullable `purchase_unit_id`
 and `purchase_unit_name`; v1 shape and public function identities stay intact.
