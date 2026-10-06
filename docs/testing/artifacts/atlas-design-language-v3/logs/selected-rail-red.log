@@ -1,0 +1,4 @@
+{'rail': {'x': 21, 'y': 400.6875, 'width': 3, 'height': 44}, 'pixel': (239, 245, 244), 'expected': (15, 100, 78)}
+Traceback (most recent call last):
+  File "<stdin>", line 13, in <module>
+AssertionError: The scroll continuation fade obscures the selection rail

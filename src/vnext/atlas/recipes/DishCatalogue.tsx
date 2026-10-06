@@ -163,8 +163,8 @@ export function DishCatalogue({
                   >
                     <Box
                       minW="var(--atlas-layout-zero, 0)"
-                      borderLeftWidth="var(--atlas-layout-edge, 1px)"
-                      borderColor={selected ? "border.accent" : "border.subtle"}
+                      borderLeftWidth="var(--atlas-layout-rail, 3px)"
+                      borderColor={selected ? "border.accent" : "transparent"}
                       pl="sm"
                     >
                       <Text fontWeight="semibold" overflowWrap="anywhere">

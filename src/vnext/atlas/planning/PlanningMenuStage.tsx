@@ -2,13 +2,18 @@ import {
   Box,
   Button,
   Flex,
+  Icon,
   Popover,
   Portal,
   Stack,
   Table,
   Text,
 } from "@chakra-ui/react";
-import { Table as SheetIcon } from "@phosphor-icons/react";
+import {
+  Table as SheetIcon,
+  WarningCircle,
+  Warning,
+} from "@phosphor-icons/react";
 import { useLayoutEffect, useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
@@ -164,11 +169,14 @@ export function PlanningMenuStage({
           aria-label="Không thể đồng bộ thực đơn"
           px={{ base: "sm", md: "md" }}
           py="sm"
-          bg="bg.warning"
+          layerStyle="feedbackDanger"
           borderBottomWidth="var(--atlas-layout-edge, 1px)"
-          borderColor="border.default"
+          borderColor="border.danger"
         >
           <Text textStyle="label" color="status.danger">
+            <Icon asChild mr="xs">
+              <WarningCircle aria-hidden="true" />
+            </Icon>
             {invalidCellCount
               ? `${invalidCellCount} ô cần xử lý trước khi lưu.`
               : "Không thể đồng bộ thực đơn"}
@@ -272,10 +280,10 @@ export function PlanningMenuStage({
           aria-label="Chưa thể đồng bộ thực đơn"
           px={{ base: "sm", md: "md" }}
           py="sm"
-          bg="bg.warning"
+          layerStyle="feedbackWarning"
           color="status.warning"
           borderBottomWidth="var(--atlas-layout-edge, 1px)"
-          borderColor="border.default"
+          borderColor="border.warning"
         >
           <Flex
             direction={{ base: "column", md: "row" }}
@@ -284,7 +292,12 @@ export function PlanningMenuStage({
             gap="sm"
           >
             <Box>
-              <Text textStyle="label">Chưa thể đồng bộ thực đơn</Text>
+              <Text textStyle="label">
+                <Icon asChild mr="xs">
+                  <Warning aria-hidden="true" />
+                </Icon>
+                Chưa thể đồng bộ thực đơn
+              </Text>
               {correctionDates.map((impact) => (
                 <Text key={impact.service_date} mt="xs" textStyle="helper">
                   {viDate(impact.service_date)} · {impact.operator_message}
@@ -342,7 +355,6 @@ export function PlanningMenuStage({
                 position="sticky"
                 left="var(--atlas-layout-zero, 0)"
                 zIndex="var(--atlas-layer-sticky-corner, 3)"
-                bg="bg.toolbar"
               >
                 Trường / điểm giao
               </Table.ColumnHeader>
@@ -390,7 +402,7 @@ export function PlanningMenuStage({
                       <Table.Cell
                         key={t.dish_type_id}
                         data-invalid={issues.length > 0 ? "true" : undefined}
-                        bg={issues.length ? "bg.warning" : undefined}
+                        bg={issues.length ? "bg.danger" : undefined}
                       >
                         {!lines.length && !issues.length && "—"}
                         {lines.map((line, index) => {
@@ -409,6 +421,9 @@ export function PlanningMenuStage({
                         {issues.map((issue) => (
                           <Box key={issue.source_row_reference}>
                             <Text textStyle="helper" color="status.danger">
+                              <Icon asChild mr="xs">
+                                <WarningCircle aria-hidden="true" />
+                              </Icon>
                               {issue.code === "UNKNOWN_DISH" ||
                               issue.code === "INVALID_DISH_ID"
                                 ? `Không tìm thấy món “${issue.source_value?.trim()}”`

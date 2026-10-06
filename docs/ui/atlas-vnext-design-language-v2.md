@@ -1,5 +1,7 @@
 # Atlas vNext design language v2 — Modern Operational Workspace
 
+**Visual supersession — 6 October 2026:** [Atlas Design Language v3 — Operational Legibility](atlas-design-language-v3.md) supersedes v2's visual color, contrast, typography-legibility and component styling guidance. Workspace/navigation/lifetime architecture remains authoritative where not superseded; v2 also remains historical design evidence. D-048 and business/API/state ownership are unchanged.
+
 **Task:** ATLAS-UI-VNEXT-03B · **Prepared:** 5 October 2026
 
 **Status:** Owner-selected direction D; production contract pending review and merge.

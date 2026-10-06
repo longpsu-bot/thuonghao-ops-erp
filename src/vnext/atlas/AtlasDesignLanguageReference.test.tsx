@@ -34,7 +34,7 @@ describe("Atlas design language reference", () => {
     );
     for (const [name, background, border] of [
       ["Lưu phân bổ", "var(--atlas-colors-action-primary-default)", null],
-      ["Áp dụng bộ lọc", "var(--atlas-colors-bg-workbench)", "border-default"],
+      ["Áp dụng bộ lọc", "var(--atlas-colors-bg-toolbar)", "border-strong"],
       ["Đóng chi tiết", "var(--atlas-colors-transparent)", "border-subtle"],
       ["Xem dòng mẫu", "var(--atlas-colors-transparent)", "border-subtle"],
     ]) {

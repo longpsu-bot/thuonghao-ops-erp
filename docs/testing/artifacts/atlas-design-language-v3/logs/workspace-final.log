@@ -1,0 +1,7 @@
+$ node scripts/check-workspace.mjs
+OPS workspace check
+- git root: E:/Project/OPS ERP/thuonghao-ops-erp
+- origin: https://github.com/longpsu-bot/thuonghao-ops-erp.git
+- branch: feat/atlas-product-corrections-01
+- working tree: has changes
+warning: Canonical user repo path is D:/Project/Repo/OPS/thuonghao-ops-erp; current root is E:/Project/OPS ERP/thuonghao-ops-erp.

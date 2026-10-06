@@ -130,7 +130,6 @@ export function ProcurementAllocationTable({
                 position="sticky"
                 left="var(--atlas-layout-zero, 0)"
                 zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
-                bg="bg.toolbar"
                 h="var(--atlas-table-header-height)"
                 py="var(--atlas-layout-zero, 0)"
               />

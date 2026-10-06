@@ -1,0 +1,137 @@
+starting 1440
+11 owners ready at 1440
+1440 0 Trường học: 332.2ms
+1440 0 Thực đơn: 602.8ms
+1440 0 Xác nhận nhu cầu: 636.7ms
+1440 0 Phân bổ NCC: 271.6ms
+1440 0 Đơn mua: 285.0ms
+1440 0 Công thức: 259.8ms
+1440 0 Lệnh điều chỉnh: 369.1ms
+1440 0 Nguyên liệu: 1394.7ms
+1440 0 Nhà cung ứng: 307.9ms
+1440 0 Phiếu xuất kho: 192.3ms
+1440 0 Đối chiếu PO / Phiếu xuất kho: 254.0ms
+1440 1 Trường học: 377.4ms
+1440 1 Thực đơn: 592.2ms
+1440 1 Xác nhận nhu cầu: 668.6ms
+1440 1 Phân bổ NCC: 239.8ms
+1440 1 Đơn mua: 203.1ms
+1440 1 Công thức: 240.4ms
+1440 1 Lệnh điều chỉnh: 237.6ms
+1440 1 Nguyên liệu: 1380.1ms
+1440 1 Nhà cung ứng: 313.7ms
+1440 1 Phiếu xuất kho: 220.3ms
+1440 1 Đối chiếu PO / Phiếu xuất kho: 261.4ms
+1440 2 Trường học: 340.5ms
+1440 2 Thực đơn: 630.9ms
+1440 2 Xác nhận nhu cầu: 680.4ms
+1440 2 Phân bổ NCC: 261.2ms
+1440 2 Đơn mua: 297.0ms
+1440 2 Công thức: 275.3ms
+1440 2 Lệnh điều chỉnh: 257.2ms
+1440 2 Nguyên liệu: 1327.8ms
+1440 2 Nhà cung ứng: 291.0ms
+1440 2 Phiếu xuất kho: 192.7ms
+1440 2 Đối chiếu PO / Phiếu xuất kho: 374.9ms
+1440 3 Trường học: 397.5ms
+1440 3 Thực đơn: 708.0ms
+1440 3 Xác nhận nhu cầu: 634.1ms
+1440 3 Phân bổ NCC: 255.6ms
+1440 3 Đơn mua: 213.0ms
+1440 3 Công thức: 249.6ms
+1440 3 Lệnh điều chỉnh: 474.5ms
+1440 3 Nguyên liệu: 1263.0ms
+1440 3 Nhà cung ứng: 297.9ms
+1440 3 Phiếu xuất kho: 188.1ms
+1440 3 Đối chiếu PO / Phiếu xuất kho: 334.8ms
+1440 4 Trường học: 302.8ms
+1440 4 Thực đơn: 692.1ms
+1440 4 Xác nhận nhu cầu: 646.4ms
+1440 4 Phân bổ NCC: 251.5ms
+1440 4 Đơn mua: 222.9ms
+1440 4 Công thức: 224.9ms
+1440 4 Lệnh điều chỉnh: 279.7ms
+1440 4 Nguyên liệu: 1476.6ms
+1440 4 Nhà cung ứng: 285.3ms
+1440 4 Phiếu xuất kho: 207.8ms
+1440 4 Đối chiếu PO / Phiếu xuất kho: 265.9ms
+1440 5 Trường học: 330.3ms
+1440 5 Thực đơn: 585.1ms
+1440 5 Xác nhận nhu cầu: 705.0ms
+1440 5 Phân bổ NCC: 214.3ms
+1440 5 Đơn mua: 208.4ms
+1440 5 Công thức: 220.0ms
+1440 5 Lệnh điều chỉnh: 342.2ms
+1440 5 Nguyên liệu: 1477.1ms
+1440 5 Nhà cung ứng: 292.5ms
+1440 5 Phiếu xuất kho: 263.2ms
+1440 5 Đối chiếu PO / Phiếu xuất kho: 317.4ms
+starting 1440
+11 owners ready at 1440
+1440 0 Trường học: 376.0ms
+1440 0 Thực đơn: 596.2ms
+1440 0 Xác nhận nhu cầu: 674.9ms
+1440 0 Phân bổ NCC: 223.6ms
+1440 0 Đơn mua: 243.0ms
+1440 0 Công thức: 262.4ms
+1440 0 Lệnh điều chỉnh: 278.1ms
+1440 0 Nguyên liệu: 1404.3ms
+1440 0 Nhà cung ứng: 342.1ms
+1440 0 Phiếu xuất kho: 250.6ms
+1440 0 Đối chiếu PO / Phiếu xuất kho: 280.9ms
+1440 1 Trường học: 373.5ms
+1440 1 Thực đơn: 722.6ms
+1440 1 Xác nhận nhu cầu: 597.6ms
+1440 1 Phân bổ NCC: 277.9ms
+1440 1 Đơn mua: 242.3ms
+1440 1 Công thức: 222.5ms
+1440 1 Lệnh điều chỉnh: 277.6ms
+1440 1 Nguyên liệu: 1330.9ms
+1440 1 Nhà cung ứng: 272.0ms
+1440 1 Phiếu xuất kho: 216.0ms
+1440 1 Đối chiếu PO / Phiếu xuất kho: 252.4ms
+1440 2 Trường học: 366.3ms
+1440 2 Thực đơn: 648.3ms
+1440 2 Xác nhận nhu cầu: 642.0ms
+1440 2 Phân bổ NCC: 270.8ms
+1440 2 Đơn mua: 220.4ms
+1440 2 Công thức: 235.0ms
+1440 2 Lệnh điều chỉnh: 261.1ms
+1440 2 Nguyên liệu: 1274.5ms
+1440 2 Nhà cung ứng: 321.0ms
+1440 2 Phiếu xuất kho: 220.0ms
+1440 2 Đối chiếu PO / Phiếu xuất kho: 250.0ms
+1440 3 Trường học: 381.8ms
+1440 3 Thực đơn: 587.2ms
+1440 3 Xác nhận nhu cầu: 646.6ms
+1440 3 Phân bổ NCC: 253.4ms
+1440 3 Đơn mua: 215.7ms
+1440 3 Công thức: 258.8ms
+1440 3 Lệnh điều chỉnh: 343.5ms
+1440 3 Nguyên liệu: 1302.8ms
+1440 3 Nhà cung ứng: 283.1ms
+1440 3 Phiếu xuất kho: 204.3ms
+1440 3 Đối chiếu PO / Phiếu xuất kho: 254.1ms
+1440 4 Trường học: 347.9ms
+1440 4 Thực đơn: 669.8ms
+1440 4 Xác nhận nhu cầu: 667.6ms
+1440 4 Phân bổ NCC: 217.9ms
+1440 4 Đơn mua: 210.8ms
+1440 4 Công thức: 229.4ms
+1440 4 Lệnh điều chỉnh: 230.0ms
+1440 4 Nguyên liệu: 1360.3ms
+1440 4 Nhà cung ứng: 281.7ms
+1440 4 Phiếu xuất kho: 196.4ms
+1440 4 Đối chiếu PO / Phiếu xuất kho: 295.5ms
+1440 5 Trường học: 317.1ms
+1440 5 Thực đơn: 576.8ms
+1440 5 Xác nhận nhu cầu: 770.0ms
+1440 5 Phân bổ NCC: 241.4ms
+1440 5 Đơn mua: 203.7ms
+1440 5 Công thức: 228.6ms
+1440 5 Lệnh điều chỉnh: 253.5ms
+1440 5 Nguyên liệu: 1259.6ms
+1440 5 Nhà cung ứng: 305.7ms
+1440 5 Phiếu xuất kho: 195.4ms
+1440 5 Đối chiếu PO / Phiếu xuất kho: 272.3ms
+[{"width": 1440, "before": 277.6, "after": 297, "before_p95": 1274.5, "after_p95": 1327.8}]

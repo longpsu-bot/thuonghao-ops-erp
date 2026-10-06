@@ -1,0 +1,30 @@
+Bàn làm việc ['rgb(184, 222, 208)', '2px', '2px']
+{"tag": "INPUT", "name": "", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "INPUT", "name": "", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "INPUT", "name": "Định lượng Bí đỏ", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "INPUT", "name": "Ghi chú Bí đỏ", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "INPUT", "name": "", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "SELECT", "name": "Tất cảĐang dùngNgừng dùngNháp", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "SELECT", "name": "Tất cảMón canhMón mặnLoại món cũ", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "SELECT", "name": "Khối nhỏKhối lớn", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Nhập workbook", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Làm mới dữ liệu", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Tạo món mới", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Canh bí đỏ thịt bằm", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Thịt heo kho", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Canh rau củ", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Đậu sốt cà chua", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Cá kho gừng", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Canh cải xanh", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Trứng hấp", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Gà xào nấm", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Canh khoai mỡ", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Thịt rim", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Rau củ luộc", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa công thức Cơm trắng", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Đóng công thức", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sửa thông tin món", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Sao chép công thức", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Mở lịch — Ngày áp dụng", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Bỏ Bí đỏ", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}
+{"tag": "BUTTON", "name": "Xem thay đổi", "color": "rgb(15, 100, 78)", "width": "2px", "offset": "2px"}

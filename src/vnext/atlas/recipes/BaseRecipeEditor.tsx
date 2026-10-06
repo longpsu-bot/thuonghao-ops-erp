@@ -5,9 +5,11 @@ import {
   Flex,
   Heading,
   Input,
+  Icon,
   Table,
   Text,
 } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { ingredientLabel, unitLabel } from "../bridges/dishRecipe";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
@@ -176,7 +178,12 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                         role="alert"
                         textStyle="helper"
                         color="status.danger"
+                        layerStyle="feedbackDanger"
+                        p="xs"
                       >
+                        <Icon asChild mr="xs">
+                          <WarningCircle aria-hidden="true" />
+                        </Icon>
                         Nguyên liệu chưa có đơn vị mua đang dùng. Hãy cập nhật
                         dữ liệu nguyên liệu trước khi lưu công thức.
                       </Text>
@@ -188,7 +195,12 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                           role="alert"
                           textStyle="helper"
                           color="status.danger"
+                          layerStyle="feedbackDanger"
+                          p="xs"
                         >
+                          <Icon asChild mr="xs">
+                            <WarningCircle aria-hidden="true" />
+                          </Icon>
                           Đơn vị đã lưu khác đơn vị mua hiện tại. Cần kiểm tra
                           dữ liệu công thức trước khi lưu.
                         </Text>

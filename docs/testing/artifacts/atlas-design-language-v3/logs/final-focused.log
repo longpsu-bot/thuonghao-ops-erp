@@ -1,0 +1,8 @@
+
+ RUN  v4.1.10 E:/Project/OPS ERP/thuonghao-ops-erp
+
+
+ Test Files  5 passed (5)
+      Tests  77 passed (77)
+   Start at  14:40:02
+   Duration  81.05s (transform 1.68s, setup 0ms, import 39.01s, tests 34.57s, environment 6.00s)

@@ -188,7 +188,9 @@ describe("Atlas vNext provider", () => {
     );
     const child = screen.getByText("var(--atlas-colors-bg-workspace)");
     expect(child.closest(".atlas-vnext")).toBeInTheDocument();
-    expect(atlasSystem.token("colors.atlas.workspace")).toBe("#EDF0ED");
+    expect(child).toHaveStyle({
+      background: "var(--atlas-colors-bg-workspace)",
+    });
   });
 
   it("scopes resets, globals and variables without adopting global html/body selectors", () => {

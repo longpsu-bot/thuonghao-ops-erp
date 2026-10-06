@@ -1,0 +1,33 @@
+$ vitest run "--maxWorkers=1" "--exclude" ".superpowers/sdd/atlas-design-language-v3/baseline/**"
+
+ RUN  v4.1.10 E:/Project/OPS ERP/thuonghao-ops-erp
+
+Not implemented: Window's confirm() method
+ ❯ src/vnext/atlas/AtlasTableViewport.test.tsx (3 tests | 1 failed) 447ms
+   × shows semantic, motion-free continuation cues only while content remains 93ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/vnext/atlas/AtlasTableViewport.test.tsx > shows semantic, motion-free continuation cues only while content remains
+Error: expect(element).toHaveStyle()
+
+- Expected
+
+- zIndex: var(--atlas-layout-continuation-z, 0);
+ ❯ src/vnext/atlas/AtlasTableViewport.test.tsx:136:58
+    134|     "start",
+    135|   );
+    136|   expect(screen.getByTestId("table-continuation-start")).toHaveStyle({
+       |                                                          ^
+    137|     zIndex: "var(--atlas-layout-continuation-z, 0)",
+    138|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 183 passed (184)
+      Tests  1 failed | 2475 passed (2476)
+   Start at  15:09:18
+   Duration  1191.30s (transform 7.94s, setup 0ms, import 477.85s, tests 477.01s, environment 193.40s)
+
+[ELIFECYCLE] Test failed. See above for more details.

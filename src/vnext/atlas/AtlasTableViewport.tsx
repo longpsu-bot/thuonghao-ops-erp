@@ -94,7 +94,8 @@ export function AtlasTableViewport({
           insetBlock="var(--atlas-layout-zero, 0)"
           left="var(--atlas-layout-zero, 0)"
           w="6"
-          zIndex="var(--atlas-layout-sticky-header-z, 3)"
+          // Keep pinned identity and its selected edge above the scroll fade.
+          zIndex="var(--atlas-layout-continuation-z, 0)"
           transition="var(--atlas-layout-motion, none)"
           style={{
             background:
