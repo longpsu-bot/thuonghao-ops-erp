@@ -96,12 +96,21 @@ SET membership to replace the helper and restores SET false. Task 1 verified
 both membership rows afterward. D-047 already rejects mismatched new PRESENT
 revisions atomically; this PR does not replace its command error semantics.
 
-After separate deployment approval: apply the reviewed repository migration,
-verify shaped v2 reads/readback and helper ownership/ACL/SET flags, then enable
-the coordinated frontend and smoke-test with authorized synthetic data. The
-new frontend deployed first fails closed for Recipe authoring until purchase
-Unit metadata is available. Do not treat that safe blocker as completed hosted
-enablement. No hosted command was run during this certification.
+Owner-authorized Atlas Staging deployment was completed on 6 October 2026
+before frontend merge. The managed migration was recorded by Staging as
+`20261006112515_atlas_recipe_purchase_unit_read`, and this PR's migration
+filename is aligned to that exact hosted version. Post-apply verification
+confirmed the helper remains owned by `atlas_owner`, STABLE, SECURITY INVOKER,
+with empty `search_path` and unchanged private runtime ACLs; postgres→atlas_owner
+SET remains false. A direct shaped helper read returned all 377 Ingredient
+references with both `purchase_unit_id` and `purchase_unit_name`.
+
+Pre/post fingerprints for `atlas_admin.ingredients`, `recipes`,
+`recipe_versions` and `recipe_line_revisions` are byte-for-byte identical
+at the audited fact projection, so the migration changed no business rows or
+historical Recipe facts. No business command was executed. The currently
+deployed frontend tolerates the additive Ingredient keys; #354 remains the
+separate frontend enablement boundary.
 
 Rollback uses a reviewed forward migration restoring the previous helper body,
 same owner/properties/ACL, and restored SET false; coordinate frontend rollback
