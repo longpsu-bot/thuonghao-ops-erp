@@ -8,7 +8,7 @@ The Product Owner reopened the visual portions of Atlas Design Language v2 follo
 
 Question: which shared palette makes boundaries, controls, selection and operational text easiest to scan on the existing Atlas workspaces?
 
-Prototype branch: `codex/atlas-v3-legibility-variants`, based on #354 commit `ea0d00a3cbf413588462873b8e03370e476f08d6`. The comparison is local and has not been pushed into #354. D-048 owner architecture, retained drafts, commands, quantities, units, status lifecycles, backend authority, contracts, layout composition and responsive breakpoints remain fixed. No database migration, dependency, hosted write or production data change is involved.
+Prototype branch: `codex/atlas-v3-legibility-variants`, based on #354 commit `ea0d00a3cbf413588462873b8e03370e476f08d6`. The prototypes run through the local review route and are published on the separate comparison branch; they have not been applied to #354. D-048 owner architecture, retained drafts, commands, quantities, units, status lifecycles, backend authority, contracts, layout composition and responsive breakpoints remain fixed. No database migration, dependency, hosted write or production data change is involved.
 
 Allowed files: the opt-in review entry, an optional system argument in the existing Atlas provider, one prototype token/recipe overlay, a capture script and this evidence. The normal production provider still defaults to the unchanged Atlas v2 system. These prototypes reuse its scoped system and portals.
 
@@ -29,12 +29,12 @@ Use 100% mode for legibility; the fit overview scales pixels and is only useful 
 
 Every variant uses the same fixture date, records, drafts and open-owner set:
 
-| Screen           | Fixed comparison state                                                                                                     |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Thực đơn         | Google source candidate with one valid soup cell and one unresolved dish; save remains blocked with its exact diagnostics. |
-| Xác nhận nhu cầu | Gạo thơm quantity 31, reason OTHER and the same explanatory note; remaining six-line need workbench data unchanged.        |
-| Công thức        | Canh bí đỏ thịt bằm selected; Bí đỏ draft quantity 2,25 with read-only Kilôgam derived from its Ingredient.                |
-| Phân bổ NCC      | Gạo thơm selected; 60/40 allocation and “Giao sớm” supplier note; existing save/close behavior.                            |
+| Screen           | Fixed comparison state                                                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Thực đơn         | Google source candidate with one valid soup cell and one unresolved dish; save remains blocked with its exact diagnostics.   |
+| Xác nhận nhu cầu | Gạo thơm quantity 31, reason OTHER and the same explanatory note; other lines in the same six-line need workbench unchanged. |
+| Công thức        | Canh bí đỏ thịt bằm selected; Bí đỏ draft quantity 2,25 with read-only Kilôgam derived from its Ingredient.                  |
+| Phân bổ NCC      | Gạo thơm selected; 60/40 allocation and “Giao sớm” supplier note; existing save/close behavior.                              |
 
 The capture check compares normalized owner text and control values across A/B/C for each screen/viewport. [Measurements](../testing/artifacts/atlas-v3-legibility-variants/measurements.json) record computed styles, selected-row markers, owners and focus/overflow checks. [Token contrast](../testing/artifacts/atlas-v3-legibility-variants/token-contrast.json) records palette values and computed luminance ratios.
 
