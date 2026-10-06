@@ -46,6 +46,97 @@ async function select(action = "Sửa") {
   await screen.findByRole("heading", { name: "Công thức gốc" });
 }
 describe("Công thức operator workbench", () => {
+  it("adds the Ingredient purchase Unit instead of the first active Unit and saves exact readback", async () => {
+    const f = await setup("DISH_ACTIVE_EDITABLE", ({ data }) => {
+      Object.assign(data.ingredients[3], {
+        purchase_unit_id: "litre",
+        purchase_unit_name: "Lít",
+      });
+      data.units.push({
+        unit_id: "litre",
+        unit_code: "litre",
+        unit_name: "Lít",
+        unit_status: "ACTIVE",
+      });
+    });
+    await select();
+    fireEvent.change(screen.getByLabelText("Tìm nguyên liệu để thêm"), {
+      target: { value: "Cà rốt" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Thêm Cà rốt" }));
+    const row = screen.getByLabelText("Định lượng Cà rốt").closest("tr")!;
+    expect(within(row).queryByRole("combobox")).not.toBeInTheDocument();
+    expect(within(row).getByText("Lít")).toBeVisible();
+    const save = vi.spyOn(f.api, "saveRecipe");
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu công thức" }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    expect(save.mock.calls[0][0].payload.lines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ingredient_id: "ingredient-3",
+          unit_id: "litre",
+        }),
+      ]),
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText("Định lượng Cà rốt")).toHaveValue("1"),
+    );
+    expect(
+      within(
+        screen.getByLabelText("Định lượng Cà rốt").closest("tr")!,
+      ).getByText("Lít"),
+    ).toBeVisible();
+  });
+  it.each(["missing", "inactive"])(
+    "blocks saving an added Ingredient with %s purchase Unit",
+    async (state) => {
+      const f = await setup("DISH_ACTIVE_EDITABLE", ({ data }) => {
+        Object.assign(data.ingredients[3], {
+          purchase_unit_id: state === "missing" ? null : "old-unit",
+          purchase_unit_name: state === "missing" ? null : "Đơn vị cũ",
+        });
+      });
+      await select();
+      const save = vi.spyOn(f.api, "saveRecipe");
+      fireEvent.change(screen.getByLabelText("Tìm nguyên liệu để thêm"), {
+        target: { value: "Cà rốt" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Thêm Cà rốt" }));
+      expect(
+        screen.getByText(/Nguyên liệu chưa có đơn vị mua đang dùng/),
+      ).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: "Xem thay đổi" }),
+      ).toBeDisabled();
+      expect(save).not.toHaveBeenCalled();
+    },
+  );
+  it("preserves a historical stored Unit and blocks mismatched normal authoring", async () => {
+    await setup("DISH_ACTIVE_EDITABLE", ({ data }) => {
+      Object.assign(data.ingredients[0], {
+        purchase_unit_id: "litre",
+        purchase_unit_name: "Lít",
+      });
+      data.units.push({
+        unit_id: "litre",
+        unit_code: "litre",
+        unit_name: "Lít",
+        unit_status: "ACTIVE",
+      });
+    });
+    await select();
+    const row = screen.getByLabelText("Định lượng Bí đỏ").closest("tr")!;
+    expect(within(row).queryByRole("combobox")).not.toBeInTheDocument();
+    expect(within(row).getByText("Kilôgam")).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
+      target: { value: "2" },
+    });
+    expect(
+      screen.getByText(/Đơn vị đã lưu khác đơn vị mua hiện tại/),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
+  });
   it("shows pending catalogue loading instead of a false empty result", async () => {
     const fixture = createRecipeReviewFixture("DISH_ACTIVE_EDITABLE");
     fixture.api.getWorkbench = async () => new Promise(() => {});

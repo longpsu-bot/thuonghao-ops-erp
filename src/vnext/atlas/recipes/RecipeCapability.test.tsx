@@ -22,9 +22,11 @@ async function setup(
   scenario: ChangeOrderScenario = "ACTIVE",
   initialJob: "recipes" | "changes" = "changes",
   onWorkspaceStatus?: (status: AtlasWorkbenchStatus) => void,
+  configure?: (fixture: ReturnType<typeof createChangeOrderFixture>) => void,
 ) {
   const f = createChangeOrderFixture(scenario),
     base = createRecipeReviewFixture("DISH_ACTIVE_EDITABLE");
+  configure?.(f);
   render(
     <AtlasVNextProvider>
       <RecipeCapability
@@ -272,11 +274,21 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
     choose("Tên món", "Bỏ tên này");
     fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
+    const discard = await screen.findByRole("dialog");
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(discard).getByRole("button", {
         name: "Bỏ thay đổi",
       }),
     );
+    expect(screen.getByLabelText("Tên món")).toHaveValue("Bỏ tên này");
+    expect(status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: true }),
+    );
+    await waitFor(() =>
+      expect(discard).toHaveAttribute("data-state", "closed"),
+    );
+    // jsdom does not run CSS exit animations; production completes this in the browser.
+    fireEvent(discard, new Event("animationcancel", { bubbles: true }));
     await waitFor(() =>
       expect(screen.queryByLabelText("Tên món")).not.toBeInTheDocument(),
     );
@@ -513,6 +525,55 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       );
       await waitFor(() =>
         expect(f.calls.filter((c) => c.name === "create")).toHaveLength(1),
+      );
+    },
+  );
+  it.each(["ADD", "REPLACE", "ADJUST_QUANTITY"])(
+    "attaches the authoritative Unit to %s quantity without changing payload semantics",
+    async (action) => {
+      const f = await setup("ACTIVE", "changes", undefined, ({ data }) => {
+        data.ingredients[3].purchase_unit_id = "litre";
+        data.ingredients[3].purchase_unit_name = "Lít";
+        data.units.push({
+          unit_id: "litre",
+          unit_code: "litre",
+          unit_name: "Lít",
+          unit_status: "ACTIVE",
+        });
+      });
+      await editor(action);
+      if (action === "REPLACE") {
+        choose("Định lượng", "change");
+        choose("Định lượng mới", "1,5");
+      }
+      const input = screen.getByLabelText("Định lượng mới");
+      expect(input.parentElement).toHaveAccessibleName("Định lượng và đơn vị");
+      expect(input).toHaveAccessibleDescription(
+        action === "ADJUST_QUANTITY" ? "Kilôgam" : "Lít",
+      );
+      const unit = document.getElementById(
+        input.getAttribute("aria-describedby")!,
+      )!;
+      expect(input.parentElement).toContainElement(unit);
+      expect(
+        screen.queryByRole("combobox", { name: "Đơn vị" }),
+      ).not.toBeInTheDocument();
+      choose("Định lượng mới", "0");
+      await waitFor(() =>
+        expect(input).toHaveAccessibleErrorMessage(
+          /Nhập số thập phân lớn hơn 0/,
+        ),
+      );
+      choose("Định lượng mới", "1,5");
+      fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
+      await screen.findByRole("dialog", { name: "Xem tác động" });
+      const request = f.calls.find((call) => call.name === "preview")!
+        .payload as { proposed_adjustment: unknown };
+      expect(request.proposed_adjustment).toEqual(
+        expect.objectContaining({
+          quantity_per_basis: 1.5,
+          unit_id: action === "ADJUST_QUANTITY" ? null : "litre",
+        }),
       );
     },
   );

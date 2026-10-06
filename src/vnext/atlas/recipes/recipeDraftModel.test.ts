@@ -39,7 +39,13 @@ describe("base Recipe draft boundary", () => {
     composition: [line],
   };
   const refs = {
-    ingredients: [{ ingredient_id: "pumpkin", ingredient_status: "ACTIVE" }],
+    ingredients: [
+      {
+        ingredient_id: "pumpkin",
+        ingredient_status: "ACTIVE",
+        purchase_unit_id: "kg",
+      },
+    ],
     units: [{ unit_id: "kg", unit_status: "ACTIVE" }],
   };
   it("preserves stable identity, exact selected basis and optional note in the save payload", () => {
@@ -88,6 +94,22 @@ describe("base Recipe draft boundary", () => {
     ).toBe(false);
     expect(sameComposition([line], [])).toBe(false);
   });
+  it.each([null, "other"])(
+    "rejects a missing or mismatched purchase Unit %s without rewriting history",
+    (purchaseUnit) => {
+      const draft = recipeDraftFor(selection);
+      expect(draft.lines[0].unitId).toBe("kg");
+      expect(
+        validRecipeDraft(draft, {
+          ...refs,
+          ingredients: [
+            { ...refs.ingredients[0], purchase_unit_id: purchaseUnit },
+          ],
+        }),
+      ).toBe(false);
+      expect(recipeDraftFor(selection).lines[0].unitId).toBe("kg");
+    },
+  );
   it("uses canonical codes, never display names or unrelated School Types", () => {
     expect(
       canonicalScopes([

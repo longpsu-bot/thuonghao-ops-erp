@@ -262,7 +262,11 @@ function fixtures(): RecipeWorkbenchData {
         ingredient_name: "Hành lá hiệu lực",
         ingredient_status: "ACTIVE",
       },
-    ],
+    ].map((ingredient) => ({
+      ...ingredient,
+      purchase_unit_id: ids.unit,
+      purchase_unit_name: "Kilôgam",
+    })),
     units: [
       {
         unit_id: ids.unit,

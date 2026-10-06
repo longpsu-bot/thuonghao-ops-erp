@@ -46,7 +46,6 @@ export function ChangeComposition({
           <Table.Row>
             <Table.ColumnHeader>Nguyên liệu</Table.ColumnHeader>
             <Table.ColumnHeader textAlign="end">Định lượng</Table.ColumnHeader>
-            <Table.ColumnHeader>Đơn vị</Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -67,9 +66,7 @@ export function ChangeComposition({
               <Table.Cell textAlign="end">
                 {l.final_quantity_per_basis.toLocaleString("vi-VN", {
                   maximumFractionDigits: 6,
-                })}
-              </Table.Cell>
-              <Table.Cell>
+                })}{" "}
                 {data.units.find((u) => u.unit_id === l.final_unit_id)
                   ?.unit_name ?? "—"}
               </Table.Cell>

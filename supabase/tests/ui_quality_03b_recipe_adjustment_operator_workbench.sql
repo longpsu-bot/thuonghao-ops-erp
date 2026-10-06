@@ -66,7 +66,9 @@ select ok(
 
 select is(
   (select count(*) from atlas_core.capabilities),
-  29::bigint,
+  -- 20260907130000_school_dispatch_release adds dispatch.school_release.read
+  -- and dispatch.school_release.release; Recipe enrichment adds no capability.
+  31::bigint,
   'the operator enrichment introduces no capability beyond the current catalog'
 );
 

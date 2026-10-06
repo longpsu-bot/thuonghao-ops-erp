@@ -232,6 +232,22 @@ create temporary table uiq03a_results (
 );
 grant select, insert on uiq03a_results to authenticated;
 
+-- A forged normal Save must fail atomically at the existing D-047 boundary.
+create function pg_temp.recipe_unit_request(p_name text, p_unit_id uuid)
+returns jsonb language sql as $$
+  select pg_temp.uiq03a_request(p_name, 1, jsonb_build_object(
+    'dish_id', 'f3100000-0000-0000-0000-000000000030',
+    'school_type_id', null, 'recipe_version_id', null, 'basis_portions', 80,
+    'lines', jsonb_build_array(jsonb_build_object(
+      'recipe_line_id', 'f3200000-0000-0000-0000-000000000009',
+      'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
+      'quantity_per_basis', 2.5, 'unit_id', p_unit_id, 'operational_note', null
+    ))
+  ));
+$$;
+insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code, decimal_scale)
+values ('f3100000-0000-0000-0000-000000000019', 'uiq03a-litre', 'UIQ03A litre', 'VOLUME', 3);
+
 create temporary table uiq03a_import_documents (
   document_name text primary key,
   canonical_json text not null,
@@ -316,6 +332,42 @@ select set_config(
   'f3000000-0000-0000-0000-000000000101',
   true
 );
+insert into uiq03a_results values ('save-wrong-unit', atlas_api.save_recipe(
+  pg_temp.recipe_unit_request('wrong-unit', 'f3100000-0000-0000-0000-000000000019')
+));
+reset role;
+select is((select response_payload->>'error_code' from uiq03a_results where result_name='save-wrong-unit'),
+  'INTERNAL_COMMAND_FAILURE', 'Save rejects an active Unit that differs from Ingredient purchase Unit');
+select is((select count(*)::integer from atlas_admin.recipe_line_revisions
+  where recipe_line_id='f3200000-0000-0000-0000-000000000009'), 0,
+  'mismatched Save creates no immutable line revision');
+select is((select count(*)::integer from atlas_admin.recipes
+  where dish_id='f3100000-0000-0000-0000-000000000030'), 0,
+  'mismatched Save rolls back its Recipe root and version');
+
+update atlas_admin.ingredients set purchase_unit_id=null
+where ingredient_id='f3100000-0000-0000-0000-000000000020';
+set local role authenticated;
+insert into uiq03a_results values ('save-missing-purchase-unit', atlas_api.save_recipe(
+  pg_temp.recipe_unit_request('missing-purchase-unit', 'f3100000-0000-0000-0000-000000000010')
+));
+reset role;
+select is((select response_payload->>'error_code' from uiq03a_results where result_name='save-missing-purchase-unit'),
+  'INTERNAL_COMMAND_FAILURE', 'Save fails closed when Ingredient has no purchase Unit');
+update atlas_admin.ingredients set purchase_unit_id='f3100000-0000-0000-0000-000000000010'
+where ingredient_id='f3100000-0000-0000-0000-000000000020';
+update atlas_admin.units set unit_status='INACTIVE'
+where unit_id='f3100000-0000-0000-0000-000000000010';
+set local role authenticated;
+insert into uiq03a_results values ('save-inactive-purchase-unit', atlas_api.save_recipe(
+  pg_temp.recipe_unit_request('inactive-purchase-unit', 'f3100000-0000-0000-0000-000000000010')
+));
+reset role;
+select is((select response_payload->>'error_code' from uiq03a_results where result_name='save-inactive-purchase-unit'),
+  'VALIDATION_FAILED', 'Save rejects an inactive purchase Unit');
+update atlas_admin.units set unit_status='ACTIVE'
+where unit_id='f3100000-0000-0000-0000-000000000010';
+set local role authenticated;
 insert into uiq03a_results values (
   'save-new',
   atlas_api.save_recipe(
@@ -341,6 +393,48 @@ insert into uiq03a_results values (
   )
 );
 reset role;
+
+select is((select ingredient->>'purchase_unit_id' from uiq03a_results,
+  lateral jsonb_array_elements(response_payload#>'{authoritative_readback,ingredients}') ingredient
+  where result_name='save-new' and ingredient->>'ingredient_id'='f3100000-0000-0000-0000-000000000020'),
+  'f3100000-0000-0000-0000-000000000010', 'v2 Save readback includes the configured Ingredient purchase Unit');
+select is((select ingredient->>'purchase_unit_name' from uiq03a_results,
+  lateral jsonb_array_elements(response_payload#>'{authoritative_readback,ingredients}') ingredient
+  where result_name='save-new' and ingredient->>'ingredient_id'='f3100000-0000-0000-0000-000000000020'),
+  'UIQ03A kilogram', 'v2 Save readback includes the controlled purchase Unit name');
+
+-- Current Ingredient references never rewrite already-materialized Unit evidence.
+update atlas_admin.ingredients set purchase_unit_id='f3100000-0000-0000-0000-000000000019'
+where ingredient_id='f3100000-0000-0000-0000-000000000020';
+set local role authenticated;
+insert into uiq03a_results
+select 'unit-read-' || contract, atlas_api.get_dish_recipe_workbench(jsonb_build_object(
+  'contract_version', contract, 'requested_by_auth_subject', 'f3000000-0000-0000-0000-000000000101',
+  'correlation_id', gen_random_uuid(),
+  'payload', case when contract='RMVP-02A.v2' then jsonb_build_object(
+    'dish_id', 'f3100000-0000-0000-0000-000000000030', 'school_type_id', null
+  ) else '{}'::jsonb end
+)) from unnest(array['RMVP-02A.v1','RMVP-02A.v2']) contract;
+reset role;
+select is((select ingredient->>'purchase_unit_id' from uiq03a_results,
+  lateral jsonb_array_elements(response_payload#>'{workbench,ingredients}') ingredient
+  where result_name='unit-read-RMVP-02A.v2' and ingredient->>'ingredient_id'='f3100000-0000-0000-0000-000000000020'),
+  'f3100000-0000-0000-0000-000000000019', 'v2 authorized read exposes the current purchase Unit');
+select is((select response_payload#>>'{workbench,selected_recipe,composition,0,unit_id}'
+  from uiq03a_results where result_name='unit-read-RMVP-02A.v2'),
+  'f3100000-0000-0000-0000-000000000010', 'historical composition retains its exact stored Unit');
+select ok((select bool_and(not (ingredient ? 'purchase_unit_id')) from uiq03a_results,
+  lateral jsonb_array_elements(response_payload#>'{workbench,ingredients}') ingredient
+  where result_name='unit-read-RMVP-02A.v1'), 'v1 Ingredient read shape remains compatible');
+update atlas_admin.ingredients set purchase_unit_id='f3100000-0000-0000-0000-000000000010'
+where ingredient_id='f3100000-0000-0000-0000-000000000020';
+
+select ok((select not prosecdef and provolatile='s' and proconfig=array['search_path=""']::text[]
+  and pg_get_userbyid(proowner)='atlas_owner'
+  and not has_function_privilege('authenticated', oid, 'EXECUTE')
+  and not has_function_privilege('anon', oid, 'EXECUTE')
+  from pg_proc where oid='atlas_core.uiq03a_workbench_payload(uuid,uuid,uuid)'::regprocedure),
+  'v2 payload keeps private invoker ownership, volatility, fixed search_path and grants');
 
 select is(
   (

@@ -45,7 +45,11 @@ export function recipeDraftFor(
 export function validRecipeDraft(
   draft: RecipeDraft,
   refs: {
-    ingredients: { ingredient_id: string; ingredient_status: string }[];
+    ingredients: {
+      ingredient_id: string;
+      ingredient_status: string;
+      purchase_unit_id?: string | null;
+    }[];
     units: { unit_id: string; unit_status: string }[];
   },
 ) {
@@ -64,7 +68,8 @@ export function validRecipeDraft(
         refs.ingredients.some(
           (i) =>
             i.ingredient_id === l.ingredientId &&
-            i.ingredient_status === "ACTIVE",
+            i.ingredient_status === "ACTIVE" &&
+            i.purchase_unit_id === l.unitId,
         ) &&
         refs.units.some(
           (u) => u.unit_id === l.unitId && u.unit_status === "ACTIVE",
