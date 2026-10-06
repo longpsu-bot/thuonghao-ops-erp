@@ -38,11 +38,23 @@ export function PlanningMenuStage({
       .filter((t) => t.dish_type_status === "ACTIVE")
       .sort((a, b) => a.display_order - b.display_order) ?? [];
   const correctionDates = c.impact?.date_impacts ?? [];
-  const issueGroups = new Map<string, number>();
-  for (const issue of c.menuSyncIssues) {
+  const invalidCellCount = new Set(
+    c.menuSyncIssues.map((issue) => issue.source_row_reference).filter(Boolean),
+  ).size;
+  const issueGroups = new Map<
+    string,
+    { cells: Set<string>; located: boolean }
+  >();
+  for (const [index, issue] of c.menuSyncIssues.entries()) {
     const cause =
       issue.code === "INVALID_DISH_ID" ? "UNKNOWN_DISH" : issue.code;
-    issueGroups.set(cause, (issueGroups.get(cause) ?? 0) + 1);
+    const group = issueGroups.get(cause) ?? {
+      cells: new Set<string>(),
+      located: true,
+    };
+    group.cells.add(issue.source_row_reference ?? `unlocated:${index}`);
+    group.located &&= !!issue.source_row_reference;
+    issueGroups.set(cause, group);
   }
   const correctionChain = correctionDates
     .filter((impact) =>
@@ -72,9 +84,13 @@ export function PlanningMenuStage({
             {c.menuSource.name || sources[0]?.source_name || "Chưa có nguồn"}
           </Text>
           <Text textStyle="helper" color="fg.muted">
-            {c.menuSyncedAt
-              ? `Đã đồng bộ lúc ${c.menuSyncedAt}`
-              : "Nguồn soạn thực đơn chính thức"}
+            {c.dirty
+              ? c.errors.length || c.menuSyncIssues.length
+                ? "Bản đồng bộ chưa lưu · Sửa ô lỗi trong Google Sheet rồi đồng bộ lại."
+                : "Bản đồng bộ chưa lưu."
+              : c.menuSyncedAt
+                ? `Đã đồng bộ lúc ${c.menuSyncedAt}`
+                : "Nguồn soạn thực đơn chính thức"}
           </Text>
         </Box>
         {sources.length ? (
@@ -153,19 +169,28 @@ export function PlanningMenuStage({
           borderColor="border.default"
         >
           <Text textStyle="label" color="status.danger">
-            Không thể đồng bộ thực đơn
+            {invalidCellCount
+              ? `${invalidCellCount} ô cần xử lý trước khi lưu.`
+              : "Không thể đồng bộ thực đơn"}
           </Text>
-          {Array.from(issueGroups, ([code, count]) => (
+          {Array.from(issueGroups, ([code, group]) => (
             <Text key={code} textStyle="helper" color="fg.default">
               {code === "UNKNOWN_DISH" || code === "INVALID_DISH_ID"
-                ? `${count} ô chưa xác định được món ăn.`
+                ? `${group.cells.size} ${group.located ? "ô" : "lỗi"} chưa xác định được món ăn.`
                 : code === "AMBIGUOUS_DISH"
-                  ? `${count} ô có tên món trùng và cần kiểm tra.`
-                  : `${count} lỗi: ${planningIssueMessage({ code, message: "", source_row_reference: null })}`}
+                  ? `${group.cells.size} ${group.located ? "ô" : "lỗi"} có tên món trùng và cần kiểm tra.`
+                  : `${group.cells.size} lỗi: ${planningIssueMessage({ code, message: "", source_row_reference: null })}`}
             </Text>
           ))}
-          {!c.menuSyncIssues.length &&
-            Array.from(new Set(c.errors)).map((error) => (
+          {Array.from(new Set(c.errors))
+            .filter(
+              (error) =>
+                !c.menuSyncIssues.some(
+                  (issue) =>
+                    planningIssueMessage({ ...issue, message: "" }) === error,
+                ),
+            )
+            .map((error) => (
               <Text key={error} textStyle="helper">
                 {error}
               </Text>
@@ -195,8 +220,21 @@ export function PlanningMenuStage({
                       <Text textStyle="helper" color="fg.muted">
                         {issue.menu_slot_name} · dòng {issue.source_row_number}
                       </Text>
+                      <Text textStyle="helper" color="fg.muted">
+                        {issue.school_name || "Chưa xác định trường"} ·{" "}
+                        {issue.service_date
+                          ? viDate(issue.service_date)
+                          : issue.source_date_value || "Chưa có ngày"}
+                      </Text>
                       <Text textStyle="helper">
                         {planningIssueMessage({ ...issue, message: "" })}
+                      </Text>
+                      <Text
+                        textStyle="helper"
+                        color="fg.muted"
+                        overflowWrap="anywhere"
+                      >
+                        {issue.source_row_reference}
                       </Text>
                     </Box>
                   ))}
@@ -257,7 +295,11 @@ export function PlanningMenuStage({
               <Button
                 variant="businessPrimary"
                 flexShrink="0"
-                disabled={!c.canEdit}
+                disabled={
+                  !c.canEdit ||
+                  c.errors.length > 0 ||
+                  c.menuSyncIssues.length > 0
+                }
                 onClick={() => void c.prepareCorrection(correctionChain)}
               >
                 Chuẩn bị hiệu chỉnh
@@ -326,19 +368,62 @@ export function PlanningMenuStage({
                     {s.school_name}
                   </Table.Cell>
                   {types.map((t) => {
-                    const line = c.menuRows.find(
+                    const lines = c.menuRows.filter(
                       (r) =>
                         r.school_id === s.school_id &&
                         r.service_date === c.date &&
                         r.menu_slot_code === t.dish_type_code,
                     );
+                    const issues = Array.from(
+                      new Map(
+                        c.menuSyncIssues
+                          .filter(
+                            (issue) =>
+                              issue.school_id === s.school_id &&
+                              issue.service_date === c.date &&
+                              issue.menu_slot_code === t.dish_type_code,
+                          )
+                          .map((issue) => [issue.source_row_reference, issue]),
+                      ).values(),
+                    );
                     return (
-                      <Table.Cell key={t.dish_type_id}>
-                        {line
-                          ? (c.data?.dishes.find(
-                              (d) => d.dish_id === line.dish_id,
-                            )?.dish_name ?? "Món chưa nhận diện")
-                          : "—"}
+                      <Table.Cell
+                        key={t.dish_type_id}
+                        data-invalid={issues.length > 0 ? "true" : undefined}
+                        bg={issues.length ? "bg.warning" : undefined}
+                      >
+                        {!lines.length && !issues.length && "—"}
+                        {lines.map((line, index) => {
+                          const dish = c.data?.dishes.find(
+                            (d) => d.dish_id === line.dish_id,
+                          );
+                          return dish || !issues.length ? (
+                            <Text
+                              key={`${line.source_row_reference}:${index}`}
+                              textStyle="body"
+                            >
+                              {dish?.dish_name ?? "Món chưa nhận diện"}
+                            </Text>
+                          ) : null;
+                        })}
+                        {issues.map((issue) => (
+                          <Box key={issue.source_row_reference}>
+                            <Text textStyle="helper" color="status.danger">
+                              {issue.code === "UNKNOWN_DISH" ||
+                              issue.code === "INVALID_DISH_ID"
+                                ? `Không tìm thấy món “${issue.source_value?.trim()}”`
+                                : issue.code === "AMBIGUOUS_DISH"
+                                  ? `Món “${issue.source_value?.trim()}” có tên trùng; cần kiểm tra.`
+                                  : planningIssueMessage({
+                                      ...issue,
+                                      message: "",
+                                    })}
+                            </Text>
+                            <Text textStyle="helper" color="fg.muted">
+                              Dòng {issue.source_row_number} · cần xử lý
+                            </Text>
+                          </Box>
+                        ))}
                       </Table.Cell>
                     );
                   })}

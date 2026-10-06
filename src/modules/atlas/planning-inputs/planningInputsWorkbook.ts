@@ -7,7 +7,7 @@ import type {
   PlanningSchool,
 } from "./planningInputsModel";
 
-export type MatrixCell = CellValue | string | number | boolean | null;
+export type MatrixCell = CellValue | string | number | boolean | Date | null;
 export type SourceMatrix = MatrixCell[][];
 
 const SCHOOL_CODE_COLUMNS = ["Mã trường", "school_code"] as const;
@@ -137,7 +137,10 @@ function canonicalDishReference(
 }
 
 function isoDate(value: MatrixCell | undefined): string {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date)
+    return Number.isFinite(value.getTime())
+      ? value.toISOString().slice(0, 10)
+      : String(value);
   const text = String(value ?? "").trim();
   const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
   if (iso) return text;
@@ -176,12 +179,21 @@ export type MenuMatrixReview = {
 export type MenuSourceCell = {
   source_row_reference: string;
   source_row_number: number;
+  school_id: string | null;
+  school_name: string;
+  source_school_value: string;
+  service_date: string | null;
+  source_date_value: string;
   menu_slot_code: string;
   menu_slot_name: string;
   source_value: string;
 };
 export type MenuSourceDiagnostic = MenuSourceCell & {
-  code: "UNKNOWN_DISH" | "AMBIGUOUS_DISH";
+  code:
+    | "UNKNOWN_DISH"
+    | "AMBIGUOUS_DISH"
+    | "UNKNOWN_SCHOOL"
+    | "INVALID_SERVICE_DATE";
 };
 
 export type MenuWorkbookReview = MenuMatrixReview & {
@@ -311,6 +323,10 @@ export async function parseMenuMatrix(
     const serviceDate = isoDate(
       sourceRow[aliasIndex(headers, DATE_COLUMNS) ?? -1],
     );
+    const validDate =
+      /^\d{4}-\d{2}-\d{2}$/.test(serviceDate) &&
+      Number.isFinite(Date.parse(serviceDate)) &&
+      new Date(serviceDate).toISOString().slice(0, 10) === serviceDate;
     const school = reference(
       schoolText,
       schools,
@@ -320,6 +336,7 @@ export async function parseMenuMatrix(
     );
     const rowNumber =
       (source.firstRowNumber ?? 1) + Math.max(headerOffset, -1) + offset + 1;
+    const rawRow = matrix[headerOffset + offset + 1];
     for (const { dishType, index } of typeColumns) {
       const dishText = cellAt(sourceRow, index);
       if (!dishText) continue;
@@ -327,12 +344,24 @@ export async function parseMenuMatrix(
       const evidence: MenuSourceCell = {
         source_row_reference: `${source.sourceName}:${source.sheetName}:row:${rowNumber}:${dishType.dish_type_code}`,
         source_row_number: rowNumber,
+        school_id: school?.school_id ?? null,
+        school_name: school?.school_name ?? schoolText,
+        source_school_value: String(
+          rawRow[aliasIndex(headers, SCHOOL_COLUMNS) ?? -1] ?? "",
+        ),
+        service_date: validDate ? serviceDate : null,
+        source_date_value: String(
+          rawRow[aliasIndex(headers, DATE_COLUMNS) ?? -1] ?? "",
+        ),
         menu_slot_code: dishType.dish_type_code,
         menu_slot_name: dishType.dish_type_name,
-        source_value: dishText,
+        source_value: String(rawRow[index] ?? ""),
       };
       sourceCells.push(evidence);
       if (resolved.code) diagnostics.push({ ...evidence, code: resolved.code });
+      if (!school) diagnostics.push({ ...evidence, code: "UNKNOWN_SCHOOL" });
+      if (!validDate)
+        diagnostics.push({ ...evidence, code: "INVALID_SERVICE_DATE" });
       if (resolved.compatibility && resolved.dish)
         compatibilityResolutions.push({
           ...evidence,

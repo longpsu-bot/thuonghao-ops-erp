@@ -23,6 +23,57 @@ async function setup() {
   return { ...hook, fixture };
 }
 describe("Planning source safety", () => {
+  it("preserves invalid Menu cells through cancelled context/close changes and discards only on confirmation", async () => {
+    const { result, fixture } = await setup();
+    fixture.api.syncMenuFromGoogle = async () =>
+      success({
+        source: { source_name: "Google", sheet_name: "Tuần" },
+        rows: [
+          ["Tên trường", "Ngày", "Món mặn", "Món canh"],
+          ["TH001", reviewWeek, "Món sai", "CANH2"],
+          ["TH001", reviewWeek, "MAN1", "Canh sai"],
+          ["Trường lạ", "31/02/2026", "MAN1", ""],
+        ],
+      });
+    const preview = vi.spyOn(fixture.api, "previewMenu");
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    await act(() => result.current.syncGoogle("google-1"));
+    const rows = result.current.menuRows;
+    const issues = result.current.menuSyncIssues;
+    expect(issues.map((issue) => issue.code)).toEqual([
+      "UNKNOWN_DISH",
+      "UNKNOWN_DISH",
+      "UNKNOWN_SCHOOL",
+      "INVALID_SERVICE_DATE",
+    ]);
+    expect(preview).not.toHaveBeenCalled();
+    const exit = vi.fn();
+    act(() => result.current.requestExit(exit));
+    expect(exit).not.toHaveBeenCalled();
+    expect(result.current.pending?.exit).toBe(exit);
+    act(() => result.current.cancelTransition());
+    for (const next of [
+      { week: "2026-09-14" },
+      { date: "2026-09-08" },
+      { schoolIds: ["school-1"] },
+    ]) {
+      act(() => result.current.transition(next));
+      expect(result.current.pending).toEqual(next);
+      act(() => result.current.cancelTransition());
+      expect(result.current.menuRows).toEqual(rows);
+      expect(result.current.menuSyncIssues).toEqual(issues);
+      expect(result.current.dirty).toBe(true);
+    }
+    act(() => result.current.transition({ date: "2026-09-08" }));
+    act(() => result.current.discardTransition());
+    expect(result.current.date).toBe("2026-09-08");
+    expect(result.current.dirty).toBe(false);
+    expect(result.current.menuSyncIssues).toEqual([]);
+    expect(result.current.menuRows).toEqual(
+      fixture.planning.weekly_menu!.lines,
+    );
+    expect(save).not.toHaveBeenCalled();
+  });
   it.each(["UNKNOWN_DISH", "AMBIGUOUS_DISH"])(
     "stops %s source identities before Preview and Save",
     async (code) => {
@@ -57,12 +108,151 @@ describe("Planning source safety", () => {
         source_row_number: 4,
       });
       expect(result.current.menuNotification).toBeNull();
-      expect(result.current.menuRows).toEqual(
-        fixture.planning.weekly_menu!.lines,
+      expect(result.current.menuRows[0].dish_id).toBe(
+        "unresolved:dish:món chưa rõ",
       );
+      expect(result.current.dirty).toBe(true);
       expect(result.current.canEdit).toBe(true);
     },
   );
+  it("retains valid neighbors and blocks programmatic review, Save and correction until a corrected resync", async () => {
+    const { result, fixture } = await setup();
+    const validSource = fixture.api.syncMenuFromGoogle;
+    fixture.api.syncMenuFromGoogle = async () =>
+      success({
+        source: { source_name: "Google", sheet_name: "Tuần" },
+        rows: [
+          ["Tên trường", "Ngày", "Món mặn", "Món canh"],
+          ["TH001", reviewWeek, "Món sai", "CANH2"],
+        ],
+      });
+    const before = structuredClone(fixture.planning.weekly_menu);
+    const preview = vi.spyOn(fixture.api, "previewMenu");
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    const prepare = vi.spyOn(fixture.api, "prepareCorrection");
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(result.current.menuRows.map((row) => row.dish_id)).toEqual([
+      "unresolved:dish:món sai",
+      "dish-2",
+    ]);
+    expect(result.current.menuSource.name).toBe("Google / Tuần");
+    expect(result.current.dirty).toBe(true);
+    expect(result.current.data?.weekly_menu).toEqual(before);
+    await act(() => result.current.previewChanges());
+    await act(() => result.current.save());
+    await act(() =>
+      result.current.prepareCorrection({
+        need_generation_run_id: "unapproved-chain",
+      } as never),
+    );
+    expect(preview).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+    expect(prepare).not.toHaveBeenCalled();
+    for (const next of [
+      { job: "attendance" },
+      { week: "2026-09-14" },
+      { refresh: true },
+    ]) {
+      act(() => result.current.transition(next));
+      expect(result.current.pending).toEqual(next);
+      act(() => result.current.cancelTransition());
+      expect(result.current.dirty).toBe(true);
+    }
+    fixture.api.syncMenuFromGoogle = validSource;
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(preview).toHaveBeenCalledOnce();
+    expect(save).toHaveBeenCalledOnce();
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contract_version: "RMVP-03A.v2",
+        expected_version: 4,
+        idempotency_key: expect.any(String),
+        payload: expect.objectContaining({
+          source_signature: "menu-preview",
+          expected_source_signature: "menu-authority",
+          rows: menuPreview().canonical_rows,
+        }),
+      }),
+    );
+    expect(result.current.menuRows).toEqual(menuPreview().canonical_rows);
+    expect(result.current.data?.weekly_menu?.source_signature).toBe(
+      "menu-preview",
+    );
+    expect(result.current.menuSyncIssues).toEqual([]);
+    expect(result.current.errors).toEqual([]);
+    expect(result.current.dirty).toBe(false);
+  });
+  it.each(["transport", "malformed", "structural"])(
+    "preserves unresolved candidate and guards after a %s resync failure",
+    async (failure) => {
+      const { result, fixture } = await setup();
+      fixture.api.syncMenuFromGoogle = async () =>
+        success({
+          source: { source_name: "Google", sheet_name: "Tuần" },
+          rows: [
+            ["Tên trường", "Ngày", "Món mặn", "Món canh"],
+            ["TH001", reviewWeek, "Món sai", "CANH2"],
+          ],
+        });
+      await act(() => result.current.syncGoogle("google-1"));
+      const rows = result.current.menuRows;
+      const issues = result.current.menuSyncIssues;
+      fixture.api.syncMenuFromGoogle = async () =>
+        failure === "transport"
+          ? unknown
+          : success(
+              failure === "malformed"
+                ? {}
+                : {
+                    source: { source_name: "Google", sheet_name: "Tuần" },
+                    rows: [["Bad header"]],
+                  },
+            );
+      const preview = vi.spyOn(fixture.api, "previewMenu");
+      const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+      await act(() => result.current.syncGoogle("google-1"));
+      expect(result.current.menuRows).toEqual(rows);
+      expect(result.current.menuSyncIssues).toEqual(issues);
+      expect(result.current.dirty).toBe(true);
+      await act(() => result.current.previewChanges());
+      await act(() => result.current.save());
+      expect(preview).not.toHaveBeenCalled();
+      expect(save).not.toHaveBeenCalled();
+    },
+  );
+  it("retains a backend-blocked candidate with exact source evidence", async () => {
+    const { result, fixture } = await setup();
+    fixture.api.previewMenu = async () =>
+      success({
+        preview: {
+          ...menuPreview(),
+          can_save: false,
+          issues: {
+            warnings: [],
+            blockers: [
+              {
+                code: "MISSING_RECIPE",
+                message: "raw backend detail",
+                source_row_reference: "Thực đơn chính thức:Tuần 37:row:4:soup",
+              },
+            ],
+          },
+        },
+      });
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(result.current.menuRows[0].dish_id).toBe("dish-2");
+    expect(result.current.dirty).toBe(true);
+    expect(result.current.menuSyncIssues[0]).toMatchObject({
+      school_id: "school-0",
+      service_date: reviewWeek,
+      source_row_number: 4,
+      source_value: "CANH2",
+    });
+    await act(() => result.current.previewChanges());
+    await act(() => result.current.save());
+    expect(save).not.toHaveBeenCalled();
+  });
   it("retains the authoritative default Attendance source metadata", async () => {
     const { result, fixture } = await setup();
     fixture.planning.attendance = null;
@@ -374,7 +564,9 @@ describe("Planning source safety", () => {
     await act(() => result.current.syncGoogle("google-1"));
     expect(impact).toHaveBeenCalledOnce();
     expect(result.current.impact?.save_allowed).toBe(false);
-    expect(result.current.menuRows[0].dish_id).toBe("dish-1");
+    expect(result.current.menuRows[0].dish_id).toBe("dish-2");
+    expect(result.current.data?.weekly_menu?.lines[0].dish_id).toBe("dish-1");
+    expect(result.current.dirty).toBe(true);
     expect(result.current.menuNotification).toBeNull();
     await act(() => result.current.prepareCorrection(chain));
     expect(prepare).toHaveBeenCalledOnce();

@@ -153,7 +153,7 @@ source, automatically requests backend canonical Preview, requires
 `preview.can_save`, and submits the complete canonical week through
 `atlas_api.save_weekly_menu`. Atlas then adopts the authoritative readback.
 Preview is a validation step, not a second operator decision. Menu has no
-`Xem thay đổi`, `Lưu`, local unsaved candidate, or manual editing path. School,
+`Xem thay đổi`, `Lưu`, or manual editing path. School,
 date and search filters never truncate the complete weekly write payload.
 Attendance and Pantry retain their own Review/Save flows. Menu synchronization blockers are grouped by authoritative issue code in Vietnamese beside the Google source strip. Unknown/ambiguous source cells retain Dish value, slot and Sheet row in collapsed scroll-bounded details; the Menu table and retry stay visible. Parser identity blockers stop before Preview/Save. Unique active Dish names resolve globally; legacy slot matching applies only to duplicate-name compatibility. A governed downstream
 Save blocker displays the authoritative correction impact and permits the
@@ -163,6 +163,24 @@ Save. Successful blank-to-Dish additions are quiet; successful replacements and
 removals produce one non-blocking Atlas notification after readback. Technical
 source facts remain in `Nguồn & lịch sử`; historical source types and retained
 Workbook parsers/backend contracts remain readable and unchanged.
+
+ATLAS-PRODUCT-CORRECTIONS-01 retains the complete parsed Menu as a local, unsaved
+candidate when any cell is invalid. Valid neighbors render normally; rejected
+cells use the existing warning surface plus explicit Vietnamese text and source
+row detail. The strip counts unique source-cell references, not diagnostic causes
+or School/date/slot groups. Duplicate source rows cannot hide a rejected cell.
+Backend issues without a source-cell reference are counted as issues rather than
+invented cells. Expanded evidence includes School, date, slot, original value,
+row number and exact source reference. Unknown Schools and invalid calendar dates
+remain in that evidence without fabricated table placement.
+
+Operators correct the Google Sheet and resynchronize. Cell blockers stop Preview,
+Save and correction preparation; backend Preview blockers also stop Save. A failed
+retry preserves the prior unresolved candidate and dirty state. The existing
+week/date/School context and close discard confirmations still apply; cancelling
+keeps the candidate intact. Workspace visibility switching retains owner state.
+The all-valid path still performs one complete atomic Save and adopts authoritative
+readback. No partial Weekly Menu is persisted.
 
 **The physical Google Sheet layout is not the Atlas business contract.** Supported
 Sheet layouts are semantic adapters into one canonical Weekly Menu contract:

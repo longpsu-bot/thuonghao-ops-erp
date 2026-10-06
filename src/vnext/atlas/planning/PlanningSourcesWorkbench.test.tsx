@@ -111,7 +111,7 @@ describe("Planning sources Chakra workbench", () => {
       name: "Không thể đồng bộ thực đơn",
     });
     expect(
-      within(summary).getAllByText(/18 ô chưa xác định được món ăn/),
+      within(summary).getAllByText(/18 lỗi chưa xác định được món ăn/),
     ).toHaveLength(1);
     expect(
       screen.queryByText("A row does not identify a valid dish."),
@@ -172,6 +172,67 @@ describe("Planning sources Chakra workbench", () => {
       ).toBeVisible();
     },
   );
+  it("shows valid neighbors, marks every rejected source cell, and counts a cell with two causes only once", async () => {
+    const { fixture } = await show();
+    fixture.api.syncMenuFromGoogle = async () =>
+      success({
+        source: { source_name: "Google", sheet_name: "Tuần" },
+        rows: [
+          ["Tên trường", "Ngày", "Món mặn", "Món canh"],
+          ["TH001", reviewWeek, "Món sai", "CANH2"],
+          ["TH001", reviewWeek, "MAN1", "Canh sai"],
+          ["Trường lạ", "31/02/2026", "MAN1", ""],
+          ["TH002", reviewWeek, "MAN1", "CANH2"],
+        ],
+      });
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    const preview = vi.spyOn(fixture.api, "previewMenu");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    );
+    const alert = await screen.findByRole("alert", {
+      name: "Không thể đồng bộ thực đơn",
+    });
+    expect(
+      within(alert).getByText("3 ô cần xử lý trước khi lưu."),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Bản đồng bộ chưa lưu · Sửa ô lỗi trong Google Sheet rồi đồng bộ lại.",
+      ),
+    ).toBeVisible();
+    const table = screen.getByRole("table", { name: "Thực đơn theo trường" });
+    const firstSchool = within(table).getByRole("row", {
+      name: /Trường Nguyễn Du/,
+    });
+    expect(within(firstSchool).getByText("Canh rau ngót")).toBeVisible();
+    expect(within(firstSchool).getByText("Thịt kho")).toBeVisible();
+    const rejected = within(firstSchool)
+      .getAllByRole("cell")
+      .filter((cell) => cell.getAttribute("data-invalid") === "true");
+    expect(rejected).toHaveLength(2);
+    expect(
+      within(rejected[0]).getByText("Không tìm thấy món “Món sai”"),
+    ).toBeVisible();
+    expect(
+      within(rejected[1]).getByText("Không tìm thấy món “Canh sai”"),
+    ).toBeVisible();
+    const neighbor = within(table).getByRole("row", { name: /Trường Lê Lợi/ });
+    expect(within(neighbor).getByText("Thịt kho")).toBeVisible();
+    expect(within(neighbor).getByText("Canh rau ngót")).toBeVisible();
+    expect(within(table).queryByText("Trường lạ")).not.toBeInTheDocument();
+    fireEvent.click(within(alert).getByText("Xem ô cần kiểm tra"));
+    expect(within(alert).getAllByText(/Trường lạ · 31\/02\/2026/)).toHaveLength(
+      2,
+    );
+    expect(within(alert).getByText("Google:Tuần:row:4:main")).toBeVisible();
+    expect(within(alert).getByText("Google:Tuần:row:5:soup")).toBeVisible();
+    expect(within(alert).getAllByText("Google:Tuần:row:6:main")).toHaveLength(
+      2,
+    );
+    expect(preview).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+  });
   it("places a visible current-job context before source tabs and the ordered workbar", async () => {
     await show();
 
