@@ -1,0 +1,242 @@
+{
+  "files": [
+    {
+      "path": "A-allocation-1366x768.png",
+      "bytes": 64024,
+      "sha256": "5730a91644db01f700686d9507f998230e37154afd6fa5deeb734b7bf9baa3e5"
+    },
+    {
+      "path": "A-allocation-1440x900.png",
+      "bytes": 68766,
+      "sha256": "fd3ba52f7aba7e8772778fce33ce866e86dc1281749464e60260657d819fc94d"
+    },
+    {
+      "path": "A-allocation-360x800.png",
+      "bytes": 36859,
+      "sha256": "824375b7d31b2089a38cb853971360a9de616b2262397c1fa4d3a352e614abad"
+    },
+    {
+      "path": "A-allocation-detail-360x800.png",
+      "bytes": 28760,
+      "sha256": "5859c2583f0211ebb7668ec6bb45ce5f8de8cd25b42303c4d194c14bcc09cc40"
+    },
+    {
+      "path": "A-menu-1366x768.png",
+      "bytes": 60175,
+      "sha256": "5118bfe57b49747a880c2ac5974b7d2988741c7922c998b2897ebc40701fae71"
+    },
+    {
+      "path": "A-menu-1440x900.png",
+      "bytes": 66015,
+      "sha256": "4947c44d711fda8eca1e4f451a95c6ba1f221685caf2aac0113e1e2e33f43e03"
+    },
+    {
+      "path": "A-menu-360x800.png",
+      "bytes": 38614,
+      "sha256": "d5a5b0c548e1b9f476ed85d0fb0207aacab91fd656a616ac138db105765a656c"
+    },
+    {
+      "path": "A-menu-detail-360x800.png",
+      "bytes": 42089,
+      "sha256": "065b00ea3c48b15c94a19c936411e2a6e3414ef4afc71b1bffcfa4039da5dae6"
+    },
+    {
+      "path": "A-need-1366x768.png",
+      "bytes": 80242,
+      "sha256": "37eb4b7e70db21c13290da2bcdf3ae64fbb23f14aff2f7168d42e5449aafc567"
+    },
+    {
+      "path": "A-need-1440x900.png",
+      "bytes": 94192,
+      "sha256": "39e0452a62cfe071a1fad976e6ec5264444ff104a245f6e5ff2b9e82bbc3762b"
+    },
+    {
+      "path": "A-need-360x800.png",
+      "bytes": 40990,
+      "sha256": "fb0f568849cc7c271989040443417f8b4c38958ccf77b32cf7803662c8114ee0"
+    },
+    {
+      "path": "A-recipe-1366x768.png",
+      "bytes": 73100,
+      "sha256": "6fdd7b2d51c53cf0bb47580afe1a8030decae3793c1e6ee036da5aad579509f8"
+    },
+    {
+      "path": "A-recipe-1440x900.png",
+      "bytes": 86440,
+      "sha256": "81b7234374f8d54cd8091b047d0fb943a43a74ed3028449188942b06bf71360b"
+    },
+    {
+      "path": "A-recipe-360x800.png",
+      "bytes": 36368,
+      "sha256": "45b313e5b64d65771929fa0b4436789c592b06c8831dc97eba3f494dc1ba7c03"
+    },
+    {
+      "path": "A-recipe-detail-360x800.png",
+      "bytes": 33944,
+      "sha256": "a4b9d3131b09e0b5971552b2e2c3326ed1b463bef5c9e6ad8ec340d6c6ca958f"
+    },
+    {
+      "path": "B-allocation-1366x768.png",
+      "bytes": 63821,
+      "sha256": "cbdff2d01c0b5be6705c8f49d83ec341927e5bdcfd5aae3462a7906afe9235d3"
+    },
+    {
+      "path": "B-allocation-1440x900.png",
+      "bytes": 68630,
+      "sha256": "dddeb461f3da9a1cd23382fdefc009d9bfe04e9547667ad8c74d5326acc49285"
+    },
+    {
+      "path": "B-allocation-360x800.png",
+      "bytes": 36815,
+      "sha256": "a08e535d7448d5eb0be00f20d88c8e6c1442fc15fa6d44ea9c4583c16ce7ba7a"
+    },
+    {
+      "path": "B-allocation-detail-360x800.png",
+      "bytes": 28750,
+      "sha256": "3687ca32a2327986768d9ac58af9a38e88195e0dd7281f165f97da6fdec44896"
+    },
+    {
+      "path": "B-menu-1366x768.png",
+      "bytes": 59988,
+      "sha256": "1b777d8e4bd1b73ce8cd188b479fdce5e97a53bdf8fc5cf69bf92252d33a6a8a"
+    },
+    {
+      "path": "B-menu-1440x900.png",
+      "bytes": 65859,
+      "sha256": "1e6b74f29e253fb9e962afc3ffda8ec5b3e356ed81ec7607daafd974de884840"
+    },
+    {
+      "path": "B-menu-360x800.png",
+      "bytes": 38596,
+      "sha256": "712632a0cefc630b57ec0dbfdaf02757205bd028dccd0a90bab8a4ced6a9a320"
+    },
+    {
+      "path": "B-menu-detail-360x800.png",
+      "bytes": 42053,
+      "sha256": "18e3164c3758a5834ac54706b02e6bef06a83ae925f2e8579a769497cdcd2b7f"
+    },
+    {
+      "path": "B-need-1366x768.png",
+      "bytes": 79986,
+      "sha256": "ea696ae28571447f8b746e68e7ca726541290e25af06d9ce998cc090a9452bb9"
+    },
+    {
+      "path": "B-need-1440x900.png",
+      "bytes": 94022,
+      "sha256": "3cd30f0ec89ef811da7d6953cbb5d3e6591a74cf71745c356e42d81ed876d8db"
+    },
+    {
+      "path": "B-need-360x800.png",
+      "bytes": 40837,
+      "sha256": "3141976377696724f3c8d2c6c253f8e2360c9e60f18b15edad234328a15b17e2"
+    },
+    {
+      "path": "B-recipe-1366x768.png",
+      "bytes": 72631,
+      "sha256": "8cad3a6facf91f465e483eab636165a4184c4bc165681b1e62f1894d9e4ad3a7"
+    },
+    {
+      "path": "B-recipe-1440x900.png",
+      "bytes": 86149,
+      "sha256": "370343da2d9d801e09f8daa247086360498768dcd64ba9df7a0a05ad2f49a00d"
+    },
+    {
+      "path": "B-recipe-360x800.png",
+      "bytes": 36697,
+      "sha256": "9b22249f36c351e8e4ba2d5d199f6ecf4e65db119656323e4afbb64f536e7894"
+    },
+    {
+      "path": "B-recipe-detail-360x800.png",
+      "bytes": 33928,
+      "sha256": "1678a90ce18e09112d4cecbeb143ad311bf7ea572fa6569461656abd29d58d94"
+    },
+    {
+      "path": "C-allocation-1366x768.png",
+      "bytes": 63632,
+      "sha256": "3c56cf2315af85568e6b9044de19f5ea6ff5f8d5ae0dd9043bdd81bac5006bf2"
+    },
+    {
+      "path": "C-allocation-1440x900.png",
+      "bytes": 69033,
+      "sha256": "f2dc12487fd6d55dfcd2d9ab8c25a4222391a309ddf8acbac85c0e37da9104ca"
+    },
+    {
+      "path": "C-allocation-360x800.png",
+      "bytes": 36749,
+      "sha256": "7ebe017610c3dde2f866e00be6b0ea5cc9dc73cd5ca7e685fd4c952a871fda34"
+    },
+    {
+      "path": "C-allocation-detail-360x800.png",
+      "bytes": 28835,
+      "sha256": "8e23f96af579097a3d835f4000588bfb417731f3c4d001399d1ec9d397b8007d"
+    },
+    {
+      "path": "C-menu-1366x768.png",
+      "bytes": 59996,
+      "sha256": "aa76e8b13fe12c153393bcef2b3716f54356cad5cc7ecdb784ca42f5712a53e7"
+    },
+    {
+      "path": "C-menu-1440x900.png",
+      "bytes": 65893,
+      "sha256": "4675b016388f321921485debfe826e9395899c722bd8230b3e0af7ffc5eb9901"
+    },
+    {
+      "path": "C-menu-360x800.png",
+      "bytes": 38429,
+      "sha256": "5642139cb1f3c0c2f447a374201f990ca8c658d5544a72738299e2b2d5c61b92"
+    },
+    {
+      "path": "C-menu-detail-360x800.png",
+      "bytes": 41868,
+      "sha256": "fef6d03410a63804aae3925e820a8d3c292b430cef586e4dfaa558a586b47095"
+    },
+    {
+      "path": "C-need-1366x768.png",
+      "bytes": 80141,
+      "sha256": "6da47aa6780e759c937607530bc57551312eaa44779e8cf1ad98e05535f08070"
+    },
+    {
+      "path": "C-need-1440x900.png",
+      "bytes": 93875,
+      "sha256": "f67500770ea79559aff5f9d688297766933339193e3e772a9bcc901ebf8887e9"
+    },
+    {
+      "path": "C-need-360x800.png",
+      "bytes": 40702,
+      "sha256": "31e8cd9bfee7d9f842dbf511a8d59242be21565a4869a428f602d0869a7adedb"
+    },
+    {
+      "path": "C-recipe-1366x768.png",
+      "bytes": 72992,
+      "sha256": "c235be6e78c6d792ce0c01e68b8422022c8bea7062d15d3d32736bb0e5ed51e6"
+    },
+    {
+      "path": "C-recipe-1440x900.png",
+      "bytes": 86299,
+      "sha256": "1ba434797186955ca674b528a5e7d28c43a2b93da04e911e7fb6419f6324ac94"
+    },
+    {
+      "path": "C-recipe-360x800.png",
+      "bytes": 36726,
+      "sha256": "11e6203c2948b6803df85697dafe62d50675a1f0c87468cf6155c84729a77be6"
+    },
+    {
+      "path": "C-recipe-detail-360x800.png",
+      "bytes": 33828,
+      "sha256": "37e70d84cd232024d6a3f94f3375436a9ed7f6b6b20ae7c6ded337ea18c1c2e2"
+    },
+    {
+      "path": "measurements.json",
+      "bytes": 355080,
+      "sha256": "18623be51060c5b11a619e8e5bdf8b5d070921973bcaef443a57553bb118fff2"
+    },
+    {
+      "path": "token-contrast.json",
+      "bytes": 2605,
+      "sha256": "681a18544f3e41aa524d9de55754261885a36effc1f6abb071ce8c295e27605a"
+    }
+  ],
+  "galleryPathsVerified": 45,
+  "primaryImages": 36,
+  "detailImages": 9
+}

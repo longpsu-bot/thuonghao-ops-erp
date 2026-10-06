@@ -1,0 +1,101 @@
+{
+  "A": {
+    "palette": {
+      "workspace": "#D6DCE3",
+      "workbench": "#FFFFFF",
+      "toolbar": "#E4E8EE",
+      "subtle": "#E4E8EE",
+      "context": "#E4E8EE",
+      "selected": "#CCD6E2",
+      "navigation": "#242C36",
+      "navigationHover": "#354150",
+      "navMuted": "#E3E8EE",
+      "primary": "#263544",
+      "primaryHover": "#152330",
+      "text": "#17212B",
+      "muted": "#465360",
+      "border": "#7D8996",
+      "borderSoft": "#BBC4CE",
+      "control": "#657180",
+      "focus": "#263544",
+      "clay": "#263544",
+      "clayText": "#263544"
+    },
+    "contrast": {
+      "text/workbench": 16.29,
+      "muted/workbench": 7.88,
+      "control/workbench": 4.97,
+      "border/workbench": 3.56,
+      "workspace/workbench": 1.38,
+      "toolbar/workbench": 1.23,
+      "selected/workbench": 1.47,
+      "primary/workbench": 12.54
+    }
+  },
+  "B": {
+    "palette": {
+      "workspace": "#DCE4DF",
+      "workbench": "#FFFFFF",
+      "toolbar": "#E4EEE7",
+      "subtle": "#E4EEE7",
+      "context": "#E4EEE7",
+      "selected": "#CDE7D5",
+      "navigation": "#154B36",
+      "navigationHover": "#216246",
+      "navMuted": "#DDEEE4",
+      "primary": "#14623E",
+      "primaryHover": "#104C31",
+      "text": "#16271E",
+      "muted": "#40594B",
+      "border": "#718A7B",
+      "borderSoft": "#B3C7BA",
+      "control": "#527C65",
+      "focus": "#14623E",
+      "clay": "#14623E",
+      "clayText": "#14623E"
+    },
+    "contrast": {
+      "text/workbench": 15.64,
+      "muted/workbench": 7.64,
+      "control/workbench": 4.74,
+      "border/workbench": 3.73,
+      "workspace/workbench": 1.3,
+      "toolbar/workbench": 1.19,
+      "selected/workbench": 1.31,
+      "primary/workbench": 7.38
+    }
+  },
+  "C": {
+    "palette": {
+      "workspace": "#DCE1DD",
+      "workbench": "#FFFFFF",
+      "toolbar": "#E7EBE8",
+      "subtle": "#E7EBE8",
+      "context": "#E7EBE8",
+      "selected": "#E0EEE4",
+      "navigation": "#293630",
+      "navigationHover": "#3B4B42",
+      "navMuted": "#E0E7E2",
+      "primary": "#246044",
+      "primaryHover": "#194B33",
+      "text": "#1C2721",
+      "muted": "#48594E",
+      "border": "#7B8B82",
+      "borderSoft": "#BCC7BF",
+      "control": "#65796C",
+      "focus": "#246044",
+      "clay": "#246044",
+      "clayText": "#246044"
+    },
+    "contrast": {
+      "text/workbench": 15.42,
+      "muted/workbench": 7.46,
+      "control/workbench": 4.66,
+      "border/workbench": 3.59,
+      "workspace/workbench": 1.32,
+      "toolbar/workbench": 1.2,
+      "selected/workbench": 1.2,
+      "primary/workbench": 7.42
+    }
+  }
+}

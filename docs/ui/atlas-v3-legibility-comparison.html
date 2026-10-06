@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Atlas — Checkpoint E / A · B · C</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #edf0ee;
+      color: #1c2721;
+      font:
+        14px/1.5 system-ui,
+        sans-serif;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 16px 24px;
+      background: white;
+      border-bottom: 2px solid #7b8b82;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 4px;
+    }
+    p {
+      margin: 4px 0 12px;
+    }
+    .controls {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    label {
+      font-weight: 600;
+    }
+    select {
+      margin-left: 6px;
+      padding: 8px;
+      font: inherit;
+      border: 1px solid #65796c;
+      background: white;
+      border-radius: 4px;
+    }
+    input {
+      accent-color: #246044;
+    }
+    main {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+    article {
+      flex: 0 0 auto;
+      width: var(--width);
+      background: white;
+      border: 1px solid #7b8b82;
+    }
+    h2 {
+      margin: 0;
+      padding: 12px;
+      font-size: 16px;
+      border-top: 5px solid var(--accent);
+    }
+    article p {
+      padding: 0 12px;
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .fit article {
+      width: calc((100vw - 80px) / 3);
+    }
+    a {
+      color: #246044;
+      text-underline-offset: 3px;
+    }
+    @media (max-width: 700px) {
+      .fit main {
+        display: block;
+      }
+      .fit article {
+        width: 100%;
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+  <header>
+    <h1>Atlas legibility — A · B · C</h1>
+    <p>
+      <strong>Product approval pending.</strong> Same #354 fixtures, layout and
+      interactions. Readability decides; these are local visual prototypes.
+    </p>
+    <div class="controls">
+      <label
+        >Screen
+        <select id="screen">
+          <option value="menu">Thực đơn</option>
+          <option value="need">Xác nhận nhu cầu</option>
+          <option value="recipe">Công thức</option>
+          <option value="allocation">Phân bổ NCC</option>
+        </select></label
+      >
+      <label
+        >Viewport
+        <select id="size">
+          <option>360x800</option>
+          <option>1440x900</option>
+          <option>1366x768</option>
+        </select></label
+      >
+      <label><input type="checkbox" id="fit" /> Fit overview</label>
+      <label><input type="checkbox" id="detail" /> Phone detail</label>
+      <a href="atlas-v3-legibility-comparison.md"
+        >Evaluation and approval gate</a
+      >
+    </div>
+    <p id="note">
+      100% pixels. Scroll horizontally to compare; “Fit overview” scales images
+      and must not be used to judge text size.
+    </p>
+  </header>
+  <main>
+    <article style="--accent: #263544">
+      <h2>A · Neutral High Contrast</h2>
+      <p>Neutral slate actions and strong gray boundaries.</p>
+      <a target="_blank"><img alt="Variant A" /></a>
+    </article>
+    <article style="--accent: #14623e">
+      <h2>B · Strong Atlas Green</h2>
+      <p>Green action, selection, navigation and structural tint.</p>
+      <a target="_blank"><img alt="Variant B" /></a>
+    </article>
+    <article style="--accent: #246044">
+      <h2>C · Neutral Operational + Atlas Accents</h2>
+      <p>Neutral work surfaces with green actions and selection markers.</p>
+      <a target="_blank"><img alt="Variant C" /></a>
+    </article>
+  </main>
+  <script>
+    const screen = document.querySelector("#screen"),
+      size = document.querySelector("#size"),
+      detail = document.querySelector("#detail"),
+      fit = document.querySelector("#fit");
+    function update() {
+      detail.disabled = size.value !== "360x800" || screen.value === "need";
+      if (detail.disabled) detail.checked = false;
+      document.body.classList.toggle("fit", fit.checked);
+      document.body.style.setProperty(
+        "--width",
+        `${size.value.split("x")[0]}px`,
+      );
+      document.querySelectorAll("article").forEach((card, index) => {
+        const variant = "ABC"[index],
+          suffix = detail.checked ? "-detail" : "";
+        const path = `../testing/artifacts/atlas-v3-legibility-variants/${variant}-${screen.value}${suffix}-${size.value}.png`;
+        card.querySelector("a").href = path;
+        card.querySelector("img").src = path;
+        card.querySelector("img").alt =
+          `${variant} · ${screen.selectedOptions[0].text} · ${size.value}${suffix}`;
+      });
+    }
+    document
+      .querySelectorAll("select,input")
+      .forEach((e) => e.addEventListener("change", update));
+    update();
+  </script>
+</html>

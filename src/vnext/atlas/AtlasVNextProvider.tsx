@@ -42,10 +42,17 @@ export function useAtlasPortalContainer() {
   return ref;
 }
 
-export function AtlasVNextProvider({ children }: { children: ReactNode }) {
+export function AtlasVNextProvider({
+  children,
+  system = atlasSystem,
+}: {
+  children: ReactNode;
+  /** Local visual prototypes may extend the same system; production keeps its default. */
+  system?: typeof atlasSystem;
+}) {
   const portalRef = useRef<HTMLDivElement>(null);
   return (
-    <ChakraProvider value={atlasSystem}>
+    <ChakraProvider value={system}>
       <Box className="atlas-vnext" minW="var(--atlas-layout-zero, 0)">
         <AtlasPortalContainerContext.Provider value={portalRef}>
           {children}

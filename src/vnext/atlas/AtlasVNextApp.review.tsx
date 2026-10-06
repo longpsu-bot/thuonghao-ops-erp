@@ -14,8 +14,21 @@ import { createConfirmedNeedReviewFixture } from "./planning-confirmed/confirmed
 import { createRecipeReviewFixture } from "./recipes/recipeReviewFixtures";
 import { createSchoolPxkReviewFixture } from "./dispatch/schoolPxkReviewFixtures";
 import { success } from "./planning/planningReviewFixtures";
+import {
+  createLegibilitySystem,
+  LegibilityPrototypeSwitcher,
+  type LegibilityVariant,
+} from "./AtlasLegibilityVariants.prototype";
 function Review() {
   const params = new URLSearchParams(window.location.search);
+  const requestedVariant = params.get("legibility");
+  const variant = ["A", "B", "C"].includes(requestedVariant ?? "")
+    ? (requestedVariant as LegibilityVariant)
+    : null;
+  const system = useMemo(
+    () => (variant ? createLegibilitySystem(variant) : undefined),
+    [variant],
+  );
   const [signedIn, setSignedIn] = useState(
     params.get("session") !== "unauthenticated",
   );
@@ -113,7 +126,7 @@ function Review() {
     return fixture;
   }, []);
   return (
-    <AtlasVNextProvider>
+    <AtlasVNextProvider system={system}>
       <AtlasSessionGate
         session={{ status: signedIn ? "authenticated" : "unauthenticated" }}
         onSignIn={async () => {
@@ -142,6 +155,7 @@ function Review() {
           }}
         />
       </AtlasSessionGate>
+      {variant && <LegibilityPrototypeSwitcher variant={variant} />}
     </AtlasVNextProvider>
   );
 }
