@@ -10,11 +10,13 @@ import {
   Flex,
   Heading,
   Input,
+  Icon,
   NativeSelect,
   Stack,
   Text,
   Textarea,
 } from "@chakra-ui/react";
+import { Info } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import type { CSSProperties } from "react";
 import {
@@ -160,13 +162,16 @@ export function ProcurementSupplierDetail({
     action: string,
   ) => (
     <Box
-      bg="bg.info"
+      layerStyle="feedbackInfo"
       p="sm"
       borderRadius="control"
       role="region"
       aria-label={title}
     >
       <Text fontWeight="semibold" color="status.info">
+        <Icon asChild mr="xs">
+          <Info aria-hidden="true" />
+        </Icon>
         {title}
       </Text>
       {title === "Đề xuất cân bằng lại" && (
@@ -474,6 +479,9 @@ export function ProcurementSupplierDetail({
       )}
       <Flex
         as="footer"
+        position="sticky"
+        bottom="var(--atlas-layout-zero, 0)"
+        zIndex="var(--atlas-layout-footer-layer, 2)"
         justify="space-between"
         gap="sm"
         p="md"

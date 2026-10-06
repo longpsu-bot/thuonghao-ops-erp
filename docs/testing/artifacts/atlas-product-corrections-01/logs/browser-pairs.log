@@ -1,0 +1,9 @@
+pair recipe 1440
+pair planning 1440
+pair procurement 1440
+pair master 1440
+pair recipe 360
+pair planning 360
+pair procurement 360
+pair master 360
+{"captures": 26, "proofs": 10, "status": "PASS"}

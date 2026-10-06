@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Field,
+  Flex,
   Grid,
   Input,
   NativeSelect,
@@ -76,6 +77,11 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
       {i.ingredient_name}
     </option>
   ));
+  const quantityUnit =
+    d.action === "ADJUST_QUANTITY"
+      ? c.targets?.effective_lines.find((l) => targetKey(l) === d.targetKey)
+          ?.unit_name
+      : purchaseIngredient(d, c.data)?.purchase_unit_name;
   const dishOptions = dishes.map((i) => (
     <option key={i.dish_id} value={i.dish_id}>
       {i.dish_name}
@@ -283,21 +289,36 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
             invalid={Boolean(d.quantity && parseQuantity(d.quantity) === null)}
           >
             <Field.Label>Định lượng mới</Field.Label>
-            <Input
-              inputMode="decimal"
-              value={d.quantity}
-              disabled={disabled}
-              onChange={(e) => update({ quantity: e.target.value })}
-            />
+            <Flex role="group" aria-label="Định lượng và đơn vị" w="full">
+              <Input
+                inputMode="decimal"
+                value={d.quantity}
+                disabled={disabled}
+                minW="var(--atlas-layout-zero, 0)"
+                borderEndRadius="var(--atlas-layout-zero, 0)"
+                onChange={(e) => update({ quantity: e.target.value })}
+              />
+              <Field.HelperText
+                display="flex"
+                alignItems="center"
+                mt="var(--atlas-layout-zero, 0)"
+                px="sm"
+                borderWidth="var(--atlas-layout-edge, 1px)"
+                borderStartWidth="var(--atlas-layout-zero, 0)"
+                borderColor="border.subtle"
+                borderEndRadius="control"
+                bg="bg.subtle"
+                textStyle="helper"
+              >
+                {quantityUnit ?? "—"}
+              </Field.HelperText>
+            </Flex>
             <Field.ErrorText>Nhập số thập phân lớn hơn 0.</Field.ErrorText>
-            <Field.HelperText>
-              {d.action === "ADJUST_QUANTITY"
-                ? c.targets?.effective_lines.find(
-                    (l) => targetKey(l) === d.targetKey,
-                  )?.unit_name
-                : (purchaseIngredient(d, c.data)?.purchase_unit_name ??
-                  "Nguyên liệu chưa có đơn vị mua")}
-            </Field.HelperText>
+            {!quantityUnit && d.action !== "ADJUST_QUANTITY" && (
+              <Text textStyle="helper" color="fg.muted">
+                Nguyên liệu chưa có đơn vị mua
+              </Text>
+            )}
           </Field.Root>
         )}
         {d.action === "REMOVE" && (

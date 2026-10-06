@@ -159,10 +159,13 @@ const suggestedOrderStep = (unit: UnitMasterData | undefined) => {
 export function useIngredientSupplierWorkbench({
   authSubject,
   api,
+  ownerJob,
 }: {
   authSubject: string | null;
   api: IngredientSupplierMasterDataApi;
+  ownerJob?: WorkbenchJob;
 }) {
+  const fixedJob = useRef(ownerJob).current;
   const [correlationId] = useState(() => crypto.randomUUID());
   const [authority, setAuthority] = useState<Authority>(emptyAuthority);
   const [loading, setLoading] = useState(false);
@@ -170,7 +173,7 @@ export function useIngredientSupplierWorkbench({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [lock, setLock] = useState<WorkbenchLock>(null);
-  const [job, setJob] = useState<WorkbenchJob>("ingredients");
+  const [job, setJob] = useState<WorkbenchJob>(fixedJob ?? "ingredients");
   const [ingredientQuery, setIngredientQuery] = useState("");
   const [ingredientStatus, setIngredientStatus] =
     useState<IngredientStatusFilter>("ALL");
@@ -267,14 +270,14 @@ export function useIngredientSupplierWorkbench({
     setError(null);
     setNotice(null);
     setLock(null);
-    setJob("ingredients");
+    setJob(fixedJob ?? "ingredients");
     setIngredientQuery("");
     setIngredientStatus("ALL");
     setSupplierQuery("");
     resetSurfaces();
     setPendingTransition(null);
     if (authSubject) void readAuthority("initial");
-  }, [authSubject, readAuthority, resetSurfaces]);
+  }, [authSubject, readAuthority, resetSurfaces, fixedJob]);
 
   const selectedIngredient = useMemo(() => {
     if (!activeSurface) return undefined;
@@ -639,7 +642,7 @@ export function useIngredientSupplierWorkbench({
   const performTransition = (transition: PendingTransition) => {
     resetSurfaces();
     if (transition.kind === "exit") transition.next();
-    if (transition.kind === "job") setJob(transition.job);
+    if (transition.kind === "job" && !fixedJob) setJob(transition.job);
     if (transition.kind === "ingredient") openIngredient(transition.id);
     if (transition.kind === "supplier") openSupplier(transition.id);
     if (transition.kind === "priorities")
@@ -648,6 +651,7 @@ export function useIngredientSupplierWorkbench({
       openLifecycle(transition.ingredientId, transition.status);
   };
   const requestTransition = (transition: PendingTransition) => {
+    if (transition.kind === "job" && fixedJob) return;
     if (dirty) setPendingTransition(transition);
     else performTransition(transition);
   };

@@ -111,7 +111,6 @@ export function IngredientCatalogue({
                     lg: "var(--atlas-layout-auto, auto)",
                   }}
                   zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
-                  bg="bg.toolbar"
                   minW="var(--atlas-table-identity-width)"
                 />
                 <AtlasSortableColumnHeader

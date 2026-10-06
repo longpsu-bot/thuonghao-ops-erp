@@ -1,0 +1,288 @@
+BEGIN
+CREATE SCHEMA
+CREATE EXTENSION
+ no_plan
+---------
+(0 rows)
+
+GRANT
+GRANT
+                                 is
+---------------------------------------------------------------------
+ ok 1 - v2 Save and compatibility Release remain physically callable
+(1 row)
+
+                                   ok
+------------------------------------------------------------------------
+ ok 2 - v2 commands retain fixed-path least-privilege runtime ownership
+(1 row)
+
+                                is
+------------------------------------------------------------------
+ ok 3 - all five v1 lifecycle commands remain physically callable
+(1 row)
+
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 5
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+CREATE FUNCTION
+INSERT 0 1
+CREATE TABLE
+GRANT
+INSERT 0 1
+SELECT 1
+SET
+              set_config
+--------------------------------------
+ f3000000-0000-0000-0000-000000000102
+(1 row)
+
+INSERT 0 1
+              set_config
+--------------------------------------
+ f3000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                      is
+-------------------------------------------------------------------------------
+ ok 4 - Save rejects an active Unit that differs from Ingredient purchase Unit
+(1 row)
+
+                            is
+-----------------------------------------------------------
+ ok 5 - mismatched Save creates no immutable line revision
+(1 row)
+
+                              is
+---------------------------------------------------------------
+ ok 6 - mismatched Save rolls back its Recipe root and version
+(1 row)
+
+UPDATE 1
+SET
+INSERT 0 1
+RESET
+                              is
+---------------------------------------------------------------
+ ok 7 - Save fails closed when Ingredient has no purchase Unit
+(1 row)
+
+UPDATE 1
+UPDATE 1
+SET
+INSERT 0 1
+RESET
+                      is
+-----------------------------------------------
+ ok 8 - Save rejects an inactive purchase Unit
+(1 row)
+
+UPDATE 1
+SET
+INSERT 0 1
+RESET
+                                    is
+--------------------------------------------------------------------------
+ ok 9 - v2 Save readback includes the configured Ingredient purchase Unit
+(1 row)
+
+                                 is
+---------------------------------------------------------------------
+ ok 10 - v2 Save readback includes the controlled purchase Unit name
+(1 row)
+
+UPDATE 1
+SET
+INSERT 0 2
+RESET
+                              is
+--------------------------------------------------------------
+ ok 11 - v2 authorized read exposes the current purchase Unit
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 12 - historical composition retains its exact stored Unit
+(1 row)
+
+                         ok
+-----------------------------------------------------
+ ok 13 - v1 Ingredient read shape remains compatible
+(1 row)
+
+UPDATE 1
+                                              ok
+----------------------------------------------------------------------------------------------
+ ok 14 - v2 payload keeps private invoker ownership, volatility, fixed search_path and grants
+(1 row)
+
+                            is
+----------------------------------------------------------
+ ok 15 - Save requires the narrow Recipe write capability
+(1 row)
+
+                                  is
+----------------------------------------------------------------------
+ ok 16 - one creation Save makes an eligible pre-use Recipe available
+(1 row)
+
+                                        is
+-----------------------------------------------------------------------------------
+ ok 17 - Save validates, materializes, and releases for future Planning atomically
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ f3000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                                         is
+-------------------------------------------------------------------------------------
+ ok 18 - pre-use Save may advance internal lineage while keeping one current release
+(1 row)
+
+SELECT 1
+GRANT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+SELECT 1
+GRANT
+SELECT 1
+GRANT
+SET
+              set_config
+--------------------------------------
+ f3000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+SET
+              set_config
+--------------------------------------
+ f3000000-0000-0000-0000-000000000102
+(1 row)
+
+INSERT 0 1
+              set_config
+--------------------------------------
+ f3000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                                   is
+-------------------------------------------------------------------------
+ ok 19 - authoritative readback marks the operationally used Dish locked
+(1 row)
+
+                                   is
+------------------------------------------------------------------------
+ ok 20 - readback denies normal Save with the specific lock reason code
+(1 row)
+
+                                  is
+----------------------------------------------------------------------
+ ok 21 - locked Save returns a safe Vietnamese Change Order direction
+(1 row)
+
+                                        is
+-----------------------------------------------------------------------------------
+ ok 22 - every base Recipe/BOM mutation returns the canonical approved-menu denial
+(1 row)
+
+                                      is
+-------------------------------------------------------------------------------
+ ok 23 - post-use Dish administration retains the RMVP-02A capability boundary
+(1 row)
+
+                                  is
+----------------------------------------------------------------------
+ ok 24 - post-use Dish lifecycle retains optimistic-version rejection
+(1 row)
+
+                                         is
+------------------------------------------------------------------------------------
+ ok 25 - legitimate post-use administration completes with event and audit evidence
+(1 row)
+
+                                       is
+---------------------------------------------------------------------------------
+ ok 26 - accepted Dish and Recipe-root post-use administration remains available
+(1 row)
+
+                                       is
+---------------------------------------------------------------------------------
+ ok 27 - post-use administration preserves exact domain-event types and versions
+(1 row)
+
+                                     is
+-----------------------------------------------------------------------------
+ ok 28 - post-use administration preserves exact audit before/after versions
+(1 row)
+
+                                        is
+-----------------------------------------------------------------------------------
+ ok 29 - locked Save creates no successor and changes no immutable Recipe evidence
+(1 row)
+
+                                                                   is
+----------------------------------------------------------------------------------------------------------------------------------------
+ ok 30 - post-use administration and denied mutations leave Recipe/BOM composition, import, Adjustment, and approval evidence unchanged
+(1 row)
+
+                                      is
+-------------------------------------------------------------------------------
+ ok 31 - locked Save leaves the authoritative approved Menu evidence unchanged
+(1 row)
+
+                                       is
+--------------------------------------------------------------------------------
+ ok 32 - creation Save changes no Adjustment, Procurement, or Dispatch behavior
+(1 row)
+
+ finish
+--------
+ 1..32
+(1 row)
+
+ROLLBACK

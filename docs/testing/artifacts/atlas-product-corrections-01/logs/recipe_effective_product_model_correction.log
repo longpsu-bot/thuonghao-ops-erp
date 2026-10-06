@@ -1,0 +1,157 @@
+BEGIN
+psql:/atlas-supabase/tests/recipe_effective_product_model_correction.sql:3: NOTICE:  schema "extensions" already exists, skipping
+CREATE SCHEMA
+CREATE EXTENSION
+ no_plan
+---------
+(0 rows)
+
+GRANT
+psql:/atlas-supabase/tests/recipe_effective_product_model_correction.sql:8: WARNING:  no privileges were granted for "grant_pg_cron_access"
+psql:/atlas-supabase/tests/recipe_effective_product_model_correction.sql:8: WARNING:  no privileges were granted for "grant_pg_net_access"
+GRANT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 3
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+SELECT 2
+GRANT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+SET
+              set_config
+--------------------------------------
+ d1000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                   is
+-------------------------------------------------------------------------
+ ok 1 - create_dish succeeds when both canonical School Types are active
+(1 row)
+
+                                is
+------------------------------------------------------------------
+ ok 2 - A. create_dish provisions exactly two active Recipe roots
+(1 row)
+
+                        is
+---------------------------------------------------
+ ok 3 - B. exactly one TIỂU HỌC Recipe root exists
+(1 row)
+
+                         is
+----------------------------------------------------
+ ok 4 - C. exactly one TRUNG HỌC Recipe root exists
+(1 row)
+
+                     is
+---------------------------------------------
+ ok 5 - create_dish creates no RecipeVersion
+(1 row)
+
+                             is
+-------------------------------------------------------------
+ ok 6 - create_dish returns both canonical Recipe identities
+(1 row)
+
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET CONSTRAINTS
+UPDATE 1
+UPDATE 1
+SET CONSTRAINTS
+                                     is
+----------------------------------------------------------------------------
+ ok 7 - D/E. RECIPE-EFFECTIVE never falls back to NULL-general for TIỂU HỌC
+(1 row)
+
+                                    is
+---------------------------------------------------------------------------
+ ok 8 - F. RECIPE-EFFECTIVE never falls back to NULL-general for TRUNG HỌC
+(1 row)
+
+SET
+INSERT 0 1
+RESET
+                                    is
+---------------------------------------------------------------------------
+ ok 9 - Q. root-only unlocked Recipe is an editable base-authoring context
+(1 row)
+
+                                        is
+----------------------------------------------------------------------------------
+ ok 10 - Q. root-only unlocked Recipe remains editable before effective readiness
+(1 row)
+
+                                    is
+---------------------------------------------------------------------------
+ ok 11 - Q. copy is not advertised until both canonical target roots exist
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET
+INSERT 0 1
+RESET
+                                   ok
+-------------------------------------------------------------------------
+ ok 12 - Q. an unlocked DRAFT version remains in editable base authoring
+(1 row)
+
+SET CONSTRAINTS
+UPDATE 1
+SET CONSTRAINTS
+SET
+INSERT 0 1
+RESET
+                                     ok
+-----------------------------------------------------------------------------
+ ok 13 - Q. an unlocked VALIDATED version remains in editable base authoring
+(1 row)
+
+SET CONSTRAINTS
+UPDATE 1
+SET CONSTRAINTS
+SET
+INSERT 0 1
+RESET
+                                      ok
+------------------------------------------------------------------------------
+ ok 14 - Q. an unlocked released version remains editable and effective-ready
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+SET
+INSERT 0 1
+RESET
+                                          ok
+--------------------------------------------------------------------------------------
+ ok 15 - R. approved-Menu use locks base editing and exposes only Change Order action
+(1 row)
+
+ finish
+--------
+ 1..15
+(1 row)
+
+ROLLBACK

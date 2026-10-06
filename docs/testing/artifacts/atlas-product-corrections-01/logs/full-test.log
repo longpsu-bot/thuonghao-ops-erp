@@ -1,0 +1,11 @@
+$ vitest run "--maxWorkers=2" "--testTimeout=20000"
+
+ RUN  v4.1.10 E:/Project/OPS ERP/thuonghao-ops-erp
+
+
+ Test Files  184 passed (184)
+      Tests  2448 passed (2448)
+   Start at  12:15:32
+   Duration  814.74s (transform 9.36s, setup 0ms, import 670.25s, tests 689.66s, environment 213.00s)
+
+EXIT_CODE=0

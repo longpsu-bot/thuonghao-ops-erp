@@ -37,11 +37,18 @@ export function IngredientSupplierWorkbench({
   api,
   exitRef,
   onWorkspaceStatus,
+  ownerJob,
 }: AtlasModuleExitProps & {
   authSubject: string | null;
   api: IngredientSupplierMasterDataApi;
+  ownerJob?: "ingredients" | "suppliers";
 }) {
-  const c = useIngredientSupplierWorkbench({ authSubject, api });
+  const c = useIngredientSupplierWorkbench({ authSubject, api, ownerJob });
+  const label = ownerJob
+    ? c.job === "ingredients"
+      ? "Nguyên liệu"
+      : "Nhà cung ứng"
+    : "Nguyên liệu và Nhà cung ứng";
   useAtlasWorkbenchStatus(onWorkspaceStatus, {
     unsaved: c.dirty,
     blocked: c.saving || c.loading || Boolean(c.lock || c.review),
@@ -104,7 +111,7 @@ export function IngredientSupplierWorkbench({
   return (
     <Box
       as="section"
-      aria-label="Nguyên liệu và Nhà cung ứng"
+      aria-label={label}
       bg="bg.workbench"
       borderRadius="workbench"
       borderWidth="var(--atlas-layout-edge, 1px)"
@@ -114,7 +121,7 @@ export function IngredientSupplierWorkbench({
       <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh công việc dữ liệu gốc"
-          moduleLabel="Nguyên liệu và Nhà cung ứng"
+          moduleLabel={label}
           jobLabel={c.job === "ingredients" ? "Nguyên liệu" : "Nhà cung ứng"}
           compactSummary={
             c.job === "ingredients"
@@ -141,19 +148,21 @@ export function IngredientSupplierWorkbench({
                 c.requestJob(value);
             }}
           >
-            <Box px="md" py="sm">
-              <Tabs.List
-                aria-label="Công việc dữ liệu gốc"
-                {...atlasPrimaryTabList}
-              >
-                <Tabs.Trigger value="ingredients" {...atlasPrimaryTabTrigger}>
-                  Nguyên liệu
-                </Tabs.Trigger>
-                <Tabs.Trigger value="suppliers" {...atlasPrimaryTabTrigger}>
-                  Nhà cung ứng
-                </Tabs.Trigger>
-              </Tabs.List>
-            </Box>
+            {!ownerJob && (
+              <Box px="md" py="sm">
+                <Tabs.List
+                  aria-label="Công việc dữ liệu gốc"
+                  {...atlasPrimaryTabList}
+                >
+                  <Tabs.Trigger value="ingredients" {...atlasPrimaryTabTrigger}>
+                    Nguyên liệu
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="suppliers" {...atlasPrimaryTabTrigger}>
+                    Nhà cung ứng
+                  </Tabs.Trigger>
+                </Tabs.List>
+              </Box>
+            )}
             <Tabs.Content
               value={c.job}
               p="var(--atlas-layout-zero, 0)"

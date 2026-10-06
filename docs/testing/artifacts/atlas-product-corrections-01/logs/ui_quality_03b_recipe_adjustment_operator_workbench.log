@@ -1,0 +1,178 @@
+BEGIN
+psql:/atlas-supabase/tests/ui_quality_03b_recipe_adjustment_operator_workbench.sql:3: NOTICE:  schema "extensions" already exists, skipping
+CREATE SCHEMA
+psql:/atlas-supabase/tests/ui_quality_03b_recipe_adjustment_operator_workbench.sql:4: NOTICE:  extension "pgtap" already exists, skipping
+CREATE EXTENSION
+ no_plan
+---------
+(0 rows)
+
+GRANT
+psql:/atlas-supabase/tests/ui_quality_03b_recipe_adjustment_operator_workbench.sql:8: WARNING:  no privileges were granted for "grant_pg_cron_access"
+psql:/atlas-supabase/tests/ui_quality_03b_recipe_adjustment_operator_workbench.sql:8: WARNING:  no privileges were granted for "grant_pg_net_access"
+GRANT
+                                  ok
+----------------------------------------------------------------------
+ ok 1 - UI-QUALITY-03B adds the one bounded RMVP-02B.v2 operator read
+(1 row)
+
+                                         ok
+------------------------------------------------------------------------------------
+ ok 2 - the v2 read retains fixed-path least-privilege runtime ownership and grants
+(1 row)
+
+                             ok
+-------------------------------------------------------------
+ ok 3 - operator temporal resolution never uses CURRENT_DATE
+(1 row)
+
+                              ok
+---------------------------------------------------------------
+ ok 4 - all six RMVP-02B.v1 reads and commands remain callable
+(1 row)
+
+                                         is
+------------------------------------------------------------------------------------
+ ok 5 - the operator enrichment introduces no capability beyond the current catalog
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+SET CONSTRAINTS
+INSERT 0 7
+INSERT 0 1
+INSERT 0 10
+INSERT 0 2
+UPDATE 8
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+SET
+              set_config
+--------------------------------------
+ f3000000-0000-0000-0000-000000000101
+(1 row)
+
+                               is
+----------------------------------------------------------------
+ ok 6 - RMVP-02B.v2 Ingredient catalog returns purchase_unit_id
+(1 row)
+
+                                      is
+------------------------------------------------------------------------------
+ ok 7 - RMVP-02B.v2 Ingredient catalog returns the correct purchase_unit_name
+(1 row)
+
+                                         is
+------------------------------------------------------------------------------------
+ ok 8 - RMVP-02B.v2 preserves existing Ingredient fields and adds only Unit context
+(1 row)
+
+                             is
+------------------------------------------------------------
+ ok 9 - the existing RMVP-02B.v1 workbench remains callable
+(1 row)
+
+                                       is
+--------------------------------------------------------------------------------
+ ok 10 - the RMVP-02B.v1 Ingredient catalog shape is unchanged by v2 enrichment
+(1 row)
+
+                              is
+---------------------------------------------------------------
+ ok 11 - active current adjustment is backend-shaped as ACTIVE
+(1 row)
+
+                               is
+----------------------------------------------------------------
+ ok 12 - future first adjustment is backend-shaped as SCHEDULED
+(1 row)
+
+                                        is
+----------------------------------------------------------------------------------
+ ok 13 - active predecessor plus future successor is shaped as a scheduled change
+(1 row)
+
+                                      is
+------------------------------------------------------------------------------
+ ok 14 - future cancellation keeps the predecessor applicable before its date
+(1 row)
+
+                                     is
+-----------------------------------------------------------------------------
+ ok 15 - cancellation effective at the reference date is shaped as CANCELLED
+(1 row)
+
+                               is
+----------------------------------------------------------------
+ ok 16 - finite successor is active during its effective period
+(1 row)
+
+                                 is
+---------------------------------------------------------------------
+ ok 17 - expired finite successor resumes its applicable predecessor
+(1 row)
+
+                                   is
+------------------------------------------------------------------------
+ ok 18 - finite first revision with no predecessor is shaped as EXPIRED
+(1 row)
+
+                               is
+----------------------------------------------------------------
+ ok 19 - native issuance uses the immutable revision Actor name
+(1 row)
+
+                                           is
+-----------------------------------------------------------------------------------------
+ ok 20 - imported OPS v1 issuance is explicitly distinguished from native Atlas issuance
+(1 row)
+
+                                       is
+---------------------------------------------------------------------------------
+ ok 21 - the Atlas importer Actor is not presented as the original OPS v1 issuer
+(1 row)
+
+                                            is
+------------------------------------------------------------------------------------------
+ ok 22 - the Atlas import timestamp is not presented as the OPS v1 business issuance date
+(1 row)
+
+                                      is
+-------------------------------------------------------------------------------
+ ok 23 - legacy history also keeps the unavailable business issuance date null
+(1 row)
+
+                                         is
+-------------------------------------------------------------------------------------
+ ok 24 - the payload-less REPLACE cancellation remains the displayed status revision
+(1 row)
+
+                                       is
+--------------------------------------------------------------------------------
+ ok 25 - a cancelled REPLACE authoritatively retains its prior business content
+(1 row)
+
+                                      is
+-------------------------------------------------------------------------------
+ ok 26 - a cancelled quantity-bearing ADD authoritatively retains its quantity
+(1 row)
+
+                                    is
+---------------------------------------------------------------------------
+ ok 27 - a cancelled quantity-bearing ADD authoritatively retains its Unit
+(1 row)
+
+ finish
+--------
+ 1..27
+(1 row)
+
+ROLLBACK

@@ -36,8 +36,12 @@ it("uses stable IDs, selects via the launcher, and restores trigger focus", asyn
     </AtlasVNextProvider>,
   );
   const trigger = screen.getByRole("button", { name: "Bàn làm việc" });
+  expect(trigger).toHaveAttribute("title", "Bàn làm việc");
+  expect(trigger.textContent).toBe("");
+  expect(screen.getByRole("banner").firstElementChild).toBe(trigger);
   fireEvent.click(trigger);
   const launcher = screen.getByRole("dialog", { name: "Bàn làm việc" });
+  expect(within(launcher).getByText("Bàn làm việc")).toBeVisible();
   expect(
     within(launcher).getByRole("button", { name: "Trường học" }),
   ).toHaveAttribute("aria-current", "page");
@@ -92,16 +96,16 @@ it("uses attached tabs with roving Arrow/Home/End and Delete guarded close", () 
   );
   const school = screen.getByRole("tab", { name: "Trường học" });
   expect(school).toHaveAttribute("tabindex", "0");
-  expect(screen.getByRole("tab", { name: "Lập nhu cầu" })).toHaveAttribute(
+  expect(screen.getByRole("tab", { name: "Thực đơn" })).toHaveAttribute(
     "tabindex",
     "-1",
   );
   fireEvent.keyDown(school, { key: "ArrowRight" });
   expect(navigate).toHaveBeenLastCalledWith("planning");
-  expect(screen.getByRole("tab", { name: "Lập nhu cầu" })).toHaveFocus();
+  expect(screen.getByRole("tab", { name: "Thực đơn" })).toHaveFocus();
   fireEvent.keyDown(school, { key: "End" });
   expect(navigate).toHaveBeenLastCalledWith("procurement");
-  fireEvent.keyDown(screen.getByRole("tab", { name: "Kế hoạch mua hàng" }), {
+  fireEvent.keyDown(screen.getByRole("tab", { name: "Phân bổ NCC" }), {
     key: "Home",
   });
   expect(navigate).toHaveBeenLastCalledWith("schools");

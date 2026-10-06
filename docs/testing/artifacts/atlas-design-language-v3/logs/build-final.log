@@ -1,0 +1,38 @@
+$ pnpm ui:vnext:typegen && tsc -b && vite build
+$ chakra typegen src/vnext/atlas/system.ts
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+T  Chakra CLI ⚡️
+|
+o  ✅ Generated conditions typings
+|
+•  Generating recipe typeso  ✅ Generated recipe typings
+|
+o  ✅ Generated utility typings
+|
+o  ✅ Generated token typings
+|
+•  Generating system typeso  ✅ Generated system types
+|
+—  🎉 Done!
+
+vite v8.1.4 building client environment for production...
+
+transforming...✓ 6737 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/_atlas-build.json                        0.16 kB │ gzip:   0.15 kB
+dist/index.html                               0.51 kB │ gzip:   0.34 kB
+dist/assets/thuong-hao-logo-DfW3Ruuz.jpg     17.78 kB
+dist/assets/rolldown-runtime-BHe-jwch.js      0.95 kB │ gzip:   0.56 kB
+dist/assets/vfs_fonts-Z6R6tjat.js           830.02 kB │ gzip: 454.01 kB
+dist/assets/pdfmake-B8z3lv3z.js           1,326.60 kB │ gzip: 570.35 kB
+dist/assets/index-DoCcku_G.js             2,432.10 kB │ gzip: 677.32 kB
+
+[INEFFECTIVE_DYNAMIC_IMPORT] node_modules/.pnpm/exceljs@4.4.0/node_modules/exceljs/dist/exceljs.min.js is dynamically imported by src/modules/atlas/dispatch/schoolDispatchReleaseExports.ts, src/modules/atlas/procurement/purchaseOrderExports.ts but also statically imported by src/modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList.ts, dynamic import will not move module into another chunk.
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.35s

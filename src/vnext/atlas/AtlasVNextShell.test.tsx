@@ -22,10 +22,14 @@ afterEach(() => {
 describe("Atlas v2 workspace shell", () => {
   it.each([
     "schools",
-    "ingredients-suppliers",
+    "ingredients",
+    "suppliers",
     "recipes",
+    "change-orders",
     "planning",
+    "confirmed-need",
     "procurement",
+    "purchase-orders",
     "pxk",
     "reconciliation",
   ] as const)(
@@ -44,7 +48,7 @@ describe("Atlas v2 workspace shell", () => {
       });
       const active = within(launcher).getByRole("button", { current: "page" });
       expect(within(active).getByText("Đang mở")).toBeVisible();
-      expect(within(launcher).getAllByRole("button")).toHaveLength(7);
+      expect(within(launcher).getAllByRole("button")).toHaveLength(11);
       expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
       expect(
         screen.getByRole("heading", { name: "Current job" }),
@@ -69,7 +73,7 @@ describe("Atlas v2 workspace shell", () => {
     expect(
       within(screen.getByRole("dialog", { name: "Bàn làm việc" })).getByRole(
         "button",
-        { name: "Công thức" },
+        { name: "Lệnh điều chỉnh" },
       ),
     ).toHaveFocus();
     input.focus();
@@ -184,7 +188,9 @@ describe("Atlas vNext provider", () => {
     );
     const child = screen.getByText("var(--atlas-colors-bg-workspace)");
     expect(child.closest(".atlas-vnext")).toBeInTheDocument();
-    expect(atlasSystem.token("colors.atlas.workspace")).toBe("#EDF0ED");
+    expect(child).toHaveStyle({
+      background: "var(--atlas-colors-bg-workspace)",
+    });
   });
 
   it("scopes resets, globals and variables without adopting global html/body selectors", () => {

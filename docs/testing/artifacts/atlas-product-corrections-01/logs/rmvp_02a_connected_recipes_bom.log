@@ -1,0 +1,275 @@
+BEGIN
+psql:/atlas-supabase/tests/rmvp_02a_connected_recipes_bom.sql:3: NOTICE:  schema "extensions" already exists, skipping
+CREATE SCHEMA
+CREATE EXTENSION
+ no_plan
+---------
+(0 rows)
+
+GRANT
+psql:/atlas-supabase/tests/rmvp_02a_connected_recipes_bom.sql:8: WARNING:  no privileges were granted for "grant_pg_cron_access"
+psql:/atlas-supabase/tests/rmvp_02a_connected_recipes_bom.sql:8: WARNING:  no privileges were granted for "grant_pg_net_access"
+GRANT
+                             is
+------------------------------------------------------------
+ ok 1 - RMVP-02A registers exactly five recipe capabilities
+(1 row)
+
+                         is
+-----------------------------------------------------
+ ok 2 - RMVP-02A exposes exactly twelve bounded APIs
+(1 row)
+
+                                            ok
+------------------------------------------------------------------------------------------
+ ok 3 - all RMVP-02A APIs are fixed-search-path definers with the exact API-role boundary
+(1 row)
+
+                                      is
+-------------------------------------------------------------------------------
+ ok 4 - recipe read and command APIs have the approved runtime ownership split
+(1 row)
+
+                                 ok
+--------------------------------------------------------------------
+ ok 5 - physical recipe and reconciliation relations remain private
+(1 row)
+
+                               is
+-----------------------------------------------------------------
+ ok 6 - legacy reconciliation has typed recipe object references
+(1 row)
+
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 5
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+CREATE TABLE
+GRANT
+INSERT 0 2
+SET
+              set_config
+--------------------------------------
+ e2000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 5
+                      is
+----------------------------------------------
+ ok 7 - auto-all creates successfully
+ ok 8 - auto-code creates successfully
+ ok 9 - auto-order creates successfully
+ ok 10 - auto-requires creates successfully
+ ok 11 - explicit-compat creates successfully
+(5 rows)
+
+INSERT 0 1
+                                         is
+-------------------------------------------------------------------------------------
+ ok 12 - automatic-code replay returns the exact original identity and code readback
+(1 row)
+
+INSERT 0 1
+                              is
+--------------------------------------------------------------
+ ok 13 - explicit normalized code uniqueness remains enforced
+(1 row)
+
+RESET
+                                    is
+---------------------------------------------------------------------------
+ ok 14 - two automatic creations persist exactly two Dishes despite replay
+(1 row)
+
+                              is
+---------------------------------------------------------------
+ ok 15 - generated codes are nonempty unique opaque UUID codes
+(1 row)
+
+                             is
+-------------------------------------------------------------
+ ok 16 - all-omitted creation defaults display order to zero
+(1 row)
+
+                          is
+-------------------------------------------------------
+ ok 17 - explicit-code creation can omit display order
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 18 - all-omitted creation participates in Need Generation
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 19 - explicit-code creation can omit demand participation
+(1 row)
+
+                                             is
+---------------------------------------------------------------------------------------------
+ ok 20 - controlled explicit metadata remains compatible without rewriting persisted history
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 21 - server readback exposes the persisted generated code
+(1 row)
+
+SET
+INSERT 0 1
+                                   is
+------------------------------------------------------------------------
+ ok 22 - explicit false creation rejects the obsolete business decision
+(1 row)
+
+RESET
+                             is
+-------------------------------------------------------------
+ ok 23 - explicit false is not silently coerced or persisted
+(1 row)
+
+SELECT 1
+UPDATE 1
+                      is
+-----------------------------------------------
+ ok 24 - renaming preserves the generated code
+(1 row)
+
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET CONSTRAINTS
+SET CONSTRAINTS
+INSERT 0 1
+INSERT 0 1
+SET CONSTRAINTS
+SET CONSTRAINTS
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+              set_config
+--------------------------------------
+ e2000000-0000-0000-0000-000000000102
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+                                  throws_ok
+-----------------------------------------------------------------------------
+ ok 25 - authenticated cannot bypass the API to read private recipe versions
+(1 row)
+
+RESET
+                                                  ok
+------------------------------------------------------------------------------------------------------
+ ok 26 - the full dish, draft, validate, release, successor, copy, import, and read workflow succeeds
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 27 - Dish creation rejects an inactive database Dish Type
+(1 row)
+
+                             is
+------------------------------------------------------------
+ ok 28 - Dish updates reject an inactive database Dish Type
+(1 row)
+
+                  is
+---------------------------------------
+ ok 29 - stale draft save fails closed
+(1 row)
+
+                                 is
+--------------------------------------------------------------------
+ ok 30 - validated composition is immutable through the command API
+(1 row)
+
+                                  is
+----------------------------------------------------------------------
+ ok 31 - missing import references are rejected without auto-creation
+(1 row)
+
+                                 ok
+--------------------------------------------------------------------
+ ok 32 - rejected import returns bounded missing-reference evidence
+(1 row)
+
+                                       ok
+---------------------------------------------------------------------------------
+ ok 33 - identical workbook rerun is idempotent and performs no duplicate writes
+(1 row)
+
+                               is
+----------------------------------------------------------------
+ ok 34 - releasing a successor locks the prior planning release
+(1 row)
+
+                             is
+-------------------------------------------------------------
+ ok 35 - the successor is the only planning-released version
+(1 row)
+
+                                      is
+------------------------------------------------------------------------------
+ ok 36 - successor materialization retains one explicit removed-line revision
+(1 row)
+
+                                       ok
+---------------------------------------------------------------------------------
+ ok 37 - copy creates a traceable draft with the source materialized composition
+(1 row)
+
+                             ok
+------------------------------------------------------------
+ ok 38 - workbook import creates draft-only recipe evidence
+(1 row)
+
+                                                         is
+---------------------------------------------------------------------------------------------------------------------
+ ok 39 - successful draft import writes the four target mappings that exist before validation materializes revisions
+(1 row)
+
+                     is
+---------------------------------------------
+ ok 40 - read capability denial fails closed
+(1 row)
+
+                      is
+----------------------------------------------
+ ok 41 - write capability denial fails closed
+(1 row)
+
+                                           ok
+-----------------------------------------------------------------------------------------
+ ok 42 - authorized read returns the full Dish Type catalog and resolved Dish references
+(1 row)
+
+ finish
+--------
+ 1..42
+(1 row)
+
+ROLLBACK

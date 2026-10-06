@@ -94,6 +94,8 @@ export function recipeFixtureData(): RecipeWorkbenchData {
     ingredient_code: `hidden-ingredient-${i}`,
     ingredient_name: name,
     ingredient_status: i === 4 ? "INACTIVE" : "ACTIVE",
+    purchase_unit_id: "kg",
+    purchase_unit_name: "Kilôgam",
   }));
   data.units = [
     {

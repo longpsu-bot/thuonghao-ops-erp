@@ -1,0 +1,6606 @@
+{
+  "elapsed_s": 1801.7,
+  "samples": [
+    {
+      "cycle": 0,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 0.2
+    },
+    {
+      "cycle": 0,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 0.4
+    },
+    {
+      "cycle": 0,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 0.6
+    },
+    {
+      "cycle": 0,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 0.9
+    },
+    {
+      "cycle": 0,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1.2
+    },
+    {
+      "cycle": 0,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1.5
+    },
+    {
+      "cycle": 0,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1.7
+    },
+    {
+      "cycle": 0,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 2.1
+    },
+    {
+      "cycle": 1,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 75.4
+    },
+    {
+      "cycle": 1,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 75.8
+    },
+    {
+      "cycle": 1,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 75.9
+    },
+    {
+      "cycle": 1,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 76.2
+    },
+    {
+      "cycle": 1,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 76.7
+    },
+    {
+      "cycle": 1,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 77.2
+    },
+    {
+      "cycle": 1,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 77.5
+    },
+    {
+      "cycle": 1,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 77.8
+    },
+    {
+      "cycle": 2,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 150.2
+    },
+    {
+      "cycle": 2,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 150.4
+    },
+    {
+      "cycle": 2,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 150.6
+    },
+    {
+      "cycle": 2,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 150.7
+    },
+    {
+      "cycle": 2,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 151.0
+    },
+    {
+      "cycle": 2,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 151.2
+    },
+    {
+      "cycle": 2,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 151.4
+    },
+    {
+      "cycle": 2,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 151.6
+    },
+    {
+      "cycle": 3,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 225.2
+    },
+    {
+      "cycle": 3,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 225.5
+    },
+    {
+      "cycle": 3,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 225.7
+    },
+    {
+      "cycle": 3,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 225.9
+    },
+    {
+      "cycle": 3,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 226.2
+    },
+    {
+      "cycle": 3,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 226.4
+    },
+    {
+      "cycle": 3,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 226.6
+    },
+    {
+      "cycle": 3,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 226.8
+    },
+    {
+      "cycle": 4,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 300.3
+    },
+    {
+      "cycle": 4,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 300.6
+    },
+    {
+      "cycle": 4,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 300.7
+    },
+    {
+      "cycle": 4,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 300.9
+    },
+    {
+      "cycle": 4,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 301.3
+    },
+    {
+      "cycle": 4,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 301.6
+    },
+    {
+      "cycle": 4,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 301.9
+    },
+    {
+      "cycle": 4,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 302.1
+    },
+    {
+      "cycle": 5,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 375.3
+    },
+    {
+      "cycle": 5,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 375.7
+    },
+    {
+      "cycle": 5,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 375.8
+    },
+    {
+      "cycle": 5,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 376.0
+    },
+    {
+      "cycle": 5,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 376.4
+    },
+    {
+      "cycle": 5,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 376.7
+    },
+    {
+      "cycle": 5,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 376.8
+    },
+    {
+      "cycle": 5,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 377.1
+    },
+    {
+      "cycle": 6,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 450.6
+    },
+    {
+      "cycle": 6,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 450.9
+    },
+    {
+      "cycle": 6,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 451.1
+    },
+    {
+      "cycle": 6,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 451.4
+    },
+    {
+      "cycle": 6,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 451.7
+    },
+    {
+      "cycle": 6,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 452.0
+    },
+    {
+      "cycle": 6,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 452.1
+    },
+    {
+      "cycle": 6,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 452.3
+    },
+    {
+      "cycle": 7,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 525.6
+    },
+    {
+      "cycle": 7,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 526.1
+    },
+    {
+      "cycle": 7,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 526.4
+    },
+    {
+      "cycle": 7,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 526.8
+    },
+    {
+      "cycle": 7,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 527.1
+    },
+    {
+      "cycle": 7,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 527.4
+    },
+    {
+      "cycle": 7,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 527.6
+    },
+    {
+      "cycle": 7,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 527.9
+    },
+    {
+      "cycle": 8,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 600.3
+    },
+    {
+      "cycle": 8,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 600.6
+    },
+    {
+      "cycle": 8,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 600.7
+    },
+    {
+      "cycle": 8,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 600.9
+    },
+    {
+      "cycle": 8,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 601.2
+    },
+    {
+      "cycle": 8,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 601.5
+    },
+    {
+      "cycle": 8,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 601.6
+    },
+    {
+      "cycle": 8,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 601.8
+    },
+    {
+      "cycle": 9,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 675.3
+    },
+    {
+      "cycle": 9,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 675.5
+    },
+    {
+      "cycle": 9,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 675.7
+    },
+    {
+      "cycle": 9,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 675.8
+    },
+    {
+      "cycle": 9,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 676.1
+    },
+    {
+      "cycle": 9,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 676.4
+    },
+    {
+      "cycle": 9,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 676.5
+    },
+    {
+      "cycle": 9,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 676.7
+    },
+    {
+      "cycle": 10,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 750.2
+    },
+    {
+      "cycle": 10,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 750.6
+    },
+    {
+      "cycle": 10,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 750.8
+    },
+    {
+      "cycle": 10,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 751.0
+    },
+    {
+      "cycle": 10,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 751.4
+    },
+    {
+      "cycle": 10,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 751.8
+    },
+    {
+      "cycle": 10,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 752.1
+    },
+    {
+      "cycle": 10,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 752.5
+    },
+    {
+      "cycle": 11,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 825.3
+    },
+    {
+      "cycle": 11,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 825.6
+    },
+    {
+      "cycle": 11,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 825.7
+    },
+    {
+      "cycle": 11,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 825.9
+    },
+    {
+      "cycle": 11,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 826.2
+    },
+    {
+      "cycle": 11,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 826.5
+    },
+    {
+      "cycle": 11,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 826.7
+    },
+    {
+      "cycle": 11,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 826.9
+    },
+    {
+      "cycle": 12,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 900.2
+    },
+    {
+      "cycle": 12,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 900.5
+    },
+    {
+      "cycle": 12,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 900.6
+    },
+    {
+      "cycle": 12,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 900.9
+    },
+    {
+      "cycle": 12,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 901.2
+    },
+    {
+      "cycle": 12,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 901.5
+    },
+    {
+      "cycle": 12,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 901.7
+    },
+    {
+      "cycle": 12,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 902.0
+    },
+    {
+      "cycle": 13,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 975.5
+    },
+    {
+      "cycle": 13,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 975.8
+    },
+    {
+      "cycle": 13,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 976.0
+    },
+    {
+      "cycle": 13,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 976.3
+    },
+    {
+      "cycle": 13,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 976.5
+    },
+    {
+      "cycle": 13,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 976.8
+    },
+    {
+      "cycle": 13,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 976.9
+    },
+    {
+      "cycle": 13,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 977.1
+    },
+    {
+      "cycle": 14,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1050.3
+    },
+    {
+      "cycle": 14,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1050.6
+    },
+    {
+      "cycle": 14,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1050.9
+    },
+    {
+      "cycle": 14,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1051.0
+    },
+    {
+      "cycle": 14,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1051.3
+    },
+    {
+      "cycle": 14,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1051.5
+    },
+    {
+      "cycle": 14,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1051.6
+    },
+    {
+      "cycle": 14,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1051.8
+    },
+    {
+      "cycle": 15,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1125.2
+    },
+    {
+      "cycle": 15,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1125.4
+    },
+    {
+      "cycle": 15,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1125.6
+    },
+    {
+      "cycle": 15,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1125.7
+    },
+    {
+      "cycle": 15,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1126.0
+    },
+    {
+      "cycle": 15,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1126.2
+    },
+    {
+      "cycle": 15,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1126.4
+    },
+    {
+      "cycle": 15,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1126.6
+    },
+    {
+      "cycle": 16,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1200.2
+    },
+    {
+      "cycle": 16,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1200.4
+    },
+    {
+      "cycle": 16,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1200.5
+    },
+    {
+      "cycle": 16,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1200.7
+    },
+    {
+      "cycle": 16,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1200.9
+    },
+    {
+      "cycle": 16,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1201.2
+    },
+    {
+      "cycle": 16,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1201.3
+    },
+    {
+      "cycle": 16,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1201.4
+    },
+    {
+      "cycle": 17,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1275.2
+    },
+    {
+      "cycle": 17,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1275.4
+    },
+    {
+      "cycle": 17,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1275.5
+    },
+    {
+      "cycle": 17,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1275.7
+    },
+    {
+      "cycle": 17,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1275.9
+    },
+    {
+      "cycle": 17,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1276.2
+    },
+    {
+      "cycle": 17,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1276.4
+    },
+    {
+      "cycle": 17,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1276.5
+    },
+    {
+      "cycle": 18,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1350.2
+    },
+    {
+      "cycle": 18,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1350.4
+    },
+    {
+      "cycle": 18,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1350.5
+    },
+    {
+      "cycle": 18,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1350.6
+    },
+    {
+      "cycle": 18,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1350.9
+    },
+    {
+      "cycle": 18,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1351.0
+    },
+    {
+      "cycle": 18,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1351.2
+    },
+    {
+      "cycle": 18,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1351.4
+    },
+    {
+      "cycle": 19,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1425.5
+    },
+    {
+      "cycle": 19,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1425.8
+    },
+    {
+      "cycle": 19,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1426.0
+    },
+    {
+      "cycle": 19,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1426.4
+    },
+    {
+      "cycle": 19,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1426.7
+    },
+    {
+      "cycle": 19,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1427.0
+    },
+    {
+      "cycle": 19,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1427.2
+    },
+    {
+      "cycle": 19,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1427.4
+    },
+    {
+      "cycle": 20,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1500.2
+    },
+    {
+      "cycle": 20,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1500.4
+    },
+    {
+      "cycle": 20,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1500.5
+    },
+    {
+      "cycle": 20,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1500.7
+    },
+    {
+      "cycle": 20,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1500.9
+    },
+    {
+      "cycle": 20,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1501.1
+    },
+    {
+      "cycle": 20,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1501.2
+    },
+    {
+      "cycle": 20,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1501.4
+    },
+    {
+      "cycle": 21,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1575.2
+    },
+    {
+      "cycle": 21,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1575.4
+    },
+    {
+      "cycle": 21,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1575.6
+    },
+    {
+      "cycle": 21,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1575.7
+    },
+    {
+      "cycle": 21,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1575.9
+    },
+    {
+      "cycle": 21,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1576.2
+    },
+    {
+      "cycle": 21,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1576.4
+    },
+    {
+      "cycle": 21,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1576.6
+    },
+    {
+      "cycle": 22,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1650.2
+    },
+    {
+      "cycle": 22,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1650.4
+    },
+    {
+      "cycle": 22,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1650.6
+    },
+    {
+      "cycle": 22,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1650.7
+    },
+    {
+      "cycle": 22,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1650.9
+    },
+    {
+      "cycle": 22,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1651.1
+    },
+    {
+      "cycle": 22,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1651.2
+    },
+    {
+      "cycle": 22,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1651.4
+    },
+    {
+      "cycle": 23,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1725.2
+    },
+    {
+      "cycle": 23,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1725.4
+    },
+    {
+      "cycle": 23,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1725.6
+    },
+    {
+      "cycle": 23,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1725.7
+    },
+    {
+      "cycle": 23,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1726.0
+    },
+    {
+      "cycle": 23,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1726.3
+    },
+    {
+      "cycle": 23,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1726.4
+    },
+    {
+      "cycle": 23,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1726.7
+    },
+    {
+      "cycle": 24,
+      "vision": "none",
+      "screen": "menu",
+      "elapsed_s": 1800.2
+    },
+    {
+      "cycle": 24,
+      "vision": "none",
+      "screen": "need",
+      "elapsed_s": 1800.4
+    },
+    {
+      "cycle": 24,
+      "vision": "none",
+      "screen": "recipe",
+      "elapsed_s": 1800.5
+    },
+    {
+      "cycle": 24,
+      "vision": "none",
+      "screen": "allocation",
+      "elapsed_s": 1800.7
+    },
+    {
+      "cycle": 24,
+      "vision": "achromatopsia",
+      "screen": "menu",
+      "elapsed_s": 1801.0
+    },
+    {
+      "cycle": 24,
+      "vision": "achromatopsia",
+      "screen": "need",
+      "elapsed_s": 1801.2
+    },
+    {
+      "cycle": 24,
+      "vision": "achromatopsia",
+      "screen": "recipe",
+      "elapsed_s": 1801.4
+    },
+    {
+      "cycle": 24,
+      "vision": "achromatopsia",
+      "screen": "allocation",
+      "elapsed_s": 1801.7
+    }
+  ],
+  "captures": [
+    {
+      "capture": "repeated-scan-0-none",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ],
+      "rendered": {
+        "cells": [
+          {
+            "text": "Nguyên liệu",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Định lượng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Đơn vị",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Ghi chú",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Thao tác",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Bí đỏ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "Kilôgam",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "Bỏ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "Nguyên liệu",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Định lượng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Đơn vị",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Bí đỏ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 32.59375
+          },
+          {
+            "text": "22,5",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 32.59375
+          },
+          {
+            "text": "Kilôgam",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 32.59375
+          }
+        ],
+        "controls": [
+          {
+            "text": "Nhập workbook",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảĐang dùngNgừng dùngNháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảMón canhMón mặnLoại món cũ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(85, 85, 85)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(85, 85, 85)",
+            "opacity": "1",
+            "outline": "rgb(85, 85, 85)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Làm mới dữ liệu"
+          },
+          {
+            "text": "Tạo món mới",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Canh bí đỏ thịt bằmMón canh · Đang dùng · Đang chọn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(221, 242, 234)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh bí đỏ thịt bằm"
+          },
+          {
+            "text": "Thịt heo khoMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(222, 243, 235)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt heo kho"
+          },
+          {
+            "text": "Canh rau củMón canh · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh rau củ"
+          },
+          {
+            "text": "Đậu sốt cà chuaMón mặn · Ngừng dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Đậu sốt cà chua"
+          },
+          {
+            "text": "Cá kho gừngMón canh · Nháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cá kho gừng"
+          },
+          {
+            "text": "Canh cải xanhMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh cải xanh"
+          },
+          {
+            "text": "Trứng hấpMón canh · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Trứng hấp"
+          },
+          {
+            "text": "Gà xào nấmMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Gà xào nấm"
+          },
+          {
+            "text": "Canh khoai mỡMón canh · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh khoai mỡ"
+          },
+          {
+            "text": "Thịt rimMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt rim"
+          },
+          {
+            "text": "Rau củ luộcMón canh · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Rau củ luộc"
+          },
+          {
+            "text": "Cơm trắngMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cơm trắng"
+          },
+          {
+            "text": "Đóng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Đóng công thức"
+          },
+          {
+            "text": "Sửa thông tin món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Sao chép công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Khối nhỏKhối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Mở lịch — Ngày áp dụng"
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": "Định lượng Bí đỏ"
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": "Ghi chú Bí đỏ"
+          },
+          {
+            "text": "Bỏ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Bỏ Bí đỏ"
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Xem thay đổi",
+            "size": "14px",
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(15, 100, 78)",
+            "border": "rgba(0, 0, 0, 0)",
+            "opacity": "1",
+            "outline": "rgb(255, 255, 255)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          }
+        ],
+        "selected": [],
+        "selectedDish": [
+          {
+            "text": "Canh bí đỏ thịt bằmMón canh · Đang dùng · Đang chọn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(221, 242, 234)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "edge": "3px"
+          }
+        ]
+      }
+    },
+    {
+      "capture": "repeated-scan-0-achromatopsia",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ],
+      "rendered": {
+        "cells": [
+          {
+            "text": "Nguyên liệu",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Định lượng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Đơn vị",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Ghi chú",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Thao tác",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 59.6875
+          },
+          {
+            "text": "Bí đỏ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "Kilôgam",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "Bỏ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 53
+          },
+          {
+            "text": "Nguyên liệu",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Định lượng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Đơn vị",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Bí đỏ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 32.59375
+          },
+          {
+            "text": "22,5",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 32.59375
+          },
+          {
+            "text": "Kilôgam",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 32.59375
+          }
+        ],
+        "controls": [
+          {
+            "text": "Nhập workbook",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảĐang dùngNgừng dùngNháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảMón canhMón mặnLoại món cũ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(85, 85, 85)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(85, 85, 85)",
+            "opacity": "1",
+            "outline": "rgb(85, 85, 85)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Làm mới dữ liệu"
+          },
+          {
+            "text": "Tạo món mới",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Canh bí đỏ thịt bằmMón canh · Đang dùng · Đang chọn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(221, 242, 234)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh bí đỏ thịt bằm"
+          },
+          {
+            "text": "Thịt heo khoMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(221, 242, 234)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt heo kho"
+          },
+          {
+            "text": "Canh rau củMón canh · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh rau củ"
+          },
+          {
+            "text": "Đậu sốt cà chuaMón mặn · Ngừng dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Đậu sốt cà chua"
+          },
+          {
+            "text": "Cá kho gừngMón canh · Nháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cá kho gừng"
+          },
+          {
+            "text": "Canh cải xanhMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh cải xanh"
+          },
+          {
+            "text": "Trứng hấpMón canh · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Trứng hấp"
+          },
+          {
+            "text": "Gà xào nấmMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Gà xào nấm"
+          },
+          {
+            "text": "Canh khoai mỡMón canh · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh khoai mỡ"
+          },
+          {
+            "text": "Thịt rimMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt rim"
+          },
+          {
+            "text": "Rau củ luộcMón canh · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Rau củ luộc"
+          },
+          {
+            "text": "Cơm trắngMón mặn · Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cơm trắng"
+          },
+          {
+            "text": "Đóng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Đóng công thức"
+          },
+          {
+            "text": "Sửa thông tin món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Sao chép công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Khối nhỏKhối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Mở lịch — Ngày áp dụng"
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": "Định lượng Bí đỏ"
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": "Ghi chú Bí đỏ"
+          },
+          {
+            "text": "Bỏ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Bỏ Bí đỏ"
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Xem thay đổi",
+            "size": "14px",
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(15, 100, 78)",
+            "border": "rgba(0, 0, 0, 0)",
+            "opacity": "1",
+            "outline": "rgb(255, 255, 255)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          }
+        ],
+        "selected": [],
+        "selectedDish": [
+          {
+            "text": "Canh bí đỏ thịt bằmMón canh · Đang dùng · Đang chọn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(221, 242, 234)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 67.5,
+            "edge": "3px"
+          }
+        ]
+      }
+    },
+    {
+      "capture": "repeated-scan-12-none",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ],
+      "rendered": {
+        "cells": [
+          {
+            "text": "Món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Loại món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Trạng thái",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Thao tác",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Canh bí đỏ thịt bằm",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Thịt heo kho",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh rau củ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đậu sốt cà chua",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Ngừng dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Cá kho gừng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Nháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh cải xanh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Trứng hấp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Gà xào nấm",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh khoai mỡ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Thịt rim",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Rau củ luộc",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Cơm trắng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          }
+        ],
+        "controls": [
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảĐang dùngNgừng dùngNháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảMón canhMón mặnLoại món cũ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(85, 85, 85)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(85, 85, 85)",
+            "opacity": "1",
+            "outline": "rgb(85, 85, 85)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Làm mới dữ liệu"
+          },
+          {
+            "text": "Tạo món mới",
+            "size": "14px",
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(15, 100, 78)",
+            "border": "rgba(0, 0, 0, 0)",
+            "opacity": "1",
+            "outline": "rgb(255, 255, 255)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Nhập workbook",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh bí đỏ thịt bằm"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt heo kho"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh rau củ"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Đậu sốt cà chua"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cá kho gừng"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh cải xanh"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Trứng hấp"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Gà xào nấm"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh khoai mỡ"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt rim"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Rau củ luộc"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cơm trắng"
+          }
+        ],
+        "selected": [],
+        "selectedDish": []
+      }
+    },
+    {
+      "capture": "repeated-scan-12-achromatopsia",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ],
+      "rendered": {
+        "cells": [
+          {
+            "text": "Món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Loại món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Trạng thái",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Thao tác",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Canh bí đỏ thịt bằm",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Thịt heo kho",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh rau củ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đậu sốt cà chua",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Ngừng dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Cá kho gừng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Nháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh cải xanh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Trứng hấp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Gà xào nấm",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh khoai mỡ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Thịt rim",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Rau củ luộc",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Cơm trắng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          }
+        ],
+        "controls": [
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảĐang dùngNgừng dùngNháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảMón canhMón mặnLoại món cũ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(85, 85, 85)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(85, 85, 85)",
+            "opacity": "1",
+            "outline": "rgb(85, 85, 85)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Làm mới dữ liệu"
+          },
+          {
+            "text": "Tạo món mới",
+            "size": "14px",
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(15, 100, 78)",
+            "border": "rgba(0, 0, 0, 0)",
+            "opacity": "1",
+            "outline": "rgb(255, 255, 255)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Nhập workbook",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh bí đỏ thịt bằm"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt heo kho"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh rau củ"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Đậu sốt cà chua"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cá kho gừng"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh cải xanh"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Trứng hấp"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Gà xào nấm"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh khoai mỡ"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt rim"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Rau củ luộc"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cơm trắng"
+          }
+        ],
+        "selected": [],
+        "selectedDish": []
+      }
+    },
+    {
+      "capture": "repeated-scan-24-none",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ],
+      "rendered": {
+        "cells": [
+          {
+            "text": "Món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Loại món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Trạng thái",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Thao tác",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Canh bí đỏ thịt bằm",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Thịt heo kho",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh rau củ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đậu sốt cà chua",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Ngừng dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Cá kho gừng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Nháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh cải xanh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Trứng hấp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Gà xào nấm",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh khoai mỡ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Thịt rim",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Rau củ luộc",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Cơm trắng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          }
+        ],
+        "controls": [
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảĐang dùngNgừng dùngNháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảMón canhMón mặnLoại món cũ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(85, 85, 85)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(85, 85, 85)",
+            "opacity": "1",
+            "outline": "rgb(85, 85, 85)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Làm mới dữ liệu"
+          },
+          {
+            "text": "Tạo món mới",
+            "size": "14px",
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(15, 100, 78)",
+            "border": "rgba(0, 0, 0, 0)",
+            "opacity": "1",
+            "outline": "rgb(255, 255, 255)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Nhập workbook",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh bí đỏ thịt bằm"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt heo kho"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh rau củ"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Đậu sốt cà chua"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cá kho gừng"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh cải xanh"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Trứng hấp"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Gà xào nấm"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh khoai mỡ"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt rim"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Rau củ luộc"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cơm trắng"
+          }
+        ],
+        "selected": [],
+        "selectedDish": []
+      }
+    },
+    {
+      "capture": "repeated-scan-24-achromatopsia",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "activeOwner": "Công thức",
+      "overflow": false,
+      "activePanels": 1,
+      "hiddenOwners": [
+        {
+          "name": "Trường học",
+          "inert": true
+        },
+        {
+          "name": "Thực đơn",
+          "inert": true
+        },
+        {
+          "name": "Xác nhận nhu cầu",
+          "inert": true
+        },
+        {
+          "name": "Phân bổ NCC",
+          "inert": true
+        }
+      ],
+      "focusHidden": false,
+      "heading": [
+        {
+          "text": "Công thức",
+          "size": "24px",
+          "weight": "650"
+        }
+      ],
+      "targets": [
+        {
+          "label": "Bàn làm việc",
+          "width": 44,
+          "height": 40
+        },
+        {
+          "label": "Tài khoản và môi trường",
+          "width": 138.53125,
+          "height": 40
+        }
+      ],
+      "rendered": {
+        "cells": [
+          {
+            "text": "Món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Loại món",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Trạng thái",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Thao tác",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(241, 241, 241)",
+            "border": "rgb(28, 28, 28) rgb(28, 28, 28) rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 40.09375
+          },
+          {
+            "text": "Canh bí đỏ thịt bằm",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Thịt heo kho",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh rau củ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đậu sốt cà chua",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Ngừng dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Cá kho gừng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Nháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh cải xanh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Trứng hấp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Gà xào nấm",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Canh khoai mỡ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Thịt rim",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Rau củ luộc",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món canh",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Cơm trắng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Món mặn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Đang dùng",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Khối nhỏ · Khối lớn",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "3px",
+            "height": 49
+          }
+        ],
+        "controls": [
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "INPUT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảĐang dùngNgừng dùngNháp",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Tất cảMón canhMón mặnLoại món cũ",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(255, 255, 255)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "SELECT",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "",
+            "size": "14px",
+            "color": "rgb(85, 85, 85)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(85, 85, 85)",
+            "opacity": "1",
+            "outline": "rgb(85, 85, 85)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Làm mới dữ liệu"
+          },
+          {
+            "text": "Tạo món mới",
+            "size": "14px",
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(15, 100, 78)",
+            "border": "rgba(0, 0, 0, 0)",
+            "opacity": "1",
+            "outline": "rgb(255, 255, 255)",
+            "outlineWidth": "0px",
+            "height": 40,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Nhập workbook",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgb(250, 250, 250)",
+            "border": "rgb(112, 112, 112)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": null
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh bí đỏ thịt bằm"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt heo kho"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh rau củ"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Đậu sốt cà chua"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cá kho gừng"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh cải xanh"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Trứng hấp"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Gà xào nấm"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Canh khoai mỡ"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Thịt rim"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Rau củ luộc"
+          },
+          {
+            "text": "Sửa công thức",
+            "size": "14px",
+            "color": "rgb(28, 28, 28)",
+            "bg": "rgba(0, 0, 0, 0)",
+            "border": "rgb(208, 208, 208)",
+            "opacity": "1",
+            "outline": "rgb(28, 28, 28)",
+            "outlineWidth": "0px",
+            "height": 36,
+            "tag": "BUTTON",
+            "disabled": false,
+            "label": "Sửa công thức Cơm trắng"
+          }
+        ],
+        "selected": [],
+        "selectedDish": []
+      }
+    }
+  ],
+  "hosted_requests": 0,
+  "scope": "30-minute fixture switching/engineering pixel review; not a human fatigue study",
+  "browser": "151.0.7922.34",
+  "fixture_only": true,
+  "status": "PASS"
+}

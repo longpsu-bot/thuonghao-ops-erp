@@ -93,15 +93,10 @@ export function PlanningPantryStage({
           onCheckedChange={(d) => c.requestNoAdditions(d.checked === true)}
         >
           <Checkbox.HiddenInput />
-          <Checkbox.Control
-            borderColor="border.default"
-            _checked={{ bg: "action.primary.default", color: "fg.inverse" }}
-          >
+          <Checkbox.Control>
             <Checkbox.Indicator />
           </Checkbox.Control>
-          <Checkbox.Label textStyle="helper">
-            Xác nhận toàn tuần không có bổ sung
-          </Checkbox.Label>
+          <Checkbox.Label>Xác nhận toàn tuần không có bổ sung</Checkbox.Label>
         </Checkbox.Root>
         {c.schoolIds.length > 0 && (
           <Text textStyle="helper" color="fg.muted">

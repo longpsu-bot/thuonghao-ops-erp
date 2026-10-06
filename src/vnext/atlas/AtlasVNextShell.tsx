@@ -8,7 +8,7 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { CaretDown, Circle, UserCircle, X } from "@phosphor-icons/react";
+import { CaretDown, Circle, List, UserCircle, X } from "@phosphor-icons/react";
 import {
   useEffect,
   useId,
@@ -246,15 +246,15 @@ export function AtlasVNextShell({
             closeMenu(false);
         }}
       >
-        <Text textStyle="brandCompact" flexShrink="0">
-          ATLAS
-        </Text>
         <Button
           id={`${prefix}-launcher`}
           variant="utility"
           color="fg.inverse"
           minH="var(--atlas-layout-mobile-target, 44px)"
+          minW="var(--atlas-layout-mobile-target, 44px)"
+          p="sm"
           aria-label="Bàn làm việc"
+          title="Bàn làm việc"
           aria-haspopup="dialog"
           aria-expanded={menu === "launcher"}
           aria-controls={`${prefix}-launcher-menu`}
@@ -262,8 +262,11 @@ export function AtlasVNextShell({
           _focusVisible={{ outlineColor: "focus.inverse" }}
           onClick={(event) => toggle("launcher", event.currentTarget)}
         >
-          Bàn làm việc <CaretDown aria-hidden="true" />
+          <List size={22} aria-hidden="true" />
         </Button>
+        <Text textStyle="brandCompact" flexShrink="0" color="fg.navBrand">
+          ATLAS
+        </Text>
         <Flex
           flex="1"
           justify="flex-end"
@@ -305,6 +308,9 @@ export function AtlasVNextShell({
             aria-label="Bàn làm việc"
             onKeyDown={menuKeys}
           >
+            <Text fontWeight="semibold" px="sm" pb="sm">
+              Bàn làm việc
+            </Text>
             <Field.Root mb="sm">
               <Field.Label>Tìm bàn làm việc</Field.Label>
               <Input
@@ -426,6 +432,7 @@ export function AtlasVNextShell({
           minW="var(--atlas-layout-zero, 0)"
           maxW="full"
           position="relative"
+          bg="bg.toolbar"
           px="sm"
           pt="xs"
         >
@@ -444,11 +451,7 @@ export function AtlasVNextShell({
                 align="center"
                 bg={id === activeModule ? "bg.workbench" : "transparent"}
                 borderTopRadius="workbench"
-                borderTopWidth="var(--atlas-layout-edge, 1px)"
-                borderTopColor={
-                  id === activeModule ? "border.default" : "transparent"
-                }
-                borderBottomWidth="var(--atlas-workspace-selected-edge, 2px)"
+                borderBottomWidth="var(--atlas-workspace-selected-edge, 3px)"
                 borderBottomColor={
                   id === activeModule ? "border.accent" : "transparent"
                 }
@@ -464,7 +467,7 @@ export function AtlasVNextShell({
                   aria-keyshortcuts="Delete"
                   tabIndex={id === activeModule ? 0 : -1}
                   variant="utility"
-                  color={id === activeModule ? "fg.default" : "fg.muted"}
+                  color={id === activeModule ? "fg.default" : "fg.secondary"}
                   fontWeight={id === activeModule ? "semibold" : "normal"}
                   borderRadius="var(--atlas-layout-zero, 0)"
                   onClick={() => select(id)}
@@ -475,7 +478,11 @@ export function AtlasVNextShell({
                     <Box
                       as="span"
                       aria-label={marker(id)}
-                      color="status.warning"
+                      color={
+                        statuses[id]?.unsaved || statuses[id]?.attention
+                          ? "fg.attention"
+                          : "status.danger"
+                      }
                       title={marker(id)}
                     >
                       <Icon
@@ -504,7 +511,13 @@ export function AtlasVNextShell({
           </Flex>
         </Box>
       ) : (
-        <Box position="relative" px="sm" py="xs" ref={openSwitcher}>
+        <Box
+          position="relative"
+          bg="bg.toolbar"
+          px="sm"
+          py="xs"
+          ref={openSwitcher}
+        >
           <Button
             id={`${prefix}-open-trigger`}
             variant="secondary"

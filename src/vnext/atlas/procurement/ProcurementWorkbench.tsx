@@ -16,7 +16,7 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import type { CSSProperties } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
@@ -55,6 +55,15 @@ export type ProcurementWorkbenchProps = ProcurementControllerProps &
   };
 export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const controller = useProcurementWorkbench(props);
+  const ownerId = useId();
+  const filterId = props.ownerStage
+    ? `${ownerId}-procurement-filters`
+    : "procurement-filters";
+  const label = props.ownerStage
+    ? controller.stage === "allocation"
+      ? "Phân bổ NCC"
+      : "Đơn mua"
+    : "Kế hoạch mua hàng";
   const [search, setSearch] = useState("");
   const [exception, setException] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -181,7 +190,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   return (
     <Box
       as="section"
-      aria-label="Kế hoạch mua hàng"
+      aria-label={label}
       bg="bg.workbench"
       borderRadius="workbench"
       borderWidth="var(--atlas-layout-edge, 1px)"
@@ -195,10 +204,12 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       >
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh công việc mua hàng"
-          moduleLabel="Kế hoạch mua hàng"
+          moduleLabel={label}
           jobLabel={
             controller.stage === "allocation"
-              ? "Phân bổ nhà cung ứng"
+              ? props.ownerStage
+                ? "Phân bổ NCC"
+                : "Phân bổ nhà cung ứng"
               : "Đơn mua"
           }
           compactSummary={
@@ -227,29 +238,33 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             }}
             variant="line"
           >
-            <Box px="md" py="sm">
-              <Tabs.List
-                aria-label="Công việc mua hàng"
-                {...atlasPrimaryTabList}
-              >
-                <Tabs.Trigger
-                  value="allocation"
-                  disabled={
-                    Boolean(selected) && controller.stage !== "allocation"
-                  }
-                  {...atlasPrimaryTabTrigger}
+            {!props.ownerStage && (
+              <Box px="md" py="sm">
+                <Tabs.List
+                  aria-label="Công việc mua hàng"
+                  {...atlasPrimaryTabList}
                 >
-                  Phân bổ NCC
-                </Tabs.Trigger>
-                <Tabs.Trigger
-                  value="orders"
-                  disabled={Boolean(selected) && controller.stage !== "orders"}
-                  {...atlasPrimaryTabTrigger}
-                >
-                  Đơn mua
-                </Tabs.Trigger>
-              </Tabs.List>
-            </Box>
+                  <Tabs.Trigger
+                    value="allocation"
+                    disabled={
+                      Boolean(selected) && controller.stage !== "allocation"
+                    }
+                    {...atlasPrimaryTabTrigger}
+                  >
+                    Phân bổ NCC
+                  </Tabs.Trigger>
+                  <Tabs.Trigger
+                    value="orders"
+                    disabled={
+                      Boolean(selected) && controller.stage !== "orders"
+                    }
+                    {...atlasPrimaryTabTrigger}
+                  >
+                    Đơn mua
+                  </Tabs.Trigger>
+                </Tabs.List>
+              </Box>
+            )}
             <Grid
               role="group"
               aria-label="Phạm vi mua hàng"
@@ -271,7 +286,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             >
               <Box
                 ref={compactFilters}
-                id="procurement-filters"
+                id={filterId}
                 display="contents"
                 onKeyDown={(event) => {
                   if (filtersOpen)
@@ -382,7 +397,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 variant="secondary"
                 minH="var(--atlas-layout-mobile-target, 44px)"
                 aria-expanded={filtersOpen}
-                aria-controls="procurement-filters"
+                aria-controls={filterId}
                 onClick={() => setFiltersOpen((open) => !open)}
               >
                 Bộ lọc

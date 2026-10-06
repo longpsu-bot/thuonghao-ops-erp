@@ -40,6 +40,8 @@ export type ProcurementControllerProps = {
   initialServiceDate: string;
   onServiceDateChange?: (date: string) => void;
   initialStage?: ProcurementStage;
+  ownerStage?: ProcurementStage;
+  onOpenOrders?: (date: string) => void;
 };
 const uncertain = (): ProcurementFeedback => ({
   kind: "unknown",
@@ -100,13 +102,18 @@ export function useProcurementWorkbench({
   initialServiceDate,
   onServiceDateChange,
   initialStage = "allocation",
+  ownerStage,
+  onOpenOrders,
 }: ProcurementControllerProps) {
+  const fixedStage = useRef(ownerStage).current;
   const [date, setDate] = useState(initialServiceDate);
   useEffect(() => {
     onServiceDateChange?.(date);
   }, [date, onServiceDateChange]);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
-  const [stage, setStage] = useState<ProcurementStage>(initialStage);
+  const [stage, setStage] = useState<ProcurementStage>(
+    fixedStage ?? initialStage,
+  );
   const [allocation, setAllocation] =
     useState<ConfirmedAllocationWorkbench | null>(null);
   const [orders, setOrders] = useState<PurchaseOrdersData | null>(null);
@@ -240,12 +247,20 @@ export function useProcurementWorkbench({
     }
   };
   const changeStage = (value: ProcurementStage) => {
-    if (value !== stage) {
+    if (!fixedStage && value !== stage) {
       invalidate();
       setStage(value);
     }
   };
-  const enterOrdersAfterRead = () => {
+  const enterOrdersAfterRead = async (readStage: ProcurementStage) => {
+    if (fixedStage === "allocation") {
+      // Orders proof cannot make the retained Allocation snapshot current.
+      recoveryStage.current = "allocation";
+      if (readStage !== "allocation" && !(await read("allocation"))) return;
+      recoveryStage.current = null;
+      onOpenOrders?.(date);
+      return;
+    }
     recoveryStage.current = null;
     if (stage !== "orders") {
       skipPreparedStageRead.current = true;
@@ -259,7 +274,7 @@ export function useProcurementWorkbench({
     const ok = await read(target);
     if (ok) {
       setFeedback(null);
-      if (target === "orders" && recoveryStage.current) enterOrdersAfterRead();
+      if (recoveryStage.current) await enterOrdersAfterRead(target);
     }
   };
 
@@ -299,7 +314,7 @@ export function useProcurementWorkbench({
       if (!ok) {
         setFeedback(uncertain());
         setMutationLocked(true);
-      } else if (preparation) enterOrdersAfterRead();
+      } else if (preparation) await enterOrdersAfterRead(target);
       return;
     }
     if (["stale", "unknown"].includes(nextFeedback.kind))

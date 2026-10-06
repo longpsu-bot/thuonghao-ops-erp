@@ -63,9 +63,7 @@ async function open(label: string) {
   fireEvent.click(await screen.findByRole("button", { name: label }));
 }
 async function planning() {
-  await open("Lập nhu cầu");
-  await screen.findByRole("table", { name: "Thực đơn theo trường" });
-  fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+  await open("Xác nhận nhu cầu");
   await waitFor(() =>
     expect(
       screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
@@ -82,17 +80,15 @@ const continueAllocation = () =>
 it("Need activates same-context Procurement without a discrepancy, remount or read", async () => {
   const h = show();
   await planning();
-  await open("Kế hoạch mua hàng");
+  await open("Phân bổ NCC");
   await allocationAction();
-  const panel = screen.getByRole("tabpanel", { name: "Kế hoạch mua hàng" });
+  const panel = screen.getByRole("tabpanel", { name: "Phân bổ NCC" });
   const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
   const allocationReads = h.allocationRead.mock.calls.length;
   const ordersReads = h.ordersRead.mock.calls.length;
-  fireEvent.click(screen.getByRole("tab", { name: "Lập nhu cầu" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
   continueAllocation();
-  expect(screen.getByRole("tabpanel", { name: "Kế hoạch mua hàng" })).toBe(
-    panel,
-  );
+  expect(screen.getByRole("tabpanel", { name: "Phân bổ NCC" })).toBe(panel);
   expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
   expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(
     "aria-selected",
@@ -103,10 +99,10 @@ it("Need activates same-context Procurement without a discrepancy, remount or re
   expect(h.ordersRead).toHaveBeenCalledTimes(ordersReads);
 }, 15000);
 
-it("Need discloses the intended context while retaining Procurement's different local date and Orders stage", async () => {
+it("Need discloses the intended context while retaining Allocation's different local date", async () => {
   const h = show();
   await planning();
-  await open("Kế hoạch mua hàng");
+  await open("Phân bổ NCC");
   await allocationAction();
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   const day = screen.getByRole("spinbutton", { name: "Day" });
@@ -114,28 +110,24 @@ it("Need discloses the intended context while retaining Procurement's different 
   fireEvent.keyDown(day, { key: "ArrowUp" });
   await waitFor(() => expect(h.allocationRead).toHaveBeenCalledTimes(2));
   await allocationAction();
-  fireEvent.click(screen.getByRole("tab", { name: "Đơn mua" }));
-  await waitFor(() => expect(h.ordersRead).toHaveBeenCalledOnce());
   await waitFor(() =>
     expect(
       screen.getByRole("button", { name: "Làm mới dữ liệu" }),
     ).toBeEnabled(),
   );
-  const panel = screen.getByRole("tabpanel", { name: "Kế hoạch mua hàng" });
+  const panel = screen.getByRole("tabpanel", { name: "Phân bổ NCC" });
   const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
-  fireEvent.click(screen.getByRole("tab", { name: "Lập nhu cầu" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
   continueAllocation();
   const notice = screen.getByText(/^Nhu cầu ngày/);
   expect(notice.closest('[role="status"]')).toBeVisible();
   expect(notice).toHaveTextContent(
     `Nhu cầu ngày ${applicationReviewDate} yêu cầu Phân bổ NCC`,
   );
-  expect(notice).toHaveTextContent("giữ ngày 2026-09-08, giai đoạn Đơn mua");
-  expect(screen.getByRole("tabpanel", { name: "Kế hoạch mua hàng" })).toBe(
-    panel,
-  );
+  expect(notice).toHaveTextContent("giữ ngày 2026-09-08");
+  expect(screen.getByRole("tabpanel", { name: "Phân bổ NCC" })).toBe(panel);
   expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
-  expect(screen.getByRole("tab", { name: "Đơn mua" })).toHaveAttribute(
+  expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -144,14 +136,14 @@ it("Need discloses the intended context while retaining Procurement's different 
     "8",
   );
   expect(h.allocationRead).toHaveBeenCalledTimes(2);
-  expect(h.ordersRead).toHaveBeenCalledOnce();
+  expect(h.ordersRead).not.toHaveBeenCalled();
 }, 15000);
 
 it("Need returns to Procurement's dirty selected Supplier detail with its note and search intact", async () => {
   const h = show();
-  await open("Kế hoạch mua hàng");
+  await open("Phân bổ NCC");
   await allocationAction();
-  const panel = screen.getByRole("tabpanel", { name: "Kế hoạch mua hàng" });
+  const panel = screen.getByRole("tabpanel", { name: "Phân bổ NCC" });
   const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
   fireEvent.change(search, { target: { value: "Gạo" } });
   const selected = await allocationAction();
@@ -172,7 +164,7 @@ it("Need returns to Procurement's dirty selected Supplier detail with its note a
   expect(selected).toHaveAttribute("aria-expanded", "true");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(
-    screen.getByRole("tab", { name: /Kế hoạch mua hàng.*Chưa lưu/ }),
+    screen.getByRole("tab", { name: /Phân bổ NCC.*Chưa lưu/ }),
   ).toBeVisible();
   expect(h.allocationRead).toHaveBeenCalledOnce();
 }, 15000);

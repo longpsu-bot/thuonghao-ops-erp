@@ -1,0 +1,9 @@
+$ vitest run "src/vnext/atlas/system.test.tsx" "src/vnext/atlas/AtlasTableViewport.test.tsx" "--maxWorkers=1"
+
+ RUN  v4.1.10 E:/Project/OPS ERP/thuonghao-ops-erp
+
+
+ Test Files  4 passed (4)
+      Tests  56 passed (56)
+   Start at  15:30:49
+   Duration  17.26s (transform 167ms, setup 0ms, import 11.87s, tests 820ms, environment 3.69s)

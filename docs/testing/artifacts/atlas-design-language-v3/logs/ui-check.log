@@ -1,0 +1,2 @@
+$ node scripts/check-atlas-vnext-ui-boundary.mjs
+Atlas vNext UI boundary passed.

@@ -1,0 +1,10 @@
+$ vitest run "--maxWorkers=4" "--testTimeout=20000" "--exclude" ".superpowers/sdd/atlas-design-language-v3/baseline/**"
+
+ RUN  v4.1.10 E:/Project/OPS ERP/thuonghao-ops-erp
+
+Not implemented: Window's confirm() method
+
+ Test Files  184 passed (184)
+      Tests  2476 passed (2476)
+   Start at  15:36:12
+   Duration  457.59s (transform 12.56s, setup 0ms, import 701.48s, tests 791.13s, environment 273.29s)

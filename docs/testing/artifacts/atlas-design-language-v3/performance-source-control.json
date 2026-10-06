@@ -1,0 +1,975 @@
+{
+  "baseline_sha": "ea0d00a3cbf413588462873b8e03370e476f08d6",
+  "browser": "151.0.7922.34",
+  "cpu_throttle": 4,
+  "method": "Exact archived pre-v3 PR at 3001 / current source at 3000; same Vite wrapper, watch=null requested (see environment_limit); 11 owners, 55 measured samples each; no heavy jobs active",
+  "results": [
+    {
+      "width": 1440,
+      "before": {
+        "width": 1440,
+        "owners": 11,
+        "samples": [
+          {
+            "owner": "Trường học",
+            "paint_ms": 494.5
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 782.4
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 814.2
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 303
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 299.4
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 321.6
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 322.7
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1493.2
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 318.7
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 243
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 320.4
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 418.8
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 696.5
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 888.2
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 291
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 287.3
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 404
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 348.1
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1830.1
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 359.6
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 322
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 426.5
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 557.6
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 669.5
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 753.9
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 265.2
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 273.9
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 249.6
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 262
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1362.1
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 305.7
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 235.7
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 272.2
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 344.9
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 684.7
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 695.7
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 245.8
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 215.1
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 245.9
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 332.4
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1398.5
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 278.1
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 223.8
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 264.2
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 323.6
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 595.4
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 696.6
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 290.5
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 251.7
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 291.2
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 268.7
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1485.2
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 280.5
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 195.4
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 270.7
+          }
+        ],
+        "sample_count": 55,
+        "median_ms": 321.6,
+        "p95_ms": 1398.5,
+        "legacy_four_owner_subset": {
+          "labels": [
+            "Trường học",
+            "Phân bổ NCC",
+            "Công thức",
+            "Phiếu xuất kho"
+          ],
+          "sample_count": 20,
+          "median_ms": 291.1,
+          "p95_ms": 494.5
+        }
+      },
+      "after": {
+        "width": 1440,
+        "owners": 11,
+        "samples": [
+          {
+            "owner": "Trường học",
+            "paint_ms": 483.4
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 985.5
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 1029.4
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 378
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 397.5
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 307.8
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 387.5
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 2466
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 437.6
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 339.8
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 383.3
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 424.7
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 892.7
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 941.1
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 421.9
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 426.5
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 303.6
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 445.5
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1659.2
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 413.5
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 270
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 450
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 448.8
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 803.5
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 974.6
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 343.5
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 328.5
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 333.6
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 605
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1614.1
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 324.3
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 252.8
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 439
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 534.9
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 1134.1
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 1156.6
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 369.6
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 243.8
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 290.8
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 372.8
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1758.6
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 323.9
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 407.8
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 299.8
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 362.1
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 1018.5
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 896.7
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 440.9
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 325.1
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 316
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 339.8
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1752.1
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 391.9
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 253.5
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 403.8
+          }
+        ],
+        "sample_count": 55,
+        "median_ms": 413.5,
+        "p95_ms": 1659.2,
+        "legacy_four_owner_subset": {
+          "labels": [
+            "Trường học",
+            "Phân bổ NCC",
+            "Công thức",
+            "Phiếu xuất kho"
+          ],
+          "sample_count": 20,
+          "median_ms": 352.8,
+          "p95_ms": 483.4
+        }
+      }
+    },
+    {
+      "width": 650,
+      "before": {
+        "width": 650,
+        "owners": 11,
+        "samples": [
+          {
+            "owner": "Trường học",
+            "paint_ms": 285.9
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 587.5
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 598.2
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 186
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 165.4
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 206.5
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 263.2
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 2206.8
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 384.3
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 188.5
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 234.6
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 312.6
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 1087.4
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 1076.4
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 254.3
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 279.7
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 181.4
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 200.8
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1402.7
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 255.7
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 183.4
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 371.7
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 496.3
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 698
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 765.3
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 293.6
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 186.1
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 347.8
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 281.4
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1619
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 318.1
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 235.4
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 225
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 470
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 814.5
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 815.3
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 235.4
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 221
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 208.6
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 270
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1600.9
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 305
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 197.3
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 262.4
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 291.8
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 605.6
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 1162.9
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 225.3
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 166.2
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 213.5
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 277.7
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1709.5
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 316.1
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 167.3
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 275.3
+          }
+        ],
+        "sample_count": 55,
+        "median_ms": 281.4,
+        "p95_ms": 1600.9,
+        "legacy_four_owner_subset": {
+          "labels": [
+            "Trường học",
+            "Phân bổ NCC",
+            "Công thức",
+            "Phiếu xuất kho"
+          ],
+          "sample_count": 20,
+          "median_ms": 230.35,
+          "p95_ms": 470
+        }
+      },
+      "after": {
+        "width": 650,
+        "owners": 11,
+        "samples": [
+          {
+            "owner": "Trường học",
+            "paint_ms": 382.5
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 647.5
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 779.1
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 265.4
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 179.7
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 234.3
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 287.6
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1816.4
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 311.7
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 314.2
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 296.9
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 386
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 822
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 861.2
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 219.7
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 241.3
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 206.8
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 226
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1346
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 249.4
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 145.2
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 212.3
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 276.3
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 627.3
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 620.7
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 182.2
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 164.3
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 205.4
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 195.8
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1317.6
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 238.6
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 146.1
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 205.4
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 280.9
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 567
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 638.6
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 163.5
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 155.4
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 165.1
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 218.9
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1363
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 238.5
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 158.5
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 202.8
+          },
+          {
+            "owner": "Trường học",
+            "paint_ms": 282.6
+          },
+          {
+            "owner": "Thực đơn",
+            "paint_ms": 643.4
+          },
+          {
+            "owner": "Xác nhận nhu cầu",
+            "paint_ms": 899.8
+          },
+          {
+            "owner": "Phân bổ NCC",
+            "paint_ms": 350.2
+          },
+          {
+            "owner": "Đơn mua",
+            "paint_ms": 279.8
+          },
+          {
+            "owner": "Công thức",
+            "paint_ms": 205.4
+          },
+          {
+            "owner": "Lệnh điều chỉnh",
+            "paint_ms": 246.7
+          },
+          {
+            "owner": "Nguyên liệu",
+            "paint_ms": 1777.7
+          },
+          {
+            "owner": "Nhà cung ứng",
+            "paint_ms": 300.3
+          },
+          {
+            "owner": "Phiếu xuất kho",
+            "paint_ms": 171
+          },
+          {
+            "owner": "Đối chiếu PO / Phiếu xuất kho",
+            "paint_ms": 237.3
+          }
+        ],
+        "sample_count": 55,
+        "median_ms": 265.4,
+        "p95_ms": 1346,
+        "legacy_four_owner_subset": {
+          "labels": [
+            "Trường học",
+            "Phân bổ NCC",
+            "Công thức",
+            "Phiếu xuất kho"
+          ],
+          "sample_count": 20,
+          "median_ms": 213.25,
+          "p95_ms": 382.5
+        }
+      }
+    }
+  ],
+  "environment_limit": "watch=null was requested but Vite watchers remained active; explicit watcher.close() was added after these runs. Raw samples are unchanged. A brief focused token check overlapped the baseline mobile run; light repeated fixture scanning remained active."
+}

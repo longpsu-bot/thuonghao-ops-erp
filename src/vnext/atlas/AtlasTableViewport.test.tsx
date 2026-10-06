@@ -133,4 +133,7 @@ it("shows semantic, motion-free continuation cues only while content remains", a
     "data-atlas-continuation",
     "start",
   );
+  expect(screen.getByTestId("table-continuation-start")).toHaveStyle({
+    zIndex: "var(--atlas-layout-continuation-z, 0)",
+  });
 });

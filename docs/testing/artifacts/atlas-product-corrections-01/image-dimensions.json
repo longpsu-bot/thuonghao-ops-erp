@@ -1,0 +1,657 @@
+[
+  {
+    "file": "capacity-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "capacity-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "change-order-quantity-unit-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "change-order-quantity-unit-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "change-order-quantity-unit-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "change-order-quantity-unit-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "change-order-quantity-unit-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "invalidMenuCell-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "invalidMenuCell-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "invalidMenuCell-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "invalidMenuCell-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "invalidMenuCell-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "launcher-collapsed-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "launcher-collapsed-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "launcher-collapsed-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "launcher-collapsed-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "launcher-collapsed-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "launcher-open-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "launcher-open-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "launcher-open-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "launcher-open-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "launcher-open-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "menu-valid-readback-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "menu-valid-readback-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "menu-valid-readback-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "menu-valid-readback-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "menu-valid-readback-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "missingRecipeUnit-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "missingRecipeUnit-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "missingRecipeUnit-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "missingRecipeUnit-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "missingRecipeUnit-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-00-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-00-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-00-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-00-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-00-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-01-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-01-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-01-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-01-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-01-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-02-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-02-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-02-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-02-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-02-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-03-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-03-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-03-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-03-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-03-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-04-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-04-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-04-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-04-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-04-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-05-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-05-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-05-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-05-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-05-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-06-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-06-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-06-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-06-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-06-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-07-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-07-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-07-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-07-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-07-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-08-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-08-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-08-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-08-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-08-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-09-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-09-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-09-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-09-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-09-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "owner-10-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "owner-10-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "owner-10-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "owner-10-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "owner-10-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "pendingValidMenu-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "pendingValidMenu-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "pendingValidMenu-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "pendingValidMenu-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "pendingValidMenu-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "recipe-editor-unit-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "recipe-editor-unit-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "recipe-editor-unit-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "recipe-editor-unit-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "recipe-editor-unit-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "retained-master-0-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "retained-master-0-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "retained-master-1-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "retained-master-1-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "retained-planning-0-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "retained-planning-0-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "retained-planning-1-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "retained-planning-1-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "retained-procurement-0-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "retained-procurement-0-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "retained-procurement-1-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "retained-procurement-1-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "retained-recipe-0-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "retained-recipe-0-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "retained-recipe-1-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "retained-recipe-1-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "signout-master-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "signout-master-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "signout-planning-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "signout-planning-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "signout-procurement-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "signout-procurement-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "signout-recipe-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "signout-recipe-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "tabs-eight-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "tabs-eight-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "tabs-eight-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "tabs-eight-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "tabs-eight-650x900.png",
+    "width": 650,
+    "height": 900
+  },
+  {
+    "file": "tabs-eleven-1366x768.png",
+    "width": 1366,
+    "height": 768
+  },
+  {
+    "file": "tabs-eleven-1440x900.png",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "tabs-eleven-1920x1080.png",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "tabs-eleven-360x800.png",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "tabs-eleven-650x900.png",
+    "width": 650,
+    "height": 900
+  }
+]

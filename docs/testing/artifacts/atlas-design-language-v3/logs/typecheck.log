@@ -1,0 +1,16 @@
+$ pnpm ui:vnext:typegen && tsc -b --pretty false
+$ chakra typegen src/vnext/atlas/system.ts
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+T  Chakra CLI ⚡️
+|
+•  Generating conditions typeso  ✅ Generated conditions typings
+|
+•  Generating recipe typeso  ✅ Generated recipe typings
+|
+o  ✅ Generated utility typings
+|
+o  ✅ Generated token typings
+|
+•  Generating system typeso  ✅ Generated system types
+|
+—  🎉 Done!

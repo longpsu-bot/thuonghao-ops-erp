@@ -1,5 +1,29 @@
 # RMVP-03A Planning Inputs API Contract
 
+## Resilient local Menu candidate — 06/10/2026
+
+ATLAS-PRODUCT-CORRECTIONS-01 retains parsed Menu rows locally when individual
+cells cannot resolve. Valid neighboring cells remain inspectable; rejected cells
+remain explicit unresolved rows, never blank assignments, deletions or omitted
+rows. This local candidate is not persisted or approved Menu authority.
+
+Source evidence retains exact row number/reference, slot, resolved School/date
+where available, and original Dish/School/date source text independently of the
+normalized lookup values. Parser diagnostics use the existing `UNKNOWN_DISH`,
+`AMBIGUOUS_DISH`, `UNKNOWN_SCHOOL` and `INVALID_SERVICE_DATE` vocabulary. Invalid
+calendar dates remain unresolved. Structural/header ambiguity still rejects the
+new matrix with no candidate rows; an earlier unresolved candidate and its dirty
+state survive failed, malformed or structurally invalid resynchronization.
+
+Local blockers prevent Preview, consequential Save and correction preparation,
+including direct controller calls. Once the source is corrected, the same Google
+sync action requests authoritative Preview; backend blockers also retain the
+local candidate and prevent Save. Only a fully valid canonical week proceeds to
+one atomic `save_weekly_menu`, with the existing canonical signature, expected
+signature/version, idempotency, authoritative readback, transport recovery and
+governed correction boundaries. No partial persistence, RPC envelope, backend
+command, schema, lifecycle or security change is introduced.
+
 ## Menu slot / Dish identity correction — 01/10/2026
 
 MENU-SLOT-DISH-DECOUPLING-01 explicitly replaces the earlier typed-only Dish
@@ -20,7 +44,7 @@ No array-order selection, Dish creation, master merge or non-blocking compatibil
 warning is introduced. Unique-name resolution never consults legacy classification.
 
 Parser results retain the canonical rows and add source-cell evidence plus
-`diagnostics` (code, source row number/reference, slot code/name and raw trimmed
+`diagnostics` (code, source row number/reference, slot code/name and raw
 source value) and `compatibilityResolutions`. Unresolved Dish diagnostics stop
 connected Google sync before Preview/Save. Backend Preview blockers stop Save.
 The shared authoritative `atlas_core.rmvp_03a_menu_issues(date,jsonb)` removes only

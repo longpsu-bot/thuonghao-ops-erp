@@ -289,7 +289,7 @@ describe("06D-C locked Recipe peer navigation", () => {
       name: "Tạo lệnh điều chỉnh",
     });
     expect(
-      hasRestingBackground(forwardAction, "var(--atlas-colors-bg-workbench)"),
+      hasRestingBackground(forwardAction, "var(--atlas-colors-bg-toolbar)"),
     ).toBe(true);
     fireEvent.click(forwardAction);
 

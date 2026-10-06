@@ -73,6 +73,75 @@ const dishes: PlanningDish[] = [
 ];
 
 describe("Planning workbook canonicalization", () => {
+  it("retains every source cell and exact diagnostics beside valid neighbors", async () => {
+    const review = await parseMenuMatrix(
+      [
+        ["Tên trường", "Ngày", "Món canh", "Nước"],
+        [" TH001 ", " 03/08/2026 ", " Không rõ ", "NUOC-CAM"],
+        ["TH001", "03/08/2026", "CANH-BI", "Không có"],
+        ["Trường lạ", "31/02/2026", "CANH-BI", ""],
+      ],
+      { sourceName: "Google", sheetName: "Tuần", firstRowNumber: 3 },
+      dishTypes,
+      schools,
+      dishes,
+    );
+    expect(review.errors).toEqual([]);
+    expect(review.rows).toHaveLength(5);
+    expect(review.rows[1].dish_id).toBe("dish-2");
+    expect(review.rows[2].dish_id).toBe("dish-1");
+    expect(
+      review.diagnostics.map((issue) => [
+        issue.source_row_reference,
+        issue.code,
+      ]),
+    ).toEqual([
+      ["Google:Tuần:row:4:soup", "UNKNOWN_DISH"],
+      ["Google:Tuần:row:5:beverage", "UNKNOWN_DISH"],
+      ["Google:Tuần:row:6:soup", "UNKNOWN_SCHOOL"],
+      ["Google:Tuần:row:6:soup", "INVALID_SERVICE_DATE"],
+    ]);
+    expect(review.diagnostics[0]).toMatchObject({
+      source_row_number: 4,
+      school_id: "school-1",
+      school_name: "Trường Nguyễn Du",
+      service_date: "2026-08-03",
+      source_date_value: " 03/08/2026 ",
+      source_school_value: " TH001 ",
+      menu_slot_code: "soup",
+      source_value: " Không rõ ",
+    });
+    expect(review.diagnostics[2]).toMatchObject({
+      school_id: null,
+      school_name: "Trường lạ",
+      service_date: null,
+      source_date_value: "31/02/2026",
+      source_value: "CANH-BI",
+    });
+  });
+  it.each(["2026-02-29", "2026-04-31", "bad-date", "", new Date("invalid")])(
+    "retains an invalid calendar date %s without throwing or normalizing it into a real day",
+    async (date) => {
+      const review = await parseMenuMatrix(
+        [
+          ["Tên trường", "Ngày", "Món canh"],
+          ["TH001", date, "CANH-BI"],
+        ],
+        { sourceName: "Google", sheetName: "Tuần" },
+        dishTypes,
+        schools,
+        dishes,
+      );
+      expect(review.rows).toHaveLength(1);
+      expect(review.diagnostics).toEqual([
+        expect.objectContaining({
+          code: "INVALID_SERVICE_DATE",
+          service_date: null,
+          source_row_reference: "Google:Tuần:row:2:soup",
+        }),
+      ]);
+    },
+  );
   it("preserves explicit zero attendance and unresolved schools for backend blockers", () => {
     const rows = parseAttendancePaste(
       [

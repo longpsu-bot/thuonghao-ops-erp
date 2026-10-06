@@ -559,10 +559,6 @@ export function usePlanningSources({
     setSyncing(true);
     setBusy(true);
     clearReview();
-    setMenuCandidate(false);
-    setImportErrors([]);
-    setImportWarnings([]);
-    setMenuSyncIssues([]);
     setMenuNotification(null);
     setOutcome("");
     const persistedRows = activeMenuRows(data.weekly_menu);
@@ -628,8 +624,12 @@ export function usePlanningSources({
           setOutcome("Google Sheet có lỗi cấu trúc. Dữ liệu chưa được lưu.");
           return;
         }
+        setMenuRows(parsed.rows);
+        setMenuSource({ type: "GOOGLE_SHEET", name: parsed.sourceName });
+        setMenuCandidate(true);
+        setMenuSyncIssues(parsed.diagnostics);
+        setImportErrors([]);
         if (parsed.diagnostics.length) {
-          setMenuSyncIssues(parsed.diagnostics);
           setImportErrors(
             parsed.diagnostics.map((issue) =>
               planningIssueMessage({ ...issue, message: "" }),
@@ -659,7 +659,9 @@ export function usePlanningSources({
         }
         if (!nextPreview.can_save || nextPreview.issues.blockers.length) {
           setImportErrors(
-            nextPreview.issues.blockers.map(planningIssueMessage),
+            nextPreview.issues.blockers.length
+              ? nextPreview.issues.blockers.map(planningIssueMessage)
+              : ["Chưa thể lưu thực đơn. Kiểm tra lại nguồn Google Sheet."],
           );
           setMenuSyncIssues(
             nextPreview.issues.blockers.map((issue) => ({
@@ -841,7 +843,14 @@ export function usePlanningSources({
     } else setOutcome(planningResultMessage(r));
   };
   const previewChanges = async () => {
-    if (!canEdit || syncing || !candidate || errors.length) return;
+    if (
+      !canEdit ||
+      syncing ||
+      !candidate ||
+      errors.length ||
+      (job === "menu" && menuSyncIssues.length)
+    )
+      return;
     const epoch = ++generation.current;
     setBusy(true);
     clearReview();
@@ -913,8 +922,10 @@ export function usePlanningSources({
       !canEdit ||
       writeBusy.current ||
       !preview?.can_save ||
+      preview.issues.blockers.length ||
       !impact?.save_allowed ||
-      errors.length
+      errors.length ||
+      (job === "menu" && menuSyncIssues.length)
     )
       return;
     writeBusy.current = true;
@@ -978,6 +989,8 @@ export function usePlanningSources({
     if (
       !canEdit ||
       writeBusy.current ||
+      errors.length ||
+      (job === "menu" && menuSyncIssues.length) ||
       !impact?.date_impacts.some(
         (d) =>
           [

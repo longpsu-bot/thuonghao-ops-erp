@@ -186,8 +186,6 @@ export function DishRecipeWorkbench(
       aria-label="Công thức"
       bg="bg.workbench"
       borderRadius="workbench"
-      borderWidth="var(--atlas-layout-edge, 1px)"
-      borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
     >
       {!props.embedded && (
@@ -240,9 +238,7 @@ export function DishRecipeWorkbench(
             aria-label="Không gian công thức"
             p="md"
             minW="var(--atlas-layout-zero, 0)"
-            borderWidth="var(--atlas-layout-edge, 1px)"
             borderRadius="workbench"
-            borderColor="border.subtle"
           >
             <Flex
               justify="space-between"
@@ -387,6 +383,10 @@ export function DishRecipeWorkbench(
                 {c.recipeDraft && (c.review || c.canEdit) && (
                   <Flex
                     as="footer"
+                    position="sticky"
+                    bottom="var(--atlas-layout-zero, 0)"
+                    bg="bg.workbench"
+                    zIndex="var(--atlas-layout-footer-layer, 2)"
                     mt="md"
                     pt="md"
                     borderTopWidth="var(--atlas-layout-edge, 1px)"

@@ -1,8 +1,12 @@
 # Atlas vNext design language v2 — Modern Operational Workspace
 
+**Visual supersession — 6 October 2026:** [Atlas Design Language v3 — Operational Legibility](atlas-design-language-v3.md) supersedes v2's visual color, contrast, typography-legibility and component styling guidance. Workspace/navigation/lifetime architecture remains authoritative where not superseded; v2 also remains historical design evidence. D-048 and business/API/state ownership are unchanged.
+
 **Task:** ATLAS-UI-VNEXT-03B · **Prepared:** 5 October 2026
 
 **Status:** Owner-selected direction D; production contract pending review and merge.
+
+**Owner amendment — 6 October 2026:** ATLAS-PRODUCT-CORRECTIONS-01 updates operator-job granularity and launcher placement below; PR review/merge is pending. Earlier prototype and seven-owner evidence remain historical.
 
 **Decision:** [D-048 — Persistent Workspace](../decisions/decision-atlas-persistent-workspace.md).
 
@@ -22,10 +26,10 @@ Atlas is operational software for school catering and ingredient distribution. C
 
 ## 2. Application shell
 
-Use a compact slate/eucalyptus utility bar with Atlas identity, one clearly labeled **Bàn làm việc ▾** launcher control and one compact account/environment utility control containing user, environment and sign-out. Do not repeat user/environment in the launcher. Below the bar, open-workbench navigation attaches to a full-width active work plane. The current permanent icon rail is not primary v2 navigation; no permanent wide sidebar. Do not repeat the module label, workbench title, scope and counts in multiple shell bands. The workbench's current operator job is the strongest heading. Business dates belong to workbench context; a shell clock must not masquerade as a shared editable service date.
+Use a compact slate/eucalyptus utility bar with a far-left Phosphor List icon launcher, followed by Atlas identity and one compact account/environment utility control containing user, environment and sign-out. Do not repeat user/environment in the launcher. The icon trigger keeps `aria-label="Bàn làm việc"` and `title="Bàn làm việc"`; the opened menu displays **Bàn làm việc** as its heading. Below the bar, open-workbench navigation attaches to a full-width active work plane. The current permanent icon rail is not primary v2 navigation; no permanent wide sidebar. Do not repeat the module label, workbench title, scope and counts in multiple shell bands. The workbench's current operator job is the strongest heading. Business dates belong to workbench context; a shell clock must not masquerade as a shared editable service date.
 
 ```text
-ATLAS | [Bàn làm việc ▾] | ...compact utilities...
+[☰] | ATLAS | ...compact account utility...
 ------------------------------------------------
 [open workbench tabs]
 ------------------------------------------------
@@ -52,7 +56,7 @@ One instance per Workbench ID in v2. Persistent means retained while open in the
 
 A static definition conceptually provides **id, label, icon, group, render**. These describe identity, recognizable Vietnamese destination, the existing Phosphor icon vocabulary, launcher grouping and composition. Exact TypeScript, optionality and file boundaries belong to implementation review; no speculative fields are frozen here.
 
-A descriptor is a presentation/application object, not a database entity, domain aggregate, persisted lifecycle object, Redux entity or class instance. Reuse current capability boundaries and approved labels. The initial registry must retain `schools`, `ingredients-suppliers`, `recipes`, `planning`, `procurement`, `pxk` and `reconciliation`, including their existing internal jobs. A prototype capacity descriptor is not permission to invent a module.
+A descriptor is a presentation/application object, not a database entity, domain aggregate, persisted lifecycle object, Redux entity or class instance. Reuse current capability boundaries and approved labels. The current eleven production IDs are `planning` (Thực đơn), `confirmed-need`, `procurement` (Phân bổ NCC), `purchase-orders`, `pxk`, `reconciliation`, `schools`, `ingredients`, `suppliers`, `recipes` and `change-orders`. Each owns a persistent component; Thực đơn keeps Thực đơn / Sĩ số / Bổ sung as secondary jobs. A prototype capacity descriptor is not permission to invent a module.
 
 ## 5. Workbench tabs
 
@@ -70,14 +74,14 @@ Tabs belong visually to Atlas. The active tab connects to the work plane through
 
 **Launcher = all available Atlas workbenches. Tab strip = workbenches already open in this session.** Generate the compact launcher from the static Workbench Registry; include simple local label search and exactly these initial meaningful operator categories:
 
-| Group               | Destinations                                                                   |
-| ------------------- | ------------------------------------------------------------------------------ |
-| CÔNG VIỆC HẰNG NGÀY | Lập nhu cầu; Kế hoạch mua hàng; Phiếu xuất kho; Đối chiếu PO / Phiếu xuất kho. |
-| DỮ LIỆU & CẤU HÌNH  | Trường học; Nguyên liệu và Nhà cung ứng; Công thức.                            |
+| Group               | Destinations                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| CÔNG VIỆC HẰNG NGÀY | Thực đơn; Xác nhận nhu cầu; Phân bổ NCC; Đơn mua; Phiếu xuất kho; Đối chiếu PO / Phiếu xuất kho. |
+| DỮ LIỆU & CẤU HÌNH  | Trường học; Nguyên liệu; Nhà cung ứng; Công thức; Lệnh điều chỉnh.                               |
 
 No empty future groups. Search filters local registry labels, creates no business read/command, and stays out of the workspace reducer. The launcher contains no business drafts/state. It may show only quiet **Đang mở** status; dirty/attention belongs primarily on the corresponding open tab, not duplicated detailed state in the launcher.
 
-Selecting an unopened item opens + activates it; selecting an already-open item activates its existing tab and never duplicates it. Close after successful selection and restore focus to the launcher trigger. Support keyboard entry/search, item traversal, activation, Escape/outside dismissal and visible trigger focus. Empty workspace remains usable. Preserve internal Planning sources/Confirmed Need, Recipe authoring/change orders, Procurement Allocation/Orders and available reconciliation paths. Grouping communicates existing work, not new domain ownership.
+Selecting an unopened item opens + activates it; selecting an already-open item activates its existing tab and never duplicates it. Close after successful selection and restore focus to the launcher trigger. Support keyboard entry/search, item traversal, activation, Escape/outside dismissal and visible trigger focus. Empty workspace remains usable. Preserve each independent Planning source/Confirmed Need, Recipe authoring/Change Order, Procurement Allocation/Orders and Ingredient/Supplier owner, along with available reconciliation paths. Grouping communicates existing work, not new domain ownership.
 
 No command-palette dependency, nested navigation framework, favorites, recently used, pinned workbenches or customizable groups until real use demonstrates need. No new router or tab library.
 
@@ -93,7 +97,7 @@ Dismiss nonmodal transient UI on deactivation and contain its portals. Resolve a
 
 Each workbench explicitly reports presentation metadata to the workspace: clean/ordinary, unsaved local work, and optional attention when unresolved local UI needs disclosure. The owning local dirty calculation supplies this report; the workspace does not duplicate draft comparison or infer status from rendered text, attributes, DOM scraping or MutationObserver.
 
-Reports contain no business draft, quantity, validation payload or authoritative business status. Attention explains its meaning and must not claim an unchanged open form is dirty or an edited form is clean. Exact Recipe metadata reporting is a production gate: create/edit Dish fields, base Recipe edits and change-order jobs must report accurately through the capability wrapper. Missing or uncertain reporting is not evidence of clean state. Reset/remove presentation reports only after authoritative local resolution or approved unmount.
+Reports contain no business draft, quantity, validation payload or authoritative business status. Attention explains its meaning and must not claim an unchanged open form is dirty or an edited form is clean. Exact Recipe metadata reporting is a production gate: create/edit Dish fields, base Recipe edits and change-order jobs must report accurately from each independent owner. Missing or uncertain reporting is not evidence of clean state. Reset/remove presentation reports only after authoritative local resolution or approved unmount.
 
 ## 9. Close behavior
 
@@ -113,13 +117,21 @@ Do not compose destructive exits sequentially: an earlier discard must not occur
 
 Confirmed Need's **Tiếp tục phân bổ NCC** follows this application navigation contract:
 
-| Procurement state           | Handoff behavior                                                                                                                                                                  |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Not open                    | Open it with the exact Need service date and initial Allocation stage.                                                                                                            |
-| Already open                | Activate it; retain date, current stage, local state and drafts.                                                                                                                  |
-| Retained date/stage differs | Clearly disclose the Need date/intended Allocation and retained Procurement date/stage. Keep existing guarded scope/stage controls available; never silently remount or retarget. |
+| Allocation state      | Handoff behavior                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Not open              | Open Phân bổ NCC with the exact Need service date.                                                                                               |
+| Already open          | Activate Allocation; retain its date, local state and drafts.                                                                                    |
+| Retained date differs | Clearly disclose the Need date and retained Allocation date. Keep existing guarded scope controls available; never silently remount or retarget. |
 
 This activation creates no Purchase Handoff, supplier commitment or other business fact. Existing backend commands own those outcomes. A guarded explicit `requestContext(...)` may be considered later only if implementation review proves it necessary; v2 does not require it.
+
+Successful Allocation preparation retains Allocation identity. Its existing command
+and Orders proof read remain local; refresh Allocation authority before unlocking it
+or opening Orders. Unknown/readback recovery follows the same path without retrying
+the write. Orders opens at the exact preparation date only on first mount. If already
+open, retain its context and disclose explicit refresh even when dates match, because
+its current displayed read predates preparation. Do not add activation reads or share
+mutable Procurement drafts between owners.
 
 ## 12. Freshness / currentness
 

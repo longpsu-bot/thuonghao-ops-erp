@@ -1,0 +1,19 @@
+$ vitest run "--maxWorkers=2" "--testTimeout=20000"
+
+ RUN  v4.1.10 E:/Project/OPS ERP/thuonghao-ops-erp
+
+ ❯ src/vnext/atlas/planning-confirmed/ConfirmedNeedWorkbench.test.tsx (43 tests | 1 failed) 45726ms
+     × composes a local table with unpinned narrow identity and a vertical sticky header 465ms
+ ❯ src/vnext/atlas/AtlasConvergence.test.tsx (14 tests | 1 failed) 26843ms
+     × opens the existing Change Order job without a backend mutation 775ms
+ ❯ src/vnext/atlas/AtlasWorkspaceHandoff.test.tsx (4 tests | 2 failed) 65493ms
+   × Need activates same-context Procurement without a discrepancy, remount or read 16664ms
+   × Need discloses the intended context while retaining Allocation's different local date 20281ms
+ ❯ scripts/staging-planning-closeout.test.mjs (87 tests | 2 failed) 50812ms
+   × real 248-row controller accepts precision proposals, commits one edit and reopens identical fixture readback 37078ms
+   × browser enters Confirmed Need even while Sources keeps the shared service-date select mounted 154ms
+ ❯ src/vnext/atlas/AtlasVNextShell.test.tsx (18 tests | 1 failed) 2765ms
+     × supplies the Atlas system to Chakra children inside the scoped root 42ms
+ ❯ src/vnext/atlas/AtlasDesignLanguageReference.test.tsx (6 tests | 1 failed) 2960ms
+     × shows approved primary, secondary, tertiary and table actions at rest 983ms
+Not implemented: Window's confirm() method

@@ -1,0 +1,318 @@
+
+ RUN  v4.1.10 E:/Project/OPS ERP/thuonghao-ops-erp
+
+ ❯ src/vnext/atlas/system.test.tsx (35 tests | 16 failed) 669ms
+     × provides monotonic neutral, Brand and independent status scales 6ms
+     × keeps fg.secondary against bg.workbench above 7:1 1ms
+     × keeps fg.placeholder against bg.workbench above 4.5:1 1ms
+     × keeps border.default against bg.workbench above 3:1 1ms
+     × keeps border.strong against bg.toolbar above 3:1 1ms
+     × keeps border.strong against bg.workbench above 3:1 1ms
+     × keeps fg.inverse against action.primary.pressed above 7:1 1ms
+     × keeps fg.primary against bg.selected above 7:1 1ms
+     × keeps fg.disabled against bg.disabled above 4.5:1 0ms
+     × keeps operational typography large enough for repeated scanning 6ms
+     × keeps resting input boundaries and error indication explicit 2ms
+     × neutralizes disabled primary hover and press as well as rest 1ms
+     × gives disabled controls readable neutral surfaces instead of fading active colors 1ms
+     × keeps outline controls white with readable placeholders and Brand focus 1ms
+     × owns quiet table selection and its Brand geometric cue in the shared recipe 1ms
+     × gives operational tables an authored header and restrained row rhythm 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > provides monotonic neutral, Brand and independent status scales
+AssertionError: neutral.25: expected undefined to be defined
+ ❯ color src/vnext/atlas/system.test.tsx:22:23
+     20| function color(name: string): string {
+     21|   const token = atlasSystem.tokens.getByName(`colors.${name}`);
+     22|   expect(token, name).toBeDefined();
+       |                       ^
+     23|   const value = String(token?.originalValue);
+     24|   const reference = value.match(/^\{colors\.(.+)\}$/);
+ ❯ src/vnext/atlas/system.test.tsx:40:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps fg.secondary against bg.workbench above 7:1
+AssertionError: fg.secondary: expected undefined to be defined
+ ❯ color src/vnext/atlas/system.test.tsx:22:23
+     20| function color(name: string): string {
+     21|   const token = atlasSystem.tokens.getByName(`colors.${name}`);
+     22|   expect(token, name).toBeDefined();
+       |                       ^
+     23|   const value = String(token?.originalValue);
+     24|   const reference = value.match(/^\{colors\.(.+)\}$/);
+ ❯ src/vnext/atlas/system.test.tsx:65:36
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps fg.placeholder against bg.workbench above 4.5:1
+AssertionError: fg.placeholder: expected undefined to be defined
+ ❯ color src/vnext/atlas/system.test.tsx:22:23
+     20| function color(name: string): string {
+     21|   const token = atlasSystem.tokens.getByName(`colors.${name}`);
+     22|   expect(token, name).toBeDefined();
+       |                       ^
+     23|   const value = String(token?.originalValue);
+     24|   const reference = value.match(/^\{colors\.(.+)\}$/);
+ ❯ src/vnext/atlas/system.test.tsx:65:36
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps border.default against bg.workbench above 3:1
+AssertionError: expected 1.4192349712851111 to be greater than or equal to 3
+ ❯ src/vnext/atlas/system.test.tsx:66:42
+     64|   ])("keeps %s against %s above %s:1", (a, b, floor) => {
+     65|     const [high, low] = [luminance(color(String(a))), luminance(color(…
+     66|     expect((high + 0.05) / (low + 0.05)).toBeGreaterThanOrEqual(Number…
+       |                                          ^
+     67|   });
+     68|   it("keeps operational typography large enough for repeated scanning"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps border.strong against bg.toolbar above 3:1
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps border.strong against bg.workbench above 3:1
+AssertionError: border.strong: expected undefined to be defined
+ ❯ color src/vnext/atlas/system.test.tsx:22:23
+     20| function color(name: string): string {
+     21|   const token = atlasSystem.tokens.getByName(`colors.${name}`);
+     22|   expect(token, name).toBeDefined();
+       |                       ^
+     23|   const value = String(token?.originalValue);
+     24|   const reference = value.match(/^\{colors\.(.+)\}$/);
+ ❯ src/vnext/atlas/system.test.tsx:65:36
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps fg.inverse against action.primary.pressed above 7:1
+AssertionError: action.primary.pressed: expected undefined to be defined
+ ❯ color src/vnext/atlas/system.test.tsx:22:23
+     20| function color(name: string): string {
+     21|   const token = atlasSystem.tokens.getByName(`colors.${name}`);
+     22|   expect(token, name).toBeDefined();
+       |                       ^
+     23|   const value = String(token?.originalValue);
+     24|   const reference = value.match(/^\{colors\.(.+)\}$/);
+ ❯ src/vnext/atlas/system.test.tsx:65:65
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps fg.primary against bg.selected above 7:1
+AssertionError: expected 6.936621089336209 to be greater than or equal to 7
+ ❯ src/vnext/atlas/system.test.tsx:66:42
+     64|   ])("keeps %s against %s above %s:1", (a, b, floor) => {
+     65|     const [high, low] = [luminance(color(String(a))), luminance(color(…
+     66|     expect((high + 0.05) / (low + 0.05)).toBeGreaterThanOrEqual(Number…
+       |                                          ^
+     67|   });
+     68|   it("keeps operational typography large enough for repeated scanning"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps fg.disabled against bg.disabled above 4.5:1
+AssertionError: fg.disabled: expected undefined to be defined
+ ❯ color src/vnext/atlas/system.test.tsx:22:23
+     20| function color(name: string): string {
+     21|   const token = atlasSystem.tokens.getByName(`colors.${name}`);
+     22|   expect(token, name).toBeDefined();
+       |                       ^
+     23|   const value = String(token?.originalValue);
+     24|   const reference = value.match(/^\{colors\.(.+)\}$/);
+ ❯ src/vnext/atlas/system.test.tsx:65:36
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps operational typography large enough for repeated scanning
+AssertionError: expected { fontSize: '13px', lineHeight: '1.4' } to match object { fontSize: '14px' }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "fontSize": "14px",
++   "fontSize": "13px",
+  }
+
+ ❯ src/vnext/atlas/system.test.tsx:70:92
+     68|   it("keeps operational typography large enough for repeated scanning"…
+     69|     const styles = atlasSystem._config.theme?.textStyles;
+     70|     for (const name of ["table", "label", "quantityInline"]) expect(st…
+       |                                                                                            ^
+     71|     for (const name of ["helper", "unitInline"]) expect(styles?.[name]…
+     72|     expect(styles?.label?.value).toMatchObject({fontWeight: "semibold"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > keeps resting input boundaries and error indication explicit
+AssertionError: expected { width: '100%', minWidth: '0', …(19) } to match object { borderColor: 'border.strong', …(1) }
+(34 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "_invalid": {
+-     "borderColor": "status.danger",
++     "borderColor": "var(--error-color)",
+    },
+-   "borderColor": "border.strong",
++   "borderColor": "border.default",
+  }
+
+ ❯ src/vnext/atlas/system.test.tsx:76:49
+     74|   it("keeps resting input boundaries and error indication explicit", (…
+     75|     const control = {borderColor: "border.strong", _invalid: {borderCo…
+     76|     expect(atlasSystem.getRecipe("input").base).toMatchObject(control);
+       |                                                 ^
+     77|     expect(atlasSystem.getSlotRecipe("nativeSelect").base?.field).toMa…
+     78|     expect(atlasSystem.getSlotRecipe("dateInput").base?.segmentGroup).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 color and typography floors > neutralizes disabled primary hover and press as well as rest
+AssertionError: expected undefined to match object { bg: 'bg.disabled', …(2) }
+
+- Expected:
+{
+  "bg": "bg.disabled",
+  "borderColor": "border.disabled",
+  "color": "fg.disabled",
+}
+
++ Received:
+undefined
+
+ ❯ src/vnext/atlas/system.test.tsx:83:32
+     81|     const disabled = {bg: "bg.disabled", color: "fg.disabled", borderC…
+     82|     const primary = atlasSystem.getRecipe("button").variants?.variant?…
+     83|     expect(primary?._disabled).toMatchObject(disabled);
+       |                                ^
+     84|     expect(primary?._disabled?._hover).toMatchObject(disabled);
+     85|     expect(primary?._disabled?._active).toMatchObject(disabled);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 operational legibility > gives disabled controls readable neutral surfaces instead of fading active colors
+AssertionError: expected { layerStyle: 'disabled', …(5) } to match object { bg: 'bg.disabled', …(4) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bg": "bg.disabled",
+-   "borderColor": "border.disabled",
+-   "color": "fg.disabled",
++   "bg": "bg.subtle",
++   "borderColor": "border.subtle",
++   "color": "fg.muted",
+    "cursor": "disabled",
+    "opacity": "var(--atlas-layout-disabled-opacity, 1)",
+  }
+
+ ❯ src/vnext/atlas/system.test.tsx:138:61
+    136|       cursor: "disabled",
+    137|     };
+    138|     expect(atlasSystem.getRecipe("button").base?._disabled).toMatchObj…
+       |                                                             ^
+    139|       disabled,
+    140|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 operational legibility > keeps outline controls white with readable placeholders and Brand focus
+AssertionError: expected { bg: 'bg.workbench', …(11) } to match object { bg: 'bg.workbench', …(2) }
+(21 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "_placeholder": {
+-     "color": "fg.placeholder",
++     "color": "fg.muted",
+    },
+    "bg": "bg.workbench",
+    "focusRingColor": "focus.ring",
+  }
+
+ ❯ src/vnext/atlas/system.test.tsx:170:7
+    168|     expect(
+    169|       atlasSystem.getRecipe("input").variants?.variant?.outline,
+    170|     ).toMatchObject({
+       |       ^
+    171|       bg: "bg.workbench",
+    172|       focusRingColor: "focus.ring",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 operational legibility > owns quiet table selection and its Brand geometric cue in the shared recipe
+AssertionError: expected { root: { …(7) }, row: { …(7) }, …(4) } to match object { root: { bg: 'bg.workbench' }, …(3) }
+(25 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -4,11 +4,11 @@
+        "bg": "border.accent",
+        "width": "var(--atlas-layout-rail, 3px)",
+      },
+    },
+    "columnHeader": {
+-     "bg": "bg.tableHeader",
++     "bg": "bg.toolbar",
+      "color": "fg.default",
+    },
+    "root": {
+      "bg": "bg.workbench",
+    },
+
+ ❯ src/vnext/atlas/system.test.tsx:187:53
+    185|   });
+    186|   it("owns quiet table selection and its Brand geometric cue in the sh…
+    187|     expect(atlasSystem.getSlotRecipe("table").base).toMatchObject({
+       |                                                     ^
+    188|       root: { bg: "bg.workbench" },
+    189|       columnHeader: { bg: "bg.tableHeader", color: "fg.default" },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯
+
+ FAIL  src/vnext/atlas/system.test.tsx > Atlas v3 operational legibility > gives operational tables an authored header and restrained row rhythm
+AssertionError: expected { root: { …(7) }, row: { …(7) }, …(4) } to match object { columnHeader: { …(6) }, …(2) }
+(22 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -11,11 +11,11 @@
+    "columnHeader": {
+      "_after": {
+        "bg": "border.subtle",
+        "w": "var(--atlas-layout-edge, 1px)",
+      },
+-     "bg": "bg.tableHeader",
++     "bg": "bg.toolbar",
+      "borderBottomColor": "border.default",
+      "color": "fg.default",
+      "fontWeight": "emphasis",
+      "minH": "var(--atlas-table-header-height, 38px)",
+    },
+
+ ❯ src/vnext/atlas/system.test.tsx:223:53
+    221|   });
+    222|   it("gives operational tables an authored header and restrained row r…
+    223|     expect(atlasSystem.getSlotRecipe("table").base).toMatchObject({
+       |                                                     ^
+    224|       columnHeader: {
+    225|         minH: "var(--atlas-table-header-height, 38px)",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/16]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  16 failed | 19 passed (35)
+   Start at  14:11:02
+   Duration  7.92s (transform 163ms, setup 0ms, import 4.84s, tests 669ms, environment 2.13s)

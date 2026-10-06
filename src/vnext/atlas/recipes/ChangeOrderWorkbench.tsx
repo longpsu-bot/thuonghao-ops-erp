@@ -43,6 +43,7 @@ export function ChangeOrderWorkbench(
     authSubject: string | null;
     api: RecipeAdjustmentApi;
     initialDate?: string;
+    standalone?: boolean;
     exitRef?: Ref<RecipeJobHandle>;
   },
 ) {
@@ -77,6 +78,11 @@ export function ChangeOrderWorkbench(
   const rows = ledgerRows(c.data, query, temporal, scope);
   return (
     <Box aria-label="Lệnh điều chỉnh" minW="var(--atlas-layout-zero, 0)">
+      {props.standalone && (
+        <Heading as="h1" textStyle="workbenchTitle" px="md" py="sm">
+          Lệnh điều chỉnh
+        </Heading>
+      )}
       <Flex bg="bg.toolbar" px="md" py="sm" gap="sm" wrap="wrap" align="end">
         <Field.Root flex="var(--atlas-layout-search-grow, 1 1 180px)">
           <Field.Label>Tìm lệnh</Field.Label>

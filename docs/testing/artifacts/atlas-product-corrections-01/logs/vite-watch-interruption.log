@@ -1,0 +1,23 @@
+node:internal/fs/watchers:321
+    const error = new UVException({
+                  ^
+
+Error: EBUSY: resource busy or locked, watch 'E:\Project\OPS ERP\thuonghao-ops-erp\docs\testing\artifacts\atlas-product-corrections-01\performance-investigation.py'
+    at FSWatcher.<computed> (node:internal/fs/watchers:321:19)
+    at Object.watch (node:fs:2548:36)
+    at createFsWatchInstance (file:///E:/Project/OPS%20ERP/thuonghao-ops-erp/node_modules/.pnpm/vite@8.1.4_esbuild@0.28.1_sugarss@5.0.1_postcss@8.5.25_/node_modules/vite/dist/node/chunks/node.js:9185:16)
+    at setFsWatchListener (file:///E:/Project/OPS%20ERP/thuonghao-ops-erp/node_modules/.pnpm/vite@8.1.4_esbuild@0.28.1_sugarss@5.0.1_postcss@8.5.25_/node_modules/vite/dist/node/chunks/node.js:9227:14)
+    at NodeFsHandler._watchWithNodeFs (file:///E:/Project/OPS%20ERP/thuonghao-ops-erp/node_modules/.pnpm/vite@8.1.4_esbuild@0.28.1_sugarss@5.0.1_postcss@8.5.25_/node_modules/vite/dist/node/chunks/node.js:9342:20)
+    at NodeFsHandler._handleFile (file:///E:/Project/OPS%20ERP/thuonghao-ops-erp/node_modules/.pnpm/vite@8.1.4_esbuild@0.28.1_sugarss@5.0.1_postcss@8.5.25_/node_modules/vite/dist/node/chunks/node.js:9386:24)
+    at NodeFsHandler._addToNodeFs (file:///E:/Project/OPS%20ERP/thuonghao-ops-erp/node_modules/.pnpm/vite@8.1.4_esbuild@0.28.1_sugarss@5.0.1_postcss@8.5.25_/node_modules/vite/dist/node/chunks/node.js:9560:26)
+Emitted 'error' event on FSWatcher instance at:
+    at FSWatcher._handleError (file:///E:/Project/OPS%20ERP/thuonghao-ops-erp/node_modules/.pnpm/vite@8.1.4_esbuild@0.28.1_sugarss@5.0.1_postcss@8.5.25_/node_modules/vite/dist/node/chunks/node.js:10359:146)
+    at NodeFsHandler._addToNodeFs (file:///E:/Project/OPS%20ERP/thuonghao-ops-erp/node_modules/.pnpm/vite@8.1.4_esbuild@0.28.1_sugarss@5.0.1_postcss@8.5.25_/node_modules/vite/dist/node/chunks/node.js:9565:18) {
+  errno: -4082,
+  syscall: 'watch',
+  code: 'EBUSY',
+  path: 'E:\\Project\\OPS ERP\\thuonghao-ops-erp\\docs\\testing\\artifacts\\atlas-product-corrections-01\\performance-investigation.py',
+  filename: 'E:\\Project\\OPS ERP\\thuonghao-ops-erp\\docs\\testing\\artifacts\\atlas-product-corrections-01\\performance-investigation.py'
+}
+
+Node.js v24.18.0

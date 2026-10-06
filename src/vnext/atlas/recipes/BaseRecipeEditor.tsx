@@ -5,10 +5,11 @@ import {
   Flex,
   Heading,
   Input,
-  NativeSelect,
+  Icon,
   Table,
   Text,
 } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { ingredientLabel, unitLabel } from "../bridges/dishRecipe";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
@@ -128,6 +129,14 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                 line.ingredientId,
                 c.catalog.ingredients,
               );
+              const ingredient = c.catalog.ingredients.find(
+                (i) => i.ingredient_id === line.ingredientId,
+              );
+              const purchaseUnit = c.catalog.units.find(
+                (u) =>
+                  u.unit_id === ingredient?.purchase_unit_id &&
+                  u.unit_status === "ACTIVE",
+              );
               return (
                 <Table.Row key={line.id}>
                   <Table.Cell overflowWrap="anywhere">{name}</Table.Cell>
@@ -163,39 +172,39 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                     )}
                   </Table.Cell>
                   <Table.Cell>
-                    {editable ? (
-                      <NativeSelect.Root>
-                        <NativeSelect.Field
-                          aria-label={`Đơn vị ${name}`}
-                          value={line.unitId}
-                          onChange={(e) =>
-                            update(line.id, { unitId: e.target.value })
-                          }
-                        >
-                          {c.catalog.units
-                            .filter(
-                              (u) =>
-                                u.unit_status === "ACTIVE" ||
-                                u.unit_id === line.unitId,
-                            )
-                            .map((u) => (
-                              <option
-                                key={u.unit_id}
-                                value={u.unit_id}
-                                disabled={u.unit_status !== "ACTIVE"}
-                              >
-                                {u.unit_name}
-                                {u.unit_status !== "ACTIVE"
-                                  ? " (ngừng dùng)"
-                                  : ""}
-                              </option>
-                            ))}
-                        </NativeSelect.Field>
-                        <NativeSelect.Indicator />
-                      </NativeSelect.Root>
-                    ) : (
-                      unitLabel(line.unitId, c.catalog.units)
+                    {unitLabel(line.unitId, c.catalog.units)}
+                    {editable && !purchaseUnit && (
+                      <Text
+                        role="alert"
+                        textStyle="helper"
+                        color="status.danger"
+                        layerStyle="feedbackDanger"
+                        p="xs"
+                      >
+                        <Icon asChild mr="xs">
+                          <WarningCircle aria-hidden="true" />
+                        </Icon>
+                        Nguyên liệu chưa có đơn vị mua đang dùng. Hãy cập nhật
+                        dữ liệu nguyên liệu trước khi lưu công thức.
+                      </Text>
                     )}
+                    {editable &&
+                      purchaseUnit &&
+                      line.unitId !== purchaseUnit.unit_id && (
+                        <Text
+                          role="alert"
+                          textStyle="helper"
+                          color="status.danger"
+                          layerStyle="feedbackDanger"
+                          p="xs"
+                        >
+                          <Icon asChild mr="xs">
+                            <WarningCircle aria-hidden="true" />
+                          </Icon>
+                          Đơn vị đã lưu khác đơn vị mua hiện tại. Cần kiểm tra
+                          dữ liệu công thức trước khi lưu.
+                        </Text>
+                      )}
                   </Table.Cell>
                   <Table.Cell>
                     {editable ? (
@@ -257,23 +266,19 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                   size="sm"
                   aria-label={`Thêm ${i.ingredient_name}`}
                   onClick={() => {
-                    const unit = c.catalog.units.find(
-                      (u) => u.unit_status === "ACTIVE",
-                    );
-                    if (unit)
-                      c.setRecipeDraft({
-                        ...draft,
-                        lines: [
-                          ...draft.lines,
-                          {
-                            id: crypto.randomUUID(),
-                            ingredientId: i.ingredient_id,
-                            quantity: "1",
-                            unitId: unit.unit_id,
-                            note: "",
-                          },
-                        ],
-                      });
+                    c.setRecipeDraft({
+                      ...draft,
+                      lines: [
+                        ...draft.lines,
+                        {
+                          id: crypto.randomUUID(),
+                          ingredientId: i.ingredient_id,
+                          quantity: "1",
+                          unitId: i.purchase_unit_id ?? "",
+                          note: "",
+                        },
+                      ],
+                    });
                     setSearch("");
                   }}
                 >

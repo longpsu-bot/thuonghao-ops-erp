@@ -12,6 +12,29 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 **Purpose:** identify the connected surfaces that should be stabilized before CMD-03 without redefining business behavior or polishing prototypes that will change later.
 
+## Current workspace amendment — 6 October 2026
+
+ATLAS-PRODUCT-CORRECTIONS-01 implements the owner-requested eleven-job registry
+in `src/vnext/atlas/AtlasWorkbenchRegistry.tsx`, pending PR review/merge.
+[D-048](../decisions/decision-atlas-persistent-workspace.md) and the
+[v2 design contract](atlas-vnext-design-language-v2.md) define its lifetime and shell.
+The earlier inventory sections below retain the accepted historical v1 evidence;
+their sidebar/grouped-page descriptions do not describe the current vNext navigation.
+
+| Group               | Persistent workbenches                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| CÔNG VIỆC HẰNG NGÀY | Thực đơn; Xác nhận nhu cầu; Phân bổ NCC; Đơn mua; Phiếu xuất kho; Đối chiếu PO / Phiếu xuất kho |
+| DỮ LIỆU & CẤU HÌNH  | Trường học; Nguyên liệu; Nhà cung ứng; Công thức; Lệnh điều chỉnh                               |
+
+The far-left icon launcher precedes ATLAS, retains the accessible name/title
+**Bàn làm việc**, and shows that heading inside the opened menu. There is no
+second primary navigation. Thực đơn retains its three secondary source jobs.
+All split pairs keep independent mounted owners, local drafts/filters/dates and
+existing guarded close; activation neither exits nor reads. Sign-out resolves
+every open owner individually. Preparation/recovery and Need-to-Allocation
+navigation preserve their existing backend contracts. Eleven production jobs and
+twelve test capacity descriptors are intentional, with no added operating stage.
+
 ## 1. Evidence basis
 
 This inventory uses:
@@ -130,7 +153,7 @@ source, automatically requests backend canonical Preview, requires
 `preview.can_save`, and submits the complete canonical week through
 `atlas_api.save_weekly_menu`. Atlas then adopts the authoritative readback.
 Preview is a validation step, not a second operator decision. Menu has no
-`Xem thay đổi`, `Lưu`, local unsaved candidate, or manual editing path. School,
+`Xem thay đổi`, `Lưu`, or manual editing path. School,
 date and search filters never truncate the complete weekly write payload.
 Attendance and Pantry retain their own Review/Save flows. Menu synchronization blockers are grouped by authoritative issue code in Vietnamese beside the Google source strip. Unknown/ambiguous source cells retain Dish value, slot and Sheet row in collapsed scroll-bounded details; the Menu table and retry stay visible. Parser identity blockers stop before Preview/Save. Unique active Dish names resolve globally; legacy slot matching applies only to duplicate-name compatibility. A governed downstream
 Save blocker displays the authoritative correction impact and permits the
@@ -140,6 +163,24 @@ Save. Successful blank-to-Dish additions are quiet; successful replacements and
 removals produce one non-blocking Atlas notification after readback. Technical
 source facts remain in `Nguồn & lịch sử`; historical source types and retained
 Workbook parsers/backend contracts remain readable and unchanged.
+
+ATLAS-PRODUCT-CORRECTIONS-01 retains the complete parsed Menu as a local, unsaved
+candidate when any cell is invalid. Valid neighbors render normally; rejected
+cells use the existing warning surface plus explicit Vietnamese text and source
+row detail. The strip counts unique source-cell references, not diagnostic causes
+or School/date/slot groups. Duplicate source rows cannot hide a rejected cell.
+Backend issues without a source-cell reference are counted as issues rather than
+invented cells. Expanded evidence includes School, date, slot, original value,
+row number and exact source reference. Unknown Schools and invalid calendar dates
+remain in that evidence without fabricated table placement.
+
+Operators correct the Google Sheet and resynchronize. Cell blockers stop Preview,
+Save and correction preparation; backend Preview blockers also stop Save. A failed
+retry preserves the prior unresolved candidate and dirty state. The existing
+week/date/School context and close discard confirmations still apply; cancelling
+keeps the candidate intact. Workspace visibility switching retains owner state.
+The all-valid path still performs one complete atomic Save and adopts authoritative
+readback. No partial Weekly Menu is persisted.
 
 **The physical Google Sheet layout is not the Atlas business contract.** Supported
 Sheet layouts are semantic adapters into one canonical Weekly Menu contract:

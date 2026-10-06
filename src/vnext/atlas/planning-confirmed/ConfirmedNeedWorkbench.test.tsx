@@ -164,7 +164,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     ).toHaveStyle({
       position: "static",
       left: "var(--atlas-layout-auto, auto)",
-      background: "var(--atlas-colors-bg-toolbar)",
+      background: "var(--atlas-colors-bg-table-header)",
       zIndex: "var(--atlas-layout-sticky-identity-header-z, 5)",
     });
     expect(

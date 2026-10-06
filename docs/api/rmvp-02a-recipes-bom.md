@@ -174,6 +174,22 @@ The v2 command envelope retains authenticated/requested-subject match, command/c
 
 ### V2 workbench selection and lock readback
 
+A v2 Ingredient reference includes nullable `purchase_unit_id` and
+`purchase_unit_name`, including on successful Save readback. The existing Unit
+catalog remains the authority for active/inactive status. The v1 Ingredient shape
+is unchanged; no private relation or new API is exposed.
+
+Normal composition authoring derives a new line's Unit from the selected
+Ingredient's current active purchase Unit and displays it read-only. Missing,
+unknown, or inactive purchase Units block Review/Save with an operator explanation;
+the client never substitutes the first active Unit. Existing stored Units remain
+visible without reinterpretation. A historical line differing from the current
+purchase Unit blocks normal Save and requires data review; this UI does not
+introduce a Unit conversion or adoption-repair command. The existing D-047 release
+guard rejects mismatched new PRESENT revisions atomically, including through
+`save_recipe`. Import, copy, successor, removed-line, and immutable historical
+evidence semantics are unchanged.
+
 A v1 `get_dish_recipe_workbench` request keeps the v1 shape. A v2 payload accepts only optional `dish_id` and `school_type_id` and adds:
 
 ```json

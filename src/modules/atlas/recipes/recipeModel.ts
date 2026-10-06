@@ -96,6 +96,8 @@ export type RecipeIngredientReference = {
   ingredient_code: string;
   ingredient_name: string;
   ingredient_status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+  purchase_unit_id?: string | null;
+  purchase_unit_name?: string | null;
 };
 
 export type RecipeUnitReference = {
@@ -574,6 +576,10 @@ function isRecipeIngredientReference(
     isNonemptyString(value.ingredient_id) &&
     isNonemptyString(value.ingredient_code) &&
     isNonemptyString(value.ingredient_name) &&
+    (value.purchase_unit_id === undefined ||
+      isNullableString(value.purchase_unit_id)) &&
+    (value.purchase_unit_name === undefined ||
+      isNullableString(value.purchase_unit_name)) &&
     (value.ingredient_status === "ACTIVE" ||
       value.ingredient_status === "INACTIVE" ||
       value.ingredient_status === "ARCHIVED")

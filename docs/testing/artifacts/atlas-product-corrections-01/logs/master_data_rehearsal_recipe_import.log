@@ -1,0 +1,352 @@
+BEGIN
+ no_plan
+---------
+(0 rows)
+
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+                                       is
+---------------------------------------------------------------------------------
+ ok 1 - approved source Dish Type ID cannot be rebound to another catalogue code
+(1 row)
+
+                                            is
+-------------------------------------------------------------------------------------------
+ ok 2 - same active Dish display name in different Dish Types is a valid separate identity
+(1 row)
+
+                                           is
+-----------------------------------------------------------------------------------------
+ ok 3 - same active Dish display name within one Dish Type remains ambiguous and blocked
+(1 row)
+
+INSERT 0 1
+SAVEPOINT
+CREATE TABLE
+INSERT 0 1
+UPDATE 1
+                              is
+--------------------------------------------------------------
+ ok 4 - typed same-name apply regression first passes preview
+(1 row)
+
+UPDATE 1
+                              is
+---------------------------------------------------------------
+ ok 5 - preview-approved typed same-name Dishes actually apply
+(1 row)
+
+                     is
+---------------------------------------------
+ ok 6 - both typed Dish IDs physically exist
+(1 row)
+
+                                is
+-------------------------------------------------------------------
+ ok 7 - Recipe/BOM apply remains intact with typed duplicate names
+(1 row)
+
+                       throws_ok
+--------------------------------------------------------
+ ok 8 - same-type duplicate remains physically rejected
+(1 row)
+
+ROLLBACK
+CREATE TABLE
+INSERT 0 1
+                       is
+------------------------------------------------
+ ok 9 - full typed Recipe snapshot is supported
+(1 row)
+
+UPDATE 1
+                       is
+-------------------------------------------------
+ ok 10 - full master snapshot applies atomically
+(1 row)
+
+          is
+-----------------------
+ ok 11 - one Dish root
+(1 row)
+
+               is
+--------------------------------
+ ok 12 - two typed Recipe roots
+(1 row)
+
+                            is
+-----------------------------------------------------------
+ ok 13 - legacy GENERAL flag does not create general roots
+(1 row)
+
+                      is
+-----------------------------------------------
+ ok 14 - initial Recipes are planning eligible
+(1 row)
+
+                   is
+----------------------------------------
+ ok 15 - legacy is_locked is not copied
+(1 row)
+
+                    is
+------------------------------------------
+ ok 16 - all exact BOM lines materialized
+(1 row)
+
+                             ok
+-------------------------------------------------------------
+ ok 17 - actual import Actor and migration evidence retained
+(1 row)
+
+                                 is
+---------------------------------------------------------------------
+ ok 18 - legacy adoption uses Ingredient purchase Unit operationally
+(1 row)
+
+                           is
+--------------------------------------------------------
+ ok 19 - legacy adoption performs no numeric conversion
+(1 row)
+
+                                  is
+-----------------------------------------------------------------------
+ ok 20 - raw BoM Unit remains auditable in immutable snapshot evidence
+(1 row)
+
+                                         is
+-------------------------------------------------------------------------------------
+ ok 21 - one immutable adoption evidence row is recorded per mismatched fixture line
+(1 row)
+
+                                             ok
+---------------------------------------------------------------------------------------------
+ ok 22 - adoption evidence binds raw Unit, corrected Unit, Ingredient and unchanged quantity
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 23 - already-correct Recipe receives no adoption evidence
+(1 row)
+
+                  throws_ok
+---------------------------------------------
+ ok 24 - adoption evidence cannot be updated
+(1 row)
+
+                  throws_ok
+---------------------------------------------
+ ok 25 - adoption evidence cannot be deleted
+(1 row)
+
+SAVEPOINT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+SET CONSTRAINTS
+SET CONSTRAINTS
+CREATE FUNCTION
+                                         throws_ok
+-------------------------------------------------------------------------------------------
+ ok 26 - native cross-Unit Recipe release remains blocked without OPS-v1 adoption evidence
+(1 row)
+
+ROLLBACK
+INSERT 0 1
+UPDATE 1
+                     is
+--------------------------------------------
+ ok 27 - same snapshot replay is idempotent
+(1 row)
+
+                                     is
+-----------------------------------------------------------------------------
+ ok 28 - already-correct Recipe is not unnecessarily revised during adoption
+(1 row)
+
+SAVEPOINT
+DELETE 1
+                                        is
+-----------------------------------------------------------------------------------
+ ok 29 - partially mapped legacy adoption evidence is blocked rather than repaired
+(1 row)
+
+ROLLBACK
+SELECT 2
+SELECT 4
+SELECT 2
+INSERT 0 1
+UPDATE 1
+                        is
+--------------------------------------------------
+ ok 30 - source physical row-ID churn is accepted
+(1 row)
+
+                        ok
+--------------------------------------------------
+ ok 31 - physical IDs alone generate no successor
+(1 row)
+
+UPDATE 1
+                 is
+-------------------------------------
+ ok 32 - row-ID-only refresh applies
+(1 row)
+
+                         is
+----------------------------------------------------
+ ok 33 - row-ID churn creates no duplicate versions
+(1 row)
+
+                         is
+-----------------------------------------------------
+ ok 34 - row-ID churn creates no duplicate revisions
+(1 row)
+
+INSERT 0 1
+UPDATE 1
+                             is
+------------------------------------------------------------
+ ok 35 - legitimate pre-use composition correction previews
+(1 row)
+
+UPDATE 1
+                   is
+----------------------------------------
+ ok 36 - composition correction applies
+(1 row)
+
+                            is
+----------------------------------------------------------
+ ok 37 - one changed Recipe creates exactly one successor
+(1 row)
+
+                 is
+------------------------------------
+ ok 38 - Recipe roots are unchanged
+(1 row)
+
+                            is
+-----------------------------------------------------------
+ ok 39 - previous immutable composition is byte-equivalent
+(1 row)
+
+                             is
+------------------------------------------------------------
+ ok 40 - released predecessor locks when successor releases
+(1 row)
+
+                                is
+------------------------------------------------------------------
+ ok 41 - removed membership has an explicit zero REMOVED revision
+(1 row)
+
+                      is
+----------------------------------------------
+ ok 42 - exact corrected quantities read back
+(1 row)
+
+                      is
+----------------------------------------------
+ ok 43 - master import creates no Weekly Menu
+(1 row)
+
+                        is
+--------------------------------------------------
+ ok 44 - master import creates no Need Generation
+(1 row)
+
+INSERT 0 1
+UPDATE 1
+                                      is
+-------------------------------------------------------------------------------
+ ok 45 - database rejects invalid quantity independently of source diagnostics
+(1 row)
+
+                         is
+----------------------------------------------------
+ ok 46 - rejected preview creates no evidence batch
+(1 row)
+
+INSERT 0 1
+UPDATE 1
+UPDATE 1
+                            is
+----------------------------------------------------------
+ ok 47 - a later correction carries removed line evidence
+(1 row)
+
+INSERT 0 1
+UPDATE 1
+UPDATE 1
+                             is
+------------------------------------------------------------
+ ok 48 - reintroduction retains exact immediate predecessor
+(1 row)
+
+                               is
+----------------------------------------------------------------
+ ok 49 - reintroduced Ingredient retains one stable Recipe line
+(1 row)
+
+                              is
+---------------------------------------------------------------
+ ok 50 - multiple corrections never rewrite old line revisions
+(1 row)
+
+                            is
+----------------------------------------------------------
+ ok 51 - empty BOM blocks even without source diagnostics
+(1 row)
+
+                    is
+------------------------------------------
+ ok 52 - duplicate composition key blocks
+(1 row)
+
+                    is
+-------------------------------------------
+ ok 53 - unknown Unit blocks independently
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+SET CONSTRAINTS
+SET CONSTRAINTS
+INSERT 0 1
+UPDATE 1
+                          is
+-------------------------------------------------------
+ ok 54 - approved Menu use blocks later base migration
+(1 row)
+
+                           ok
+---------------------------------------------------------
+ ok 55 - blocker uses actual approved Dish-use authority
+(1 row)
+
+                 is
+-------------------------------------
+ ok 56 - committed-use apply refuses
+(1 row)
+
+                  is
+---------------------------------------
+ ok 57 - no successor after commitment
+(1 row)
+
+ finish
+--------
+ 1..57
+(1 row)
+
+ROLLBACK

@@ -153,15 +153,7 @@ export function AtlasSchoolScope({
                       }
                     >
                       <Checkbox.HiddenInput />
-                      <Checkbox.Control
-                        borderColor="border.default"
-                        borderRadius="control"
-                        _checked={{
-                          bg: "action.primary.default",
-                          color: "fg.inverse",
-                          borderColor: "action.primary.default",
-                        }}
-                      >
+                      <Checkbox.Control>
                         <Checkbox.Indicator />
                       </Checkbox.Control>
                       <Checkbox.Label textStyle="body">

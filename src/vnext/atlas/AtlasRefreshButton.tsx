@@ -41,9 +41,9 @@ export function AtlasRefreshButton({
       flexShrink="0"
       p="var(--atlas-layout-zero, 0)"
       rounded="full"
-      bg="bg.selected"
+      bg="bg.subtle"
       color="fg.muted"
-      _hover={{ bg: "bg.selected", color: "fg.primary" }}
+      _hover={{ bg: "bg.context", color: "fg.primary" }}
       border="var(--atlas-layout-zero, 0)"
       animationStyle={complete && !loading ? "refreshComplete" : undefined}
     >

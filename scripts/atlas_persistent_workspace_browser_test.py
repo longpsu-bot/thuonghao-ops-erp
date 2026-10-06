@@ -52,9 +52,12 @@ def dirty(page, kind):
     return control, control.input_value()
 
 
-def capture(page, root, name, results):
-    page.screenshot(path=str(root / f"{name}.png"), full_page=True)
+def capture(page, root, name, results, full_page=True, save_image=True):
+    if save_image:
+        page.screenshot(path=str(root / f"{name}.png"), full_page=full_page)
     metrics = page.evaluate("""() => ({
+      viewport:{width:innerWidth,height:innerHeight},
+      activeOwner:document.querySelector('main>[role=tabpanel]:not([hidden])')?.getAttribute('aria-label'),
       overflow:document.documentElement.scrollWidth>innerWidth,
       activePanels:[...document.querySelectorAll('main>[role=tabpanel]')].filter(e=>!e.hidden).length,
       hiddenOwners:[...document.querySelectorAll('main>[role=tabpanel][hidden]')].map(e=>({name:e.getAttribute('aria-label'),inert:e.inert})),
@@ -69,7 +72,7 @@ def capture(page, root, name, results):
     assert all(owner["inert"] for owner in metrics["hiddenOwners"]), results[-1]
 
 
-def capacity(browser, url, root, results):
+def capacity(browser, url, root, results, full_page=True, save_image=True):
     for width, height in [(1366, 768), (360, 800)]:
         page = browser.new_page(viewport={"width": width, "height": height}, reduced_motion="reduce")
         page.goto(url + "?capacity=12")
@@ -87,7 +90,7 @@ def capacity(browser, url, root, results):
                 expect(tab).to_be_focused()
                 expect(tab).to_have_attribute("aria-selected", "true")
                 assert tab.evaluate("e=>{const item=e.parentElement.getBoundingClientRect(),s=e.closest('[role=tablist]').getBoundingClientRect();return item.left>=s.left-1&&item.right<=s.right+1}")
-            capture(page, root, f"capacity-{width}x{height}", results)
+            capture(page, root, f"capacity-{width}x{height}", results, full_page=full_page, save_image=save_image)
             page.keyboard.press("Home")
             expect(tabs.first).to_be_focused()
         else:
@@ -100,7 +103,7 @@ def capacity(browser, url, root, results):
                 expect(button).to_be_in_viewport()
                 assert button.bounding_box()["height"] >= 44
                 assert popup.get_by_role("button", name=re.compile("^Đóng ")).nth(index).bounding_box()["height"] >= 44
-            capture(page, root, f"capacity-{width}x{height}", results)
+            capture(page, root, f"capacity-{width}x{height}", results, full_page=full_page, save_image=save_image)
         page.close()
 
 

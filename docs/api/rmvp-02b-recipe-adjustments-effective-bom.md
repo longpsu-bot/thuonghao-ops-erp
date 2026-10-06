@@ -164,6 +164,13 @@ Explicit historical inspection belongs to the separate read-only effective-compo
 
 The response retains the approved scope/action catalog, precedence and human-reference catalogs needed by the Application. In `RMVP-02B.v2` only, each Ingredient catalog entry also exposes its configured `purchase_unit_id` and `purchase_unit_name`; the v1 read shape is unchanged. Released Recipe lines are shaped with current Ingredient name, quantity and Unit so operators can select by business meaning rather than stable identity. The Application preserves a selected Recipe line's historical Unit, derives ADD and quantity-bearing REPLACE Units from the selected Ingredient purchase Unit, and blocks preview when that required master-data Unit is missing.
 
+The quantity editor presents this derived read-only Unit attached to its decimal
+input. ADD uses the selected Ingredient purchase Unit, quantity-bearing REPLACE
+uses the substitute purchase Unit, and ADJUST_QUANTITY displays the target line's
+stored Unit. KEEP replacement exposes neither a quantity input nor a new Unit
+input. Before/After composition rows render quantity and Unit together. These
+presentation changes do not alter command payloads.
+
 `operator_rows` returns one narrow row per stable adjustment with internal IDs and optimistic version for the existing commands, the frozen scope/action identity, a display revision, an authoritative content revision, the exact current command revision, ordered immutable business history, issuance provenance and one server-derived `temporal_state`. For a cancelled root, `display_revision` remains the cancellation evidence while `content_revision` is the latest preceding non-cancellation revision whose business payload was cancelled; React does not infer this lineage.
 
 - `ACTIVE`
