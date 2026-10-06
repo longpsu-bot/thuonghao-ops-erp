@@ -100,7 +100,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   return (
     <Box
       as="section"
-      aria-label="Nguồn lập nhu cầu"
+      aria-label="Thực đơn"
       bg="bg.workbench"
       borderRadius="workbench"
       borderWidth="var(--atlas-layout-edge, 1px)"
@@ -109,8 +109,8 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
     >
       <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
         <AtlasTaskContext
-          ariaLabel="Ngữ cảnh nguồn lập nhu cầu"
-          moduleLabel="Lập nhu cầu"
+          ariaLabel="Ngữ cảnh thực đơn"
+          moduleLabel="Thực đơn"
           jobLabel={jobs[c.job]}
           compactSummary={`${dateSummary} · ${scopeSummary}`}
           headingRef={heading}
@@ -128,7 +128,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
           >
             <Box>
               <Tabs.List
-                aria-label="Nguồn lập nhu cầu"
+                aria-label="Công việc thực đơn"
                 {...atlasSecondaryTabList}
               >
                 {Object.entries(jobs).map(([value, label]) => (

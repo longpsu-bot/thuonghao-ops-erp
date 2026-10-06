@@ -1,6 +1,9 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useProcurementWorkbench } from "./useProcurementWorkbench";
+import {
+  useProcurementWorkbench,
+  type ProcurementControllerProps,
+} from "./useProcurementWorkbench";
 import {
   createProcurementReviewFixture,
   reviewFailure,
@@ -20,6 +23,7 @@ function deferred() {
 }
 function setup(
   scenario: Parameters<typeof createProcurementReviewFixture>[0] = "normal",
+  owner: Pick<ProcurementControllerProps, "ownerStage" | "onOpenOrders"> = {},
 ) {
   const fixture = createProcurementReviewFixture(scenario);
   const read = vi.spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations");
@@ -31,6 +35,7 @@ function setup(
       authSubject: "operator",
       ...fixture,
       initialServiceDate: reviewDate,
+      ...owner,
     }),
   );
   return { ...hook, fixture, read, save, poRead, prepare };
@@ -263,6 +268,81 @@ describe("Procurement command safety", () => {
 });
 
 describe("Preparation and PO actions", () => {
+  it("keeps Allocation identity and opens Orders only after both authoritative readbacks", async () => {
+    const onOpenOrders = vi.fn();
+    const { result, prepare, poRead, read, fixture } = setup("ready", {
+      ownerStage: "allocation",
+      onOpenOrders,
+    });
+    await ready(result);
+    act(() => result.current.changeStage("orders"));
+    expect(result.current.stage).toBe("allocation");
+    const allocationReadback = deferred();
+    read.mockReturnValueOnce(allocationReadback.promise);
+    let command!: Promise<void>;
+    act(() => {
+      command = result.current.prepare(false);
+    });
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+    expect(poRead).toHaveBeenCalledOnce();
+    expect(onOpenOrders).not.toHaveBeenCalled();
+    expect(result.current.locked).toBe(true);
+    await act(async () => {
+      allocationReadback.resolve(
+        reviewSuccess({ ...fixture.allocation, rows: [] }),
+      );
+      await command;
+    });
+    expect(prepare).toHaveBeenCalledOnce();
+    expect(result.current.stage).toBe("allocation");
+    expect(result.current.allocation?.rows).toEqual([]);
+    expect(onOpenOrders).toHaveBeenCalledExactlyOnceWith(reviewDate);
+  });
+  it.each(["unknown", "orders-readback", "allocation-readback"])(
+    "recovers %s preparation without retrying or changing Allocation identity",
+    async (failure) => {
+      const onOpenOrders = vi.fn();
+      const { result, prepare, poRead, read } = setup("ready", {
+        ownerStage: "allocation",
+        onOpenOrders,
+      });
+      await ready(result);
+      if (failure === "unknown") prepare.mockResolvedValueOnce(reviewUnknown);
+      if (failure === "orders-readback")
+        poRead.mockResolvedValueOnce(reviewFailure("ACCESS_DENIED"));
+      if (failure === "allocation-readback")
+        read.mockResolvedValueOnce(reviewFailure("ACCESS_DENIED"));
+      await act(async () => result.current.prepare(false));
+      expect(result.current.stage).toBe("allocation");
+      expect(result.current.locked).toBe(true);
+      expect(onOpenOrders).not.toHaveBeenCalled();
+      await act(async () => result.current.prepare(false));
+      expect(prepare).toHaveBeenCalledOnce();
+      await act(async () => result.current.reload());
+      expect(result.current.stage).toBe("allocation");
+      expect(result.current.locked).toBe(false);
+      expect(onOpenOrders).toHaveBeenCalledExactlyOnceWith(reviewDate);
+      expect(prepare).toHaveBeenCalledOnce();
+    },
+  );
+  it("retries the exact preparation request while retaining Allocation ownership", async () => {
+    const onOpenOrders = vi.fn();
+    const { result, prepare, fixture } = setup("ready", {
+      ownerStage: "allocation",
+      onOpenOrders,
+    });
+    await ready(result);
+    fixture.commandResult = reviewFailure("RETRY", true);
+    await act(async () => result.current.prepare(false));
+    expect(result.current.locked).toBe(true);
+    expect(onOpenOrders).not.toHaveBeenCalled();
+    fixture.commandResult = reviewSuccess();
+    await act(async () => result.current.retry());
+    expect(prepare).toHaveBeenCalledTimes(2);
+    expect(prepare.mock.calls[1]![0]).toBe(prepare.mock.calls[0]![0]);
+    expect(result.current.stage).toBe("allocation");
+    expect(onOpenOrders).toHaveBeenCalledExactlyOnceWith(reviewDate);
+  });
   it("prepares only ready authority without an active editor and reads orders before switching", async () => {
     const { result, prepare, poRead } = setup("ready");
     await ready(result);

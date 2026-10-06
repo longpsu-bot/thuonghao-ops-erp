@@ -176,7 +176,7 @@ describe("Planning sources Chakra workbench", () => {
     await show();
 
     const context = screen.getByRole("region", {
-      name: "Ngữ cảnh nguồn lập nhu cầu",
+      name: "Ngữ cảnh thực đơn",
     });
     expect(context).toHaveStyle({
       minHeight: "var(--atlas-task-context-min-height, 56px)",
@@ -193,12 +193,12 @@ describe("Planning sources Chakra workbench", () => {
       level: 1,
       name: "Thực đơn",
     });
-    const tabs = screen.getByRole("tablist", { name: "Nguồn lập nhu cầu" });
+    const tabs = screen.getByRole("tablist", { name: "Công việc thực đơn" });
     const workbar = screen.getByRole("group", {
       name: "Phạm vi nguồn lập nhu cầu",
     });
     expect(heading).toBeVisible();
-    expect(heading).toHaveAccessibleDescription("Lập nhu cầu");
+    expect(heading).toHaveAccessibleDescription("Thực đơn");
     expect(context).toContainElement(heading);
     expect(
       heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,

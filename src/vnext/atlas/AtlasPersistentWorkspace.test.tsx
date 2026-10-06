@@ -85,22 +85,21 @@ it("activates existing instances with no duplicate or initialization reads", asy
   const schools = vi.spyOn(apis.masterData, "getSchools");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
-  await open("Kế hoạch mua hàng");
+  await open("Phân bổ NCC");
   await waitFor(() => expect(allocation).toHaveBeenCalledOnce());
   const schoolReads = schools.mock.calls.length;
   await open("Trường học");
-  await open("Kế hoạch mua hàng");
-  await open("Kế hoạch mua hàng");
+  await open("Phân bổ NCC");
+  await open("Phân bổ NCC");
   expect(allocation).toHaveBeenCalledOnce();
   expect(schools).toHaveBeenCalledTimes(schoolReads);
   expect(
-    document.querySelectorAll(
-      '[role="tabpanel"][aria-label="Kế hoạch mua hàng"]',
-    ),
+    document.querySelectorAll('[role="tabpanel"][aria-label="Phân bổ NCC"]'),
   ).toHaveLength(1);
-  expect(
-    screen.getByRole("tab", { name: "Kế hoạch mua hàng" }),
-  ).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
 }, 20_000);
 
 it("blocks sign-out with multiple dirty owners and preserves every hidden draft", async () => {

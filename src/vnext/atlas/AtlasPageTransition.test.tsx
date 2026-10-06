@@ -220,8 +220,8 @@ it("opens rapid destinations immediately and activates existing owners without d
   await show();
   open("Công thức");
   const recipes = panel("Công thức");
-  open("Lập nhu cầu");
-  const planning = panel("Lập nhu cầu");
+  open("Thực đơn");
+  const planning = panel("Thực đơn");
   open("Phiếu xuất kho");
   const pxk = panel("Phiếu xuất kho");
   open("Công thức");
@@ -268,22 +268,22 @@ it("Confirmed Need opens Procurement at its exact local date and Allocation stag
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
-  open("Lập nhu cầu");
+  open("Thực đơn");
   await screen.findByRole("table", { name: "Thực đơn theo trường" });
-  const planning = panel("Lập nhu cầu");
+  const planning = panel("Thực đơn");
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   fireEvent.change(
     await screen.findByRole("combobox", { name: "Ngày phục vụ" }),
     { target: { value: "2026-09-09" } },
   );
-  fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+  open("Xác nhận nhu cầu");
   const proceed = await screen.findByRole("button", {
     name: "Tiếp tục phân bổ NCC",
   });
   await waitFor(() => expect(proceed).toBeEnabled());
   expect(allocation).not.toHaveBeenCalled();
   fireEvent.click(proceed);
-  expect(panel("Kế hoạch mua hàng")).toBeVisible();
+  expect(panel("Phân bổ NCC")).toBeVisible();
   expect(planning).toHaveAttribute("hidden");
   expect(proceed).toBeInTheDocument();
   await waitFor(() =>
@@ -297,7 +297,7 @@ it("Confirmed Need opens Procurement at its exact local date and Allocation stag
     ),
   );
   expect(allocation).toHaveBeenCalledOnce();
-  expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(
+  expect(screen.getByRole("tab", { name: /^Phân bổ NCC/ })).toHaveAttribute(
     "aria-selected",
     "true",
   );

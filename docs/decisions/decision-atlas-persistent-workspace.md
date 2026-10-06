@@ -6,7 +6,9 @@
 
 **Approval basis:** Product Owner's ATLAS-UI-VNEXT-03B brief selects Variant D.
 
-**Scope:** Application navigation/lifetime and presentation; documentation freeze only.
+**Scope:** Application navigation/lifetime and presentation.
+
+**Owner amendment — 6 October 2026 (ATLAS-PRODUCT-CORRECTIONS-01):** The owner explicitly replaces grouped destinations with eleven operator-job owners and moves the icon-only launcher to the far left. This bounded implementation and amendment await PR review/merge. The original seven-destination evidence remains historical; business domains, APIs and operating stages are unchanged.
 
 ## Context and authority
 
@@ -40,15 +42,15 @@ Use explicit workbench-to-workspace presentation reporting for ordinary/unsaved 
 
 Attempted sign-out with any unsaved open owner blocks without discarding, identifies those owners and requires individual resolution. **Reject the prototype's sequential destructive exit composition:** an early discarded draft cannot be restored if a later guard cancels. Do not invent atomic global Save/Discard. Preserve non-destructive busy/unknown/session safety and browser `beforeunload` protection, including inactive workbenches.
 
-Date seeds apply only on first mount. Need's **Tiếp tục phân bổ NCC** opens unopened Procurement at the exact Need service date/Allocation stage. Already-open Procurement is activated with date/stage/local work intact; discrepancies are explicitly disclosed. This application activation performs no backend business handoff. An explicit guarded `requestContext(...)` is deferred unless proven necessary.
+Date seeds apply only on first mount. Need's **Tiếp tục phân bổ NCC** opens unopened **Phân bổ NCC** at the exact Need service date. Already-open Allocation is activated with date/local work intact; date discrepancies are explicitly disclosed. This application activation performs no backend business handoff. An explicit guarded `requestContext(...)` is deferred unless proven necessary.
 
 Activation never refreshes. Existing command/readback, currentness/version/concurrency and stale/unknown recovery remain in each workbench. Inspect hidden effects/timers; never overwrite local work with hidden or activation-time refresh. Inactive panels are hidden/inert and excluded from focus, commands and active landmarks; escaping transient UI and DatePicker focus/input ownership require browser verification.
 
 ## Visual decision and alternatives
 
-Select **Atlas Modern Operational Workspace**: full-width dense plane and compact shell from C, eucalyptus/slate identity, typography, refined surfaces and restrained elevation from B, with Atlas-integrated workbench tabs. Desktop is Atlas identity + **Bàn làm việc ▾** + compact utilities, then open tabs, then active workbench; the permanent icon rail is not primary v2 navigation.
+Select **Atlas Modern Operational Workspace**: full-width dense plane and compact shell from C, eucalyptus/slate identity, typography, refined surfaces and restrained elevation from B, with Atlas-integrated workbench tabs. Desktop is **☰ + ATLAS + compact utilities**, then open tabs, then active workbench. The far-left Phosphor List control has `aria-label="Bàn làm việc"` and `title="Bàn làm việc"`; the opened launcher retains the visible **Bàn làm việc** heading; the permanent icon rail is not primary v2 navigation.
 
-The registry-generated **Bàn làm việc** launcher lists all available destinations with simple local search. Initial groups are **CÔNG VIỆC HẰNG NGÀY** (Lập nhu cầu, Kế hoạch mua hàng, Phiếu xuất kho, Đối chiếu PO / Phiếu xuất kho) and **DỮ LIỆU & CẤU HÌNH** (Trường học, Nguyên liệu và Nhà cung ứng, Công thức), with no empty future groups. It shows only quiet open status and contains no business drafts/state. Successful selection opens/activates or activates-existing without duplication, closes the launcher and restores trigger focus; keyboard traversal/activation and Escape are required. Dirty/attention remains primarily on open tabs.
+The registry-generated **Bàn làm việc** launcher lists all available destinations with simple local search. Groups are **CÔNG VIỆC HẰNG NGÀY** (Thực đơn, Xác nhận nhu cầu, Phân bổ NCC, Đơn mua, Phiếu xuất kho, Đối chiếu PO / Phiếu xuất kho) and **DỮ LIỆU & CẤU HÌNH** (Trường học, Nguyên liệu, Nhà cung ứng, Công thức, Lệnh điều chỉnh), with no empty future groups. It shows only quiet open status and contains no business drafts/state. Successful selection opens/activates or activates-existing without duplication, closes the launcher and restores trigger focus; keyboard traversal/activation and Escape are required. Dirty/attention remains primarily on open tabs.
 
 One compact shell utility contains user/environment/sign-out; the launcher does not repeat them. Mobile separates **Bàn làm việc** (launcher) from **Đang mở** (open-workbench selector); do not squeeze the full desktop strip/rail onto mobile. Touch targets remain 44px. Command-palette dependencies, nested navigation frameworks, recently used, favorites, pins and customizable groups are deferred until demonstrated need.
 
@@ -67,6 +69,20 @@ Benefits: immediate return to open work, preserved useful table width, visible u
 **Owner clarification — 5 October 2026:** 03C does not require screen-reader/disability-assistance certification for the current Atlas operator population. Remove NVDA/JAWS, spoken-date/live-announcer human verification and WCAG certification as release gates. Retain browser input/focus isolation, date ownership, transient dismissal, predictable guarded dialogs/shortcuts and state-preserving navigation. This narrows presentation acceptance only; it changes no business/API/security contract.
 
 Implementation is separately bounded by [03C](../implementation-tasks/TASK-ATLAS-UI-VNEXT-03C-PERSISTENT-WORKSPACE-PRODUCTION.md): A Workspace Foundation, then B Visual Adoption of Need, Procurement, Recipes and School PXK without requiring every module to be restyled.
+
+## Operator-owner composition amendment
+
+Each of the eleven jobs owns its persistent component and exit/status report.
+Thực đơn retains Thực đơn / Sĩ số / Bổ sung as secondary jobs with the existing
+week/date/School semantics. Recipe authoring and Change Orders compose directly;
+Ingredient and Supplier owners reuse the existing hook/API with fixed identities.
+Allocation and Orders reuse the Procurement hook with fixed owner stages. Successful
+preparation or uncertain-outcome recovery verifies Orders readback and then refreshes
+Allocation's own authority before activating Orders. An unopened Orders owner uses
+the exact preparation date; an existing Orders owner keeps its date/filter/data and
+receives explicit refresh disclosure, even for the same date. Activation adds no read.
+Backend currentness and command checks remain authoritative. The test-only twelve
+capacity descriptors remain separate from the eleven production destinations.
 
 ## Safety, validation and rollback
 

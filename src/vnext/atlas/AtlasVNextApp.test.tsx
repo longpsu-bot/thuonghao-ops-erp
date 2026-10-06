@@ -30,10 +30,14 @@ afterEach(() => {
 });
 const modules = [
   ["Trường học", "Sĩ số mặc định"],
-  ["Nguyên liệu và Nhà cung ứng", "Nguyên liệu"],
+  ["Nguyên liệu", "Nguyên liệu"],
+  ["Nhà cung ứng", "Nhà cung ứng"],
   ["Công thức", "Công thức"],
-  ["Lập nhu cầu", "Thực đơn"],
-  ["Kế hoạch mua hàng", "Phân bổ nhà cung ứng"],
+  ["Thực đơn", "Thực đơn"],
+  ["Xác nhận nhu cầu", "Xác nhận nhu cầu"],
+  ["Phân bổ NCC", "Phân bổ NCC"],
+  ["Đơn mua", "Đơn mua"],
+  ["Lệnh điều chỉnh", "Lệnh điều chỉnh"],
   ["Phiếu xuất kho", "Phiếu xuất kho"],
   ["Đối chiếu PO / Phiếu xuất kho", "Đối chiếu PO / Phiếu xuất kho"],
 ];
@@ -131,8 +135,8 @@ it("Confirmed Need continues to supplier allocation with no hidden write", async
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
-  await nav("Lập nhu cầu");
-  fireEvent.click(await screen.findByRole("tab", { name: "Xác nhận nhu cầu" }));
+  await nav("Thực đơn");
+  await nav("Xác nhận nhu cầu");
   const proceed = await screen.findByRole("button", {
     name: "Tiếp tục phân bổ NCC",
   });
@@ -154,11 +158,11 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
   const reconciliation = vi.spyOn(apis.reconciliation, "getWorkbench");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
-  await nav("Lập nhu cầu");
+  await nav("Thực đơn");
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   const date = await screen.findByRole("combobox", { name: "Ngày phục vụ" });
   fireEvent.change(date, { target: { value: "2026-09-09" } });
-  fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+  await nav("Xác nhận nhu cầu");
   await waitFor(() =>
     expect(confirmed).toHaveBeenCalledWith(
       expect.anything(),

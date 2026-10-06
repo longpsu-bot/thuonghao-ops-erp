@@ -81,6 +81,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
   }, [workspace]);
   const mountDate = useRef(vietnamServiceDate(props.now ?? new Date()));
   const procurementContext = useRef<AtlasProcurementContext | null>(null);
+  const ordersContext = useRef<AtlasProcurementContext | null>(null);
   const [statuses, setStatuses] = useState<
     Partial<Record<AtlasWorkbenchId, AtlasWorkbenchStatus>>
   >({});
@@ -115,6 +116,9 @@ function ApplicationSession(props: AtlasVNextAppProps) {
   }, []);
   const reportProcurement = useCallback((context: AtlasProcurementContext) => {
     procurementContext.current = context;
+  }, []);
+  const reportOrders = useCallback((context: AtlasProcurementContext) => {
+    ordersContext.current = context;
   }, []);
   const ownersNeedingResolution = workspace.openIds.filter((id) => {
     const status = statuses[id];
@@ -168,18 +172,30 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       const retained = entries.current!.has("procurement");
       if (!open("procurement", date)) return;
       const context = procurementContext.current;
-      if (
-        retained &&
-        context &&
-        (context.date !== date || context.stage !== "allocation")
-      ) {
+      if (retained && context && context.date !== date) {
         setNotice(
-          `Nhu cầu ngày ${date} yêu cầu Phân bổ NCC. Kế hoạch mua hàng đang mở giữ ngày ${context.date}, giai đoạn ${context.stage === "orders" ? "Đơn mua" : "Phân bổ NCC"}. Đổi ngày hoặc giai đoạn tại bàn làm việc này khi đã sẵn sàng.`,
+          `Nhu cầu ngày ${date} yêu cầu Phân bổ NCC. Phân bổ NCC đang mở giữ ngày ${context.date} và các thay đổi tại chỗ. Đổi ngày tại bàn làm việc này khi đã sẵn sàng.`,
         );
       }
     },
     [open],
   );
+  const openOrders = useCallback(
+    (date: string) => {
+      const retained = entries.current!.has("purchase-orders");
+      if (!open("purchase-orders", date)) return;
+      if (retained) {
+        const retainedDate = ordersContext.current?.date ?? date;
+        setNotice(
+          `Chuyển sang Đơn mua từ Phân bổ NCC ngày ${date}. Đơn mua đang mở giữ ngày ${retainedDate} và ngữ cảnh tại chỗ. Tải lại dữ liệu tại Đơn mua để xem kết quả mới; đổi ngày khi đã sẵn sàng nếu cần.`,
+        );
+      }
+    },
+    [open],
+  );
+  const openChangeOrders = useCallback(() => {
+    open("change-orders");
+  }, [open]);
   const restoreNavigationFocus = () => {
     requestAnimationFrame(() => {
       const id = currentWorkspace.current.activeId;
@@ -209,6 +225,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       });
       entries.current!.delete(id);
       if (id === "procurement") procurementContext.current = null;
+      if (id === "purchase-orders") ordersContext.current = null;
       restoreNavigationFocus();
     };
     if (id === "reconciliation") approved();
@@ -306,7 +323,10 @@ function ApplicationSession(props: AtlasVNextAppProps) {
                 onWorkspaceStatus={entry.report}
                 onServiceDateChange={reportDate}
                 onContinueAllocation={continueAllocation}
+                onOpenOrders={openOrders}
+                onOpenChangeOrders={openChangeOrders}
                 onProcurementContextChange={reportProcurement}
+                onOrdersContextChange={reportOrders}
               />
             </AtlasWorkbenchScope>
           </Box>

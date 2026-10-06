@@ -12,6 +12,29 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 **Purpose:** identify the connected surfaces that should be stabilized before CMD-03 without redefining business behavior or polishing prototypes that will change later.
 
+## Current workspace amendment — 6 October 2026
+
+ATLAS-PRODUCT-CORRECTIONS-01 implements the owner-requested eleven-job registry
+in `src/vnext/atlas/AtlasWorkbenchRegistry.tsx`, pending PR review/merge.
+[D-048](../decisions/decision-atlas-persistent-workspace.md) and the
+[v2 design contract](atlas-vnext-design-language-v2.md) define its lifetime and shell.
+The earlier inventory sections below retain the accepted historical v1 evidence;
+their sidebar/grouped-page descriptions do not describe the current vNext navigation.
+
+| Group               | Persistent workbenches                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| CÔNG VIỆC HẰNG NGÀY | Thực đơn; Xác nhận nhu cầu; Phân bổ NCC; Đơn mua; Phiếu xuất kho; Đối chiếu PO / Phiếu xuất kho |
+| DỮ LIỆU & CẤU HÌNH  | Trường học; Nguyên liệu; Nhà cung ứng; Công thức; Lệnh điều chỉnh                               |
+
+The far-left icon launcher precedes ATLAS, retains the accessible name/title
+**Bàn làm việc**, and shows that heading inside the opened menu. There is no
+second primary navigation. Thực đơn retains its three secondary source jobs.
+All split pairs keep independent mounted owners, local drafts/filters/dates and
+existing guarded close; activation neither exits nor reads. Sign-out resolves
+every open owner individually. Preparation/recovery and Need-to-Allocation
+navigation preserve their existing backend contracts. Eleven production jobs and
+twelve test capacity descriptors are intentional, with no added operating stage.
+
 ## 1. Evidence basis
 
 This inventory uses:

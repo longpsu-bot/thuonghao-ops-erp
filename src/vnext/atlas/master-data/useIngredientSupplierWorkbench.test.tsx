@@ -110,6 +110,32 @@ function apiWithRead(result: AtlasRpcResult = readSuccess()) {
 describe("useIngredientSupplierWorkbench", () => {
   beforeEach(() => vi.useRealTimers());
 
+  it("keeps the Supplier owner through initial reads, refresh and identity reset", async () => {
+    const api = apiWithRead();
+    const { result, rerender } = renderHook(
+      ({ authSubject }) =>
+        useIngredientSupplierWorkbench({
+          authSubject,
+          api,
+          ownerJob: "suppliers",
+        }),
+      { initialProps: { authSubject: "operator-1" } },
+    );
+    expect(result.current.job).toBe("suppliers");
+    await waitFor(() => expect(result.current.suppliers).toHaveLength(1));
+    act(() => result.current.requestJob("ingredients"));
+    expect(result.current.job).toBe("suppliers");
+    await act(async () => {
+      await result.current.refresh();
+    });
+    expect(result.current.job).toBe("suppliers");
+    rerender({ authSubject: "operator-2" });
+    await waitFor(() =>
+      expect(api.getIngredientsAndSuppliers).toHaveBeenCalledTimes(3),
+    );
+    expect(result.current.job).toBe("suppliers");
+  });
+
   it("adopts one authoritative read only when all five arrays exist", async () => {
     const api = apiWithRead(
       readSuccess({ ingredient_order_groups: undefined }),

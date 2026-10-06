@@ -89,32 +89,26 @@ describe("Atlas pre-cutover UI polish", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
     const procurement = await screen.findByRole("button", {
-      name: "Kế hoạch mua hàng",
+      name: "Phân bổ NCC",
     });
     expect(
       within(procurement).getByTestId("procurement-nav-icon"),
     ).toHaveAttribute("data-icon", "shopping-cart");
   });
 
-  it("uses strong two-tier Planning tabs and a Monday-Sunday week range field", async () => {
+  it("retains Planning secondary jobs and a Monday-Sunday week range field", async () => {
     show();
-    await nav("Lập nhu cầu");
+    await nav("Thực đơn");
 
     expect(
-      screen.getByRole("tablist", { name: "Giai đoạn lập nhu cầu" }),
-    ).toHaveAttribute("data-tab-tier", "primary");
+      screen.queryByRole("tablist", { name: "Giai đoạn lập nhu cầu" }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("tablist", { name: "Nguồn lập nhu cầu" }),
+      screen.getByRole("tablist", { name: "Công việc thực đơn" }),
     ).toHaveAttribute("data-tab-tier", "secondary");
-    const primary = screen.getByRole("tablist", {
-      name: "Giai đoạn lập nhu cầu",
-    });
     const secondary = screen.getByRole("tablist", {
-      name: "Nguồn lập nhu cầu",
+      name: "Công việc thực đơn",
     });
-    expect(primary.compareDocumentPosition(secondary)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
     expect(
       within(secondary)
         .getAllByRole("tab")
@@ -135,7 +129,7 @@ describe("Atlas pre-cutover UI polish", () => {
   it("normalizes an arbitrary selected week day to Monday and emits week_start only", async () => {
     const { apis } = show();
     const planningRead = vi.spyOn(apis.planning, "getWorkbench");
-    await nav("Lập nhu cầu");
+    await nav("Thực đơn");
 
     fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
     fireEvent.click(
@@ -161,8 +155,8 @@ describe("Atlas pre-cutover UI polish", () => {
 
   it("uses Phiếu đi chợ wording without changing the Confirmed Need workflow", async () => {
     show();
-    await nav("Lập nhu cầu");
-    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    await nav("Thực đơn");
+    await nav("Xác nhận nhu cầu");
 
     expect(
       await screen.findByRole("button", { name: "Xuất Phiếu đi chợ" }),
@@ -179,21 +173,20 @@ describe("Atlas pre-cutover UI polish", () => {
     );
   });
 
-  it("puts Procurement tabs first with one visible Station heading", async () => {
+  it("gives Allocation one heading without duplicate primary navigation", async () => {
     show();
-    await nav("Kế hoạch mua hàng");
-    const section = screen.getByRole("region", { name: "Kế hoạch mua hàng" });
-    const tabs = within(section).getByRole("tablist", {
+    await nav("Phân bổ NCC");
+    const section = screen.getByRole("region", { name: "Phân bổ NCC" });
+    const tabs = within(section).queryByRole("tablist", {
       name: "Công việc mua hàng",
     });
-    expect(tabs).toHaveAttribute("data-tab-tier", "primary");
-    expect(tabs).toHaveAttribute("data-tab-align", "start");
+    expect(tabs).not.toBeInTheDocument();
     const heading = within(section).getByRole("heading", {
       level: 1,
-      name: "Phân bổ nhà cung ứng",
+      name: "Phân bổ NCC",
     });
     expect(heading).toBeVisible();
-    expect(heading).toHaveAccessibleDescription("Kế hoạch mua hàng");
+    expect(heading).toHaveAccessibleDescription("Phân bổ NCC");
     expect(within(section).getAllByRole("heading", { level: 1 })).toEqual([
       heading,
     ]);
