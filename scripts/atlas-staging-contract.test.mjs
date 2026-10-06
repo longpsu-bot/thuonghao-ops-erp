@@ -912,6 +912,42 @@ describe("Atlas staging dry-run and workflow", () => {
     warning.mockRestore();
   });
 
+  it("runs Recipe unit authority regressions in draft smoke and full certification", () => {
+    const workflow = readFileSync(
+      ".github/workflows/supabase-integration.yml",
+      "utf8",
+    );
+    const smoke = workflow.slice(
+      workflow.indexOf("  smoke:"),
+      workflow.indexOf("  full-integration:"),
+    );
+    for (const file of [
+      "ui_quality_03a_recipe_workflow.sql",
+      "ui_quality_03b_recipe_adjustment_operator_workbench.sql",
+    ]) {
+      const path = `supabase/tests/${file}`;
+      expect(
+        SUPABASE_FULL_INTEGRATION_COMMANDS.filter(({ args }) =>
+          args.includes(path),
+        ),
+      ).toEqual([
+        {
+          command: "pnpm",
+          args: ["exec", "supabase", "test", "db", path, "--local"],
+        },
+      ]);
+      expect(
+        smoke
+          .split(/\r?\n/)
+          .filter(
+            (line) =>
+              line.trim().startsWith("pnpm exec supabase test db ") &&
+              line.split(/\s+/).includes(path),
+          ),
+      ).toHaveLength(1);
+    }
+  });
+
   it("makes both workflows call the shared repository certification entrypoints", () => {
     const frontendWorkflow = readFileSync(
       ".github/workflows/frontend-ci.yml",
@@ -932,7 +968,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(98);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(100);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: ["scripts/test-local-planning-final-closeout.mjs"],
