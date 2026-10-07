@@ -199,6 +199,20 @@ it("measures only emitted School bands, without reserving an unused continuation
   ).resolves.toBeInstanceOf(ArrayBuffer);
 });
 
+it("classifies a band retargeted to another existing School as STALE_IDENTITY", async () => {
+  const f = shoppingFixture();
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(await createConfirmedNeedShoppingListXlsx([f]));
+  book.worksheets[0]!.getCell("K4").value = f.workbench.lines[1]!.school.id;
+  await expect(
+    parseConfirmedNeedShoppingListXlsx(
+      new Uint8Array(await book.xlsx.writeBuffer()),
+      [f.workbench],
+      f.drafts,
+    ),
+  ).rejects.toMatchObject({ code: "STALE_IDENTITY" });
+});
+
 it.each([
   ["K5", "tampered", "STALE_IDENTITY"],
   ["Q5", "tampered", "REFERENCE_CHANGED"],

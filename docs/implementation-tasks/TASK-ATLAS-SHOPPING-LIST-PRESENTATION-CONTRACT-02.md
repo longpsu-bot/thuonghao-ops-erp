@@ -38,7 +38,7 @@ Focused checks cover V2 metadata/Table structure, frozen/print headers, band sty
 
 ## Verification evidence
 
-- Five exact Shopping List suites: **110 tests PASS**, including XLSX/package/import, precision, service, V2 conformance and School-band cases.
+- Five exact Shopping List suites: **111 tests PASS**, including XLSX/package/import, precision, service, V2 conformance and School-band cases. Band ID retargeting to another existing School returns `STALE_IDENTITY`, using the following authoritative business line rather than a name as the identity check.
 - UI boundary, typecheck, build, workspace and whitespace checks pass. Build retains existing chunk-size/static ExcelJS import warnings.
 - Local full-suite attempts on Windows stalled without completed test output, including the retry with default dependency directories and ignored `.superpowers` snapshots excluded. No local full-suite PASS is claimed and no tracked test or CI setting was changed. GitHub's full Frontend CI on the final head is the required certification gate.
 - Native Excel A/B/C normal Open, isolated SaveAs/reopen, unhide/flat-copy and changed-quantity import pass. The production artifacts remain unchanged by native save.

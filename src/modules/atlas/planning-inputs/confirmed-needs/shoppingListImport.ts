@@ -585,6 +585,16 @@ export function validateShoppingListEnvelope(
             v[9] === daily.service_date,
           "STALE_IDENTITY",
         );
+        const following = rows[rowIndex + 1];
+        shoppingAssert(
+          following?.[15]?.text === "DATA_LINE",
+          "SCHOOL_GROUP_INVALID",
+        );
+        const followingLine = byLine.get(following[6]!.text);
+        shoppingAssert(followingLine, "LINE_SET_MISMATCH");
+        // Band identity comes from the next authoritative business line, never
+        // from a displayed name. Retargeting to any existing School is stale too.
+        shoppingAssert(v[10] === followingLine.school.id, "STALE_IDENTITY");
         const name = schools.get(v[10]!)!;
         const continuation = v[0] === `${name} (tiếp)`;
         shoppingAssert(
