@@ -103,8 +103,8 @@ rollback;`;
     );
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(local);
-    book.worksheets[0].getCell("D4").value = 3.5;
-    book.worksheets[0].getCell("E4").value = "ignored staff note";
+    book.worksheets[0].getCell("D5").value = 3.5;
+    book.worksheets[0].getCell("E5").value = "ignored staff note";
     const edited = new Uint8Array(await book.xlsx.writeBuffer());
     const imported = await serviceModule
       .createConnectedShoppingListService(api, preflight, subject)
@@ -231,7 +231,6 @@ rollback;`;
     for (const l of b.workbench.lines)
       try {
         layout.shoppingListRowHeight(
-          l.school.name,
           l.ingredient.name,
           l.controlled_unit.name,
           codec.shortestShoppingListQuantity(l.confirmed_quantity_after),

@@ -1,5 +1,7 @@
 # ATLAS-SHOPPING-LIST-UNIT-DISPLAY-01
 
+**Historical Unit-resolver record.** The subsequent Owner-approved [PRESENTATION-CONTRACT-02](TASK-ATLAS-SHOPPING-LIST-PRESENTATION-CONTRACT-02.md) preserves this resolver and supersedes the 35.5 pt geometry, Miếng-rejection regression, V1 Table/envelope and next-task wording below. The fresh authorized current export has 248 lines; the earlier 249-line observation below is historical, not current specimen authority.
+
 Date: 2026-10-07. Starting main: `cffb17189b11e861c5d7dff6e761335940e46a45`.
 
 ## Bounded correction

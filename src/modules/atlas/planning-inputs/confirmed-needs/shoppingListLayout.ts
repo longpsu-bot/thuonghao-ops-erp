@@ -1,12 +1,17 @@
 import metrics from "./shoppingListFontMetrics.json";
 import {
   ShoppingListError,
-  shoppingListContract as contract,
+  shoppingListGeometries,
+  type ShoppingListGeometry,
 } from "./shoppingListContract";
 
 // Times New Roman glyph advances from the native font used in F13. Accent
 // combining marks have zero advance; unsupported glyphs fail export safely.
-function width(text: string, size: number, bold = false) {
+export function shoppingListTextWidth(
+  text: string,
+  size: number,
+  bold = false,
+) {
   const map: Record<string, number> = bold ? metrics.bold : metrics.normal;
   let result = 0;
   for (const glyph of text.normalize("NFD")) {
@@ -27,9 +32,9 @@ function lineCount(text: string, points: number, size: number, bold = false) {
     let line = "";
     count++;
     for (const word of paragraph.split(" ")) {
-      if (width(word, size, bold) > points) return Infinity;
+      if (shoppingListTextWidth(word, size, bold) > points) return Infinity;
       const candidate = line ? `${line} ${word}` : word;
-      if (width(candidate, size, bold) > points) {
+      if (shoppingListTextWidth(candidate, size, bold) > points) {
         count++;
         line = word;
       } else line = candidate;
@@ -38,68 +43,85 @@ function lineCount(text: string, points: number, size: number, bold = false) {
   return count;
 }
 export function shoppingListRowHeight(
-  school: string,
   ingredient: string,
   unit: string,
   quantity: string,
   supplier: string,
-  continuation = false,
-  schoolShown = true,
+  geometry: ShoppingListGeometry = "B",
 ) {
-  const p = contract.print;
-  const size = Array.from(
-    `${school}${ingredient}${unit}${quantity}${supplier}`,
-  ).filter((c) => c !== "\n" && c !== "\r").length;
-  // This is an artifact warning/block, never a database or name-length rule.
+  const p = shoppingListGeometries[geometry];
+  const usable = shoppingListColumnUsableWidths(geometry);
+  // Native Carlito 11 Normal style gives 6 pt per column unit. Padding is
+  // reserved conservatively; native widths and physical PDFs verify this.
   if (
-    size > 84 ||
-    width(unit, p.bodyFontPt) > 35.5 ||
-    width(quantity, p.quantityFontPt) > 95.5
+    shoppingListTextWidth(unit, p.bodyFontPt) > usable[2]! ||
+    shoppingListTextWidth(quantity, p.quantityFontPt) > usable[3]!
   )
     throw new ShoppingListError(
       "PRINT_OVERFLOW",
       "Nội dung vượt khuôn in đã kiểm chứng. Hãy rà soát Phiếu đi chợ trước khi xuất.",
     );
   const lines = Math.max(
-    lineCount(
-      continuation ? `${school} (tiếp)` : schoolShown ? school : "",
-      149.5,
-      p.schoolFontPt,
-      true,
-    ),
-    lineCount(ingredient, 192.5, p.bodyFontPt),
-    lineCount(supplier, 89.5, p.supplierFontPt),
+    lineCount(ingredient, usable[1]!, p.bodyFontPt),
+    lineCount(supplier, usable[4]!, p.supplierFontPt),
   );
   if (lines > 2)
     throw new ShoppingListError(
       "PRINT_OVERFLOW",
       "Nội dung không vừa khuôn in Phiếu đi chợ. Hãy rà soát tên hiển thị trước khi xuất.",
     );
-  return continuation || lines > 1 ? p.wrappedRowPt : p.normalRowPt;
+  return lines > 1 ? p.wrappedRowPt : p.normalRowPt;
 }
+export function shoppingListColumnUsableWidths(
+  geometry: ShoppingListGeometry = "B",
+) {
+  return shoppingListGeometries[geometry].columnWidths.map((w) => w * 6 - 5.5);
+}
+export type ShoppingListBodyRow = {
+  kind: "SCHOOL_BAND" | "DATA_LINE";
+  index: number;
+  height: number;
+  continuation: boolean;
+};
 export function shoppingListPages(
   rows: { schoolId: string; height: number }[],
+  geometry: ShoppingListGeometry = "B",
 ) {
-  const p = contract.print;
+  const p = shoppingListGeometries[geometry];
   const capacity =
     (p.a4HeightPt -
       72 * (p.topMarginIn + p.bottomMarginIn) -
-      p.footerAllowancePt -
-      p.titleRowPt -
-      p.spacerRowPt -
-      p.headerRowPt) /
-    p.pageHeightScaleUpperBound;
+      p.footerAllowancePt) /
+      (p.scalePercent / 100) -
+    p.titleRowPt -
+    p.spacerRowPt -
+    p.headerRowPt;
   let remaining = capacity,
     index = 0;
   const breaks: number[] = [],
-    continuations = new Set<number>();
+    body: ShoppingListBodyRow[] = [];
+  const band = (index: number, continuation: boolean) => {
+    body.push({
+      kind: "SCHOOL_BAND",
+      index,
+      height: p.bandRowPt,
+      continuation,
+    });
+    remaining -= p.bandRowPt;
+  };
+  const page = () => {
+    breaks.push(body.length + 3);
+    remaining = capacity;
+  };
   while (index < rows.length) {
     let end = index;
     while (end < rows.length && rows[end]!.schoolId === rows[index]!.schoolId)
       end++;
-    const total = rows.slice(index, end).reduce((sum, r) => sum + r.height, 0);
+    const total =
+      p.bandRowPt +
+      rows.slice(index, end).reduce((sum, r) => sum + r.height, 0);
     let fit = 0,
-      space = remaining;
+      space = remaining - p.bandRowPt;
     for (let i = index; i < end; i++) {
       if (rows[i]!.height > space) break;
       space -= rows[i]!.height;
@@ -110,23 +132,19 @@ export function shoppingListPages(
       ((end - index <= 8 && total > remaining) ||
         (total > remaining && remaining < capacity && fit < 3))
     ) {
-      breaks.push(index + 3);
-      remaining = capacity;
+      page();
     }
+    band(index, false);
     for (let i = index; i < end; i++) {
-      let height = rows[i]!.height;
+      const height = rows[i]!.height;
       if (height > remaining) {
-        breaks.push(i + 3);
-        remaining = capacity;
-        if (i > index) {
-          continuations.add(i);
-          height = p.wrappedRowPt;
-          rows[i]!.height = height;
-        }
+        page();
+        band(i, true);
       }
+      body.push({ kind: "DATA_LINE", index: i, height, continuation: false });
       remaining -= height;
     }
     index = end;
   }
-  return { breaks, continuations };
+  return { breaks, body };
 }

@@ -32,7 +32,7 @@ async function workbook(quantity = "1.234567") {
 }
 const bytes = async (book: ExcelJS.Workbook) =>
   new Uint8Array(await book.xlsx.writeBuffer());
-describe("AUD-003 frozen V1 precision", () => {
+describe("AUD-003 V2 precision", () => {
   it.each(["1.234567", "0.000001", "12.345600", "1.230000", "0.000000", "0"])(
     "retains exact authoritative XML and unchanged draft for %s",
     async (quantity) => {
@@ -43,13 +43,13 @@ describe("AUD-003 frozen V1 precision", () => {
         await readShoppingListPackage(output),
         "xl/worksheets/sheet1.xml",
       );
-      expect(xml).toMatch(/<c[^>]*r="D4"[^>]*t="s"/);
+      expect(xml).toMatch(/<c[^>]*r="D5"[^>]*t="s"/);
       const native = new ExcelJS.Workbook();
       await native.xlsx.load(output);
-      expect(native.worksheets[0]!.getCell("D4").value).toBe(
+      expect(native.worksheets[0]!.getCell("D5").value).toBe(
         shortestShoppingListQuantity(quantity),
       );
-      expect(native.worksheets[0]!.getCell("O4").value).toBe(quantity);
+      expect(native.worksheets[0]!.getCell("O5").value).toBe(quantity);
       const imported = await parseConfirmedNeedShoppingListXlsx(
         output,
         [structuredClone(f.workbench)],
@@ -63,7 +63,7 @@ describe("AUD-003 frozen V1 precision", () => {
     "recognizes unchanged numeric/dot/comma %s",
     async (value) => {
       const f = await workbook();
-      f.sheet.getCell("D4").value = value;
+      f.sheet.getCell("D5").value = value;
       const result = await parseConfirmedNeedShoppingListXlsx(
         await bytes(f.book),
         [f.workbench],
@@ -80,7 +80,7 @@ describe("AUD-003 frozen V1 precision", () => {
       files,
       "xl/worksheets/sheet1.xml",
       packageText(files, "xl/worksheets/sheet1.xml").replace(
-        /<c\b([^>]*\br="D4"[^>]*)>[\s\S]*?<\/c>/,
+        /<c\b([^>]*\br="D5"[^>]*)>[\s\S]*?<\/c>/,
         (_, attrs) =>
           `<c${attrs.replace(/\s*t="[^"]*"/, "")} t="n"><v>1234567e-6</v></c>`,
       ),
@@ -99,8 +99,8 @@ describe("AUD-003 frozen V1 precision", () => {
     "permits real two-decimal/zero entry without importing a reason %s",
     async (value) => {
       const f = await workbook();
-      f.sheet.getCell("D4").value = value;
-      f.sheet.getCell("E4").value = "ignored";
+      f.sheet.getCell("D5").value = value;
+      f.sheet.getCell("E5").value = "ignored";
       const result = await parseConfirmedNeedShoppingListXlsx(
         await bytes(f.book),
         [f.workbench],
@@ -118,7 +118,7 @@ describe("AUD-003 frozen V1 precision", () => {
     async (value) => {
       const f = await workbook(),
         before = structuredClone(f.drafts);
-      f.sheet.getCell("D4").value = value;
+      f.sheet.getCell("D5").value = value;
       await expect(
         parseConfirmedNeedShoppingListXlsx(
           await bytes(f.book),
@@ -131,8 +131,8 @@ describe("AUD-003 frozen V1 precision", () => {
   );
   it("rejects coordinated baseline tampering instead of treating it as authority", async () => {
     const f = await workbook();
-    f.sheet.getCell("D4").value = "9.123456";
-    f.sheet.getCell("O4").value = "9.123456";
+    f.sheet.getCell("D5").value = "9.123456";
+    f.sheet.getCell("O5").value = "9.123456";
     await expect(
       parseConfirmedNeedShoppingListXlsx(
         await bytes(f.book),
@@ -143,7 +143,7 @@ describe("AUD-003 frozen V1 precision", () => {
   });
   it("ignores note-only changes and blocks existing dirty quantities", async () => {
     const f = await workbook();
-    f.sheet.getCell("E4").value = "working paper";
+    f.sheet.getCell("E5").value = "working paper";
     expect(
       (
         await parseConfirmedNeedShoppingListXlsx(
@@ -166,8 +166,8 @@ describe("AUD-003 frozen V1 precision", () => {
     l.confirmed_quantity_after = large;
     l.proposed_confirmed_quantity = large;
     f.drafts[l.confirmed_need_line_id] = initialConfirmedNeedDraft(l);
-    f.sheet.getCell("D4").value = large;
-    f.sheet.getCell("O4").value = large;
+    f.sheet.getCell("D5").value = large;
+    f.sheet.getCell("O5").value = large;
     expect(
       (
         await parseConfirmedNeedShoppingListXlsx(

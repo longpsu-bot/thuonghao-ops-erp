@@ -10,8 +10,14 @@ import {
   shoppingListContract as contract,
   uuidPattern,
   validServiceDate,
+  shoppingListGeometries,
+  type ShoppingListGeometry,
 } from "./shoppingListContract";
-import { shoppingListPages, shoppingListRowHeight } from "./shoppingListLayout";
+import {
+  shoppingListPages,
+  shoppingListRowHeight,
+  shoppingListTextWidth,
+} from "./shoppingListLayout";
 import {
   packageText,
   readShoppingListPackage,
@@ -140,6 +146,7 @@ export async function createConfirmedNeedShoppingListXlsx(
   batches: ShoppingListDailyBatch[],
   exportedAt = new Date(),
   workbookMarker = crypto.randomUUID(),
+  geometry: ShoppingListGeometry = "B",
 ) {
   shoppingAssert(
     batches.length >= 1 &&
@@ -166,12 +173,17 @@ export async function createConfirmedNeedShoppingListXlsx(
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "OPS ERP - Project Atlas";
   workbook.created = exportedAt;
-  const p = contract.print;
+  const p = shoppingListGeometries[geometry];
+  shoppingAssert(
+    p &&
+      (p.columnWidths.reduce((n, w) => n + w * 6, 0) * p.scalePercent) / 100 <=
+        p.a4WidthPt - 72 * (p.leftMarginIn + p.rightMarginIn),
+    "PRINT_OVERFLOW",
+  );
   for (const batch of sorted) {
     const b = batch.workbench,
       date = b.service_period.period_start,
-      lines = orderedLines(b),
-      end = lines.length + 3;
+      lines = orderedLines(b);
     const sheet = workbook.addWorksheet(date, {
       views: [{ showGridLines: false, state: "frozen", ySplit: 3 }],
       pageSetup: {
@@ -179,7 +191,6 @@ export async function createConfirmedNeedShoppingListXlsx(
         orientation: "portrait",
         scale: p.scalePercent,
         fitToPage: false,
-        printArea: `A1:E${end}`,
         printTitlesRow: "1:3",
         margins: {
           left: p.leftMarginIn,
@@ -202,33 +213,29 @@ export async function createConfirmedNeedShoppingListXlsx(
     title.alignment = { horizontal: "center", vertical: "middle" };
     sheet.getRow(1).height = p.titleRowPt;
     sheet.getRow(2).height = p.spacerRowPt;
-    let previous: string | null = null;
     const rows = lines.map((line) => {
       const q = savedShoppingListQuantity(line),
         supplier = batch.supplierAdvice[line.confirmed_need_line_id]!,
         unit = shoppingListUnitDisplay(line.controlled_unit);
-      const first = previous !== line.school.id;
-      previous = line.school.id;
       return {
         line,
         q,
         supplier,
         unit,
-        first,
         height: shoppingListRowHeight(
-          line.school.name,
           line.ingredient.name,
           unit,
           shortestShoppingListQuantity(q),
           supplier,
-          false,
-          first,
+          geometry,
         ),
       };
     });
     const pages = shoppingListPages(
       rows.map((r) => ({ schoolId: r.line.school.id, height: r.height })),
+      geometry,
     );
+    sheet.pageSetup.printArea = `A1:E${pages.body.length + 3}`;
     sheet.addTable({
       name: `AtlasNeed_${date.replaceAll("-", "")}`,
       ref: "A3",
@@ -242,27 +249,36 @@ export async function createConfirmedNeedShoppingListXlsx(
       columns: [...contract.visibleHeaders, ...contract.hiddenHeaders].map(
         (name) => ({ name, filterButton: false }),
       ),
-      rows: rows.map((r, i) => [
-        r.first
-          ? r.line.school.name
-          : pages.continuations.has(i)
-            ? `${r.line.school.name} (tiếp)`
-            : null,
-        r.line.ingredient.name,
-        r.unit,
-        shortestShoppingListQuantity(r.q),
-        r.supplier,
-        workbookMarker,
-        r.line.confirmed_need_line_id,
-        r.line.current_revision_id,
-        r.line.current_decision_id ?? "",
-        date,
-        r.line.school.id,
-        r.line.delivery_location.id,
-        r.line.ingredient.id,
-        r.line.controlled_unit.id,
-        r.q,
-      ]),
+      rows: pages.body.map((body) => {
+        const r = rows[body.index]!;
+        const band = body.kind === "SCHOOL_BAND";
+        const schoolLabel = `${r.line.school.name}${body.continuation ? " (tiếp)" : ""}`;
+        if (band)
+          shoppingAssert(
+            shoppingListTextWidth(schoolLabel, p.schoolFontPt, true) <=
+              p.columnWidths.reduce((n, w) => n + w * 6, 0) - 5.5,
+            "PRINT_OVERFLOW",
+          );
+        return [
+          band ? schoolLabel : null,
+          band ? null : r.line.ingredient.name,
+          band ? null : r.unit,
+          band ? null : shortestShoppingListQuantity(r.q),
+          band ? null : r.supplier,
+          workbookMarker,
+          band ? null : r.line.confirmed_need_line_id,
+          band ? null : r.line.current_revision_id,
+          band ? null : (r.line.current_decision_id ?? ""),
+          date,
+          r.line.school.id,
+          band ? null : r.line.delivery_location.id,
+          band ? null : r.line.ingredient.id,
+          band ? null : r.line.controlled_unit.id,
+          band ? null : r.q,
+          body.kind,
+          r.line.school.name,
+        ];
+      }),
     });
     const header = sheet.getRow(3);
     header.height = p.headerRowPt;
@@ -277,19 +293,10 @@ export async function createConfirmedNeedShoppingListXlsx(
       vertical: "middle",
       wrapText: false,
     };
-    rows.forEach((r, i) => {
-      const continued = pages.continuations.has(i);
+    pages.body.forEach((body, i) => {
+      const band = body.kind === "SCHOOL_BAND";
       const row = sheet.getRow(i + 4);
-      row.height = continued
-        ? shoppingListRowHeight(
-            r.line.school.name,
-            r.line.ingredient.name,
-            r.unit,
-            shortestShoppingListQuantity(r.q),
-            r.supplier,
-            true,
-          )
-        : r.height;
+      row.height = body.height;
       row.font = { name: contract.font, size: p.bodyFontPt };
       row.alignment = { vertical: "middle", wrapText: true };
       row.getCell(1).font = {
@@ -297,6 +304,8 @@ export async function createConfirmedNeedShoppingListXlsx(
         size: p.schoolFontPt,
         bold: true,
       };
+      if (band)
+        row.getCell(1).alignment = { vertical: "middle", wrapText: false };
       row.getCell(3).alignment = {
         horizontal: "center",
         vertical: "middle",
@@ -312,27 +321,36 @@ export async function createConfirmedNeedShoppingListXlsx(
       // Native Excel SaveAs can rewrite even <=15-digit decimal numerics.
       // Text preserves the exact value; imported numeric edits still use raw XML.
       row.getCell(4).numFmt = "@";
-      row.getCell(4).protection = { locked: false };
-      row.getCell(5).protection = { locked: false };
-      for (let c = 1; c <= 15; c++) {
+      row.getCell(4).protection = { locked: band };
+      row.getCell(5).protection = { locked: band };
+      for (let c = 1; c <= 5 + contract.hiddenHeaders.length; c++) {
         const cell = row.getCell(c);
-        if (c >= 6) cell.numFmt = "@";
+        if (c >= 6) {
+          cell.numFmt = "@";
+          cell.protection = { locked: true, hidden: true };
+        }
+        if (band && c <= 5)
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFD9D9D9" },
+          };
         if (c <= 5)
           cell.border = {
             top: {
-              style: r.first || continued ? "medium" : "thin",
+              style: band ? "medium" : "thin",
               color: { argb: "FF000000" },
             },
             left: {
-              style: c === 1 ? "medium" : "thin",
+              style: c === 1 ? "medium" : band ? undefined : "thin",
               color: { argb: "FF000000" },
             },
             right: {
-              style: c === 5 ? "medium" : "thin",
+              style: c === 5 ? "medium" : band ? undefined : "thin",
               color: { argb: "FF000000" },
             },
             bottom: {
-              style: i === rows.length - 1 ? "medium" : "thin",
+              style: band || i === pages.body.length - 1 ? "medium" : "thin",
               color: { argb: "FF000000" },
             },
           };
@@ -364,6 +382,7 @@ export async function createConfirmedNeedShoppingListXlsx(
     exportedAt.toISOString(),
     dates[0]!,
     dates.at(-1)!,
+    geometry,
   ];
   contract.metadataKeys.forEach((key, i) => {
     meta.getCell(i + 1, 1).value = key;
@@ -424,7 +443,7 @@ export async function downloadConfirmedNeedShoppingList(
   );
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `PhieuDiCho_${dates[0]}_${dates.at(-1)}_ATLAS_V1.xlsx`;
+  anchor.download = `PhieuDiCho_${dates[0]}_${dates.at(-1)}_ATLAS_V2.xlsx`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

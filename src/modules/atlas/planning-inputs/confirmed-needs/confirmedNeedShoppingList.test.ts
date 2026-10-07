@@ -23,7 +23,7 @@ async function fixture() {
 }
 const bytes = async (book: ExcelJS.Workbook) =>
   new Uint8Array(await book.xlsx.writeBuffer());
-describe("frozen Shopping List V1", () => {
+describe("Shopping List V2", () => {
   it.each([
     ["kg", "Kilogram", "kg"],
     ["v1-unit-034ce34d3ff3", "Quả", "Quả"],
@@ -61,7 +61,7 @@ describe("frozen Shopping List V1", () => {
       Object.assign(line.controlled_unit, { code, name });
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(await createConfirmedNeedShoppingListXlsx([f]));
-    expect(book.worksheets[0]!.getCell("C4").value).toBe(name);
+    expect(book.worksheets[0]!.getCell("C5").value).toBe(name);
     expect(
       (
         await parseConfirmedNeedShoppingListXlsx(
@@ -100,7 +100,7 @@ describe("frozen Shopping List V1", () => {
       ).rejects.toMatchObject({ code: "PRINT_OVERFLOW" });
     },
   );
-  it("keeps the real Staging Miếng fallback blocked by frozen print width", async () => {
+  it("accepts the real Staging Miếng fallback in provisional geometry", async () => {
     const f = shoppingFixture("2026-09-17");
     Object.assign(f.workbench.lines[0]!.controlled_unit, {
       code: "v1-unit-83bea5cf6378",
@@ -111,9 +111,7 @@ describe("frozen Shopping List V1", () => {
     );
     await expect(
       createConfirmedNeedShoppingListXlsx([f]),
-    ).rejects.toMatchObject({
-      code: "PRINT_OVERFLOW",
-    });
+    ).resolves.toBeInstanceOf(ArrayBuffer);
   });
   it("exports kg/Kilogram without overflow and round-trips only local quantity proposals", async () => {
     const f = shoppingFixture("2026-09-17");
@@ -122,14 +120,14 @@ describe("frozen Shopping List V1", () => {
       line.controlled_unit.name = "Kilogram";
     }
     const before = structuredClone(f);
-    expect(() =>
-      shoppingListRowHeight("Trường", "Gạo", "Kilogram", "1", ""),
-    ).toThrow(expect.objectContaining({ code: "PRINT_OVERFLOW" }));
+    expect(() => shoppingListRowHeight("Gạo", "Kilogram", "1", "")).toThrow(
+      expect.objectContaining({ code: "PRINT_OVERFLOW" }),
+    );
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(await createConfirmedNeedShoppingListXlsx([f]));
     const sheet = book.worksheets[0]!;
-    expect(sheet.getCell("C4").value).toBe("kg");
-    expect(sheet.getCell("N4").value).toBe(
+    expect(sheet.getCell("C5").value).toBe("kg");
+    expect(sheet.getCell("N5").value).toBe(
       f.workbench.lines[0]!.controlled_unit.id,
     );
     expect(
@@ -141,7 +139,7 @@ describe("frozen Shopping List V1", () => {
         )
       ).changedLineIds,
     ).toEqual([]);
-    sheet.getCell("D4").value = 12.5;
+    sheet.getCell("D5").value = 12.5;
     const result = await parseConfirmedNeedShoppingListXlsx(
       await bytes(book),
       [f.workbench],
@@ -154,7 +152,7 @@ describe("frozen Shopping List V1", () => {
       quantity_entered: true,
     });
     expect(f).toEqual(before);
-    sheet.getCell("C4").value = "something else";
+    sheet.getCell("C5").value = "something else";
     await expect(
       parseConfirmedNeedShoppingListXlsx(
         await bytes(book),
@@ -162,8 +160,8 @@ describe("frozen Shopping List V1", () => {
         f.drafts,
       ),
     ).rejects.toMatchObject({ code: "REFERENCE_CHANGED" });
-    sheet.getCell("C4").value = "kg";
-    sheet.getCell("N4").value = "00000000-0000-4000-8000-000000009999";
+    sheet.getCell("C5").value = "kg";
+    sheet.getCell("N5").value = "00000000-0000-4000-8000-000000009999";
     await expect(
       parseConfirmedNeedShoppingListXlsx(
         await bytes(book),
@@ -216,7 +214,7 @@ describe("frozen Shopping List V1", () => {
       files,
       "xl/worksheets/sheet1.xml",
       packageText(files, "xl/worksheets/sheet1.xml").replace(
-        /<c\b([^>]*\br="E4"[^>]*)>[\s\S]*?<\/c>/,
+        /<c\b([^>]*\br="E5"[^>]*)>[\s\S]*?<\/c>/,
         (_, a) =>
           `<c${a.replace(/\s*t="[^"]*"/, "")} t="d"><v>2026-09-07</v></c>`,
       ),
@@ -278,7 +276,7 @@ describe("frozen Shopping List V1", () => {
     "ignores scalar working-paper notes %j",
     async (value) => {
       const f = await fixture();
-      f.sheet.getCell("E4").value = value;
+      f.sheet.getCell("E5").value = value;
       expect(
         (
           await parseConfirmedNeedShoppingListXlsx(
@@ -309,12 +307,14 @@ describe("frozen Shopping List V1", () => {
       "__ingredient_id",
       "__unit_id",
       "__exported_quantity",
+      "__row_kind",
+      "__school_name",
     ]);
     expect(sheet.getCell("A4").value).toBe("Trường Nguyễn Du");
     expect(sheet.getCell("A5").value).toBeNull();
-    expect(sheet.getCell("C4").value).toBe("kg");
-    expect(sheet.getCell("E4").value).toBe("NCC An Bình");
-    expect(sheet.getCell("L4").value).toBe(
+    expect(sheet.getCell("C5").value).toBe("kg");
+    expect(sheet.getCell("E5").value).toBe("NCC An Bình");
+    expect(sheet.getCell("L5").value).toBe(
       workbench.lines[0]!.delivery_location.id,
     );
     expect(sheet.getTables()).toHaveLength(1);
@@ -325,29 +325,29 @@ describe("frozen Shopping List V1", () => {
         ),
         "xl/tables/table1.xml",
       ),
-    ).toContain('ref="A3:O9"');
+    ).toContain('ref="A3:Q11"');
     expect(book.getWorksheet("_ATLAS_META")?.state).toBe("veryHidden");
     expect(sheet.pageSetup).toMatchObject({
       paperSize: 9,
       orientation: "portrait",
       scale: 96,
-      printArea: "A1:E9",
+      printArea: "A1:E11",
       printTitlesRow: "1:3",
     });
     expect([1, 2, 3, 4, 5].map((c) => sheet.getColumn(c).width)).toEqual([
-      25, 32, 6, 16, 15,
+      14, 32, 10, 16, 22,
     ]);
     expect([1, 2, 3].map((r) => sheet.getRow(r).height)).toEqual([32, 5, 48]);
-    for (let r = 4; r <= 9; r++)
-      expect([28, 44]).toContain(sheet.getRow(r).height);
+    for (let r = 4; r <= 11; r++)
+      expect([30, 46]).toContain(sheet.getRow(r).height);
     expect(
-      ["A3", "B4", "D4", "E4"].map((c) => sheet.getCell(c).font.size),
+      ["A3", "B5", "D5", "E5"].map((c) => sheet.getCell(c).font.size),
     ).toEqual([17, 18, 16, 14]);
-    for (let c = 6; c <= 15; c++) expect(sheet.getColumn(c).hidden).toBe(true);
+    for (let c = 6; c <= 17; c++) expect(sheet.getColumn(c).hidden).toBe(true);
   });
   it("ignores notes and preserves reasons for quantity-only proposals", async () => {
     const f = await fixture();
-    f.sheet.getCell("E4").value = "staff note";
+    f.sheet.getCell("E5").value = "staff note";
     expect(
       (
         await parseConfirmedNeedShoppingListXlsx(
@@ -357,13 +357,13 @@ describe("frozen Shopping List V1", () => {
         )
       ).changedLineIds,
     ).toEqual([]);
-    f.sheet.getCell("D4").value = 12.5;
+    f.sheet.getCell("D5").value = 12.5;
     const a = await parseConfirmedNeedShoppingListXlsx(
       await bytes(f.book),
       [f.workbench],
       f.drafts,
     );
-    f.sheet.getCell("E4").value = "";
+    f.sheet.getCell("E5").value = "";
     expect(
       await parseConfirmedNeedShoppingListXlsx(
         await bytes(f.book),
@@ -382,19 +382,19 @@ describe("frozen Shopping List V1", () => {
     });
   });
   it.each([
-    "F4",
-    "G4",
-    "H4",
-    "I4",
-    "J4",
-    "K4",
-    "L4",
-    "M4",
-    "N4",
-    "O4",
-    "A4",
-    "B4",
-    "C4",
+    "F5",
+    "G5",
+    "H5",
+    "I5",
+    "J5",
+    "K5",
+    "L5",
+    "M5",
+    "N5",
+    "O5",
+    "A5",
+    "B5",
+    "C5",
   ])("rejects evidence/reference tampering %s", async (cell) => {
     const f = await fixture();
     const before = structuredClone(f.drafts);
@@ -412,7 +412,7 @@ describe("frozen Shopping List V1", () => {
     "rejects invalid quantity or formula %j",
     async (value) => {
       const f = await fixture();
-      f.sheet.getCell("D4").value = value;
+      f.sheet.getCell("D5").value = value;
       await expect(
         parseConfirmedNeedShoppingListXlsx(
           await bytes(f.book),
@@ -426,9 +426,9 @@ describe("frozen Shopping List V1", () => {
     for (const mode of ["duplicate", "missing", "outside"]) {
       const f = await fixture();
       if (mode === "duplicate")
-        f.sheet.getCell("G5").value = f.sheet.getCell("G4").value;
+        f.sheet.getCell("G6").value = f.sheet.getCell("G5").value;
       if (mode === "missing") f.sheet.getRow(5).values = [];
-      if (mode === "outside") f.sheet.getCell("A10").value = "extra";
+      if (mode === "outside") f.sheet.getCell("A12").value = "extra";
       await expect(
         parseConfirmedNeedShoppingListXlsx(
           await bytes(f.book),
@@ -474,15 +474,15 @@ describe("frozen Shopping List V1", () => {
       ),
     ).rejects.toThrow("Không thể đọc Phiếu đi chợ");
   });
-  it("maps a complete Table sort by stable identity", async () => {
+  it("maps a DATA_LINE sort within its School by stable identity", async () => {
     const f = await fixture();
-    f.sheet.getCell("D4").value = 12.5;
+    f.sheet.getCell("D5").value = 12.5;
     const rows = Array.from(
-      { length: 6 },
-      (_, i) => f.sheet.getRow(i + 4).values,
+      { length: 3 },
+      (_, i) => f.sheet.getRow(i + 5).values,
     ).reverse();
     rows.forEach((values, i) => {
-      f.sheet.getRow(i + 4).values = values;
+      f.sheet.getRow(i + 5).values = values;
     });
     expect(
       (
@@ -499,7 +499,7 @@ describe("frozen Shopping List V1", () => {
     async (kind) => {
       const f = await fixture(),
         before = structuredClone(f.drafts);
-      f.sheet.getCell("D4").value = 12.5;
+      f.sheet.getCell("D5").value = 12.5;
       if (kind === "batch_version") f.workbench.batch_version++;
       if (kind === "run")
         f.workbench.need_generation_source.run_id =

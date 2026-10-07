@@ -60,7 +60,7 @@ describe("connected XLSX authority", () => {
       drafts: f.drafts,
     });
     await book.xlsx.load(await createConfirmedNeedShoppingListXlsx([f]));
-    book.worksheets[0]!.getCell("D4").value = 12.5;
+    book.worksheets[0]!.getCell("D5").value = 12.5;
     const buffer = new Uint8Array(await book.xlsx.writeBuffer());
     const file = { arrayBuffer: async () => buffer.buffer } as File;
     const imported = await f.service.import(file, f.workbench, f.drafts);

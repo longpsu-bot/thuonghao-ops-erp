@@ -1,9 +1,9 @@
 import type { ConfirmedNeedLine } from "./confirmedNeedModel";
 
-// Production contract. Conformance is checked against the frozen design schema.
+// V2 structure is approved; geometry B is provisional until Owner print review.
 export const shoppingListContract = {
   contractName: "ATLAS_SHOPPING_LIST",
-  contractVersion: "ATLAS_SHOPPING_LIST_V1",
+  contractVersion: "ATLAS_SHOPPING_LIST_V2",
   visibleHeaders: ["TRƯỜNG", "THÀNH PHẦN", "ĐVT", "SỐ LƯỢNG", "GHI CHÚ"],
   hiddenHeaders: [
     "__workbook_marker",
@@ -16,6 +16,8 @@ export const shoppingListContract = {
     "__ingredient_id",
     "__unit_id",
     "__exported_quantity",
+    "__row_kind",
+    "__school_name",
   ],
   metadataKeys: [
     "contract_name",
@@ -24,6 +26,7 @@ export const shoppingListContract = {
     "exported_at",
     "service_period_start",
     "service_period_end",
+    "geometry_variant",
   ],
   dailyKeys: [
     "service_date",
@@ -36,7 +39,7 @@ export const shoppingListContract = {
   metadataState: "veryHidden",
   headerRow: 3,
   firstDataRow: 4,
-  lastColumn: "O",
+  lastColumn: "Q",
   editableColumns: ["D", "E"],
   paper: "A4",
   orientation: "portrait",
@@ -49,7 +52,7 @@ export const shoppingListContract = {
   importWrites: false,
   legacyAccepted: false,
   protectedSort: false,
-  protectionPassword: "ATLAS_SHOPPING_LIST_V1",
+  protectionPassword: "ATLAS_SHOPPING_LIST_V2",
   print: {
     titleFontPt: 20,
     headerFontPt: 17,
@@ -60,15 +63,16 @@ export const shoppingListContract = {
     titleRowPt: 32,
     spacerRowPt: 5,
     headerRowPt: 48,
-    normalRowPt: 28,
-    bodyHardCapPt: 44,
-    columnWidths: [25, 32, 6, 16, 15],
-    pageHeightScaleUpperBound: 0.97,
+    normalRowPt: 30,
+    bodyHardCapPt: 50,
+    columnWidths: [14, 32, 10, 16, 22],
+    a4WidthPt: 595.28,
     a4HeightPt: 841.89,
     topMarginIn: 0.25,
     bottomMarginIn: 0.25,
     footerAllowancePt: 12,
-    wrappedRowPt: 44,
+    wrappedRowPt: 46,
+    bandRowPt: 30,
     leftMarginIn: 0.2,
     rightMarginIn: 0.2,
     scalePercent: 96,
@@ -84,6 +88,27 @@ export const shoppingListContract = {
     largeEntryThresholdBytes: 1048576,
   },
 } as const;
+
+// Same structure/font/scale. Widths are calibrated against the 248-line
+// 17 September read and native Excel PDFs; none is a final Product freeze.
+export const shoppingListGeometries = {
+  A: {
+    ...shoppingListContract.print,
+    columnWidths: [14, 31, 9, 16, 24],
+    normalRowPt: 28,
+    wrappedRowPt: 44,
+    bandRowPt: 28,
+  },
+  B: shoppingListContract.print,
+  C: {
+    ...shoppingListContract.print,
+    columnWidths: [14, 33, 11, 16, 20],
+    normalRowPt: 34,
+    wrappedRowPt: 50,
+    bandRowPt: 34,
+  },
+} as const;
+export type ShoppingListGeometry = keyof typeof shoppingListGeometries;
 
 export class ShoppingListError extends Error {
   constructor(
