@@ -1,9 +1,10 @@
 import type { ConfirmedNeedLine } from "./confirmedNeedModel";
 
-// V2 structure is approved; geometry B is provisional until Owner print review.
+// Owner-selected A+: A's density, 6 pt moved from Note to Unit.
 export const shoppingListContract = {
   contractName: "ATLAS_SHOPPING_LIST",
   contractVersion: "ATLAS_SHOPPING_LIST_V2",
+  geometryVariant: "A+",
   visibleHeaders: ["TRƯỜNG", "THÀNH PHẦN", "ĐVT", "SỐ LƯỢNG", "GHI CHÚ"],
   hiddenHeaders: [
     "__workbook_marker",
@@ -63,16 +64,16 @@ export const shoppingListContract = {
     titleRowPt: 32,
     spacerRowPt: 5,
     headerRowPt: 48,
-    normalRowPt: 30,
-    bodyHardCapPt: 50,
-    columnWidths: [14, 32, 10, 16, 22],
+    normalRowPt: 28,
+    bodyHardCapPt: 44,
+    columnWidths: [14, 31, 10, 16, 23],
     a4WidthPt: 595.28,
     a4HeightPt: 841.89,
     topMarginIn: 0.25,
     bottomMarginIn: 0.25,
     footerAllowancePt: 12,
-    wrappedRowPt: 46,
-    bandRowPt: 30,
+    wrappedRowPt: 44,
+    bandRowPt: 28,
     leftMarginIn: 0.2,
     rightMarginIn: 0.2,
     scalePercent: 96,
@@ -88,27 +89,6 @@ export const shoppingListContract = {
     largeEntryThresholdBytes: 1048576,
   },
 } as const;
-
-// Same structure/font/scale. Widths are calibrated against the 248-line
-// 17 September read and native Excel PDFs; none is a final Product freeze.
-export const shoppingListGeometries = {
-  A: {
-    ...shoppingListContract.print,
-    columnWidths: [14, 31, 9, 16, 24],
-    normalRowPt: 28,
-    wrappedRowPt: 44,
-    bandRowPt: 28,
-  },
-  B: shoppingListContract.print,
-  C: {
-    ...shoppingListContract.print,
-    columnWidths: [14, 33, 11, 16, 20],
-    normalRowPt: 34,
-    wrappedRowPt: 50,
-    bandRowPt: 34,
-  },
-} as const;
-export type ShoppingListGeometry = keyof typeof shoppingListGeometries;
 
 export class ShoppingListError extends Error {
   constructor(

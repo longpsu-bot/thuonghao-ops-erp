@@ -1,8 +1,7 @@
 import metrics from "./shoppingListFontMetrics.json";
 import {
   ShoppingListError,
-  shoppingListGeometries,
-  type ShoppingListGeometry,
+  shoppingListContract,
 } from "./shoppingListContract";
 
 // Times New Roman glyph advances from the native font used in F13. Accent
@@ -47,10 +46,9 @@ export function shoppingListRowHeight(
   unit: string,
   quantity: string,
   supplier: string,
-  geometry: ShoppingListGeometry = "B",
 ) {
-  const p = shoppingListGeometries[geometry];
-  const usable = shoppingListColumnUsableWidths(geometry);
+  const p = shoppingListContract.print;
+  const usable = shoppingListColumnUsableWidths();
   // Native Carlito 11 Normal style gives 6 pt per column unit. Padding is
   // reserved conservatively; native widths and physical PDFs verify this.
   if (
@@ -72,10 +70,8 @@ export function shoppingListRowHeight(
     );
   return lines > 1 ? p.wrappedRowPt : p.normalRowPt;
 }
-export function shoppingListColumnUsableWidths(
-  geometry: ShoppingListGeometry = "B",
-) {
-  return shoppingListGeometries[geometry].columnWidths.map((w) => w * 6 - 5.5);
+export function shoppingListColumnUsableWidths() {
+  return shoppingListContract.print.columnWidths.map((w) => w * 6 - 5.5);
 }
 export type ShoppingListBodyRow = {
   kind: "SCHOOL_BAND" | "DATA_LINE";
@@ -85,9 +81,8 @@ export type ShoppingListBodyRow = {
 };
 export function shoppingListPages(
   rows: { schoolId: string; height: number }[],
-  geometry: ShoppingListGeometry = "B",
 ) {
-  const p = shoppingListGeometries[geometry];
+  const p = shoppingListContract.print;
   const capacity =
     (p.a4HeightPt -
       72 * (p.topMarginIn + p.bottomMarginIn) -

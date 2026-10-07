@@ -1,9 +1,6 @@
 import { expect, it } from "vitest";
 import schema from "../../../../../docs/xlsx/atlas-shopping-list-xlsx-v1.schema.json";
-import {
-  shoppingListContract as c,
-  shoppingListGeometries,
-} from "./shoppingListContract";
+import { shoppingListContract as c } from "./shoppingListContract";
 it("production V2 constants conform to the Owner-approved structural amendment", () => {
   const layout = schema["x-atlas-layout"];
   for (const key of [
@@ -39,5 +36,7 @@ it("production V2 constants conform to the Owner-approved structural amendment",
     schema.properties.metadata.properties.contract_version.const,
   );
   expect(c.resourceLimits).toEqual(schema["x-atlas-resource-limits"]);
-  expect(shoppingListGeometries).toEqual(schema["x-atlas-geometry-candidates"]);
+  expect(c.geometryVariant).toBe(
+    schema.properties.metadata.properties.geometry_variant.const,
+  );
 });

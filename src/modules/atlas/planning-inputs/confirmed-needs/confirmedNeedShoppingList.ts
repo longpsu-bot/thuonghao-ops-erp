@@ -10,8 +10,6 @@ import {
   shoppingListContract as contract,
   uuidPattern,
   validServiceDate,
-  shoppingListGeometries,
-  type ShoppingListGeometry,
 } from "./shoppingListContract";
 import {
   shoppingListPages,
@@ -146,7 +144,6 @@ export async function createConfirmedNeedShoppingListXlsx(
   batches: ShoppingListDailyBatch[],
   exportedAt = new Date(),
   workbookMarker = crypto.randomUUID(),
-  geometry: ShoppingListGeometry = "B",
 ) {
   shoppingAssert(
     batches.length >= 1 &&
@@ -173,7 +170,7 @@ export async function createConfirmedNeedShoppingListXlsx(
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "OPS ERP - Project Atlas";
   workbook.created = exportedAt;
-  const p = shoppingListGeometries[geometry];
+  const p = contract.print;
   shoppingAssert(
     p &&
       (p.columnWidths.reduce((n, w) => n + w * 6, 0) * p.scalePercent) / 100 <=
@@ -227,13 +224,11 @@ export async function createConfirmedNeedShoppingListXlsx(
           unit,
           shortestShoppingListQuantity(q),
           supplier,
-          geometry,
         ),
       };
     });
     const pages = shoppingListPages(
       rows.map((r) => ({ schoolId: r.line.school.id, height: r.height })),
-      geometry,
     );
     sheet.pageSetup.printArea = `A1:E${pages.body.length + 3}`;
     sheet.addTable({
@@ -382,7 +377,7 @@ export async function createConfirmedNeedShoppingListXlsx(
     exportedAt.toISOString(),
     dates[0]!,
     dates.at(-1)!,
-    geometry,
+    contract.geometryVariant,
   ];
   contract.metadataKeys.forEach((key, i) => {
     meta.getCell(i + 1, 1).value = key;

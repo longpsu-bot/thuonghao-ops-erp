@@ -1,6 +1,6 @@
 # Atlas Confirmed Need — Phiếu đi chợ XLSX V2
 
-**Status: STRUCTURE OWNER-APPROVED; GEOMETRY SPECIMENS PENDING OWNER CHOICE.**
+**Status: STRUCTURE AND A+ PRESENTATION GEOMETRY OWNER-APPROVED; HOSTED ACCEPTANCE PENDING.**
 Current amendment: `ATLAS-SHOPPING-LIST-PRESENTATION-CONTRACT-02`, 2026-10-07.
 Same Draft [PR #355](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/355).
 Current format: **ATLAS_SHOPPING_LIST_V2**.
@@ -56,7 +56,7 @@ One initial School band precedes each represented School's data. School lines ar
 
 Export retains authorized source School first-occurrence order and the original line sequence within each School. The current read exposes no canonical School display-rank field. No lexical sort or name special case is invented. Import permits row reordering within a School only when grouping and generated pagination remain valid; a full Table sort that scatters bands/data fails closed.
 
-`SỐ LƯỢNG` fits all three candidates and is retained. `SL` is a possible later Owner presentation decision, not silently substituted.
+The Owner retained `SỐ LƯỢNG` in final A+; no change to `SL`.
 
 ## Shared Unit display
 
@@ -87,7 +87,7 @@ School ID is the identity key. A changed K raises `STALE_IDENTITY`; a changed Q 
 
 ## Closed envelope and compatibility
 
-Metadata A1:B7 contains exactly `contract_name`, `contract_version`, `workbook_marker`, `exported_at`, `service_period_start`, `service_period_end`, `geometry_variant`. Version must equal `ATLAS_SHOPPING_LIST_V2`; geometry is A, B or C. A8:E8 retains daily headers; rows 9 onward contain service_date, confirmed_need_batch_id, batch_version, need_generation_run_id and release_snapshot_id. Every daily sheet/record is unique and exact.
+Metadata A1:B7 contains exactly `contract_name`, `contract_version`, `workbook_marker`, `exported_at`, `service_period_start`, `service_period_end`, `geometry_variant`. Version must equal `ATLAS_SHOPPING_LIST_V2`; geometry must equal `A+`. Earlier A/B/C V2 specimens are superseded and require re-export; the structural version remains V2 and the existing geometry field is the exact print-compatibility discriminator. A8:E8 retains daily headers; rows 9 onward contain service_date, confirmed_need_batch_id, batch_version, need_generation_run_id and release_snapshot_id. Every daily sheet/record is unique and exact.
 
 V1 was fixed/version-discriminated; no pre-final governance rule authorizes silently reusing V1 for new row semantics. Therefore V2 is the compatibility ruling and **legacyAccepted remains false**. The backend export-read contract is unchanged.
 
@@ -97,21 +97,29 @@ Pagination validates the existing declared row-height classes and geometry, inde
 
 The workbook is unsigned. Hidden evidence is not trusted authority or cryptographic provenance; fresh authorization/currentness and explicit Save remain decisive. No browser session manifest is required.
 
-## Geometry specimens — no final freeze
+## Final A+ geometry — Owner decision, 2026-10-07
 
-All candidates use the same structure, font sizes and 96% scale. Widths are calibrated against real 248-line data, native column widths and A4-normalized PDFs.
+The Owner reviewed actual A/B/C PDFs and native files, selected A's vertical density and transferred one width unit (6 pt) from Note to Unit. All three had identical wrapping; extra B/C height did not earn additional text capacity. A+ is now the only export/import geometry. The provisional geometry selection code has been removed; historical A/B/C metrics remain in the evidence record, not runtime alternatives.
 
-| Candidate  | A/B/C/D/E width units | Normal/wrapped/band pt | Unit usable pt | Note usable pt |
-| ---------- | --------------------- | ---------------------- | -------------- | -------------- |
-| A Compact  | 14/31/9/16/24         | 28/44/28               | 48.5           | 138.5          |
-| B Balanced | 14/32/10/16/22        | 30/46/30               | 54.5           | 126.5          |
-| C Spacious | 14/33/11/16/20        | 34/50/34               | 60.5           | 114.5          |
+| A+ setting                  | Final value      |
+| --------------------------- | ---------------- |
+| A/B/C/D/E width units       | 14/31/10/16/23   |
+| Native full widths, pt      | 84/186/60/96/138 |
+| Normal / wrapped / band, pt | 28/44/28         |
+| Body hard cap, pt           | 44               |
+| Usable Unit / Note, pt      | 54.5/132.5       |
+| Font sizes and print scale  | Unchanged; 96%   |
+| Quantity header             | SỐ LƯỢNG         |
 
-Logical width uses native Carlito 11 Normal-style 6 pt per width unit, with a conservative 5.5 pt text allowance. These are workbook points before print scaling. Ingredient width rises from A to C; C trades Note width for that and taller writing rows. Native measurements confirm full widths 84/186/54/96/144 pt for A; 84/192/60/96/132 for B; 84/198/66/96/120 for C.
+Logical width uses native Carlito 11 Normal-style 6 pt per width unit with 5.5 pt text allowance, before print scaling. The real maximum Unit advance is `Miếng` = 46.99512 pt at 18 pt, leaving approximately 7.5 pt clearance. All eight current Units fit unchanged: kg, Cái, Miếng, Quả, Cốc, Hộp, Gói, Trái. `PRINT_OVERFLOW` remains for unsupported glyphs, Unit/quantity beyond usable columns, School beyond band width, text needing more than two lines or page-width overflow. No text shrinkage, arbitrary abbreviation or master-data constraint.
 
-Real Units are kg, Cái, Miếng, Quả, Cốc, Hộp, Gói, Trái. Maximum Unit advance is Miếng = 46.99512 pt at 18 pt and fits every candidate. `PRINT_OVERFLOW` remains for unsupported glyphs, Unit/quantity beyond usable columns, School beyond band width, text needing more than two body lines or page-width overflow. No text is silently shrunk or abbreviated and no name-length business constraint exists.
+Fresh read-only Staging authority still returns 248 lines, 20 Schools and batch version 3. Native A+ PDF remains **12 physical A4 pages**, **6 continuation bands**, **1 wrapped Ingredient**, **32 wrapped DATA_LINE**, **0 wrapped bands**, with no new wrapping, overflow, clipping or cropping. Data rows/page remain **21,22,21,21,22,23,21,22,23,21,21,10**. These results satisfy the Owner's conditional geometry-finalization decision; hosted export/import acceptance and Planning/Procurement business freeze remain separate gates. Freeze recommendation: **HOLD**.
 
-B is the provisional application default and recommendation, **not Owner final geometry approval**. The Owner must choose A/B/C after reviewing all specimens. Hosted export/import acceptance remains a later gate. Planning/Procurement freeze recommendation: **HOLD**.
+### Clean deliverable versus edited QA copy
+
+The final clean `ShoppingList-SchoolBand-APlus-2026-09-17.xlsx` is generated directly by the production codec from fresh authoritative facts. Every visible quantity is checked against its exact saved baseline. The first `Cá basa phi lê` exports visible `228.01` and hidden `228.010000`. Its corresponding PDF is produced from a read-only native Excel open; all 248 PDF quantities and Unit labels reconcile with the clean file.
+
+Before any edit/unhide/native-save test, copy the clean XLSX to `ShoppingList-SchoolBand-APlus-2026-09-17-QUANTITY-EDIT-TEST-ONLY.xlsx`. Only that copy is edited from `228.01` to `12,5`, with baseline unchanged. Native save/reopen and import produce exactly one local proposal; clean import produces none. A SHA-256 comparison proves the clean export is byte-for-byte unchanged after QA. Earlier `-native.xlsx` specimens were intentionally edited QA copies, not clean Product deliverables; their naming was insufficiently explicit and is superseded by this separation.
 
 ## Validation and rollback
 

@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import { expect, it } from "vitest";
 import { shoppingFixture } from "./shoppingListTestFixtures";
 import { initialConfirmedNeedDraft } from "./confirmedNeedModel";
-import { shoppingListGeometries } from "./shoppingListContract";
+import { shoppingListContract } from "./shoppingListContract";
 import {
   shoppingListColumnUsableWidths,
   shoppingListTextWidth,
@@ -15,6 +15,21 @@ import {
   createConfirmedNeedShoppingListXlsx,
   parseConfirmedNeedShoppingListXlsx,
 } from "./confirmedNeedShoppingList";
+
+it("exports the Owner-selected A+ density and Unit/Note allocation by default", async () => {
+  const f = shoppingFixture();
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(await createConfirmedNeedShoppingListXlsx([f]));
+  const sheet = book.worksheets[0]!;
+  expect(book.getWorksheet("_ATLAS_META")!.getCell("B7").value).toBe("A+");
+  expect([1, 2, 3, 4, 5].map((c) => sheet.getColumn(c).width)).toEqual([
+    14, 31, 10, 16, 23,
+  ]);
+  expect(sheet.getRow(4).height).toBe(28);
+  expect(sheet.getRow(5).height).toBe(28);
+  expect(shoppingListColumnUsableWidths()[2]).toBe(54.5);
+  expect(shoppingListColumnUsableWidths()[4]).toBe(132.5);
+});
 
 it("exports locked School bands and complete flat DATA_LINE records in V2", async () => {
   const f = shoppingFixture();
@@ -77,72 +92,78 @@ it.each([
   expect(f.drafts).toEqual(before);
 });
 
-it.each(["A", "B", "C"] as const)(
-  "uses A4-bounded geometry %s, real Units and separate continuation bands",
+it("uses A4-bounded A+ geometry, real Units and separate continuation bands", async () => {
+  const f = shoppingFixture();
+  const template = f.workbench.lines[0]!;
+  const names = ["kg", "Miếng", "Quả", "Gói", "Cốc", "Cái", "Hộp", "Trái"];
+  f.workbench.lines = Array.from({ length: 55 }, (_, i) => ({
+    ...structuredClone(template),
+    confirmed_need_line_id: `00000000-0000-4000-8000-${String(9000 + i).padStart(12, "0")}`,
+    controlled_unit: {
+      ...template.controlled_unit,
+      code: names[i % 8] === "kg" ? "kg" : "v1-unit-technical",
+      name: names[i % 8]!,
+    },
+  }));
+  f.workbench.pagination.total_lines = 55;
+  f.workbench.line_counts.total = 55;
+  f.drafts = Object.fromEntries(
+    f.workbench.lines.map((l) => [
+      l.confirmed_need_line_id,
+      initialConfirmedNeedDraft(l),
+    ]),
+  );
+  f.supplierAdvice = Object.fromEntries(
+    f.workbench.lines.map((l) => [l.confirmed_need_line_id, ""]),
+  );
+  const bytes = await createConfirmedNeedShoppingListXlsx(
+    [f],
+    new Date(),
+    crypto.randomUUID(),
+  );
+  const envelope = await readShoppingListEnvelope(bytes);
+  const rows = envelope.sheets.get("2026-09-07")!;
+  const bands = rows.filter((r) => r[15]!.text === "SCHOOL_BAND");
+  expect(bands.filter((r) => !r[0]!.text.endsWith(" (tiếp)"))).toHaveLength(1);
+  expect(bands.length).toBeGreaterThan(1);
+  expect(rows.filter((r) => r[15]!.text === "DATA_LINE")).toHaveLength(55);
+  for (const after of envelope.breaks.get("2026-09-07")!) {
+    expect(rows[after - 3]![15]!.text).toBe("SCHOOL_BAND");
+    expect(rows[after - 3]![0]!.text).toBe(`${template.school.name} (tiếp)`);
+  }
+  for (const r of rows.filter((r) => r[15]!.text === "DATA_LINE")) {
+    expect(r[10]!.text).toBe(template.school.id);
+    expect(r[16]!.text).toBe(template.school.name);
+  }
+  const p = shoppingListContract.print;
+  expect(
+    (p.columnWidths.reduce((n, w) => n + w * 6, 0) * p.scalePercent) / 100,
+  ).toBeLessThanOrEqual(p.a4WidthPt - 72 * (p.leftMarginIn + p.rightMarginIn));
+  expect(shoppingListTextWidth("Miếng", p.bodyFontPt)).toBeLessThan(
+    shoppingListColumnUsableWidths()[2]!,
+  );
+  expect(
+    validateShoppingListEnvelope(envelope, [f.workbench], f.drafts)
+      .changedLineIds,
+  ).toEqual([]);
+  // A continuation label away from its generated page position is not accepted.
+  rows[0]![0]!.text += " (tiếp)";
+  expect(() =>
+    validateShoppingListEnvelope(envelope, [f.workbench], f.drafts),
+  ).toThrow();
+});
+
+it.each(["A", "B", "C"])(
+  "rejects superseded specimen geometry %s",
   async (geometry) => {
-    const f = shoppingFixture();
-    const template = f.workbench.lines[0]!;
-    const names = ["kg", "Miếng", "Quả", "Gói", "Cốc", "Cái", "Hộp", "Trái"];
-    f.workbench.lines = Array.from({ length: 55 }, (_, i) => ({
-      ...structuredClone(template),
-      confirmed_need_line_id: `00000000-0000-4000-8000-${String(9000 + i).padStart(12, "0")}`,
-      controlled_unit: {
-        ...template.controlled_unit,
-        code: names[i % 8] === "kg" ? "kg" : "v1-unit-technical",
-        name: names[i % 8]!,
-      },
-    }));
-    f.workbench.pagination.total_lines = 55;
-    f.workbench.line_counts.total = 55;
-    f.drafts = Object.fromEntries(
-      f.workbench.lines.map((l) => [
-        l.confirmed_need_line_id,
-        initialConfirmedNeedDraft(l),
-      ]),
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(
+      await createConfirmedNeedShoppingListXlsx([shoppingFixture()]),
     );
-    f.supplierAdvice = Object.fromEntries(
-      f.workbench.lines.map((l) => [l.confirmed_need_line_id, ""]),
-    );
-    const bytes = await createConfirmedNeedShoppingListXlsx(
-      [f],
-      new Date(),
-      crypto.randomUUID(),
-      geometry,
-    );
-    const envelope = await readShoppingListEnvelope(bytes);
-    const rows = envelope.sheets.get("2026-09-07")!;
-    const bands = rows.filter((r) => r[15]!.text === "SCHOOL_BAND");
-    expect(bands.filter((r) => !r[0]!.text.endsWith(" (tiếp)"))).toHaveLength(
-      1,
-    );
-    expect(bands.length).toBeGreaterThan(1);
-    expect(rows.filter((r) => r[15]!.text === "DATA_LINE")).toHaveLength(55);
-    for (const after of envelope.breaks.get("2026-09-07")!) {
-      expect(rows[after - 3]![15]!.text).toBe("SCHOOL_BAND");
-      expect(rows[after - 3]![0]!.text).toBe(`${template.school.name} (tiếp)`);
-    }
-    for (const r of rows.filter((r) => r[15]!.text === "DATA_LINE")) {
-      expect(r[10]!.text).toBe(template.school.id);
-      expect(r[16]!.text).toBe(template.school.name);
-    }
-    const p = shoppingListGeometries[geometry];
-    expect(
-      (p.columnWidths.reduce((n, w) => n + w * 6, 0) * p.scalePercent) / 100,
-    ).toBeLessThanOrEqual(
-      p.a4WidthPt - 72 * (p.leftMarginIn + p.rightMarginIn),
-    );
-    expect(shoppingListTextWidth("Miếng", p.bodyFontPt)).toBeLessThan(
-      shoppingListColumnUsableWidths(geometry)[2]!,
-    );
-    expect(
-      validateShoppingListEnvelope(envelope, [f.workbench], f.drafts)
-        .changedLineIds,
-    ).toEqual([]);
-    // A continuation label away from its generated page position is not accepted.
-    rows[0]![0]!.text += " (tiếp)";
-    expect(() =>
-      validateShoppingListEnvelope(envelope, [f.workbench], f.drafts),
-    ).toThrow();
+    book.getWorksheet("_ATLAS_META")!.getCell("B7").value = geometry;
+    await expect(
+      readShoppingListEnvelope(new Uint8Array(await book.xlsx.writeBuffer())),
+    ).rejects.toMatchObject({ code: "UNSUPPORTED_GEOMETRY" });
   },
 );
 

@@ -4,6 +4,20 @@ Date: 2026-10-07. Starting SHA: `5116dffe2482641970ace0874ddfc8fb3992a13d`.
 Base main: `cffb17189b11e861c5d7dff6e761335940e46a45`.
 Continue branch `fix/atlas-shopping-list-unit-display-01`, Draft [PR #355](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/355). No new PR or automatic merge.
 
+## Final A+ follow-up — Owner decision, 2026-10-07
+
+Starting follow-up head: `49932e6fc26339046fab9793b8e8dafdeadfc67c`. Continue the same branch and Draft PR #355. The Owner chose A+ after actual print/file review: keep A's 28/44/28 pt vertical geometry and `SỐ LƯỢNG`, move 6 pt from Note to Unit. Final widths 14/31/10/16/23; usable Unit/Note 54.5/132.5 pt. No additional variants are generated. One final geometry replaces provisional runtime selection; metadata geometry must be `A+`, so superseded A/B/C specimens require re-export.
+
+Fresh read-only Staging export: 248 lines, 20 Schools, batch version 3, first `Cá basa phi lê` saved quantity `228.010000`. Final clean XLSX visible quantity is `228.01`; the corresponding native PDF matches all 248 quantities and Unit labels. Normal native Excel opens and the separate quantity-edit copy saves/reopens without repair. Copy-before-edit and SHA-256 equality prove the clean deliverable is unchanged. Only `-QUANTITY-EDIT-TEST-ONLY.xlsx` contains `12,5`; importing that copy proposes one local change, while the clean file proposes zero. Earlier `-native.xlsx` files were QA edits, not clean Product acceptance files.
+
+A+ PDF checks: physical A4, 12 pages, 20 initial bands + 6 continuations, 1 wrapped Ingredient / 32 wrapped DATA_LINE / 0 bands, no new wrapping/overflow/clipping/cropping. DATA_LINE/page: 21,22,21,21,22,23,21,22,23,21,21,10. All hidden School IDs/names and existing lineage remain complete. 113 focused package/XLSX/import/precision/service/contract tests pass; final-head full Frontend CI is recorded in PR checks. Native pages are rendered and inspected. This satisfies the Owner's conditional **presentation geometry finalization**, not hosted acceptance or business freeze.
+
+Final artifacts: `E:/Project/OPS ERP/atlas-artifacts/shopping-list-school-band-final-2026-09-17/ShoppingList-SchoolBand-APlus-2026-09-17.xlsx`, matching `.pdf`, and `ShoppingList-SchoolBand-APlus-2026-09-17-QUANTITY-EDIT-TEST-ONLY.xlsx`. Safety counts remain zero for migrations, hosted schema/business writes, Retool and live OPS. Rollback is frontend-only and requires re-export for matching geometry/codec. Next: hosted export/import acceptance. Draft/unmerged; Planning/Procurement freeze **HOLD**.
+
+## Phase 1 history — superseded geometry recommendation
+
+The following records the original specimen phase. B was then recommended; the Owner subsequently selected A+ as documented above. It does not remain the active default or an open geometry decision.
+
 ## Approved boundary and implementation sequence
 
 Owner approval authorizes the School-band structure and three provisional geometry specimens. It does not approve final geometry or business freeze. Allowed files are the existing Shopping List codec, layout, contract/schema, focused tests, certification scripts and affected documents. No frontend redesign, module/API/business-rule change, dependency, migration, schema/data write, Retool or live OPS change is permitted.
@@ -16,7 +30,8 @@ Owner approval authorizes the School-band structure and three provisional geomet
 - [x] Normalize/inspect all native PDFs as A4, compare representative pages and hidden-column records.
 - [x] Run the requested local checks and independent review. Push this bounded amendment on the existing branch; exact-head Frontend CI remains mandatory and its result is recorded in PR checks.
 - [x] Prepare all seven artifacts for Owner selection; remain Draft, freeze recommendation HOLD.
-- [ ] Owner chooses final geometry; final hosted acceptance is a subsequent task.
+- [x] Owner selects A+; native 12-page/no-new-wrap checks satisfy conditional presentation finalization.
+- [ ] Final hosted export/import acceptance is the next task; business freeze remains HOLD.
 
 ## Contract ruling
 

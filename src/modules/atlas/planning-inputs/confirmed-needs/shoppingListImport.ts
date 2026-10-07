@@ -20,8 +20,6 @@ import {
   shoppingListContract as contract,
   uuidPattern,
   validServiceDate,
-  shoppingListGeometries,
-  type ShoppingListGeometry,
 } from "./shoppingListContract";
 import { shoppingListPages } from "./shoppingListLayout";
 import {
@@ -44,7 +42,6 @@ export type ShoppingListEnvelope = {
   marker: string;
   daily: DailyRecord[];
   sheets: Map<string, Cell[][]>;
-  geometry: ShoppingListGeometry;
   heights: Map<string, number[]>;
   breaks: Map<string, number[]>;
 };
@@ -331,9 +328,8 @@ export async function readShoppingListEnvelope(
     );
     const marker = text(meta.cells, "B3"),
       exportedAt = text(meta.cells, "B4");
-    const geometry = text(meta.cells, "B7") as ShoppingListGeometry;
     shoppingAssert(
-      Object.hasOwn(shoppingListGeometries, geometry),
+      text(meta.cells, "B7") === contract.geometryVariant,
       "UNSUPPORTED_GEOMETRY",
     );
     shoppingAssert(
@@ -507,7 +503,7 @@ export async function readShoppingListEnvelope(
       [...files.keys()].filter((p) => /^xl\/tables\/table\d+\.xml$/.test(p))
         .length === tablePaths.size,
     );
-    return { marker, daily, sheets: rowsByDate, geometry, heights, breaks };
+    return { marker, daily, sheets: rowsByDate, heights, breaks };
   } catch (error) {
     if (error instanceof ShoppingListError && error.code !== "RESOURCE_LIMIT")
       throw error;
@@ -566,7 +562,7 @@ export function validateShoppingListEnvelope(
     let activeSchool: string | null = null,
       awaitingData = false;
     const dataHeights: { schoolId: string; height: number }[] = [];
-    const p = shoppingListGeometries[envelope.geometry];
+    const p = contract.print;
     for (const [rowIndex, cells] of rows.entries()) {
       const v = cells.map((c) => c.text),
         id = v[6]!;
@@ -710,7 +706,7 @@ export function validateShoppingListEnvelope(
       !awaitingData && labelledSchools.size === schools.size,
       "SCHOOL_GROUP_INVALID",
     );
-    const planned = shoppingListPages(dataHeights, envelope.geometry);
+    const planned = shoppingListPages(dataHeights);
     shoppingAssert(
       planned.body.length === rows.length &&
         planned.body.every(

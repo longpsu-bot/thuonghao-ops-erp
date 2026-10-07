@@ -1,6 +1,32 @@
 # Shopping List XLSX V1/V2 — source evidence and comparison
 
-## Current V2 School-band specimens — 2026-10-07
+## Final A+ — Owner print decision and pristine acceptance files, 2026-10-07
+
+The Owner selected A+ after reviewing actual A/B/C files: keep A's vertical density and continuation behavior, transfer 6 pt from Note to Unit, retain `SỐ LƯỢNG`. A+ is the only active geometry; the historical B recommendation and A/B/C specimens below are superseded. Metadata `geometry_variant=A+` rejects earlier specimen geometries and requires re-export. V2 structure/business semantics remain unchanged.
+
+A fresh authenticated Staging read in `begin read only … rollback` returns the same 248 complete lines, 20 Schools and batch version 3. Production-codec clean export and native read-only PDF generation pass:
+
+| Final A+ measurement                      | Result           |
+| ----------------------------------------- | ---------------- |
+| Width units A/B/C/D/E                     | 14/31/10/16/23   |
+| Native full widths, pt                    | 84/186/60/96/138 |
+| Normal/wrapped/band heights, pt           | 28/44/28         |
+| Unit maximum / usable width, pt           | 46.99512 / 54.5  |
+| Note usable width, pt                     | 132.5            |
+| Physical A4 pages                         | 12               |
+| DATA_LINE / initial bands / continuations | 248 / 20 / 6     |
+| Wrapped Ingredient / DATA_LINE / band     | 1 / 32 / 0       |
+| Overflow / clipping / cropping            | None             |
+
+Rows/page: **21,22,21,21,22,23,21,22,23,21,21,10**. No new wrapping or pages versus A. All eight Unit labels and every PDF quantity reconcile with the clean XLSX. Each business row retains complete School ID/name, Ingredient/Unit IDs, line/revision/decision evidence and exact baseline. Grayscale bands, frozen/repeating global headers, Table and protection remain intact. PDF physical size is normalized to 595.276 × 841.890 pt A4; all pages are rendered and inspected.
+
+The QA-file issue is verified: earlier `-native.xlsx` files contain the intentional `12,5` edit, while production exports contain `228.01`; their role must not be confused. Final clean export `ShoppingList-SchoolBand-APlus-2026-09-17.xlsx` checks **all 248 visible quantities against saved authority**, with first `Cá basa phi lê` visible `228.01` / hidden `228.010000`. Native PDF comes from that read-only clean file. Before edits, copy it to **`ShoppingList-SchoolBand-APlus-2026-09-17-QUANTITY-EDIT-TEST-ONLY.xlsx`**. Only this copy is unhidden/copied/rehidden/reprotected, edited, native-saved and reopened. SHA-256 equality confirms the clean XLSX remains byte-for-byte unchanged. The isolated copy produces exactly one local proposal at `12,5`; the clean XLSX produces none. Import executes zero business commands/writes.
+
+113 focused tests pass, preserving quantity, identity, stale/currentness and School-band tamper controls. Additional final-default and rejection checks cover A+ and superseded A/B/C. Exact final-head Frontend CI is the required full validation gate and is recorded on the same Draft PR #355. Presentation geometry is finalized under the Owner's conditional approval; hosted export/import acceptance is next. No migration, hosted schema/data, Retool or live OPS change; Planning/Procurement freeze **HOLD**.
+
+## Phase 1 history — A/B/C specimens, superseded by A+
+
+### V2 School-band specimens — 2026-10-07
 
 **Owner-approved structure; final geometry pending Owner choice.** This section supersedes the historical V1 print/layout observations below. Same Draft PR #355; no new PR, merge, hosted schema or business write. Business identity, precision, currentness, whole-workbook validation, local-only proposals and explicit Save remain unchanged.
 

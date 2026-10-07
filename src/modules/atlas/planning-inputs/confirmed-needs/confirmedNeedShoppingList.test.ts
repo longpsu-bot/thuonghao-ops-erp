@@ -335,11 +335,11 @@ describe("Shopping List V2", () => {
       printTitlesRow: "1:3",
     });
     expect([1, 2, 3, 4, 5].map((c) => sheet.getColumn(c).width)).toEqual([
-      14, 32, 10, 16, 22,
+      14, 31, 10, 16, 23,
     ]);
     expect([1, 2, 3].map((r) => sheet.getRow(r).height)).toEqual([32, 5, 48]);
     for (let r = 4; r <= 11; r++)
-      expect([30, 46]).toContain(sheet.getRow(r).height);
+      expect([28, 44]).toContain(sheet.getRow(r).height);
     expect(
       ["A3", "B5", "D5", "E5"].map((c) => sheet.getCell(c).font.size),
     ).toEqual([17, 18, 16, 14]);
