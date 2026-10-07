@@ -100,6 +100,21 @@ describe("frozen Shopping List V1", () => {
       ).rejects.toMatchObject({ code: "PRINT_OVERFLOW" });
     },
   );
+  it("keeps the real Staging Miếng fallback blocked by frozen print width", async () => {
+    const f = shoppingFixture("2026-09-17");
+    Object.assign(f.workbench.lines[0]!.controlled_unit, {
+      code: "v1-unit-83bea5cf6378",
+      name: "Miếng",
+    });
+    expect(shoppingListUnitDisplay(f.workbench.lines[0]!.controlled_unit)).toBe(
+      "Miếng",
+    );
+    await expect(
+      createConfirmedNeedShoppingListXlsx([f]),
+    ).rejects.toMatchObject({
+      code: "PRINT_OVERFLOW",
+    });
+  });
   it("exports kg/Kilogram without overflow and round-trips only local quantity proposals", async () => {
     const f = shoppingFixture("2026-09-17");
     for (const line of f.workbench.lines) {
