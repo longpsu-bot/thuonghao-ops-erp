@@ -1,4 +1,83 @@
-# Shopping List XLSX V1 — source evidence and comparison
+# Shopping List XLSX V1/V2 — source evidence and comparison
+
+## Final A+ — Owner print decision and pristine acceptance files, 2026-10-07
+
+The Owner selected A+ after reviewing actual A/B/C files: keep A's vertical density and continuation behavior, transfer 6 pt from Note to Unit, retain `SỐ LƯỢNG`. A+ is the only active geometry; the historical B recommendation and A/B/C specimens below are superseded. Metadata `geometry_variant=A+` rejects earlier specimen geometries and requires re-export. V2 structure/business semantics remain unchanged.
+
+A fresh authenticated Staging read in `begin read only … rollback` returns the same 248 complete lines, 20 Schools and batch version 3. Production-codec clean export and native read-only PDF generation pass:
+
+| Final A+ measurement                      | Result           |
+| ----------------------------------------- | ---------------- |
+| Width units A/B/C/D/E                     | 14/31/10/16/23   |
+| Native full widths, pt                    | 84/186/60/96/138 |
+| Normal/wrapped/band heights, pt           | 28/44/28         |
+| Unit maximum / usable width, pt           | 46.99512 / 54.5  |
+| Note usable width, pt                     | 132.5            |
+| Physical A4 pages                         | 12               |
+| DATA_LINE / initial bands / continuations | 248 / 20 / 6     |
+| Wrapped Ingredient / DATA_LINE / band     | 1 / 32 / 0       |
+| Overflow / clipping / cropping            | None             |
+
+Rows/page: **21,22,21,21,22,23,21,22,23,21,21,10**. No new wrapping or pages versus A. All eight Unit labels and every PDF quantity reconcile with the clean XLSX. Each business row retains complete School ID/name, Ingredient/Unit IDs, line/revision/decision evidence and exact baseline. Grayscale bands, frozen/repeating global headers, Table and protection remain intact. PDF physical size is normalized to 595.276 × 841.890 pt A4; all pages are rendered and inspected.
+
+The QA-file issue is verified: earlier `-native.xlsx` files contain the intentional `12,5` edit, while production exports contain `228.01`; their role must not be confused. Final clean export `ShoppingList-SchoolBand-APlus-2026-09-17.xlsx` checks **all 248 visible quantities against saved authority**, with first `Cá basa phi lê` visible `228.01` / hidden `228.010000`. Native PDF comes from that read-only clean file. Before edits, copy it to **`ShoppingList-SchoolBand-APlus-2026-09-17-QUANTITY-EDIT-TEST-ONLY.xlsx`**. Only this copy is unhidden/copied/rehidden/reprotected, edited, native-saved and reopened. SHA-256 equality confirms the clean XLSX remains byte-for-byte unchanged. The isolated copy produces exactly one local proposal at `12,5`; the clean XLSX produces none. Import executes zero business commands/writes.
+
+113 focused tests pass, preserving quantity, identity, stale/currentness and School-band tamper controls. Additional final-default and rejection checks cover A+ and superseded A/B/C. Exact final-head Frontend CI is the required full validation gate and is recorded on the same Draft PR #355. Presentation geometry is finalized under the Owner's conditional approval; hosted export/import acceptance is next. No migration, hosted schema/data, Retool or live OPS change; Planning/Procurement freeze **HOLD**.
+
+## Phase 1 history — A/B/C specimens, superseded by A+
+
+### V2 School-band specimens — 2026-10-07
+
+**Owner-approved structure; final geometry pending Owner choice.** This section supersedes the historical V1 print/layout observations below. Same Draft PR #355; no new PR, merge, hosted schema or business write. Business identity, precision, currentness, whole-workbook validation, local-only proposals and explicit Save remain unchanged.
+
+The actual authorized `atlas_api.get_confirmed_need_shopping_list_export` read ran as the established authenticated Staging Actor in `begin read only … rollback` for `rnzxmxiiqgtdevzregff`, 2026-09-17, batch `a0311e0a-a4de-48b9-a529-fe7464a3352b`, version **3**. Offset 0 / limit 250 returned **248 complete DATA_LINE rows**, 20 Schools and accepted Supplier advice; no synthetic names or quantities. Migrations remain 92, tip `20261006112515_atlas_recipe_purchase_unit_read`. Earlier 249-line observations are historical, not specimen authority.
+
+V2 uses one A3:Q Table, frozen rows 1–3, repeated print titles 1:3, global TRƯỜNG/THÀNH PHẦN/ĐVT/SỐ LƯỢNG/GHI CHÚ header, dedicated neutral School bands across A:E without merge, blank DATA_LINE A, locked band/identity cells and editable DATA_LINE D/E. P/Q append explicit row kind and repeated canonical School name. No full Table sort that scatters School groups is accepted. The only merge is title A1:E1.
+
+### Actual native Excel / A4 results
+
+Every candidate uses the same structure, fonts and 96% scale. Native column widths are exactly 6 pt per configured width unit. Usable widths reserve 5.5 pt; numbers below are logical workbook points before scaling. Native Excel on this host exported 620 × 876.88 pt pages despite A4 settings. All final specimen PDFs are uniformly scaled onto physical **595.276 × 841.890 pt A4**, with complete contents inside printable bounds.
+
+| Result                                    | A Compact     | B Balanced     | C Spacious     |
+| ----------------------------------------- | ------------- | -------------- | -------------- |
+| A/B/C/D/E width units                     | 14/31/9/16/24 | 14/32/10/16/22 | 14/33/11/16/20 |
+| PDF pages                                 | 12            | 13             | 15             |
+| DATA_LINE count                           | 248           | 248            | 248            |
+| Initial School bands                      | 20            | 20             | 20             |
+| Continuation bands                        | 6             | 9              | 10             |
+| All School bands                          | 26            | 29             | 30             |
+| Wrapped Ingredient rows                   | 1             | 1              | 1              |
+| Wrapped DATA_LINE rows including Supplier | 32            | 32             | 32             |
+| Wrapped School bands                      | 0             | 0              | 0              |
+| Maximum Unit advance                      | 46.99512 pt   | 46.99512 pt    | 46.99512 pt    |
+| Usable Unit width                         | 48.5 pt       | 54.5 pt        | 60.5 pt        |
+| Minimum/usable Note width                 | 138.5 pt      | 126.5 pt       | 114.5 pt       |
+| Normal / wrapped / band heights           | 28/44/28 pt   | 30/46/30 pt    | 34/50/34 pt    |
+| PRINT_OVERFLOW / clipping / cropping      | None          | None           | None           |
+
+DATA_LINE rows per physical page:
+
+- A: **21, 22, 21, 21, 22, 23, 21, 22, 23, 21, 21, 10**.
+- B: **21, 21, 19, 21, 22, 19, 21, 21, 21, 21, 18, 21, 2**.
+- C: **19, 15, 18, 16, 18, 18, 16, 18, 18, 17, 19, 19, 17, 18, 2**.
+
+All eight actual Units fit unchanged: **kg, Cái, Miếng, Quả, Cốc, Hộp, Gói, Trái**. The shared resolver is preserved: kg/Kilogram displays kg, technical v1-unit codes fall back to the human name. Three real Miếng lines print in full. No technical Unit code is visible. The sole wrapped Ingredient is `Sữa trái cây Kun 110ml hương nhiệt đới`; Supplier text causes the other wrapped rows. No row striping is used; ruled rows and dominant bands already provide grayscale scanning clarity.
+
+**Recommendation: B**, for 30 pt working rows and additional Miếng clearance at 13 pages. A saves a page and has more Note width. C adds writing height/Ingredient/Unit space but trades Note width and requires 15 pages. B/C end with a two-line continuation page; the page distribution is disclosed for Owner judgment, not hidden by shrinking text. **Retain SỐ LƯỢNG**: it fits every candidate, so SL would not recover body width. B is provisional, not approved final geometry.
+
+### Native reopening, copying and import
+
+Normal native Excel Open, PDF export, isolated SaveAs and read-only reopen succeeded for A/B/C, with one 17-column Table retained and no repair request. Original specimen XLSX files were not saved by Excel. Isolated copies exercise public-password unprotect → unhide F:Q → inspect/copy DATA_LINE → rehide/protect. All 248 native records carry School ID/Name, Ingredient/Unit IDs, line/revision evidence and baseline quantity. Clipboard copy of a complete DATA_LINE succeeds. The comparison's final page shows actual repeated School names and full hidden IDs from native inspection; staff do not reconstruct School context from bands.
+
+Unchanged production-workbook import yields no changed proposal. An isolated D5 edit to `12,5` yields exactly one local quantity proposal; native SaveAs/reopen/import does likewise for all variants. The production codec and connected service perform no business command. Native Excel quantizes stored row heights by up to 0.1 pt; importer normalizes within 0.15 pt and rejects structural resizing. ExcelJS alone drops manual breaks on reserialization; QA restores the original IDs for its isolated edit, while native Excel preserves them. No malformed continuation is accepted for convenience.
+
+Closed V2 envelope rejects old V1; `legacyAccepted=false`. Identity and row-kind/group tamper regressions cover changed data School ID/name, changed band name/ID, foreign-school row moves, kind swaps, missing/duplicate bands, missing/fake lines, stale authority and existing Unit/precision/package tamper cases. Complete business-line count excludes presentation bands.
+
+All A/B/C physical pages were rendered and reviewed; automated PDF checks verify A4 dimensions, repeated headings/date, all Ingredient occurrences, three Miếng labels, continuation labels at native page starts and text bounds. The 14-page comparison contains first School/kg/Miếng, the 16-line THUẬN GIAO School, count/package Units, continuation pages and hidden flat records.
+
+Artifacts are generated under `E:/Project/OPS ERP/atlas-artifacts/shopping-list-school-band-02/` using `scripts/certify-shopping-list-school-band.mjs`, `scripts/certify-shopping-list-school-band-excel.ps1`, and `scripts/compare-shopping-list-school-band.py`. Authoritative JSON and native/inspection reports stay outside the repository. The seven Owner deliverables are the three matching XLSX/PDF pairs and `ShoppingList-SchoolBand-Comparison.pdf`.
+
+**Freeze recommendation: HOLD.** Owner geometry selection, final hosted export/import acceptance and final print review remain open. Historical V1 evidence follows for provenance only.
 
 Original source audit 2026-10-02; Product redesign audit 2026-10-04.
 Repository baseline: `d81b60ca63349794d28b0dcc5d34f5fd3e1ebfa1`, PR #345.
@@ -115,7 +194,7 @@ Native Excel normal Open succeeded without requesting repair. An isolated final-
 
 ### Unit projection and validation boundary
 
-The authoritative RMVP-05 read already selects Unit code and Unit name and serializes `controlled_unit: {id, code, name, status}` (`20260803102941_rmvp_05_connected_confirmed_need_review.sql`, read selection and JSON projection). The frontend model/read shape already exposes `controlled_unit.name`; the current production Shopping List still uses `.code`, so mapping to the operator name remains a future connected implementation requirement. Migration `20260915153000_master_data_rehearsal_import.sql` retains technical `v1-unit-...` codes separately from operator `unit_name` (lines 161–162). V1 uses that existing name; normalized fixture `unit_display` is a projection, not a database field. Missing/unsuitable connected labels must block future connected export; no Unit-model change or new shaped field is needed for the label.
+The authoritative RMVP-05 read already selects Unit code and Unit name and serializes `controlled_unit: {id, code, name, status}` (`20260803102941_rmvp_05_connected_confirmed_need_review.sql`, read selection and JSON projection). Migration `20260915153000_master_data_rehearsal_import.sql` retains technical `v1-unit-...` codes separately from operator `unit_name` (lines 161–162). The original specimen projected the human name. The approved `ATLAS-SHOPPING-LIST-UNIT-DISPLAY-01` amendment (2026-10-07) uses one shared resolver for connected export/import: trimmed human-facing code first (`kg` for `kg`/`Kilogram`), otherwise the trimmed human name (`Quả`, `Gói` for technical adoption codes). Missing/unsuitable candidates fail closed; normalized fixture `unit_display` remains presentation only, with no Unit-model, identity, or print-geometry change.
 
 Static validation retains existing identity/currentness/precision controls and adds explicit School/Location/Ingredient hidden-ID tamper checks: **43 negative controls plus 7 certification controls**. It checks two height classes, cap44, scale/body floors, complete row sets and restart/currentness behavior. Positive Location mutation checks metric, grouping and pagination; an independently regenerated probe changes every hidden Location ID and supplies very long unprinted address text, then compares every visible cell/style, height, width, page setup/break and style definition with the original. Separate stable lines sharing one business identity triple remain allowed.
 

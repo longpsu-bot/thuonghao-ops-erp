@@ -48,14 +48,29 @@ describe("connected XLSX authority", () => {
   it("freshly reads on restart and proposes quantity without invoking any command", async () => {
     const f = fixture(),
       book = new ExcelJS.Workbook();
+    for (const line of f.workbench.lines) {
+      line.controlled_unit.code = "kg";
+      line.controlled_unit.name = "Kilogram";
+    }
+    f.api.getReview.mockResolvedValue(
+      reviewSuccess({ workbench: f.workbench }),
+    );
+    const before = structuredClone({
+      workbench: f.workbench,
+      drafts: f.drafts,
+    });
     await book.xlsx.load(await createConfirmedNeedShoppingListXlsx([f]));
-    book.worksheets[0]!.getCell("D4").value = 12.5;
+    book.worksheets[0]!.getCell("D5").value = 12.5;
     const buffer = new Uint8Array(await book.xlsx.writeBuffer());
     const file = { arrayBuffer: async () => buffer.buffer } as File;
     const imported = await f.service.import(file, f.workbench, f.drafts);
     expect(imported.changedLineIds).toEqual([
       f.workbench.lines[0]!.confirmed_need_line_id,
     ]);
+    expect(imported.drafts[imported.changedLineIds[0]!]?.exact_quantity).toBe(
+      "12,5",
+    );
+    expect({ workbench: f.workbench, drafts: f.drafts }).toEqual(before);
     expect(f.api.getReview).toHaveBeenCalled();
     for (const command of [
       f.api.save,

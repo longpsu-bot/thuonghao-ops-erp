@@ -16,10 +16,12 @@ import {
 import {
   ShoppingListError,
   shoppingAssert,
+  shoppingListUnitDisplay,
   shoppingListContract as contract,
   uuidPattern,
   validServiceDate,
 } from "./shoppingListContract";
+import { shoppingListPages } from "./shoppingListLayout";
 import {
   packageText,
   parsePackageXml,
@@ -40,6 +42,8 @@ export type ShoppingListEnvelope = {
   marker: string;
   daily: DailyRecord[];
   sheets: Map<string, Cell[][]>;
+  heights: Map<string, number[]>;
+  breaks: Map<string, number[]>;
 };
 const main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 function internalTarget(base: string, target: string) {
@@ -155,7 +159,12 @@ function readCells(
       )
         text = vs[0]?.textContent ?? "";
       else shoppingAssert(false);
-      if (address.startsWith("D") && rowId >= 4 && type === "n") {
+      if (
+        address.startsWith("D") &&
+        rowId >= 4 &&
+        type === "n" &&
+        text !== ""
+      ) {
         shoppingAssert(!badQuantityStyles.has(style), "INVALID_QUANTITY");
         const normalized = exactXmlNumber(text);
         shoppingAssert(normalized, "INVALID_QUANTITY");
@@ -309,16 +318,20 @@ export async function readShoppingListEnvelope(
     );
     const meta = documents.get(contract.metadataSheet)!;
     shoppingAssert(!xmlElements(meta.doc, "tablePart").length);
-    contract.metadataKeys.forEach((key, i) =>
-      shoppingAssert(text(meta.cells, `A${i + 1}`) === key),
-    );
     shoppingAssert(
       text(meta.cells, "B1") === contract.contractName &&
         text(meta.cells, "B2") === contract.contractVersion,
       "UNSUPPORTED_CONTRACT",
     );
+    contract.metadataKeys.forEach((key, i) =>
+      shoppingAssert(text(meta.cells, `A${i + 1}`) === key),
+    );
     const marker = text(meta.cells, "B3"),
       exportedAt = text(meta.cells, "B4");
+    shoppingAssert(
+      text(meta.cells, "B7") === contract.geometryVariant,
+      "UNSUPPORTED_GEOMETRY",
+    );
     shoppingAssert(
       uuidPattern.test(marker) &&
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(
@@ -363,14 +376,17 @@ export async function readShoppingListEnvelope(
     allowCells(
       meta.cells,
       (address) =>
-        /^[AB][1-6]$/.test(address) ||
+        /^[AB][1-7]$/.test(address) ||
         /^[A-E]8$/.test(address) ||
         (/^[A-E]\d+$/.test(address) &&
           Number(address.slice(1)) >= 9 &&
           Number(address.slice(1)) < 9 + dates.length),
     );
     const rowsByDate = new Map<string, Cell[][]>();
+    const heights = new Map<string, number[]>(),
+      breaks = new Map<string, number[]>();
     let total = 0;
+    let dataTotal = 0;
     const tablePaths = new Set<string>();
     for (const date of dates) {
       const sheet = documents.get(date)!,
@@ -403,7 +419,7 @@ export async function readShoppingListEnvelope(
           (!table.getAttribute("totalsRowCount") ||
             table.getAttribute("totalsRowCount") === "0"),
       );
-      const range = /^A3:O([4-9]|[1-9]\d+)$/.exec(
+      const range = /^A3:Q([4-9]|[1-9]\d+)$/.exec(
         table.getAttribute("ref") ?? "",
       );
       shoppingAssert(range);
@@ -416,13 +432,13 @@ export async function readShoppingListEnvelope(
       );
       total += end - 3;
       shoppingAssert(
-        total <= contract.resourceLimits.dataLines,
+        total <= contract.resourceLimits.dataLines * 3,
         "RESOURCE_LIMIT",
       );
       const headers = [...contract.visibleHeaders, ...contract.hiddenHeaders];
       const columns = xmlElements(table, "tableColumn");
       shoppingAssert(
-        columns.length === 15 &&
+        columns.length === headers.length &&
           columns.every((col, i) => col.getAttribute("name") === headers[i]),
       );
       headers.forEach((h, i) =>
@@ -435,14 +451,14 @@ export async function readShoppingListEnvelope(
         sheet.cells,
         (address) =>
           address === "A1" ||
-          (/^[A-O]\d+$/.test(address) &&
+          (/^[A-Q]\d+$/.test(address) &&
             Number(address.slice(1)) >= 3 &&
             Number(address.slice(1)) <= end),
       );
       const rows: Cell[][] = [];
       for (let r = 4; r <= end; r++) {
         const cells = Array.from(
-          { length: 15 },
+          { length: headers.length },
           (_, c) =>
             sheet.cells.get(`${String.fromCharCode(65 + c)}${r}`) ?? {
               text: "",
@@ -458,18 +474,42 @@ export async function readShoppingListEnvelope(
         rows.push(cells);
       }
       rowsByDate.set(date, rows);
+      dataTotal += rows.filter((r) => r[15]?.text === "DATA_LINE").length;
+      shoppingAssert(
+        dataTotal <= contract.resourceLimits.dataLines,
+        "RESOURCE_LIMIT",
+      );
+      const physicalRows = new Map(
+        xmlElements(sheet.doc, "row").map((r) => [
+          Number(r.getAttribute("r")),
+          Number(r.getAttribute("ht")),
+        ]),
+      );
+      heights.set(
+        date,
+        rows.map((_, i) => physicalRows.get(i + 4) ?? 0),
+      );
+      const rowBreaks = xmlElements(sheet.doc, "rowBreaks")[0];
+      breaks.set(
+        date,
+        rowBreaks
+          ? xmlElements(rowBreaks, "brk").map((r) =>
+              Number(r.getAttribute("id")),
+            )
+          : [],
+      );
     }
     shoppingAssert(
       [...files.keys()].filter((p) => /^xl\/tables\/table\d+\.xml$/.test(p))
         .length === tablePaths.size,
     );
-    return { marker, daily, sheets: rowsByDate };
+    return { marker, daily, sheets: rowsByDate, heights, breaks };
   } catch (error) {
     if (error instanceof ShoppingListError && error.code !== "RESOURCE_LIMIT")
       throw error;
     throw new ShoppingListError(
       "IMPORT_FAILED",
-      "Không thể đọc Phiếu đi chợ. Hãy chọn file XLSX V1 hợp lệ hoặc xuất một file mới.",
+      "Không thể đọc Phiếu đi chợ. Hãy chọn file XLSX V2 hợp lệ hoặc xuất một file mới.",
     );
   }
 }
@@ -510,14 +550,76 @@ export function validateShoppingListEnvelope(
       "INELIGIBLE_AUTHORITY",
     );
     const rows = envelope.sheets.get(daily.service_date)!;
-    shoppingAssert(rows.length === b.lines.length);
+    shoppingAssert(
+      rows.filter((c) => c[15]?.text === "DATA_LINE").length === b.lines.length,
+      "LINE_SET_MISMATCH",
+    );
     const byLine = new Map(b.lines.map((l) => [l.confirmed_need_line_id, l]));
     shoppingAssert(byLine.size === b.lines.length);
+    const schools = new Map(b.lines.map((l) => [l.school.id, l.school.name]));
     const seen = new Set<string>(),
       labelledSchools = new Set<string>();
-    for (const cells of rows) {
+    let activeSchool: string | null = null,
+      awaitingData = false;
+    const dataHeights: { schoolId: string; height: number }[] = [];
+    const p = contract.print;
+    for (const [rowIndex, cells] of rows.entries()) {
       const v = cells.map((c) => c.text),
         id = v[6]!;
+      shoppingAssert(
+        v[15] === "SCHOOL_BAND" || v[15] === "DATA_LINE",
+        "ROW_STRUCTURE_INVALID",
+      );
+      if (v[15] === "SCHOOL_BAND") {
+        shoppingAssert(
+          [6, 7, 8, 11, 12, 13, 14].every((c) => v[c] === ""),
+          "LINE_SET_MISMATCH",
+        );
+        shoppingAssert(
+          schools.has(v[10]!) &&
+            v[5] === envelope.marker &&
+            v[9] === daily.service_date,
+          "STALE_IDENTITY",
+        );
+        const following = rows[rowIndex + 1];
+        shoppingAssert(
+          following?.[15]?.text === "DATA_LINE",
+          "SCHOOL_GROUP_INVALID",
+        );
+        const followingLine = byLine.get(following[6]!.text);
+        shoppingAssert(followingLine, "LINE_SET_MISMATCH");
+        // Band identity comes from the next authoritative business line, never
+        // from a displayed name. Retargeting to any existing School is stale too.
+        shoppingAssert(v[10] === followingLine.school.id, "STALE_IDENTITY");
+        const name = schools.get(v[10]!)!;
+        const continuation = v[0] === `${name} (tiếp)`;
+        shoppingAssert(
+          v[16] === name && (v[0] === name || continuation),
+          "REFERENCE_CHANGED",
+        );
+        shoppingAssert(
+          v.slice(1, 5).every((s) => s === "") && !awaitingData,
+          "SCHOOL_GROUP_INVALID",
+        );
+        shoppingAssert(
+          continuation
+            ? activeSchool === v[10] && labelledSchools.has(v[10]!)
+            : !labelledSchools.has(v[10]!),
+          "SCHOOL_GROUP_INVALID",
+        );
+        if (!continuation) labelledSchools.add(v[10]!);
+        activeSchool = v[10]!;
+        awaitingData = true;
+        // Native Excel on this host quantizes stored row heights by <=0.1 pt.
+        // Allow 0.15 pt representation drift, never a different height class.
+        shoppingAssert(
+          Math.abs(
+            envelope.heights.get(daily.service_date)![rowIndex]! - p.bandRowPt,
+          ) <= 0.15,
+          "PRINT_STRUCTURE_CHANGED",
+        );
+        continue;
+      }
       const line = byLine.get(id);
       shoppingAssert(
         line &&
@@ -546,15 +648,20 @@ export function validateShoppingListEnvelope(
         "STALE_IDENTITY",
       );
       shoppingAssert(
-        v[0] === "" ||
-          v[0] === line.school.name ||
-          v[0] === `${line.school.name} (tiếp)`,
+        v[16] === line.school.name && v[0] === "",
         "REFERENCE_CHANGED",
       );
-      if (v[0]) labelledSchools.add(line.school.id);
+      shoppingAssert(activeSchool === line.school.id, "SCHOOL_GROUP_INVALID");
+      awaitingData = false;
+      const storedHeight = envelope.heights.get(daily.service_date)![rowIndex]!;
+      const height = [p.normalRowPt, p.wrappedRowPt].find(
+        (h) => Math.abs(storedHeight - h) <= 0.15,
+      );
+      shoppingAssert(height !== undefined, "PRINT_STRUCTURE_CHANGED");
+      dataHeights.push({ schoolId: line.school.id, height });
       shoppingAssert(
         v[1] === line.ingredient.name &&
-          v[2] === line.controlled_unit.name &&
+          v[2] === shoppingListUnitDisplay(line.controlled_unit) &&
           line.controlled_unit.status === "ACTIVE",
         "REFERENCE_CHANGED",
       );
@@ -594,10 +701,24 @@ export function validateShoppingListEnvelope(
       };
       changedLineIds.push(id);
     }
+    shoppingAssert(seen.size === b.lines.length, "LINE_SET_MISMATCH");
     shoppingAssert(
-      seen.size === b.lines.length &&
-        b.lines.every((line) => labelledSchools.has(line.school.id)),
-      "REFERENCE_CHANGED",
+      !awaitingData && labelledSchools.size === schools.size,
+      "SCHOOL_GROUP_INVALID",
+    );
+    const planned = shoppingListPages(dataHeights);
+    shoppingAssert(
+      planned.body.length === rows.length &&
+        planned.body.every(
+          (r, i) =>
+            rows[i]![15]!.text === r.kind &&
+            (r.kind !== "SCHOOL_BAND" ||
+              rows[i]![0]!.text ===
+                `${schools.get(dataHeights[r.index]!.schoolId)}${r.continuation ? " (tiếp)" : ""}`),
+        ) &&
+        JSON.stringify(planned.breaks) ===
+          JSON.stringify(envelope.breaks.get(daily.service_date)),
+      "PRINT_STRUCTURE_CHANGED",
     );
   }
   return { drafts: next, changedLineIds };

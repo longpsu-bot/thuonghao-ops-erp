@@ -1,7 +1,10 @@
-// Production contract. Conformance is checked against the frozen design schema.
+import type { ConfirmedNeedLine } from "./confirmedNeedModel";
+
+// Owner-selected A+: A's density, 6 pt moved from Note to Unit.
 export const shoppingListContract = {
   contractName: "ATLAS_SHOPPING_LIST",
-  contractVersion: "ATLAS_SHOPPING_LIST_V1",
+  contractVersion: "ATLAS_SHOPPING_LIST_V2",
+  geometryVariant: "A+",
   visibleHeaders: ["TRƯỜNG", "THÀNH PHẦN", "ĐVT", "SỐ LƯỢNG", "GHI CHÚ"],
   hiddenHeaders: [
     "__workbook_marker",
@@ -14,6 +17,8 @@ export const shoppingListContract = {
     "__ingredient_id",
     "__unit_id",
     "__exported_quantity",
+    "__row_kind",
+    "__school_name",
   ],
   metadataKeys: [
     "contract_name",
@@ -22,6 +27,7 @@ export const shoppingListContract = {
     "exported_at",
     "service_period_start",
     "service_period_end",
+    "geometry_variant",
   ],
   dailyKeys: [
     "service_date",
@@ -34,7 +40,7 @@ export const shoppingListContract = {
   metadataState: "veryHidden",
   headerRow: 3,
   firstDataRow: 4,
-  lastColumn: "O",
+  lastColumn: "Q",
   editableColumns: ["D", "E"],
   paper: "A4",
   orientation: "portrait",
@@ -47,7 +53,7 @@ export const shoppingListContract = {
   importWrites: false,
   legacyAccepted: false,
   protectedSort: false,
-  protectionPassword: "ATLAS_SHOPPING_LIST_V1",
+  protectionPassword: "ATLAS_SHOPPING_LIST_V2",
   print: {
     titleFontPt: 20,
     headerFontPt: 17,
@@ -60,13 +66,14 @@ export const shoppingListContract = {
     headerRowPt: 48,
     normalRowPt: 28,
     bodyHardCapPt: 44,
-    columnWidths: [25, 32, 6, 16, 15],
-    pageHeightScaleUpperBound: 0.97,
+    columnWidths: [14, 31, 10, 16, 23],
+    a4WidthPt: 595.28,
     a4HeightPt: 841.89,
     topMarginIn: 0.25,
     bottomMarginIn: 0.25,
     footerAllowancePt: 12,
     wrappedRowPt: 44,
+    bandRowPt: 28,
     leftMarginIn: 0.2,
     rightMarginIn: 0.2,
     scalePercent: 96,
@@ -100,6 +107,20 @@ export function shoppingAssert(
 }
 export const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export function shoppingListUnitDisplay(
+  unit: Pick<ConfirmedNeedLine["controlled_unit"], "code" | "name">,
+): string {
+  const label = [unit.code.trim(), unit.name.trim()].find(
+    (value) =>
+      value &&
+      value !== "?" &&
+      !/^(?:v1-unit-|atlas[-_:]|unit[-_:])/i.test(value) &&
+      !uuidPattern.test(value.toLowerCase()) &&
+      !/\p{Control}/u.test(value),
+  );
+  shoppingAssert(label, "INVALID_UNIT_DISPLAY");
+  return label;
+}
 export function validServiceDate(date: string) {
   return (
     /^\d{4}-\d{2}-\d{2}$/.test(date) &&

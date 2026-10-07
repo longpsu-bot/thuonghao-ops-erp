@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:atlas:shopping-list:xlsx:v1",
-  "title": "Atlas Shopping List V1 normalized workbook evidence",
-  "$comment": "Design-only closed object shapes and physical annotations. Cross-object invariants below require a separate validator; this is not an XLSX ZIP, currentness, backend-authority, or import implementation validator.",
+  "$id": "urn:atlas:shopping-list:xlsx:v2",
+  "title": "Atlas Shopping List V2 normalized workbook evidence",
+  "$comment": "V2 structural amendment; historical filename retained. Owner-selected A+ final geometry. Closed normalized rows plus physical annotations; production package/currentness validation remains required.",
   "type": "object",
   "additionalProperties": false,
   "required": ["metadata", "daily_batches", "rows"],
@@ -16,14 +16,15 @@
         "workbook_marker",
         "exported_at",
         "service_period_start",
-        "service_period_end"
+        "service_period_end",
+        "geometry_variant"
       ],
       "properties": {
         "contract_name": {
           "const": "ATLAS_SHOPPING_LIST"
         },
         "contract_version": {
-          "const": "ATLAS_SHOPPING_LIST_V1"
+          "const": "ATLAS_SHOPPING_LIST_V2"
         },
         "workbook_marker": {
           "$ref": "#/$defs/uuid"
@@ -39,6 +40,9 @@
         "service_period_end": {
           "type": "string",
           "format": "date"
+        },
+        "geometry_variant": {
+          "const": "A+"
         }
       }
     },
@@ -98,20 +102,43 @@
           "__location_id",
           "__ingredient_id",
           "__unit_id",
-          "__exported_quantity"
+          "__exported_quantity",
+          "__row_kind",
+          "__school_name"
         ],
         "properties": {
           "ingredient_name": {
-            "type": "string",
-            "minLength": 1
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "unit_display": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Operator-facing controlled_unit.name from the authoritative Confirmed Need read; never a technical migration identifier. A missing or unsuitable operator label blocks future connected export; this projection adds no database field."
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "description": "Shared shoppingListUnitDisplay(controlled_unit): trimmed human-facing code, otherwise trimmed human name. Technical adoption codes, UUIDs, placeholders and control characters are rejected; no usable candidate blocks export. Hidden __unit_id remains controlled_unit.id. This presentation projection adds no database field or print-geometry change."
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "quantity": {
-            "$ref": "#/$defs/decimal"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/decimal"
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "note": {
             "type": "string",
@@ -121,10 +148,24 @@
             "$ref": "#/$defs/uuid"
           },
           "__line_id": {
-            "$ref": "#/$defs/uuid"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/uuid"
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "__revision_id": {
-            "$ref": "#/$defs/uuid"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/uuid"
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "__decision_id": {
             "oneOf": [
@@ -144,23 +185,150 @@
             "$ref": "#/$defs/uuid"
           },
           "__location_id": {
-            "$ref": "#/$defs/uuid",
-            "description": "Required hidden row-bound lineage/currentness evidence. Zero effect on School text, groups, height, wrapping, width, page breaks or print certification."
+            "oneOf": [
+              {
+                "$ref": "#/$defs/uuid",
+                "description": "Required hidden row-bound lineage/currentness evidence. Zero effect on School text, groups, height, wrapping, width, page breaks or print certification."
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "__ingredient_id": {
-            "$ref": "#/$defs/uuid"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/uuid"
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "__unit_id": {
-            "$ref": "#/$defs/uuid"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/uuid"
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "__exported_quantity": {
-            "$ref": "#/$defs/decimal"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/decimal"
+              },
+              {
+                "const": ""
+              }
+            ]
           },
           "school_display": {
             "type": "string",
-            "description": "Presentation only: canonical School on first group row, blank on following rows, or School (tiếp) on a print continuation; never an identity key."
+            "description": "Canonical School name or School name (tiếp) on SCHOOL_BAND, always blank on DATA_LINE."
+          },
+          "__row_kind": {
+            "enum": ["SCHOOL_BAND", "DATA_LINE"]
+          },
+          "__school_name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Validated canonical School-name snapshot, not identity. Repeated on every DATA_LINE; School ID remains identity."
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "__row_kind": {
+                  "const": "DATA_LINE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "school_display": {
+                  "const": ""
+                },
+                "ingredient_name": {
+                  "minLength": 1
+                },
+                "unit_display": {
+                  "minLength": 1
+                },
+                "quantity": {
+                  "$ref": "#/$defs/decimal"
+                },
+                "__line_id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "__revision_id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "__location_id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "__ingredient_id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "__unit_id": {
+                  "$ref": "#/$defs/uuid"
+                },
+                "__exported_quantity": {
+                  "$ref": "#/$defs/decimal"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "__row_kind": {
+                  "const": "SCHOOL_BAND"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "ingredient_name": {
+                  "const": ""
+                },
+                "unit_display": {
+                  "const": ""
+                },
+                "quantity": {
+                  "const": ""
+                },
+                "note": {
+                  "const": ""
+                },
+                "__line_id": {
+                  "const": ""
+                },
+                "__revision_id": {
+                  "const": ""
+                },
+                "__decision_id": {
+                  "const": ""
+                },
+                "__location_id": {
+                  "const": ""
+                },
+                "__ingredient_id": {
+                  "const": ""
+                },
+                "__unit_id": {
+                  "const": ""
+                },
+                "__exported_quantity": {
+                  "const": ""
+                }
+              }
+            }
+          }
+        ]
       }
     }
   },
@@ -187,11 +355,13 @@
       "__location_id",
       "__ingredient_id",
       "__unit_id",
-      "__exported_quantity"
+      "__exported_quantity",
+      "__row_kind",
+      "__school_name"
     ],
     "headerRow": 3,
     "firstDataRow": 4,
-    "lastColumn": "O",
+    "lastColumn": "Q",
     "editableColumns": ["D", "E"],
     "metadataSheet": "_ATLAS_META",
     "metadataState": "veryHidden",
@@ -200,7 +370,7 @@
     "printAreaColumns": "A:E",
     "printTitleRows": "1:3",
     "font": "Times New Roman",
-    "schoolPresentation": "School name only on the first data row, blank following rows, School (tiếp) on continuation pages; no Delivery Location/address, subgroups, merged data cells or extra School row.",
+    "schoolPresentation": "Exactly one initial SCHOOL_BAND per School; generated continuation bands at page starts. A contains School name, B:E blank; neutral fill and strong horizontal borders across A:E, no body merge. DATA_LINE A blank, repeated hidden School ID and Name.",
     "bodyHeightClasses": ["NORMAL", "WRAPPED"],
     "colorSemantics": false,
     "print": {
@@ -215,8 +385,7 @@
       "headerRowPt": 48,
       "normalRowPt": 28,
       "bodyHardCapPt": 44,
-      "columnWidths": [25, 32, 6, 16, 15],
-      "pageHeightScaleUpperBound": 0.97,
+      "columnWidths": [14, 31, 10, 16, 23],
       "a4HeightPt": 841.89,
       "topMarginIn": 0.25,
       "bottomMarginIn": 0.25,
@@ -224,26 +393,28 @@
       "wrappedRowPt": 44,
       "leftMarginIn": 0.2,
       "rightMarginIn": 0.2,
-      "scalePercent": 96
+      "scalePercent": 96,
+      "a4WidthPt": 595.28,
+      "bandRowPt": 28
     },
     "maxServiceDates": 7,
     "scope": "generated collection of 1–7 service dates, each bound to its authoritative daily Confirmed Need batch",
     "tableNamePattern": "^AtlasNeed_[0-9]{8}$",
     "sheetNamePattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
-    "protectionPassword": "ATLAS_SHOPPING_LIST_V1",
+    "protectionPassword": "ATLAS_SHOPPING_LIST_V2",
     "protectedSort": false,
     "partialImport": false,
     "importWrites": false,
     "legacyAccepted": false
   },
   "x-atlas-invariants": [
-    "Unique __line_id; exact complete current backend line set; no name aggregation.",
-    "Each row marker equals metadata workbook_marker; it is artifact binding, not a signature or session credential.",
+    "Unique DATA_LINE __line_id; exact complete current backend line set; no name aggregation.",
+    "Each body row marker equals metadata workbook_marker; it is artifact binding, not a signature or session credential.",
     "There are 1–7 represented service dates; metadata bounds equal the first and last dates; each row date matches its containing worksheet and canonical line.",
     "Exactly one daily_batches entry per date sheet; its batch/version/run/snapshot and every row's revision/decision and School/location/Ingredient/Unit bindings match fresh authorized evidence.",
-    "Blank visible School cells and print-only (tiếp) labels never drive identity; every row carries its own School/location/Ingredient/Unit IDs.",
+    "Blank visible School cells and print-only (tiếp) labels never drive identity; every DATA_LINE carries its own School/location/Ingredient/Unit IDs and canonical School name.",
     "Delivery Location is required hidden row evidence with zero presentation effect; visible ambiguity and print certification never use Location text or identity.",
-    "Visible School, Ingredient and Unit reference labels match fresh canonical saved facts; GHI CHÚ is ignored on import.",
+    "School band label and hidden School name, DATA_LINE Ingredient and Unit reference labels match fresh canonical saved facts; GHI CHÚ is ignored on import.",
     "Export requires saved/current authoritative state with no unsaved local draft; import after browser restart requires no session manifest.",
     "Import does not overwrite an unsaved local Confirmed Need draft on a represented date.",
     "GHI CHÚ is export-time Supplier advice and working paper only; import ignores it and Supplier projection drift alone does not stale a quantity row.",
@@ -251,7 +422,9 @@
     "A4 portrait black-and-white staff surface; repeated date/header rows, controlled School breaks, bounded print area and used range.",
     "Exact physical Table/meta/sheet set, no nonempty out-of-region cells, no formulas/executable parts.",
     "No partial apply, no import-time business write, no released-state import.",
-    "Print certification covers the documented 84-character row envelope and independent field stresses, not arbitrary unbounded text or database validation."
+    "DATA_LINE count equals authoritative line count; SCHOOL_BAND creates no quantity proposal or fake lineage.",
+    "Explicit row kind, exactly one initial School band per represented School, contiguous grouping, continuation bands and manual page breaks match the generated pagination plan.",
+    "Only Owner-selected A+ geometry is supported. Historical A/B/C specimens and V1 require re-export; legacyAccepted false. Hosted export/import acceptance remains pending."
   ],
   "x-atlas-resource-limits": {
     "compressedBytes": 10485760,
@@ -264,20 +437,23 @@
     "largeEntryThresholdBytes": 1048576
   },
   "x-atlas-print-certification": {
-    "combinedCharEnvelope": 84,
-    "guardBandPercent": 25,
-    "fieldMaxChars": {
-      "school": 32,
-      "ingredient": 48,
-      "supplier": 25,
-      "quantity": 12
-    },
+    "authorityDate": "2026-09-17",
+    "dataLines": 248,
+    "initialSchoolBands": 20,
+    "units": ["kg", "Miếng", "Quả", "Gói", "Cốc", "Cái", "Hộp", "Trái"],
+    "geometryStatus": "OWNER_APPROVED_FINAL_A_PLUS",
     "minimumPrintScalePercent": 95,
     "minimumEffectiveBodyPt": 17,
     "qaOnly": true,
     "runtimeBusinessConstraint": false,
-    "combinedMetric": "Canonical School name, Ingredient, authoritative operator-facing Unit display, shortest exact quantity display and derived Supplier. Count Unicode code points including spaces within cells, excluding line breaks, blank-group suppression, continuation suffix and inter-column spacing. Delivery Location is hidden lineage only and has zero presentation effect.",
-    "independentMaxima": "Test row-level envelope plus isolated field stresses; do not combine independent catalog maxima unless observed domain evidence supports the combination.",
-    "overflow": "Outside this QA envelope needs connected-exporter overflow handling/certification or a clear export warning/block; never silently clip. No database name-length rule."
+    "overflow": "PRINT_OVERFLOW derives from final A+ column widths, native font advances and bounded row heights; unsupported glyphs and content exceeding printable geometry block export. No catalog-length business constraint.",
+    "geometryVariant": "A+",
+    "pdfPages": 12,
+    "continuationBands": 6,
+    "wrappedIngredientRows": 1,
+    "wrappedDataRows": 32,
+    "wrappedSchoolBands": 0,
+    "unitUsableWidthPt": 54.5,
+    "noteUsableWidthPt": 132.5
   }
 }
