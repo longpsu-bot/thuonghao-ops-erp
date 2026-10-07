@@ -6,6 +6,7 @@ import {
 } from "./confirmedNeedModel";
 import {
   shoppingAssert,
+  shoppingListUnitDisplay,
   shoppingListContract as contract,
   uuidPattern,
   validServiceDate,
@@ -110,8 +111,6 @@ function validateExport(batch: ShoppingListDailyBatch) {
     shoppingAssert(
       l.school.name.trim() &&
         l.ingredient.name.trim() &&
-        l.controlled_unit.name.trim() &&
-        !/^v1-unit-/i.test(l.controlled_unit.name) &&
         l.controlled_unit.status === "ACTIVE",
       "INVALID_UNIT_DISPLAY",
     );
@@ -123,7 +122,7 @@ function validateExport(batch: ShoppingListDailyBatch) {
     const key = JSON.stringify([
         l.school.name,
         l.ingredient.name,
-        l.controlled_unit.name,
+        shoppingListUnitDisplay(l.controlled_unit),
       ]),
       identity = JSON.stringify([
         l.school.id,
@@ -206,18 +205,20 @@ export async function createConfirmedNeedShoppingListXlsx(
     let previous: string | null = null;
     const rows = lines.map((line) => {
       const q = savedShoppingListQuantity(line),
-        supplier = batch.supplierAdvice[line.confirmed_need_line_id]!;
+        supplier = batch.supplierAdvice[line.confirmed_need_line_id]!,
+        unit = shoppingListUnitDisplay(line.controlled_unit);
       const first = previous !== line.school.id;
       previous = line.school.id;
       return {
         line,
         q,
         supplier,
+        unit,
         first,
         height: shoppingListRowHeight(
           line.school.name,
           line.ingredient.name,
-          line.controlled_unit.name,
+          unit,
           shortestShoppingListQuantity(q),
           supplier,
           false,
@@ -248,7 +249,7 @@ export async function createConfirmedNeedShoppingListXlsx(
             ? `${r.line.school.name} (tiếp)`
             : null,
         r.line.ingredient.name,
-        r.line.controlled_unit.name,
+        r.unit,
         shortestShoppingListQuantity(r.q),
         r.supplier,
         workbookMarker,
@@ -283,7 +284,7 @@ export async function createConfirmedNeedShoppingListXlsx(
         ? shoppingListRowHeight(
             r.line.school.name,
             r.line.ingredient.name,
-            r.line.controlled_unit.name,
+            r.unit,
             shortestShoppingListQuantity(r.q),
             r.supplier,
             true,

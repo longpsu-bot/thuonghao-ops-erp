@@ -1,3 +1,5 @@
+import type { ConfirmedNeedLine } from "./confirmedNeedModel";
+
 // Production contract. Conformance is checked against the frozen design schema.
 export const shoppingListContract = {
   contractName: "ATLAS_SHOPPING_LIST",
@@ -100,6 +102,20 @@ export function shoppingAssert(
 }
 export const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export function shoppingListUnitDisplay(
+  unit: Pick<ConfirmedNeedLine["controlled_unit"], "code" | "name">,
+): string {
+  const label = [unit.code.trim(), unit.name.trim()].find(
+    (value) =>
+      value &&
+      value !== "?" &&
+      !/^(?:v1-unit-|atlas[-_:]|unit[-_:])/i.test(value) &&
+      !uuidPattern.test(value.toLowerCase()) &&
+      !/\p{Control}/u.test(value),
+  );
+  shoppingAssert(label, "INVALID_UNIT_DISPLAY");
+  return label;
+}
 export function validServiceDate(date: string) {
   return (
     /^\d{4}-\d{2}-\d{2}$/.test(date) &&

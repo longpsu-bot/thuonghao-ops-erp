@@ -5,6 +5,8 @@ Task: `ATLAS-SHOPPING-LIST-XLSX-CONTRACT-01`.
 Baseline: `d81b60ca63349794d28b0dcc5d34f5fd3e1ebfa1` (PR #345).
 Format: `ATLAS_SHOPPING_LIST_V1`.
 
+Approved display amendment: `ATLAS-SHOPPING-LIST-UNIT-DISPLAY-01` (2026-10-07) changes only the visible Unit projection described below; all frozen workbook and print invariants remain unchanged.
+
 This is the single proposed human-readable format contract. The [schema](atlas-shopping-list-xlsx-v1.schema.json), [specimen](examples/atlas-shopping-list-v1-example.xlsx), [source comparison](atlas-shopping-list-xlsx-v1-evidence.md), and [task record](../implementation-tasks/TASK-ATLAS-SHOPPING-LIST-XLSX-CONTRACT-01.md) accompany it. No production module consumes these files. Approval and a separate bounded implementation task are required before changing connected behavior.
 
 ## 1. Authority and boundary
@@ -57,13 +59,15 @@ For visible ambiguity, compare the expanded canonical `(School name, Ingredient 
 | ------ | ----------- | ----------------------------------------------------------------------------------------------- | ------------------ |
 | A      | TRƯỜNG      | Canonical School name on first row / blank following cells / print-only `(tiếp)` continuation   | No                 |
 | B      | THÀNH PHẦN  | Canonical Ingredient name                                                                       | No                 |
-| C      | ĐVT         | Operator-facing `controlled_unit.name` from the authoritative Confirmed Need read               | No                 |
+| C      | ĐVT         | Shared `shoppingListUnitDisplay(controlled_unit)` from authoritative code/name facts            | No                 |
 | D      | SỐ LƯỢNG    | Exact saved/current authoritative quantity                                                      | Yes                |
 | E      | GHI CHÚ     | First eligible preferred Supplier name at export, or blank; staff working space; never imported | Working paper only |
 
 Choose **SỐ LƯỢNG**, not `SL`, for clarity. `THÀNH PHẦN` and `ĐVT` retain staff vocabulary. All normal operator headings, help and errors are Vietnamese. Technical hidden keys are exempt. No additional operator-editable column is legitimate in this bounded artifact; reason type, identity, policy and status stay in Atlas.
 
-The existing RMVP-05 read supplies `controlled_unit` with `id`, `code`, `name` and `status`; use its operator-facing `name`, never technical migration codes such as `v1-unit-...`. The specimen's normalized `unit_display` is a design projection of that existing name, not a new database field. If a future connected read returns a missing or unsuitable operator label, block connected export and report that implementation blocker. Do not invent a database field or change the Unit model here.
+The existing RMVP-05 read supplies `controlled_unit` with `id`, `code`, `name` and `status`. One shared `shoppingListUnitDisplay` resolver trims code and name, prefers a nonempty human-facing code, and otherwise uses the human-facing name. Technical `v1-unit-*`, `atlas-*`/`atlas:*`/`atlas_*`, `unit-*`/`unit:*`/`unit_*`, UUIDs, `?`, and control characters are unusable labels. If neither candidate is usable, fail closed with `INVALID_UNIT_DISPLAY`. Thus `{code: "kg", name: "Kilogram"}` displays `kg`, while technical adoption codes with names `Quả` or `Gói` display those names. No per-Unit map, abbreviation, truncation, or Unit-fact mutation occurs.
+
+Exported ĐVT, row-height/print measurement, visible ambiguity validation, and import reference validation use this same resolver. A valid human label exceeding 35.5 pt at the frozen 18 pt body font still raises `PRINT_OVERFLOW`; unsupported glyphs remain blocked. The specimen's `unit_display` is a presentation projection, not a new database field. Hidden `__unit_id` remains exact `controlled_unit.id`; identity/currentness checks and explicit Save remain authoritative. Existing workbooks whose Unit text differs from the current resolver are rejected as `REFERENCE_CHANGED` and must be exported again.
 
 ### Deterministic export order
 

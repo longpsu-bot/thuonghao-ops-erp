@@ -16,6 +16,7 @@ import {
 import {
   ShoppingListError,
   shoppingAssert,
+  shoppingListUnitDisplay,
   shoppingListContract as contract,
   uuidPattern,
   validServiceDate,
@@ -554,7 +555,7 @@ export function validateShoppingListEnvelope(
       if (v[0]) labelledSchools.add(line.school.id);
       shoppingAssert(
         v[1] === line.ingredient.name &&
-          v[2] === line.controlled_unit.name &&
+          v[2] === shoppingListUnitDisplay(line.controlled_unit) &&
           line.controlled_unit.status === "ACTIVE",
         "REFERENCE_CHANGED",
       );

@@ -108,7 +108,7 @@
           "unit_display": {
             "type": "string",
             "minLength": 1,
-            "description": "Operator-facing controlled_unit.name from the authoritative Confirmed Need read; never a technical migration identifier. A missing or unsuitable operator label blocks future connected export; this projection adds no database field."
+            "description": "Shared shoppingListUnitDisplay(controlled_unit): trimmed human-facing code, otherwise trimmed human name. Technical adoption codes, UUIDs, placeholders and control characters are rejected; no usable candidate blocks export. Hidden __unit_id remains controlled_unit.id. This presentation projection adds no database field or print-geometry change."
           },
           "quantity": {
             "$ref": "#/$defs/decimal"

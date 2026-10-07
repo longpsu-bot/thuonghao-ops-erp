@@ -12,6 +12,8 @@ import {
   createConfirmedNeedShoppingListXlsx,
   parseConfirmedNeedShoppingListXlsx,
 } from "./confirmedNeedShoppingList";
+import { shoppingListRowHeight } from "./shoppingListLayout";
+import { shoppingListUnitDisplay } from "./shoppingListContract";
 
 async function fixture() {
   const f = shoppingFixture();
@@ -22,6 +24,140 @@ async function fixture() {
 const bytes = async (book: ExcelJS.Workbook) =>
   new Uint8Array(await book.xlsx.writeBuffer());
 describe("frozen Shopping List V1", () => {
+  it.each([
+    ["kg", "Kilogram", "kg"],
+    ["v1-unit-034ce34d3ff3", "Quả", "Quả"],
+    ["v1-unit-469606e98b7e", "Gói", "Gói"],
+    ["Cái", "Cái", "Cái"],
+    [" kg ", " Kilogram ", "kg"],
+    [" V1-UNIT-technical ", " Quả ", "Quả"],
+    ["", "Hộp", "Hộp"],
+    ["00000000-0000-4000-8000-000000009999", "Cốc", "Cốc"],
+    ["atlas-unit-technical", "Trái", "Trái"],
+  ])("resolves Unit %s / %s to %s", (code, name, expected) => {
+    expect(shoppingListUnitDisplay({ code, name })).toBe(expected);
+  });
+  it.each([
+    "",
+    " ",
+    "v1-unit-missing",
+    "?",
+    "00000000-0000-4000-8000-000000009999",
+    "unit-123",
+    "atlas-unit-123",
+  ])("fails closed for technical code and unusable name %s", async (name) => {
+    const f = shoppingFixture();
+    f.workbench.lines[0]!.controlled_unit.name = name;
+    await expect(
+      createConfirmedNeedShoppingListXlsx([f]),
+    ).rejects.toMatchObject({ code: "INVALID_UNIT_DISPLAY" });
+  });
+  it.each([
+    ["v1-unit-034ce34d3ff3", "Quả"],
+    ["v1-unit-469606e98b7e", "Gói"],
+  ])("exports and imports human name for %s", async (code, name) => {
+    const f = shoppingFixture();
+    for (const line of f.workbench.lines)
+      Object.assign(line.controlled_unit, { code, name });
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createConfirmedNeedShoppingListXlsx([f]));
+    expect(book.worksheets[0]!.getCell("C4").value).toBe(name);
+    expect(
+      (
+        await parseConfirmedNeedShoppingListXlsx(
+          await bytes(book),
+          [f.workbench],
+          f.drafts,
+        )
+      ).changedLineIds,
+    ).toEqual([]);
+  });
+  it("checks ambiguity using the displayed Unit while preserving identity", async () => {
+    const f = shoppingFixture();
+    const first = f.workbench.lines[0]!,
+      second = f.workbench.lines[2]!;
+    second.ingredient = { ...first.ingredient };
+    first.controlled_unit.code = "kg";
+    first.controlled_unit.name = "Kilogram";
+    second.controlled_unit.code = "v1-unit-technical";
+    second.controlled_unit.name = "kg";
+    second.controlled_unit.id = "00000000-0000-4000-8000-000000009999";
+    await expect(
+      createConfirmedNeedShoppingListXlsx([f]),
+    ).rejects.toMatchObject({ code: "AMBIGUOUS_DISPLAY" });
+    second.controlled_unit.id = first.controlled_unit.id;
+    await expect(
+      createConfirmedNeedShoppingListXlsx([f]),
+    ).resolves.toBeInstanceOf(ArrayBuffer);
+  });
+  it.each(["Kilogram", "😀"])(
+    "keeps print overflow and unsupported glyph rejection for %s",
+    async (code) => {
+      const f = shoppingFixture();
+      f.workbench.lines[0]!.controlled_unit.code = code;
+      await expect(
+        createConfirmedNeedShoppingListXlsx([f]),
+      ).rejects.toMatchObject({ code: "PRINT_OVERFLOW" });
+    },
+  );
+  it("exports kg/Kilogram without overflow and round-trips only local quantity proposals", async () => {
+    const f = shoppingFixture("2026-09-17");
+    for (const line of f.workbench.lines) {
+      line.controlled_unit.code = "kg";
+      line.controlled_unit.name = "Kilogram";
+    }
+    const before = structuredClone(f);
+    expect(() =>
+      shoppingListRowHeight("Trường", "Gạo", "Kilogram", "1", ""),
+    ).toThrow(expect.objectContaining({ code: "PRINT_OVERFLOW" }));
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createConfirmedNeedShoppingListXlsx([f]));
+    const sheet = book.worksheets[0]!;
+    expect(sheet.getCell("C4").value).toBe("kg");
+    expect(sheet.getCell("N4").value).toBe(
+      f.workbench.lines[0]!.controlled_unit.id,
+    );
+    expect(
+      (
+        await parseConfirmedNeedShoppingListXlsx(
+          await bytes(book),
+          [f.workbench],
+          f.drafts,
+        )
+      ).changedLineIds,
+    ).toEqual([]);
+    sheet.getCell("D4").value = 12.5;
+    const result = await parseConfirmedNeedShoppingListXlsx(
+      await bytes(book),
+      [f.workbench],
+      f.drafts,
+    );
+    const id = f.workbench.lines[0]!.confirmed_need_line_id;
+    expect(result.changedLineIds).toEqual([id]);
+    expect(result.drafts[id]).toMatchObject({
+      exact_quantity: "12,5",
+      quantity_entered: true,
+    });
+    expect(f).toEqual(before);
+    sheet.getCell("C4").value = "something else";
+    await expect(
+      parseConfirmedNeedShoppingListXlsx(
+        await bytes(book),
+        [f.workbench],
+        f.drafts,
+      ),
+    ).rejects.toMatchObject({ code: "REFERENCE_CHANGED" });
+    sheet.getCell("C4").value = "kg";
+    sheet.getCell("N4").value = "00000000-0000-4000-8000-000000009999";
+    await expect(
+      parseConfirmedNeedShoppingListXlsx(
+        await bytes(book),
+        [f.workbench],
+        f.drafts,
+      ),
+    ).rejects.toMatchObject({ code: "STALE_IDENTITY" });
+    expect(f).toEqual(before);
+  });
   it("rejects hostile ZIP envelopes before parsing workbook XML", async () => {
     const encode = new TextEncoder();
     const duplicate = writeShoppingListPackage(
