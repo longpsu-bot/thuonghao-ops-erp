@@ -1,0 +1,8 @@
+{
+  "project": "atlas-backend-convergence-02d",
+  "volumes_before_second_start": [],
+  "retained_inputs": ["CLI configuration", "canonical directory junctions"],
+  "containers_before_second_start": [],
+  "seeds_enabled": false,
+  "discard_exit": 0
+}
