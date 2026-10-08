@@ -15,6 +15,8 @@ const DIAGNOSTIC_COMMAND_TIMEOUT_MS = 10_000;
 
 const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "atlas_current_platform_security_catalog.sql",
+  "atlas_backend_convergence_02b_helpers.sql",
+  "atlas_backend_convergence_02b_allocation.sql",
   "need_generation_operational_scale.sql",
   "staging_count_unit_policies.sql",
   "school_catering_handoff_allocation.sql",
@@ -103,7 +105,10 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
           command: "node",
           args: Object.freeze(["scripts/test-local-staging-master-load.mjs"]),
         })
-      : file === "purchase_review_confirm_release.sql"
+      : [
+            "purchase_review_confirm_release.sql",
+            "atlas_backend_convergence_02b_allocation.sql",
+          ].includes(file)
         ? Object.freeze({
             command: "node",
             args: Object.freeze([

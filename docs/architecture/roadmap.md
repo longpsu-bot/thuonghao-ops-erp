@@ -19,7 +19,7 @@
 - ✅ Workflow-led, contract-constrained, backend-authoritative delivery
 - ✅ [ATLAS-MODEL-PRINCIPLE-01](../decisions/decision-atlas-model-convergence.md) — **facts explicit, state derived, supporting objects generated**
 - ✅ [Authority map through Procurement](atlas-authority-map-through-procurement.md)
-- ✅ [Planning–Procurement Business Freeze](planning-procurement-business-freeze.md) — Owner-approved business/application contract; documentation closeout pending this PR's approval/merge
+- ✅ [Planning–Procurement Business Freeze](planning-procurement-business-freeze.md) — COMPLETE; Owner-approved business/application contract, merged PR #356
 
 Normal delivery shorthand:
 
@@ -86,7 +86,7 @@ Menu / Attendance / Pantry
 - ✅ Persistent mounted workbenches with local context, guarded close/sign-out and bounded Need → Procurement handoff
 - ✅ Eleven operator-job owners and connected hosted workspace acceptance; [D-048](../decisions/decision-atlas-persistent-workspace.md) ownership preserved
 
-## Current gate — business freeze record
+## Current gate — 02B Draft PR / Owner review
 
 ### Accepted connected baseline
 
@@ -113,7 +113,8 @@ The [connected Staging app](https://thuonghao-ops-erp.pages.dev/) serves the acc
 → ✅ persistent connected Staging deployment
 → ✅ connected Planning / Procurement rehearsal + Shopping List V2 A+ acceptance
 → ✅ Product decision: PLANNING_PROCUREMENT_BUSINESS_FREEZE = APPROVED
-→ 🟡 PLANNING-PROCUREMENT-BUSINESS-FREEZE-01 documentation approval/merge
+→ ✅ PLANNING-PROCUREMENT-BUSINESS-FREEZE-01 documentation merged #356
+→ 🟡 ATLAS-BACKEND-CONVERGENCE-02B implementation COMPLETE / Draft PR / Owner review
 → parallel product and backend lanes below
 ```
 
@@ -134,9 +135,10 @@ Storybook and GitHub Pages are developer/mock evidence only. The preferred Produ
 
 - ⬜ Staff usage of Atlas v3 for approximately **5–10 working days** → `ATLAS-UX-POLISH-02`, using observed workflow/legibility evidence.
 - ⬜ `ATLAS-DOCUMENT-SYSTEM-01` → PO, PXK, Dispatch, Attendance/import templates, common layout/branding/signature/header/footer and grouped-export rules → later document presentation freeze.
-- ⬜ `ATLAS-BACKEND-CONVERGENCE-02B` → `02C` → `02D`, under separate bounded approvals and the merged [#353 / 02A audit](atlas-backend-convergence-02a-audit.md). First prove equivalence; investigate allocation precision before consolidation; retire nothing without complete compatibility proof.
+- 🟡 [ATLAS-BACKEND-CONVERGENCE-02B](../implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02B.md) implementation COMPLETE, Draft PR/Owner review: D01/D02 reuse preserves catalog posture; D03 retained for disjoint privileges; complete-command evidence proves and corrects Handoff precision; zero retirements. Required final-head CI and Owner review govern readiness.
+- ⬜ `ATLAS-BACKEND-CONVERGENCE-02C` → `02D`, under separate bounded approvals and the merged [#353 / 02A audit](atlas-backend-convergence-02a-audit.md). Neither has started.
 
-UI and document tracks may proceed in parallel with backend convergence; their completion is not a prerequisite for 02B absent an actual dependency. Business freeze does not authorize 02B–02D implementation. Class A–D [change control](planning-procurement-business-freeze.md#23-change-control-after-freeze) governs all tracks. Design Language v3 and A+ are current presentation baselines, open to compatible explicit review; business semantics remain frozen.
+UI and document tracks may proceed in parallel with backend convergence; their completion is not a prerequisite absent an actual dependency. The Owner separately authorized 02B; 02C/02D remain separately governed future work. Class A–D [change control](planning-procurement-business-freeze.md#23-change-control-after-freeze) governs all tracks. Design Language v3 and A+ are current presentation baselines, open to compatible explicit review; business semantics remain frozen.
 
 ## Next domain after backend certification
 
@@ -170,7 +172,7 @@ Do not pre-build a generic warehouse-management lifecycle.
 
 ## Environment boundary
 
-- Planning/Procurement business freeze is Owner-approved; repository closeout completes after this documentation PR's approval/merge. Accepted hosted evidence has the limits stated in the canonical freeze.
+- Planning/Procurement business freeze is COMPLETE, merged PR #356. Accepted hosted evidence has the limits stated in the canonical freeze. 02B performs no Staging writes or deployment.
 - Live OPS project `qnthofvccilhnefdcxnz` is a forbidden Atlas deployment target.
 - OPS v1 / Retool remains operational continuity and workflow evidence, not Atlas architecture authority.
 

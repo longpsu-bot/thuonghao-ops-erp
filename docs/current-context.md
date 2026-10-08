@@ -2,13 +2,15 @@
 
 **Status:** Active project memory
 
-**Last updated:** 2026-10-07
+**Last updated:** 2026-10-08
 
 **Authority:** Working context summary
 
 **Accepted business baseline:** `010871bebb43f3883c77c5b9bf6954282053c93d` (merged PR #355).
 
-**Planning/Procurement:** Business/application contract freeze **Owner-approved**; [canonical freeze](architecture/planning-procurement-business-freeze.md). Documentation task completes after its PR is approved/merged. UI/document polish remains open.
+**Planning/Procurement:** Business/application contract freeze **COMPLETE**, merged PR #356 (`0be0c37eba4d96e0c321e2770a0c2ec814fa65f0`); [canonical freeze](architecture/planning-procurement-business-freeze.md). UI/document polish remains open.
+
+**Backend convergence:** [02B implementation and evidence](implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02B.md) **COMPLETE**, submitted as a Draft for Owner review: D01/D02 reuse with catalog posture preserved; D03 retained for disjoint privileges; proven Handoff precision defect corrected; no retirements or Staging writes. Required final-head CI and Owner review govern readiness. 02C/02D and Warehouse have not started.
 
 **Review required:** No — update whenever project direction, active scope, environment boundary, or blocking Product decisions change.
 
@@ -171,8 +173,9 @@ Live OPS project `qnthofvccilhnefdcxnz` is a forbidden Atlas deployment target a
 ## 7. Immediate roadmap
 
 ```text
-PLANNING-PROCUREMENT-BUSINESS-FREEZE-01 → Owner review / PR merge
-→ ATLAS-BACKEND-CONVERGENCE-02B → 02C → 02D (separate bounded tasks)
+PLANNING-PROCUREMENT-BUSINESS-FREEZE-01 → COMPLETE (merged #356)
+→ ATLAS-BACKEND-CONVERGENCE-02B implementation COMPLETE → Draft PR / Owner review
+→ 02C → 02D (separate bounded tasks; not started)
 → sufficiently certified backend baseline → Warehouse new-domain task
 
 Parallel product lanes after freeze PR:
@@ -181,7 +184,7 @@ ATLAS-DOCUMENT-SYSTEM-01 → PO / PXK / Dispatch / Attendance-import presentatio
 → later document presentation freeze
 ```
 
-The merged [#353 / 02A audit](architecture/atlas-backend-convergence-02a-audit.md) governs convergence. Business freeze does not authorize 02B; start it only after the freeze PR and separate bounded approval. Allocation precision asymmetry requires evidence before consolidation. No broad rewrite, migration squash or compatibility retirement without complete proof. Product tracks may run in parallel; their completion is not a prerequisite for 02B absent a real dependency. Restoring bug/security/performance fixes and compatible UX/document refinements remain permitted under the freeze's Class A–D change control.
+The merged [#353 / 02A audit](architecture/atlas-backend-convergence-02a-audit.md) governs convergence. The Owner separately authorized bounded 02B after the freeze merge. Its complete-command evidence proves the Handoff precision violation and preserves separate source writers. 02C and 02D still require separate authorization. No broad rewrite, migration squash or compatibility retirement without complete proof. Product tracks may run in parallel; their completion is not a prerequisite for backend convergence absent a real dependency. Restoring bug/security/performance fixes and compatible UX/document refinements remain permitted under the freeze's Class A–D change control.
 
 ---
 
