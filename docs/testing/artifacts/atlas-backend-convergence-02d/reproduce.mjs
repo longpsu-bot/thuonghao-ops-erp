@@ -13,7 +13,6 @@ import { redactAtlasStagingDiagnostic } from "../../../../scripts/atlas-staging-
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(directory, "../../../..");
 const container = "supabase_db_atlas-backend-convergence-02d";
-assert.equal(process.env.ATLAS_LOCAL_DB_CONTAINER, container);
 const mode = process.argv[2];
 assert.ok(["1", "2", "compare"].includes(mode));
 assert.ok(!process.argv[3] || process.argv[3] === "--evidence-only");
@@ -100,6 +99,7 @@ if (mode === "compare") {
     status: "NOT_RUN",
     reason: "Comparison preflight incomplete",
   });
+  assert.equal(process.env.ATLAS_LOCAL_DB_CONTAINER, container);
   const discard = JSON.parse(
     readFileSync(path.join(directory, "independent-discard.json")),
   );
@@ -139,6 +139,7 @@ if (mode === "compare") {
       ? JSON.parse(readFileSync(path.join(directory, `cycle-${mode}.json`)))
       : {};
   save(`cycle-${mode}.json`, {});
+  assert.equal(process.env.ATLAS_LOCAL_DB_CONTAINER, container);
   const evidence = process.argv[3] ? { suites: previous.suites } : {};
   if (process.argv[3]) {
     verifySuites(evidence.suites);
