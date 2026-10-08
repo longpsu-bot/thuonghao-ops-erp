@@ -1,5 +1,9 @@
 # Printed quantity precision — PR #360
 
+The Owner subsequently requested larger fonts after comparison with V1. Current
+font and layout evidence is in [the font legibility follow-up](../font-legibility/README.md);
+this directory preserves the earlier quantity-formatting specimens.
+
 Owner decision on 8 October 2026; presentation-only continuation of reviewed head
 `03580da349047881c247601538b3685f817ccbfb`. Keep the same PR Draft for Owner acceptance.
 

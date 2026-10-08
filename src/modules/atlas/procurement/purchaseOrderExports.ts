@@ -263,7 +263,7 @@ export function buildPurchaseOrderPdfDefinition(
     60,
     ...[...data.summaryLines, ...data.schoolLines].map(
       (line) =>
-        formatExactDocumentQuantity(line.orderedQuantity).text.length * 6.5 + 6,
+        formatExactDocumentQuantity(line.orderedQuantity).text.length * 8 + 6,
     ),
   );
   const content: TDocumentDefinitions["content"] = [];
@@ -280,28 +280,43 @@ export function buildPurchaseOrderPdfDefinition(
             alignment: "center",
           },
         ],
-        ...(viewIndex ? { pageBreak: "before" as const } : {}),
+        ...(viewIndex
+          ? {
+              pageBreak: "before" as const,
+              pageOrientation:
+                view === "sum" && quantityWidth > 90
+                  ? ("landscape" as const)
+                  : ("portrait" as const),
+            }
+          : {}),
       },
       { text: viewTitle[view], style: "heading" },
-      { text: `Nhà cung cấp: ${data.supplierName}`, fontSize: 12 },
+      { text: `Nhà cung cấp: ${data.supplierName}`, fontSize: 14 },
       { text: `Ngày dùng: ${data.serviceDate}`, bold: true },
       {
         text: `Số đơn: ${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel}`,
-        fontSize: 9,
+        fontSize: 11,
         margin: [0, 4, 0, 4],
       },
-      { text: `Mã NCC: ${codeGap}`, fontSize: 9 },
+      { text: `Mã NCC: ${codeGap}`, fontSize: 11 },
     );
     if (view === "sum") {
       content.push(
-        { text: `Mã hàng: ${codeGap}.`, fontSize: 9, margin: [0, 0, 0, 8] },
+        { text: `Mã hàng: ${codeGap}.`, fontSize: 11, margin: [0, 0, 0, 8] },
         {
           table: {
             headerRows: 1,
-            widths: [22, 43, "*", 35, quantityWidth, 110],
+            widths: [
+              30,
+              55,
+              "*",
+              44,
+              quantityWidth,
+              data.summaryLines.some((line) => line.supplierNote) ? 110 : 60,
+            ],
             dontBreakRows: true,
             body: [
-              [...summaryHeaders],
+              summaryHeaders.map((text) => ({ text, style: "tableHeader" })),
               ...data.summaryLines.flatMap((line, index) =>
                 noteChunks(line.supplierNote).map((note, continuation) => [
                   continuation ? "↳" : index + 1,
@@ -339,7 +354,7 @@ export function buildPurchaseOrderPdfDefinition(
             view === "details_school" ? "Tên hàng" : "Trường học",
             "Đơn vị",
             "Số lượng",
-          ],
+          ].map((text) => ({ text, style: "tableHeader" })),
         ];
         lines.forEach((line, index) => {
           const detail =
@@ -361,7 +376,7 @@ export function buildPurchaseOrderPdfDefinition(
                 {
                   text: `Ghi chú (STT ${index + 1}, ${detail}): ${note}`,
                   colSpan: 5,
-                  fontSize: 9,
+                  fontSize: 12,
                 },
                 {},
                 {},
@@ -375,7 +390,7 @@ export function buildPurchaseOrderPdfDefinition(
             headerRows: 2,
             dontBreakRows: true,
             keepWithHeaderRows: 1,
-            widths: [24, 24, "*", 35, quantityWidth],
+            widths: [12, 32, "*", 44, quantityWidth],
             body,
           },
           margin: [0, 8, 0, 0],
@@ -385,6 +400,8 @@ export function buildPurchaseOrderPdfDefinition(
   }
   return {
     pageSize: "A4",
+    pageOrientation:
+      mode === "sum" && quantityWidth > 90 ? "landscape" : "portrait",
     pageMargins: [28, 32, 28, 42],
     content,
     footer: documentPdfFooter(
@@ -399,13 +416,14 @@ export function buildPurchaseOrderPdfDefinition(
         order.current_revision.released_at ?? "2000-01-01T00:00:00Z",
       ),
     },
-    defaultStyle: { font: "Roboto", fontSize: 10 },
+    defaultStyle: { font: "Roboto", fontSize: 14 },
     styles: {
-      company: { bold: true, fontSize: 11 },
-      address: { italics: true, fontSize: 9, margin: [0, 2, 0, 6] },
+      tableHeader: { bold: true, fontSize: 16 },
+      company: { bold: true, fontSize: 14 },
+      address: { italics: true, fontSize: 12, margin: [0, 2, 0, 6] },
       heading: {
         bold: true,
-        fontSize: 18,
+        fontSize: 20,
         alignment: "center",
         margin: [0, 8, 0, 12],
       },
@@ -414,7 +432,7 @@ export function buildPurchaseOrderPdfDefinition(
 }
 
 function styleWorksheetHeader(row: Row) {
-  row.font = { name: "Times New Roman", bold: true, size: 14 };
+  row.font = { name: "Times New Roman", bold: true, size: 16 };
   row.fill = {
     type: "pattern",
     pattern: "solid",
@@ -464,12 +482,19 @@ function addDetailSheet(
     12,
     ...data.schoolLines.map(
       (line) =>
-        formatExactDocumentQuantity(line.orderedQuantity).text.length * 1.15 +
+        formatExactDocumentQuantity(line.orderedQuantity).text.length * 1.34 +
         2,
     ),
   );
-  const descriptionWidth = 34 + Math.max(0, 24 - quantityWidth);
+  // 139 columns fit landscape A4/Letter without shrinking the body font.
+  const descriptionWidth =
+    quantityWidth > 18
+      ? Math.max(34, 139 - 47 - quantityWidth)
+      : 34 + Math.max(0, 24 - quantityWidth);
   const formWidth = 47 + descriptionWidth + quantityWidth;
+  sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
+  // Fixed scale preserves manual breaks; Excel fit-to-page ignores them.
+  sheet.pageSetup.fitToPage = quantityWidth <= 18;
   [
     15,
     13,
@@ -501,7 +526,7 @@ function addDetailSheet(
   ];
   sheet.mergeCells("A9:B9");
   sheet.mergeCells("F9:G9");
-  sheet.getRow(9).height = 36;
+  sheet.getRow(9).height = 46;
   styleWorksheetHeader(sheet.getRow(9));
   let rowNumber = 10;
   const headerHeight = Array.from(
@@ -509,8 +534,12 @@ function addDetailSheet(
     (_, i) => sheet.getRow(i + 1).height ?? 20,
   ).reduce((a, b) => a + b, 0);
   // ponytail: conservative A4/TNR height budget; native Excel QA owns the ceiling, measured font pagination if other fonts are introduced.
-  const scale = Math.min(1, (595.28 - 0.6 * 72) / (formWidth * 5.25));
-  const pageHeight = (841.89 - 0.9 * 72) / scale - 12;
+  const landscape = sheet.pageSetup.orientation === "landscape";
+  const scale = Math.min(
+    1,
+    ((landscape ? 841.89 : 595.28) - 0.6 * 72) / (formWidth * 5.25),
+  );
+  const pageHeight = ((landscape ? 595.28 : 841.89) - 0.9 * 72) / scale - 12;
   let pageUsed = headerHeight;
   let activeLabel = "";
   const band = (label: string) => {
@@ -636,14 +665,19 @@ function addSummarySheet(
     10,
     ...data.summaryLines.map(
       (line) =>
-        formatExactDocumentQuantity(line.orderedQuantity).text.length * 1.15 +
+        formatExactDocumentQuantity(line.orderedQuantity).text.length * 1.34 +
         2,
     ),
   );
   const noteWidth = data.summaryLines.some((line) => line.supplierNote)
     ? 32
     : 11.14;
-  const descriptionWidth = 36 + Math.max(0, 12.71 - quantityWidth);
+  sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
+  sheet.pageSetup.fitToPage = quantityWidth <= 18;
+  const descriptionWidth =
+    quantityWidth > 18
+      ? Math.max(36, 139 - 16.14 - 12 - 9.71 - quantityWidth - noteWidth)
+      : 36 + Math.max(0, 12.71 - quantityWidth);
   [16.14, 12, descriptionWidth, 9.71, quantityWidth, noteWidth].forEach(
     (width, i) => (sheet.getColumn(i + 1).width = width),
   );
@@ -665,7 +699,7 @@ function addSummarySheet(
   sheet.getRow(3).height = 8;
   sheet.getRow(7).height = 24;
   sheet.getRow(10).values = summaryHeaders;
-  sheet.getRow(10).height = 36;
+  sheet.getRow(10).height = 46;
   styleWorksheetHeader(sheet.getRow(10));
   let rowNumber = 11;
   data.summaryLines.forEach((line, index) =>

@@ -230,7 +230,7 @@ describe("Atlas document presentation boundaries", () => {
       expect(sheet.getCell(signature.number + 1, column).value).toBe(
         "(Ký, ghi họ tên)",
       );
-    expect(sheet.getRow(signature.number + 1).height).toBe(22);
+    expect(sheet.getRow(signature.number + 1).height).toBe(24);
     for (let row = signature.number + 2; row <= sheet.rowCount; row++)
       for (let column = 1; column <= 7; column++)
         expect(sheet.getCell(row, column).value).toBeNull();

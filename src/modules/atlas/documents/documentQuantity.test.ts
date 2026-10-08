@@ -45,6 +45,7 @@ describe("printed exact quantities", () => {
       const saved = reopened.worksheets[0]!.getCell("A1");
       expect(saved.value).toBe(printed);
       expect(saved.numFmt).toBe("@");
+      expect(saved.font.size).toBe(14);
       expect(saved.alignment.horizontal).toBe("right");
       expect(saved.alignment.wrapText).not.toBe(true);
       if (exception)
@@ -93,6 +94,12 @@ describe("printed exact quantities", () => {
       expect(values).toEqual(expected);
       expect(totalMicros(values)).toBe(12_390_000n);
       const sheet = workbook.worksheets[0]!;
+      expect(sheet.pageSetup.orientation).toBe("portrait");
+      expect(sheet.getCell(mode === "sum" ? "E11" : "F11").font.size).toBe(14);
+      expect(sheet.getCell(mode === "sum" ? "A10" : "C9").font.size).toBe(16);
+      expect(
+        buildPurchaseOrderPdfDefinition(order, mode).defaultStyle?.fontSize,
+      ).toBe(14);
       if (mode === "sum") {
         expect(sheet.getColumn(3).width).toBeGreaterThan(36);
         expect(sheet.getColumn(5).width).toBeLessThan(12.71);
@@ -143,6 +150,19 @@ describe("printed exact quantities", () => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createGroupedSchoolDispatchXlsx([document]));
     const sheet = workbook.worksheets[0]!;
+    expect(sheet.pageSetup.orientation).toBe("landscape");
+    expect(sheet.pageSetup.fitToPage).toBe(false);
+    expect(sheet.pageSetup.scale).toBe(100);
+    expect(sheet.getRow(15).height).toBe(10);
+    expect(buildSchoolDispatchPdfDefinition(document).pageOrientation).toBe(
+      "landscape",
+    );
+    expect(sheet.getCell("B11").font.size).toBe(16);
+    expect(sheet.getCell("D11").font.size).toBe(16);
+    expect(sheet.getCell("B9").font.size).toBe(16);
+    expect(
+      buildSchoolDispatchPdfDefinition(document).defaultStyle?.fontSize,
+    ).toBe(15);
     const expected = ["375", "39.7", "12.345678", "99999999999999.12"];
     expect(totalMicros(source.lines.map((line) => line.quantity))).toBe(
       100_000_000_000_426_165_678n,

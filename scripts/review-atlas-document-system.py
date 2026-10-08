@@ -29,6 +29,9 @@ for file in manifest["files"]:
         report.append({"pdf": pdf.name, "pages": len(document), "missing_visible_strings": missing})
         for page_index, page in enumerate(document):
             page_text = normalize(page.get_text())
+            if file["name"].startswith(("PXK-", "Dispatch-", "V1-equivalent-PXK")) and normalize("Người nhận hàng") not in page_text:
+                quantities = [cell["value"] for cell in sheet["cells"] if cell.get("quantity")]
+                assert any(re.search(r"(?m)^\s*" + re.escape(value) + r"\s*$", page.get_text()) for value in quantities), f"Header-only dispatch page: {pdf.name} page {page_index + 1}"
             if normalize("Người nhận hàng") in page_text:
                 assert normalize("Người giao hàng") in page_text and normalize("Người lập phiếu") in page_text, f"Split signatures: {pdf.name} page {page_index + 1}"
                 blocks = [block for block in page.get_text("blocks") if normalize("Ký, ghi họ tên") in normalize(block[4])]

@@ -71,14 +71,15 @@ export function buildSchoolDispatchPdfDefinition(
 ): TDocumentDefinitions {
   const data = buildSchoolDispatchExportData(document);
   const quantityWidth = Math.max(
-    56,
+    60,
     ...data.lines.map(
       (line) =>
-        formatExactDocumentQuantity(line.quantity).text.length * 6.7 + 6,
+        formatExactDocumentQuantity(line.quantity).text.length * 8.5 + 6,
     ),
   );
   return {
     pageSize: "A4",
+    pageOrientation: quantityWidth > 90 ? "landscape" : "portrait",
     pageMargins: [28, 32, 28, 42],
     footer: documentPdfFooter(
       `${data.documentNumber} · ${documentStatusLabel(document.status)}`,
@@ -119,13 +120,13 @@ export function buildSchoolDispatchPdfDefinition(
             ? [`\nThay thế phiếu: ${document.predecessor_release_id}`]
             : []),
         ],
-        fontSize: 9,
+        fontSize: 11,
         margin: [0, 3, 0, 0],
       },
       {
         table: {
           headerRows: 2,
-          widths: [40, "*", 30, quantityWidth, 46, 46, 90],
+          widths: [28, "*", 30, quantityWidth, 46, 46, 90],
           dontBreakRows: true,
           body: [
             [
@@ -152,7 +153,7 @@ export function buildSchoolDispatchPdfDefinition(
               line.unitCode,
               {
                 text: formatExactDocumentQuantity(line.quantity).text,
-                fontSize: 12,
+                fontSize: 15,
                 noWrap: true,
                 alignment: "right" as const,
               },
@@ -185,10 +186,10 @@ export function buildSchoolDispatchPdfDefinition(
         unbreakable: true,
       },
     ],
-    defaultStyle: { font: "Roboto", fontSize: 11 },
+    defaultStyle: { font: "Roboto", fontSize: 15 },
     styles: {
-      company: { bold: true, fontSize: 13, margin: [0, 0, 0, 4] },
-      address: { fontSize: 10, margin: [0, 0, 0, 6] },
+      company: { bold: true, fontSize: 14, margin: [0, 0, 0, 4] },
+      address: { fontSize: 12, margin: [0, 0, 0, 6] },
       heading: {
         bold: true,
         fontSize: 18,
@@ -212,18 +213,23 @@ function addSchoolDispatchSheet(
     10,
     ...data.lines.map(
       (line) =>
-        formatExactDocumentQuantity(line.quantity).text.length * 1.15 + 2,
+        formatExactDocumentQuantity(line.quantity).text.length * 1.53 + 2,
     ),
   );
   const columnWidths = [
     13,
-    30 + Math.max(0, 12.28515625 - quantityWidth),
+    quantityWidth > 18
+      ? Math.max(30, 139 - 13 - 8 - quantityWidth - 11 - 11 - 24)
+      : 30 + Math.max(0, 12.28515625 - quantityWidth),
     8,
     quantityWidth,
     11,
     11,
     24,
   ];
+  sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
+  // Fixed scale keeps the signature block together at manual page breaks.
+  sheet.pageSetup.fitToPage = quantityWidth <= 18;
   columnWidths.forEach(
     (width, index) => (sheet.getColumn(index + 1).width = width),
   );
@@ -315,7 +321,7 @@ function addSchoolDispatchSheet(
   for (const rowNumber of [9, 10]) {
     const header = sheet.getRow(rowNumber);
     header.height = rowNumber === 9 ? 40 : 28;
-    header.font = { name: "Times New Roman", bold: true, size: 14 };
+    header.font = { name: "Times New Roman", bold: true, size: 16 };
     header.alignment = {
       horizontal: "center",
       vertical: "middle",
@@ -334,10 +340,11 @@ function addSchoolDispatchSheet(
       "",
       "",
     ];
-    row.height = wrappedRowHeight(line.ingredientName, columnWidths[1]!, 14);
-    row.font = { name: "Times New Roman", size: 14 };
+    row.height = wrappedRowHeight(line.ingredientName, columnWidths[1]!, 16);
+    row.font = { name: "Times New Roman", size: 16 };
     row.alignment = { vertical: "middle", wrapText: true };
     setExactQuantity(row.getCell(4), line.quantity);
+    row.getCell(4).font = { name: "Times New Roman", size: 16 };
     borderRow(row);
   });
   const signatureRow = 11 + data.lines.length + 5;
@@ -354,7 +361,7 @@ function addSchoolDispatchSheet(
     ][index]!;
     sheet.getCell(signatureRow, column).font = {
       name: "Times New Roman",
-      size: 14,
+      size: 16,
       bold: true,
     };
     sheet.getCell(signatureRow, column).alignment = {
@@ -365,7 +372,7 @@ function addSchoolDispatchSheet(
     sheet.getCell(signatureRow + 1, column).value = "(Ký, ghi họ tên)";
     sheet.getCell(signatureRow + 1, column).font = {
       name: "Times New Roman",
-      size: 14,
+      size: 16,
       italic: true,
     };
     sheet.getCell(signatureRow + 1, column).alignment = {
@@ -374,27 +381,35 @@ function addSchoolDispatchSheet(
     };
   }
   sheet.getRow(signatureRow).height = 24;
-  sheet.getRow(signatureRow + 1).height = 22;
+  sheet.getRow(signatureRow + 1).height = 24;
   sheet.getRow(signatureRow + 6).height = 24;
   // ponytail: conservative native A4/TNR budget; keep the separated roles,
   // instructions and handwriting rows together. Native print QA verifies it.
   const rowHeight = (number: number) => sheet.getRow(number).height ?? 20;
-  const scale = Math.min(1, (595.28 - 0.6 * 72) / (formWidth * 5.25));
-  const pageHeight = (841.89 - 0.9 * 72) / scale - 20;
+  const landscape = sheet.pageSetup.orientation === "landscape";
+  const signatureBlockStart = signatureRow - 5;
+  if (landscape)
+    for (let number = signatureBlockStart; number < signatureRow; number++)
+      sheet.getRow(number).height = 10;
+  const scale = Math.min(
+    1,
+    ((landscape ? 841.89 : 595.28) - 0.6 * 72) / (formWidth * 5.25),
+  );
+  const pageHeight = ((landscape ? 595.28 : 841.89) - 0.9 * 72) / scale - 20;
   const headerHeight = Array.from({ length: 10 }, (_, i) =>
     rowHeight(i + 1),
   ).reduce((a, b) => a + b, 0);
   let remaining = pageHeight;
-  for (let number = 1; number < signatureRow; number++) {
+  for (let number = 1; number < signatureBlockStart; number++) {
     const height = rowHeight(number);
     if (height > remaining) remaining = pageHeight - headerHeight;
     remaining -= height;
   }
-  const signatureHeight = Array.from({ length: 7 }, (_, i) =>
-    rowHeight(signatureRow + i),
+  const signatureHeight = Array.from({ length: 12 }, (_, i) =>
+    rowHeight(signatureBlockStart + i),
   ).reduce((a, b) => a + b, 0);
   if (remaining < signatureHeight + 20)
-    sheet.getRow(signatureRow - 1).addPageBreak();
+    sheet.getRow(signatureBlockStart - 1).addPageBreak();
   applyDocumentFont(sheet);
   finishDocumentSheet(
     sheet,

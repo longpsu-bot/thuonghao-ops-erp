@@ -38,7 +38,7 @@ describe("School dispatch release exports", () => {
     expect(sheet.getCell("F29").value).toBe("Người lập phiếu");
     expect(sheet.getCell("A30").value).toBe("(Ký, ghi họ tên)");
     expect(sheet.getRow(29).height).toBe(24);
-    expect(sheet.getRow(30).height).toBe(22);
+    expect(sheet.getRow(30).height).toBe(24);
     expect(sheet.pageSetup.printArea).toBe("A1:G35");
     expect(JSON.stringify(sheet.getSheetValues())).not.toContain(
       "Bùi Thị Linh Trang",

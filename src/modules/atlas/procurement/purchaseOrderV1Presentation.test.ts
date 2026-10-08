@@ -47,8 +47,12 @@ describe("Owner V1 PO presentation revision", () => {
     const sheet = workbook.worksheets[0]!;
     expect(sheet.getCell("A10").value).toBe("STT");
     expect(sheet.getCell("F10").value).toBe("Ghi chú");
+    expect(sheet.pageSetup.orientation).toBe("landscape");
+    expect(buildPurchaseOrderPdfDefinition(order, "sum").pageOrientation).toBe(
+      "landscape",
+    );
     expect(sheet.getColumn(5).width).toBeGreaterThanOrEqual(
-      "99999999999999.123456".length * 1.15 + 2,
+      "99999999999999.123456".length * 1.34 + 2,
     );
   });
   it("matches V1 all-mode sheet order and the six-column summary positions without invented codes", async () => {
@@ -123,7 +127,11 @@ describe("Owner V1 PO presentation revision", () => {
     expect(
       tables.some(
         (item) =>
-          JSON.stringify(item.table!.body[0]) ===
+          JSON.stringify(
+            item.table!.body[0]!.map((cell) =>
+              typeof cell === "string" ? cell : (cell as { text: string }).text,
+            ),
+          ) ===
           JSON.stringify([
             "STT",
             "Mã hàng",

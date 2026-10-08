@@ -105,8 +105,12 @@ function prepare(
   sheet.views = [{ state: "frozen", ySplit: 9, showGridLines: false }];
   sheet.pageSetup = {
     paperSize: 9,
-    orientation: "portrait",
-    fitToPage: true,
+    orientation:
+      widths[detail ? 5 : 4]! * (detail ? 2 : 1) > 18
+        ? "landscape"
+        : "portrait",
+    fitToPage: widths[detail ? 5 : 4]! * (detail ? 2 : 1) <= 18,
+    scale: 100,
     fitToWidth: 1,
     fitToHeight: 0,
     margins: {
@@ -237,12 +241,21 @@ export async function createGeneratedPurchaseReviewXlsx(
   const quantityWidth = Math.max(
     10,
     ...[...totals, ...review.rows.map((row) => row.family_quantity)].map(
-      (value) => formatExactDocumentQuantity(value).text.length * 1.15 + 2,
+      (value) => formatExactDocumentQuantity(value).text.length * 1.34 + 2,
     ),
   );
   prepare(
     summary,
-    [7, 12, 36 + Math.max(0, 24 - quantityWidth), 9, quantityWidth, 20],
+    [
+      7,
+      12,
+      quantityWidth > 18
+        ? Math.max(36, 139 - 7 - 12 - 9 - quantityWidth - 20)
+        : 36 + Math.max(0, 24 - quantityWidth),
+      9,
+      quantityWidth,
+      20,
+    ],
     review,
     false,
   );
@@ -252,7 +265,9 @@ export async function createGeneratedPurchaseReviewXlsx(
       15,
       13,
       8,
-      34 + Math.max(0, 24 - quantityWidth),
+      quantityWidth > 18
+        ? Math.max(34, 139 - 47 - quantityWidth)
+        : 34 + Math.max(0, 24 - quantityWidth),
       11,
       quantityWidth / 2,
       quantityWidth / 2,

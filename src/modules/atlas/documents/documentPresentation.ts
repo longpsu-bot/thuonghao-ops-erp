@@ -46,7 +46,7 @@ export function setExactQuantity(cell: Cell, value: string) {
   cell.value = printed.text;
   if (printed.precisionException)
     cell.note = `PRECISION_EXCEPTION: ${value} requires more than two decimal places; retained exactly for Product review.`;
-  cell.font = { name: documentFont, size: 12 };
+  cell.font = { name: documentFont, size: 14 };
   cell.numFmt = "@";
   cell.alignment = { vertical: "middle", horizontal: "right", wrapText: false };
 }

@@ -180,6 +180,23 @@ acceptance. In the large preliminary specimen, the reviewer line occupies its ow
 final summary page; nonblocking print-efficiency observation. No global
 presentation freeze or merge is authorized by technical QA.
 
+## Owner font legibility follow-up — 8 October 2026
+
+Compared original V1 workbooks printed through native Excel with production PO/PXK
+PDFs. V1 body/quantity sizes are approximately 14 pt for PO and 15 pt for PXK;
+the prior 10/11 pt PDF body was too small. PO now uses 14 pt body/quantity and
+16 pt headers; PXK PDF uses 15 pt, native table/signatures use 16 pt. Preliminary
+quantities match its existing 14 pt body. Description space and compact exact
+quantity formatting remain preserved.
+
+Wide exact quantities use landscape and native fixed 100% print scale; manual
+breaks keep the entire PXK signature block together. Ordinary V1 forms remain
+portrait. Native Excel/PDF specimens, measured font comparisons and verification
+are in [font-legibility](../testing/artifacts/atlas-document-system-01/font-legibility/README.md).
+Larger stress outputs can require more pages. No business/schema/API, snapshot,
+Shopping List V2/A+ contract or Class C decision changes. Same PR #360 stays Draft
+for Owner acceptance; no merge authorized.
+
 ## Security, migration and rollback
 
 BUSINESS CONTRACT CHANGES: 0. DATABASE AUTHORITY CHANGES: 0.
