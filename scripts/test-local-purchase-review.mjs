@@ -47,7 +47,7 @@ const result = spawnSync(
   [
     "exec",
     "-i",
-    "supabase_db_thuonghao-ops-erp",
+    process.env.ATLAS_LOCAL_DB_CONTAINER ?? "supabase_db_thuonghao-ops-erp",
     "psql",
     "-X",
     "-qAt",

@@ -1,0 +1,608 @@
+{
+  "function_count_before": 440,
+  "function_count_after": 440,
+  "only_body_changes": [
+    "pantry_02_normalize_text",
+    "pantry_02_sha256",
+    "rmvp_03b_normalize_text",
+    "rmvp_03b_sha256",
+    "school_catering_persist_allocation"
+  ],
+  "all_non_body_catalog_attributes": "IDENTICAL",
+  "new_callable_identities": 0,
+  "staging_local_prechange_parity": "10/10 effective definitions and attributes; hosted execute-role arrays decoded from PostgreSQL text",
+  "identities": [
+    {
+      "before": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "pantry_02_normalize_text",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.approve_pantry(request jsonb)",
+          "atlas_api.reopen_pantry(request jsonb)",
+          "atlas_api.save_pantry_draft(request jsonb)",
+          "atlas_api.validate_pantry(request jsonb)",
+          "atlas_core.direct_need_legacy_preview_pantry_source(request jsonb)",
+          "atlas_core.issue_222_enforce_source_save(request jsonb, source_kind text, command_name text, contract_version text, capability_code text)",
+          "atlas_core.issue_222_save_pantry_impl(request jsonb)",
+          "atlas_core.pantry_02_canonical_rows(target_week_start date, rows jsonb)",
+          "atlas_core.pantry_02_safe_quantity(value text)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "4d06679aa71b72d5112416648f6448ae6d91d403177124a4a76363528e695a29"
+      },
+      "after": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "pantry_02_normalize_text",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.approve_pantry(request jsonb)",
+          "atlas_api.reopen_pantry(request jsonb)",
+          "atlas_api.save_pantry_draft(request jsonb)",
+          "atlas_api.validate_pantry(request jsonb)",
+          "atlas_core.direct_need_legacy_preview_pantry_source(request jsonb)",
+          "atlas_core.issue_222_enforce_source_save(request jsonb, source_kind text, command_name text, contract_version text, capability_code text)",
+          "atlas_core.issue_222_save_pantry_impl(request jsonb)",
+          "atlas_core.pantry_02_canonical_rows(target_week_start date, rows jsonb)",
+          "atlas_core.pantry_02_safe_quantity(value text)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "f63e82adc0d4eee9fc989e10e3caba43bd4e006014d098a482a0cfa7e95dd8b3"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "pantry_02_sha256",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_core.pantry_02_signature(target_week_start date, no_additions_confirmed boolean, canonical_rows jsonb)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value jsonb",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "3262d17a23dfd0d3ac35fbb5074cd1b96e7affc0a190c00c61841d952c8ae48a"
+      },
+      "after": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "pantry_02_sha256",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_core.pantry_02_signature(target_week_start date, no_additions_confirmed boolean, canonical_rows jsonb)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value jsonb",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "8d512da30a651bc3c2492eda881250e7156c50e69a7b63d824d86f6315224637"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_procurement_command_runtime=X/atlas_procurement_command_runtime}",
+        "name": "purchase_review_persist_allocation",
+        "owner": "atlas_procurement_command_runtime",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.save_confirmed_supplier_allocation(request jsonb)",
+          "atlas_core.purchase_review_promote_allocations(p_batch uuid, p_actor uuid, p_command uuid, p_correlation uuid, p_receipt uuid)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "p_actor_id uuid, p_command_id uuid, p_expected_version bigint, p_family jsonb, p_splits jsonb, p_decision_origin text, p_source_kind text",
+        "volatility": "v",
+        "return_type": "jsonb",
+        "execute_roles": [
+          "atlas_procurement_command_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "bc11677ac642f0135fafb90ee3dc722415434c7b9e39496189589e5a76cf5b0b"
+      },
+      "after": {
+        "acl": "{atlas_procurement_command_runtime=X/atlas_procurement_command_runtime}",
+        "name": "purchase_review_persist_allocation",
+        "owner": "atlas_procurement_command_runtime",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.save_confirmed_supplier_allocation(request jsonb)",
+          "atlas_core.purchase_review_promote_allocations(p_batch uuid, p_actor uuid, p_command uuid, p_correlation uuid, p_receipt uuid)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "p_actor_id uuid, p_command_id uuid, p_expected_version bigint, p_family jsonb, p_splits jsonb, p_decision_origin text, p_source_kind text",
+        "volatility": "v",
+        "return_type": "jsonb",
+        "execute_roles": [
+          "atlas_procurement_command_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "bc11677ac642f0135fafb90ee3dc722415434c7b9e39496189589e5a76cf5b0b"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03a_normalize_text",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.preview_attendance_import(request jsonb)",
+          "atlas_api.preview_weekly_menu_import(request jsonb)",
+          "atlas_api.reopen_attendance(request jsonb)",
+          "atlas_api.reopen_weekly_menu(request jsonb)",
+          "atlas_api.save_weekly_menu_draft(request jsonb)",
+          "atlas_core.issue_222_enforce_source_save(request jsonb, source_kind text, command_name text, contract_version text, capability_code text)",
+          "atlas_core.issue_222_save_attendance_impl(request jsonb)",
+          "atlas_core.issue_222_save_weekly_menu_impl(request jsonb)",
+          "atlas_core.rmvp_03a_canonical_attendance_rows(rows jsonb)",
+          "atlas_core.rmvp_03a_canonical_menu_rows(rows jsonb)",
+          "atlas_core.rmvp_03a_save_attendance_internal(request jsonb, command_name text, proposed_rows jsonb, proposed_source_type text, proposed_source_name text, proposed_signature text)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "1b4a0de328bc0659b1f3234065612b545cdc276f3447fd2102c42d6406489277"
+      },
+      "after": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03a_normalize_text",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.preview_attendance_import(request jsonb)",
+          "atlas_api.preview_weekly_menu_import(request jsonb)",
+          "atlas_api.reopen_attendance(request jsonb)",
+          "atlas_api.reopen_weekly_menu(request jsonb)",
+          "atlas_api.save_weekly_menu_draft(request jsonb)",
+          "atlas_core.issue_222_enforce_source_save(request jsonb, source_kind text, command_name text, contract_version text, capability_code text)",
+          "atlas_core.issue_222_save_attendance_impl(request jsonb)",
+          "atlas_core.issue_222_save_weekly_menu_impl(request jsonb)",
+          "atlas_core.pantry_02_normalize_text(value text)",
+          "atlas_core.rmvp_03a_canonical_attendance_rows(rows jsonb)",
+          "atlas_core.rmvp_03a_canonical_menu_rows(rows jsonb)",
+          "atlas_core.rmvp_03a_save_attendance_internal(request jsonb, command_name text, proposed_rows jsonb, proposed_source_type text, proposed_source_name text, proposed_signature text)",
+          "atlas_core.rmvp_03b_normalize_text(value text)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "1b4a0de328bc0659b1f3234065612b545cdc276f3447fd2102c42d6406489277"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03a_sha256",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_core.rmvp_03a_attendance_signature(rows jsonb)",
+          "atlas_core.rmvp_03a_menu_signature(rows jsonb)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value jsonb",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "844b2fa055f12d64a6ddedbb57db9fafcd174df6079bb62c4f05dc27854f0619"
+      },
+      "after": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03a_sha256",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_core.pantry_02_sha256(value jsonb)",
+          "atlas_core.rmvp_03a_attendance_signature(rows jsonb)",
+          "atlas_core.rmvp_03a_menu_signature(rows jsonb)",
+          "atlas_core.rmvp_03b_sha256(value jsonb)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value jsonb",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "844b2fa055f12d64a6ddedbb57db9fafcd174df6079bb62c4f05dc27854f0619"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03b_normalize_text",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.invalidate_planning_input_readiness(request jsonb)",
+          "atlas_core.rmvp_03b_record_change(request jsonb, actor_id uuid, receipt_id uuid, event_type text, input_set_id uuid, before_summary jsonb, after_summary jsonb)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "f66a6b899795106054d12b7d8dd810130143a7c3b33e48c9074c28089c1cfcc6"
+      },
+      "after": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03b_normalize_text",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.invalidate_planning_input_readiness(request jsonb)",
+          "atlas_core.rmvp_03b_record_change(request jsonb, actor_id uuid, receipt_id uuid, event_type text, input_set_id uuid, before_summary jsonb, after_summary jsonb)"
+        ],
+        "language": "sql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "9675429487f280a3e316b2fc3f977d01205ab21dfafece18b5d3c6ee417bddf5"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03b_safe_date",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.evaluate_planning_input_readiness(request jsonb)",
+          "atlas_api.get_planning_input_preflight(request jsonb)",
+          "atlas_api.get_planning_input_readiness_workbench(request jsonb)",
+          "atlas_api.invalidate_planning_input_readiness(request jsonb)",
+          "atlas_api.request_planning_input_need_generation(request jsonb)",
+          "atlas_core.rmvp_03b_finish_success(request jsonb, actor_id uuid, receipt_id uuid, event_type text, input_set_id uuid, evaluation_id uuid, evaluation_version bigint, before_summary jsonb, after_summary jsonb, safe_message text, source_selection jsonb)",
+          "atlas_core.rmvp_03b_history_page(input_set_id uuid, period_start date, period_end date, history_limit integer, history_cursor text)",
+          "atlas_core.rmvp_03b_source_evidence(source_kind text, p_period_start date, p_period_end date, supplied jsonb)",
+          "atlas_core.rmvp_03b_validate_command(request jsonb, command_name text)",
+          "atlas_core.rmvp_03b_validate_read(request jsonb, read_name text)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "date",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "54033f584e8c954955b67cbc298edbe9d088b9780667c631c03e8f60b6992432"
+      },
+      "after": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_read_runtime=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03b_safe_date",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.evaluate_planning_input_readiness(request jsonb)",
+          "atlas_api.get_planning_input_preflight(request jsonb)",
+          "atlas_api.get_planning_input_readiness_workbench(request jsonb)",
+          "atlas_api.invalidate_planning_input_readiness(request jsonb)",
+          "atlas_api.request_planning_input_need_generation(request jsonb)",
+          "atlas_core.rmvp_03b_finish_success(request jsonb, actor_id uuid, receipt_id uuid, event_type text, input_set_id uuid, evaluation_id uuid, evaluation_version bigint, before_summary jsonb, after_summary jsonb, safe_message text, source_selection jsonb)",
+          "atlas_core.rmvp_03b_history_page(input_set_id uuid, period_start date, period_end date, history_limit integer, history_cursor text)",
+          "atlas_core.rmvp_03b_source_evidence(source_kind text, p_period_start date, p_period_end date, supplied jsonb)",
+          "atlas_core.rmvp_03b_validate_command(request jsonb, command_name text)",
+          "atlas_core.rmvp_03b_validate_read(request jsonb, read_name text)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "date",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "atlas_read_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "54033f584e8c954955b67cbc298edbe9d088b9780667c631c03e8f60b6992432"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03b_sha256",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_core.rmvp_03b_begin_receipt(request jsonb, actor_id uuid, command_name text, scope_key text)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "value jsonb",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "6beb24f74df2a70b9eddf7058591184e265a27318187be32ef9d0c3cb64a38b5"
+      },
+      "after": {
+        "acl": "{atlas_owner=X/atlas_owner,atlas_planning_command_runtime=X/atlas_owner}",
+        "name": "rmvp_03b_sha256",
+        "owner": "atlas_owner",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_core.rmvp_03b_begin_receipt(request jsonb, actor_id uuid, command_name text, scope_key text)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "value jsonb",
+        "volatility": "i",
+        "return_type": "text",
+        "execute_roles": [
+          "atlas_owner",
+          "atlas_planning_command_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "804d61c0167bc13f402e3a71236236d67da10035ed1b8c9871ceb773fdbdc99d"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_need_generation_runtime=X/atlas_need_generation_runtime,atlas_confirmed_need_review_runtime=X/atlas_need_generation_runtime}",
+        "name": "rmvp_04_safe_date",
+        "owner": "atlas_need_generation_runtime",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.create_need_generation_run(request jsonb)",
+          "atlas_api.execute_need_generation(request jsonb)",
+          "atlas_api.get_need_generation_workbench(request jsonb)",
+          "atlas_api.release_need_generation_run(request jsonb)",
+          "atlas_api.validate_need_generation_run(request jsonb)",
+          "atlas_core.issue_223_execute_need_generation_v2(request jsonb)",
+          "atlas_core.rmvp_04_validate_command(request jsonb, command_name text)",
+          "atlas_core.rmvp_04_validate_read(request jsonb, read_name text)",
+          "atlas_core.rmvp_04_workbench_payload(period_start date, period_end date, requested_run_id uuid, filters jsonb, group_offset integer, group_limit integer, detail_group jsonb)",
+          "atlas_core.rmvp_05_validate_read(request jsonb, read_name text)",
+          "atlas_core.rmvp_05_workbench_payload(batch_id uuid, filters jsonb, line_offset integer, line_limit integer)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "date",
+        "execute_roles": [
+          "atlas_confirmed_need_review_runtime",
+          "atlas_need_generation_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "b6646485e2a668e5bc7b1625f31b39725ee67d404f1cb099e74330ab6696a090"
+      },
+      "after": {
+        "acl": "{atlas_need_generation_runtime=X/atlas_need_generation_runtime,atlas_confirmed_need_review_runtime=X/atlas_need_generation_runtime}",
+        "name": "rmvp_04_safe_date",
+        "owner": "atlas_need_generation_runtime",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.create_need_generation_run(request jsonb)",
+          "atlas_api.execute_need_generation(request jsonb)",
+          "atlas_api.get_need_generation_workbench(request jsonb)",
+          "atlas_api.release_need_generation_run(request jsonb)",
+          "atlas_api.validate_need_generation_run(request jsonb)",
+          "atlas_core.issue_223_execute_need_generation_v2(request jsonb)",
+          "atlas_core.rmvp_04_validate_command(request jsonb, command_name text)",
+          "atlas_core.rmvp_04_validate_read(request jsonb, read_name text)",
+          "atlas_core.rmvp_04_workbench_payload(period_start date, period_end date, requested_run_id uuid, filters jsonb, group_offset integer, group_limit integer, detail_group jsonb)",
+          "atlas_core.rmvp_05_validate_read(request jsonb, read_name text)",
+          "atlas_core.rmvp_05_workbench_payload(batch_id uuid, filters jsonb, line_offset integer, line_limit integer)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "value text",
+        "volatility": "i",
+        "return_type": "date",
+        "execute_roles": [
+          "atlas_confirmed_need_review_runtime",
+          "atlas_need_generation_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "b6646485e2a668e5bc7b1625f31b39725ee67d404f1cb099e74330ab6696a090"
+      }
+    },
+    {
+      "before": {
+        "acl": "{atlas_procurement_command_runtime=X/atlas_procurement_command_runtime}",
+        "name": "school_catering_persist_allocation",
+        "owner": "atlas_procurement_command_runtime",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.confirm_school_catering_supplier_recommendations(request jsonb)",
+          "atlas_api.save_school_catering_supplier_allocation(request jsonb)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "p_actor_id uuid, p_command_id uuid, p_expected_version bigint, p_family jsonb, p_splits jsonb, p_decision_origin text",
+        "volatility": "v",
+        "return_type": "jsonb",
+        "execute_roles": [
+          "atlas_procurement_command_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "9ca0bb563f8d34c61296875450454efa1bdb4d45c5ed3192b0b0f91af47753c6"
+      },
+      "after": {
+        "acl": "{atlas_procurement_command_runtime=X/atlas_procurement_command_runtime}",
+        "name": "school_catering_persist_allocation",
+        "owner": "atlas_procurement_command_runtime",
+        "config": ["search_path=\"\""],
+        "schema": "atlas_core",
+        "strict": false,
+        "callers": [
+          "atlas_api.confirm_school_catering_supplier_recommendations(request jsonb)",
+          "atlas_api.save_school_catering_supplier_allocation(request jsonb)"
+        ],
+        "language": "plpgsql",
+        "parallel": "u",
+        "arguments": "p_actor_id uuid, p_command_id uuid, p_expected_version bigint, p_family jsonb, p_splits jsonb, p_decision_origin text",
+        "volatility": "v",
+        "return_type": "jsonb",
+        "execute_roles": [
+          "atlas_procurement_command_runtime",
+          "postgres",
+          "supabase_admin"
+        ],
+        "security_definer": false,
+        "definition_sha256": "c285a39fb0e2c639db9eff0865d4a1902ce4a98b1129bb504b06788d11cc686c"
+      }
+    }
+  ]
+}
