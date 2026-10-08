@@ -66,6 +66,8 @@ Inputs/selects/date fields/textareas and checkboxes have a visible Neutral 500 r
 
 Selected rows and compact selected Dishes combine Brand 100 fill and a **3px Brand edge**. Neutral hover stays different from selection; sticky cells inherit both states. Active workspace tabs join the white workbench with stronger text and a **3px Brand bottom edge**. Inactive tabs use transparent fill on Neutral 50; dirty/attention markers remain independent from activation. The Recipe editor's existing action footer stays reachable at the bottom of its scrolling workplane; master-detail geometry is unchanged.
 
+**Owner-approved tab legibility polish — 8 October 2026:** Workspace and internal job tabs have visible neutral resting borders. Active tabs use an accent outline, white fill and the existing Brand underline; neutral hover and a separate keyboard focus ring distinguish interaction from selection. Workspace dirty/attention markers, close guards, retained state and the mobile open-owner selector keep their existing contracts.
+
 The shared left scroll-continuation fade stays below pinned identity cells. It must not wash out a selected edge: final browser certification samples the rendered rail pixel at every viewport, beyond checking the existence of a CSS indicator.
 
 One next business action uses solid Brand 600, darkening on hover/press. Secondary actions use neutral fill and a visible border; utility/tertiary actions use readable text and discoverable hover. Destructive actions use Danger, never Brand. Do not style every clickable item green.

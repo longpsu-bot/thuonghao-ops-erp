@@ -25,7 +25,10 @@ export const atlasPrimaryTabTrigger = {
   fontWeight: "semibold",
   borderRadius: "control",
   borderWidth: "var(--atlas-layout-edge, 1px)",
-  borderColor: "transparent",
+  borderColor: "border.default",
+  _hover: { bg: "bg.context", borderColor: "border.strong" },
+  focusVisibleRing: "outside",
+  focusRingColor: "focus.ring",
   position: "relative",
   _after: {
     content: '""',
@@ -40,7 +43,8 @@ export const atlasPrimaryTabTrigger = {
   _selected: {
     color: "fg.primary",
     bg: "bg.workbench",
-    borderColor: "transparent",
+    borderColor: "border.accent",
+    _hover: { bg: "bg.workbench", borderColor: "border.accent" },
     _after: { opacity: "var(--atlas-layout-tab-marker-visible, 1)" },
   },
   _before: { display: "none" },
@@ -71,12 +75,24 @@ export const atlasSecondaryTabTrigger = {
   color: "fg.muted",
   fontWeight: "semibold",
   borderRadius: "var(--atlas-layout-zero, 0)",
+  borderWidth: "var(--atlas-layout-edge, 1px)",
+  borderColor: "border.default",
+  _hover: { bg: "bg.context", borderColor: "border.strong" },
+  focusVisibleRing: "outside",
+  focusRingColor: "focus.ring",
   _selected: {
     color: "fg.primary",
-    bg: "transparent",
+    bg: "bg.workbench",
+    borderColor: "border.accent",
+    _hover: { bg: "bg.workbench", borderColor: "border.accent" },
     fontWeight: "semibold",
+    _horizontal: {
+      _before: {
+        bg: "border.accent",
+        height: "var(--atlas-layout-tab-marker, 3px)",
+      },
+    },
   },
-  _before: { bg: "border.accent" },
 } as const;
 
 export const atlasVisuallyHidden = {

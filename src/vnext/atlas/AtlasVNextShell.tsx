@@ -451,10 +451,24 @@ export function AtlasVNextShell({
                 align="center"
                 bg={id === activeModule ? "bg.workbench" : "transparent"}
                 borderTopRadius="workbench"
-                borderBottomWidth="var(--atlas-workspace-selected-edge, 3px)"
-                borderBottomColor={
-                  id === activeModule ? "border.accent" : "transparent"
+                borderWidth="var(--atlas-layout-edge, 1px)"
+                borderColor={
+                  id === activeModule ? "border.accent" : "border.default"
                 }
+                borderBottomWidth={
+                  id === activeModule
+                    ? "var(--atlas-workspace-selected-edge, 3px)"
+                    : "var(--atlas-layout-edge, 1px)"
+                }
+                borderBottomColor={
+                  id === activeModule ? "border.accent" : "border.default"
+                }
+                _hover={{
+                  bg: id === activeModule ? "bg.workbench" : "bg.context",
+                  borderColor:
+                    id === activeModule ? "border.accent" : "border.strong",
+                }}
+                _focusWithin={{ borderColor: "focus.ring" }}
               >
                 <Button
                   id={`${prefix}-tab-${id}`}
@@ -470,6 +484,7 @@ export function AtlasVNextShell({
                   color={id === activeModule ? "fg.default" : "fg.secondary"}
                   fontWeight={id === activeModule ? "semibold" : "normal"}
                   borderRadius="var(--atlas-layout-zero, 0)"
+                  _hover={{ bg: "transparent", color: "fg.primary" }}
                   onClick={() => select(id)}
                   onKeyDown={(event) => tabKeys(event, id)}
                 >
