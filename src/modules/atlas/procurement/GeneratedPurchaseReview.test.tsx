@@ -190,6 +190,15 @@ describe("generated purchase review worksheet", () => {
     expect(workbook.getWorksheet("Tổng")!.getCell("E11").value).toBe(
       "99999999999999.000002",
     );
+    expect(workbook.getWorksheet("Tổng")!.getCell("C11").value).toContain(
+      "NCC đề xuất: Nhà cung ứng A",
+    );
+    expect(workbook.getWorksheet("Chi tiết")!.getCell("A12").value).toContain(
+      "Trường An Bình · Bếp An Bình",
+    );
+    expect(workbook.getWorksheet("Chi tiết")!.getCell("A12").value).toContain(
+      "NCC đề xuất: Nhà cung ứng A",
+    );
   });
   it("rejects mixed dates or invalid exact quantities before exporting", async () => {
     await expect(

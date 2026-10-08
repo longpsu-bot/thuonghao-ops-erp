@@ -42,7 +42,7 @@ describe("released purchase-order exports", () => {
     order.current_revision.supplier_name_snapshot = "NCC An Phú lúc phát hành";
     const data = buildPurchaseOrderExportData(order);
 
-    expect(data).toEqual({
+    expect(data).toMatchObject({
       documentNumber: "PO-20260902-2500000000004000",
       supplierName: "NCC An Phú lúc phát hành",
       serviceDate: "02/09/2026",
@@ -108,7 +108,7 @@ describe("released purchase-order exports", () => {
     expect(serialized).toContain("60.000000");
   });
 
-  it("creates the default three-sheet PO workbook with exact numeric quantities", async () => {
+  it("creates the default three-sheet PO workbook with exact text quantities", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
     order.supplier.supplier_name = "Tên NCC hiện tại đã đổi";
@@ -140,23 +140,27 @@ describe("released purchase-order exports", () => {
     expect(summaryText).not.toContain("Mã NCC");
     expect(schoolText).toContain("Trường Nguyễn Du");
     expect(ingredientText).toContain("Trường Trần Quốc Toản");
-    expect(workbook.getWorksheet("Tổng")!.getCell("D8").value).toBe(100);
-    expect(workbook.getWorksheet("Theo trường")!.getCell("A10").value).toBe(
-      "Trường Nguyễn Du",
+    expect(workbook.getWorksheet("Tổng")!.getCell("D8").value).toBe(
+      "100.000000",
     );
+    expect(
+      workbook.getWorksheet("Theo trường")!.getCell("A10").value,
+    ).toContain("Trường Nguyễn Du");
     expect(workbook.getWorksheet("Theo trường")!.model.merges).toContain(
       "A10:B10",
     );
     expect(workbook.getWorksheet("Theo trường")!.model.merges).toContain(
       "F10:G10",
     );
-    expect(workbook.getWorksheet("Theo trường")!.getCell("A11").value).toBe(
-      "Trường Trần Quốc Toản",
+    expect(
+      workbook.getWorksheet("Theo trường")!.getCell("A11").value,
+    ).toContain("Trường Trần Quốc Toản");
+    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(
+      "60.000000",
     );
-    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(60);
     expect(
       workbook.getWorksheet("Theo trường")!.getCell("F10").numFmt ?? "General",
-    ).toBe("General");
+    ).toBe("@");
     expect(workbook.model.media).toHaveLength(1);
     expect(
       workbook.getWorksheet("Theo trường")!.getCell("A9").fill,
@@ -170,8 +174,12 @@ describe("released purchase-order exports", () => {
     expect(workbook.getWorksheet("Theo hàng")!.model.merges).toContain(
       "A10:B10",
     );
-    expect(workbook.getWorksheet("Theo hàng")!.getCell("A11").value).toBeNull();
-    expect(workbook.getWorksheet("Theo hàng")!.getRow(10).height).toBe(30);
+    expect(workbook.getWorksheet("Theo hàng")!.getCell("A11").value).toBe(
+      "Gạo thơm",
+    );
+    expect(
+      workbook.getWorksheet("Theo hàng")!.getRow(10).height,
+    ).toBeGreaterThanOrEqual(30);
     expect(workbook.getWorksheet("Tổng")!.views[0]?.showGridLines).toBe(false);
     expect(workbook.getWorksheet("Tổng")!.pageSetup.orientation).toBe(
       "portrait",
@@ -213,16 +221,26 @@ describe("released purchase-order exports", () => {
     order.lines[0]!.supplier_note = "Giao trước 05:30; ".repeat(20).trim();
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
-    expect(workbook.getWorksheet("Tổng")!.getCell("E8").value).toBe(
-      order.lines[0]!.supplier_note,
-    );
+    const notes: string[] = [];
+    workbook.getWorksheet("Tổng")!.eachRow((row, n) => {
+      if (n >= 8 && typeof row.getCell(5).value === "string")
+        notes.push(row.getCell(5).value as string);
+    });
+    expect(notes.join("")).toBe(order.lines[0]!.supplier_note);
     expect(
       workbook.getWorksheet("Tổng")!.getCell("E8").alignment?.wrapText,
     ).toBe(true);
     expect(workbook.getWorksheet("Tổng")!.getRow(8).height).toBeGreaterThan(18);
-    expect(JSON.stringify(buildPurchaseOrderPdfDefinition(order))).toContain(
-      order.lines[0]!.supplier_note,
+    const pdf = buildPurchaseOrderPdfDefinition(order);
+    const tables = (pdf.content as { table?: { body: unknown[][] } }[]).filter(
+      (item) => item.table,
     );
+    expect(
+      tables[0]!
+        .table!.body.slice(1)
+        .map((row) => row.at(-1))
+        .join(""),
+    ).toBe(order.lines[0]!.supplier_note);
     expect(
       new TextDecoder().decode(
         (await createPurchaseOrderPdf(order)).slice(0, 5),

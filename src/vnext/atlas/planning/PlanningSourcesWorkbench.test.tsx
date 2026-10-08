@@ -12,6 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import type { PantryApi } from "../bridges/planning";
 import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
+import * as attendanceTemplate from "../../../modules/atlas/documents/attendanceImportTemplate";
+import * as documentDownloads from "../../../modules/atlas/procurement/purchaseOrderExports";
 import { createPlanningStoryFixture } from "./planningStoryFixtures";
 import {
   menuPreview,
@@ -59,6 +61,45 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("downloads the scoped blank attendance template without previewing or saving attendance", async () => {
+    const { fixture } = await show();
+    const preview = vi.spyOn(fixture.api, "previewAttendance");
+    const save = vi.spyOn(fixture.api, "saveCompletedAttendance");
+    const bytes = new ArrayBuffer(1);
+    const build = vi
+      .spyOn(attendanceTemplate, "createAttendanceImportTemplate")
+      .mockResolvedValue(bytes);
+    const download = vi
+      .spyOn(documentDownloads, "downloadBytes")
+      .mockImplementation(() => {});
+    try {
+      fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Tải mẫu sĩ số XLSX" }),
+      );
+      await screen.findByText(
+        "Đã tải mẫu nhập. Sĩ số chỉ được ghi nhận sau khi rà soát và Lưu.",
+      );
+      expect(build).toHaveBeenCalledWith(
+        reviewWeek,
+        expect.arrayContaining([
+          expect.objectContaining({
+            school_id: fixture.planning.schools[0]!.school_id,
+          }),
+        ]),
+      );
+      expect(download).toHaveBeenCalledWith(
+        bytes,
+        expect.stringContaining("spreadsheetml"),
+        `SiSo_MauNhap_${reviewWeek}.xlsx`,
+      );
+      expect(preview).not.toHaveBeenCalled();
+      expect(save).not.toHaveBeenCalled();
+    } finally {
+      build.mockRestore();
+      download.mockRestore();
+    }
+  });
   it("reports local attendance edits and frozen Review", async () => {
     const fixture = createPlanningReviewFixture();
     const report = vi.fn();

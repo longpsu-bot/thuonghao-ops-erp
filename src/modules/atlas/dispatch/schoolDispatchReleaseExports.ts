@@ -1,7 +1,22 @@
-import type { Cell, Row, Workbook, Worksheet } from "exceljs";
+import type { Workbook } from "exceljs";
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import type { SchoolDispatchDocument } from "./schoolDispatchReleaseModel";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
+
+import {
+  applyDocumentFont,
+  borderRow,
+  documentStatusLabel,
+  documentPdfFooter,
+  documentFilePart,
+  finishDocumentSheet,
+  initializeDocumentWorkbook,
+  prepareDocumentSheet,
+  renderDocumentPdf,
+  safeWorksheetName,
+  setExactQuantity,
+  wrappedRowHeight,
+} from "../documents/documentPresentation";
 
 const QUANTITY_SCALE = 1_000_000n;
 
@@ -54,7 +69,16 @@ export function buildSchoolDispatchPdfDefinition(
 ): TDocumentDefinitions {
   const data = buildSchoolDispatchExportData(document);
   return {
-    info: { title: `Phiếu xuất kho ${data.documentNumber}` },
+    pageSize: "A4",
+    pageMargins: [28, 32, 28, 42],
+    footer: documentPdfFooter(
+      `${data.documentNumber} · ${documentStatusLabel(document.status)}`,
+    ),
+    info: {
+      title: `Phiếu xuất kho ${data.documentNumber}`,
+      creationDate: new Date(document.released_at),
+      modDate: new Date(document.released_at),
+    },
     content: [
       {
         columns: [
@@ -70,6 +94,14 @@ export function buildSchoolDispatchPdfDefinition(
         ],
       },
       { text: "PHIẾU XUẤT KHO", style: "heading" },
+      {
+        text: documentStatusLabel(document.status),
+        bold: true,
+        margin: [0, 0, 0, 8],
+      },
+      ...(document.predecessor_release_id
+        ? [{ text: `Thay thế phiếu: ${document.predecessor_release_id}` }]
+        : []),
       { text: `Số phiếu: ${data.documentNumber}` },
       { text: `Ngày phục vụ: ${data.serviceDate}` },
       { text: `Trường: ${data.schoolName}` },
@@ -79,7 +111,8 @@ export function buildSchoolDispatchPdfDefinition(
       {
         table: {
           headerRows: 2,
-          widths: [25, "*", 35, 55, 38, 38, 70],
+          widths: [20, "*", 30, 120, 30, 30, 65],
+          dontBreakRows: true,
           body: [
             [
               { text: "Stt", rowSpan: 2 },
@@ -95,7 +128,7 @@ export function buildSchoolDispatchPdfDefinition(
               index + 1,
               line.ingredientName,
               line.unitCode,
-              line.quantity,
+              { text: line.quantity, alignment: "right" as const },
               "",
               "",
               "",
@@ -111,7 +144,8 @@ export function buildSchoolDispatchPdfDefinition(
           { text: "Người lập phiếu\n(Ký, ghi họ tên)", alignment: "center" },
         ],
         bold: true,
-        margin: [0, 28, 0, 0],
+        margin: [0, 28, 0, 50],
+        unbreakable: true,
       },
     ],
     defaultStyle: { font: "Roboto", fontSize: 10 },
@@ -123,42 +157,6 @@ export function buildSchoolDispatchPdfDefinition(
   };
 }
 
-function borderRow(row: Row) {
-  row.eachCell((cell) => {
-    cell.border = {
-      top: { style: "thin", color: { argb: "FF7F7F7F" } },
-      left: { style: "thin", color: { argb: "FF7F7F7F" } },
-      bottom: { style: "thin", color: { argb: "FF7F7F7F" } },
-      right: { style: "thin", color: { argb: "FF7F7F7F" } },
-    };
-  });
-}
-
-function exactExcelQuantity(cell: Cell, value: string) {
-  const governed = scaledQuantity(value);
-  const numeric = Number(value);
-  const scaled = numeric * Number(QUANTITY_SCALE);
-  cell.value =
-    Number.isFinite(numeric) &&
-    Number.isSafeInteger(scaled) &&
-    BigInt(scaled) === governed
-      ? numeric
-      : value;
-  if (typeof cell.value === "number") cell.numFmt = "General";
-  cell.alignment = { horizontal: "right" };
-}
-
-function prepareWorksheet(worksheet: Worksheet) {
-  worksheet.views = [{ showGridLines: false }];
-  worksheet.pageSetup = {
-    paperSize: 9,
-    orientation: "portrait",
-    fitToPage: true,
-    fitToWidth: 1,
-    fitToHeight: 0,
-  };
-}
-
 function addSchoolDispatchSheet(
   workbook: Workbook,
   document: SchoolDispatchDocument,
@@ -167,7 +165,11 @@ function addSchoolDispatchSheet(
 ) {
   const data = buildSchoolDispatchExportData(document);
   const sheet = workbook.addWorksheet(sheetName);
-  prepareWorksheet(sheet);
+  prepareDocumentSheet(sheet);
+  sheet.mergeCells("A3:G3");
+  sheet.getCell("A3").value = documentStatusLabel(document.status);
+  sheet.getCell("A3").font = { name: "Times New Roman", size: 11, bold: true };
+  sheet.getRow(3).height = 24;
   sheet.addImage(logoId, {
     tl: { col: 0, row: 0 },
     ext: { width: 58, height: 58 },
@@ -182,18 +184,25 @@ function addSchoolDispatchSheet(
   sheet.getCell("A4").value = "PHIẾU XUẤT KHO";
   sheet.getCell("A4").font = { name: "Times New Roman", bold: true, size: 20 };
   sheet.getCell("A4").alignment = { horizontal: "center" };
-  sheet.getCell("F5").value = "Ngày:";
-  sheet.getCell("G5").value = data.serviceDate;
-  sheet.mergeCells("A5:D5");
+
+  sheet.mergeCells("A5:G5");
   sheet.getCell("A5").value = `Số phiếu: ${data.documentNumber}`;
+  sheet.getRow(5).height = 22;
   sheet.mergeCells("A6:G6");
   sheet.getCell("A6").value = `Trường: ${data.schoolName}`;
   sheet.mergeCells("A7:G7");
   sheet.getCell("A7").value = `Địa chỉ: ${data.deliveryAddress}`;
-  if (data.note) {
-    sheet.mergeCells("A8:G8");
-    sheet.getCell("A8").value = `Ghi chú: ${data.note}`;
-  }
+  sheet.mergeCells("A8:G8");
+  sheet.getCell("A8").value =
+    `Ngày: ${data.serviceDate} · Điểm giao: ${data.deliveryLocationName}${data.note ? `\nGhi chú: ${data.note}` : ""}${document.predecessor_release_id ? `\nThay thế phiếu: ${document.predecessor_release_id}` : ""}`;
+  for (const r of [1, 2, 6, 7, 8])
+    sheet.getRow(r).height = wrappedRowHeight(
+      String(sheet.getCell(r, 1).value ?? ""),
+      112,
+      12,
+      r === 1 ? 28 : 24,
+    );
+  sheet.getRow(4).height = 30;
   sheet.mergeCells("A9:A10");
   sheet.mergeCells("B9:B10");
   sheet.mergeCells("C9:C10");
@@ -211,7 +220,7 @@ function addSchoolDispatchSheet(
   for (const rowNumber of [9, 10]) {
     const header = sheet.getRow(rowNumber);
     header.height = 30;
-    header.font = { name: "Times New Roman", bold: true, size: 16 };
+    header.font = { name: "Times New Roman", bold: true, size: 12 };
     header.alignment = {
       horizontal: "center",
       vertical: "middle",
@@ -230,49 +239,42 @@ function addSchoolDispatchSheet(
       "",
       "",
     ];
-    row.height = 30;
-    exactExcelQuantity(row.getCell(4), line.quantity);
+    row.height = wrappedRowHeight(line.ingredientName, 38, 14);
+    row.font = { name: "Times New Roman", size: 14 };
+    row.alignment = { vertical: "middle", wrapText: true };
+    setExactQuantity(row.getCell(4), line.quantity);
     borderRow(row);
   });
-  [13, 37.43, 8, 9.57, 11, 11, 14].forEach(
+  [6, 38, 8, 24, 8, 8, 20].forEach(
     (width, index) => (sheet.getColumn(index + 1).width = width),
   );
-  const signatureRow = Math.max(29, 11 + data.lines.length + 6);
+  const signatureRow = 11 + data.lines.length + 2;
   sheet.mergeCells(signatureRow, 1, signatureRow, 2);
   sheet.mergeCells(signatureRow, 3, signatureRow, 5);
   sheet.mergeCells(signatureRow, 6, signatureRow, 7);
-  sheet.getCell(signatureRow, 1).value = "Người nhận hàng";
-  sheet.getCell(signatureRow, 3).value = "Người giao hàng";
-  sheet.getCell(signatureRow, 6).value = "Người lập phiếu";
-  sheet.mergeCells(signatureRow + 1, 1, signatureRow + 1, 2);
-  sheet.mergeCells(signatureRow + 1, 3, signatureRow + 1, 5);
-  sheet.mergeCells(signatureRow + 1, 6, signatureRow + 1, 7);
+  sheet.getCell(signatureRow, 1).value = "Người nhận hàng\n(Ký, ghi họ tên)";
+  sheet.getCell(signatureRow, 3).value = "Người giao hàng\n(Ký, ghi họ tên)";
+  sheet.getCell(signatureRow, 6).value = "Người lập phiếu\n(Ký, ghi họ tên)";
   for (const column of [1, 3, 6]) {
     sheet.getCell(signatureRow, column).font = {
       name: "Times New Roman",
-      size: 16,
+      size: 14,
       bold: true,
     };
-    sheet.getCell(signatureRow, column).alignment = { horizontal: "center" };
-    sheet.getCell(signatureRow + 1, column).value = "(Ký, ghi họ tên)";
-    sheet.getCell(signatureRow + 1, column).alignment = {
+    sheet.getCell(signatureRow, column).alignment = {
       horizontal: "center",
+      vertical: "top",
+      wrapText: true,
     };
   }
-  sheet.eachRow((row) =>
-    row.eachCell((cell) => {
-      cell.font = { name: "Times New Roman", size: 16, ...cell.font };
-      cell.alignment = { vertical: "middle", ...cell.alignment };
-    }),
-  );
-}
-
-function safeSheetName(value: string) {
-  return (
-    value
-      .replace(/[\\/*?:[\]]/g, " ")
-      .trim()
-      .slice(0, 31) || "PXK"
+  // One physical row keeps all three signature areas together during printing.
+  sheet.getRow(signatureRow).height = 102;
+  applyDocumentFont(sheet);
+  finishDocumentSheet(
+    sheet,
+    "G",
+    10,
+    `${data.documentNumber} · ${documentStatusLabel(document.status)}`,
   );
 }
 
@@ -281,7 +283,7 @@ export async function createSchoolDispatchXlsx(
 ) {
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Atlas · Thượng Hảo";
+  initializeDocumentWorkbook(workbook, "Phiếu xuất kho", document.released_at);
   const logoId = workbook.addImage({
     base64: companyLogoDataUrl,
     extension: "jpeg",
@@ -289,7 +291,7 @@ export async function createSchoolDispatchXlsx(
   addSchoolDispatchSheet(
     workbook,
     document,
-    safeSheetName(document.school_name),
+    safeWorksheetName(document.school_name),
     logoId,
   );
   return workbook.xlsx.writeBuffer();
@@ -302,7 +304,11 @@ export async function createGroupedSchoolDispatchXlsx(
     throw new Error("At least one released PXK snapshot is required.");
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Atlas · Thượng Hảo";
+  initializeDocumentWorkbook(
+    workbook,
+    "Phiếu xuất kho theo ngày",
+    [...documents].map((d) => d.released_at).sort()[0],
+  );
   const logoId = workbook.addImage({
     base64: companyLogoDataUrl,
     extension: "jpeg",
@@ -316,17 +322,10 @@ export async function createGroupedSchoolDispatchXlsx(
       left.document_number.localeCompare(right.document_number),
   );
   for (const document of ordered) {
-    const stem = safeSheetName(
+    const name = safeWorksheetName(
       `${document.service_date.slice(5)} ${document.school_name}`,
+      names,
     );
-    let name = stem;
-    let suffix = 2;
-    while (names.has(name)) {
-      const tail = ` ${suffix}`;
-      name = `${stem.slice(0, 31 - tail.length)}${tail}`;
-      suffix += 1;
-    }
-    names.add(name);
     addSchoolDispatchSheet(workbook, document, name, logoId);
   }
   return workbook.xlsx.writeBuffer();
@@ -336,34 +335,11 @@ export async function createSchoolDispatchPdf(
   document: SchoolDispatchDocument,
 ) {
   const definition = buildSchoolDispatchPdfDefinition(document);
-  const [pdfMake, pdfFonts] = await Promise.all([
-    import("pdfmake/build/pdfmake"),
-    import("pdfmake/build/vfs_fonts"),
-  ]);
-  const fontModule = pdfFonts as unknown as {
-    default?: Record<string, string>;
-    vfs?: Record<string, string>;
-  };
-  const virtualFonts = fontModule.default ?? fontModule.vfs;
-  if (!virtualFonts) throw new Error("PDF font assets are unavailable.");
-  return new Promise<Uint8Array>((resolve, reject) => {
-    try {
-      pdfMake
-        .createPdf(definition, undefined, undefined, virtualFonts)
-        .getBuffer((buffer) => resolve(new Uint8Array(buffer)));
-    } catch (error) {
-      reject(error);
-    }
-  });
+  return renderDocumentPdf(definition);
 }
 
 function safeStem(document: SchoolDispatchDocument) {
-  const school = document.school_name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/gi, "d")
-    .replace(/[^a-zA-Z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+  const school = documentFilePart(document.school_name);
   return `${school}-${document.service_date}-${document.document_number}`;
 }
 

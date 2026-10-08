@@ -1,0 +1,84 @@
+{
+  "fixtureOnly": true,
+  "result": "PASS",
+  "specimens": [
+    {
+      "name": "PO-one-school.xlsx",
+      "sha256": "2da037aba08eef00474d5f386a271735ffccebbb7b6de2296cc496e21f72a2d1"
+    },
+    {
+      "name": "PO-one-school.pdf",
+      "sha256": "ab0a95581024619161f06d507e8e37184dee284cd8a9895d800dc84981649de1"
+    },
+    {
+      "name": "PO-multiple-schools.xlsx",
+      "sha256": "9520c361776abab90b168f3aa8d1cadcfccbc60f06eb579850d0d1ff55fa8f5d"
+    },
+    {
+      "name": "PO-multiple-schools.pdf",
+      "sha256": "4feb4c0c85f61a5d342d36fcb660a8695f456daf6fb0c57e4a32bc265eb3d7c4"
+    },
+    {
+      "name": "PO-second-supplier.xlsx",
+      "sha256": "950564af14a07c0c3a1876630abdd18a9c9389e96024d19ef9157c1532dad60e"
+    },
+    {
+      "name": "PO-second-supplier.pdf",
+      "sha256": "ac15e33d86021a09bb7b30b33419e62c5e4e01b32e476ef29ed201fc3a246fa5"
+    },
+    {
+      "name": "PO-superseded.xlsx",
+      "sha256": "9504ad682541b97dd2120bab46d945300ba5a4d0696df43327f51c9ae247f3f6"
+    },
+    {
+      "name": "PO-superseded.pdf",
+      "sha256": "a63cc4b530208cfb2e3d756cc27a597a79db9836d50ed2662543898fa46e6c64"
+    },
+    {
+      "name": "PO-multiline-note.xlsx",
+      "sha256": "0b388c901efddc79fcf7a1ea17f892528fde0b05d1f0c94ad8503256f0eb6821"
+    },
+    {
+      "name": "PO-multiline-note.pdf",
+      "sha256": "fe37e20c99ac5234fa8f58d601a6f2511b76148cdbf6ad6854f2b454ac21f509"
+    },
+    {
+      "name": "PO-multipage-precision.xlsx",
+      "sha256": "51a9b93fa34e4d01055746362da7de4fdc8380e5975e561d0442aa7db4104d81"
+    },
+    {
+      "name": "PO-multipage-precision.pdf",
+      "sha256": "09a9b8cc2d7836eb69dec33ecdd695db2fac88296acf286d0b1be327dd5a6c2a"
+    },
+    {
+      "name": "PXK-one-school.xlsx",
+      "sha256": "2a595b71d03122788b49da45c6b6160f9d21eb4f00a3f8fbd9b613f5a08a4dee"
+    },
+    {
+      "name": "PXK-one-school.pdf",
+      "sha256": "9cdaf852c81a9f4969764576bc55b097c3869715112e5f8b9c63f8bbd666d795"
+    },
+    {
+      "name": "PXK-multipage-superseded.xlsx",
+      "sha256": "a9351a85a047adb9c5482397b850d199fd466672b1c55a6713f6850c55a3dfc2"
+    },
+    {
+      "name": "PXK-multipage-superseded.pdf",
+      "sha256": "35638ee79ec883b30cf45edfcf287e95b950c67321c38bf584ebe943d6ebdace"
+    },
+    {
+      "name": "Dispatch-grouped-distinct-destinations.xlsx",
+      "sha256": "0b46615304dbc76185afa383483877250ba9269d95e462754abe2b0b60048e11"
+    },
+    {
+      "name": "Purchase-review-preliminary.xlsx",
+      "sha256": "8b548b86cfebdc6813b13972ff9f984fa75d2321d4fb083357d8c499eeddf32b"
+    },
+    {
+      "name": "Attendance-import-template.xlsx",
+      "sha256": "80e329d50b3cfe29433f0712f74a2030e044fd20e7bd6e713b78350aa3f9d253"
+    }
+  ],
+  "shopping": "PASS — identical cells/print geometry; accepted randomized protection untouched",
+  "normalization": "XLSX ZIP timestamps; Shopping fixture modified-time only. Production renderers unchanged by normalization."
+}

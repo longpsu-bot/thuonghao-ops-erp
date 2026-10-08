@@ -43,9 +43,9 @@ describe("School dispatch release exports", () => {
       paperSize: 9,
       orientation: "portrait",
     });
-    expect(sheet.getColumn(1).width).toBeCloseTo(13, 1);
-    expect(sheet.getColumn(2).width).toBeCloseTo(37.43, 1);
-    expect(sheet.getColumn(7).width).toBe(14);
+    expect(sheet.getColumn(1).width).toBeCloseTo(6, 1);
+    expect(sheet.getColumn(2).width).toBeCloseTo(38, 1);
+    expect(sheet.getColumn(7).width).toBe(20);
     expect(sheet.getCell("A1").alignment.horizontal).toBe("center");
     expect(sheet.getCell("A2").alignment.horizontal).toBe("center");
     expect(sheet.getCell("A9").value).toBe("Stt");
@@ -56,7 +56,7 @@ describe("School dispatch release exports", () => {
     expect(sheet.getCell("E10").value).toBe("Đạt");
     expect(sheet.getCell("F10").value).toBe("K Đạt");
     expect(sheet.getCell("G9").value).toBe("Biện pháp xử lý");
-    expect(sheet.getCell("D11").value).toBe(100);
+    expect(sheet.getCell("D11").value).toBe("100.000000");
     expect(workbook.model.media).toHaveLength(1);
     expect(sheet.getRow(11).height).toBe(30);
     expect(JSON.stringify(sheet.getSheetValues())).toContain("Người nhận hàng");

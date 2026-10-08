@@ -22,6 +22,8 @@ export function PlanningAttendanceStage({
 }) {
   const [pasteOpen, setPasteOpen] = useState(false),
     [paste, setPaste] = useState("");
+  const [templatePending, setTemplatePending] = useState(false);
+  const [templateNotice, setTemplateNotice] = useState("");
   const visible = c.attendanceRows
     .map((r, index) => ({ r, index }))
     .filter(
@@ -47,14 +49,54 @@ export function PlanningAttendanceStage({
             ? `Học sinh ${students} · Giáo viên ${teachers} · Tổng ${students + teachers}`
             : "Cần sửa số suất trước khi tính tổng."}
         </Text>
-        <Button
-          size="sm"
-          disabled={!c.canEdit}
-          onClick={() => setPasteOpen(!pasteOpen)}
-        >
-          Dán hàng loạt
-        </Button>
+        <Flex gap="sm">
+          <Button
+            size="sm"
+            disabled={!c.data || templatePending}
+            onClick={async () => {
+              setTemplatePending(true);
+              setTemplateNotice("");
+              try {
+                const [{ createAttendanceImportTemplate }, { downloadBytes }] =
+                  await Promise.all([
+                    import("../../../modules/atlas/documents/attendanceImportTemplate"),
+                    import("../../../modules/atlas/procurement/purchaseOrderExports"),
+                  ]);
+                const bytes = await createAttendanceImportTemplate(
+                  c.week,
+                  c.data!.schools,
+                );
+                downloadBytes(
+                  bytes,
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                  `SiSo_MauNhap_${c.week}.xlsx`,
+                );
+                setTemplateNotice(
+                  "Đã tải mẫu nhập. Sĩ số chỉ được ghi nhận sau khi rà soát và Lưu.",
+                );
+              } catch {
+                setTemplateNotice("Không thể tải mẫu nhập sĩ số. Hãy thử lại.");
+              } finally {
+                setTemplatePending(false);
+              }
+            }}
+          >
+            Tải mẫu sĩ số XLSX
+          </Button>
+          <Button
+            size="sm"
+            disabled={!c.canEdit}
+            onClick={() => setPasteOpen(!pasteOpen)}
+          >
+            Dán hàng loạt
+          </Button>
+        </Flex>
       </Flex>
+      {templateNotice && (
+        <Text role="status" px="sm" textStyle="helper">
+          {templateNotice}
+        </Text>
+      )}
       {pasteOpen && (
         <Box p="sm" bg="bg.subtle">
           <Text textStyle="helper">
