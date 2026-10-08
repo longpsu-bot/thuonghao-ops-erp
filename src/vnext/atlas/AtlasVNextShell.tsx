@@ -22,7 +22,6 @@ import {
   type AtlasWorkbenchDefinition,
   type AtlasWorkbenchId,
 } from "./AtlasWorkbenchRegistry";
-import { atlasPrimaryTabTrigger } from "./AtlasTaskTabs";
 import type { AtlasWorkbenchStatus } from "./AtlasModuleExit";
 import { foldVietnameseSearch } from "./foldVietnameseSearch";
 import { formatVietnamBusinessDate } from "./businessDate";
@@ -436,7 +435,6 @@ export function AtlasVNextShell({
           bg="bg.toolbar"
           px="sm"
           pt="xs"
-          pb="xs"
         >
           <Flex
             w="var(--atlas-workspace-tab-content-width, max-content)"
@@ -452,26 +450,11 @@ export function AtlasVNextShell({
                 }}
                 align="center"
                 bg={id === activeModule ? "bg.workbench" : "transparent"}
-                borderRadius="control"
-                borderWidth="var(--atlas-layout-edge, 1px)"
-                borderColor={
-                  id === activeModule ? "border.accent" : "border.default"
+                borderBottomWidth="var(--atlas-workspace-selected-edge, 3px)"
+                borderBottomColor={
+                  id === activeModule ? "border.accent" : "transparent"
                 }
-                position="relative"
-                overflow="visible"
-                _after={{
-                  ...atlasPrimaryTabTrigger._after,
-                  opacity:
-                    id === activeModule
-                      ? "var(--atlas-layout-tab-marker-visible, 1)"
-                      : "var(--atlas-layout-tab-marker-hidden, 0)",
-                }}
-                _hover={{
-                  bg: id === activeModule ? "bg.workbench" : "bg.context",
-                  borderColor:
-                    id === activeModule ? "border.accent" : "border.strong",
-                }}
-                _focusWithin={{ borderColor: "focus.ring" }}
+                _hover={{ bg: "bg.context" }}
               >
                 <Button
                   id={`${prefix}-tab-${id}`}
@@ -486,9 +469,7 @@ export function AtlasVNextShell({
                   variant="utility"
                   color={id === activeModule ? "fg.default" : "fg.secondary"}
                   fontWeight={id === activeModule ? "semibold" : "normal"}
-                  borderStartRadius="control"
-                  borderEndRadius="var(--atlas-layout-zero, 0)"
-                  _hover={{ bg: "transparent", color: "fg.primary" }}
+                  borderRadius="var(--atlas-layout-zero, 0)"
                   onClick={() => select(id)}
                   onKeyDown={(event) => tabKeys(event, id)}
                 >

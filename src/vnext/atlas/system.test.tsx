@@ -317,7 +317,7 @@ describe("Atlas v3 operational legibility", () => {
     expect(atlasPrimaryTabTrigger._selected).toMatchObject({
       color: "fg.primary",
       bg: "bg.workbench",
-      borderColor: "border.accent",
+      borderColor: "transparent",
     });
     expect(atlasPrimaryTabTrigger._after).toMatchObject({
       bg: "border.accent",
@@ -325,8 +325,7 @@ describe("Atlas v3 operational legibility", () => {
     });
     expect(atlasSecondaryTabTrigger._selected).toMatchObject({
       color: "fg.primary",
-      bg: "bg.workbench",
-      borderColor: "border.accent",
+      bg: "transparent",
       fontWeight: "semibold",
     });
   });

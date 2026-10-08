@@ -12,7 +12,7 @@ Staff feedback supersedes v2's visually similar eucalyptus/mineral structural pl
 
 The owner's atmosphere correction supersedes the first v3 pass's charcoal shell and medium-gray tab band. Keep its successful geometry and legibility; make the header deep eucalyptus, tabs nearly white, canvas lighter and large working planes white. Remove redundant boxes, retain visible controls and important divisions, and give business actions a little more chroma. Avoid both grim administrative monochrome and soft pastel SaaS.
 
-[ARCH-002](../architecture/arch-002-atlas-system-map.md), [D-048](../decisions/decision-atlas-persistent-workspace.md), the eleven persistent owners, local-state ownership and every business/API/security contract remain authoritative. **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED.** The three-stage operating baseline remains unchanged. V3 supersedes v2 visual color, contrast, typography-legibility and component styling only.
+[ARCH-002](../architecture/arch-002-atlas-system-map.md), [D-048](../decisions/decision-atlas-persistent-workspace.md), the thirteen persistent owners (8 October composition amendment), local-state ownership and every business/API/security contract remain authoritative. **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED.** The three-stage operating baseline remains unchanged. V3 supersedes v2 visual color, contrast, typography-legibility and component styling only.
 
 ## Color architecture
 
@@ -64,9 +64,9 @@ Keep tabular numbers aligned, and quantity and Unit paired. Recover density thro
 
 Inputs/selects/date fields/textareas and checkboxes have a visible Neutral 500 resting border, Brand hover/focus and independent Danger invalid styling. They look editable before hover. Disabled controls use Neutral 100 fill, Neutral 600 text, Neutral 300 border and full opacity, including hover/pressed states. A disabled primary action is neutral. Textareas retain a 60px minimum; mobile controls retain 44px targets.
 
-Selected rows and compact selected Dishes combine Brand 100 fill and a **3px Brand edge**. Neutral hover stays different from selection; sticky cells inherit both states. Active workspace tabs use white fill, stronger text and an **inset 3px Brand underline with rounded ends**. Tabs use the existing 8px control radius on all corners; space below the workspace strip keeps the lower corners visible. Inactive tabs use transparent fill on Neutral 50; dirty/attention markers remain independent from activation. The Recipe editor's existing action footer stays reachable at the bottom of its scrolling workplane; master-detail geometry is unchanged.
+Selected rows and compact selected Dishes combine Brand 100 fill and a **3px Brand edge**. Neutral hover stays different from selection; sticky cells inherit both states. Active workspace navigation uses clear stronger text, surface continuity and one restrained Brand underline. It has no full outline, accent enclosure, rounded lower corners or extra gap beneath the strip. Inactive tabs use transparent fill on Neutral 50; dirty/attention markers remain independent from activation. The Recipe editor's existing action footer stays reachable at the bottom of its scrolling workplane; master-detail geometry is unchanged.
 
-**Owner-approved tab legibility polish — 8 October 2026:** Workspace and internal job tabs have rounded 8px corners and visible neutral resting borders. Active tabs use an accent outline, white fill and a shared inset Brand underline with rounded ends; neutral hover and a separate keyboard focus ring distinguish interaction from selection. Workspace dirty/attention markers, close guards, retained state and the mobile open-owner selector keep their existing contracts. See the [desktop and narrow review evidence](../testing/ux/atlas-tab-borders/README.md).
+**Workbench correction — 8 October 2026, Draft PR #358:** The previous rounded/outlined treatment is rejected and its approval claim is withdrawn. The current direction is thirteen persistent operator jobs with separate Menu, Attendance and Hàng đặt riêng owners, quiet workspace navigation, neutral inactive/hover treatment and visible keyboard focus. Existing dirty/attention markers and guards remain. See the [current fixture evidence](../testing/ux/atlas-tab-borders/README.md).
 
 The shared left scroll-continuation fade stays below pinned identity cells. It must not wash out a selected edge: final browser certification samples the rendered rail pixel at every viewport, beyond checking the existence of a CSS indicator.
 
@@ -99,6 +99,8 @@ The [Untitled UI v7 Figma palette](https://www.figma.com/community/file/10295067
 [Carbon color usage](https://v10.carbondesignsystem.com/guidelines/color/usage/) informs neutral layering and semantic roles. [W3C CSS Color 4](https://www.w3.org/TR/css-color-4/#ok-lab) informs perceptual lightness/chroma construction. [W3C non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html) informs resting control and state boundaries. These are references, not Atlas Product authority.
 
 ## Bounded implementation and certification plan
+
+The original #354 plan below records its eleven-owner baseline. Current #358 composition checks supersede that count with thirteen; historical captures remain unchanged.
 
 1. Update `system.test.tsx` first: scale progression, text/control/action/status contrast, minimum typography, neutral disabled treatment, table/selection geometry, raw-color and prototype checks. Run against v2 and record expected failures.
 2. Replace v2 primitives and semantic mappings in `system.ts`; update shared recipes. Touch the shell and specific blocker anatomy only where geometry/icon structure cannot live in the recipes. Do not alter handlers, hooks, quantities, API shapes or fixtures.

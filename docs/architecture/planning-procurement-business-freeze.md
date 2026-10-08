@@ -160,6 +160,10 @@ For new PRESENT line authoring, Ingredient's active purchase Unit is authoritati
 
 [Reconciliation](../api/school-fulfilment-reconciliation.md) reads released PO/PXK evidence and compares exact Ingredient + Unit quantities; unlike Units never combine. Captured operational location does not move when School defaults change. It writes no resolution or business fact. Only these Procurement-consumer relationships are retained by this freeze; hosted acceptance for both is **smoke**, with no new Warehouse or Dispatch expansion certified.
 
+**Composition supersession — 8 October 2026 (Draft PR #358):** [D-048](../decisions/decision-atlas-persistent-workspace.md) now defines **13 persistent owners**: separate Thực đơn, Sĩ số and Hàng đặt riêng (formerly Bổ sung), plus the existing jobs. Local-state/guard ownership and business/backend contracts are unchanged. Earlier eleven-owner hosted acceptance remains historical; this amendment claims no hosted rollout.
+
+The frozen table's `WORKBENCH_COUNT = 11` and section 19 record the accepted hosted baseline, not the revised presentation count.
+
 ## 19. Persistent workspace ownership
 
 [D-048](../decisions/decision-atlas-persistent-workspace.md), as amended by the eleven-owner Product correction and implemented at this baseline, freezes business ownership implications:

@@ -10,6 +10,8 @@
 
 **Decision:** [D-048 — Persistent Workspace](../decisions/decision-atlas-persistent-workspace.md).
 
+**Composition supersession — 8 October 2026 (Draft PR #358):** [D-048](../decisions/decision-atlas-persistent-workspace.md) now defines **13 persistent owners**: separate Thực đơn, Sĩ số and Hàng đặt riêng (formerly Bổ sung), plus the existing jobs. Local-state/guard ownership and business/backend contracts are unchanged. Earlier eleven-owner hosted acceptance remains historical; this amendment claims no hosted rollout.
+
 ## Authority and effective scope
 
 [ARCH-002](../architecture/arch-002-atlas-system-map.md), [PA-06A](../architecture/pa-06a-application-connection-contract.md), [model convergence](../decisions/decision-atlas-model-convergence.md), D-035 and D-045 govern this presentation/application contract. **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED.** Supabase/PostgreSQL owns business facts, persistence, calculations, permissions, currentness, concurrency and commitments. Retool/OPS v1 supplies workflow evidence only.
@@ -50,13 +52,13 @@ The authoritative workspace UI facts are only ordered open Workbench IDs and act
 
 One instance per Workbench ID in v2. Persistent means retained while open in the current authenticated application session, not durable restoration after reload. Workbench-local React state owns drafts, quantities, selected Supplier, filters, search, API results, command state, validation, currentness and business status. None belongs in the workspace reducer. Small presentation reports, guard handles and mount seeds do not become a second business-state store.
 
-**Redux = NOT JUSTIFIED. Zustand = NOT JUSTIFIED.** About 10–12 workbenches need only this small navigation state machine; persistent mounting preserves local state. No global state dependency or workspace cache.
+**Redux = NOT JUSTIFIED. Zustand = NOT JUSTIFIED.** Thirteen workbenches need only this small navigation state machine; persistent mounting preserves local state. No global state dependency or workspace cache.
 
 ## 4. Workbench registry
 
 A static definition conceptually provides **id, label, icon, group, render**. These describe identity, recognizable Vietnamese destination, the existing Phosphor icon vocabulary, launcher grouping and composition. Exact TypeScript, optionality and file boundaries belong to implementation review; no speculative fields are frozen here.
 
-A descriptor is a presentation/application object, not a database entity, domain aggregate, persisted lifecycle object, Redux entity or class instance. Reuse current capability boundaries and approved labels. The current eleven production IDs are `planning` (Thực đơn), `confirmed-need`, `procurement` (Phân bổ NCC), `purchase-orders`, `pxk`, `reconciliation`, `schools`, `ingredients`, `suppliers`, `recipes` and `change-orders`. Each owns a persistent component; Thực đơn keeps Thực đơn / Sĩ số / Bổ sung as secondary jobs. A prototype capacity descriptor is not permission to invent a module.
+A descriptor is a presentation/application object, not a database entity, domain aggregate, persisted lifecycle object, Redux entity or class instance. Reuse current capability boundaries and approved labels. The current thirteen production IDs are `planning` (Thực đơn), `attendance` (Sĩ số), `pantry` (Hàng đặt riêng), `confirmed-need`, `procurement` (Phân bổ NCC), `purchase-orders`, `pxk`, `reconciliation`, `schools`, `ingredients`, `suppliers`, `recipes` and `change-orders`. Each owns a persistent component. Production Planning sources have no secondary source-job tabs; fixed owners reuse the existing source implementations. A prototype capacity descriptor is not permission to invent a module.
 
 ## 5. Workbench tabs
 
@@ -74,10 +76,10 @@ Tabs belong visually to Atlas. The active tab connects to the work plane through
 
 **Launcher = all available Atlas workbenches. Tab strip = workbenches already open in this session.** Generate the compact launcher from the static Workbench Registry; include simple local label search and exactly these initial meaningful operator categories:
 
-| Group               | Destinations                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------------ |
-| CÔNG VIỆC HẰNG NGÀY | Thực đơn; Xác nhận nhu cầu; Phân bổ NCC; Đơn mua; Phiếu xuất kho; Đối chiếu PO / Phiếu xuất kho. |
-| DỮ LIỆU & CẤU HÌNH  | Trường học; Nguyên liệu; Nhà cung ứng; Công thức; Lệnh điều chỉnh.                               |
+| Group               | Destinations                                                                                                            |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| CÔNG VIỆC HẰNG NGÀY | Thực đơn; Sĩ số; Hàng đặt riêng; Xác nhận nhu cầu; Phân bổ NCC; Đơn mua; Phiếu xuất kho; Đối chiếu PO / Phiếu xuất kho. |
+| DỮ LIỆU & CẤU HÌNH  | Trường học; Nguyên liệu; Nhà cung ứng; Công thức; Lệnh điều chỉnh.                                                      |
 
 No empty future groups. Search filters local registry labels, creates no business read/command, and stays out of the workspace reducer. The launcher contains no business drafts/state. It may show only quiet **Đang mở** status; dirty/attention belongs primarily on the corresponding open tab, not duplicated detailed state in the launcher.
 

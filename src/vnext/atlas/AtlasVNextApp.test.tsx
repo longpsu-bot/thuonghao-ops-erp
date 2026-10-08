@@ -34,6 +34,8 @@ const modules = [
   ["Nhà cung ứng", "Nhà cung ứng"],
   ["Công thức", "Công thức"],
   ["Thực đơn", "Thực đơn"],
+  ["Sĩ số", "Sĩ số"],
+  ["Hàng đặt riêng", "Hàng đặt riêng"],
   ["Xác nhận nhu cầu", "Xác nhận nhu cầu"],
   ["Phân bổ NCC", "Phân bổ NCC"],
   ["Đơn mua", "Đơn mua"],

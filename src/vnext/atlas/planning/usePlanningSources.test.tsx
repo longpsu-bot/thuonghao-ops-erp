@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { usePlanningSources } from "./usePlanningSources";
+import { usePlanningSources, type PlanningJob } from "./usePlanningSources";
 import {
   createPlanningReviewFixture,
   reviewWeek,
@@ -23,6 +23,32 @@ async function setup() {
   return { ...hook, fixture };
 }
 describe("Planning source safety", () => {
+  it("keeps a fixed source owner on its own job without discarding its draft", async () => {
+    const fixture = createPlanningReviewFixture();
+    const { result, rerender } = renderHook(
+      ({ ownerJob }) =>
+        usePlanningSources({
+          ...fixture,
+          authSubject: "operator",
+          initialWeek: reviewWeek,
+          initialJob: "menu",
+          ownerJob,
+        }),
+      { initialProps: { ownerJob: "attendance" as PlanningJob } },
+    );
+    await waitFor(() => expect(result.current.canEdit).toBe(true));
+    expect(result.current.job).toBe("attendance");
+    act(() => result.current.editAttendance(0, "student_portions", "123"));
+    act(() => result.current.transition({ job: "pantry" }));
+    expect(result.current.job).toBe("attendance");
+    expect(result.current.pending).toBeNull();
+    expect(result.current.attendanceRows[0].student_portions).toBe("123");
+    expect(result.current.dirty).toBe(true);
+    rerender({ ownerJob: "pantry" });
+    expect(result.current.job).toBe("attendance");
+    act(() => result.current.transition({ job: "pantry" }));
+    expect(result.current.pending).toBeNull();
+  });
   it("preserves invalid Menu cells through cancelled context/close changes and discards only on confirmation", async () => {
     const { result, fixture } = await setup();
     fixture.api.syncMenuFromGoogle = async () =>
