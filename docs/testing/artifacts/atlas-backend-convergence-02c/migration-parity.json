@@ -1,0 +1,18 @@
+{
+  "repository_count": 94,
+  "local_count": 94,
+  "staging_count": 92,
+  "local_parity": true,
+  "hosted_missing": [
+    {
+      "name": "atlas_backend_convergence_02b_helpers",
+      "version": "20261008015308"
+    },
+    {
+      "name": "atlas_backend_convergence_02b_allocation",
+      "version": "20261008015340"
+    }
+  ],
+  "hosted_only": [],
+  "catalog_verifier": "PASS"
+}

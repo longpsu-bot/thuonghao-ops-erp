@@ -1,0 +1,54 @@
+1..42
+{"sub": "a7400000-0000-4000-8000-000000000101", "role": "authenticated"}
+ok 1 - 380-assignment weekly Menu is saved through the real command
+ok 2 - 95-row Attendance is saved through the real command
+ok 3 - explicit no-additions Pantry is saved
+ok 4 - all three completed sources are ready
+ok 5 - daily generation completes under eight seconds
+# {"message": null, "elapsed_ms": 3678.920000, "error_code": null, "blocking_references": null}
+# [{"calls": 552, "self_ms": 1337.86, "funcname": "pa_06e_h0b1b_confirmed_need_revision_membership_total", "schemaname": "atlas_planning"}, {"calls": 993, "self_ms": 1301.24, "funcname": "pa_06e_h0a5b_need_generation_integrity_guard", "schemaname": "atlas_planning"}, {"calls": 1, "self_ms": 308.57, "funcname": "create_need_generation_run", "schemaname": "atlas_api"}, {"calls": 1, "self_ms": 146.07, "funcname": "planning_contract_01_materialize_confirmed_needs", "schemaname": "atlas_core"}, {"calls": 497, "self_ms": 87.72, "funcname": "pa_06e_h0b1b_confirmed_need_current_source_consistency", "schemaname": "atlas_planning"}, {"calls": 3, "self_ms": 56.58, "funcname": "pa_06e_h0a4b_planning_input_integrity_guard", "schemaname": "atlas_planning"}, {"calls": 801, "self_ms": 54.99, "funcname": "pa_06e_h0b1b_confirmed_need_guard", "schemaname": "atlas_planning"}, {"calls": 4, "self_ms": 54.34, "funcname": "rmvp_04_workbench_payload", "schemaname": "atlas_core"}]
+ok 6 - current-source validation remains event-local instead of dominating materialization
+ok 7 - completed Need becomes authoritative current state
+ok 8 - Confirmed Need review can be read by the operator
+ok 9 - review contains the real 248 School/Ingredient groups
+ok 10 - review is complete, not silently paginated
+ok 11 - the current Confirmed Need is editable by the operator
+ok 12 - Confirmed Need has no batch blockers
+ok 13 - explicit identical replay succeeds
+ok 14 - replay creates exactly one generation run
+ok 15 - every one of the real 304 atomic Recipe contributions is retained
+NOTICE:  schema "extensions" already exists, skipping
+ok 16 - six-decimal proportional quantities are unchanged
+ok 17 - release preserves the exact 304-member set
+ok 18 - generated evidence remains immutable
+ok 19 - replay retains one command receipt
+ok 20 - the high-fanout public command pins generic plans instead of replanning hundreds of trigger calls
+ok 21 - multiple sequential real-shape generations succeed
+ok 22 - three local real-shape generations stay within the unchanged authenticated timeout
+# {"p50_ms": 3678.920000, "p95_ms": 4546.787000, "samples_ms": [3005.582000, 3678.920000, 4546.787000], "operator_target_ms": 4000, "operator_target_met": false}
+ok 23 - each sequential generation retains exactly 304 atomic contributions
+ok 24 - each sequential generation materializes exactly 248 current groups
+ok 25 - each sequential Confirmed Need review succeeds
+ok 26 - each sequential review returns all 248 groups
+ok 27 - sequential reviews are editable, blocker-free, and not silently paginated
+ok 28 - completed theoretical evidence cannot be deleted
+ok 29 - a caller cannot enlarge immutable counts to admit a late child
+ok 30 - late duplicate release membership is rejected after early flush
+ok 31 - late loss of current ownership cannot bypass the partition check
+quantity
+ok 32 - full aggregate guard rejects forged numeric result
+ok 33 - quantity failure leaves no partial generation or Confirmed Need
+composition
+ok 34 - full aggregate guard rejects omitted Recipe composition
+ok 35 - composition failure leaves no partial generation or Confirmed Need
+release
+ok 36 - full aggregate guard rejects incomplete release membership
+ok 37 - release failure leaves no partial generation or Confirmed Need
+confirmed-facts
+ok 38 - scoped guard rejects forged Confirmed Need contribution quantity
+ok 39 - confirmed-facts failure leaves no partial generation or Confirmed Need
+confirmed-members
+ok 40 - scoped guard rejects omitted Confirmed Need membership
+ok 41 - confirmed-members failure leaves no partial generation or Confirmed Need
+
+ok 42 - a valid subsequent generation still succeeds after rejected packages

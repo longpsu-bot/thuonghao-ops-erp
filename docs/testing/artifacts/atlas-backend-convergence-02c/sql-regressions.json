@@ -1,0 +1,227 @@
+[
+  {
+    "suite": "atlas_backend_convergence_02b_helpers.sql",
+    "exit": 0,
+    "plan": "1..124"
+  },
+  {
+    "suite": "atlas_backend_convergence_02b_allocation.sql",
+    "exit": 0,
+    "plan": "1..417"
+  },
+  {
+    "suite": "atlas_current_platform_security_catalog.sql",
+    "exit": 0,
+    "plan": "1..28"
+  },
+  {
+    "suite": "rmvp_03a_connected_weekly_menu_attendance.sql",
+    "exit": 0,
+    "plan": "1..77"
+  },
+  {
+    "suite": "weekly_menu_save_scale.sql",
+    "exit": 0,
+    "plan": "1..10"
+  },
+  {
+    "suite": "rmvp_03b_connected_planning_input_readiness.sql",
+    "exit": 0,
+    "plan": "1..84"
+  },
+  {
+    "suite": "pantry_02_connected_pantry_source.sql",
+    "exit": 0,
+    "plan": "1..46"
+  },
+  {
+    "suite": "pantry_ng_02_direct_ingredient_persistence_materialization.sql",
+    "exit": 0,
+    "plan": "1..144"
+  },
+  {
+    "suite": "direct_ingredient_need_convergence.sql",
+    "exit": 0,
+    "plan": "1..31"
+  },
+  {
+    "suite": "rmvp_04_connected_need_generation.sql",
+    "exit": 0,
+    "plan": "1..87"
+  },
+  {
+    "suite": "rmvp_05_connected_confirmed_need_review.sql",
+    "exit": 0,
+    "plan": "1..41"
+  },
+  {
+    "suite": "rmvp_06_connected_confirmed_need_validation.sql",
+    "exit": 0,
+    "plan": "1..65"
+  },
+  {
+    "suite": "rmvp_07_connected_confirmed_need_approval_release.sql",
+    "exit": 0,
+    "plan": "1..67"
+  },
+  {
+    "suite": "d037_confirmed_need_save_release_boundary.sql",
+    "exit": 0,
+    "plan": "1..37"
+  },
+  {
+    "suite": "school_catering_handoff_allocation.sql",
+    "exit": 0,
+    "plan": "1..88"
+  },
+  {
+    "suite": "purchase_review_confirm_release.sql",
+    "exit": 0,
+    "plan": "1..147"
+  },
+  {
+    "suite": "procurement_supplier_line_note.sql",
+    "exit": 0,
+    "plan": "1..13"
+  },
+  {
+    "suite": "school_catering_purchase_orders.sql",
+    "exit": 0,
+    "plan": "1..100"
+  },
+  {
+    "suite": "school_catering_planning_correction.sql",
+    "exit": 0,
+    "plan": "1..23"
+  },
+  {
+    "suite": "purchase_handoff_clock_skew.sql",
+    "exit": 0,
+    "plan": "1..6"
+  },
+  {
+    "suite": "issue_222_closed_loop_planning_corrections.sql",
+    "exit": 0,
+    "plan": "1..47"
+  },
+  {
+    "suite": "planning_contract_01_atomic_planning_boundaries.sql",
+    "exit": 0,
+    "plan": "1..258"
+  },
+  {
+    "suite": "planning_contract_02b_selective_confirmation_continuity.sql",
+    "exit": 0,
+    "plan": "1..42"
+  },
+  {
+    "suite": "planning_operational_proposal.sql",
+    "exit": 0,
+    "plan": "1..62"
+  },
+  {
+    "suite": "planning_legacy_adoption_unit_transition.sql",
+    "exit": 0,
+    "plan": "1..20"
+  },
+  {
+    "suite": "school_dispatch_release.sql",
+    "exit": 0,
+    "plan": "1..54"
+  },
+  {
+    "suite": "school_fulfilment_reconciliation.sql",
+    "exit": 0,
+    "plan": "1..16"
+  },
+  {
+    "suite": "pa_05d_planning_command_family.sql",
+    "exit": 0,
+    "plan": "1..69"
+  },
+  {
+    "suite": "pa_05e_procurement_command_family.sql",
+    "exit": 0,
+    "plan": "1..74"
+  },
+  {
+    "suite": "pa_06e_h0a3a_weekly_menu_persistence_foundation.sql",
+    "exit": 0,
+    "plan": "1..100"
+  },
+  {
+    "suite": "pa_06e_h0a3b_attendance_structure_security.sql",
+    "exit": 0,
+    "plan": "1..25"
+  },
+  {
+    "suite": "pa_06e_h0a3b_attendance_lifecycle_mutability.sql",
+    "exit": 0,
+    "plan": "1..78"
+  },
+  {
+    "suite": "pa_06e_h0a3b_attendance_approval_snapshot_integrity.sql",
+    "exit": 0,
+    "plan": "1..40"
+  },
+  {
+    "suite": "pa_06e_h0a4b_planning_input_readiness_structure_security.sql",
+    "exit": 0,
+    "plan": "1..36"
+  },
+  {
+    "suite": "pa_06e_h0a4b_planning_input_readiness_evaluation_source_snapshot_integrity.sql",
+    "exit": 0,
+    "plan": "1..59"
+  },
+  {
+    "suite": "pa_06e_h0a4b_planning_input_readiness_lifecycle_issues_invalidation.sql",
+    "exit": 0,
+    "plan": "1..57"
+  },
+  {
+    "suite": "pa_06e_h0a5b_need_generation_structure_security.sql",
+    "exit": 0,
+    "plan": "1..43"
+  },
+  {
+    "suite": "pa_06e_h0a5b_need_generation_run_input_recipe_calculation_integrity.sql",
+    "exit": 0,
+    "plan": "1..60"
+  },
+  {
+    "suite": "pa_06e_h0a5b_theoretical_line_source_predecessor_release_integrity.sql",
+    "exit": 0,
+    "plan": "1..76"
+  },
+  {
+    "suite": "pa_06e_h0a5b_need_generation_lifecycle_issues_invalidation_history.sql",
+    "exit": 0,
+    "plan": "1..64"
+  },
+  {
+    "suite": "pa_06e_h0b1b_confirmed_need_structure_security_catalog.sql",
+    "exit": 0,
+    "plan": "1..51"
+  },
+  {
+    "suite": "pa_06e_h0b1b_school_catering_identity_current_source.sql",
+    "exit": 0,
+    "plan": "1..69"
+  },
+  {
+    "suite": "pa_06e_h0b1b_contribution_membership_total_partition_history.sql",
+    "exit": 0,
+    "plan": "1..80"
+  },
+  {
+    "suite": "pa_06e_h0b1b_wholesale_compatibility_source_classification.sql",
+    "exit": 0,
+    "plan": "1..56"
+  },
+  {
+    "suite": "pa_05g_backend_end_to_end_acceptance.sql",
+    "exit": 0,
+    "plan": "1..78"
+  }
+]
