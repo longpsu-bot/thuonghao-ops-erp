@@ -12,7 +12,15 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 **Purpose:** identify the connected surfaces that should be stabilized before CMD-03 without redefining business behavior or polishing prototypes that will change later.
 
-## Current workspace amendment — 6 October 2026
+## Current workspace amendment — 8 October 2026
+
+**Composition supersession — 8 October 2026 (Draft PR #358):** [D-048](../decisions/decision-atlas-persistent-workspace.md) now defines **13 persistent owners**: separate Thực đơn, Sĩ số and Hàng đặt riêng (formerly Bổ sung), plus the existing jobs. Local-state/guard ownership and business/backend contracts are unchanged. Earlier eleven-owner hosted acceptance remains historical; this amendment claims no hosted rollout.
+
+Daily jobs: Thực đơn; Sĩ số; Hàng đặt riêng; Xác nhận nhu cầu; Phân bổ NCC; Đơn mua; Phiếu xuất kho; Đối chiếu PO / Phiếu xuất kho.
+
+Data & Configuration: Trường học; Nguyên liệu; Nhà cung ứng; Công thức; Lệnh điều chỉnh.
+
+## Historical workspace amendment — 6 October 2026
 
 ATLAS-PRODUCT-CORRECTIONS-01 implements the owner-requested eleven-job registry
 in `src/vnext/atlas/AtlasWorkbenchRegistry.tsx`, pending PR review/merge.

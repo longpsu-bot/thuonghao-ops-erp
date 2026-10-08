@@ -96,7 +96,7 @@ describe("Atlas pre-cutover UI polish", () => {
     ).toHaveAttribute("data-icon", "shopping-cart");
   });
 
-  it("retains Planning secondary jobs and a Monday-Sunday week range field", async () => {
+  it("uses a standalone Menu owner and retains its Monday-Sunday week range field", async () => {
     show();
     await nav("Thực đơn");
 
@@ -104,16 +104,8 @@ describe("Atlas pre-cutover UI polish", () => {
       screen.queryByRole("tablist", { name: "Giai đoạn lập nhu cầu" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("tablist", { name: "Công việc thực đơn" }),
-    ).toHaveAttribute("data-tab-tier", "secondary");
-    const secondary = screen.getByRole("tablist", {
-      name: "Công việc thực đơn",
-    });
-    expect(
-      within(secondary)
-        .getAllByRole("tab")
-        .map((tab) => tab.textContent),
-    ).toEqual(["Thực đơn", "Sĩ số", "Bổ sung"]);
+      screen.queryByRole("tablist", { name: "Công việc thực đơn" }),
+    ).not.toBeInTheDocument();
     const heading = screen.getByRole("heading", {
       level: 1,
       name: "Thực đơn",

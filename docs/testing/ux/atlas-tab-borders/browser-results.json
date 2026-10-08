@@ -1,0 +1,52 @@
+[
+  {
+    "viewport": "1920x1080",
+    "workbench_count": 13,
+    "independent_drafts": "PASS",
+    "close_cancel": "PASS",
+    "navigation": "PASS",
+    "source_subtabs": 0,
+    "document_overflow": false,
+    "page_errors": []
+  },
+  {
+    "viewport": "1440x900",
+    "workbench_count": 13,
+    "independent_drafts": "PASS",
+    "close_cancel": "PASS",
+    "navigation": "PASS",
+    "source_subtabs": 0,
+    "document_overflow": false,
+    "page_errors": []
+  },
+  {
+    "viewport": "1366x768",
+    "workbench_count": 13,
+    "independent_drafts": "PASS",
+    "close_cancel": "PASS",
+    "navigation": "PASS",
+    "source_subtabs": 0,
+    "document_overflow": false,
+    "page_errors": []
+  },
+  {
+    "viewport": "650x900",
+    "workbench_count": 13,
+    "independent_drafts": "PASS",
+    "close_cancel": "PASS",
+    "navigation": "PASS",
+    "source_subtabs": 0,
+    "document_overflow": false,
+    "page_errors": []
+  },
+  {
+    "viewport": "360x800",
+    "workbench_count": 13,
+    "independent_drafts": "PASS",
+    "close_cancel": "PASS",
+    "navigation": "PASS",
+    "source_subtabs": 0,
+    "document_overflow": false,
+    "page_errors": []
+  }
+]

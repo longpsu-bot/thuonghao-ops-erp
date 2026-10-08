@@ -100,6 +100,7 @@ export type PlanningSourcesProps = AtlasModuleExitProps & {
   initialServiceDate?: string;
   onServiceDateChange?: (date: string) => void;
   initialJob?: PlanningJob;
+  ownerJob?: PlanningJob;
 };
 export type AttendanceDraft = Omit<
   AttendanceLine,
@@ -156,7 +157,9 @@ export function usePlanningSources({
   onServiceDateChange,
   initialWeek = initialServiceDate ?? mondayOf(new Date()),
   initialJob = "menu",
+  ownerJob,
 }: PlanningSourcesProps) {
+  const fixedJob = useRef(ownerJob).current;
   const [week, setWeek] = useState(() => normalizeWeek(initialWeek));
   const [date, setDate] = useState(
     () => initialServiceDate ?? normalizeWeek(initialWeek),
@@ -164,7 +167,7 @@ export function usePlanningSources({
   useEffect(() => {
     onServiceDateChange?.(date);
   }, [date, onServiceDateChange]);
-  const [job, setJob] = useState<PlanningJob>(initialJob);
+  const [job, setJob] = useState<PlanningJob>(fixedJob ?? initialJob);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
   const [data, setData] = useState<PlanningInputsWorkbenchData | null>(null);
   const [pantryData, setPantryData] = useState<PantryWorkbenchData | null>(
@@ -460,6 +463,7 @@ export function usePlanningSources({
     if (next.refresh) void load(week);
   };
   const transition = (next: PlanningTransition) => {
+    if (fixedJob && next.job && next.job !== fixedJob) return;
     if (writeBusy.current) return;
     if (dirty) setPending(next);
     else applyTransition(next);
