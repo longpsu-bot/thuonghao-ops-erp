@@ -34,9 +34,10 @@ try {
       foreach($atlasSheetRecord in $atlasFile.sheets) {
         $atlasSheet=$atlasReopened.Worksheets.Item($atlasSheetRecord.name)
         foreach($atlasCell in $atlasSheetRecord.cells) {
-          if($atlasCell.value -is [string] -and $atlasCell.value -match '^\d+\.\d{1,6}$') {
+          if($atlasCell.quantity -or ($atlasCell.value -is [string] -and $atlasCell.value -match '^\d+\.\d{1,6}$')) {
             $atlasValue=$atlasSheet.Range($atlasCell.address).Value2
             if($atlasValue -isnot [string] -or $atlasValue -cne $atlasCell.value) {throw "EXACT_TEXT_LOST: $($atlasFile.name) $($atlasCell.address)"}
+            if($atlasCell.quantity -and ($atlasSheet.Range($atlasCell.address).NumberFormat -cne '@' -or $atlasSheet.Range($atlasCell.address).HorizontalAlignment -ne -4152)) {throw "QUANTITY_STYLE_LOST: $($atlasFile.name) $($atlasCell.address)"}
             $atlasQuantityCount++
           }
         }

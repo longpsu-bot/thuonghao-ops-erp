@@ -91,3 +91,10 @@ python scripts/compare-atlas-document-v1.py docs/testing/artifacts/atlas-documen
 Keep PR #360 Draft. Native XLSX geometry, denser Roboto PDF rendering, missing
 codes/labels/groups and any future retrieval expansion require Owner decisions.
 No migration or live Supabase/Retool change is part of this revision.
+
+# Subsequent quantity display revision
+
+The Owner's 8 October 2026 decision supersedes this set's six-padded-decimal display
+with [compact exact quantities and wider item descriptions](../quantity-precision/README.md).
+This historical set remains evidence for the earlier layout review; source facts,
+reference files, snapshots and pending Class C decisions are unchanged.

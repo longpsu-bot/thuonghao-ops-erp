@@ -28,8 +28,12 @@ const manifest = {
   generatedAt: "2026-10-08T00:00:00Z",
   files: [],
   shoppingImport: null,
+  precisionExceptions: [],
 };
 try {
+  const { formatExactDocumentQuantity } = await load(
+    "documents/documentPresentation.ts",
+  );
   const po = await load("procurement/purchaseOrderExports.ts");
   const pxk = await load("dispatch/schoolDispatchReleaseExports.ts");
   const preliminary = await load(
@@ -52,7 +56,13 @@ try {
     "planning-inputs/confirmed-needs/shoppingListPackage.ts",
   );
 
-  async function saveXlsx(name, bytes) {
+  // Independent exact-value check against source strings, not the print formatter.
+  function micros(value) {
+    assert(/^\d+(?:\.\d{1,6})?$/.test(value));
+    const [whole, fraction = ""] = value.split(".");
+    return BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, "0"));
+  }
+  async function saveXlsx(name, bytes, sourceQuantities = []) {
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(bytes);
     const sheets = book.worksheets
@@ -67,6 +77,16 @@ try {
                   address: cell.address,
                   value: cell.value,
                   hidden: sheet.getColumn(cell.col).hidden,
+                  ...(name !== "Shopping-list-APlus-preserved" &&
+                  cell.numFmt === "@" &&
+                  typeof cell.value === "string"
+                    ? {
+                        quantity: true,
+                        sourceExact: sourceQuantities.find(
+                          (source) => micros(source) === micros(cell.value),
+                        ),
+                      }
+                    : {}),
                 });
             }
           }),
@@ -100,37 +120,104 @@ try {
     }
     const stable = packageCodec.writeShoppingListPackage(parts);
     await fs.writeFile(path.join(output, name + ".xlsx"), stable);
+    const quantities = sheets.flatMap((sheet) =>
+      sheet.cells.filter((cell) => cell.quantity),
+    );
+    assert.deepEqual(
+      quantities.map((cell) => micros(cell.value).toString()).sort(),
+      sourceQuantities.map((value) => micros(value).toString()).sort(),
+      `Exact source quantities: ${name}`,
+    );
+    if (sourceQuantities.length)
+      for (const sheet of sheets)
+        for (const cell of sheet.cells.filter((cell) => cell.quantity)) {
+          assert(!/\.\d*0$/.test(cell.value), "Padded fractional zeroes");
+          if (micros(cell.sourceExact) % 10_000n !== 0n) {
+            assert(
+              JSON.stringify(
+                book.getWorksheet(sheet.name).getCell(cell.address).note,
+              ).includes("PRECISION_EXCEPTION"),
+            );
+            manifest.precisionExceptions.push({
+              file: name + ".xlsx",
+              sheet: sheet.name,
+              cell: cell.address,
+              sourceExact: cell.sourceExact,
+              printed: cell.value,
+            });
+          }
+        }
     manifest.files.push({
       name: name + ".xlsx",
       sha256: crypto.createHash("sha256").update(stable).digest("hex"),
       sheets,
+      sourceQuantities,
+      ...(sourceQuantities.length ? { exactSourceQuantityParity: "PASS" } : {}),
     });
   }
-  async function savePo(name, order) {
-    await saveXlsx(name, await po.createPurchaseOrderXlsx(order));
+  async function savePo(name, order, mode = "all") {
+    const source = structuredClone(order);
+    const data = po.buildPurchaseOrderExportData(order);
+    const summaries = data.summaryLines.map((line) => line.orderedQuantity);
+    const details = data.schoolLines.map((line) => line.orderedQuantity);
+    await saveXlsx(
+      name,
+      await po.createPurchaseOrderXlsx(order, mode),
+      mode === "all"
+        ? [...details, ...details, ...summaries]
+        : mode === "sum"
+          ? summaries
+          : details,
+    );
     await savePdf(
       name,
-      await po.createPurchaseOrderPdf(order),
-      po.buildPurchaseOrderPdfDefinition(order),
+      await po.createPurchaseOrderPdf(order, mode),
+      po.buildPurchaseOrderPdfDefinition(order, mode),
     );
+    assert.deepEqual(order, source);
   }
   async function savePdf(name, bytes, definition) {
     await fs.writeFile(path.join(output, name + ".pdf"), bytes);
     const strings = [];
+    const quantities = [];
     const visit = (value) => {
       if (typeof value === "string") strings.push(value);
       else if (Array.isArray(value)) value.forEach(visit);
       else if (value && typeof value === "object") {
-        if (typeof value.text === "string") strings.push(value.text);
+        if (typeof value.text === "string") {
+          strings.push(value.text);
+          if (
+            value.alignment === "right" &&
+            /^\d+(?:\.\d{1,6})?$/.test(value.text)
+          )
+            quantities.push(value.text);
+        }
         for (const key of ["content", "stack", "columns", "table", "body"])
           if (value[key]) visit(value[key]);
       }
     };
     visit(definition.content);
+    const xlsx = manifest.files.find((file) => file.name === name + ".xlsx");
+    assert(xlsx);
+    const excelQuantities = xlsx.sheets.flatMap((sheet) =>
+      sheet.cells.filter((cell) => cell.quantity).map((cell) => cell.value),
+    );
+    assert.deepEqual(
+      [...quantities].sort(),
+      [...excelQuantities].sort(),
+      `XLSX/PDF quantity parity: ${name}`,
+    );
     manifest.files.push({
       name: name + ".pdf",
       sha256: crypto.createHash("sha256").update(bytes).digest("hex"),
-      visibleStrings: strings.filter((value) => value.length > 7),
+      visibleStrings: [
+        ...new Set([
+          ...strings.filter((value) => value.length > 7),
+          ...quantities,
+        ]),
+      ],
+      quantities,
+      xlsxQuantityParity: "PASS",
     });
   }
   const order =
@@ -178,12 +265,47 @@ try {
     return line;
   });
   await savePo("PO-multipage-precision", many);
+  const displayCases = [
+    "375.000000",
+    "39.700000",
+    "12.340000",
+    "0.050000",
+    "100.000000",
+    "12.345678",
+    "99999999999999.120000",
+  ];
+  const compactOrder = structuredClone(single);
+  compactOrder.lines = displayCases.map((quantity, index) => {
+    const line = structuredClone(single.lines[0]);
+    line.ingredient.ingredient_id = `display-item-${index}`;
+    line.ordered_quantity = quantity;
+    line.school_breakdown[0].ordered_quantity = quantity;
+    return line;
+  });
+  await savePo("PO-quantity-display", compactOrder);
 
   const document = createReviewSchoolDispatchDocument("RELEASED");
   document.released_at = "2026-09-24T02:00:00Z";
+  const compactPxk = structuredClone(document);
+  compactPxk.lines = displayCases.map((quantity, index) => ({
+    ...document.lines[0],
+    ingredient_id: `display-item-${index}`,
+    quantity,
+  }));
+  await saveXlsx(
+    "PXK-quantity-display",
+    await pxk.createSchoolDispatchXlsx(compactPxk),
+    compactPxk.lines.map((line) => line.quantity),
+  );
+  await savePdf(
+    "PXK-quantity-display",
+    await pxk.createSchoolDispatchPdf(compactPxk),
+    pxk.buildSchoolDispatchPdfDefinition(compactPxk),
+  );
   await saveXlsx(
     "PXK-one-school",
     await pxk.createSchoolDispatchXlsx(document),
+    document.lines.map((line) => line.quantity),
   );
   await savePdf(
     "PXK-one-school",
@@ -210,6 +332,7 @@ try {
   await saveXlsx(
     "PXK-multipage-superseded",
     await pxk.createSchoolDispatchXlsx(long),
+    long.lines.map((line) => line.quantity),
   );
   await savePdf(
     "PXK-multipage-superseded",
@@ -224,6 +347,9 @@ try {
   await saveXlsx(
     "Dispatch-grouped-distinct-destinations",
     await pxk.createGroupedSchoolDispatchXlsx([long, other, document]),
+    [long, other, document].flatMap((document) =>
+      document.lines.map((line) => line.quantity),
+    ),
   );
 
   // Optional owner reference files stay read-only and outside the repository.
@@ -286,7 +412,10 @@ try {
       line.unit = { unit_id: `v1-fixture-unit-${unit}`, unit_code: unit };
       // Reference detail quantities are small decimal facts. Summary's IEEE
       // 39.700000000000003 artifact is deliberately recomputed by the exact builder.
-      line.ordered_quantity = Number(current.getCell(6).value).toFixed(6);
+      const rawQuantity = String(current.getCell(6).value);
+      formatExactDocumentQuantity(rawQuantity);
+      const [whole, fraction = ""] = rawQuantity.split(".");
+      line.ordered_quantity = `${whole}.${fraction.padEnd(6, "0")}`;
       line.supplier_note = null;
       line.delivery_location = {
         delivery_location_id: `v1-fixture-location-${schoolIndex}`,
@@ -306,17 +435,15 @@ try {
     }
     assert.equal(equivalent.lines.length, 23);
     assert.equal(schoolIndex, 18);
+    assert.deepEqual(
+      po
+        .buildPurchaseOrderExportData(equivalent)
+        .summaryLines.map((line) => line.orderedQuantity),
+      ["375.000000", "147.000000", "1630.000000", "39.700000"],
+    );
     await savePo("V1-equivalent-3F-all", equivalent);
     for (const mode of ["details_ing", "details_school", "sum"]) {
-      await saveXlsx(
-        `V1-equivalent-3F-${mode}`,
-        await po.createPurchaseOrderXlsx(equivalent, mode),
-      );
-      await savePdf(
-        `V1-equivalent-3F-${mode}`,
-        await po.createPurchaseOrderPdf(equivalent, mode),
-        po.buildPurchaseOrderPdfDefinition(equivalent, mode),
-      );
+      await savePo(`V1-equivalent-3F-${mode}`, equivalent, mode);
     }
     const inspection = structuredClone(document);
     const reference = references[1].worksheets[0];
@@ -338,11 +465,14 @@ try {
       ingredient_id: `v1-inspection-item-${i}`,
       ingredient_name: reference.getCell(`B${11 + i}`).text,
       unit_code: reference.getCell(`C${11 + i}`).text,
-      quantity: Number(reference.getCell(`D${11 + i}`).value).toFixed(6),
+      quantity: formatExactDocumentQuantity(
+        String(reference.getCell(`D${11 + i}`).value),
+      ).text,
     }));
     await saveXlsx(
       "V1-equivalent-PXK-13",
       await pxk.createSchoolDispatchXlsx(inspection),
+      inspection.lines.map((line) => line.quantity),
     );
     await savePdf(
       "V1-equivalent-PXK-13",
@@ -418,6 +548,19 @@ try {
   await saveXlsx(
     "Purchase-review-preliminary",
     await preliminary.createGeneratedPurchaseReviewXlsx(review),
+    [...review.rows, ...review.rows].map((row) => row.family_quantity),
+  );
+  await saveXlsx(
+    "Purchase-review-quantity-display",
+    await preliminary.createGeneratedPurchaseReviewXlsx({
+      ...review,
+      rows: displayCases.map((quantity, index) => ({
+        ...review.rows[0],
+        ingredient_id: `display-item-${index}`,
+        family_quantity: quantity,
+      })),
+    }),
+    [...displayCases, ...displayCases],
   );
   const schools = [0, 1].map((i) => ({
     school_id: `fixture-school-${i}`,

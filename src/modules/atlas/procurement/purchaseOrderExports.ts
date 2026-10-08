@@ -13,6 +13,7 @@ import {
   documentFilePart,
   createDocumentZip,
   finishDocumentSheet,
+  formatExactDocumentQuantity,
   initializeDocumentWorkbook,
   prepareDocumentSheet as prepareWorksheet,
   renderDocumentPdf,
@@ -259,9 +260,10 @@ export function buildPurchaseOrderPdfDefinition(
 ): TDocumentDefinitions {
   const data = buildPurchaseOrderExportData(order);
   const quantityWidth = Math.max(
-    110,
+    60,
     ...[...data.summaryLines, ...data.schoolLines].map(
-      (line) => line.orderedQuantity.length * 6.5 + 6,
+      (line) =>
+        formatExactDocumentQuantity(line.orderedQuantity).text.length * 6.5 + 6,
     ),
   );
   const content: TDocumentDefinitions["content"] = [];
@@ -307,7 +309,9 @@ export function buildPurchaseOrderPdfDefinition(
                   line.ingredientName,
                   line.unitCode,
                   {
-                    text: continuation ? "" : line.orderedQuantity,
+                    text: continuation
+                      ? ""
+                      : formatExactDocumentQuantity(line.orderedQuantity).text,
                     noWrap: true,
                     alignment: "right" as const,
                   },
@@ -345,7 +349,11 @@ export function buildPurchaseOrderPdfDefinition(
             index + 1,
             detail,
             line.unitCode,
-            { text: line.orderedQuantity, alignment: "right", noWrap: true },
+            {
+              text: formatExactDocumentQuantity(line.orderedQuantity).text,
+              alignment: "right",
+              noWrap: true,
+            },
           ]);
           if (line.supplierNote)
             noteChunks(line.supplierNote).forEach((note) =>
@@ -452,9 +460,25 @@ function addDetailSheet(
   sheet.getCell("A8").value =
     `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel} · Mã NCC: ${codeGap}`;
   sheet.getCell("A8").font = { name: "Times New Roman", size: 9 };
-  [15, 13, 8, 34, 11, 12, 12].forEach(
-    (width, i) => (sheet.getColumn(i + 1).width = width),
+  const quantityWidth = Math.max(
+    12,
+    ...data.schoolLines.map(
+      (line) =>
+        formatExactDocumentQuantity(line.orderedQuantity).text.length * 1.15 +
+        2,
+    ),
   );
+  const descriptionWidth = 34 + Math.max(0, 24 - quantityWidth);
+  const formWidth = 47 + descriptionWidth + quantityWidth;
+  [
+    15,
+    13,
+    8,
+    descriptionWidth,
+    11,
+    quantityWidth / 2,
+    quantityWidth / 2,
+  ].forEach((width, i) => (sheet.getColumn(i + 1).width = width));
   for (const [row, height] of [
     [1, 22],
     [2, 24],
@@ -463,7 +487,7 @@ function addDetailSheet(
     [5, 22],
     [6, wrappedRowHeight(data.supplierName, 70, 14, 22)],
     [7, 12],
-    [8, wrappedRowHeight(sheet.getCell("A8").text, 105, 9, 20)],
+    [8, wrappedRowHeight(sheet.getCell("A8").text, formWidth, 9, 20)],
   ])
     sheet.getRow(row!).height = height;
   sheet.getRow(9).values = [
@@ -485,7 +509,7 @@ function addDetailSheet(
     (_, i) => sheet.getRow(i + 1).height ?? 20,
   ).reduce((a, b) => a + b, 0);
   // ponytail: conservative A4/TNR height budget; native Excel QA owns the ceiling, measured font pagination if other fonts are introduced.
-  const scale = Math.min(1, (595.28 - 0.6 * 72) / (105 * 5.25));
+  const scale = Math.min(1, (595.28 - 0.6 * 72) / (formWidth * 5.25));
   const pageHeight = (841.89 - 0.9 * 72) / scale - 12;
   let pageUsed = headerHeight;
   let activeLabel = "";
@@ -499,7 +523,7 @@ function addDetailSheet(
       pattern: "solid",
       fgColor: { argb: "FFE8E8E8" },
     };
-    row.height = wrappedRowHeight(label, 105, 14, 24);
+    row.height = wrappedRowHeight(label, formWidth, 14, 24);
     row.alignment = { vertical: "middle", wrapText: true };
     borderRow(row);
     pageUsed += row.height;
@@ -513,12 +537,12 @@ function addDetailSheet(
   for (const lines of detailGroups(data, direction)) {
     activeLabel = groupLabel(lines, direction);
     room(
-      wrappedRowHeight(activeLabel, 105, 14, 24) +
+      wrappedRowHeight(activeLabel, formWidth, 14, 24) +
         wrappedRowHeight(
           direction === "details_school"
             ? lines[0]!.ingredientName
             : schoolLabel(lines[0]!),
-          34,
+          descriptionWidth,
           14,
           30,
         ),
@@ -530,7 +554,7 @@ function addDetailSheet(
         direction === "details_school"
           ? line.ingredientName
           : schoolLabel(line);
-      const height = wrappedRowHeight(detail, 34, 14, 30);
+      const height = wrappedRowHeight(detail, descriptionWidth, 14, 30);
       room(height, true);
       const row = sheet.getRow(rowNumber++);
       row.values = [null, null, index + 1, detail, line.unitCode, null, null];
@@ -545,7 +569,7 @@ function addDetailSheet(
       if (line.supplierNote)
         noteChunks(line.supplierNote).forEach((note) => {
           const text = `Ghi chú (STT ${index + 1}, ${detail.replaceAll("\n", " / ")}): ${note}`;
-          const noteHeight = wrappedRowHeight(text, 105, 12, 24);
+          const noteHeight = wrappedRowHeight(text, formWidth, 12, 24);
           room(noteHeight, true);
           sheet.mergeCells(rowNumber, 1, rowNumber, 7);
           const noteRow = sheet.getRow(rowNumber++);
@@ -609,18 +633,23 @@ function addSummarySheet(
   sheet.getCell("A9").value = `Mã hàng: ${codeGap}.`;
   sheet.getCell("A9").font = { name: "Times New Roman", size: 10 };
   const quantityWidth = Math.max(
-    12.71,
-    ...data.summaryLines.map((line) => line.orderedQuantity.length * 1.15 + 2),
+    10,
+    ...data.summaryLines.map(
+      (line) =>
+        formatExactDocumentQuantity(line.orderedQuantity).text.length * 1.15 +
+        2,
+    ),
   );
   const noteWidth = data.summaryLines.some((line) => line.supplierNote)
     ? 32
     : 11.14;
-  [16.14, 12, 36, 9.71, quantityWidth, noteWidth].forEach(
+  const descriptionWidth = 36 + Math.max(0, 12.71 - quantityWidth);
+  [16.14, 12, descriptionWidth, 9.71, quantityWidth, noteWidth].forEach(
     (width, i) => (sheet.getColumn(i + 1).width = width),
   );
   for (const [r, w, size, minimum] of [
-    [1, 36 + 9.71 + quantityWidth + noteWidth, 14, 22],
-    [2, 36 + 9.71 + quantityWidth + noteWidth, 12, 20],
+    [1, descriptionWidth + 9.71 + quantityWidth + noteWidth, 14, 22],
+    [2, descriptionWidth + 9.71 + quantityWidth + noteWidth, 12, 20],
     [4, 105, 20, 30],
     [5, 105, 9, 22],
     [6, 105, 14, 26],
@@ -654,7 +683,7 @@ function addSummarySheet(
       row.alignment = { vertical: "middle", wrapText: true };
       row.getCell(6).font = { name: "Times New Roman", size: 12 };
       row.height = Math.max(
-        wrappedRowHeight(line.ingredientName, 36, 14),
+        wrappedRowHeight(line.ingredientName, descriptionWidth, 14),
         wrappedRowHeight(note, 32),
       );
       if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);

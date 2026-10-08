@@ -2,6 +2,16 @@
 
 ## Current Owner fidelity revision
 
+The 8 October 2026 approved printed-quantity decision is implemented as a
+presentation-only continuation of reviewed head `03580da349047881c247601538b3685f817ccbfb`:
+trim fractional zeros, normally at most two meaningful decimal places, preserve
+and record exact exceptions. The Owner also requested wider item descriptions
+and smaller routine quantity columns. [Current specimens, precision ledger and
+validation](../testing/artifacts/atlas-document-system-01/quantity-precision/README.md)
+supersede earlier padded-quantity specimens for display review. Source precision,
+snapshots, calculations, Allocation validation and Shopping List V2/A+ are unchanged.
+Same Draft PR #360; Owner acceptance and the existing Class C decisions remain open.
+
 The Owner rejected reviewed head `f3c8b5014e87906399c5cb1035c0b87cf4052f95`:
 **DOCUMENT_SYSTEM_V1_FIDELITY = NOT ACCEPTED**. The same branch and
 [Draft PR #360](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/360) are revised;

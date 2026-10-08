@@ -10,6 +10,7 @@ import {
   wrappedRowHeight,
   finishDocumentSheet,
   setExactQuantity,
+  formatExactDocumentQuantity,
 } from "../documents/documentPresentation";
 
 export function generatedSupplierLabel(row: GeneratedPurchaseReviewRow) {
@@ -226,8 +227,39 @@ export async function createGeneratedPurchaseReviewXlsx(
   workbook.title = `Bản dự kiến · ${review.service_date}`;
   const summary = workbook.addWorksheet("Tổng");
   const detail = workbook.addWorksheet("Chi tiết");
-  prepare(summary, [7, 12, 36, 9, 24, 20], review, false);
-  prepare(detail, [15, 13, 8, 34, 11, 12, 12], review, true);
+  const totals = groupBy(
+    review.rows,
+    (row) =>
+      `${row.recommendation?.supplier_id ?? "unresolved"}:${row.ingredient_id}:${row.unit_id}`,
+  ).map((rows) =>
+    exact(rows.reduce((sum, row) => sum + quantity(row.family_quantity), 0n)),
+  );
+  const quantityWidth = Math.max(
+    10,
+    ...[...totals, ...review.rows.map((row) => row.family_quantity)].map(
+      (value) => formatExactDocumentQuantity(value).text.length * 1.15 + 2,
+    ),
+  );
+  prepare(
+    summary,
+    [7, 12, 36 + Math.max(0, 24 - quantityWidth), 9, quantityWidth, 20],
+    review,
+    false,
+  );
+  prepare(
+    detail,
+    [
+      15,
+      13,
+      8,
+      34 + Math.max(0, 24 - quantityWidth),
+      11,
+      quantityWidth / 2,
+      quantityWidth / 2,
+    ],
+    review,
+    true,
+  );
   const suppliers = groupBy(
     [...review.rows].sort(
       (a, b) =>
@@ -277,8 +309,6 @@ export async function createGeneratedPurchaseReviewXlsx(
       ]);
       border(row, 6, index % 2 === 1);
       setExactQuantity(row.getCell(5), total);
-      row.getCell(5).note =
-        "Exact generated quantity; text preserves six decimal places without Excel rounding.";
     });
     for (const schoolRows of groupBy(
       rows,

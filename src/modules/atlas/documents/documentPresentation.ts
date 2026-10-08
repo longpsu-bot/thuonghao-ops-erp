@@ -30,10 +30,22 @@ export function borderRow(row: Row) {
   });
 }
 
-export function setExactQuantity(cell: Cell, value: string) {
+export function formatExactDocumentQuantity(value: string) {
   if (!/^\d+(?:\.\d{1,6})?$/.test(value))
     throw new Error("Invalid exact document quantity.");
-  cell.value = value;
+  const [whole, fraction = ""] = value.split(".");
+  const meaningful = fraction.replace(/0+$/, "");
+  return {
+    text: meaningful ? `${whole}.${meaningful}` : whole!,
+    precisionException: meaningful.length > 2,
+  };
+}
+
+export function setExactQuantity(cell: Cell, value: string) {
+  const printed = formatExactDocumentQuantity(value);
+  cell.value = printed.text;
+  if (printed.precisionException)
+    cell.note = `PRECISION_EXCEPTION: ${value} requires more than two decimal places; retained exactly for Product review.`;
   cell.font = { name: documentFont, size: 12 };
   cell.numFmt = "@";
   cell.alignment = { vertical: "middle", horizontal: "right", wrapText: false };

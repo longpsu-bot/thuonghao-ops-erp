@@ -76,7 +76,7 @@ describe("Owner V1 PO presentation revision", () => {
     expect(summary.getCell("A8").text).toContain("chưa lưu mã");
     expect(summary.getCell("A9").text).toContain("Mã hàng");
     expect(summary.getCell("B11").text).toBe("");
-    expect(summary.getCell("E11").value).toBe("100.000000");
+    expect(summary.getCell("E11").value).toBe("100");
     expect(summary.getCell("E11").numFmt).toBe("@");
     expect(summary.pageSetup.printTitlesRow).toBe("1:10");
     expect(JSON.stringify(summary.getSheetValues())).not.toContain("Ngày giao");
@@ -103,7 +103,7 @@ describe("Owner V1 PO presentation revision", () => {
       expect(sheet.model.merges).toContain("A10:G10");
       expect(sheet.getCell("C11").value).toBe(1);
       expect(sheet.getCell("A11").text).toBe("");
-      expect(sheet.getCell("F11").value).toBe("60.000000");
+      expect(sheet.getCell("F11").value).toBe("60");
       expect(sheet.pageSetup.orientation).toBe("portrait");
     }
     expect(

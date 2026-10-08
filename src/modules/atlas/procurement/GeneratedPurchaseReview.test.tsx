@@ -200,6 +200,41 @@ describe("generated purchase review worksheet", () => {
       "NCC đề xuất: Nhà cung ứng A",
     );
   });
+  it("prints compact preliminary totals and details without mutating proposal evidence", async () => {
+    const source: ReviewData = {
+      ...review,
+      rows: [
+        { ...review.rows[0]!, family_quantity: "12.340000" },
+        {
+          ...review.rows[0]!,
+          school_id: "second",
+          family_quantity: "0.050000",
+        },
+      ],
+    };
+    const before = structuredClone(source);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await createGeneratedPurchaseReviewXlsx(source));
+    expect(workbook.getWorksheet("Tổng")!.getCell("E11").value).toBe("12.39");
+    const quantities: string[] = [];
+    workbook.getWorksheet("Chi tiết")!.eachRow((row) => {
+      const cell = row.getCell(6);
+      if (cell.numFmt === "@") quantities.push(cell.text);
+    });
+    expect(quantities).toEqual(["12.34", "0.05"]);
+    expect(workbook.getWorksheet("Tổng")!.getColumn(3).width).toBeGreaterThan(
+      36,
+    );
+    expect(workbook.getWorksheet("Tổng")!.getColumn(5).width).toBeLessThan(24);
+    expect(
+      workbook.getWorksheet("Chi tiết")!.getColumn(4).width,
+    ).toBeGreaterThan(34);
+    expect(source).toEqual(before);
+    expect(source.rows.map((row) => row.family_quantity)).toEqual([
+      "12.340000",
+      "0.050000",
+    ]);
+  });
   it("rejects mixed dates or invalid exact quantities before exporting", async () => {
     await expect(
       createGeneratedPurchaseReviewXlsx({

@@ -11,6 +11,7 @@ import {
   documentFilePart,
   createDocumentZip,
   finishDocumentSheet,
+  formatExactDocumentQuantity,
   initializeDocumentWorkbook,
   prepareDocumentSheet,
   renderDocumentPdf,
@@ -71,7 +72,10 @@ export function buildSchoolDispatchPdfDefinition(
   const data = buildSchoolDispatchExportData(document);
   const quantityWidth = Math.max(
     56,
-    ...data.lines.map((line) => line.quantity.length * 7.5 + 6),
+    ...data.lines.map(
+      (line) =>
+        formatExactDocumentQuantity(line.quantity).text.length * 6.7 + 6,
+    ),
   );
   return {
     pageSize: "A4",
@@ -147,7 +151,7 @@ export function buildSchoolDispatchPdfDefinition(
               line.ingredientName,
               line.unitCode,
               {
-                text: line.quantity,
+                text: formatExactDocumentQuantity(line.quantity).text,
                 fontSize: 12,
                 noWrap: true,
                 alignment: "right" as const,
@@ -205,10 +209,21 @@ function addSchoolDispatchSheet(
   const sheet = workbook.addWorksheet(sheetName);
   prepareDocumentSheet(sheet);
   const quantityWidth = Math.max(
-    12.28515625,
-    ...data.lines.map((line) => line.quantity.length * 1.15 + 2),
+    10,
+    ...data.lines.map(
+      (line) =>
+        formatExactDocumentQuantity(line.quantity).text.length * 1.15 + 2,
+    ),
   );
-  const columnWidths = [13, 30, 8, quantityWidth, 11, 11, 24];
+  const columnWidths = [
+    13,
+    30 + Math.max(0, 12.28515625 - quantityWidth),
+    8,
+    quantityWidth,
+    11,
+    11,
+    24,
+  ];
   columnWidths.forEach(
     (width, index) => (sheet.getColumn(index + 1).width = width),
   );
@@ -319,7 +334,7 @@ function addSchoolDispatchSheet(
       "",
       "",
     ];
-    row.height = wrappedRowHeight(line.ingredientName, 30, 14);
+    row.height = wrappedRowHeight(line.ingredientName, columnWidths[1]!, 14);
     row.font = { name: "Times New Roman", size: 14 };
     row.alignment = { vertical: "middle", wrapText: true };
     setExactQuantity(row.getCell(4), line.quantity);

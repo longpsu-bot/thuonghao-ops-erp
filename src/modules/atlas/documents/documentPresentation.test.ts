@@ -81,11 +81,14 @@ describe("Atlas document presentation boundaries", () => {
           expect(row.height).toBeLessThanOrEqual(180);
         }
         const quantity = row.getCell(quantityColumn).value;
-        if (typeof quantity === "string" && /^\d+\.\d{6}$/.test(quantity))
+        if (
+          typeof quantity === "string" &&
+          /^\d+(?:\.\d{1,6})?$/.test(quantity)
+        )
           quantities.push(quantity);
       });
       expect(chunks.join("")).toBe(order.lines[0]!.supplier_note);
-      expect(quantities).toEqual(["60.000000", "40.000000"]);
+      expect(quantities).toEqual(["60", "40"]);
     }
     for (const [mode, prefix] of [
       ["sum", ""],
@@ -112,7 +115,7 @@ describe("Atlas document presentation boundaries", () => {
         }
       }
       expect(notes.join("")).toBe(order.lines[0]!.supplier_note);
-      expect(quantities).toEqual(["60.000000", "40.000000"]);
+      expect(quantities).toEqual(["60", "40"]);
     }
   });
   it("keeps all released quantities as exact text and labels every PO sheet", async () => {
@@ -160,8 +163,8 @@ describe("Atlas document presentation boundaries", () => {
       const sheet = workbook.getWorksheet(name)!;
       expect(sheet.model.merges).toContain("A10:G10");
       expect(sheet.model.merges).toContain("A13:G13");
-      expect(sheet.getCell("F11").value).toBe("60.000000");
-      expect(sheet.getCell("F14").value).toBe("40.000000");
+      expect(sheet.getCell("F11").value).toBe("60");
+      expect(sheet.getCell("F14").value).toBe("40");
     }
     expect(
       workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("A10").value,

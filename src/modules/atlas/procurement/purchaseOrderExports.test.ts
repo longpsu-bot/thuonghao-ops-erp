@@ -108,7 +108,7 @@ describe("released purchase-order exports", () => {
     expect(serialized).toContain("02/09/2026");
     expect(serialized).toContain("Gạo thơm");
     expect(serialized).toContain("Trường Nguyễn Du");
-    expect(serialized).toContain("60.000000");
+    expect(serialized).toContain('"text":"60"');
   });
 
   it("creates the default three-sheet PO workbook with exact text quantities", async () => {
@@ -145,7 +145,7 @@ describe("released purchase-order exports", () => {
     expect(ingredientText).toContain("Trường Trần Quốc Toản");
     expect(
       workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("E11").value,
-    ).toBe("100.000000");
+    ).toBe("100");
     expect(
       workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A10").value,
     ).toContain("Trường Nguyễn Du");
@@ -160,7 +160,7 @@ describe("released purchase-order exports", () => {
     ).toContain("Trường Trần Quốc Toản");
     expect(
       workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").value,
-    ).toBe("60.000000");
+    ).toBe("60");
     expect(
       workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11")
         .numFmt ?? "General",
