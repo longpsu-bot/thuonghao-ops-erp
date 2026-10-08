@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(100);
+select plan(101);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -289,6 +289,7 @@ create function pg_temp.prb_release(
   where po.supplier_id=p_supplier and po.purchase_order_kind='SCHOOL_CATERING'
     and por.is_current
   order by case when po.purchase_order_status='DRAFT' then 0 else 1 end,
+    case when po.replaces_purchase_order_id is not null then 0 else 1 end,
     po.created_at desc
   limit 1;
 $$;
@@ -1022,6 +1023,14 @@ select ok((
   where r.name='read-replacement-required'
     and row ->> 'commitment_state'='REPLACEMENT_REQUIRED'
 ), 'read model derives replacement-required on both stale released commitments');
+
+-- The isolated 23 September Draft has the same transaction-created timestamp.
+-- The replacement release must target the prepared 21 September replacement.
+select is(
+  pg_temp.prb_release('24050000-0000-4000-8000-000000000035',
+    '24020000-0000-4000-8000-000000000051')#>>'{payload,purchase_order_id}',
+  (select response->>'purchase_order_id' from prb_results where name='replacement-a'),
+  'release fixture selects the exact prepared replacement despite a same-time unrelated Draft');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);

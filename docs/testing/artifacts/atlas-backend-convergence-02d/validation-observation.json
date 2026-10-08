@@ -1,0 +1,156 @@
+{
+  "starting_main_sha": "4ec629d865427ed5180cb9491d528a4a17cf43ba",
+  "chronology": [
+    "fresh cycle 1 start: all 94 migrations",
+    "51 SQL suites and three semantic fixtures",
+    "15 real Auth/API commands",
+    "project-specific stop --no-backup, empty volumes and containers",
+    "fresh cycle 2 start: all 94 migrations",
+    "51 SQL suites and three semantic fixtures",
+    "semantic comparison after full-tuple snapshot sorting",
+    "15 real Auth/API commands"
+  ],
+  "cycles": [
+    {
+      "cycle": 1,
+      "chronological_migrations": 94,
+      "replay_log_sha256": "5750d75182463842152197fc199abf1e5c2d4d775eda9b9a3278b9a5aad4c1cf",
+      "assertions": 3543,
+      "supplementary_catalog": {
+        "views": {
+          "count": 2,
+          "sha256": "0c620443c8d269df8402b12911926bf05b61b75abf2830976d43bc1137d19be2"
+        },
+        "columns": {
+          "count": 1393,
+          "sha256": "7622491109896c98248a0d01bf0b9cadc446257129fdb3f68d55f4ffd00a17b8"
+        },
+        "schemas": {
+          "count": 10,
+          "sha256": "e08b6585b1d053dc32a558ba13e003560acbc88ee92e02909e380445f1ddfcd9"
+        },
+        "triggers": {
+          "count": 112,
+          "sha256": "044811d7565de44bfaa36319c1c8d6ea0affc25956cb969c9a7877f0cc81501d"
+        },
+        "constraints": {
+          "count": 1249,
+          "sha256": "a10d07fad75b0cbd2ae4742e366ec0083b39745548c285cb7ff467871464c23f"
+        },
+        "default_acls": {
+          "count": 0,
+          "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "role_memberships": {
+          "count": 19,
+          "sha256": "6b0a8feb789a2470371e79fcca6af4e2d601a0724f1225ddf9161bed31788b90"
+        }
+      },
+      "performance": {
+        "p50_ms": 3602.094,
+        "p95_ms": 4106.668,
+        "samples_ms": [3323.291, 3602.094, 4106.668],
+        "operator_target_ms": 4000,
+        "operator_target_met": false
+      }
+    },
+    {
+      "cycle": 2,
+      "chronological_migrations": 94,
+      "replay_log_sha256": "5750d75182463842152197fc199abf1e5c2d4d775eda9b9a3278b9a5aad4c1cf",
+      "assertions": 3543,
+      "supplementary_catalog": {
+        "views": {
+          "count": 2,
+          "sha256": "0c620443c8d269df8402b12911926bf05b61b75abf2830976d43bc1137d19be2"
+        },
+        "columns": {
+          "count": 1393,
+          "sha256": "7622491109896c98248a0d01bf0b9cadc446257129fdb3f68d55f4ffd00a17b8"
+        },
+        "schemas": {
+          "count": 10,
+          "sha256": "e08b6585b1d053dc32a558ba13e003560acbc88ee92e02909e380445f1ddfcd9"
+        },
+        "triggers": {
+          "count": 112,
+          "sha256": "044811d7565de44bfaa36319c1c8d6ea0affc25956cb969c9a7877f0cc81501d"
+        },
+        "constraints": {
+          "count": 1249,
+          "sha256": "a10d07fad75b0cbd2ae4742e366ec0083b39745548c285cb7ff467871464c23f"
+        },
+        "default_acls": {
+          "count": 0,
+          "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "role_memberships": {
+          "count": 19,
+          "sha256": "6b0a8feb789a2470371e79fcca6af4e2d601a0724f1225ddf9161bed31788b90"
+        }
+      },
+      "performance": {
+        "p50_ms": 3173.615,
+        "p95_ms": 3847.232,
+        "samples_ms": [2924.863, 3173.615, 3847.232],
+        "operator_target_ms": 4000,
+        "operator_target_met": true
+      }
+    }
+  ],
+  "local_frontend": {
+    "format": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "full_test_attempt": "FAIL then aborted after seven failures; not a full local PASS",
+    "failure_recheck": "PASS: all seven affected cases, original assertions/timeouts, one worker",
+    "document_business_tests": "PASS: 5 files, 22 tests",
+    "ignored_checkout_exclusion": "Existing ignored .superpowers checkout only; no tracked test excluded",
+    "github_ci": "Required separately on exact final PR head"
+  },
+  "diagnostics_directory": "%TEMP%/atlas-backend-convergence-02d",
+  "retained_log_digests": [
+    {
+      "name": "overlapping-auth-setup.log",
+      "sha256": "0ebff852f8cf51324453a9bd6eb1a1df5a32e804f23f149c4c20b20a1f42813f"
+    },
+    {
+      "name": "po-target-diagnostic.log",
+      "sha256": "8f664d3134c29a688b531399eb4dfb1f3c480b056825da25a05cf739c0468c17"
+    },
+    {
+      "name": "frontend-tests.log",
+      "sha256": "96f4259cc9fe77d4b11b3bb57196e01eb05ba6f49870c8146268794d36e2e9be"
+    },
+    {
+      "name": "frontend-failure-recheck.log",
+      "sha256": "8d6b0bc9da2cc836f45237a396cb3b5546b1a7a1e5e62b7eef65e4efeef82975"
+    },
+    {
+      "name": "document-tests.log",
+      "sha256": "6760e844802430975737fa5c2d0a0835a97a098389619536b8c2a9265a62ce65"
+    },
+    {
+      "name": "frontend-format.log",
+      "sha256": "3195538fc5c302b8da5cd456bdfee36b9b1da3f875894ee2a74f7de013cd0c98"
+    },
+    {
+      "name": "frontend-typecheck.log",
+      "sha256": "e8c131f24b7ba92897cfe9f35aaeb5d0d5a7afb09900b9d655f26912b22c552a"
+    },
+    {
+      "name": "frontend-build.log",
+      "sha256": "489e6ff2d4ea9755eacb166667d60e7586778cfba20e0cf8991ca0ee5b385da8"
+    },
+    {
+      "name": "discard-1.log",
+      "sha256": "2f19e01ef4517d6e01275858125811b847d1b688f910d3b27850ecd2545263e0"
+    }
+  ],
+  "excluded_attempts": [
+    "Concurrent Auth setup contaminated Pantry capability count (32 instead of 31); discarded entire project and started again",
+    "Direct import runner lacked CLI pgTAP search_path; official CLI import test passed, wrapper prerequisite supplied only within rolled-back tests"
+  ],
+  "fixture_correction": "Existing PO release helper selected unrelated same-timestamp Draft; prefer prepared replacement, add exact-target assertion; production unchanged",
+  "collector_correction": "PO/PXK snapshots with tied sort keys had equal multisets in different order; compare full tuples canonically without dropping facts"
+}
