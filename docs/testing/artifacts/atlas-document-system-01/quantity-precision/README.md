@@ -78,6 +78,12 @@ Attendance owner, with PO/PXK ZIP callbacks preserved. All 110 affected workbenc
 tests and typecheck pass; this reconciliation does not change the certified
 quantity formatter or specimen output.
 
+The first reconciled-head CI run exposed two newly merged repeat-PDF assertions
+that compared footer callback identities. The guards now evaluate first/last-page
+footer output before comparing the full definition, retaining all exact source,
+Unit, note and snapshot assertions. The reproduced failures pass with 41 focused
+document checks; no exporter or business behavior changed for this repair.
+
 ## Shopping List and open Product decisions
 
 Shopping List V2/A+ exporter, parser, codec, metadata and geometry are unchanged.
