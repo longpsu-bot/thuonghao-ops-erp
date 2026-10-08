@@ -1,7 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$OutputDirectory)
 $ErrorActionPreference='Stop'
 $atlasOutput=(Resolve-Path -LiteralPath $OutputDirectory).Path
-$atlasManifest=Get-Content -LiteralPath (Join-Path $atlasOutput 'manifest.json') -Raw | ConvertFrom-Json
+$atlasManifest=Get-Content -LiteralPath (Join-Path $atlasOutput 'manifest.json') -Raw -Encoding utf8 | ConvertFrom-Json
 $atlasNative=Join-Path $atlasOutput 'native-qa'
 [void](New-Item -ItemType Directory -Path $atlasNative -Force)
 $atlasExcel=New-Object -ComObject Excel.Application

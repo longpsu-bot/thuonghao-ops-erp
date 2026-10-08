@@ -59,37 +59,60 @@ describe("Atlas document presentation boundaries", () => {
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
     order.lines[0]!.supplier_note = "BEGIN" + "A\n".repeat(240) + "END";
     const workbook = await book(await createPurchaseOrderXlsx(order));
-    for (const [name, noteColumn, quantityColumn, first] of [
-      ["Tổng", 5, 4, 8],
-      ["Theo trường", 8, 6, 10],
-      ["Theo hàng", 8, 6, 10],
+    for (const [name, noteColumn, quantityColumn, first, prefix] of [
+      ["02-09-2026 - Tổng", 6, 5, 11, ""],
+      ["02-09-2026 - Theo trường", 1, 6, 11, "Ghi chú (STT 1, Gạo thơm): "],
+      [
+        "02-09-2026 - Theo hàng",
+        1,
+        6,
+        11,
+        "Ghi chú (STT 1, Trường Nguyễn Du / Bếp chính Nguyễn Du): ",
+      ],
     ] as const) {
       const sheet = workbook.getWorksheet(name)!;
       const chunks: string[] = [],
         quantities: string[] = [];
       sheet.eachRow((row, n) => {
         if (n < first) return;
-        if (typeof row.getCell(noteColumn).value === "string") {
-          chunks.push(row.getCell(noteColumn).value as string);
+        const note = row.getCell(noteColumn).value;
+        if (typeof note === "string" && (!prefix || note.startsWith(prefix))) {
+          chunks.push(note.slice(prefix.length));
           expect(row.height).toBeLessThanOrEqual(180);
         }
-        if (typeof row.getCell(quantityColumn).value === "string")
-          quantities.push(row.getCell(quantityColumn).value as string);
+        const quantity = row.getCell(quantityColumn).value;
+        if (typeof quantity === "string" && /^\d+\.\d{6}$/.test(quantity))
+          quantities.push(quantity);
       });
       expect(chunks.join("")).toBe(order.lines[0]!.supplier_note);
-      expect(quantities).toHaveLength(2);
+      expect(quantities).toEqual(["60.000000", "40.000000"]);
     }
-    const pdf = buildPurchaseOrderPdfDefinition(order);
-    const tables = (pdf.content as { table?: { body: unknown[][] } }[]).filter(
-      (item) => item.table,
-    );
-    for (const item of tables) {
-      expect(
-        item
-          .table!.body.slice(1)
-          .map((row) => row.at(-1))
-          .join(""),
-      ).toBe(order.lines[0]!.supplier_note);
+    for (const [mode, prefix] of [
+      ["sum", ""],
+      ["details_school", "Ghi chú (STT 1, Gạo thơm): "],
+      [
+        "details_ing",
+        "Ghi chú (STT 1, Trường Nguyễn Du\nBếp chính Nguyễn Du): ",
+      ],
+    ] as const) {
+      const pdf = buildPurchaseOrderPdfDefinition(order, mode);
+      const tables = (
+        pdf.content as { table?: { body: unknown[][] } }[]
+      ).filter((item) => item.table);
+      const notes: string[] = [],
+        quantities: string[] = [];
+      for (const item of tables) {
+        for (const row of item.table!.body.slice(mode === "sum" ? 1 : 2)) {
+          const note =
+            mode === "sum" ? row.at(-1) : (row[0] as { text?: string }).text;
+          if (typeof note === "string" && (!prefix || note.startsWith(prefix)))
+            notes.push(note.slice(prefix.length));
+          const quantity = (row[4] as { text?: string }).text;
+          if (quantity) quantities.push(quantity);
+        }
+      }
+      expect(notes.join("")).toBe(order.lines[0]!.supplier_note);
+      expect(quantities).toEqual(["60.000000", "40.000000"]);
     }
   });
   it("keeps all released quantities as exact text and labels every PO sheet", async () => {
@@ -110,12 +133,12 @@ describe("Atlas document presentation boundaries", () => {
       expect(sheet.headerFooter.oddFooter).toContain("&P / &N");
       expect(sheet.pageSetup.printArea).toMatch(/^A1:/);
     }
-    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(
-      "1.234567",
-    );
-    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").numFmt).toBe(
-      "@",
-    );
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").value,
+    ).toBe("1.234567");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").numFmt,
+    ).toBe("@");
     const pdf = buildPurchaseOrderPdfDefinition(order);
     expect(JSON.stringify(pdf)).toContain("ĐÃ ĐƯỢC THAY THẾ");
     expect(pdf.footer).toBeTypeOf("function");
@@ -131,11 +154,21 @@ describe("Atlas document presentation boundaries", () => {
     b!.ingredient.ingredient_id = "different-ingredient-id";
     const workbook = await book(await createPurchaseOrderXlsx(order));
     expect(
-      workbook.getWorksheet("Theo trường")!.getCell("A11").value,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A10").value,
     ).toContain(a!.school_breakdown[0]!.school_name);
-    expect(workbook.getWorksheet("Theo hàng")!.getCell("A11").value).toBe(
-      a!.ingredient.ingredient_name,
-    );
+    for (const name of ["02-09-2026 - Theo trường", "02-09-2026 - Theo hàng"]) {
+      const sheet = workbook.getWorksheet(name)!;
+      expect(sheet.model.merges).toContain("A10:G10");
+      expect(sheet.model.merges).toContain("A13:G13");
+      expect(sheet.getCell("F11").value).toBe("60.000000");
+      expect(sheet.getCell("F14").value).toBe("40.000000");
+    }
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("A10").value,
+    ).toBe("Gạo thơm (kg)");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("A13").value,
+    ).toBe("Gạo thơm (kg)");
   });
 
   it("preserves PXK destination, status, exact quantity and repeatable headers", async () => {
@@ -185,10 +218,18 @@ describe("Atlas document presentation boundaries", () => {
     expect(sheet.getCell("B11").alignment.wrapText).toBe(true);
     expect(sheet.getRow(11).height).toBeGreaterThan(30);
     expect(sheet.getRow(7).height).toBeGreaterThan(30);
-    const signature = sheet.getRow(sheet.rowCount);
+    const signature = sheet.getRow(sheet.rowCount - 6);
     expect(signature.getCell(1).value).toContain("Người nhận hàng");
     expect(signature.getCell(3).value).toContain("Người giao hàng");
     expect(signature.getCell(6).value).toContain("Người lập phiếu");
-    expect(signature.height).toBe(102);
+    expect(signature.height).toBe(24);
+    for (const column of [1, 3, 6])
+      expect(sheet.getCell(signature.number + 1, column).value).toBe(
+        "(Ký, ghi họ tên)",
+      );
+    expect(sheet.getRow(signature.number + 1).height).toBe(22);
+    for (let row = signature.number + 2; row <= sheet.rowCount; row++)
+      for (let column = 1; column <= 7; column++)
+        expect(sheet.getCell(row, column).value).toBeNull();
   });
 });

@@ -22,6 +22,7 @@ import { SchoolPxkTable, pxkLabels } from "./SchoolPxkTable";
 import { SchoolPxkDetail } from "./SchoolPxkDetail";
 import { SchoolPxkDirtyExitDialog } from "./SchoolPxkDirtyExitDialog";
 import { SchoolPxkCommandFeedback } from "./SchoolPxkCommandFeedback";
+import type { SchoolDispatchDocument } from "../bridges/schoolDispatch";
 import {
   focusFirstCompactFilter,
   preserveCompactFilterFocusOrder,
@@ -47,6 +48,8 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const dateControl = useRef<HTMLDivElement>(null);
   const [dateReset, setDateReset] = useState(0);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportMode, setExportMode] = useState<"date" | "entity">("date");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const compactFilters = useRef<HTMLDivElement>(null);
   const compactFilterTrigger = useRef<HTMLButtonElement>(null);
@@ -57,8 +60,14 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const releasedDocuments = Array.from(
     new Map(
       c.rows
-        .flatMap((row) => row.history)
-        .filter((document) => document.export_ready)
+        .filter((row) => row.allowed_actions.export)
+        .flatMap((row) => [row.current_release, ...row.history])
+        .filter(
+          (document): document is SchoolDispatchDocument =>
+            document !== null &&
+            document.export_ready &&
+            ["RELEASED", "SUPERSEDED"].includes(document.status),
+        )
         .map((document) => [document.school_dispatch_release_id, document]),
     ).values(),
   );
@@ -80,6 +89,19 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
     }
   }, [c.selectedKey]);
   const disabled = c.busy || Boolean(c.lock);
+  const exportLoaded = async (zip: boolean) => {
+    if (!c.canExportLoaded || exporting || !releasedDocuments.length) return;
+    setExporting(true);
+    setExportError(null);
+    try {
+      if (zip) await props.onExportZip?.(releasedDocuments, exportMode);
+      else await props.onExportGroupedXlsx?.(releasedDocuments);
+    } catch {
+      setExportError("Không thể xuất nhóm Phiếu xuất kho.");
+    } finally {
+      setExporting(false);
+    }
+  };
   const dateSummary = c.date.split("-").reverse().join("/");
   const scopeSummary =
     c.schoolIds.length === 0
@@ -285,18 +307,44 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
               base: "var(--atlas-layout-mobile-target, 44px)",
               lg: "compact",
             }}
-            disabled={disabled || !releasedDocuments.length}
-            onClick={() => {
-              setExportError(null);
-              void Promise.resolve(
-                props.onExportGroupedXlsx!(releasedDocuments),
-              ).catch(() =>
-                setExportError("Không thể xuất nhóm Phiếu xuất kho."),
-              );
-            }}
+            disabled={
+              !c.canExportLoaded || exporting || !releasedDocuments.length
+            }
+            onClick={() => void exportLoaded(false)}
           >
             Xuất PXK đã phát hành
           </Button>
+        )}
+        {props.onExportZip && (
+          <Flex gap="sm" align="end" wrap="wrap">
+            <Field.Root w="var(--atlas-export-mode-width, 230px)">
+              <Field.Label>Nhóm file Dispatch</Field.Label>
+              <NativeSelect.Root
+                size="sm"
+                disabled={!c.canExportLoaded || exporting}
+              >
+                <NativeSelect.Field
+                  value={exportMode}
+                  onChange={(event) =>
+                    setExportMode(event.target.value as "date" | "entity")
+                  }
+                >
+                  <option value="date">Theo ngày</option>
+                  <option value="entity">Theo trường / điểm giao</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Field.Root>
+            <Button
+              size="sm"
+              variant="tertiary"
+              loading={exporting}
+              disabled={!c.canExportLoaded || !releasedDocuments.length}
+              onClick={() => void exportLoaded(true)}
+            >
+              Xuất ZIP Dispatch · phạm vi đã tải
+            </Button>
+          </Flex>
         )}
       </Flex>
       {exportError && (

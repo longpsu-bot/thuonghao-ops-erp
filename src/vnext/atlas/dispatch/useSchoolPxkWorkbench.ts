@@ -22,6 +22,10 @@ export type SchoolPxkWorkbenchProps = AtlasModuleExitProps & {
   onExportGroupedXlsx?: (
     documents: SchoolDispatchDocument[],
   ) => void | Promise<void>;
+  onExportZip?: (
+    documents: SchoolDispatchDocument[],
+    mode: "date" | "entity",
+  ) => void | Promise<void>;
 };
 type Transition = {
   exit?: () => void;
@@ -409,6 +413,14 @@ export function useSchoolPxkWorkbench({
     notice,
     lock,
     canRelease,
+    canExportLoaded:
+      Boolean(authSubject) &&
+      loadedScope === scope &&
+      !loading &&
+      !busy &&
+      !lock &&
+      !readError &&
+      !note.trim(),
     actionAllowed,
     pendingTransition,
     key: schoolPxkRowKey,

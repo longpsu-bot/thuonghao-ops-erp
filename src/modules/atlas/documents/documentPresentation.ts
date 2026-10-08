@@ -138,6 +138,19 @@ export function documentFilePart(value: string) {
   );
 }
 
+export async function createDocumentZip(
+  files: { name: string; bytes: ArrayBuffer | Uint8Array }[],
+) {
+  if (!files.length) throw new Error("No released documents to package.");
+  const { default: JSZip } = await import("jszip");
+  const zip = new JSZip();
+  for (const file of files) {
+    if (zip.file(file.name)) throw new Error("Duplicate document filename.");
+    zip.file(file.name, file.bytes, { date: new Date("2000-01-01T00:00:00Z") });
+  }
+  return zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+}
+
 export function documentPdfFooter(
   identity: string,
 ): TDocumentDefinitions["footer"] {

@@ -1,5 +1,35 @@
 # ATLAS-DOCUMENT-SYSTEM-01
 
+## Current Owner fidelity revision
+
+The Owner rejected reviewed head `f3c8b5014e87906399c5cb1035c0b87cf4052f95`:
+**DOCUMENT_SYSTEM_V1_FIDELITY = NOT ACCEPTED**. The same branch and
+[Draft PR #360](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/360) are revised;
+no new Document System task/PR, merge or backend change is authorized here.
+
+Current evidence and complete per-document V1 comparison matrix:
+[V1 revision specimens](../testing/artifacts/atlas-document-system-01/v1-revision/README.md).
+Exact Owner references were available and read unchanged. The revision restores
+six-column PO summary, `Ngày dùng`, compact detail bands/numbered rows, the
+seven-column PXK with three separated signing areas, PO selection modes and
+supplier/date plus Dispatch date/captured-entity ZIP packaging.
+
+[Class C authority gaps](../open-questions/atlas-document-system-v1-authority-gaps.md)
+remain blocked: immutable outward codes, PO label/address authority and V1 cooking
+groups. The Owner explicitly approved PO presentation over the unchanged read
+while retaining these blocks. Required codes are visibly reported as unavailable;
+no UUID-as-code, mutable code lookup, cooking-group heuristic or invented API.
+
+Shopping List V2/A+ remains unchanged. Focused exporter/UI/Shopping regressions,
+format, typecheck, build and exact-head GitHub CI are the validation gates;
+product acceptance remains the Owner's decision. No live Supabase/Retool operation,
+release semantic change or Backend 02C edit. Presentation rollback is a branch
+revert; no migration/production rollback is needed.
+
+The sections below record the historical implementation at the rejected reviewed
+head. Their old geometry and technical PASS statements are not the current V1
+acceptance result; the linked revision record supersedes them.
+
 ## Authorization and baseline
 
 One presentation-bounded Draft PR; no automatic merge or global document freeze.

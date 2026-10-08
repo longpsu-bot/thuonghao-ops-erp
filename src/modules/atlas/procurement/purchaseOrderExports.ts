@@ -11,6 +11,7 @@ import {
   documentStatusLabel,
   documentPdfFooter,
   documentFilePart,
+  createDocumentZip,
   finishDocumentSheet,
   initializeDocumentWorkbook,
   prepareDocumentSheet as prepareWorksheet,
@@ -165,131 +166,17 @@ export function buildPurchaseOrderExportData(
   };
 }
 
-export function buildPurchaseOrderPdfDefinition(
-  order: SchoolCateringPurchaseOrder,
-): TDocumentDefinitions {
-  const data = buildPurchaseOrderExportData(order);
-  return {
-    pageSize: "A4",
-    pageMargins: [28, 32, 28, 42],
-    footer: documentPdfFooter(
-      `${data.documentNumber} · ${documentStatusLabel(order.status)}`,
-    ),
-    info: {
-      title: `Phiếu đặt hàng ${data.documentNumber}`,
-      creationDate: new Date(
-        order.current_revision.released_at ?? "2000-01-01T00:00:00Z",
-      ),
-      modDate: new Date(
-        order.current_revision.released_at ?? "2000-01-01T00:00:00Z",
-      ),
-    },
-    content: [
-      {
-        columns: [
-          { image: companyLogoDataUrl, width: 54 },
-          {
-            stack: [
-              { text: companyName, style: "company" },
-              { text: companyAddress, style: "address" },
-            ],
-            alignment: "center",
-          },
-          { text: "", width: 54 },
-        ],
-      },
-      { text: "PHIẾU ĐẶT HÀNG", style: "heading" },
-      {
-        text: documentStatusLabel(order.status),
-        bold: true,
-        margin: [0, 0, 0, 8],
-      },
-      ...(order.replaces_purchase_order_id
-        ? [{ text: `Thay thế PO: ${order.replaces_purchase_order_id}` }]
-        : []),
-      ...(order.replaced_by_purchase_order_id
-        ? [
-            {
-              text: `Được thay thế bởi PO: ${order.replaced_by_purchase_order_id}`,
-            },
-          ]
-        : []),
-      { text: `Số đơn: ${data.documentNumber}` },
-      { text: `Nhà cung ứng: ${data.supplierName}` },
-      { text: `Ngày giao: ${data.serviceDate}` },
-      { text: `Phiên bản phát hành: ${data.releasedRevision}` },
-      { text: "Tổng hợp đơn mua", style: "section" },
-      {
-        table: {
-          headerRows: 1,
-          widths: ["*", 120, 36, 120],
-          dontBreakRows: true,
-          body: [
-            ["Nguyên liệu", "Số lượng", "Đơn vị", "Ghi chú"],
-            ...data.summaryLines.flatMap((line) =>
-              noteChunks(line.supplierNote).map((note, continuation) => [
-                line.ingredientName,
-                {
-                  text: continuation ? "" : line.orderedQuantity,
-                  alignment: "right" as const,
-                },
-                line.unitCode,
-                note ?? "",
-              ]),
-            ),
-          ],
-        },
-      },
-      { text: "Theo trường / điểm giao", style: "section" },
-      {
-        table: {
-          headerRows: 1,
-          widths: ["*", "*", 120, 32, 95],
-          dontBreakRows: true,
-          body: [
-            [
-              "Trường / điểm giao",
-              "Nguyên liệu",
-              "Số lượng",
-              "Đơn vị",
-              "Ghi chú",
-            ],
-            ...data.schoolLines.flatMap((line) =>
-              noteChunks(line.supplierNote).map((note, continuation) => [
-                `${line.schoolName} · ${line.locationName}`,
-                line.ingredientName,
-                {
-                  text: continuation ? "" : line.orderedQuantity,
-                  alignment: "right" as const,
-                },
-                line.unitCode,
-                note ?? "",
-              ]),
-            ),
-          ],
-        },
-      },
-    ],
-    defaultStyle: { font: "Roboto", fontSize: 9 },
-    styles: {
-      company: { bold: true, fontSize: 9, margin: [0, 0, 0, 4] },
-      address: { italics: true, fontSize: 8, margin: [0, 0, 0, 6] },
-      heading: { bold: true, fontSize: 16, margin: [0, 0, 0, 10] },
-      section: { bold: true, fontSize: 11, margin: [0, 12, 0, 6] },
-    },
-  };
-}
-
-function styleWorksheetHeader(row: Row) {
-  row.font = { name: "Times New Roman", bold: true };
-  row.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FFD9D9D9" },
-  };
-  row.alignment = { vertical: "middle", horizontal: "center" };
-  borderRow(row);
-}
+export type PurchaseOrderWorkbookMode =
+  "all" | "details_ing" | "details_school" | "sum";
+const codeGap = "bản phát hành chưa lưu mã";
+const summaryHeaders = [
+  "STT",
+  "Mã hàng",
+  "Tên hàng",
+  "Đơn vị",
+  "Số lượng",
+  "Ghi chú",
+];
 
 function groupBy<T>(items: T[], keyFor: (item: T) => string) {
   const groups = new Map<string, T[]>();
@@ -299,11 +186,41 @@ function groupBy<T>(items: T[], keyFor: (item: T) => string) {
     group.push(item);
     groups.set(key, group);
   }
-  return groups;
+  return [...groups.values()];
 }
-
-// Excel cannot split a physical row across pages. Keep every note character in
-// bounded continuation rows; quantities appear only on the first row.
+function schoolLabel(line: PurchaseOrderSchoolExportLine) {
+  return line.schoolName === line.locationName
+    ? line.schoolName
+    : `${line.schoolName}\n${line.locationName}`;
+}
+function detailGroups(
+  data: PurchaseOrderExportData,
+  direction: "details_ing" | "details_school",
+) {
+  const lines =
+    direction === "details_ing"
+      ? [...data.schoolLines].sort(
+          (a, b) =>
+            a.ingredientId.localeCompare(b.ingredientId) ||
+            a.unitId.localeCompare(b.unitId),
+        )
+      : data.schoolLines;
+  return groupBy(lines, (line) =>
+    direction === "details_school"
+      ? `${line.schoolId}\u0000${line.locationId}`
+      : `${line.ingredientId}\u0000${line.unitId}\u0000${line.supplierNote ?? ""}`,
+  );
+}
+function groupLabel(
+  lines: PurchaseOrderSchoolExportLine[],
+  direction: "details_ing" | "details_school",
+) {
+  const first = lines[0]!;
+  return direction === "details_school"
+    ? schoolLabel(first)
+    : `${first.ingredientName} (${first.unitCode})`;
+}
+// Excel cannot split a physical row; bounded fragments retain every note character.
 function noteChunks(note: string | null) {
   if (!note) return [note];
   const chunks: string[] = [];
@@ -318,144 +235,443 @@ function noteChunks(note: string | null) {
   chunks.push(chunk);
   return chunks;
 }
+function selectedViews(mode: PurchaseOrderWorkbookMode) {
+  if (!["all", "details_ing", "details_school", "sum"].includes(mode))
+    throw new Error("Unknown PO document selection.");
+  return (["details_ing", "details_school", "sum"] as const).filter(
+    (view) => mode === "all" || view === mode,
+  );
+}
+const viewTitle = {
+  details_ing: "CHI TIẾT GIAO HÀNG (THEO HÀNG)",
+  details_school: "CHI TIẾT GIAO HÀNG",
+  sum: "PHIẾU ĐẶT HÀNG",
+};
+const viewName = {
+  details_ing: "Theo hàng",
+  details_school: "Theo trường",
+  sum: "Tổng",
+};
 
-function prepareDetailSheet(
-  sheet: Worksheet,
-  title: string,
+export function buildPurchaseOrderPdfDefinition(
+  order: SchoolCateringPurchaseOrder,
+  mode: PurchaseOrderWorkbookMode = "all",
+): TDocumentDefinitions {
+  const data = buildPurchaseOrderExportData(order);
+  const quantityWidth = Math.max(
+    110,
+    ...[...data.summaryLines, ...data.schoolLines].map(
+      (line) => line.orderedQuantity.length * 6.5 + 6,
+    ),
+  );
+  const content: TDocumentDefinitions["content"] = [];
+  for (const [viewIndex, view] of selectedViews(mode).entries()) {
+    content.push(
+      {
+        columns: [
+          { image: companyLogoDataUrl, width: 54 },
+          {
+            stack: [
+              { text: companyName, style: "company" },
+              { text: companyAddress, style: "address" },
+            ],
+            alignment: "center",
+          },
+        ],
+        ...(viewIndex ? { pageBreak: "before" as const } : {}),
+      },
+      { text: viewTitle[view], style: "heading" },
+      { text: `Nhà cung cấp: ${data.supplierName}`, fontSize: 12 },
+      { text: `Ngày dùng: ${data.serviceDate}`, bold: true },
+      {
+        text: `Số đơn: ${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel}`,
+        fontSize: 9,
+        margin: [0, 4, 0, 4],
+      },
+      { text: `Mã NCC: ${codeGap}`, fontSize: 9 },
+    );
+    if (view === "sum") {
+      content.push(
+        { text: `Mã hàng: ${codeGap}.`, fontSize: 9, margin: [0, 0, 0, 8] },
+        {
+          table: {
+            headerRows: 1,
+            widths: [22, 43, "*", 35, quantityWidth, 110],
+            dontBreakRows: true,
+            body: [
+              [...summaryHeaders],
+              ...data.summaryLines.flatMap((line, index) =>
+                noteChunks(line.supplierNote).map((note, continuation) => [
+                  continuation ? "↳" : index + 1,
+                  "",
+                  line.ingredientName,
+                  line.unitCode,
+                  {
+                    text: continuation ? "" : line.orderedQuantity,
+                    noWrap: true,
+                    alignment: "right" as const,
+                  },
+                  note ?? "",
+                ]),
+              ),
+            ],
+          },
+        },
+      );
+    } else {
+      for (const lines of detailGroups(data, view)) {
+        const label = groupLabel(lines, view);
+        const body: import("pdfmake/interfaces").TableCell[][] = [
+          [
+            { text: label, colSpan: 5, bold: true, fillColor: "#e8e8e8" },
+            {},
+            {},
+            {},
+            {},
+          ],
+          [
+            "",
+            "STT",
+            view === "details_school" ? "Tên hàng" : "Trường học",
+            "Đơn vị",
+            "Số lượng",
+          ],
+        ];
+        lines.forEach((line, index) => {
+          const detail =
+            view === "details_school" ? line.ingredientName : schoolLabel(line);
+          body.push([
+            "",
+            index + 1,
+            detail,
+            line.unitCode,
+            { text: line.orderedQuantity, alignment: "right", noWrap: true },
+          ]);
+          if (line.supplierNote)
+            noteChunks(line.supplierNote).forEach((note) =>
+              body.push([
+                {
+                  text: `Ghi chú (STT ${index + 1}, ${detail}): ${note}`,
+                  colSpan: 5,
+                  fontSize: 9,
+                },
+                {},
+                {},
+                {},
+                {},
+              ]),
+            );
+        });
+        content.push({
+          table: {
+            headerRows: 2,
+            dontBreakRows: true,
+            keepWithHeaderRows: 1,
+            widths: [24, 24, "*", 35, quantityWidth],
+            body,
+          },
+          margin: [0, 8, 0, 0],
+        });
+      }
+    }
+  }
+  return {
+    pageSize: "A4",
+    pageMargins: [28, 32, 28, 42],
+    content,
+    footer: documentPdfFooter(
+      `${data.documentNumber} · ${documentStatusLabel(data.status)}`,
+    ),
+    info: {
+      title: `Phiếu đặt hàng ${data.documentNumber}`,
+      creationDate: new Date(
+        order.current_revision.released_at ?? "2000-01-01T00:00:00Z",
+      ),
+      modDate: new Date(
+        order.current_revision.released_at ?? "2000-01-01T00:00:00Z",
+      ),
+    },
+    defaultStyle: { font: "Roboto", fontSize: 10 },
+    styles: {
+      company: { bold: true, fontSize: 11 },
+      address: { italics: true, fontSize: 9, margin: [0, 2, 0, 6] },
+      heading: {
+        bold: true,
+        fontSize: 18,
+        alignment: "center",
+        margin: [0, 8, 0, 12],
+      },
+    },
+  };
+}
+
+function styleWorksheetHeader(row: Row) {
+  row.font = { name: "Times New Roman", bold: true, size: 14 };
+  row.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFD9D9D9" },
+  };
+  row.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+  borderRow(row);
+}
+function addDetailSheet(
+  workbook: import("exceljs").Workbook,
   data: PurchaseOrderExportData,
-  firstHeader: string,
-  fourthHeader: string,
+  direction: "details_ing" | "details_school",
   logoId: number,
 ) {
+  const sheet = workbook.addWorksheet(
+    `${data.serviceDate.replaceAll("/", "-")} - ${viewName[direction]}`,
+  );
   prepareWorksheet(sheet);
   sheet.addImage(logoId, {
     tl: { col: 0, row: 0 },
     ext: { width: 58, height: 58 },
   });
-  sheet.pageSetup.orientation = "landscape";
-  sheet.mergeCells("A3:H3");
-  sheet.getCell("A3").value = documentStatusLabel(data.status);
-  sheet.getCell("A3").font = { name: "Times New Roman", size: 12, bold: true };
-  sheet.mergeCells("A5:H5");
-  sheet.getCell("A5").value =
-    `Số đơn: ${data.documentNumber} · Phiên bản: ${data.releasedRevision}${data.replacementLabel}`;
-  sheet.getRow(5).height = wrappedRowHeight(
-    String(sheet.getCell("A5").value),
-    140,
-  );
-  sheet.mergeCells("A1:H1");
-  sheet.getCell("A1").value = companyName;
-  sheet.getCell("A1").alignment = { horizontal: "center" };
-  sheet.mergeCells("A2:H2");
-  sheet.getCell("A2").value = companyAddress;
-  sheet.getCell("A2").alignment = { horizontal: "center" };
-  sheet.mergeCells("A4:H4");
-  sheet.getCell("A4").value = title;
-  sheet.getCell("A4").font = { name: "Times New Roman", bold: true, size: 18 };
+  sheet.mergeCells("B1:G1");
+  sheet.getCell("B1").value = companyName;
+  sheet.getCell("B1").font = { name: "Times New Roman", size: 14, bold: true };
+  sheet.mergeCells("B2:G2");
+  sheet.getCell("B2").value = companyAddress;
+  sheet.getCell("B2").font = {
+    name: "Times New Roman",
+    size: 12,
+    italic: true,
+  };
+  sheet.mergeCells("A4:G4");
+  sheet.getCell("A4").value = viewTitle[direction];
+  sheet.getCell("A4").font = { name: "Times New Roman", size: 20, bold: true };
   sheet.getCell("A4").alignment = { horizontal: "center" };
-  sheet.getRow(1).height = 28;
-  sheet.getRow(2).height = 26;
-  sheet.getRow(4).height = 34;
-  sheet.getRow(7).height = 24;
-  sheet.mergeCells("A6:H6");
-  sheet.getRow(6).height = wrappedRowHeight(
-    `Nhà cung cấp: ${data.supplierName}`,
-    140,
-    14,
-  );
+  sheet.getCell("E5").value = "Ngày dùng:";
+  sheet.mergeCells("F5:G5");
+  sheet.getCell("F5").value = data.serviceDate;
+  sheet.mergeCells("A6:D6");
   sheet.getCell("A6").value = `Nhà cung cấp: ${data.supplierName}`;
-  sheet.getCell("A6").font = { name: "Times New Roman", size: 14 };
-  sheet.getCell("A7").value = "Ngày dùng:";
-  sheet.mergeCells("B7:H7");
-  sheet.getCell("B7").value = data.serviceDate;
-  const header = sheet.getRow(9);
-  header.values = [
-    firstHeader,
+  sheet.mergeCells("A8:G8");
+  sheet.getCell("A8").value =
+    `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel} · Mã NCC: ${codeGap}`;
+  sheet.getCell("A8").font = { name: "Times New Roman", size: 9 };
+  [15, 13, 8, 34, 11, 12, 12].forEach(
+    (width, i) => (sheet.getColumn(i + 1).width = width),
+  );
+  for (const [row, height] of [
+    [1, 22],
+    [2, 24],
+    [3, 8],
+    [4, 30],
+    [5, 22],
+    [6, wrappedRowHeight(data.supplierName, 70, 14, 22)],
+    [7, 12],
+    [8, wrappedRowHeight(sheet.getCell("A8").text, 105, 9, 20)],
+  ])
+    sheet.getRow(row!).height = height;
+  sheet.getRow(9).values = [
+    direction === "details_school" ? "Trường học" : "Tên hàng",
     null,
     "STT",
-    fourthHeader,
+    direction === "details_school" ? "Tên hàng" : "Trường học",
     "Đơn vị",
     "Số lượng",
     null,
-    "Ghi chú",
   ];
   sheet.mergeCells("A9:B9");
   sheet.mergeCells("F9:G9");
-  header.height = 36;
-  header.font = {
-    name: "Times New Roman",
-    bold: true,
-    size: 12,
-    color: { argb: "FF000000" },
-  };
-  header.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FFB7B7B7" },
-  };
-  header.alignment = {
-    horizontal: "center",
-    vertical: "middle",
-    wrapText: true,
-  };
-  borderRow(header);
-  [15, 13, 6, 36, 8, 12, 12, 32].forEach(
-    (width, index) => (sheet.getColumn(index + 1).width = width),
-  );
-}
-
-function addDetailRow(
-  sheet: Worksheet,
-  rowNumber: number,
-  groupLabel: string | null,
-  index: number | string,
-  detailLabel: string,
-  unitCode: string,
-  quantity: string | null,
-  supplierNote: string | null,
-  groupStart: boolean,
-) {
-  sheet.mergeCells(rowNumber, 1, rowNumber, 2);
-  sheet.mergeCells(rowNumber, 6, rowNumber, 7);
-  const row = sheet.getRow(rowNumber);
-  row.getCell(1).value = groupLabel;
-  row.getCell(3).value = index;
-  row.getCell(4).value = detailLabel;
-  row.getCell(5).value = unitCode;
-  row.getCell(8).value = supplierNote;
-  row.height = Math.max(
-    wrappedRowHeight(groupLabel, 28, 14),
-    wrappedRowHeight(detailLabel, 36, 14),
-    wrappedRowHeight(supplierNote, 32, 12),
-  );
-  row.font = { name: "Times New Roman", size: 14 };
-  row.alignment = { vertical: "middle", wrapText: true };
-  if (groupStart)
-    row.getCell(1).font = {
-      name: "Times New Roman",
-      size: 14,
-      bold: true,
-    };
-  if (rowNumber % 2 === 1)
+  sheet.getRow(9).height = 36;
+  styleWorksheetHeader(sheet.getRow(9));
+  let rowNumber = 10;
+  const headerHeight = Array.from(
+    { length: 9 },
+    (_, i) => sheet.getRow(i + 1).height ?? 20,
+  ).reduce((a, b) => a + b, 0);
+  // ponytail: conservative A4/TNR height budget; native Excel QA owns the ceiling, measured font pagination if other fonts are introduced.
+  const scale = Math.min(1, (595.28 - 0.6 * 72) / (105 * 5.25));
+  const pageHeight = (841.89 - 0.9 * 72) / scale - 12;
+  let pageUsed = headerHeight;
+  let activeLabel = "";
+  const band = (label: string) => {
+    sheet.mergeCells(rowNumber, 1, rowNumber, 7);
+    const row = sheet.getRow(rowNumber++);
+    row.getCell(1).value = label;
+    row.font = { name: "Times New Roman", size: 14, bold: true };
     row.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFF2F2F2" },
+      fgColor: { argb: "FFE8E8E8" },
     };
-  row.getCell(8).font = { name: "Times New Roman", size: 12 };
-  if (quantity !== null) setQuantity(row.getCell(6), quantity);
-  borderRow(row);
-  if (groupStart)
-    row.eachCell((cell) => {
-      cell.border = {
-        ...cell.border,
-        top: { style: "medium", color: { argb: "FF000000" } },
-      };
+    row.height = wrappedRowHeight(label, 105, 14, 24);
+    row.alignment = { vertical: "middle", wrapText: true };
+    borderRow(row);
+    pageUsed += row.height;
+  };
+  const room = (height: number, continuing: boolean) => {
+    if (pageUsed + height <= pageHeight) return;
+    sheet.getRow(rowNumber - 1).addPageBreak();
+    pageUsed = headerHeight;
+    if (continuing) band(`${activeLabel} (tiếp)`);
+  };
+  for (const lines of detailGroups(data, direction)) {
+    activeLabel = groupLabel(lines, direction);
+    room(
+      wrappedRowHeight(activeLabel, 105, 14, 24) +
+        wrappedRowHeight(
+          direction === "details_school"
+            ? lines[0]!.ingredientName
+            : schoolLabel(lines[0]!),
+          34,
+          14,
+          30,
+        ),
+      false,
+    );
+    band(activeLabel);
+    lines.forEach((line, index) => {
+      const detail =
+        direction === "details_school"
+          ? line.ingredientName
+          : schoolLabel(line);
+      const height = wrappedRowHeight(detail, 34, 14, 30);
+      room(height, true);
+      const row = sheet.getRow(rowNumber++);
+      row.values = [null, null, index + 1, detail, line.unitCode, null, null];
+      sheet.mergeCells(row.number, 1, row.number, 2);
+      sheet.mergeCells(row.number, 6, row.number, 7);
+      row.font = { name: "Times New Roman", size: 14 };
+      row.alignment = { vertical: "middle", wrapText: true };
+      row.height = height;
+      setQuantity(row.getCell(6), line.orderedQuantity);
+      borderRow(row);
+      pageUsed += height;
+      if (line.supplierNote)
+        noteChunks(line.supplierNote).forEach((note) => {
+          const text = `Ghi chú (STT ${index + 1}, ${detail.replaceAll("\n", " / ")}): ${note}`;
+          const noteHeight = wrappedRowHeight(text, 105, 12, 24);
+          room(noteHeight, true);
+          sheet.mergeCells(rowNumber, 1, rowNumber, 7);
+          const noteRow = sheet.getRow(rowNumber++);
+          noteRow.getCell(1).value = text;
+          noteRow.font = { name: "Times New Roman", size: 12, italic: true };
+          noteRow.alignment = { vertical: "middle", wrapText: true };
+          noteRow.height = noteHeight;
+          pageUsed += noteHeight;
+        });
     });
+    sheet.getRow(rowNumber++).height = 20;
+    pageUsed += 20;
+  }
+  applyDocumentFont(sheet);
+  finishDocumentSheet(
+    sheet,
+    "G",
+    9,
+    `${data.documentNumber} · ${documentStatusLabel(data.status)}`,
+  );
 }
-
+function addSummarySheet(
+  workbook: import("exceljs").Workbook,
+  data: PurchaseOrderExportData,
+  logoId: number,
+) {
+  const sheet = workbook.addWorksheet(
+    `${data.serviceDate.replaceAll("/", "-")} - Tổng`,
+  );
+  prepareWorksheet(sheet);
+  sheet.addImage(logoId, {
+    tl: { col: 0, row: 0 },
+    ext: { width: 75, height: 65 },
+  });
+  sheet.mergeCells("C1:F1");
+  sheet.getCell("C1").value = companyName;
+  sheet.getCell("C1").font = { name: "Times New Roman", bold: true, size: 14 };
+  sheet.mergeCells("C2:F2");
+  sheet.getCell("C2").value = companyAddress;
+  sheet.getCell("C2").font = {
+    name: "Times New Roman",
+    size: 12,
+    italic: true,
+  };
+  sheet.mergeCells("A4:F4");
+  sheet.getCell("A4").value = "PHIẾU ĐẶT HÀNG";
+  sheet.getCell("A4").font = { name: "Times New Roman", bold: true, size: 20 };
+  sheet.getCell("A4").alignment = { horizontal: "center" };
+  sheet.mergeCells("A5:F5");
+  sheet.getCell("A5").value =
+    `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel}`;
+  sheet.getCell("A5").font = { name: "Times New Roman", size: 9 };
+  sheet.mergeCells("A6:F6");
+  sheet.getCell("A6").value = `Nhà cung cấp: ${data.supplierName}`;
+  sheet.getCell("A7").value = "Ngày dùng:";
+  sheet.mergeCells("B7:F7");
+  sheet.getCell("B7").value = data.serviceDate;
+  sheet.mergeCells("A8:F8");
+  sheet.getCell("A8").value = `Mã NCC: ${codeGap}`;
+  sheet.mergeCells("A9:F9");
+  sheet.getCell("A9").value = `Mã hàng: ${codeGap}.`;
+  sheet.getCell("A9").font = { name: "Times New Roman", size: 10 };
+  const quantityWidth = Math.max(
+    12.71,
+    ...data.summaryLines.map((line) => line.orderedQuantity.length * 1.15 + 2),
+  );
+  const noteWidth = data.summaryLines.some((line) => line.supplierNote)
+    ? 32
+    : 11.14;
+  [16.14, 12, 36, 9.71, quantityWidth, noteWidth].forEach(
+    (width, i) => (sheet.getColumn(i + 1).width = width),
+  );
+  for (const [r, w, size, minimum] of [
+    [1, 36 + 9.71 + quantityWidth + noteWidth, 14, 22],
+    [2, 36 + 9.71 + quantityWidth + noteWidth, 12, 20],
+    [4, 105, 20, 30],
+    [5, 105, 9, 22],
+    [6, 105, 14, 26],
+    [8, 105, 12, 22],
+    [9, 105, 10, 20],
+  ])
+    sheet.getRow(r!).height = wrappedRowHeight(
+      sheet.getCell(r!, r! <= 2 ? 3 : 1).text,
+      w!,
+      size,
+      minimum,
+    );
+  sheet.getRow(3).height = 8;
+  sheet.getRow(7).height = 24;
+  sheet.getRow(10).values = summaryHeaders;
+  sheet.getRow(10).height = 36;
+  styleWorksheetHeader(sheet.getRow(10));
+  let rowNumber = 11;
+  data.summaryLines.forEach((line, index) =>
+    noteChunks(line.supplierNote).forEach((note, continuation) => {
+      const row = sheet.getRow(rowNumber++);
+      row.values = [
+        continuation ? "↳" : index + 1,
+        "",
+        line.ingredientName,
+        line.unitCode,
+        null,
+        note,
+      ];
+      row.font = { name: "Times New Roman", size: 14 };
+      row.alignment = { vertical: "middle", wrapText: true };
+      row.getCell(6).font = { name: "Times New Roman", size: 12 };
+      row.height = Math.max(
+        wrappedRowHeight(line.ingredientName, 36, 14),
+        wrappedRowHeight(note, 32),
+      );
+      if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
+      borderRow(row);
+    }),
+  );
+  applyDocumentFont(sheet);
+  finishDocumentSheet(
+    sheet,
+    "F",
+    10,
+    `${data.documentNumber} · ${documentStatusLabel(data.status)}`,
+  );
+}
 export async function createPurchaseOrderXlsx(
   order: SchoolCateringPurchaseOrder,
+  mode: PurchaseOrderWorkbookMode = "all",
 ) {
   const data = buildPurchaseOrderExportData(order);
   const ExcelJS = (await import("exceljs")).default;
@@ -469,171 +685,18 @@ export async function createPurchaseOrderXlsx(
     base64: companyLogoDataUrl,
     extension: "jpeg",
   });
-
-  const summary = workbook.addWorksheet("Tổng");
-  prepareWorksheet(summary);
-  summary.addImage(logoId, {
-    tl: { col: 0, row: 0 },
-    ext: { width: 58, height: 58 },
-  });
-  summary.mergeCells("A1:E1");
-  summary.getCell("A1").value = companyName;
-  summary.getCell("A1").alignment = { horizontal: "center" };
-  summary.getRow(1).height = 28;
-  summary.getRow(2).height = 34;
-  summary.mergeCells("A2:E2");
-  summary.getCell("A2").value = "PHIẾU ĐẶT HÀNG";
-  summary.getCell("A2").font = {
-    name: "Times New Roman",
-    bold: true,
-    size: 18,
-  };
-  summary.getCell("A2").alignment = { horizontal: "center" };
-  summary.mergeCells("A3:E3");
-  summary.getCell("A3").value = documentStatusLabel(order.status);
-  summary.getCell("A3").font = {
-    name: "Times New Roman",
-    size: 11,
-    bold: true,
-  };
-  summary.getRow(3).height = 26;
-  summary.addRow([
-    "Số đơn",
-    `${data.documentNumber} · v${data.releasedRevision}${data.replacementLabel}`,
-  ]);
-  summary.mergeCells("B4:E4");
-  summary.getRow(4).height = wrappedRowHeight(
-    String(summary.getCell("B4").value),
-    90,
-  );
-  summary.addRow(["Ngày giao", data.serviceDate]);
-  summary.mergeCells("B5:E5");
-  summary.addRow(["Nhà cung ứng", data.supplierName]);
-  summary.mergeCells("B6:E6");
-  summary.getRow(6).height = wrappedRowHeight(data.supplierName, 90);
-  const summaryHeader = summary.addRow([
-    "STT",
-    "Tên hàng",
-    "Đơn vị",
-    "Số lượng",
-    "Ghi chú",
-  ]);
-  styleWorksheetHeader(summaryHeader);
-  data.summaryLines.forEach((line, index) => {
-    noteChunks(line.supplierNote).forEach((note, continuation) => {
-      const row = summary.addRow([
-        continuation ? "↳" : index + 1,
-        line.ingredientName,
-        line.unitCode,
-        null,
-        note,
-      ]);
-      if (!continuation) setQuantity(row.getCell(4), line.orderedQuantity);
-      row.getCell(5).alignment = { wrapText: true, vertical: "middle" };
-      row.height = Math.max(
-        wrappedRowHeight(line.ingredientName, 38),
-        wrappedRowHeight(note, 32),
-      );
-      row.getCell(2).alignment = { wrapText: true, vertical: "middle" };
-      borderRow(row);
-    });
-  });
-  summary.getColumn(1).width = 14;
-  summary.getColumn(2).width = 38;
-  summary.getColumn(3).width = 9;
-  summary.getColumn(4).width = 24;
-  summary.getColumn(5).width = 32;
-  applyDocumentFont(summary);
-
-  const bySchool = workbook.addWorksheet("Theo trường");
-  prepareDetailSheet(
-    bySchool,
-    "CHI TIẾT GIAO HÀNG",
-    data,
-    "Trường học",
-    "Tên hàng",
-    logoId,
-  );
-  const schools = groupBy(
-    data.schoolLines,
-    (line) => `${line.schoolId}\u0000${line.locationId}`,
-  );
-  let schoolRow = 10;
-  for (const [, lines] of schools) {
-    lines.forEach((line, index) => {
-      noteChunks(line.supplierNote).forEach((note, continuation) => {
-        addDetailRow(
-          bySchool,
-          schoolRow,
-          `${line.schoolName} · ${line.locationName}`,
-          continuation ? "↳" : index + 1,
-          line.ingredientName,
-          line.unitCode,
-          continuation ? null : line.orderedQuantity,
-          note,
-          index === 0 && continuation === 0,
-        );
-        schoolRow += 1;
-      });
-    });
-  }
-  applyDocumentFont(bySchool);
-
-  const byIngredient = workbook.addWorksheet("Theo hàng");
-  prepareDetailSheet(
-    byIngredient,
-    "CHI TIẾT GIAO HÀNG (THEO HÀNG)",
-    data,
-    "Tên hàng",
-    "Trường học",
-    logoId,
-  );
-  const ingredients = groupBy(
-    data.schoolLines,
-    (line) =>
-      `${line.ingredientId}\u0000${line.unitId}\u0000${line.supplierNote ?? ""}`,
-  );
-  let ingredientRow = 10;
-  for (const [, lines] of ingredients) {
-    const { ingredientName, unitCode } = lines[0]!;
-    lines.forEach((line, index) => {
-      noteChunks(line.supplierNote).forEach((note, continuation) => {
-        addDetailRow(
-          byIngredient,
-          ingredientRow,
-          ingredientName,
-          continuation ? "↳" : index + 1,
-          `${line.schoolName} · ${line.locationName}`,
-          unitCode!,
-          continuation ? null : line.orderedQuantity,
-          note,
-          index === 0 && continuation === 0,
-        );
-        ingredientRow += 1;
-      });
-    });
-  }
-  applyDocumentFont(byIngredient);
-
-  for (const [sheet, end, header] of [
-    [summary, "E", 7],
-    [bySchool, "H", 9],
-    [byIngredient, "H", 9],
-  ] as const) {
-    finishDocumentSheet(
-      sheet,
-      end,
-      header,
-      `${data.documentNumber} · ${documentStatusLabel(order.status)}`,
-    );
+  for (const view of selectedViews(mode)) {
+    if (view === "sum") addSummarySheet(workbook, data, logoId);
+    else addDetailSheet(workbook, data, view, logoId);
   }
   return workbook.xlsx.writeBuffer();
 }
 
 export async function createPurchaseOrderPdf(
   order: SchoolCateringPurchaseOrder,
+  mode: PurchaseOrderWorkbookMode = "all",
 ) {
-  const definition = buildPurchaseOrderPdfDefinition(order);
+  const definition = buildPurchaseOrderPdfDefinition(order, mode);
   return renderDocumentPdf(definition);
 }
 
@@ -660,22 +723,60 @@ function purchaseOrderFileStem(order: SchoolCateringPurchaseOrder) {
 
 export async function downloadPurchaseOrderXlsx(
   order: SchoolCateringPurchaseOrder,
+  mode: PurchaseOrderWorkbookMode = "all",
 ) {
-  const bytes = await createPurchaseOrderXlsx(order);
+  const bytes = await createPurchaseOrderXlsx(order, mode);
   downloadBytes(
     bytes,
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    `${purchaseOrderFileStem(order)}.xlsx`,
+    `${purchaseOrderFileStem(order)}-${mode}.xlsx`,
   );
 }
 
 export async function downloadPurchaseOrderPdf(
   order: SchoolCateringPurchaseOrder,
+  mode: PurchaseOrderWorkbookMode = "all",
 ) {
-  const bytes = await createPurchaseOrderPdf(order);
+  const bytes = await createPurchaseOrderPdf(order, mode);
   downloadBytes(
     bytes,
     "application/pdf",
-    `${purchaseOrderFileStem(order)}.pdf`,
+    `${purchaseOrderFileStem(order)}-${mode}.pdf`,
+  );
+}
+
+export async function createPurchaseOrderZip(
+  orders: SchoolCateringPurchaseOrder[],
+  mode: PurchaseOrderWorkbookMode = "all",
+) {
+  const ids = new Set<string>();
+  const files = [];
+  const ordered = [...orders].sort(
+    (a, b) =>
+      a.service_date.localeCompare(b.service_date) ||
+      a.supplier.supplier_id.localeCompare(b.supplier.supplier_id) ||
+      a.purchase_order_id.localeCompare(b.purchase_order_id),
+  );
+  for (const [index, order] of ordered.entries()) {
+    buildPurchaseOrderExportData(order);
+    if (ids.has(order.purchase_order_id))
+      throw new Error("Duplicate PO identity.");
+    ids.add(order.purchase_order_id);
+    files.push({
+      name: `${purchaseOrderFileStem(order)}-${index + 1}-${mode}.xlsx`,
+      bytes: await createPurchaseOrderXlsx(order, mode),
+    });
+  }
+  return createDocumentZip(files);
+}
+
+export async function downloadPurchaseOrderZip(
+  orders: SchoolCateringPurchaseOrder[],
+  mode: PurchaseOrderWorkbookMode = "all",
+) {
+  downloadBytes(
+    await createPurchaseOrderZip(orders, mode),
+    "application/zip",
+    `PO-supplier-date-${mode}.zip`,
   );
 }

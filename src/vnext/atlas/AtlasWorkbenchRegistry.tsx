@@ -121,6 +121,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
         procurementApi={c.app.apis.procurement}
         onExportXlsx={c.app.exporters?.procurementXlsx}
         onExportPdf={c.app.exporters?.procurementPdf}
+        onExportZip={c.app.exporters?.procurementZip}
       />
     ),
   },
@@ -138,6 +139,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
         procurementApi={c.app.apis.procurement}
         onExportXlsx={c.app.exporters?.procurementXlsx}
         onExportPdf={c.app.exporters?.procurementPdf}
+        onExportZip={c.app.exporters?.procurementZip}
       />
     ),
   },
@@ -153,6 +155,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
         onExportXlsx={c.app.exporters?.pxkXlsx}
         onExportPdf={c.app.exporters?.pxkPdf}
         onExportGroupedXlsx={c.app.exporters?.pxkGroupedXlsx}
+        onExportZip={c.app.exporters?.pxkZip}
       />
     ),
   },

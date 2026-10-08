@@ -22,15 +22,18 @@ describe("released purchase-order exports", () => {
     ]);
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
-    expect(workbook.getWorksheet("Tổng")!.getCell("E7").value).toBe("Ghi chú");
-    expect(workbook.getWorksheet("Tổng")!.getCell("E8").value).toBe(
-      "Loại 500g/gói",
-    );
-    expect(workbook.getWorksheet("Tổng")!.getCell("E9").value).toBe(
-      "Giao trước 05:30",
-    );
     expect(
-      workbook.getWorksheet("Tổng")!.getCell("E8").alignment?.wrapText,
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F10").value,
+    ).toBe("Ghi chú");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F11").value,
+    ).toBe("Loại 500g/gói");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F12").value,
+    ).toBe("Giao trước 05:30");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F11").alignment
+        ?.wrapText,
     ).toBe(true);
     const definition = buildPurchaseOrderPdfDefinition(order);
     expect(JSON.stringify(definition)).toContain("Giao trước 05:30");
@@ -118,72 +121,75 @@ describe("released purchase-order exports", () => {
     await workbook.xlsx.load(bytes);
 
     expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
-      "Tổng",
-      "Theo trường",
-      "Theo hàng",
+      "02-09-2026 - Theo hàng",
+      "02-09-2026 - Theo trường",
+      "02-09-2026 - Tổng",
     ]);
     const summaryText = JSON.stringify(
-      workbook.getWorksheet("Tổng")!.getSheetValues(),
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getSheetValues(),
     );
     const schoolText = JSON.stringify(
-      workbook.getWorksheet("Theo trường")!.getSheetValues(),
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getSheetValues(),
     );
     const ingredientText = JSON.stringify(
-      workbook.getWorksheet("Theo hàng")!.getSheetValues(),
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getSheetValues(),
     );
     expect(summaryText).toContain("PHIẾU ĐẶT HÀNG");
     expect(summaryText).toContain("PO-20260902-2500000000004000");
     expect(summaryText).toContain("NCC An Phú lúc phát hành");
     expect(summaryText).not.toContain("Tên NCC hiện tại đã đổi");
     expect(summaryText).toContain("02/09/2026");
-    expect(summaryText).not.toContain("Mã hàng");
-    expect(summaryText).not.toContain("Mã NCC");
+    expect(summaryText).toContain("Mã hàng: bản phát hành chưa lưu mã");
+    expect(summaryText).toContain("Mã NCC: bản phát hành chưa lưu mã");
     expect(schoolText).toContain("Trường Nguyễn Du");
     expect(ingredientText).toContain("Trường Trần Quốc Toản");
-    expect(workbook.getWorksheet("Tổng")!.getCell("D8").value).toBe(
-      "100.000000",
-    );
     expect(
-      workbook.getWorksheet("Theo trường")!.getCell("A10").value,
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("E11").value,
+    ).toBe("100.000000");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A10").value,
     ).toContain("Trường Nguyễn Du");
-    expect(workbook.getWorksheet("Theo trường")!.model.merges).toContain(
-      "A10:B10",
-    );
-    expect(workbook.getWorksheet("Theo trường")!.model.merges).toContain(
-      "F10:G10",
-    );
     expect(
-      workbook.getWorksheet("Theo trường")!.getCell("A11").value,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.model.merges,
+    ).toContain("A10:G10");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.model.merges,
+    ).toEqual(expect.arrayContaining(["F11:G11"]));
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A13").value,
     ).toContain("Trường Trần Quốc Toản");
-    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(
-      "60.000000",
-    );
     expect(
-      workbook.getWorksheet("Theo trường")!.getCell("F10").numFmt ?? "General",
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").value,
+    ).toBe("60.000000");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11")
+        .numFmt ?? "General",
     ).toBe("@");
     expect(workbook.model.media).toHaveLength(1);
     expect(
-      workbook.getWorksheet("Theo trường")!.getCell("A9").fill,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A9").fill,
     ).toMatchObject({
       type: "pattern",
       pattern: "solid",
     });
-    expect(workbook.getWorksheet("Theo hàng")!.getCell("A10").value).toBe(
-      "Gạo thơm",
-    );
-    expect(workbook.getWorksheet("Theo hàng")!.model.merges).toContain(
-      "A10:B10",
-    );
-    expect(workbook.getWorksheet("Theo hàng")!.getCell("A11").value).toBe(
-      "Gạo thơm",
-    );
     expect(
-      workbook.getWorksheet("Theo hàng")!.getRow(10).height,
-    ).toBeGreaterThanOrEqual(30);
-    expect(workbook.getWorksheet("Tổng")!.views[0]?.showGridLines).toBe(false);
-    expect(workbook.getWorksheet("Tổng")!.pageSetup.orientation).toBe(
-      "portrait",
-    );
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("A10").value,
+    ).toBe("Gạo thơm (kg)");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.model.merges,
+    ).toContain("A10:G10");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("D11").value,
+    ).toContain("Trường Nguyễn Du");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getRow(10).height,
+    ).toBeGreaterThanOrEqual(24);
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.views[0]?.showGridLines,
+    ).toBe(false);
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.pageSetup.orientation,
+    ).toBe("portrait");
   });
 
   it("retains unsafe exact XLSX quantities as text instead of losing precision", async () => {
@@ -198,12 +204,12 @@ describe("released purchase-order exports", () => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
 
-    expect(workbook.getWorksheet("Tổng")!.getCell("D8").value).toBe(
-      "9007199254740993.123456",
-    );
-    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(
-      "9007199254740992.123455",
-    );
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("E11").value,
+    ).toBe("9007199254740993.123456");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").value,
+    ).toBe("9007199254740992.123455");
   });
 
   it("creates an actual PDF document from the same released snapshot", async () => {
@@ -222,16 +228,19 @@ describe("released purchase-order exports", () => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
     const notes: string[] = [];
-    workbook.getWorksheet("Tổng")!.eachRow((row, n) => {
-      if (n >= 8 && typeof row.getCell(5).value === "string")
-        notes.push(row.getCell(5).value as string);
+    workbook.getWorksheet("02-09-2026 - Tổng")!.eachRow((row, n) => {
+      if (n >= 11 && typeof row.getCell(6).value === "string")
+        notes.push(row.getCell(6).value as string);
     });
     expect(notes.join("")).toBe(order.lines[0]!.supplier_note);
     expect(
-      workbook.getWorksheet("Tổng")!.getCell("E8").alignment?.wrapText,
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F11").alignment
+        ?.wrapText,
     ).toBe(true);
-    expect(workbook.getWorksheet("Tổng")!.getRow(8).height).toBeGreaterThan(18);
-    const pdf = buildPurchaseOrderPdfDefinition(order);
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getRow(11).height,
+    ).toBeGreaterThan(18);
+    const pdf = buildPurchaseOrderPdfDefinition(order, "sum");
     const tables = (pdf.content as { table?: { body: unknown[][] } }[]).filter(
       (item) => item.table,
     );

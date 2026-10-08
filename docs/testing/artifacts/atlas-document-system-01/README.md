@@ -1,5 +1,9 @@
 # Atlas document-system review specimens
 
+Historical reviewed-head evidence. Owner rejected V1 fidelity at `f3c8b50`.
+Use the [current V1 revision and comparison matrix](v1-revision/README.md)
+for the revised layouts and packaging; overall acceptance remains blocked/pending.
+
 Synthetic fixture data only. The 12 XLSX files at this level are clean, editable
 review deliverables. The eight PDFs are actual production pdfmake output.
 `native-qa/` contains separate `NATIVE-SAVE-TEST-ONLY.xlsx` round-trip copies and

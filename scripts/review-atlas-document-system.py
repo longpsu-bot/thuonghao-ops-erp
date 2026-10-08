@@ -11,9 +11,12 @@ manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
 normalize = lambda value: re.sub(r"\s+", "", str(value)).replace("\u00a0", "")
 report = []
 for file in manifest["files"]:
+    if file["name"].endswith(".zip"):
+        continue
     if not file["name"].endswith(".xlsx"):
         document = fitz.open(root / file["name"])
         text = normalize("".join(page.get_text() for page in document))
+        assert "undefined" not in text, f"Invalid fixture label: {file['name']}"
         missing = [value for value in file["visibleStrings"] if normalize(value) not in text]
         report.append({"pdf": file["name"], "pages": len(document), "missing_visible_strings": missing})
         continue
@@ -21,12 +24,15 @@ for file in manifest["files"]:
         pdf = root / "native-qa" / file["name"].replace(".xlsx", f"-sheet-{index}.pdf")
         document = fitz.open(pdf)
         text = normalize("".join(page.get_text() for page in document))
+        assert "undefined" not in text, f"Invalid fixture label: {pdf.name}"
         missing = [cell for cell in sheet["cells"] if not cell.get("hidden") and isinstance(cell["value"], str) and len(cell["value"]) > 7 and normalize(cell["value"]) not in text]
         report.append({"pdf": pdf.name, "pages": len(document), "missing_visible_strings": missing})
         for page_index, page in enumerate(document):
             page_text = normalize(page.get_text())
             if normalize("Người nhận hàng") in page_text:
                 assert normalize("Người giao hàng") in page_text and normalize("Người lập phiếu") in page_text, f"Split signatures: {pdf.name} page {page_index + 1}"
+                blocks = [block for block in page.get_text("blocks") if normalize("Ký, ghi họ tên") in normalize(block[4])]
+                assert blocks and page.rect.height - max(block[3] for block in blocks) >= 100, f"No handwriting space: {pdf.name} page {page_index + 1}"
         if file["name"] == "Purchase-review-preliminary.xlsx":
             for page_index, page in enumerate(document):
                 page_text = page.get_text()
@@ -43,6 +49,8 @@ assert not any(record["missing_visible_strings"] for record in report), "Printed
 
 files = sorted(root.glob("*.pdf")) + sorted((root / "native-qa").glob("*.pdf"))
 pages = [(file, index) for file in files for index in range(len(fitz.open(file)))]
+for previous in root.glob("visual-review-*.png"):
+    previous.unlink()
 for start in range(0, len(pages), 8):
     canvas = Image.new("RGB", (1600, 2200), "#dddddd")
     draw = ImageDraw.Draw(canvas)

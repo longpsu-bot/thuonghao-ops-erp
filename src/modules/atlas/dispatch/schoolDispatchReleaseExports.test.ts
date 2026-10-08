@@ -9,6 +9,44 @@ import {
 } from "./schoolDispatchReleaseExports";
 
 describe("School dispatch release exports", () => {
+  it("restores the V1 left-hand seven-column form for the same 13-item case", async () => {
+    const document = createReviewSchoolDispatchDocument("RELEASED");
+    document.lines = Array.from({ length: 13 }, (_, index) => ({
+      ...document.lines[0]!,
+      ingredient_id: `fixture-${index}`,
+      ingredient_name: index === 0 ? "Cà rốt" : `Thực phẩm ${index + 1}`,
+      quantity: "3.000000",
+    }));
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await createSchoolDispatchXlsx(document));
+    const sheet = workbook.worksheets[0]!;
+    expect(sheet.getCell("B1").value).toBe(document.document_issuer_name);
+    expect(sheet.getCell("B2").value).toBe(
+      `ĐC: ${document.document_issuer_address}`,
+    );
+    expect(sheet.getCell("A3").value).toBeNull();
+    expect(sheet.getCell("A4").value).toBe("PHIẾU XUẤT KHO");
+    expect(sheet.getCell("F5").value).toBe("Ngày:");
+    expect(sheet.getCell("G5").value).toBe("24/09/2026");
+    expect(sheet.getCell("A8").text).toContain("ĐÃ PHÁT HÀNH");
+    expect(sheet.getColumn(5).width).toBe(11);
+    expect(sheet.getColumn(6).width).toBe(11);
+    expect(sheet.getColumn(7).width).toBe(24);
+    expect(sheet.getCell("D23").value).toBe("3.000000");
+    expect(sheet.getCell("A29").value).toBe("Người nhận hàng");
+    expect(sheet.getCell("C29").value).toBe("Người giao hàng");
+    expect(sheet.getCell("F29").value).toBe("Người lập phiếu");
+    expect(sheet.getCell("A30").value).toBe("(Ký, ghi họ tên)");
+    expect(sheet.getRow(29).height).toBe(24);
+    expect(sheet.getRow(30).height).toBe(22);
+    expect(sheet.pageSetup.printArea).toBe("A1:G35");
+    expect(JSON.stringify(sheet.getSheetValues())).not.toContain(
+      "Bùi Thị Linh Trang",
+    );
+    expect(JSON.stringify(sheet.getSheetValues())).not.toContain(
+      "Quách Thành Đạt",
+    );
+  });
   it.each(["RELEASED", "SUPERSEDED"] as const)(
     "keeps an immutable %s PXK exportable",
     (status) => {
@@ -43,11 +81,11 @@ describe("School dispatch release exports", () => {
       paperSize: 9,
       orientation: "portrait",
     });
-    expect(sheet.getColumn(1).width).toBeCloseTo(6, 1);
-    expect(sheet.getColumn(2).width).toBeCloseTo(38, 1);
-    expect(sheet.getColumn(7).width).toBe(20);
-    expect(sheet.getCell("A1").alignment.horizontal).toBe("center");
-    expect(sheet.getCell("A2").alignment.horizontal).toBe("center");
+    expect(sheet.getColumn(1).width).toBe(13);
+    expect(sheet.getColumn(2).width).toBe(30);
+    expect(sheet.getColumn(7).width).toBe(24);
+    expect(sheet.getCell("B1").alignment.horizontal).toBe("center");
+    expect(sheet.getCell("B2").alignment.horizontal).toBe("center");
     expect(sheet.getCell("A9").value).toBe("Stt");
     expect(sheet.getCell("A5").value).toBe(
       "Số phiếu: PXK-20260924-2600000000004000",

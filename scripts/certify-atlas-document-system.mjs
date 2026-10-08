@@ -143,6 +143,7 @@ try {
   await savePo("PO-multiple-schools", order);
   const second = structuredClone(single);
   second.supplier.supplier_id = "fixture-supplier-b";
+  second.purchase_order_id = "fixture-po-b";
   second.current_revision.supplier_name_snapshot = "Nhà cung ứng B — mẫu thử";
   second.document_number = "PO-FIXTURE-B";
   await savePo("PO-second-supplier", second);
@@ -224,6 +225,155 @@ try {
     "Dispatch-grouped-distinct-destinations",
     await pxk.createGroupedSchoolDispatchXlsx([long, other, document]),
   );
+
+  // Optional owner reference files stay read-only and outside the repository.
+  const referenceArg = process.argv.indexOf("--v1-reference-dir");
+  if (referenceArg !== -1) {
+    const referenceDir = process.argv[referenceArg + 1];
+    const references = [];
+    for (const name of [
+      "3F_20-04-2026_ALL_GROUPED.xlsx",
+      "Dispatch_GROUPED_20-04-2026.xlsx",
+    ]) {
+      const bytes = await fs.readFile(path.join(referenceDir, name));
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(bytes);
+      references.push(book);
+      (manifest.ownerReferences ??= []).push({
+        name,
+        sha256: crypto.createHash("sha256").update(bytes).digest("hex"),
+      });
+    }
+    const equivalent = structuredClone(order);
+    equivalent.service_date = "2026-04-20";
+    equivalent.document_number = "PO-V1-COMPARISON-3F";
+    equivalent.current_revision.supplier_name_snapshot = "3F";
+    equivalent.lines = [];
+    const ingredients = new Map();
+    const summaryReference = references[0].worksheets[2];
+    for (let row = 11; row <= 14; row++) {
+      ingredients.set(
+        summaryReference.getCell(`C${row}`).text +
+          "|" +
+          summaryReference.getCell(`D${row}`).text,
+        row - 11,
+      );
+    }
+    const source = references[0].worksheets[1];
+    let school = "",
+      schoolIndex = 0;
+    for (let row = 10; row <= source.rowCount; row++) {
+      const current = source.getRow(row);
+      if (
+        current.getCell(1).text &&
+        typeof current.getCell(3).value !== "number"
+      ) {
+        school = current.getCell(1).text;
+        schoolIndex++;
+      }
+      if (typeof current.getCell(3).value !== "number") continue;
+      assert(school, "Reference detail must belong to a School band");
+      const name = current.getCell(4).text,
+        unit = current.getCell(5).text;
+      const key = name + "|" + unit;
+      if (!ingredients.has(key)) ingredients.set(key, ingredients.size);
+      const line = structuredClone(order.lines[0]);
+      line.purchase_order_line_revision_id = `v1-fixture-line-${row}`;
+      line.ingredient = {
+        ingredient_id: `v1-fixture-ingredient-${ingredients.get(key)}`,
+        ingredient_name: name,
+      };
+      line.unit = { unit_id: `v1-fixture-unit-${unit}`, unit_code: unit };
+      // Reference detail quantities are small decimal facts. Summary's IEEE
+      // 39.700000000000003 artifact is deliberately recomputed by the exact builder.
+      line.ordered_quantity = Number(current.getCell(6).value).toFixed(6);
+      line.supplier_note = null;
+      line.delivery_location = {
+        delivery_location_id: `v1-fixture-location-${schoolIndex}`,
+        location_name: school,
+      };
+      line.school_breakdown = [
+        {
+          school_id: `v1-fixture-school-${schoolIndex}`,
+          school_name: school,
+          school_display_order: schoolIndex,
+          delivery_location_id: line.delivery_location.delivery_location_id,
+          delivery_location_name: school,
+          ordered_quantity: line.ordered_quantity,
+        },
+      ];
+      equivalent.lines.push(line);
+    }
+    assert.equal(equivalent.lines.length, 23);
+    assert.equal(schoolIndex, 18);
+    await savePo("V1-equivalent-3F-all", equivalent);
+    for (const mode of ["details_ing", "details_school", "sum"]) {
+      await saveXlsx(
+        `V1-equivalent-3F-${mode}`,
+        await po.createPurchaseOrderXlsx(equivalent, mode),
+      );
+      await savePdf(
+        `V1-equivalent-3F-${mode}`,
+        await po.createPurchaseOrderPdf(equivalent, mode),
+        po.buildPurchaseOrderPdfDefinition(equivalent, mode),
+      );
+    }
+    const inspection = structuredClone(document);
+    const reference = references[1].worksheets[0];
+    inspection.service_date = "2026-04-20";
+    inspection.document_number = "PXK-V1-COMPARISON-13";
+    inspection.document_issuer_name = reference.getCell("B1").text;
+    inspection.document_issuer_address = reference
+      .getCell("B2")
+      .text.replace(/^ĐC:\s*/, "");
+    inspection.school_name = reference
+      .getCell("A6")
+      .text.replace(/^Trường:\s*/, "");
+    inspection.delivery_location_name = inspection.school_name;
+    inspection.delivery_address = reference
+      .getCell("A7")
+      .text.replace(/^Địa chỉ:\s*/, "");
+    inspection.lines = Array.from({ length: 13 }, (_, i) => ({
+      ...document.lines[0],
+      ingredient_id: `v1-inspection-item-${i}`,
+      ingredient_name: reference.getCell(`B${11 + i}`).text,
+      unit_code: reference.getCell(`C${11 + i}`).text,
+      quantity: Number(reference.getCell(`D${11 + i}`).value).toFixed(6),
+    }));
+    await saveXlsx(
+      "V1-equivalent-PXK-13",
+      await pxk.createSchoolDispatchXlsx(inspection),
+    );
+    await savePdf(
+      "V1-equivalent-PXK-13",
+      await pxk.createSchoolDispatchPdf(inspection),
+      pxk.buildSchoolDispatchPdfDefinition(inspection),
+    );
+    for (const [name, bytes] of [
+      [
+        "PO-supplier-date-all.zip",
+        await po.createPurchaseOrderZip([equivalent, second], "all"),
+      ],
+      [
+        "Dispatch-date.zip",
+        await pxk.createSchoolDispatchZip([inspection, other], "date"),
+      ],
+      [
+        "Dispatch-entity.zip",
+        await pxk.createSchoolDispatchZip([inspection, other], "entity"),
+      ],
+    ]) {
+      await fs.writeFile(path.join(output, name), bytes);
+      manifest.files.push({
+        name,
+        sha256: crypto.createHash("sha256").update(bytes).digest("hex"),
+      });
+    }
+    manifest.equivalentFixtureFacts = {
+      PO: "23 contributions, 18 School/location fixtures, 4 items from owner details; legacy codes intentionally unavailable in released contract",
+      PXK: "same 13 items/Units/quantities, issuer, School/address; synthetic official numbers, no copied historical signers",
+    };
+  }
 
   const review = {
     success: true,

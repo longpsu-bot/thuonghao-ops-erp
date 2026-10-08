@@ -45,9 +45,11 @@ export type AtlasVNextAppProps = {
   exporters?: {
     procurementXlsx?: ProcurementWorkbenchProps["onExportXlsx"];
     procurementPdf?: ProcurementWorkbenchProps["onExportPdf"];
+    procurementZip?: ProcurementWorkbenchProps["onExportZip"];
     pxkXlsx?: SchoolPxkWorkbenchProps["onExportXlsx"];
     pxkPdf?: SchoolPxkWorkbenchProps["onExportPdf"];
     pxkGroupedXlsx?: SchoolPxkWorkbenchProps["onExportGroupedXlsx"];
+    pxkZip?: SchoolPxkWorkbenchProps["onExportZip"];
     shoppingListXlsx?: ConfirmedNeedWorkbenchProps["onExportShoppingList"];
     shoppingListImport?: ConfirmedNeedWorkbenchProps["onImportShoppingList"];
     attendanceTemplateXlsx?: PlanningSourcesProps["onExportAttendanceTemplate"];

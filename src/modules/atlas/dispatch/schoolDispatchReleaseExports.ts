@@ -1,5 +1,5 @@
 import type { Workbook } from "exceljs";
-import type { TDocumentDefinitions } from "pdfmake/interfaces";
+import type { Column, TDocumentDefinitions } from "pdfmake/interfaces";
 import type { SchoolDispatchDocument } from "./schoolDispatchReleaseModel";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
 
@@ -9,6 +9,7 @@ import {
   documentStatusLabel,
   documentPdfFooter,
   documentFilePart,
+  createDocumentZip,
   finishDocumentSheet,
   initializeDocumentWorkbook,
   prepareDocumentSheet,
@@ -68,6 +69,10 @@ export function buildSchoolDispatchPdfDefinition(
   document: SchoolDispatchDocument,
 ): TDocumentDefinitions {
   const data = buildSchoolDispatchExportData(document);
+  const quantityWidth = Math.max(
+    56,
+    ...data.lines.map((line) => line.quantity.length * 7.5 + 6),
+  );
   return {
     pageSize: "A4",
     pageMargins: [28, 32, 28, 42],
@@ -90,69 +95,102 @@ export function buildSchoolDispatchPdfDefinition(
             ],
             alignment: "center",
           },
-          { text: "", width: 54 },
         ],
       },
       { text: "PHIẾU XUẤT KHO", style: "heading" },
       {
-        text: documentStatusLabel(document.status),
-        bold: true,
-        margin: [0, 0, 0, 8],
+        columns: [
+          { text: `Số phiếu: ${data.documentNumber}`, width: "*" },
+          { text: `Ngày: ${data.serviceDate}`, width: 136, alignment: "right" },
+        ],
       },
-      ...(document.predecessor_release_id
-        ? [{ text: `Thay thế phiếu: ${document.predecessor_release_id}` }]
-        : []),
-      { text: `Số phiếu: ${data.documentNumber}` },
-      { text: `Ngày phục vụ: ${data.serviceDate}` },
       { text: `Trường: ${data.schoolName}` },
-      { text: `Điểm giao: ${data.deliveryLocationName}` },
       { text: `Địa chỉ: ${data.deliveryAddress}` },
-      ...(data.note ? [{ text: `Ghi chú: ${data.note}` }] : []),
+      {
+        text: [
+          { text: documentStatusLabel(document.status), bold: true },
+          ` · Điểm giao: ${data.deliveryLocationName}`,
+          ...(data.note ? [`\nGhi chú: ${data.note}`] : []),
+          ...(document.predecessor_release_id
+            ? [`\nThay thế phiếu: ${document.predecessor_release_id}`]
+            : []),
+        ],
+        fontSize: 9,
+        margin: [0, 3, 0, 0],
+      },
       {
         table: {
           headerRows: 2,
-          widths: [20, "*", 30, 120, 30, 30, 65],
+          widths: [40, "*", 30, quantityWidth, 46, 46, 90],
           dontBreakRows: true,
           body: [
             [
-              { text: "Stt", rowSpan: 2 },
-              { text: "Tên thực phẩm", rowSpan: 2 },
-              { text: "Đvt", rowSpan: 2 },
-              { text: "Số lượng", rowSpan: 2 },
-              { text: "Tình trạng cảm quan", colSpan: 2 },
+              { text: "Stt", bold: true, rowSpan: 2 },
+              { text: "Tên thực phẩm", bold: true, rowSpan: 2 },
+              { text: "Đvt", bold: true, rowSpan: 2 },
+              { text: "Số lượng", bold: true, rowSpan: 2 },
+              { text: "Tình trạng cảm quan", bold: true, colSpan: 2 },
               {},
-              { text: "Biện pháp xử lý", rowSpan: 2 },
+              { text: "Biện pháp xử lý", bold: true, rowSpan: 2 },
             ],
-            ["", "", "", "", "Đạt", "K Đạt", ""],
+            [
+              "",
+              "",
+              "",
+              "",
+              { text: "Đạt", bold: true },
+              { text: "K Đạt", bold: true },
+              "",
+            ],
             ...data.lines.map((line, index) => [
               index + 1,
               line.ingredientName,
               line.unitCode,
-              { text: line.quantity, alignment: "right" as const },
+              {
+                text: line.quantity,
+                fontSize: 12,
+                noWrap: true,
+                alignment: "right" as const,
+              },
               "",
               "",
               "",
             ]),
           ],
         },
-        margin: [0, 12, 0, 0],
+        margin: [0, 8, 0, 0],
       },
       {
         columns: [
-          { text: "Người nhận hàng\n(Ký, ghi họ tên)", alignment: "center" },
-          { text: "Người giao hàng\n(Ký, ghi họ tên)", alignment: "center" },
-          { text: "Người lập phiếu\n(Ký, ghi họ tên)", alignment: "center" },
-        ],
-        bold: true,
-        margin: [0, 28, 0, 50],
+          "Người nhận hàng",
+          "Người giao hàng",
+          "Người lập phiếu",
+        ].map<Column>((role) => ({
+          stack: [
+            { text: role, bold: true },
+            {
+              text: "(Ký, ghi họ tên)",
+              italics: true,
+              margin: [0, 4, 0, 0],
+            },
+            { text: " ", margin: [0, 0, 0, 72] },
+          ],
+          alignment: "center" as const,
+        })),
+        margin: [0, 52, 0, 0],
         unbreakable: true,
       },
     ],
-    defaultStyle: { font: "Roboto", fontSize: 10 },
+    defaultStyle: { font: "Roboto", fontSize: 11 },
     styles: {
-      company: { bold: true, fontSize: 9, margin: [0, 0, 0, 4] },
-      address: { fontSize: 8, margin: [0, 0, 0, 6] },
-      heading: { bold: true, fontSize: 17, margin: [0, 0, 0, 10] },
+      company: { bold: true, fontSize: 13, margin: [0, 0, 0, 4] },
+      address: { fontSize: 10, margin: [0, 0, 0, 6] },
+      heading: {
+        bold: true,
+        fontSize: 18,
+        alignment: "center",
+        margin: [0, 10, 0, 10],
+      },
     },
   };
 }
@@ -166,42 +204,84 @@ function addSchoolDispatchSheet(
   const data = buildSchoolDispatchExportData(document);
   const sheet = workbook.addWorksheet(sheetName);
   prepareDocumentSheet(sheet);
-  sheet.mergeCells("A3:G3");
-  sheet.getCell("A3").value = documentStatusLabel(document.status);
-  sheet.getCell("A3").font = { name: "Times New Roman", size: 11, bold: true };
-  sheet.getRow(3).height = 24;
+  const quantityWidth = Math.max(
+    12.28515625,
+    ...data.lines.map((line) => line.quantity.length * 1.15 + 2),
+  );
+  const columnWidths = [13, 30, 8, quantityWidth, 11, 11, 24];
+  columnWidths.forEach(
+    (width, index) => (sheet.getColumn(index + 1).width = width),
+  );
+  const formWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+  sheet.mergeCells("A1:A3");
+  sheet.getRow(3).height = 10;
   sheet.addImage(logoId, {
     tl: { col: 0, row: 0 },
     ext: { width: 58, height: 58 },
   });
-  sheet.mergeCells("A1:G1");
-  sheet.getCell("A1").value = data.issuerName;
-  sheet.getCell("A1").alignment = { horizontal: "center" };
-  sheet.mergeCells("A2:G2");
-  sheet.getCell("A2").value = `ĐC: ${data.issuerAddress}`;
-  sheet.getCell("A2").alignment = { horizontal: "center" };
+  sheet.mergeCells("B1:G1");
+  sheet.getCell("B1").value = data.issuerName;
+  sheet.getCell("B1").font = { name: "Times New Roman", size: 14, bold: true };
+  sheet.getCell("B1").alignment = { horizontal: "center" };
+  sheet.mergeCells("B2:G2");
+  sheet.getCell("B2").value = `ĐC: ${data.issuerAddress}`;
+  sheet.getCell("B2").alignment = { horizontal: "center" };
+  sheet.getRow(1).height = wrappedRowHeight(
+    data.issuerName,
+    formWidth - 13,
+    14,
+    28,
+  );
+  sheet.getRow(2).height = wrappedRowHeight(
+    `ĐC: ${data.issuerAddress}`,
+    formWidth - 13,
+    12,
+    24,
+  );
   sheet.mergeCells("A4:G4");
   sheet.getCell("A4").value = "PHIẾU XUẤT KHO";
   sheet.getCell("A4").font = { name: "Times New Roman", bold: true, size: 20 };
   sheet.getCell("A4").alignment = { horizontal: "center" };
 
-  sheet.mergeCells("A5:G5");
+  sheet.mergeCells("A5:E5");
   sheet.getCell("A5").value = `Số phiếu: ${data.documentNumber}`;
+  sheet.getCell("F5").value = "Ngày:";
+  sheet.getCell("G5").value = data.serviceDate;
+  sheet.getCell("G5").alignment = { horizontal: "center" };
   sheet.getRow(5).height = 22;
   sheet.mergeCells("A6:G6");
   sheet.getCell("A6").value = `Trường: ${data.schoolName}`;
   sheet.mergeCells("A7:G7");
   sheet.getCell("A7").value = `Địa chỉ: ${data.deliveryAddress}`;
   sheet.mergeCells("A8:G8");
-  sheet.getCell("A8").value =
-    `Ngày: ${data.serviceDate} · Điểm giao: ${data.deliveryLocationName}${data.note ? `\nGhi chú: ${data.note}` : ""}${document.predecessor_release_id ? `\nThay thế phiếu: ${document.predecessor_release_id}` : ""}`;
-  for (const r of [1, 2, 6, 7, 8])
+  sheet.getCell("A8").value = {
+    richText: [
+      {
+        text: documentStatusLabel(document.status),
+        font: { name: "Times New Roman", size: 11, bold: true },
+      },
+      {
+        text: ` · Điểm giao: ${data.deliveryLocationName}${data.note ? `\nGhi chú: ${data.note}` : ""}${document.predecessor_release_id ? `\nThay thế phiếu: ${document.predecessor_release_id}` : ""}`,
+        font: { name: "Times New Roman", size: 11 },
+      },
+    ],
+  };
+  sheet.getCell("A8").font = { name: "Times New Roman", size: 11 };
+  sheet.getRow(8).height = wrappedRowHeight(
+    sheet.getCell("A8").text,
+    formWidth,
+    11,
+    20,
+  );
+  for (const r of [6, 7]) {
+    sheet.getCell(r, 1).font = { name: "Times New Roman", size: 14 };
     sheet.getRow(r).height = wrappedRowHeight(
       String(sheet.getCell(r, 1).value ?? ""),
-      112,
-      12,
-      r === 1 ? 28 : 24,
+      formWidth,
+      14,
+      24,
     );
+  }
   sheet.getRow(4).height = 30;
   sheet.mergeCells("A9:A10");
   sheet.mergeCells("B9:B10");
@@ -219,8 +299,8 @@ function addSchoolDispatchSheet(
   sheet.getCell("G9").value = "Biện pháp xử lý";
   for (const rowNumber of [9, 10]) {
     const header = sheet.getRow(rowNumber);
-    header.height = 30;
-    header.font = { name: "Times New Roman", bold: true, size: 12 };
+    header.height = rowNumber === 9 ? 40 : 28;
+    header.font = { name: "Times New Roman", bold: true, size: 14 };
     header.alignment = {
       horizontal: "center",
       vertical: "middle",
@@ -239,23 +319,24 @@ function addSchoolDispatchSheet(
       "",
       "",
     ];
-    row.height = wrappedRowHeight(line.ingredientName, 38, 14);
+    row.height = wrappedRowHeight(line.ingredientName, 30, 14);
     row.font = { name: "Times New Roman", size: 14 };
     row.alignment = { vertical: "middle", wrapText: true };
     setExactQuantity(row.getCell(4), line.quantity);
     borderRow(row);
   });
-  [6, 38, 8, 24, 8, 8, 20].forEach(
-    (width, index) => (sheet.getColumn(index + 1).width = width),
-  );
-  const signatureRow = 11 + data.lines.length + 2;
-  sheet.mergeCells(signatureRow, 1, signatureRow, 2);
-  sheet.mergeCells(signatureRow, 3, signatureRow, 5);
-  sheet.mergeCells(signatureRow, 6, signatureRow, 7);
-  sheet.getCell(signatureRow, 1).value = "Người nhận hàng\n(Ký, ghi họ tên)";
-  sheet.getCell(signatureRow, 3).value = "Người giao hàng\n(Ký, ghi họ tên)";
-  sheet.getCell(signatureRow, 6).value = "Người lập phiếu\n(Ký, ghi họ tên)";
-  for (const column of [1, 3, 6]) {
+  const signatureRow = 11 + data.lines.length + 5;
+  for (const row of [signatureRow, signatureRow + 1, signatureRow + 6]) {
+    sheet.mergeCells(row, 1, row, 2);
+    sheet.mergeCells(row, 3, row, 5);
+    sheet.mergeCells(row, 6, row, 7);
+  }
+  for (const [index, column] of [1, 3, 6].entries()) {
+    sheet.getCell(signatureRow, column).value = [
+      "Người nhận hàng",
+      "Người giao hàng",
+      "Người lập phiếu",
+    ][index]!;
     sheet.getCell(signatureRow, column).font = {
       name: "Times New Roman",
       size: 14,
@@ -266,9 +347,39 @@ function addSchoolDispatchSheet(
       vertical: "top",
       wrapText: true,
     };
+    sheet.getCell(signatureRow + 1, column).value = "(Ký, ghi họ tên)";
+    sheet.getCell(signatureRow + 1, column).font = {
+      name: "Times New Roman",
+      size: 14,
+      italic: true,
+    };
+    sheet.getCell(signatureRow + 1, column).alignment = {
+      horizontal: "center",
+      vertical: "top",
+    };
   }
-  // One physical row keeps all three signature areas together during printing.
-  sheet.getRow(signatureRow).height = 102;
+  sheet.getRow(signatureRow).height = 24;
+  sheet.getRow(signatureRow + 1).height = 22;
+  sheet.getRow(signatureRow + 6).height = 24;
+  // ponytail: conservative native A4/TNR budget; keep the separated roles,
+  // instructions and handwriting rows together. Native print QA verifies it.
+  const rowHeight = (number: number) => sheet.getRow(number).height ?? 20;
+  const scale = Math.min(1, (595.28 - 0.6 * 72) / (formWidth * 5.25));
+  const pageHeight = (841.89 - 0.9 * 72) / scale - 20;
+  const headerHeight = Array.from({ length: 10 }, (_, i) =>
+    rowHeight(i + 1),
+  ).reduce((a, b) => a + b, 0);
+  let remaining = pageHeight;
+  for (let number = 1; number < signatureRow; number++) {
+    const height = rowHeight(number);
+    if (height > remaining) remaining = pageHeight - headerHeight;
+    remaining -= height;
+  }
+  const signatureHeight = Array.from({ length: 7 }, (_, i) =>
+    rowHeight(signatureRow + i),
+  ).reduce((a, b) => a + b, 0);
+  if (remaining < signatureHeight + 20)
+    sheet.getRow(signatureRow - 1).addPageBreak();
   applyDocumentFont(sheet);
   finishDocumentSheet(
     sheet,
@@ -387,5 +498,62 @@ export async function downloadSchoolDispatchPdf(
     await createSchoolDispatchPdf(document),
     "application/pdf",
     `${safeStem(document)}.pdf`,
+  );
+}
+
+export type SchoolDispatchZipMode = "date" | "entity";
+
+export async function createSchoolDispatchZip(
+  documents: SchoolDispatchDocument[],
+  mode: SchoolDispatchZipMode = "date",
+) {
+  if (!["date", "entity"].includes(mode))
+    throw new Error("Invalid Dispatch ZIP mode.");
+  const groups = new Map<string, SchoolDispatchDocument[]>();
+  const ids = new Set<string>();
+  const ordered = [...documents].sort(
+    (a, b) =>
+      a.service_date.localeCompare(b.service_date) ||
+      a.school_display_order - b.school_display_order ||
+      a.school_id.localeCompare(b.school_id) ||
+      a.delivery_location_id.localeCompare(b.delivery_location_id) ||
+      a.school_dispatch_release_id.localeCompare(b.school_dispatch_release_id),
+  );
+  for (const document of ordered) {
+    buildSchoolDispatchExportData(document);
+    if (ids.has(document.school_dispatch_release_id))
+      throw new Error("Duplicate PXK identity.");
+    ids.add(document.school_dispatch_release_id);
+    const key =
+      mode === "date"
+        ? document.service_date
+        : JSON.stringify([document.school_id, document.delivery_location_id]);
+    const group = groups.get(key) ?? [];
+    group.push(document);
+    groups.set(key, group);
+  }
+  const files = [];
+  for (const [index, group] of [...groups.values()].entries()) {
+    const first = group[0]!;
+    const stem =
+      mode === "date"
+        ? `Dispatch-${first.service_date}`
+        : `Dispatch-${documentFilePart(first.school_name)}-${documentFilePart(first.delivery_location_name)}-${index + 1}-${first.service_date}-${group.at(-1)!.service_date}`;
+    files.push({
+      name: `${stem}.xlsx`,
+      bytes: await createGroupedSchoolDispatchXlsx(group),
+    });
+  }
+  return createDocumentZip(files);
+}
+
+export async function downloadSchoolDispatchZip(
+  documents: SchoolDispatchDocument[],
+  mode: SchoolDispatchZipMode = "date",
+) {
+  downloadBytes(
+    await createSchoolDispatchZip(documents, mode),
+    "application/zip",
+    `Dispatch-${mode}.zip`,
   );
 }

@@ -4,6 +4,8 @@ import {
   Flex,
   Grid,
   Heading,
+  Field,
+  NativeSelect,
   Stack,
   Table,
   Text,
@@ -16,9 +18,20 @@ import {
 } from "../bridges/procurement";
 import { formatExactQuantityForOperator as quantity } from "./procurementExactQuantity";
 
+export type ProcurementExportMode =
+  "all" | "details_ing" | "details_school" | "sum";
 export type ProcurementExport = (
   order: SchoolCateringPurchaseOrder,
+  mode?: ProcurementExportMode,
 ) => void | Promise<void>;
+export type ProcurementZipExport = (
+  orders: SchoolCateringPurchaseOrder[],
+  mode: ProcurementExportMode,
+) => void | Promise<void>;
+const canExport = (order: SchoolCateringPurchaseOrder) =>
+  ["RELEASED_TO_SUPPLIER", "SUPERSEDED"].includes(order.status) &&
+  order.export_ready &&
+  order.allowed_actions.export;
 const dateLabel = (date: string) => date.split("-").reverse().join("/");
 const stateLabel: Record<
   SchoolCateringPurchaseOrder["commitment_state"],
@@ -50,6 +63,7 @@ export function ProcurementOrdersStage({
   onAction,
   onExportXlsx,
   onExportPdf,
+  onExportZip,
 }: {
   data: PurchaseOrdersData | null;
   disabled: boolean;
@@ -57,10 +71,13 @@ export function ProcurementOrdersStage({
   onAction: (order: SchoolCateringPurchaseOrder) => void;
   onExportXlsx?: ProcurementExport;
   onExportPdf?: ProcurementExport;
+  onExportZip?: ProcurementZipExport;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportMode, setExportMode] = useState<ProcurementExportMode>("all");
+  const exportOrders = (data?.purchase_orders ?? []).filter(canExport);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const selected = data?.purchase_orders.find(
@@ -112,17 +129,25 @@ export function ProcurementOrdersStage({
         selected.allowed_actions.release) ||
       (selected.commitment_state === "REPLACEMENT_REQUIRED" &&
         selected.allowed_actions.create_replacement));
-  const exportReady =
-    selected &&
-    ["RELEASED_TO_SUPPLIER", "SUPERSEDED"].includes(selected.status) &&
-    selected.export_ready &&
-    selected.allowed_actions.export;
+  const exportReady = selected && canExport(selected);
   const exportOrder = async (callback: ProcurementExport | undefined) => {
     if (!selected || !exportReady || !callback || disabled || exporting) return;
     setExporting(true);
     setExportError(null);
     try {
-      await callback(selected);
+      await callback(selected, exportMode);
+    } catch {
+      setExportError("Chưa xuất được chứng từ. Hãy thử xuất lại.");
+    } finally {
+      setExporting(false);
+    }
+  };
+  const exportZip = async () => {
+    if (!onExportZip || !exportOrders.length || disabled || exporting) return;
+    setExporting(true);
+    setExportError(null);
+    try {
+      await onExportZip(exportOrders, exportMode);
     } catch {
       setExportError("Chưa xuất được chứng từ. Hãy thử xuất lại.");
     } finally {
@@ -146,6 +171,41 @@ export function ProcurementOrdersStage({
       <Text px="md" py="sm" textStyle="helper" color="fg.muted">
         {visible.length} đơn mua theo nhà cung cấp
       </Text>
+      <Flex px="md" pb="sm" gap="sm" align="end" wrap="wrap">
+        <Field.Root w="var(--atlas-export-mode-width, 230px)">
+          <Field.Label>Nội dung xuất PO</Field.Label>
+          <NativeSelect.Root size="sm" disabled={disabled || exporting}>
+            <NativeSelect.Field
+              value={exportMode}
+              onChange={(event) =>
+                setExportMode(event.target.value as ProcurementExportMode)
+              }
+            >
+              <option value="all">Tất cả</option>
+              <option value="details_ing">Chi tiết theo hàng</option>
+              <option value="details_school">Chi tiết theo trường</option>
+              <option value="sum">Tổng</option>
+            </NativeSelect.Field>
+            <NativeSelect.Indicator />
+          </NativeSelect.Root>
+        </Field.Root>
+        {onExportZip && (
+          <Button
+            size="sm"
+            variant="tertiary"
+            loading={exporting}
+            disabled={disabled || !exportOrders.length}
+            onClick={() => void exportZip()}
+          >
+            Xuất ZIP PO · phạm vi đã tải
+          </Button>
+        )}
+      </Flex>
+      {exportError && (
+        <Text px="md" pb="sm" role="alert" color="status.danger">
+          {exportError}
+        </Text>
+      )}
       {procurementOperatorMessages(
         [...(data?.blockers ?? []), ...(data?.warnings ?? [])],
         "Có điều kiện cần kiểm tra trước khi tiếp tục.",
@@ -195,7 +255,7 @@ export function ProcurementOrdersStage({
                 <Table.Row>
                   {[
                     "Nhà cung cấp",
-                    "Ngày giao",
+                    "Ngày dùng",
                     "Trường / điểm giao",
                     "Số dòng",
                     "Trạng thái",
@@ -322,7 +382,7 @@ export function ProcurementOrdersStage({
                 {selected.supplier.supplier_name}
               </Heading>
               <Text color="fg.muted" mt="xs">
-                Ngày giao {dateLabel(selected.service_date)}
+                Ngày dùng {dateLabel(selected.service_date)}
               </Text>
               {selected.document_number && (
                 <Text fontWeight="semibold" mt="xs">
@@ -449,11 +509,6 @@ export function ProcurementOrdersStage({
                   </Table.Body>
                 </Table.Root>
               </Table.ScrollArea>
-              {exportError && (
-                <Text role="alert" color="status.warning">
-                  {exportError}
-                </Text>
-              )}
             </Stack>
             <Flex
               p="md"

@@ -20,11 +20,13 @@ import { createAtlasRpcTransport } from "./modules/atlas/connection/atlasRpc";
 import {
   downloadPurchaseOrderXlsx,
   downloadPurchaseOrderPdf,
+  downloadPurchaseOrderZip,
 } from "./modules/atlas/procurement/purchaseOrderExports";
 import {
   downloadSchoolDispatchXlsx,
   downloadSchoolDispatchPdf,
   downloadGroupedSchoolDispatchXlsx,
+  downloadSchoolDispatchZip,
 } from "./modules/atlas/dispatch/schoolDispatchReleaseExports";
 import { AtlasVNextProvider } from "./vnext/atlas/AtlasVNextProvider";
 import { AtlasSessionGate } from "./vnext/atlas/AtlasSessionGate";
@@ -35,9 +37,11 @@ import { downloadAttendanceImportTemplate } from "./modules/atlas/documents/atte
 const exporters = {
   procurementXlsx: downloadPurchaseOrderXlsx,
   procurementPdf: downloadPurchaseOrderPdf,
+  procurementZip: downloadPurchaseOrderZip,
   pxkXlsx: downloadSchoolDispatchXlsx,
   pxkPdf: downloadSchoolDispatchPdf,
   pxkGroupedXlsx: downloadGroupedSchoolDispatchXlsx,
+  pxkZip: downloadSchoolDispatchZip,
   attendanceTemplateXlsx: downloadAttendanceImportTemplate,
 };
 export function AtlasVNextConnectedApp({
