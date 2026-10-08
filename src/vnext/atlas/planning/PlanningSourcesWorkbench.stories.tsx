@@ -157,7 +157,9 @@ function story(scenario: PlanningReviewScenario): Story {
         await userEvent.type(input, "30");
       }
       if (scenario === "dirty_dialog") {
-        await userEvent.click(canvas.getByRole("tab", { name: "Bổ sung" }));
+        await userEvent.click(
+          canvas.getByRole("tab", { name: "Hàng đặt riêng" }),
+        );
         return;
       }
       if (scenario.endsWith("dirty") || scenario.endsWith("invalid")) return;

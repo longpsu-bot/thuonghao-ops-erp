@@ -9,7 +9,7 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import type { CSSProperties } from "react";
 import { AtlasWeekRangeInput } from "../AtlasWeekRangeInput";
@@ -32,13 +32,21 @@ import {
 } from "./usePlanningSources";
 import { AtlasTaskContext } from "../AtlasTaskContext";
 import { AtlasNotificationPortal } from "../AtlasNotificationPortal";
+import { useAtlasWorkbenchActive } from "../AtlasVNextProvider";
 import {
   focusFirstCompactFilter,
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
-const jobs = { menu: "Thực đơn", attendance: "Sĩ số", pantry: "Bổ sung" };
+const jobs = {
+  menu: "Thực đơn",
+  attendance: "Sĩ số",
+  pantry: "Hàng đặt riêng",
+};
 export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const c = usePlanningSources(props);
+  const active = useAtlasWorkbenchActive();
+  const label = props.ownerJob ? jobs[c.job] : "Thực đơn";
+  const filterId = useId();
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [search, setSearch] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -66,10 +74,10 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
     if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
   }, [filtersOpen]);
   useEffect(() => {
-    if (reviewOpen) reviewPanel.current?.focus();
-    else if (wasReviewOpen.current) reviewTrigger.current?.focus();
+    if (active && reviewOpen) reviewPanel.current?.focus();
+    else if (active && wasReviewOpen.current) reviewTrigger.current?.focus();
     wasReviewOpen.current = reviewOpen;
-  }, [reviewOpen]);
+  }, [reviewOpen, active]);
   useEffect(() => {
     setSearch("");
     if (previousJob.current !== c.job) heading.current?.focus();
@@ -97,10 +105,67 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
     : "Tất cả trường";
   const dateSummary = viDate(c.date);
   const weekSummary = `${viDate(c.week)} – ${viDate(days[6]!)}`;
+  const sourceContent = c.authority ? (
+    <Grid
+      data-testid="planning-source-editor-review"
+      style={
+        {
+          "--atlas-planning-review-columns":
+            "minmax(330px, .9fr) minmax(440px, 1.1fr)",
+        } as CSSProperties
+      }
+      templateColumns={{
+        base: "minmax(0, 1fr)",
+        lg: reviewOpen
+          ? "var(--atlas-planning-review-columns)"
+          : "minmax(0, 1fr)",
+      }}
+      alignItems="stretch"
+    >
+      <Box minW="var(--atlas-layout-zero, 0)">
+        {c.job === "menu" ? (
+          <PlanningMenuStage c={c} visibleSchoolIds={visibleSchoolIds} />
+        ) : c.job === "attendance" ? (
+          <PlanningAttendanceStage
+            c={c}
+            visibleSchoolIds={visibleSchoolIds}
+            onExportTemplate={props.onExportAttendanceTemplate}
+          />
+        ) : (
+          <PlanningPantryStage c={c} visibleSchoolIds={visibleSchoolIds} />
+        )}
+        <Flex
+          p="md"
+          justify="space-between"
+          align="center"
+          gap="sm"
+          wrap="wrap"
+        >
+          <Text textStyle="helper" color="fg.muted">
+            {c.dirty ? "Đang chỉnh sửa · chưa lưu" : ""}
+          </Text>
+          {c.job !== "menu" && c.candidate && (
+            <Button
+              ref={reviewTrigger}
+              display={c.preview ? "none" : "inline-flex"}
+              variant="businessPrimary"
+              disabled={!c.canEdit || c.syncing || c.errors.length > 0}
+              onClick={() => void c.previewChanges()}
+            >
+              Xem thay đổi
+            </Button>
+          )}
+        </Flex>
+      </Box>
+      {reviewOpen && <PlanningSourceReview c={c} reviewRef={reviewPanel} />}
+    </Grid>
+  ) : (
+    c.loading && <Text p="md">Đang tải nguồn kế hoạch…</Text>
+  );
   return (
     <Box
       as="section"
-      aria-label="Thực đơn"
+      aria-label={label}
       bg="bg.workbench"
       borderRadius="workbench"
       borderWidth="var(--atlas-layout-edge, 1px)"
@@ -109,8 +174,8 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
     >
       <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
         <AtlasTaskContext
-          ariaLabel="Ngữ cảnh thực đơn"
-          moduleLabel="Thực đơn"
+          ariaLabel={`Ngữ cảnh ${label.toLocaleLowerCase("vi")}`}
+          moduleLabel={label}
           jobLabel={jobs[c.job]}
           compactSummary={`${dateSummary} · ${scopeSummary}`}
           headingRef={heading}
@@ -126,22 +191,24 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
             onValueChange={(d) => c.transition({ job: d.value })}
             variant="line"
           >
-            <Box>
-              <Tabs.List
-                aria-label="Công việc thực đơn"
-                {...atlasSecondaryTabList}
-              >
-                {Object.entries(jobs).map(([value, label]) => (
-                  <Tabs.Trigger
-                    key={value}
-                    value={value}
-                    {...atlasSecondaryTabTrigger}
-                  >
-                    {label}
-                  </Tabs.Trigger>
-                ))}
-              </Tabs.List>
-            </Box>
+            {!props.ownerJob && (
+              <Box>
+                <Tabs.List
+                  aria-label="Công việc thực đơn"
+                  {...atlasSecondaryTabList}
+                >
+                  {Object.entries(jobs).map(([value, label]) => (
+                    <Tabs.Trigger
+                      key={value}
+                      value={value}
+                      {...atlasSecondaryTabTrigger}
+                    >
+                      {label}
+                    </Tabs.Trigger>
+                  ))}
+                </Tabs.List>
+              </Box>
+            )}
             <Grid
               role="group"
               aria-label="Phạm vi nguồn lập nhu cầu"
@@ -160,7 +227,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
             >
               <Box
                 ref={compactFilters}
-                id="planning-source-filters"
+                id={filterId}
                 display="contents"
                 onKeyDown={(event) => {
                   if (filtersOpen)
@@ -264,7 +331,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 variant="secondary"
                 minH="var(--atlas-layout-mobile-target, 44px)"
                 aria-expanded={filtersOpen}
-                aria-controls="planning-source-filters"
+                aria-controls={filterId}
                 onClick={() => setFiltersOpen((open) => !open)}
               >
                 Bộ lọc
@@ -330,75 +397,13 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 {error}
               </Text>
             ))}
-            <Tabs.Content value={c.job} p="var(--atlas-layout-zero, 0)">
-              {c.authority ? (
-                <Grid
-                  data-testid="planning-source-editor-review"
-                  style={
-                    {
-                      "--atlas-planning-review-columns":
-                        "minmax(330px, .9fr) minmax(440px, 1.1fr)",
-                    } as CSSProperties
-                  }
-                  templateColumns={{
-                    base: "minmax(0, 1fr)",
-                    lg: reviewOpen
-                      ? "var(--atlas-planning-review-columns)"
-                      : "minmax(0, 1fr)",
-                  }}
-                  alignItems="stretch"
-                >
-                  <Box minW="var(--atlas-layout-zero, 0)">
-                    {c.job === "menu" ? (
-                      <PlanningMenuStage
-                        c={c}
-                        visibleSchoolIds={visibleSchoolIds}
-                      />
-                    ) : c.job === "attendance" ? (
-                      <PlanningAttendanceStage
-                        c={c}
-                        visibleSchoolIds={visibleSchoolIds}
-                        onExportTemplate={props.onExportAttendanceTemplate}
-                      />
-                    ) : (
-                      <PlanningPantryStage
-                        c={c}
-                        visibleSchoolIds={visibleSchoolIds}
-                      />
-                    )}
-                    <Flex
-                      p="md"
-                      justify="space-between"
-                      align="center"
-                      gap="sm"
-                      wrap="wrap"
-                    >
-                      <Text textStyle="helper" color="fg.muted">
-                        {c.dirty ? "Đang chỉnh sửa · chưa lưu" : ""}
-                      </Text>
-                      {c.job !== "menu" && c.candidate && (
-                        <Button
-                          ref={reviewTrigger}
-                          display={c.preview ? "none" : "inline-flex"}
-                          variant="businessPrimary"
-                          disabled={
-                            !c.canEdit || c.syncing || c.errors.length > 0
-                          }
-                          onClick={() => void c.previewChanges()}
-                        >
-                          Xem thay đổi
-                        </Button>
-                      )}
-                    </Flex>
-                  </Box>
-                  {reviewOpen && (
-                    <PlanningSourceReview c={c} reviewRef={reviewPanel} />
-                  )}
-                </Grid>
-              ) : (
-                c.loading && <Text p="md">Đang tải nguồn kế hoạch…</Text>
-              )}
-            </Tabs.Content>
+            {props.ownerJob ? (
+              <Box>{sourceContent}</Box>
+            ) : (
+              <Tabs.Content value={c.job} p="var(--atlas-layout-zero, 0)">
+                {sourceContent}
+              </Tabs.Content>
+            )}
             <PlanningDirtyExitDialog
               open={!!c.pending}
               wholeWeek={c.pending?.noAdditions === true}

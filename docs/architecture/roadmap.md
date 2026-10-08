@@ -86,6 +86,8 @@ Menu / Attendance / Pantry
 - ✅ Persistent mounted workbenches with local context, guarded close/sign-out and bounded Need → Procurement handoff
 - ✅ Eleven operator-job owners and connected hosted workspace acceptance; [D-048](../decisions/decision-atlas-persistent-workspace.md) ownership preserved
 
+**Composition supersession — 8 October 2026 (Draft PR #358):** [D-048](../decisions/decision-atlas-persistent-workspace.md) now defines **13 persistent owners**: separate Thực đơn, Sĩ số and Hàng đặt riêng (formerly Bổ sung), plus the existing jobs. Local-state/guard ownership and business/backend contracts are unchanged. Earlier eleven-owner hosted acceptance remains historical; this amendment claims no hosted rollout.
+
 ## Current gate — 02B Draft PR / Owner review
 
 ### Accepted connected baseline
@@ -101,7 +103,7 @@ hosted commit:         010871bebb43f3883c77c5b9bf6954282053c93d
 hosted target:         rnzxmxiiqgtdevzregff
 operator rehearsal:    accepted through Procurement; PO read/context and PXK/reconciliation smoke limits retained
 Shopping List:         ATLAS_SHOPPING_LIST_V2 / A+; accepted hosted import/discard; no immediate business writes
-presentation baseline: Atlas Design Language v3; 11 persistent workbench owners
+presentation baseline: Atlas Design Language v3; 13-owner composition authorized in Draft #358 (hosted acceptance remains the historical 11-owner baseline)
 ```
 
 The [connected Staging app](https://thuonghao-ops-erp.pages.dev/) serves the accepted main baseline. The [canonical freeze](planning-procurement-business-freeze.md#21-accepted-hosted-evidence) records the later completed Owner acceptance and supersedes the dated pending rehearsal status without rewriting historical observations. This documentation task performs no business writes or deployment.

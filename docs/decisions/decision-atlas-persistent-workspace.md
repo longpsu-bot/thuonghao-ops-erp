@@ -10,6 +10,8 @@
 
 **Owner amendment — 6 October 2026 (ATLAS-PRODUCT-CORRECTIONS-01):** The owner explicitly replaces grouped destinations with eleven operator-job owners and moves the icon-only launcher to the far left. This bounded implementation and amendment await PR review/merge. The original seven-destination evidence remains historical; business domains, APIs and operating stages are unchanged.
 
+**Composition supersession — 8 October 2026 (Draft PR #358):** The Owner replaces the grouped Planning source destination with three independent persistent owners: **Thực đơn**, **Sĩ số**, and **Hàng đặt riêng** (previous UI label: Bổ sung). **Xác nhận nhu cầu** remains separate. Current production composition has **13 workbenches**, eight daily jobs and five configuration jobs. This is application composition only: local UI state and guarded close remain with each owner; switching performs no business write. Backend facts, calculations, API/RPC, Save/release, currentness, permissions and RLS remain unchanged. Earlier eleven-owner acceptance and capacity measurements remain historical; this amendment does not claim hosted rollout.
+
 ## Context and authority
 
 Atlas operators move among Need, supplier allocation, Recipes and School PXK while retaining local drafts, scope and selected detail. The current `AtlasVNextApp.tsx` conditionally mounts one module through `AtlasPageTransition`; navigation and voluntary sign-out invoke the active `AtlasModuleExitHandle`. Its shared service date seeds the next mounted operational module. `AtlasVNextShell.tsx` exposes seven destinations through a rail/drawer. This is the existing v1 implementation, not evidence that persistent workspace behavior is already shipped.
@@ -34,7 +36,7 @@ Draft [PR #349](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/349) at `e
 | DATE_AFTER_MOUNT           | WORKBENCH_LOCAL                                                                        |
 | SIGNOUT_WITH_DIRTY_TABS    | BLOCK_AND_RESOLVE_INDIVIDUALLY                                                         |
 
-The workspace reducer owns only ordered open IDs and the active ID. A definition is not a database entity, domain aggregate, persisted lifecycle, Redux entity or class. Mounted owners retain forms, quantities, Supplier selection, filters, reads, commands, validation and currentness locally. About 10–12 workbenches do not justify a global store.
+The workspace reducer owns only ordered open IDs and the active ID. A definition is not a database entity, domain aggregate, persisted lifecycle, Redux entity or class. Mounted owners retain forms, quantities, Supplier selection, filters, reads, commands, validation and currentness locally. Thirteen workbenches do not justify a global store.
 
 Opening an unopened ID mounts once and activates it; reopening activates its existing instance. Switching preserves date/stage/draft/selection/scroll without calling an exit guard, initializing reads or unmounting. Ordinary dirty switching is allowed. Resolve a live modal before hiding its owner. Closing is an actual exit and removes the panel only after the owning guard approves; existing Save/discard/cancel and busy/stale/unknown safeguards remain authoritative.
 
@@ -50,7 +52,7 @@ Activation never refreshes. Existing command/readback, currentness/version/concu
 
 Select **Atlas Modern Operational Workspace**: full-width dense plane and compact shell from C, eucalyptus/slate identity, typography, refined surfaces and restrained elevation from B, with Atlas-integrated workbench tabs. Desktop is **☰ + ATLAS + compact utilities**, then open tabs, then active workbench. The far-left Phosphor List control has `aria-label="Bàn làm việc"` and `title="Bàn làm việc"`; the opened launcher retains the visible **Bàn làm việc** heading; the permanent icon rail is not primary v2 navigation.
 
-The registry-generated **Bàn làm việc** launcher lists all available destinations with simple local search. Groups are **CÔNG VIỆC HẰNG NGÀY** (Thực đơn, Xác nhận nhu cầu, Phân bổ NCC, Đơn mua, Phiếu xuất kho, Đối chiếu PO / Phiếu xuất kho) and **DỮ LIỆU & CẤU HÌNH** (Trường học, Nguyên liệu, Nhà cung ứng, Công thức, Lệnh điều chỉnh), with no empty future groups. It shows only quiet open status and contains no business drafts/state. Successful selection opens/activates or activates-existing without duplication, closes the launcher and restores trigger focus; keyboard traversal/activation and Escape are required. Dirty/attention remains primarily on open tabs.
+The registry-generated **Bàn làm việc** launcher lists all available destinations with simple local search. Groups are **CÔNG VIỆC HẰNG NGÀY** (Thực đơn, Sĩ số, Hàng đặt riêng, Xác nhận nhu cầu, Phân bổ NCC, Đơn mua, Phiếu xuất kho, Đối chiếu PO / Phiếu xuất kho) and **DỮ LIỆU & CẤU HÌNH** (Trường học, Nguyên liệu, Nhà cung ứng, Công thức, Lệnh điều chỉnh), with no empty future groups. It shows only quiet open status and contains no business drafts/state. Successful selection opens/activates or activates-existing without duplication, closes the launcher and restores trigger focus; keyboard traversal/activation and Escape are required. Dirty/attention remains primarily on open tabs.
 
 One compact shell utility contains user/environment/sign-out; the launcher does not repeat them. Mobile separates **Bàn làm việc** (launcher) from **Đang mở** (open-workbench selector); do not squeeze the full desktop strip/rail onto mobile. Touch targets remain 44px. Command-palette dependencies, nested navigation frameworks, recently used, favorites, pins and customizable groups are deferred until demonstrated need.
 
@@ -70,7 +72,9 @@ Benefits: immediate return to open work, preserved useful table width, visible u
 
 Implementation is separately bounded by [03C](../implementation-tasks/TASK-ATLAS-UI-VNEXT-03C-PERSISTENT-WORKSPACE-PRODUCTION.md): A Workspace Foundation, then B Visual Adoption of Need, Procurement, Recipes and School PXK without requiring every module to be restyled.
 
-## Operator-owner composition amendment
+## Historical operator-owner composition amendment — 6 October 2026
+
+Superseded for current source composition by the 8 October amendment above. The original delivery and twelve-descriptor capacity record below remain historical.
 
 Each of the eleven jobs owns its persistent component and exit/status report.
 Thực đơn retains Thực đơn / Sĩ số / Bổ sung as secondary jobs with the existing

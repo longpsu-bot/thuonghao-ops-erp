@@ -27,6 +27,8 @@ describe("Atlas v2 workspace shell", () => {
     "recipes",
     "change-orders",
     "planning",
+    "attendance",
+    "pantry",
     "confirmed-need",
     "procurement",
     "purchase-orders",
@@ -48,7 +50,7 @@ describe("Atlas v2 workspace shell", () => {
       });
       const active = within(launcher).getByRole("button", { current: "page" });
       expect(within(active).getByText("Đang mở")).toBeVisible();
-      expect(within(launcher).getAllByRole("button")).toHaveLength(11);
+      expect(within(launcher).getAllByRole("button")).toHaveLength(13);
       expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
       expect(
         screen.getByRole("heading", { name: "Current job" }),

@@ -1,0 +1,26 @@
+{
+  "project": "rnzxmxiiqgtdevzregff",
+  "observed_date": "2026-10-08",
+  "classification": "ADVISOR_ONLY",
+  "action": "No index or policy change without measured predicate/role evidence",
+  "lints": [
+    {
+      "name": "unindexed_foreign_keys",
+      "count": 179,
+      "level": "INFO",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys"
+    },
+    {
+      "name": "unused_index",
+      "count": 128,
+      "level": "INFO",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index"
+    },
+    {
+      "name": "multiple_permissive_policies",
+      "count": 16,
+      "level": "WARN",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies"
+    }
+  ]
+}

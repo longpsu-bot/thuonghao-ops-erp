@@ -72,6 +72,12 @@ presentation. Focused exporter/download/Shopping/Confirmed Need checks: 251 PASS
 format, typecheck and build pass. Required final-head GitHub CI is recorded on
 Draft PR #360 after push. Build retains the preexisting bundle-size warnings.
 
+The branch is reconciled with `origin/main` at `343f2b1` after the persistent
+workbench split. The existing Attendance template callback is retained on its
+Attendance owner, with PO/PXK ZIP callbacks preserved. All 110 affected workbench
+tests and typecheck pass; this reconciliation does not change the certified
+quantity formatter or specimen output.
+
 ## Shopping List and open Product decisions
 
 Shopping List V2/A+ exporter, parser, codec, metadata and geometry are unchanged.

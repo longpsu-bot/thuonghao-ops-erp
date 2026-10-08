@@ -104,9 +104,11 @@ async function guards(names: string[], signOut: ReturnType<typeof vi.fn>) {
   }
 }
 
-it("registers exactly eleven real operator owners in the approved groups", () => {
+it("registers exactly thirteen real operator owners in the approved groups", () => {
   expect(atlasWorkbenches.map(({ id, label }) => [id, label])).toEqual([
     ["planning", "Thực đơn"],
+    ["attendance", "Sĩ số"],
+    ["pantry", "Hàng đặt riêng"],
     ["confirmed-need", "Xác nhận nhu cầu"],
     ["procurement", "Phân bổ NCC"],
     ["purchase-orders", "Đơn mua"],
@@ -120,48 +122,118 @@ it("registers exactly eleven real operator owners in the approved groups", () =>
   ]);
   expect(
     atlasWorkbenches
-      .slice(0, 6)
+      .slice(0, 8)
       .every((w) => w.group === "CÔNG VIỆC HẰNG NGÀY"),
   ).toBe(true);
   expect(
-    atlasWorkbenches.slice(6).every((w) => w.group === "DỮ LIỆU & CẤU HÌNH"),
+    atlasWorkbenches.slice(8).every((w) => w.group === "DỮ LIỆU & CẤU HÌNH"),
   ).toBe(true);
 });
 
-it("retains independent Planning source and Need drafts, DOM, reads and close/sign-out guards", async () => {
+it("retains separate Menu, Attendance, direct-order and Need owners without navigation writes", async () => {
   const { apis, signOut } = show();
   const sources = vi.spyOn(apis.planning, "getWorkbench"),
+    pantry = vi.spyOn(apis.pantry, "getWorkbench"),
     need = vi.spyOn(apis.confirmedNeed, "getReview");
+  const writes = [
+    vi.spyOn(apis.planning, "syncMenuFromGoogle"),
+    vi.spyOn(apis.planning, "saveCompletedMenu"),
+    vi.spyOn(apis.planning, "saveCompletedAttendance"),
+    vi.spyOn(apis.planning, "prepareCorrection"),
+    vi.spyOn(apis.pantry, "saveCompleted"),
+    vi.spyOn(apis.pantry, "prepareCorrection"),
+    vi.spyOn(apis.confirmedNeed, "save"),
+  ];
   await open("Thực đơn");
   await screen.findByRole("table", { name: "Thực đơn theo trường" });
-  fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+  const menuOwner = owner("Thực đơn");
+  const menuSearch = screen.getByRole("textbox", {
+    name: "Tìm trong công việc",
+  });
+  fireEvent.change(menuSearch, { target: { value: "Nguyễn" } });
+  await open("Sĩ số");
   const attendance = await screen.findByRole("textbox", {
     name: "Học sinh Trường Nguyễn Du",
   });
   fireEvent.change(attendance, { target: { value: "123" } });
-  const sourceOwner = owner("Thực đơn");
+  const attendanceOwner = owner("Sĩ số");
+  await open("Hàng đặt riêng");
+  const addSchool = await screen.findByRole("combobox", {
+    name: "Trường thêm dòng",
+  });
+  await waitFor(() => expect(addSchool).toBeEnabled());
+  fireEvent.change(addSchool, { target: { value: "school-1" } });
+  fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
+  const pantryQuantity = await screen.findByRole("textbox", {
+    name: "Số lượng dòng 1",
+  });
+  fireEvent.change(pantryQuantity, { target: { value: "3,5" } });
+  const pantryOwner = owner("Hàng đặt riêng");
   await open("Xác nhận nhu cầu");
   const quantity = await screen.findByRole("textbox", {
     name: "Số lượng xác nhận Gạo thơm",
   });
   fireEvent.change(quantity, { target: { value: "12,5" } });
   const needOwner = owner("Xác nhận nhu cầu");
-  const reads = [sources.mock.calls.length, need.mock.calls.length];
-  retained(sourceOwner, attendance, "123");
+  const reads = [
+    sources.mock.calls.length,
+    pantry.mock.calls.length,
+    need.mock.calls.length,
+  ];
+  retained(menuOwner, menuSearch, "Nguyễn");
+  retained(attendanceOwner, attendance, "123");
+  retained(pantryOwner, pantryQuantity, "3,5");
   await open("Thực đơn");
+  expect(screen.getByRole("textbox", { name: "Tìm trong công việc" })).toBe(
+    menuSearch,
+  );
+  await open("Sĩ số");
   expect(
     screen.getByRole("textbox", { name: "Học sinh Trường Nguyễn Du" }),
   ).toBe(attendance);
   retained(needOwner, quantity, "12,5");
+  await open("Hàng đặt riêng");
+  expect(screen.getByRole("textbox", { name: "Số lượng dòng 1" })).toBe(
+    pantryQuantity,
+  );
   await open("Xác nhận nhu cầu");
   expect(
     screen.getByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" }),
   ).toBe(quantity);
-  expect([sources.mock.calls.length, need.mock.calls.length]).toEqual(reads);
-  await guards(["Thực đơn", "Xác nhận nhu cầu"], signOut);
+  expect([
+    sources.mock.calls.length,
+    pantry.mock.calls.length,
+    need.mock.calls.length,
+  ]).toEqual(reads);
+  for (const panel of [menuOwner, attendanceOwner, pantryOwner]) {
+    expect(panel.querySelector('[data-tab-tier="secondary"]')).toBeNull();
+    expect(panel.querySelector('[role="tabpanel"]')).toBeNull();
+  }
+  const filterIds = [menuOwner, attendanceOwner, pantryOwner].map((panel) =>
+    within(panel)
+      .getByRole("button", { name: "Bộ lọc", hidden: true })
+      .getAttribute("aria-controls"),
+  );
+  expect(new Set(filterIds).size).toBe(3);
+  await guards(["Sĩ số", "Hàng đặt riêng", "Xác nhận nhu cầu"], signOut);
   expect(attendance).toHaveValue("123");
   expect(quantity).toHaveValue("12,5");
-}, 30000);
+  expect(pantryQuantity).toHaveValue("3,5");
+  await open("Xác nhận nhu cầu");
+  expect(attendanceOwner).toHaveAttribute("hidden");
+  fireEvent.click(screen.getByRole("button", { name: "Đóng Sĩ số" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
+  await waitFor(() => expect(attendanceOwner).not.toBeInTheDocument());
+  expect(pantryQuantity).toHaveValue("3,5");
+  expect(quantity).toHaveValue("12,5");
+  await open("Sĩ số");
+  const reopened = await screen.findByRole("textbox", {
+    name: "Học sinh Trường Nguyễn Du",
+  });
+  expect(reopened).not.toBe(attendance);
+  expect(reopened).not.toHaveValue("123");
+  for (const write of writes) expect(write).not.toHaveBeenCalled();
+}, 60000);
 
 it("retains independent Recipe and Change Order editors, filters and guards without activation reads", async () => {
   const { apis, signOut } = show();

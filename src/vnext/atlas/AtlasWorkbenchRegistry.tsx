@@ -31,6 +31,8 @@ export type AtlasWorkbenchId =
   | "recipes"
   | "change-orders"
   | "planning"
+  | "attendance"
+  | "pantry"
   | "confirmed-need"
   | "procurement"
   | "purchase-orders"
@@ -83,9 +85,38 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
     render: (c) => (
       <PlanningSourcesWorkbench
         {...dateOwner(c)}
+        ownerJob="menu"
+        api={c.app.apis.planning}
+        pantryApi={c.app.apis.pantry}
+      />
+    ),
+  },
+  {
+    id: "attendance",
+    label: "Sĩ số",
+    icon: ClipboardText,
+    group: "CÔNG VIỆC HẰNG NGÀY",
+    render: (c) => (
+      <PlanningSourcesWorkbench
+        {...dateOwner(c)}
+        ownerJob="attendance"
         api={c.app.apis.planning}
         pantryApi={c.app.apis.pantry}
         onExportAttendanceTemplate={c.app.exporters?.attendanceTemplateXlsx}
+      />
+    ),
+  },
+  {
+    id: "pantry",
+    label: "Hàng đặt riêng",
+    icon: Package,
+    group: "CÔNG VIỆC HẰNG NGÀY",
+    render: (c) => (
+      <PlanningSourcesWorkbench
+        {...dateOwner(c)}
+        ownerJob="pantry"
+        api={c.app.apis.planning}
+        pantryApi={c.app.apis.pantry}
       />
     ),
   },

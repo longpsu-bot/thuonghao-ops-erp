@@ -6,7 +6,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 from atlas_persistent_workspace_browser_test import launch, select
 
-OWNERS = ["Trường học", "Thực đơn", "Xác nhận nhu cầu", "Phân bổ NCC", "Đơn mua",
+OWNERS = ["Trường học", "Thực đơn", "Sĩ số", "Hàng đặt riêng", "Xác nhận nhu cầu", "Phân bổ NCC", "Đơn mua",
           "Công thức", "Lệnh điều chỉnh", "Nguyên liệu", "Nhà cung ứng", "Phiếu xuất kho",
           "Đối chiếu PO / Phiếu xuất kho"]
 LEGACY_SUBSET = ["Trường học", "Phân bổ NCC", "Công thức", "Phiếu xuất kho"]

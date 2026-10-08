@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -9,7 +10,7 @@ import {
 } from "@testing-library/react";
 import { userEvent } from "storybook/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AtlasVNextProvider } from "../AtlasVNextProvider";
+import { AtlasVNextProvider, AtlasWorkbenchScope } from "../AtlasVNextProvider";
 import type { PantryApi } from "../bridges/planning";
 import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
 import { createPlanningStoryFixture } from "./planningStoryFixtures";
@@ -92,6 +93,42 @@ describe("Planning sources Chakra workbench", () => {
     );
     expect(preview).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
+  });
+  it("does not move focus into an inactive source owner when its pending Review finishes", async () => {
+    const fixture = createPlanningReviewFixture();
+    let finish!: () => void;
+    const preview = fixture.api.previewAttendance;
+    fixture.api.previewAttendance = (...args) =>
+      new Promise((resolve) => {
+        finish = () => void preview(...args).then(resolve);
+      });
+    const view = (active: boolean) => (
+      <AtlasVNextProvider>
+        <button>Active owner control</button>
+        <AtlasWorkbenchScope active={active}>
+          <PlanningSourcesWorkbench
+            {...fixture}
+            authSubject="operator"
+            initialWeek={reviewWeek}
+            ownerJob="attendance"
+          />
+        </AtlasWorkbenchScope>
+      </AtlasVNextProvider>
+    );
+    const { rerender } = render(view(true));
+    fireEvent.change(
+      await screen.findByRole("textbox", { name: "Học sinh Trường Nguyễn Du" }),
+      { target: { value: "123" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    rerender(view(false));
+    const outside = screen.getByRole("button", {
+      name: "Active owner control",
+    });
+    outside.focus();
+    await act(async () => finish());
+    await screen.findByRole("complementary", { name: "Xem thay đổi" });
+    expect(outside).toHaveFocus();
   });
   it("reports local attendance edits and frozen Review", async () => {
     const fixture = createPlanningReviewFixture();
@@ -337,10 +374,9 @@ describe("Planning sources Chakra workbench", () => {
     ).toBeEnabled();
     const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
     expect(disclosure).toHaveAttribute("aria-expanded", "false");
-    expect(disclosure).toHaveAttribute(
-      "aria-controls",
-      "planning-source-filters",
-    );
+    expect(
+      document.getElementById(disclosure.getAttribute("aria-controls")!),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Tuần 07/09/2026 · Ngày 07/09/2026 · Tất cả trường"),
     ).toBeInTheDocument();
@@ -369,7 +405,9 @@ describe("Planning sources Chakra workbench", () => {
     await userEvent.keyboard("{Enter}");
     expect(disclosure).toHaveAttribute("aria-expanded", "true");
 
-    const filters = document.getElementById("planning-source-filters");
+    const filters = document.getElementById(
+      disclosure.getAttribute("aria-controls")!,
+    );
     expect(filters).toContainElement(document.activeElement as HTMLElement);
     while (filters?.contains(document.activeElement)) await userEvent.tab();
     expect(
@@ -398,7 +436,9 @@ describe("Planning sources Chakra workbench", () => {
 
     const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
     fireEvent.click(disclosure);
-    const filters = document.getElementById("planning-source-filters")!;
+    const filters = document.getElementById(
+      disclosure.getAttribute("aria-controls")!,
+    )!;
     filters.querySelector<HTMLElement>("input, select, button")!.focus();
     for (
       let step = 0;
@@ -459,7 +499,9 @@ describe("Planning sources Chakra workbench", () => {
 
       const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
       fireEvent.click(disclosure);
-      const filters = document.getElementById("planning-source-filters")!;
+      const filters = document.getElementById(
+        disclosure.getAttribute("aria-controls")!,
+      )!;
       filters.querySelector<HTMLElement>("input, select, button")!.focus();
       for (
         let step = 0;
@@ -612,7 +654,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
       "Thực đơn",
       "Sĩ số",
-      "Bổ sung",
+      "Hàng đặt riêng",
     ]);
     const active = screen.getByRole("tab", { name: "Thực đơn" });
     expect(
@@ -668,7 +710,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(
       await screen.findByRole("button", { name: "Trường Nguyễn Du" }),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("tab", { name: "Bổ sung" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     expect(
       await screen.findByRole("checkbox", {
         name: "Xác nhận toàn tuần không có bổ sung",
@@ -815,18 +857,18 @@ describe("Planning sources Chakra workbench", () => {
     fireEvent.change(input, { target: { value: "0" } });
     expect(input).toHaveValue("0");
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
-    fireEvent.click(screen.getByRole("tab", { name: "Bổ sung" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     expect(await screen.findAllByRole("dialog")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Tiếp tục chỉnh sửa" }));
     expect(input).toHaveValue("0");
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByRole("tab", { name: "Bổ sung" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
     await waitFor(() =>
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Bổ sung",
+        "Hàng đặt riêng",
       ),
     );
   });
@@ -847,7 +889,7 @@ describe("Planning sources Chakra workbench", () => {
   });
   it("groups pantry mode by School/date and derives unit and delivery location", async () => {
     await show();
-    fireEvent.click(screen.getByRole("tab", { name: "Bổ sung" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     const pantryTable = await screen.findByRole("table", {
       name: "Nguyên liệu bổ sung",
     });
@@ -1012,7 +1054,7 @@ it.each(["menu", "attendance", "pantry"] as const)(
       ).toHaveTextContent(fixture.pantry.schools[0].school_name);
     fireEvent.click(
       screen.getByRole("tab", {
-        name: job === "pantry" ? "Thực đơn" : "Bổ sung",
+        name: job === "pantry" ? "Thực đơn" : "Hàng đặt riêng",
       }),
     );
     expect(

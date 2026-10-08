@@ -34,6 +34,8 @@ const modules = [
   ["Nhà cung ứng", "Nhà cung ứng"],
   ["Công thức", "Công thức"],
   ["Thực đơn", "Thực đơn"],
+  ["Sĩ số", "Sĩ số"],
+  ["Hàng đặt riêng", "Hàng đặt riêng"],
   ["Xác nhận nhu cầu", "Xác nhận nhu cầu"],
   ["Phân bổ NCC", "Phân bổ NCC"],
   ["Đơn mua", "Đơn mua"],
@@ -75,6 +77,37 @@ async function clickSignOut() {
   });
   fireEvent.click(within(account).getByRole("button", { name: "Đăng xuất" }));
 }
+it("downloads the attendance template from its persistent owner without saving attendance", async () => {
+  const apis = createAtlasApplicationFixture();
+  const preview = vi.spyOn(apis.planning, "previewAttendance");
+  const save = vi.spyOn(apis.planning, "saveCompletedAttendance");
+  const exportTemplate = vi.fn().mockResolvedValue(undefined);
+  render(
+    <AtlasVNextProvider>
+      <AtlasVNextApp
+        apis={apis}
+        authSubject="operator"
+        now={applicationReviewNow}
+        exporters={{ attendanceTemplateXlsx: exportTemplate }}
+      />
+    </AtlasVNextProvider>,
+  );
+  await nav("Sĩ số");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Tải mẫu sĩ số XLSX" }),
+  );
+  await screen.findByText(
+    "Đã tải mẫu nhập. Sĩ số chỉ được ghi nhận sau khi rà soát và Lưu.",
+  );
+  expect(exportTemplate).toHaveBeenCalledWith(
+    "2026-09-07",
+    expect.arrayContaining([
+      expect.objectContaining({ school_id: expect.any(String) }),
+    ]),
+  );
+  expect(preview).not.toHaveBeenCalled();
+  expect(save).not.toHaveBeenCalled();
+});
 it.each(modules)(
   "launches %s with one active heading",
   async (label, heading) => {

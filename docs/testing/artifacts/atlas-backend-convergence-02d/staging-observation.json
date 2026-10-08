@@ -1,0 +1,25 @@
+{
+  "observed_date": "2026-10-08",
+  "project": "rnzxmxiiqgtdevzregff",
+  "mode": "read-only list_migrations; no hosted SQL/business commands",
+  "migration_count": 92,
+  "tip": {
+    "version": "20261006112515",
+    "name": "atlas_recipe_purchase_unit_read"
+  },
+  "repository_count": 94,
+  "repository_missing_on_staging": [
+    {
+      "version": "20261008015308",
+      "name": "atlas_backend_convergence_02b_helpers"
+    },
+    {
+      "version": "20261008015340",
+      "name": "atlas_backend_convergence_02b_allocation"
+    }
+  ],
+  "hosted_only": [],
+  "drift_from_expected": "NONE",
+  "exact_repository_prefix_parity": true,
+  "version_name_sha256": "e0b0560f9868a13726a9af739b6feb3d77b25d75ef16d1a70eba583830cd427f"
+}

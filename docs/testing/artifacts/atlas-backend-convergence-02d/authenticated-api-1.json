@@ -1,0 +1,103 @@
+[
+  {
+    "command": ["pnpm", "local:auth:provision"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:connection:verify"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": [
+      "pnpm",
+      "local:master-data:import",
+      "--",
+      "--file",
+      "supabase/local/rmvp_01_master_data_snapshot.example.json"
+    ],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:rmvp01:verify"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:rmvp02a:verify"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:rmvp02b:verify"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:rmvp03a:verify"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:pantry02:verify"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:rmvp04:verify"],
+    "environment": {
+      "RMVP05_BROWSER_SOURCE": "rmvp04",
+      "RMVP06_BROWSER_SOURCE": "rmvp04",
+      "RMVP07_BROWSER_SOURCE": "rmvp04",
+      "RMVP07_CONTRACT": "v1"
+    },
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:rmvp05:verify"],
+    "environment": {
+      "RMVP05_BROWSER_SOURCE": "rmvp04",
+      "RMVP06_BROWSER_SOURCE": "rmvp04",
+      "RMVP07_BROWSER_SOURCE": "rmvp04",
+      "RMVP07_CONTRACT": "v1"
+    },
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:rmvp06:verify"],
+    "environment": {
+      "RMVP05_BROWSER_SOURCE": "rmvp04",
+      "RMVP06_BROWSER_SOURCE": "rmvp04",
+      "RMVP07_BROWSER_SOURCE": "rmvp04",
+      "RMVP07_CONTRACT": "v1"
+    },
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "verify:local:rmvp07"],
+    "environment": {
+      "RMVP05_BROWSER_SOURCE": "rmvp04",
+      "RMVP06_BROWSER_SOURCE": "rmvp04",
+      "RMVP07_BROWSER_SOURCE": "rmvp04",
+      "RMVP07_CONTRACT": "v1"
+    },
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "verify:local:rmvp07"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:planning-contract-01:verify"],
+    "environment": {},
+    "exit": 0
+  },
+  {
+    "command": ["pnpm", "local:school-catering-procurement:verify"],
+    "environment": {},
+    "exit": 0
+  }
+]

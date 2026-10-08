@@ -90,7 +90,7 @@ def matrix(browser, url, sizes, results):
         trigger = page.get_by_role("button", name="Bàn làm việc", exact=True)
         trigger.click()
         launcher = page.get_by_role("dialog", name="Bàn làm việc", exact=True)
-        expect(launcher.locator("button[data-destination]")).to_have_count(11)
+        expect(launcher.locator("button[data-destination]")).to_have_count(len(OWNERS))
         snapshot(page, f"launcher-open-{size}", results)
         page.get_by_role("textbox", name="Tìm bàn làm việc", exact=True).fill("cong thuc")
         page.keyboard.press("ArrowDown")
@@ -101,17 +101,17 @@ def matrix(browser, url, sizes, results):
             opened(page, label)
             if page.locator('main>[role="tabpanel"]').count() == 8:
                 snapshot(page, f"tabs-eight-{size}", results)
-        expect(page.locator('main>[role="tabpanel"]')).to_have_count(11)
-        snapshot(page, f"tabs-eleven-{size}", results)
+        expect(page.locator('main>[role="tabpanel"]')).to_have_count(len(OWNERS))
+        snapshot(page, f"tabs-thirteen-{size}", results)
         for index, label in enumerate(OWNERS):
             opened(page, label)
-            expect(page.locator('main>[role="tabpanel"]')).to_have_count(11)
+            expect(page.locator('main>[role="tabpanel"]')).to_have_count(len(OWNERS))
             snapshot(page, f"owner-{index:02}-{size}", results)
         if width >= 1024:
             tabs = page.get_by_role("tablist", name="Bàn làm việc đang mở").get_by_role("tab")
             tabs.first.focus()
             page.keyboard.press("Home")
-            for index in range(11):
+            for index in range(len(OWNERS)):
                 if index:
                     page.keyboard.press("ArrowRight")
                 expect(tabs.nth(index)).to_be_focused()
@@ -200,9 +200,8 @@ def pairs(browser, url, results, proofs):
                 values = ["2,25", "Giữ lệnh riêng"]
                 dirty_names = names
             elif kind == "planning":
-                names = ["Thực đơn", "Xác nhận nhu cầu"]
+                names = ["Sĩ số", "Xác nhận nhu cầu"]
                 opened(page, names[0])
-                page.get_by_role("tab", name="Sĩ số", exact=True).click()
                 first = mark(page.get_by_label("Học sinh Trường Nguyễn Du", exact=True), "first", "123")
                 opened(page, names[1])
                 second = mark(page.get_by_label("Số lượng xác nhận Gạo thơm", exact=True), "second", "12,5")

@@ -199,11 +199,11 @@ def visual(browser):
         if index:
             gates.opened(page, label)
         snap(page, f"smoke-{index:02}", results)
-    assert page.locator('main>[role="tabpanel"]').count() == 11
-    snap(page, "workspace-eleven-open-tabs", results)
+    assert page.locator('main>[role="tabpanel"]').count() == len(OWNERS)
+    snap(page, "workspace-thirteen-open-tabs", results)
     page.get_by_role("button", name="Bàn làm việc", exact=True).click()
-    expect(page.get_by_role("dialog", name="Bàn làm việc").locator("button[data-destination]")).to_have_count(11)
-    snap(page, "launcher-eleven", results)
+    expect(page.get_by_role("dialog", name="Bàn làm việc").locator("button[data-destination]")).to_have_count(len(OWNERS))
+    snap(page, "launcher-thirteen", results)
     gates.close(page, failures)
 
     page, failures = gates.new_page(browser, URL, 360, 800)

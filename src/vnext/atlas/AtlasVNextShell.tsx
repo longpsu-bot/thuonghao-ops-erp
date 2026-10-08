@@ -450,11 +450,11 @@ export function AtlasVNextShell({
                 }}
                 align="center"
                 bg={id === activeModule ? "bg.workbench" : "transparent"}
-                borderTopRadius="workbench"
                 borderBottomWidth="var(--atlas-workspace-selected-edge, 3px)"
                 borderBottomColor={
                   id === activeModule ? "border.accent" : "transparent"
                 }
+                _hover={{ bg: "bg.context" }}
               >
                 <Button
                   id={`${prefix}-tab-${id}`}
