@@ -1,0 +1,87 @@
+ok 1 - API roles retain no usage on private Atlas schemas
+ok 2 - only authenticated receives atlas_api schema usage
+ok 3 - anon, authenticated, and service_role have no direct Atlas table or view access
+ok 4 - authenticated can execute exactly the six approved PA-05B functions
+ok 5 - anon and service_role cannot execute PA-05B functions
+ok 6 - all PA-05B entry functions are hardened definers owned by their narrowed runtime roles
+ok 7 - authenticated direct insert into a private domain table is denied
+10000000-0000-0000-0000-000000000101
+10000000-0000-0000-0000-000000000102
+10000000-0000-0000-0000-000000000103
+10000000-0000-0000-0000-000000000104
+10000000-0000-0000-0000-000000000105
+10000000-0000-0000-0000-000000000106
+ok 8 - JWT subject must match requested_by_auth_subject
+ok 9 - unregistered authenticated subjects are rejected
+ok 10 - inactive actors are rejected
+ok 11 - revoked authentication subjects are rejected
+ok 12 - missing command capability is rejected
+ok 13 - relational customer scope is enforced
+NOTICE:  schema "extensions" already exists, skipping
+WARNING:  no privileges were granted for "grant_pg_cron_access"
+WARNING:  no privileges were granted for "grant_pg_net_access"
+10000000-0000-0000-0000-000000000101
+ok 14 - valid supplier evidence is recorded
+ok 15 - exact idempotent replay returns the original response
+ok 16 - exact replay does not duplicate supplier evidence
+ok 17 - same idempotency key with a different request is rejected
+ok 18 - nonpositive evidence quantity is rejected
+ok 19 - stale purchase-order version is rejected
+ok 20 - failed evidence commands do not mutate evidence
+ok 21 - post-receipt validation failure is stored deterministically
+ok 22 - successful evidence command emits one domain event
+ok 23 - successful evidence command emits one audit event
+ok 24 - successful command receipt, domain event, and audit event share one atomic identity
+ok 25 - failed evidence command emits no domain event
+ok 26 - failed evidence command emits no audit event
+ok 27 - structured command errors expose no internal database details
+10000000-0000-0000-0000-000000000101
+10000000-0000-0000-0000-000000000101
+ok 28 - evidence can be applied to its exact allocation line
+ok 29 - evidence application supports exact replay
+ok 30 - a second valid evidence application succeeds
+ok 31 - duplicate active evidence-to-allocation pair is rejected
+ok 32 - evidence quantity cannot be over-applied
+ok 33 - allocation quantity cannot be exceeded
+ok 34 - only the two valid evidence applications persist
+10000000-0000-0000-0000-000000000101
+ok 35 - exact third-line evidence application succeeds
+ok 36 - second allocation line reaches exact Evidence coverage
+10000000-0000-0000-0000-000000000101
+ok 37 - dispatch load is confirmed from exact current evidence
+ok 38 - dispatch load supports exact replay
+ok 39 - evidence applications cannot be consumed beyond their remaining quantity
+ok 40 - successful load advances the main trip to LOADED
+ok 41 - successful load increments the trip version exactly once
+ok 42 - successful multi-line load persists every line exactly once
+ok 43 - failed and replayed load commands add no extra load applications
+10000000-0000-0000-0000-000000000101
+ok 44 - delivery cannot be confirmed before departure
+ok 45 - pre-departure delivery rejection is atomic
+10000000-0000-0000-0000-000000000101
+ok 46 - departure revalidation blocks voided supplier evidence
+ok 47 - blocked departure leaves the trip loaded
+10000000-0000-0000-0000-000000000101
+ok 48 - valid exact loaded evidence can depart
+ok 49 - departure supports exact replay
+ok 50 - successful departure advances the trip to IN_TRANSIT
+ok 51 - successful departure increments the trip version exactly once
+10000000-0000-0000-0000-000000000101
+ok 52 - delivered quantity cannot exceed the exact load
+ok 53 - returns and exception paths remain explicitly unsupported
+ok 54 - exact successful delivery is confirmed
+ok 55 - successful delivery supports exact replay
+ok 56 - failed and replayed delivery commands create no duplicate confirmation
+ok 57 - successful-only delivery writes every exact reconciliation line
+ok 58 - exact delivery completes the trip
+ok 59 - delivery increments the trip version exactly once
+ok 60 - successful delivery emits one domain event
+ok 61 - successful delivery emits one audit event
+10000000-0000-0000-0000-000000000101
+10000000-0000-0000-0000-000000000105
+ok 62 - authorized actor receives the completed supplier-direct trace
+ok 63 - trace preserves the exact delivered quantity
+ok 64 - trace exposes shaped operational stage status
+ok 65 - trace does not expose command-receipt or audit internals
+ok 66 - trace read enforces relational customer scope
+1..66
