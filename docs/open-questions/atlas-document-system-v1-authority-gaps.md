@@ -32,12 +32,14 @@ and supplier name snapshot), and `20261001094403_procurement_supplier_line_note.
 
 ## PO labels contradict the approved frozen-read rule
 
-The base released PO read still joins current Ingredient names, Unit codes and
-delivery-location names. The later breakdown/note wrappers do not freeze those
-display fields. This conflicts with section 8 of the
+Released PO Ingredient names and Unit codes are currently resolved from mutable
+Master Data; later wrappers add no snapshots for these labels. This conflicts
+with section 8 of the
 [Planning–Procurement business freeze](../architecture/planning-procurement-business-freeze.md).
-Supplier name snapshot and exact released quantities remain authoritative;
-Ingredient/Unit/location label immutability cannot be claimed.
+The base read also exposes a mutable location label, but official School-detail
+export uses release-captured School and location labels from `school_breakdown`.
+Supplier name, School/location labels and exact released quantities remain
+authoritative; Ingredient/Unit label immutability cannot be claimed.
 
 The conflict was reported before continuing. The Owner explicitly authorized:
 **“Proceed with PO presentation only; keep authority gaps blocked.”** This allows

@@ -226,6 +226,7 @@ describe("Supplier purchase orders", () => {
       fireEvent.click(within(detail).getByRole("button", { name: "XLSX" }));
       expect(onExportXlsx).toHaveBeenCalledWith(
         fixture.orders.purchase_orders[0],
+        "all",
       );
       expect(within(detail).getByRole("button", { name: "PDF" })).toBeVisible();
     },

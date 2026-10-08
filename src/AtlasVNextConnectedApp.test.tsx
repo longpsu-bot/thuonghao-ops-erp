@@ -132,9 +132,11 @@ it("builds each reviewed API factory once, reuses its bundle, and supplies expor
     "attendanceTemplateXlsx",
     "procurementPdf",
     "procurementXlsx",
+    "procurementZip",
     "pxkGroupedXlsx",
     "pxkPdf",
     "pxkXlsx",
+    "pxkZip",
     "shoppingListImport",
     "shoppingListXlsx",
   ]);
