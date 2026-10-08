@@ -129,6 +129,7 @@ it("builds each reviewed API factory once, reuses its bundle, and supplies expor
   expect(reconciliation).toHaveBeenCalledOnce();
   expect(apis.reconciliation).toBe(reconciliation.mock.results[0]!.value);
   expect(Object.keys(observed.props!.exporters!).sort()).toEqual([
+    "attendanceTemplateXlsx",
     "procurementPdf",
     "procurementXlsx",
     "pxkGroupedXlsx",

@@ -119,6 +119,12 @@ synthetic fixture facts and fixed source timestamps, never a live connection.
   allowlist adds only the template module; direct vNext/business-bridge imports
   remain forbidden and have a regression check. This changes export wiring only,
   with no business bridge or API contract change. `pnpm ui:vnext:check` passed.
+- Subsequent full CI passed 2,532 tests (two existing environment-gated skips)
+  and found one stale connected-root exporter-key expectation. The expectation
+  now includes the authorized Attendance callback, retaining exact key/function
+  checks and the no-RPC assertion. Its focused root test passed. Database smoke
+  and repository preview checks passed; the final full CI outcome is tracked on
+  the Draft PR rather than treating this intermediate run as passing.
 - Local format, typecheck and production build passed. Build retains existing
   large-chunk warnings; no dependency or public contract change was introduced.
 
