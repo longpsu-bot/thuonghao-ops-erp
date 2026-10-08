@@ -34,9 +34,11 @@ Shopping List retains its specialized codec, geometry and import validator uncha
 - [x] Generate deterministic safe fixture specimens through production builders.
       Inspect native Excel open/save/reopen and actual PDF pagination/rendering.
       Keep native QA copies separate from clean deliverables.
-- [ ] Run exporter/guard/snapshot/note/breakdown/import compatibility and Shopping
+- [x] Run exporter/guard/snapshot/note/breakdown/import compatibility and Shopping
       List regressions, full frontend tests, format, typecheck, build and whitespace.
-      Review the branch, commit, push, open one Draft PR and record CI.
+      Review the branch, commit, push and open one Draft PR. Exact-head CI is
+      tracked on [Draft PR #360](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/360);
+      integration requires its required Frontend CI to pass.
 
 Prohibited: `docs/current-context.md`, `docs/architecture/roadmap.md`, Backend 02C
 files, Supabase functions/migrations, business calculations, lifecycle/authority
@@ -44,14 +46,14 @@ changes, live data, new major dependencies and unrelated UI polish.
 
 ## Document matrix
 
-| Document                  | Current implementation        | Business authority                                   | Current format      | Target format                  | Grouping                                                           | Filename                               | Status treatment                                           | Signatures                                 | Print QA            | Tests                          | Acceptance                          |
-| ------------------------- | ----------------------------- | ---------------------------------------------------- | ------------------- | ------------------------------ | ------------------------------------------------------------------ | -------------------------------------- | ---------------------------------------------------------- | ------------------------------------------ | ------------------- | ------------------------------ | ----------------------------------- |
-| SHOPPING_LIST             | confirmedNeedShoppingList     | Complete saved/current Confirmed Need                | V2 A+ XLSX          | unchanged                      | source School ID order                                             | unchanged PhieuDiCho period V2         | working paper                                              | unchanged                                  | regression specimen | full V2 suite                  | accepted baseline / preserved       |
-| PO                        | purchaseOrderExports          | Released PO revision, supplier/note/School snapshots | XLSX + PDF          | same                           | supplier/date; School + location IDs; Ingredient + Unit + note     | snapshot supplier/date/official number | released / superseded, revision and replacement references | no new commitment/sign-off                 | pending             | exporter + snapshot guards     | pending owner visual review         |
-| PXK                       | schoolDispatchReleaseExports  | Immutable School/date/location release               | XLSX + PDF          | same                           | one release per sheet, date/frozen School order                    | snapshot School/date/official number   | released / superseded, predecessor reference               | existing received/delivered/prepared areas | pending             | PXK exporter guards            | pending owner visual review         |
-| DISPATCH                  | grouped School PXK exporter   | Same bounded released PXK snapshots                  | grouped XLSX        | same                           | date, frozen School order/name, number; distinct releases retained | PXK-GROUPED date range                 | status on every sheet                                      | existing PXK areas                         | pending             | grouped ordering/collisions    | no Trip/Vehicle/Warehouse expansion |
-| ATTENDANCE_IMPORT         | planningInputsWorkbook parser | Existing School code + date, explicit Preview/Save   | XLSX import / paste | compatible blank XLSX template | existing selected week; no generated source facts                  | attendance import selected week        | import template / not saved                                | none                                       | pending             | unchanged parser compatibility | pending owner visual review         |
-| GENERATED_PURCHASE_REVIEW | generatedPurchaseReviewExport | Read-only generated evidence/recommendations         | XLSX                | same                           | supplier ID, School/location IDs, Ingredient/Unit IDs              | ban-du-kien service date               | DỰ KIẾN — CHƯA XÁC NHẬN                                    | reviewer working space only                | pending             | preliminary export suite       | pending owner visual review         |
+| Document                  | Current implementation        | Business authority                                   | Current format      | Target format                  | Grouping                                                           | Filename                               | Status treatment                                           | Signatures                                 | Print QA        | Tests                          | Acceptance                          |
+| ------------------------- | ----------------------------- | ---------------------------------------------------- | ------------------- | ------------------------------ | ------------------------------------------------------------------ | -------------------------------------- | ---------------------------------------------------------- | ------------------------------------------ | --------------- | ------------------------------ | ----------------------------------- |
+| SHOPPING_LIST             | confirmedNeedShoppingList     | Complete saved/current Confirmed Need                | V2 A+ XLSX          | unchanged                      | source School ID order                                             | unchanged PhieuDiCho period V2         | working paper                                              | unchanged                                  | native/PDF PASS | full V2 suite                  | accepted baseline / preserved       |
+| PO                        | purchaseOrderExports          | Released PO revision, supplier/note/School snapshots | XLSX + PDF          | same                           | supplier/date; School + location IDs; Ingredient + Unit + note     | snapshot supplier/date/official number | released / superseded, revision and replacement references | no new commitment/sign-off                 | native/PDF PASS | exporter + snapshot guards     | pending owner visual review         |
+| PXK                       | schoolDispatchReleaseExports  | Immutable School/date/location release               | XLSX + PDF          | same                           | one release per sheet, date/frozen School order                    | snapshot School/date/official number   | released / superseded, predecessor reference               | existing received/delivered/prepared areas | native/PDF PASS | PXK exporter guards            | pending owner visual review         |
+| DISPATCH                  | grouped School PXK exporter   | Same bounded released PXK snapshots                  | grouped XLSX        | same                           | date, frozen School order/name, number; distinct releases retained | PXK-GROUPED date range                 | status on every sheet                                      | existing PXK areas                         | native/PDF PASS | grouped ordering/collisions    | no Trip/Vehicle/Warehouse expansion |
+| ATTENDANCE_IMPORT         | planningInputsWorkbook parser | Existing School code + date, explicit Preview/Save   | XLSX import / paste | compatible blank XLSX template | existing selected week; no generated source facts                  | SiSo_MauNhap_YYYY-MM-DD.xlsx           | import template / not saved                                | none                                       | native/PDF PASS | unchanged parser compatibility | pending owner visual review         |
+| GENERATED_PURCHASE_REVIEW | generatedPurchaseReviewExport | Read-only generated evidence/recommendations         | XLSX                | same                           | supplier ID, School/location IDs, Ingredient/Unit IDs              | ban-du-kien service date               | DỰ KIẾN — CHƯA XÁC NHẬN                                    | reviewer working space only                | native/PDF PASS | preliminary export suite       | pending owner visual review         |
 
 ## Rulings and authority gaps
 
@@ -101,9 +103,22 @@ synthetic fixture facts and fixed source timestamps, never a live connection.
 - Independent code review: both Important findings (tall-note loss and lost
   continuation context), plus the truncated worksheet apostrophe, fixed and
   rechecked. No remaining Critical/Important code or visual findings.
-- Focused initial verification: six files / 66 tests passed, including Attendance
-  download without Preview/Save. Added further guard/determinism cases afterward.
-  Full frontend verification and final CI results are recorded below when available.
+- Focused initial verification: six files / 66 tests passed. Final document,
+  Attendance UI and import-boundary checks: four files / 94 tests passed. Shopping
+  and Confirmed Need regressions plus Planning Sources: nine files / 220 tests
+  passed. The unchanged legacy Planning Inputs suite passed all 38 tests separately.
+- Full local frontend run: 187 files / 2,534 tests; 2,531 passed, three failed.
+  One filename expectation was corrected and its 11-test suite passed; two existing
+  focus/timeout failures under concurrent Windows load passed in serialized suites.
+  No assertions or timeouts were weakened. Required GitHub CI owns final full-suite
+  validation; its exact-head outcome is maintained in the linked Draft PR.
+- First PR CI exposed a direct legacy import from the Attendance stage. The
+  download now follows existing composition-root export callbacks through
+  `AtlasVNextConnectedApp`, `AtlasVNextApp`, `AtlasWorkbenchRegistry`,
+  `PlanningSourcesWorkbench`, and the existing Planning Sources props. The root
+  allowlist adds only the template module; direct vNext/business-bridge imports
+  remain forbidden and have a regression check. This changes export wiring only,
+  with no business bridge or API contract change. `pnpm ui:vnext:check` passed.
 - Local format, typecheck and production build passed. Build retains existing
   large-chunk warnings; no dependency or public contract change was introduced.
 

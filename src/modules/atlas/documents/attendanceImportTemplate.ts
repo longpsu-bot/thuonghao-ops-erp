@@ -1,4 +1,5 @@
 import type { PlanningSchool } from "../planning-inputs/planningInputsModel";
+import { downloadBytes } from "../procurement/purchaseOrderExports";
 import {
   applyDocumentFont,
   borderRow,
@@ -95,4 +96,15 @@ export async function createAttendanceImportTemplate(
     "THAM KHẢO MÃ TRƯỜNG — KHÔNG PHẢI SĨ SỐ ĐÃ LƯU",
   );
   return workbook.xlsx.writeBuffer();
+}
+
+export async function downloadAttendanceImportTemplate(
+  weekStart: string,
+  schools: PlanningSchool[],
+) {
+  downloadBytes(
+    await createAttendanceImportTemplate(weekStart, schools),
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    `SiSo_MauNhap_${weekStart}.xlsx`,
+  );
 }

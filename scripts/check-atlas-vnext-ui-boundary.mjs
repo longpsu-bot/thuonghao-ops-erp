@@ -56,6 +56,7 @@ const connectedRootModules = new Set([
   "src/modules/atlas/connection/atlasRpc",
   "src/modules/atlas/procurement/purchaseOrderExports",
   "src/modules/atlas/dispatch/schoolDispatchReleaseExports",
+  "src/modules/atlas/documents/attendanceImportTemplate",
   "src/modules/atlas/master-data/masterDataApi",
   "src/modules/atlas/recipes/recipeApi",
   "src/modules/atlas/recipe-adjustments/recipeAdjustmentApi",

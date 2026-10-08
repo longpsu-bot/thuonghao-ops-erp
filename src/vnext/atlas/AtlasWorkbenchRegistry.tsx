@@ -85,6 +85,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
         {...dateOwner(c)}
         api={c.app.apis.planning}
         pantryApi={c.app.apis.pantry}
+        onExportAttendanceTemplate={c.app.exporters?.attendanceTemplateXlsx}
       />
     ),
   },

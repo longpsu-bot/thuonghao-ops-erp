@@ -100,6 +100,10 @@ export type PlanningSourcesProps = AtlasModuleExitProps & {
   initialServiceDate?: string;
   onServiceDateChange?: (date: string) => void;
   initialJob?: PlanningJob;
+  onExportAttendanceTemplate?: (
+    weekStart: string,
+    schools: PlanningInputsWorkbenchData["schools"],
+  ) => Promise<void>;
 };
 export type AttendanceDraft = Omit<
   AttendanceLine,

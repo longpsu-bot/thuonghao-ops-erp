@@ -11,14 +11,17 @@ import { useState } from "react";
 import {
   validCount,
   type PlanningSourcesController,
+  type PlanningSourcesProps,
 } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 export function PlanningAttendanceStage({
   c,
   visibleSchoolIds,
+  onExportTemplate,
 }: {
   c: PlanningSourcesController;
   visibleSchoolIds: string[];
+  onExportTemplate?: PlanningSourcesProps["onExportAttendanceTemplate"];
 }) {
   const [pasteOpen, setPasteOpen] = useState(false),
     [paste, setPaste] = useState("");
@@ -52,25 +55,12 @@ export function PlanningAttendanceStage({
         <Flex gap="sm">
           <Button
             size="sm"
-            disabled={!c.data || templatePending}
+            disabled={!c.data || !onExportTemplate || templatePending}
             onClick={async () => {
               setTemplatePending(true);
               setTemplateNotice("");
               try {
-                const [{ createAttendanceImportTemplate }, { downloadBytes }] =
-                  await Promise.all([
-                    import("../../../modules/atlas/documents/attendanceImportTemplate"),
-                    import("../../../modules/atlas/procurement/purchaseOrderExports"),
-                  ]);
-                const bytes = await createAttendanceImportTemplate(
-                  c.week,
-                  c.data!.schools,
-                );
-                downloadBytes(
-                  bytes,
-                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                  `SiSo_MauNhap_${c.week}.xlsx`,
-                );
+                await onExportTemplate!(c.week, c.data!.schools);
                 setTemplateNotice(
                   "Đã tải mẫu nhập. Sĩ số chỉ được ghi nhận sau khi rà soát và Lưu.",
                 );

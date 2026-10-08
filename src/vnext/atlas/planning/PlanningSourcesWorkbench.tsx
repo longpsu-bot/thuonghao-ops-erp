@@ -358,6 +358,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                       <PlanningAttendanceStage
                         c={c}
                         visibleSchoolIds={visibleSchoolIds}
+                        onExportTemplate={props.onExportAttendanceTemplate}
                       />
                     ) : (
                       <PlanningPantryStage

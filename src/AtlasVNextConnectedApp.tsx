@@ -31,12 +31,14 @@ import { AtlasSessionGate } from "./vnext/atlas/AtlasSessionGate";
 import { AtlasVNextApp } from "./vnext/atlas/AtlasVNextApp";
 import type { AtlasVNextApis } from "./vnext/atlas/AtlasVNextApis";
 import { createConnectedShoppingListService } from "./modules/atlas/planning-inputs/confirmed-needs/shoppingListService";
+import { downloadAttendanceImportTemplate } from "./modules/atlas/documents/attendanceImportTemplate";
 const exporters = {
   procurementXlsx: downloadPurchaseOrderXlsx,
   procurementPdf: downloadPurchaseOrderPdf,
   pxkXlsx: downloadSchoolDispatchXlsx,
   pxkPdf: downloadSchoolDispatchPdf,
   pxkGroupedXlsx: downloadGroupedSchoolDispatchXlsx,
+  attendanceTemplateXlsx: downloadAttendanceImportTemplate,
 };
 export function AtlasVNextConnectedApp({
   connection: suppliedConnection,

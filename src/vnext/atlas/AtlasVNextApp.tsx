@@ -22,6 +22,7 @@ import { vietnamServiceDate } from "./businessDate";
 import type { ProcurementWorkbenchProps } from "./procurement/ProcurementWorkbench";
 import type { SchoolPxkWorkbenchProps } from "./dispatch/useSchoolPxkWorkbench";
 import type { ConfirmedNeedWorkbenchProps } from "./planning-confirmed/useConfirmedNeedWorkbench";
+import type { PlanningSourcesProps } from "./planning/usePlanningSources";
 import {
   atlasWorkbenches,
   type AtlasWorkbenchDefinition,
@@ -49,6 +50,7 @@ export type AtlasVNextAppProps = {
     pxkGroupedXlsx?: SchoolPxkWorkbenchProps["onExportGroupedXlsx"];
     shoppingListXlsx?: ConfirmedNeedWorkbenchProps["onExportShoppingList"];
     shoppingListImport?: ConfirmedNeedWorkbenchProps["onImportShoppingList"];
+    attendanceTemplateXlsx?: PlanningSourcesProps["onExportAttendanceTemplate"];
   };
 };
 export function AtlasVNextApp(props: AtlasVNextAppProps) {
