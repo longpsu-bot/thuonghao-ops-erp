@@ -38,6 +38,7 @@ export const atlasPrimaryTabTrigger = {
     bottom: "var(--atlas-layout-zero, 0)",
     height: "var(--atlas-layout-tab-marker, 3px)",
     bg: "border.accent",
+    borderRadius: "control",
     opacity: "var(--atlas-layout-tab-marker-hidden, 0)",
   },
   _selected: {
@@ -74,25 +75,23 @@ export const atlasSecondaryTabTrigger = {
   py: "xs",
   color: "fg.muted",
   fontWeight: "semibold",
-  borderRadius: "var(--atlas-layout-zero, 0)",
+  borderRadius: "control",
   borderWidth: "var(--atlas-layout-edge, 1px)",
   borderColor: "border.default",
   _hover: { bg: "bg.context", borderColor: "border.strong" },
   focusVisibleRing: "outside",
   focusRingColor: "focus.ring",
+  position: "relative",
+  _after: atlasPrimaryTabTrigger._after,
   _selected: {
     color: "fg.primary",
     bg: "bg.workbench",
     borderColor: "border.accent",
     _hover: { bg: "bg.workbench", borderColor: "border.accent" },
     fontWeight: "semibold",
-    _horizontal: {
-      _before: {
-        bg: "border.accent",
-        height: "var(--atlas-layout-tab-marker, 3px)",
-      },
-    },
+    _after: { opacity: "var(--atlas-layout-tab-marker-visible, 1)" },
   },
+  _before: { display: "none" },
 } as const;
 
 export const atlasVisuallyHidden = {

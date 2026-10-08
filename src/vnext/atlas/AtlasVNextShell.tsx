@@ -22,6 +22,7 @@ import {
   type AtlasWorkbenchDefinition,
   type AtlasWorkbenchId,
 } from "./AtlasWorkbenchRegistry";
+import { atlasPrimaryTabTrigger } from "./AtlasTaskTabs";
 import type { AtlasWorkbenchStatus } from "./AtlasModuleExit";
 import { foldVietnameseSearch } from "./foldVietnameseSearch";
 import { formatVietnamBusinessDate } from "./businessDate";
@@ -435,6 +436,7 @@ export function AtlasVNextShell({
           bg="bg.toolbar"
           px="sm"
           pt="xs"
+          pb="xs"
         >
           <Flex
             w="var(--atlas-workspace-tab-content-width, max-content)"
@@ -450,19 +452,20 @@ export function AtlasVNextShell({
                 }}
                 align="center"
                 bg={id === activeModule ? "bg.workbench" : "transparent"}
-                borderTopRadius="workbench"
+                borderRadius="control"
                 borderWidth="var(--atlas-layout-edge, 1px)"
                 borderColor={
                   id === activeModule ? "border.accent" : "border.default"
                 }
-                borderBottomWidth={
-                  id === activeModule
-                    ? "var(--atlas-workspace-selected-edge, 3px)"
-                    : "var(--atlas-layout-edge, 1px)"
-                }
-                borderBottomColor={
-                  id === activeModule ? "border.accent" : "border.default"
-                }
+                position="relative"
+                overflow="visible"
+                _after={{
+                  ...atlasPrimaryTabTrigger._after,
+                  opacity:
+                    id === activeModule
+                      ? "var(--atlas-layout-tab-marker-visible, 1)"
+                      : "var(--atlas-layout-tab-marker-hidden, 0)",
+                }}
                 _hover={{
                   bg: id === activeModule ? "bg.workbench" : "bg.context",
                   borderColor:
@@ -483,7 +486,8 @@ export function AtlasVNextShell({
                   variant="utility"
                   color={id === activeModule ? "fg.default" : "fg.secondary"}
                   fontWeight={id === activeModule ? "semibold" : "normal"}
-                  borderRadius="var(--atlas-layout-zero, 0)"
+                  borderStartRadius="control"
+                  borderEndRadius="var(--atlas-layout-zero, 0)"
                   _hover={{ bg: "transparent", color: "fg.primary" }}
                   onClick={() => select(id)}
                   onKeyDown={(event) => tabKeys(event, id)}
