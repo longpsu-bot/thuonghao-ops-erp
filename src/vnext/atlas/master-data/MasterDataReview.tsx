@@ -145,6 +145,11 @@ function IngredientReviewTable({
           after: review.after.ingredientName,
         },
         {
+          label: "Mã hàng trên chứng từ",
+          before: review.before?.documentCode,
+          after: review.after.documentCode,
+        },
+        {
           label: "Đơn vị mua",
           before: review.before
             ? unit(review.before.purchaseUnitId)
@@ -189,6 +194,11 @@ function SupplierReviewTable({
           label: "Tên nhà cung ứng",
           before: review.before?.supplierName,
           after: review.after.supplierName,
+        },
+        {
+          label: "Mã NCC trên chứng từ",
+          before: review.before?.documentCode,
+          after: review.after.documentCode,
         },
         {
           label: "Người liên hệ",

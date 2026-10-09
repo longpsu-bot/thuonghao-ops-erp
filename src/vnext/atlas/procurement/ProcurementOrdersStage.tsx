@@ -30,6 +30,7 @@ export type ProcurementZipExport = (
 ) => void | Promise<void>;
 const canExport = (order: SchoolCateringPurchaseOrder) =>
   ["RELEASED_TO_SUPPLIER", "SUPERSEDED"].includes(order.status) &&
+  order.document_snapshot_complete === true &&
   order.export_ready &&
   order.allowed_actions.export;
 const dateLabel = (date: string) => date.split("-").reverse().join("/");

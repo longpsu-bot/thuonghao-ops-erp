@@ -1013,11 +1013,24 @@ where capability.capability_code in (
 on conflict (role_id, capability_id) do nothing;
 
 insert into atlas_admin.suppliers (
-  supplier_id, supplier_code, supplier_name, supplier_status
+  supplier_id, supplier_code, supplier_name, supplier_status, document_code
 ) values (
   'e4900000-0000-0000-0000-000000000001',
-  'scenario-c-supplier', 'Scenario C Supplier', 'ACTIVE'
+  'scenario-c-supplier', 'Scenario C Supplier', 'ACTIVE', '53'
 );
+-- Explicit native test facts needed by the official supplier document contract.
+update atlas_admin.ingredients set document_code='ITEM-RICE'
+where ingredient_id='e4100000-0000-0000-0000-000000000007';
+update atlas_admin.ingredients set document_code='ITEM-OIL'
+where ingredient_id='e4100000-0000-0000-0000-000000000013';
+update atlas_admin.ingredients set document_code='ITEM-CARROT'
+where ingredient_id='e4100000-0000-0000-0000-000000000016';
+update atlas_admin.ingredients set document_code='ITEM-POTATO'
+where ingredient_id='e4100000-0000-0000-0000-000000000019';
+update atlas_admin.ingredients set document_code='ITEM-SPINACH'
+where ingredient_id='e4100000-0000-0000-0000-000000000020';
+update atlas_admin.ingredients set document_code='ITEM-CELERY'
+where ingredient_id='e4100000-0000-0000-0000-000000000021';
 insert into atlas_admin.supplier_eligibilities (
   supplier_id, ingredient_id, effective_from, priority, reason_note
 )

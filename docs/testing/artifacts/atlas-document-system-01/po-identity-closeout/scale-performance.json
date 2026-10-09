@@ -1,0 +1,35 @@
+{
+  "status": "Final clean-cycle hard guards PASS; four-second target MISSED; prior timing failures retained",
+  "cycle1": {
+    "p50_ms": 5020.721,
+    "p95_ms": 6595.519,
+    "operator_target_met": false,
+    "hard_guard": "PASS42"
+  },
+  "cycle2": {
+    "p50_ms": 4887.273,
+    "p95_ms": 5390.429,
+    "operator_target_met": false,
+    "hard_guard": "PASS42"
+  },
+  "failed_discarded_reset_attempts": [
+    {
+      "attempt": 1,
+      "p95_ms": 7465.438,
+      "failed_assertion": 6,
+      "reason": "current-source profile277.58ms versus materialization169.94ms"
+    },
+    {
+      "attempt": 2,
+      "p95_ms": 10808.546,
+      "failed_assertion": 22
+    },
+    {
+      "attempt": 3,
+      "p95_ms": 9095.231,
+      "failed_assertion": 22
+    }
+  ],
+  "need_code_or_threshold_changes": false,
+  "root_cause": "Unproven physical-state/host-timing variability; unchanged measured function paths and guard call counts verified"
+}

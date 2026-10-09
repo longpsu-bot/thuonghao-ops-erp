@@ -242,6 +242,7 @@ function createSuppliers(): SupplierMasterData[] {
     return {
       supplier_id: `review-supplier-${number.toString().padStart(2, "0")}`,
       supplier_code: `NCC${number.toString().padStart(3, "0")}`,
+      document_code: null,
       supplier_name: name,
       supplier_status:
         index === 21 ? "SUSPENDED" : index === 22 ? "INACTIVE" : "ACTIVE",
@@ -315,6 +316,7 @@ function createIngredients(
     return {
       ingredient_id: `review-ingredient-${number.toString().padStart(3, "0")}`,
       ingredient_code: `NL${number.toString().padStart(4, "0")}`,
+      document_code: null,
       ingredient_name: name,
       ingredient_status:
         index % 29 === 0 && index > 0
@@ -401,6 +403,22 @@ function payloadNumber(
 ): number {
   const value = request.payload[key];
   return typeof value === "number" ? value : Number.NaN;
+}
+
+function validDocumentCode(request: { payload: Record<string, JsonValue> }) {
+  const code = request.payload.document_code;
+  return (
+    code === undefined ||
+    code === null ||
+    (typeof code === "string" &&
+      code.trim().length > 0 &&
+      Array.from(code.trim()).length <= 200 &&
+      !/^v1-(ingredient|supplier)-/i.test(code.trim()) &&
+      !/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(
+        code,
+      ) &&
+      !/[\u0000-\u001f\u007f]/.test(code))
+  );
 }
 
 function payloadArray(
@@ -630,6 +648,8 @@ export function createReviewMasterDataApi(
     createIngredient(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
+      if (!validDocumentCode(request))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const code =
         request.payload.ingredient_code === undefined
           ? `ingredient-${crypto.randomUUID()}`
@@ -664,6 +684,7 @@ export function createReviewMasterDataApi(
         {
           ingredient_id: id,
           ingredient_code: code,
+          document_code: payloadString(request, "document_code").trim() || null,
           ingredient_name: payloadString(request, "ingredient_name"),
           ingredient_status: "ACTIVE",
           ingredient_type_id: type.ingredient_type_id,
@@ -687,6 +708,8 @@ export function createReviewMasterDataApi(
     updateIngredient(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
+      if (!validDocumentCode(request))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const id = payloadString(request, "ingredient_id");
       const index = ingredients.findIndex(
         (ingredient) => ingredient.ingredient_id === id,
@@ -711,6 +734,12 @@ export function createReviewMasterDataApi(
         return Promise.resolve(backendError("VALIDATION_FAILED"));
       ingredients[index] = {
         ...ingredients[index],
+        ...(Object.hasOwn(request.payload, "document_code")
+          ? {
+              document_code:
+                payloadString(request, "document_code").trim() || null,
+            }
+          : {}),
         ingredient_name: payloadString(request, "ingredient_name"),
         ingredient_type_id: type.ingredient_type_id,
         ingredient_type_name: type.ingredient_type_name,
@@ -754,6 +783,8 @@ export function createReviewMasterDataApi(
     createSupplier(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
+      if (!validDocumentCode(request))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const code =
         request.payload.supplier_code === undefined
           ? `supplier-${crypto.randomUUID()}`
@@ -773,6 +804,7 @@ export function createReviewMasterDataApi(
         {
           supplier_id: `review-supplier-${number.toString().padStart(2, "0")}`,
           supplier_code: code,
+          document_code: payloadString(request, "document_code").trim() || null,
           supplier_name: payloadString(request, "supplier_name"),
           supplier_status: "ACTIVE",
           contact_name: payloadString(request, "contact_name") || null,
@@ -788,6 +820,8 @@ export function createReviewMasterDataApi(
     updateSupplier(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
+      if (!validDocumentCode(request))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const id = payloadString(request, "supplier_id");
       const index = suppliers.findIndex(
         (supplier) => supplier.supplier_id === id,
@@ -797,6 +831,12 @@ export function createReviewMasterDataApi(
         return Promise.resolve(backendError("STALE_VERSION"));
       suppliers[index] = {
         ...suppliers[index],
+        ...(Object.hasOwn(request.payload, "document_code")
+          ? {
+              document_code:
+                payloadString(request, "document_code").trim() || null,
+            }
+          : {}),
         supplier_name: payloadString(request, "supplier_name"),
         contact_name: payloadString(request, "contact_name") || null,
         contact_phone: payloadString(request, "contact_phone") || null,

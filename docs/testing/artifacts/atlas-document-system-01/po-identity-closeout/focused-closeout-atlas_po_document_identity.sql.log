@@ -1,0 +1,35 @@
+ok 1 - Ingredient owns explicit outward document code
+ok 2 - Supplier owns explicit outward document code
+ok 3 - PO header freezes supplier outward code
+ok 4 - PO line freezes item outward code
+ok 5 - PO line freezes Ingredient display name
+ok 6 - PO line freezes Unit display code
+ok 7 - exact V1 item provenance becomes numeric text
+ok 8 - legacy suffix is text without numeric overflow
+ok 9 - exact V1 supplier provenance becomes numeric text
+ok 10 - unapproved technical prefix form stays null
+ok 11 - zero legacy form stays null
+ok 12 - native item has no invented outward code
+ok 13 - native supplier has no invented outward code
+d7100000-0000-4000-8000-000000000101
+ok 14 - native item document code is authored through create
+ok 15 - create exact replay returns same document identity
+ok 16 - authored native item code persists
+ok 17 - authored native supplier code persists
+ok 18 - shaped Ingredient read always exposes nullable document_code
+ok 19 - shaped Supplier read always exposes nullable document_code
+ok 20 - update persists code and omitted update preserves it
+ok 21 - document-code update cannot overwrite stale version
+ok 22 - blank, UUID including embedded UUID, technical prefix, type and oversized explicit codes reject safely
+ok 23 - explicit null clears the governed native supplier code
+ok 24 - document-code changes retain existing audit evidence
+ok 25 - ongoing import insertion never clobbers explicitly supplied code
+ok 26 - browser cannot write document codes through private tables
+ok 27 - document row-lock helper remains private
+ok 28 - all four bounded private helpers preserve exact ownership, fixed paths and denied browser execution
+ok 29 - existing master writer owns document-code writes and Procurement has no Admin UPDATE RLS policy
+d7100000-0000-4000-8000-000000000102
+ok 30 - document-code authoring requires existing master write capability
+d7100000-0000-4000-8000-000000000101
+ok 31 - document-code authoring requires GLOBAL Admin scope
+1..31

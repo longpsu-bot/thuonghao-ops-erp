@@ -78,6 +78,12 @@ try {
                   address: cell.address,
                   value: cell.value,
                   hidden: sheet.getColumn(cell.col).hidden,
+                  ...(name.startsWith("PO-") &&
+                  cell.col === 2 &&
+                  (typeof row.getCell(1).value === "number" ||
+                    row.getCell(1).value === "...")
+                    ? { documentCode: true }
+                    : {}),
                   ...(name !== "Shopping-list-APlus-preserved" &&
                   cell.numFmt === "@" &&
                   typeof cell.value === "string"
@@ -221,7 +227,10 @@ try {
       xlsxQuantityParity: "PASS",
     });
   }
-  if (process.argv.includes("--cooking-revision")) {
+  if (
+    process.argv.includes("--cooking-revision") ||
+    process.argv.includes("--po-identity-closeout")
+  ) {
     manifest.generatedAt = "2026-10-09T00:00:00Z";
     manifest.revision = "Owner School bands / cooking-group snapshot amendment";
     const source =
@@ -256,6 +265,8 @@ try {
       line.purchase_order_line_revision_id = `fixture-po-line-${index}`;
       line.ingredient.ingredient_id = `fixture-item-${String(index).padStart(3, "0")}`;
       line.ingredient.ingredient_name = `Thực phẩm mẫu ${String(index).padStart(3, "0")}`;
+      line.ingredient_name_snapshot = line.ingredient.ingredient_name;
+      line.ingredient_document_code_snapshot = `ITEM-${index}`;
       line.supplier_note = index === 0 ? "A".repeat(500) : null;
       line.school_breakdown[0].school_name =
         "Trường Tiểu học mẫu với tên dài cần đọc đầy đủ khi giao hàng";
@@ -264,6 +275,79 @@ try {
       return line;
     });
     await savePo("PO-grouped-multipage-500-note", stress);
+    if (process.argv.includes("--po-identity-closeout")) {
+      manifest.revision =
+        "Owner final PO immutable labels and explicit outward codes";
+      const frozen = structuredClone(grouped);
+      frozen.supplier.document_code = "999";
+      frozen.supplier.supplier_name = "Current supplier renamed after release";
+      for (const line of frozen.lines) {
+        line.ingredient.document_code = "888";
+        line.ingredient.ingredient_name =
+          "Current Ingredient renamed after release";
+        line.unit.unit_code = "Current Unit changed after release";
+      }
+      await savePo("PO-frozen-after-master-edits", frozen);
+      const predecessor = structuredClone(frozen);
+      predecessor.status = "SUPERSEDED";
+      predecessor.replaced_by_purchase_order_id = "fixture-replacement";
+      await savePo("PO-superseded-frozen-predecessor", predecessor);
+      const replacement = structuredClone(grouped);
+      replacement.document_number = "PO-FIXTURE-REPLACEMENT";
+      replacement.replaces_purchase_order_id = "fixture-predecessor";
+      replacement.current_revision.supplier_document_code_snapshot = "NCC-NEW";
+      for (const line of replacement.lines) {
+        line.ingredient_document_code_snapshot = "ITEM-NEW";
+        line.ingredient_name_snapshot = "Tên mới được phát hành";
+        line.unit_code_snapshot = "Hộp";
+      }
+      await savePo("PO-replacement-new-frozen-facts", replacement);
+      const numeric = structuredClone(grouped);
+      numeric.lines = ["1082", "956", "957", "1053"].map((code, index) => {
+        const line = structuredClone(grouped.lines[0]);
+        line.ingredient.ingredient_id = `fixture-v1-item-${index}`;
+        line.ingredient_document_code_snapshot = code;
+        line.ingredient_name_snapshot = `Hàng V1 mẫu ${code}`;
+        return line;
+      });
+      await savePo("PO-v1-numeric-outward-codes", numeric);
+      const wideCode = structuredClone(grouped);
+      wideCode.current_revision.supplier_document_code_snapshot = "W".repeat(
+        200,
+      );
+      for (const line of wideCode.lines)
+        line.ingredient_document_code_snapshot = "W".repeat(200);
+      await savePo("PO-long-explicit-document-code", wideCode);
+      const incomplete = structuredClone(grouped);
+      incomplete.document_snapshot_complete = false;
+      incomplete.current_revision.supplier_document_code_snapshot = null;
+      for (const line of incomplete.lines) {
+        line.ingredient_document_code_snapshot = null;
+        line.ingredient_name_snapshot = null;
+        line.unit_code_snapshot = null;
+      }
+      const safeReason =
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.";
+      for (const mode of ["all", "details_ing", "details_school", "sum"]) {
+        await assert.rejects(po.createPurchaseOrderXlsx(incomplete, mode), {
+          message: safeReason,
+        });
+        await assert.rejects(po.createPurchaseOrderPdf(incomplete, mode), {
+          message: safeReason,
+        });
+        await assert.rejects(po.createPurchaseOrderZip([incomplete], mode), {
+          message: safeReason,
+        });
+      }
+      manifest.identityCloseout = {
+        frozenMasterMutation: "PASS",
+        supersededPredecessor: "PASS",
+        replacementCurrentSnapshots: "PASS",
+        visibleV1Codes: ["53", "1082", "956", "957", "1053"],
+        historicalIncompleteAllModesAndZip:
+          "FAIL CLOSED — expected safe reason verified",
+      };
+    }
     const baseline = JSON.parse(
       await fs.readFile(
         path.resolve(

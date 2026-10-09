@@ -25,6 +25,8 @@ describe("Owner V1 PO presentation revision", () => {
       ingredient_id: "a-first",
       ingredient_name: "Đầu cánh gà",
     };
+    order.lines[0]!.ingredient_name_snapshot = "Ức gà";
+    order.lines[1]!.ingredient_name_snapshot = "Đầu cánh gà";
     const workbook = await load(await createPurchaseOrderXlsx(order));
     const item = workbook
       .getWorksheet("02-09-2026 - Tổng")!
@@ -77,9 +79,9 @@ describe("Owner V1 PO presentation revision", () => {
     expect(summary.getCell("A4").text).toBe("PHIẾU ĐẶT HÀNG");
     expect(summary.getCell("A7").text).toBe("Ngày dùng:");
     expect(summary.getCell("A8").text).toContain("Mã NCC:");
-    expect(summary.getCell("A8").text).toContain("chưa lưu mã");
-    expect(summary.getCell("A9").text).toContain("Mã hàng");
-    expect(summary.getCell("B11").text).toBe("");
+    expect(summary.getCell("A8").text).toBe("Mã NCC: 53");
+    expect(summary.getCell("A9").text).toBe("");
+    expect(summary.getCell("B11").text).toBe("1082");
     expect(summary.getCell("E11").value).toBe("100");
     expect(summary.getCell("E11").numFmt).toBe("@");
     expect(summary.pageSetup.printTitlesRow).toBe("1:10");
@@ -106,7 +108,7 @@ describe("Owner V1 PO presentation revision", () => {
       expect(sheet.columnCount).toBe(6);
       expect(sheet.model.merges).toContain("A10:F10");
       expect(sheet.getCell("A11").value).toBe(1);
-      expect(sheet.getCell("B11").text).toBe("");
+      expect(sheet.getCell("B11").text).toBe("1082");
       expect(sheet.getCell("E11").value).toBe("60");
       expect(sheet.pageSetup.orientation).toBe("portrait");
     }
@@ -114,12 +116,14 @@ describe("Owner V1 PO presentation revision", () => {
       workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A13").text,
     ).toContain(order.lines[0]!.school_breakdown[0]!.school_name);
   });
-  it("uses Ngày dùng and an explicit code gap in PDF, keeping the six-column summary", () => {
+  it("uses Ngày dùng and frozen document codes in PDF, keeping the six-column summary", () => {
     const definition = buildPurchaseOrderPdfDefinition(fixture());
     const text = JSON.stringify(definition);
     expect(text).toContain("Ngày dùng");
     expect(text).not.toContain("Ngày giao");
-    expect(text).toContain("chưa lưu mã");
+    expect(text).toContain("Mã NCC: 53");
+    expect(text).toContain("1082");
+    expect(text).not.toContain("chưa lưu mã");
     expect(text).toContain("Mã hàng");
     const tables = (
       definition.content as { table?: { body: unknown[][] } }[]

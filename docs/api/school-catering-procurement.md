@@ -189,3 +189,72 @@ exact platform catalog contains 112 private forced-RLS tables, 31 capabilities, 
 physical `atlas_api` functions, and 111 authenticated browser-callable functions.
 The three non-browser-callable functions are predecessor PO/PXK read
 implementations retained behind shaped public wrappers.
+
+## Released document identity closeout — PR #360
+
+Authority: the Owner's final Document System closeout retains the accepted School
+bands, cooking groups, supplier notes, replacement and commitment semantics. The
+forward migration is `20261009105641_atlas_po_document_identity.sql`; earlier
+migrations and previously released PO rows remain unchanged.
+
+Admin Ingredient and Supplier each own nullable explicit `document_code`, governed
+by the existing Master Data create/update/read APIs. Exact imported technical
+codes `v1-ingredient-1082` and `v1-supplier-53` map to document codes `1082` and `53`
+using the retained legacy ID provenance. Native technical codes and UUIDs are
+never outward-code authority. See the
+[Master Data amendment](../architecture/rmvp-01-independent-atlas-master-data.md#document-facing-code-amendment--pr-360).
+
+Future official school-catering PO release requires every participating Supplier
+and Ingredient to have a nonblank, trimmed, single-line printable document code
+of at most 200 Unicode code points. Technical V1 prefixes, UUID substrings and control
+characters are invalid, including Unicode boundary whitespace such as NBSP and BOM. `PO_DOCUMENT_CODE_REQUIRED` returns a safe blocker before
+issuing a number or commitment. The existing command acquires Supplier, ordered
+Ingredient and ordered Unit row locks before reading the display facts, retaining
+those locks through validation and capture. Existing version, source-currentness,
+eligibility, scope, receipt and retryable concurrency checks remain authoritative.
+
+Each future released header freezes `supplier_document_code_snapshot` beside the
+existing `supplier_name_snapshot`. Each released line freezes
+`ingredient_document_code_snapshot`, `ingredient_name_snapshot` and
+`unit_code_snapshot`, retaining the existing Ingredient and Unit identities, exact
+quantity, source, predecessor, supplier note and School/cooking-group breakdown.
+New snapshot fields are immutable, including a historical null. Releasing a
+replacement freezes current facts in its own revision; supersession preserves the
+predecessor's original facts and number.
+
+The existing shaped read adds:
+
+- `current_revision.supplier_document_code_snapshot`: nullable text.
+- Line `ingredient_document_code_snapshot`, `ingredient_name_snapshot` and
+  `unit_code_snapshot`: nullable text.
+- Order `document_snapshot_complete`: derived boolean.
+- `supplier.document_code` and `line.ingredient.document_code`: current Master Data
+  for Drafts, frozen outward codes for released/superseded records.
+- `document_export_blocker`: safe Vietnamese explanation when an official record
+  lacks reproducible display evidence.
+
+For `RELEASED_TO_SUPPLIER` and `SUPERSEDED`, existing display properties
+`supplier.supplier_name`, `line.ingredient.ingredient_name` and `line.unit.unit_code`
+use their frozen snapshots. Missing historical labels use explicitly missing
+history placeholders, never current Master Data. Official exporters consume only
+the explicit snapshots and require `document_snapshot_complete === true`.
+
+The shaped line retains `supplier_note` from its frozen revision snapshot after current allocation notes change.
+
+Completeness requires valid outward codes, the captured Supplier name, captured Ingredient/Unit labels and
+the existing complete School breakdown on every line. Incomplete or malformed
+historical evidence remains readable with `document_snapshot_complete: false`,
+`export_ready: false`, `allowed_actions.export: false` and
+`PO_DOCUMENT_SNAPSHOT_INCOMPLETE`. The safe reason is
+`Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.` Historical rows are not
+fabricated or rewritten. A Draft may display current labels, but cannot release
+while current required codes are absent or invalid.
+
+This revision adds four private helpers, five triggers and seven reviewed positive
+grants, without a new table, API, capability, policy, role or browser table grant.
+The current catalogue is 115 private forced-RLS tables, 118 physical APIs, 115
+authenticated APIs, 663 normal policies, 332 private functions, 120 triggers and
+1797 reviewed positive grants. Forward rollback retains explicit codes and all
+released snapshot columns; removing or reconstructing them destroys evidence.
+Supplier address semantics remain open. PXK business authority and Shopping List
+V2/A+ are unchanged.

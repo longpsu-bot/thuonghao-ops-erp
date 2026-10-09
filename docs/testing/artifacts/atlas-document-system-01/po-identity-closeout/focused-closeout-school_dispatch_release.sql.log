@@ -1,0 +1,72 @@
+1..59
+ok 1 - Function atlas_api.get_school_dispatch_release_workbench(jsonb) should exist
+ok 2 - Function atlas_api.release_school_dispatch_document(jsonb) should exist
+ok 3 - Function atlas_api.get_school_dispatch_release_workbench(jsonb) should be owned by atlas_read_runtime
+ok 4 - Function atlas_api.release_school_dispatch_document(jsonb) should be owned by atlas_dispatch_command_runtime
+ok 5 - Role authenticated should be granted EXECUTE on function atlas_api.get_school_dispatch_release_workbench(jsonb)
+ok 6 - Role authenticated should be granted EXECUTE on function atlas_api.release_school_dispatch_document(jsonb)
+ok 7 - Role anon should be granted no privileges on function atlas_api.get_school_dispatch_release_workbench(jsonb)
+ok 8 - Role anon should be granted no privileges on function atlas_api.release_school_dispatch_document(jsonb)
+ok 9 - School PXK headers exist
+ok 10 - School PXK lines exist
+ok 11 - School PXK lineage exists
+ok 12 - School master configures the direct PXK issuer name
+ok 13 - School master configures the direct PXK issuer address
+ok 14 - released PXK freezes School display order
+ok 15 - released PXK freezes its issuer name
+ok 16 - released PXK freezes its issuer address
+ok 17 - School PXK headers have forced RLS
+ok 18 - School PXK lines have forced RLS
+ok 19 - School PXK lineage has forced RLS
+ok 20 - browser and service roles receive no direct School PXK relation grants
+ok 21 - bounded School PXK read capability exists
+ok 22 - bounded School PXK release capability exists
+26000000-0000-4000-8000-000000000101
+NOTICE:  schema "extensions" already exists, skipping
+ok 23 - captured Location A PXK preview stays ready after the School default changes to B
+ok 24 - preview creates no PXK draft or other supporting write
+ok 25 - preview returns lossless quantity and exact Confirmed Need/allocation/PO lineage
+ok 26 - new same-Customer default Location B inherits no captured Location A Need
+ok 27 - cross-Customer Delivery Location remains outside the School boundary
+26000000-0000-4000-8000-000000000101
+ok 28 - PXK release rejects an unnormalized document note
+26000000-0000-4000-8000-000000000101
+ok 29 - actual new PXK release after clearing assignment freezes null cooking facts
+ok 30 - explicit PXK release succeeds and assigns a server-owned official number
+ok 31 - released PXK header stores immutable scope, display snapshots, and note
+ok 32 - released PXK preserves captured Location A and never substitutes mutable default B
+ok 33 - released PXK stores one immutable line and its exact typed source coverage
+ok 34 - exact PXK release replay returns the original outcome
+ok 35 - read model exposes the released immutable PXK as current and exportable
+ok 36 - new PXK release freezes cooking X
+ok 37 - historical PXK read retains X after assignment and rename
+26000000-0000-4000-8000-000000000101
+ok 38 - released PXK header and School order do not follow later master changes
+26000000-0000-4000-8000-000000000101
+ok 39 - legacy PXK without the direct header snapshot fails closed for export
+ok 40 - PXK readiness has no stock, receiving, trip, vehicle, driver, or load dependency
+ok 41 - PXK source coverage uses exact residual-preserving contribution/supplier ranges
+ok 42 - released PXK line facts cannot be edited
+26000000-0000-4000-8000-000000000101
+ok 43 - changed exact allocation/PO membership derives PXK replacement-required
+ok 44 - explicit PXK successor release creates a distinct official document
+ok 45 - successor release atomically supersedes the prior PXK and preserves both documents
+ok 46 - new PXK successor captures current cooking Y
+ok 47 - removal preserves both historical PXK snapshots
+26000000-0000-4000-8000-000000000101
+ok 48 - PXK-SCOPE-04 relevant removed-supplier commitment blocks PXK
+ok 49 - PXK command rechecks and rejects unresolved removed-supplier commitment
+ok 50 - PXK slice introduces no supplier-cancellation command
+ok 51 - each successful PXK release records exactly one receipt, event, and audit record
+ok 52 - PXK-SCOPE-02 shared stale Supplier 1 PO blocks unchanged School A
+ok 53 - PXK-SCOPE-01/PXK-SCOPE-05C unrelated replacement-required PO does not block A
+ok 54 - PXK-SCOPE-01 stale Supplier 2 PO still blocks School B
+ok 55 - PXK-SCOPE-03 unrelated School B cancellation-required PO does not block School A
+26000000-0000-4000-8000-000000000101
+ok 56 - PXK-SCOPE-05A relevant active replacement-required PO blocks covered School A
+26000000-0000-4000-8000-000000000101
+ok 57 - PXK-SCOPE-05B replacement draft excludes A while old Supplier 1 PO stays active
+26000000-0000-4000-8000-000000000101
+ok 58 - PXK-SCOPE-05B replacement release atomically resolves and unblocks School A
+26000000-0000-4000-8000-000000000101
+ok 59 - reconciliation excludes stale PO quantity, retains PXK history and captured location

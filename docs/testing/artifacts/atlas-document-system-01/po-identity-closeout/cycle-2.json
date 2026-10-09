@@ -1,0 +1,2568 @@
+{
+  "migrations": [
+    {
+      "name": "pa_04_supplier_direct_slice_1_foundation",
+      "version": "20260715052252"
+    },
+    {
+      "name": "pa_05b_supplier_direct_command_subset",
+      "version": "20260715105918"
+    },
+    {
+      "name": "pa_05c_authorized_read_api_wrappers",
+      "version": "20260715130617"
+    },
+    {
+      "name": "pa_05b_h1_runtime_role_hardening",
+      "version": "20260715144830"
+    },
+    {
+      "name": "pa_05d_planning_command_family",
+      "version": "20260715163344"
+    },
+    {
+      "name": "pa_05e_procurement_command_family",
+      "version": "20260716023909"
+    },
+    {
+      "name": "pa_05b_h2_multiline_dispatch_execution",
+      "version": "20260716054358"
+    },
+    {
+      "name": "pa_05f_dispatch_setup_command_family",
+      "version": "20260716084258"
+    },
+    {
+      "name": "pa_05b_h3_successful_trip_closure",
+      "version": "20260717021808"
+    },
+    {
+      "name": "pa_05c_h2_current_command_timeline_scope",
+      "version": "20260717042323"
+    },
+    {
+      "name": "pa_05c_h3_evidence_readiness_current_command_context",
+      "version": "20260718084742"
+    },
+    {
+      "name": "pa_06e_h0a1_school_customer_location_foundation",
+      "version": "20260719115318"
+    },
+    {
+      "name": "pa_06e_h0a2_recipe_bom_immutable_reference_foundation",
+      "version": "20260719140821"
+    },
+    {
+      "name": "pa_06e_h0a3a_weekly_menu_persistence_foundation",
+      "version": "20260719165444"
+    },
+    {
+      "name": "pa_06e_h0a3b_attendance_persistence_foundation",
+      "version": "20260720051142"
+    },
+    {
+      "name": "pa_06e_h0a4b_planning_input_readiness_persistence",
+      "version": "20260720135755"
+    },
+    {
+      "name": "pa_06e_h0a5b_need_generation_persistence",
+      "version": "20260721070121"
+    },
+    {
+      "name": "pa_06e_h0b1b_confirmed_need_persistence",
+      "version": "20260722041540"
+    },
+    {
+      "name": "pa_06e_h0cb_confirmed_need_materialization_command",
+      "version": "20260722144050"
+    },
+    {
+      "name": "pa_06e_h1a_planning_quantity_policy_persistence",
+      "version": "20260725204120"
+    },
+    {
+      "name": "pa_06e_h1b1_policy_bound_line_decision_persistence",
+      "version": "20260726115324"
+    },
+    {
+      "name": "rmvp_01_atlas_master_data",
+      "version": "20260726160315"
+    },
+    {
+      "name": "rmvp_02a_connected_recipes_bom",
+      "version": "20260727090000"
+    },
+    {
+      "name": "rmvp_02b_recipe_adjustments_effective_bom",
+      "version": "20260727120000"
+    },
+    {
+      "name": "rmvp_03a_connected_weekly_menu_attendance",
+      "version": "20260727150000"
+    },
+    {
+      "name": "pantry_02_connected_pantry_source",
+      "version": "20260729032653"
+    },
+    {
+      "name": "pantry_rdy_02_readiness_persistence",
+      "version": "20260730231951"
+    },
+    {
+      "name": "rmvp_03b_connected_planning_input_readiness",
+      "version": "20260731212845"
+    },
+    {
+      "name": "pantry_ng_02_direct_ingredient_persistence_materialization",
+      "version": "20260802090000"
+    },
+    {
+      "name": "rmvp_04_connected_need_generation",
+      "version": "20260802164523"
+    },
+    {
+      "name": "rmvp_05_connected_confirmed_need_review",
+      "version": "20260803102941"
+    },
+    {
+      "name": "rmvp_06_connected_confirmed_need_validation",
+      "version": "20260804073753"
+    },
+    {
+      "name": "rmvp_07_connected_confirmed_need_approval_release",
+      "version": "20260805202517"
+    },
+    {
+      "name": "planning_contract_01_atomic_planning_boundaries",
+      "version": "20260809120000"
+    },
+    {
+      "name": "confirmed_need_save_release_boundary",
+      "version": "20260811011339"
+    },
+    {
+      "name": "ui_quality_03a_recipe_lock_forward",
+      "version": "20260811064000"
+    },
+    {
+      "name": "ui_quality_03a_recipe_workflow",
+      "version": "20260811064724"
+    },
+    {
+      "name": "ui_quality_03b_recipe_adjustment_operator_workbench",
+      "version": "20260814010928"
+    },
+    {
+      "name": "ui_quality_03b_recipe_adjustment_corrections",
+      "version": "20260814045038"
+    },
+    {
+      "name": "ui_quality_03b_derived_ingredient_units",
+      "version": "20260814152310"
+    },
+    {
+      "name": "ui_quality_03c_a_school_defaults_bulk_editor",
+      "version": "20260814205439"
+    },
+    {
+      "name": "ui_quality_03c_b_authoritative_ingredient_catalogs",
+      "version": "20260815165003"
+    },
+    {
+      "name": "planning_contract_02a_recipe_replacement_evidence",
+      "version": "20260817025156"
+    },
+    {
+      "name": "planning_contract_02b_selective_confirmation_continuity",
+      "version": "20260817045218"
+    },
+    {
+      "name": "issue_213_recipe_save_activates_new_dish",
+      "version": "20260821150043"
+    },
+    {
+      "name": "issue_213_preserve_dish_activation_invariants",
+      "version": "20260821160145"
+    },
+    {
+      "name": "fix_planning_command_clock_skew",
+      "version": "20260822060130"
+    },
+    {
+      "name": "issue_223_daily_need_generation",
+      "version": "20260823033440"
+    },
+    {
+      "name": "issue_223_legacy_overlap_guard",
+      "version": "20260823055452"
+    },
+    {
+      "name": "issue_222_closed_loop_planning_corrections",
+      "version": "20260823090858"
+    },
+    {
+      "name": "daily_need_empty_source_preflight",
+      "version": "20260826011050"
+    },
+    {
+      "name": "school_catering_handoff_allocation",
+      "version": "20260831090000"
+    },
+    {
+      "name": "school_catering_purchase_orders",
+      "version": "20260831120000"
+    },
+    {
+      "name": "procurement_connected_contract_hardening",
+      "version": "20260901181519"
+    },
+    {
+      "name": "purchase_review_confirm_release",
+      "version": "20260903072648"
+    },
+    {
+      "name": "atlas_dish_creation_defaults",
+      "version": "20260904042117"
+    },
+    {
+      "name": "fix_rmvp_02b_command_clock_skew",
+      "version": "20260904071803"
+    },
+    {
+      "name": "master_data_creation_ux_02",
+      "version": "20260904081048"
+    },
+    {
+      "name": "recipe_effective_contract_01",
+      "version": "20260905105253"
+    },
+    {
+      "name": "recipe_effective_product_model_correction",
+      "version": "20260905161348"
+    },
+    {
+      "name": "recipe_active_on_create_lifecycle_correction",
+      "version": "20260906000923"
+    },
+    {
+      "name": "recipe_system_command_context_01",
+      "version": "20260906085653"
+    },
+    {
+      "name": "recipe_legacy_issuance_read_01",
+      "version": "20260906105509"
+    },
+    {
+      "name": "direct_need_school_date_mode",
+      "version": "20260907090000"
+    },
+    {
+      "name": "school_need_downstream_correction",
+      "version": "20260907110000"
+    },
+    {
+      "name": "school_catering_po_replacement",
+      "version": "20260907120000"
+    },
+    {
+      "name": "school_dispatch_release",
+      "version": "20260907130000"
+    },
+    {
+      "name": "school_fulfilment_reconciliation",
+      "version": "20260907140000"
+    },
+    {
+      "name": "pantry_v3_approved_replacement_preview_gate",
+      "version": "20260908000508"
+    },
+    {
+      "name": "scenario_b_procurement_contract_repair",
+      "version": "20260908142935"
+    },
+    {
+      "name": "scenario_c_confirmed_need_write_certainty_message",
+      "version": "20260908154640"
+    },
+    {
+      "name": "purchase_preparation_replacement_frontier",
+      "version": "20260908225248"
+    },
+    {
+      "name": "atlas_document_output_snapshots",
+      "version": "20260914105238"
+    },
+    {
+      "name": "master_data_rehearsal_import",
+      "version": "20260915153000"
+    },
+    {
+      "name": "master_data_rehearsal_recipe_import",
+      "version": "20260915160000"
+    },
+    {
+      "name": "master_data_rehearsal_school_optional_fields",
+      "version": "20260916010000"
+    },
+    {
+      "name": "master_data_owner_reviewed_resolutions",
+      "version": "20260916023500"
+    },
+    {
+      "name": "staging_master_reference_adoption",
+      "version": "20260916050000"
+    },
+    {
+      "name": "master_import_apply_invariant_alignment",
+      "version": "20260916070000"
+    },
+    {
+      "name": "weekly_menu_snapshot_integrity_scale",
+      "version": "20260917060426"
+    },
+    {
+      "name": "need_generation_integrity_scale",
+      "version": "20260918012128"
+    },
+    {
+      "name": "confirmed_need_partition_lookup_indexes",
+      "version": "20260918064938"
+    },
+    {
+      "name": "stabilize_need_generation_generic_plans",
+      "version": "20260920154302"
+    },
+    {
+      "name": "planning_operational_proposal",
+      "version": "20260923041223"
+    },
+    {
+      "name": "planning_legacy_adoption_unit_repair",
+      "version": "20260924030542"
+    },
+    {
+      "name": "planning_generation_tail_latency_02",
+      "version": "20260925015857"
+    },
+    {
+      "name": "planning_d047_current_source_regeneration",
+      "version": "20260926043448"
+    },
+    {
+      "name": "planning_final_closeout_completion",
+      "version": "20260926071101"
+    },
+    {
+      "name": "menu_slot_dish_decoupling",
+      "version": "20261001081941"
+    },
+    {
+      "name": "procurement_supplier_line_note",
+      "version": "20261001094403"
+    },
+    {
+      "name": "atlas_shopping_list_export_read",
+      "version": "20261005032608"
+    },
+    {
+      "name": "atlas_recipe_purchase_unit_read",
+      "version": "20261006112515"
+    },
+    {
+      "name": "atlas_backend_convergence_02b_helpers",
+      "version": "20261008015308"
+    },
+    {
+      "name": "atlas_backend_convergence_02b_allocation",
+      "version": "20261008015340"
+    },
+    {
+      "name": "atlas_school_cooking_groups",
+      "version": "20261009075715"
+    },
+    {
+      "name": "atlas_po_document_identity",
+      "version": "20261009105641"
+    }
+  ],
+  "bootstrap": {
+    "project": "atlas-document-system-360-cooking",
+    "reset_exit": 0,
+    "seeds_enabled": false,
+    "command": "supabase db reset --local --no-seed"
+  },
+  "catalog_sha256": "5ec051f92d77b645b6697b7642b0525535c35ba209d3632066ec0e7c011af609",
+  "additional_catalog": {
+    "views": {
+      "count": 2,
+      "sha256": "0c620443c8d269df8402b12911926bf05b61b75abf2830976d43bc1137d19be2"
+    },
+    "columns": {
+      "count": 1409,
+      "sha256": "c1cd9e37956cb1a389c493758cf0e06ea6a230afc4747906ac534b1de62f996a"
+    },
+    "schemas": {
+      "count": 10,
+      "sha256": "e08b6585b1d053dc32a558ba13e003560acbc88ee92e02909e380445f1ddfcd9"
+    },
+    "triggers": {
+      "count": 120,
+      "sha256": "12f073eb23b69984e80d332c69f22652f0a53fa278e6b3e575d96f51d272d4da"
+    },
+    "constraints": {
+      "count": 1258,
+      "sha256": "ba14d570aa9df4b50495cb1605c50a173fc448f9829c862e06443e672b404bf8"
+    },
+    "default_acls": {
+      "count": 0,
+      "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    "role_memberships": {
+      "count": 19,
+      "sha256": "e45c81f33bd85a0356fe87b8efaf662e4063524f61c5b9d709b2a0e4ad0d64ee"
+    }
+  },
+  "catalog_verifier": "PASS",
+  "suites": [
+    {
+      "suite": "need_generation_operational_scale.sql",
+      "exit": 0,
+      "plan": "1..42",
+      "assertions_sha256": "e0c4f1cdbd9801386fd4f1dca5f749ed2046c8ba8ea07a5e4bcf54f0e721f6c9"
+    },
+    {
+      "suite": "atlas_backend_convergence_02b_helpers.sql",
+      "exit": 0,
+      "plan": "1..124",
+      "assertions_sha256": "b19d67817f7c704db1e3dfc805a65f81498e7b8dbd1a332bcb6af1c5e2a6b325"
+    },
+    {
+      "suite": "atlas_backend_convergence_02b_allocation.sql",
+      "exit": 0,
+      "plan": "1..417",
+      "assertions_sha256": "3172df928b333a8bcef737d2c8bda4f0ca7a80226b3665b5d496491b9587deac"
+    },
+    {
+      "suite": "atlas_current_platform_security_catalog.sql",
+      "exit": 0,
+      "plan": "1..28",
+      "assertions_sha256": "48ad998203ce0f36bf5f13b12b75ee66c2fbec884fa25a03e44172d6e12199f0"
+    },
+    {
+      "suite": "rmvp_03a_connected_weekly_menu_attendance.sql",
+      "exit": 0,
+      "plan": "1..77",
+      "assertions_sha256": "d087eaf24184697d1ba6e89aa0ef1b7e78ed4fc538ecca0e16d6212c2177d9d1"
+    },
+    {
+      "suite": "weekly_menu_save_scale.sql",
+      "exit": 0,
+      "plan": "1..10",
+      "assertions_sha256": "9e579c6ed9e5553962036dde93a7b6f5add090ddd5737ceafbae578cd98d67ea"
+    },
+    {
+      "suite": "rmvp_03b_connected_planning_input_readiness.sql",
+      "exit": 0,
+      "plan": "1..84",
+      "assertions_sha256": "9c0d3ab9a3a3d7a1a93dc1ef88cfdf9a93302210e1c46e0f337aed9cb2ff477e"
+    },
+    {
+      "suite": "pantry_02_connected_pantry_source.sql",
+      "exit": 0,
+      "plan": "1..46",
+      "assertions_sha256": "79c16c148fbbd958eed333d6064aa3389c251a5a970218c27cffa5832ef0a578"
+    },
+    {
+      "suite": "pantry_ng_02_direct_ingredient_persistence_materialization.sql",
+      "exit": 0,
+      "plan": "1..144",
+      "assertions_sha256": "97bc03ecc42c9bd54c03f1d8b6b9d3c7a1a6b215e9c63543163b24eb34b2007b"
+    },
+    {
+      "suite": "direct_ingredient_need_convergence.sql",
+      "exit": 0,
+      "plan": "1..31",
+      "assertions_sha256": "984d5432c4d9301a110328a6010e05736faf78f9170fb451b209dc792adb8e96"
+    },
+    {
+      "suite": "rmvp_04_connected_need_generation.sql",
+      "exit": 0,
+      "plan": "1..87",
+      "assertions_sha256": "7523565cd0a1e5953e4c12d62cfbad0c6e5a03b7921e01d36f683f7f4d9588cf"
+    },
+    {
+      "suite": "rmvp_05_connected_confirmed_need_review.sql",
+      "exit": 0,
+      "plan": "1..41",
+      "assertions_sha256": "e637728c222ea4ed831b37a01c52bcfd6158576430f3b8291be6352fb64e33e3"
+    },
+    {
+      "suite": "rmvp_06_connected_confirmed_need_validation.sql",
+      "exit": 0,
+      "plan": "1..65",
+      "assertions_sha256": "bd1345ad9ebf0b2151bf27c03bf9e829be3f21830259968c90aacb6b5c3bd0cb"
+    },
+    {
+      "suite": "rmvp_07_connected_confirmed_need_approval_release.sql",
+      "exit": 0,
+      "plan": "1..67",
+      "assertions_sha256": "ad3348a67927674198a7e2facedcc6dd78bf336487dea7d11ca0464b845c877d"
+    },
+    {
+      "suite": "d037_confirmed_need_save_release_boundary.sql",
+      "exit": 0,
+      "plan": "1..37",
+      "assertions_sha256": "e415b9ef619c52071bedab66096f000fa1df32695236859c9be71c1d8761c2d2"
+    },
+    {
+      "suite": "school_catering_handoff_allocation.sql",
+      "exit": 0,
+      "plan": "1..88",
+      "assertions_sha256": "733921835bcc2a183f9b1f2222f2bcacd15fb545a001d125ddea0e91e2fd2753"
+    },
+    {
+      "suite": "purchase_review_confirm_release.sql",
+      "exit": 0,
+      "plan": "1..147",
+      "assertions_sha256": "e0c107cbf19c351275f46462f2dbab8fb2cf98fce64c4296210bce7ccaa81a89"
+    },
+    {
+      "suite": "procurement_supplier_line_note.sql",
+      "exit": 0,
+      "plan": "1..13",
+      "assertions_sha256": "6bcd3ed136219b1c4e339c9ffa32557ff1f53f8923f27c76358311f4fa47ca4c"
+    },
+    {
+      "suite": "school_catering_purchase_orders.sql",
+      "exit": 0,
+      "plan": "1..132",
+      "assertions_sha256": "ab73dca6b2e1468f3c02b4fb8cbc6d23412303e1990afc75eda46de85cd19c20"
+    },
+    {
+      "suite": "school_catering_planning_correction.sql",
+      "exit": 0,
+      "plan": "1..23",
+      "assertions_sha256": "769f233f9735ed7e8f401eb3fca437e15f4c74bc257331b06c5d405d9be8bf28"
+    },
+    {
+      "suite": "purchase_handoff_clock_skew.sql",
+      "exit": 0,
+      "plan": "1..6",
+      "assertions_sha256": "8e0068695c4019b2dd4b4bc7e8f794acd8bb678651c7f669adeca44d587c78a5"
+    },
+    {
+      "suite": "issue_222_closed_loop_planning_corrections.sql",
+      "exit": 0,
+      "plan": "1..47",
+      "assertions_sha256": "9ab9c4f65c791b615e6846dbe493fb7a2687500234252e6584ab4a8735db0699"
+    },
+    {
+      "suite": "planning_contract_01_atomic_planning_boundaries.sql",
+      "exit": 0,
+      "plan": "1..258",
+      "assertions_sha256": "afc327751cab170eb69190408091fdff2649a80e0b2e4adf1cc361b41aa4caed"
+    },
+    {
+      "suite": "planning_contract_02b_selective_confirmation_continuity.sql",
+      "exit": 0,
+      "plan": "1..42",
+      "assertions_sha256": "f3af157565b8ae69d3bf59741dbe7b0144398f5d4f40ca99ae1b543e39d751d9"
+    },
+    {
+      "suite": "planning_operational_proposal.sql",
+      "exit": 0,
+      "plan": "1..62",
+      "assertions_sha256": "43ce55d5b1ca94fea88d3d321c73b528ab42144e6713e5bbe224eee505788ae6"
+    },
+    {
+      "suite": "planning_legacy_adoption_unit_transition.sql",
+      "exit": 0,
+      "plan": "1..20",
+      "assertions_sha256": "bc747c05dd7834018f59150e8caf76b590a1d83ca6821ef58722a55214d51463"
+    },
+    {
+      "suite": "school_dispatch_release.sql",
+      "exit": 0,
+      "plan": "1..59",
+      "assertions_sha256": "4e74d1db96587e3bd4bbc9ed717175a2e510c7f7cb920508e77cbfc68a03a418"
+    },
+    {
+      "suite": "school_fulfilment_reconciliation.sql",
+      "exit": 0,
+      "plan": "1..16",
+      "assertions_sha256": "d20ea3c46793cdb2ac92a5d4ba4aba010f2ec2b3ec1c80eb214f030f658d2118"
+    },
+    {
+      "suite": "pa_05d_planning_command_family.sql",
+      "exit": 0,
+      "plan": "1..69",
+      "assertions_sha256": "b524ac50dff77f293408f1cc1933eac4a86eb6c0d4634d39456fd5c7505ea70f"
+    },
+    {
+      "suite": "pa_05e_procurement_command_family.sql",
+      "exit": 0,
+      "plan": "1..74",
+      "assertions_sha256": "9b79f0b8dfca3748bc6764d1d7e61e25ca1d0fbb83f3bca9c18b7776f96b1b58"
+    },
+    {
+      "suite": "pa_06e_h0a3a_weekly_menu_persistence_foundation.sql",
+      "exit": 0,
+      "plan": "1..100",
+      "assertions_sha256": "6cbea1042a92c7f78c3c4702994fa3c63f00d7313b00f5008f6bbac45e8bea3f"
+    },
+    {
+      "suite": "pa_06e_h0a3b_attendance_structure_security.sql",
+      "exit": 0,
+      "plan": "1..25",
+      "assertions_sha256": "a685d5066f868ff95b5e38bc0af4c2799bd700bab160258e16ae5870b21149d6"
+    },
+    {
+      "suite": "pa_06e_h0a3b_attendance_lifecycle_mutability.sql",
+      "exit": 0,
+      "plan": "1..78",
+      "assertions_sha256": "6bd81766b8fb5966320b2cd3a263ab25ab28765be38c8b16287119635c01aa5d"
+    },
+    {
+      "suite": "pa_06e_h0a3b_attendance_approval_snapshot_integrity.sql",
+      "exit": 0,
+      "plan": "1..40",
+      "assertions_sha256": "dffba34d021b2b7737cf97c45e7d07204929849670f16ab20d90207f3b9a81ee"
+    },
+    {
+      "suite": "pa_06e_h0a4b_planning_input_readiness_structure_security.sql",
+      "exit": 0,
+      "plan": "1..36",
+      "assertions_sha256": "a1876382dcf6077d6741882262158e3d1064239fb70d66ee834fd70e624f1a4f"
+    },
+    {
+      "suite": "pa_06e_h0a4b_planning_input_readiness_evaluation_source_snapshot_integrity.sql",
+      "exit": 0,
+      "plan": "1..59",
+      "assertions_sha256": "f4f715b35e169e951f5fe4e4ff0bc1454a2411ea98f827044f0f37f082d8a1f1"
+    },
+    {
+      "suite": "pa_06e_h0a4b_planning_input_readiness_lifecycle_issues_invalidation.sql",
+      "exit": 0,
+      "plan": "1..57",
+      "assertions_sha256": "05796a915e01c6d6b2a71153dde5322415ae0025701ac1c0b02e1b2742047ec8"
+    },
+    {
+      "suite": "pa_06e_h0a5b_need_generation_structure_security.sql",
+      "exit": 0,
+      "plan": "1..43",
+      "assertions_sha256": "5ae16812d852b1874821c12c7433cbb2643bb31b93e43121fa1c6bb6139b724e"
+    },
+    {
+      "suite": "pa_06e_h0a5b_need_generation_run_input_recipe_calculation_integrity.sql",
+      "exit": 0,
+      "plan": "1..60",
+      "assertions_sha256": "3acabc2f481a74a435f9faed2084a970f41a123c550973490455acc2aeb4cd36"
+    },
+    {
+      "suite": "pa_06e_h0a5b_theoretical_line_source_predecessor_release_integrity.sql",
+      "exit": 0,
+      "plan": "1..76",
+      "assertions_sha256": "610acc9f17284daca68bb7febbadd174929bc9e1a6b8858929184f251795d9cf"
+    },
+    {
+      "suite": "pa_06e_h0a5b_need_generation_lifecycle_issues_invalidation_history.sql",
+      "exit": 0,
+      "plan": "1..64",
+      "assertions_sha256": "1f6780c1c2c4f82ea69fcc8f03ccb1d009c00c730e4b33773782cf2342d1c10c"
+    },
+    {
+      "suite": "pa_06e_h0b1b_confirmed_need_structure_security_catalog.sql",
+      "exit": 0,
+      "plan": "1..51",
+      "assertions_sha256": "d694b7e48caeeabce281ccf73f399f8ca971ab3bd0ff24eab42bb33d1f199e12"
+    },
+    {
+      "suite": "pa_06e_h0b1b_school_catering_identity_current_source.sql",
+      "exit": 0,
+      "plan": "1..69",
+      "assertions_sha256": "e699e709032b70dcfc65a37fd1b257004959711a6a6e33f0092cd2d3044c5afb"
+    },
+    {
+      "suite": "pa_06e_h0b1b_contribution_membership_total_partition_history.sql",
+      "exit": 0,
+      "plan": "1..80",
+      "assertions_sha256": "0bbaa89c6f85187c349b1eeb6461eb944b5bcc6f3b5cd5c8e1a12990fc3687b6"
+    },
+    {
+      "suite": "pa_06e_h0b1b_wholesale_compatibility_source_classification.sql",
+      "exit": 0,
+      "plan": "1..56",
+      "assertions_sha256": "bbb01f27900e5125fd762f3c934d5f1dadd872ed36bc427d16ed82c3943b5591"
+    },
+    {
+      "suite": "pa_05g_backend_end_to_end_acceptance.sql",
+      "exit": 0,
+      "plan": "1..78",
+      "assertions_sha256": "7b52bc1203e7899b638ef6c99a883dab987ed59b19df4274ffe92fbe1669d8d4"
+    },
+    {
+      "suite": "master_data_rehearsal_import.sql",
+      "exit": 0,
+      "plan": "1..64",
+      "assertions_sha256": "2783274c9d2c88e07cd04222de5cdc329ceffac3cd3985b557755847076744fb"
+    },
+    {
+      "suite": "master_data_rehearsal_recipe_import.sql",
+      "exit": 0,
+      "plan": "1..57",
+      "assertions_sha256": "31acdbd6478fdfe7c10ff6134974d378b0fcd0a358f1019b96e1efdc6ed463ee"
+    },
+    {
+      "suite": "rmvp_01_atlas_master_data.sql",
+      "exit": 0,
+      "plan": "1..43",
+      "assertions_sha256": "22f9504fce438cfdbe0c8c665f6cc09ed761396bb6f940ea7f1dad16e77f47ef"
+    },
+    {
+      "suite": "rmvp_02b_recipe_adjustments_effective_bom.sql",
+      "exit": 0,
+      "plan": "1..70",
+      "assertions_sha256": "a9522b583ef3b9f7388c8c725b15eac322a78ca6c64f04c21bbaf898ae0ed38a"
+    },
+    {
+      "suite": "atlas_shopping_list_export_read.sql",
+      "exit": 0,
+      "plan": "1..17",
+      "assertions_sha256": "5576beba0d0c68c01a29abc592768dd94796834f4fb2aba210320ac8d1bc055f"
+    },
+    {
+      "suite": "atlas_school_cooking_groups.sql",
+      "exit": 0,
+      "plan": "1..33",
+      "assertions_sha256": "d8bdb70a5f8329103e173dd718740a2932ed88fb9eb15cc9aeeec02770806684"
+    },
+    {
+      "suite": "atlas_po_document_identity.sql",
+      "exit": 0,
+      "plan": "1..31",
+      "assertions_sha256": "4dc05afec2fece33913e6b14adc7b9c1ac2993fe48b0d63bc011c2371e17e727"
+    }
+  ],
+  "business": {
+    "purchase_review_confirm_release.sql": {
+      "commands": [
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "allocate_beans"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "allocate120"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "allocate125"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "allocate130"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "allocate134"
+        },
+        {
+          "error": "CONFIRMED_ALLOCATION_NOT_READY",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "blocked_release"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "cancellation-frontier"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "confirmed120"
+        },
+        {
+          "error": "IDEMPOTENCY_CONFLICT",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "conflicting_replay"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "context_ineligible"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "context_scope"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "context_tie"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "correct130"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "correct134"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "corrected130"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "corrected134"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "create-explicit-replacement"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "drafts"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "extra-active-draft-frontier"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "generated"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "handoff125"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "incomplete"
+        },
+        {
+          "error": "CONFIRMED_NEED_INCOMPLETE",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "incomplete_save"
+        },
+        {
+          "error": "PREPARATION_BLOCKED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "ineligible_prepare"
+        },
+        {
+          "error": "SOURCE_CHANGED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid_batch_version"
+        },
+        {
+          "error": "DUPLICATE_SUPPLIER",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid_duplicate"
+        },
+        {
+          "error": "ALLOCATION_IMBALANCED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid_imbalance"
+        },
+        {
+          "error": "SOURCE_CHANGED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid_source"
+        },
+        {
+          "error": "STALE_VERSION",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid_version"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "legacy_handoff"
+        },
+        {
+          "error": "PREPARATION_BLOCKED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "missing-frontier"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "mixed-supplier-frontier"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "no_handoff_drafts"
+        },
+        {
+          "error": "INVALID_SPLIT_PRECISION",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "precision"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "prepare"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "prepare_replay"
+        },
+        {
+          "error": "INTERNAL_COMMAND_FAILURE",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "prepare-child-failure"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "prepare-existing-replacement"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "prepare-replacement-frontier"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "prepare-second-correction"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "promoted_read"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "reallocate_beans"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "reallocate_beans134"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "rebalance60_40"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "regenerate-explicit-replacement"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "release-po-c7100000-0000-4000-8000-000000000001"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "release-po-c7100000-0000-4000-8000-000000000002"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "release125"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "released_recovery"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "replay120"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "save120"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "save125"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "shared_school"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "stale125"
+        }
+      ],
+      "audit_count": 39,
+      "event_count": 39,
+      "po_snapshots": [
+        [
+          "2026-11-02",
+          "PR-A-VERIFY-A",
+          "RELEASED_TO_SUPPLIER",
+          "RELEASED_TO_SUPPLIER",
+          "PR-A Verify Supplier A",
+          "53",
+          "Nhiều điểm giao",
+          "rmvp05-browser-beans",
+          "rmvp05-browser-kg",
+          "1.000000",
+          "956",
+          "RMVP-05 browser beans",
+          "rmvp05-browser-kg",
+          null,
+          [
+            {
+              "school_id": "b6500000-0000-0000-0000-000000000004",
+              "school_name": "RMVP-05 browser school",
+              "cooking_group_id": null,
+              "ordered_quantity": "1.000000",
+              "cooking_group_name": null,
+              "delivery_location_id": "b6500000-0000-0000-0000-000000000002",
+              "school_display_order": 50,
+              "delivery_location_name": "RMVP-05 browser kitchen"
+            }
+          ]
+        ],
+        [
+          "2026-11-02",
+          "PR-A-VERIFY-A",
+          "RELEASED_TO_SUPPLIER",
+          "RELEASED_TO_SUPPLIER",
+          "PR-A Verify Supplier A",
+          "53",
+          "Nhiều điểm giao",
+          "rmvp05-browser-rice",
+          "rmvp05-browser-kg",
+          "75.000000",
+          "1082",
+          "RMVP-05 browser rice",
+          "rmvp05-browser-kg",
+          null,
+          [
+            {
+              "school_id": "b6500000-0000-0000-0000-000000000004",
+              "school_name": "RMVP-05 browser school",
+              "cooking_group_id": null,
+              "ordered_quantity": "75.000000",
+              "cooking_group_name": null,
+              "delivery_location_id": "b6500000-0000-0000-0000-000000000002",
+              "school_display_order": 50,
+              "delivery_location_name": "RMVP-05 browser kitchen"
+            }
+          ]
+        ],
+        [
+          "2026-11-02",
+          "PR-A-VERIFY-B",
+          "RELEASED_TO_SUPPLIER",
+          "RELEASED_TO_SUPPLIER",
+          "PR-A Verify Supplier B",
+          "54",
+          "Nhiều điểm giao",
+          "rmvp05-browser-beans",
+          "rmvp05-browser-kg",
+          "2.000000",
+          "956",
+          "RMVP-05 browser beans",
+          "rmvp05-browser-kg",
+          null,
+          [
+            {
+              "school_id": "b6500000-0000-0000-0000-000000000004",
+              "school_name": "RMVP-05 browser school",
+              "cooking_group_id": null,
+              "ordered_quantity": "2.000000",
+              "cooking_group_name": null,
+              "delivery_location_id": "b6500000-0000-0000-0000-000000000002",
+              "school_display_order": 50,
+              "delivery_location_name": "RMVP-05 browser kitchen"
+            }
+          ]
+        ],
+        [
+          "2026-11-02",
+          "PR-A-VERIFY-B",
+          "RELEASED_TO_SUPPLIER",
+          "RELEASED_TO_SUPPLIER",
+          "PR-A Verify Supplier B",
+          "54",
+          "Nhiều điểm giao",
+          "rmvp05-browser-rice",
+          "rmvp05-browser-kg",
+          "50.000000",
+          "1082",
+          "RMVP-05 browser rice",
+          "rmvp05-browser-kg",
+          null,
+          [
+            {
+              "school_id": "b6500000-0000-0000-0000-000000000004",
+              "school_name": "RMVP-05 browser school",
+              "cooking_group_id": null,
+              "ordered_quantity": "50.000000",
+              "cooking_group_name": null,
+              "delivery_location_id": "b6500000-0000-0000-0000-000000000002",
+              "school_display_order": 50,
+              "delivery_location_name": "RMVP-05 browser kitchen"
+            }
+          ]
+        ]
+      ],
+      "pxk_snapshots": null,
+      "cooking_groups": null,
+      "receipt_counts": [
+        ["create_school_catering_purchase_order_drafts", "COMPLETED", 6],
+        ["create_school_catering_purchase_order_replacement", "COMPLETED", 2],
+        ["prepare_school_catering_purchase_orders", "COMPLETED", 4],
+        ["prepare_school_catering_purchase_orders", "FAILED_NON_RETRYABLE", 2],
+        ["release_confirmed_needs", "COMPLETED", 3],
+        ["release_school_catering_purchase_handoff", "COMPLETED", 3],
+        ["release_school_catering_purchase_order", "COMPLETED", 2],
+        ["save_confirmed_needs", "COMPLETED", 4],
+        ["save_confirmed_supplier_allocation", "COMPLETED", 7],
+        ["save_confirmed_supplier_allocation", "FAILED_NON_RETRYABLE", 7]
+      ],
+      "unit_provenance": null,
+      "master_identities": null,
+      "recipe_composition": null,
+      "cooking_memberships": null,
+      "pxk_cooking_snapshots": null,
+      "supplier_document_codes": [
+        ["PR-A-VERIFY-A", "53"],
+        ["PR-A-VERIFY-B", "54"]
+      ],
+      "ingredient_document_codes": [
+        ["rmvp05-browser-beans", "956"],
+        ["rmvp05-browser-rice", "1082"]
+      ]
+    },
+    "school_dispatch_release.sql": {
+      "commands": [
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "fulfilment-reconciliation"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "preview"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "read-cancellation-blocked"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "read-released"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "read-released-after-school-change"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "read-replacement-required"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "release"
+        },
+        {
+          "error": "PXK_NOT_READY",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "release-cancellation-blocked"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "release-replay"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "release-successor"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "scope05-a-to-s2"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "scope05-b-to-s1"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "scope05-s1-b-draft"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "scope05-s1-b-release"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "scope05-s1-shared-draft"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "scope05-s1-shared-release"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "scope05-s2-a-draft"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "scope05-s2-a-release"
+        }
+      ],
+      "audit_count": 13,
+      "event_count": 13,
+      "po_snapshots": [
+        [
+          "2026-09-24",
+          "pxk-supplier-a",
+          "RELEASED_TO_SUPPLIER",
+          "RELEASED_TO_SUPPLIER",
+          "NCC An Phú",
+          null,
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "100.000000",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "2026-09-24",
+          "pxk-supplier-a",
+          "SUPERSEDED",
+          "RELEASED_TO_SUPPLIER",
+          "NCC An Phú",
+          null,
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "100.000000",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-a",
+          "RELEASED_TO_SUPPLIER",
+          "RELEASED_TO_SUPPLIER",
+          "NCC An Phú",
+          "53",
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "40.000000",
+          "1082",
+          "Gạo thơm",
+          "pxk-kg",
+          null,
+          [
+            {
+              "school_id": "26020000-0000-4000-8000-000000000022",
+              "school_name": "Trường Tiểu học Trưng Vương",
+              "cooking_group_id": null,
+              "ordered_quantity": "40.000000",
+              "cooking_group_name": null,
+              "delivery_location_id": "26020000-0000-4000-8000-000000000012",
+              "school_display_order": 2,
+              "delivery_location_name": "Bếp phụ Nguyễn Du"
+            }
+          ]
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-a",
+          "SUPERSEDED",
+          "RELEASED_TO_SUPPLIER",
+          "NCC An Phú",
+          "53",
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "100.000000",
+          "1082",
+          "Gạo thơm",
+          "pxk-kg",
+          null,
+          [
+            {
+              "school_id": "26020000-0000-4000-8000-000000000021",
+              "school_name": "Trường Tiểu học Nguyễn Du",
+              "cooking_group_id": null,
+              "ordered_quantity": "100.000000",
+              "cooking_group_name": null,
+              "delivery_location_id": "26020000-0000-4000-8000-000000000011",
+              "school_display_order": 1,
+              "delivery_location_name": "Bếp chính Nguyễn Du"
+            }
+          ]
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-a",
+          "SUPERSEDED",
+          "RELEASED_TO_SUPPLIER",
+          "NCC An Phú",
+          "53",
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "40.000000",
+          "1082",
+          "Gạo thơm",
+          "pxk-kg",
+          null,
+          [
+            {
+              "school_id": "26020000-0000-4000-8000-000000000022",
+              "school_name": "Trường Tiểu học Trưng Vương",
+              "cooking_group_id": null,
+              "ordered_quantity": "40.000000",
+              "cooking_group_name": null,
+              "delivery_location_id": "26020000-0000-4000-8000-000000000012",
+              "school_display_order": 2,
+              "delivery_location_name": "Bếp phụ Nguyễn Du"
+            }
+          ]
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-a",
+          "SUPERSEDED",
+          "RELEASED_TO_SUPPLIER",
+          "NCC An Phú",
+          null,
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "100.000000",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-a",
+          "SUPERSEDED",
+          "RELEASED_TO_SUPPLIER",
+          "NCC An Phú",
+          null,
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "100.000000",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-a",
+          "SUPERSEDED",
+          "RELEASED_TO_SUPPLIER",
+          "NCC An Phú",
+          null,
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "40.000000",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-b",
+          "RELEASED_TO_SUPPLIER",
+          "RELEASED_TO_SUPPLIER",
+          "NCC Bình Minh",
+          "54",
+          "Nhiều điểm giao",
+          "pxk-rice",
+          "pxk-kg",
+          "100.000000",
+          "1082",
+          "Gạo thơm",
+          "pxk-kg",
+          null,
+          [
+            {
+              "school_id": "26020000-0000-4000-8000-000000000021",
+              "school_name": "Trường Tiểu học Nguyễn Du",
+              "cooking_group_id": null,
+              "ordered_quantity": "100.000000",
+              "cooking_group_name": null,
+              "delivery_location_id": "26020000-0000-4000-8000-000000000011",
+              "school_display_order": 1,
+              "delivery_location_name": "Bếp chính Nguyễn Du"
+            }
+          ]
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-b",
+          "SUPERSEDED",
+          "RELEASED_TO_SUPPLIER",
+          "NCC Bình Minh",
+          null,
+          "Bếp phụ Nguyễn Du",
+          "pxk-rice",
+          "pxk-kg",
+          "40.000000",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-b",
+          "SUPERSEDED",
+          "RELEASED_TO_SUPPLIER",
+          "NCC Bình Minh",
+          null,
+          "Bếp phụ Nguyễn Du",
+          "pxk-rice",
+          "pxk-kg",
+          "40.000000",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          "2026-09-25",
+          "pxk-supplier-c",
+          "RELEASED_TO_SUPPLIER",
+          "RELEASED_TO_SUPPLIER",
+          "NCC Cửu Long",
+          null,
+          "Bếp phụ Nguyễn Du",
+          "pxk-rice",
+          "pxk-kg",
+          "40.000000",
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ],
+      "pxk_snapshots": [
+        [
+          "2026-09-24",
+          "pxk-school",
+          "pxk-location-a",
+          "RELEASED",
+          "Trường Tiểu học Nguyễn Du",
+          "Bếp chính Nguyễn Du",
+          "Số 1 Nguyễn Du",
+          null,
+          1,
+          true,
+          1,
+          "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+          "Địa chỉ PXK đã cấu hình",
+          "pxk-rice",
+          "pxk-kg",
+          "100.000000",
+          "Gạo thơm",
+          "pxk-kg"
+        ],
+        [
+          "2026-09-24",
+          "pxk-school",
+          "pxk-location-a",
+          "SUPERSEDED",
+          "Trường Tiểu học Nguyễn Du",
+          "Bếp chính Nguyễn Du",
+          "Số 1 Nguyễn Du",
+          "Giao tại cổng phụ trước 06:00",
+          1,
+          false,
+          1,
+          "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+          "Địa chỉ PXK đã cấu hình",
+          "pxk-rice",
+          "pxk-kg",
+          "100.000000",
+          "Gạo thơm",
+          "pxk-kg"
+        ]
+      ],
+      "cooking_groups": [
+        ["Cooking X renamed", true, 1, true],
+        ["Cooking Y", true, 1, true]
+      ],
+      "receipt_counts": [
+        ["create_school_catering_purchase_order_replacement", "COMPLETED", 3],
+        ["release_school_catering_purchase_order", "COMPLETED", 3],
+        ["release_school_dispatch_document", "COMPLETED", 2],
+        ["release_school_dispatch_document", "FAILED_NON_RETRYABLE", 1],
+        ["save_school_catering_supplier_allocation", "COMPLETED", 2]
+      ],
+      "unit_provenance": null,
+      "master_identities": null,
+      "recipe_composition": null,
+      "cooking_memberships": null,
+      "pxk_cooking_snapshots": [
+        [
+          "2026-09-24",
+          "pxk-school",
+          1,
+          "SUPERSEDED",
+          "c7000000-0000-4000-8000-000000000001",
+          "Cooking X"
+        ],
+        [
+          "2026-09-24",
+          "pxk-school",
+          1,
+          "RELEASED",
+          "c7000000-0000-4000-8000-000000000002",
+          "Cooking Y"
+        ]
+      ],
+      "supplier_document_codes": [
+        ["pxk-supplier-a", "53"],
+        ["pxk-supplier-b", "54"],
+        ["pxk-supplier-c", "55"]
+      ],
+      "ingredient_document_codes": [["pxk-rice", "1082"]]
+    },
+    "master_data_rehearsal_recipe_import.sql": {
+      "commands": [
+        {
+          "error": null,
+          "status": "COMPLETED",
+          "success": true,
+          "replayed": null,
+          "scenario": "a"
+        },
+        {
+          "error": null,
+          "status": "REPLAYED",
+          "success": true,
+          "replayed": null,
+          "scenario": "a-replay"
+        },
+        {
+          "error": null,
+          "status": "COMPLETED",
+          "success": true,
+          "replayed": null,
+          "scenario": "b"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "bad"
+        },
+        {
+          "error": null,
+          "status": "COMPLETED",
+          "success": true,
+          "replayed": null,
+          "scenario": "c"
+        },
+        {
+          "error": null,
+          "status": "COMPLETED",
+          "success": true,
+          "replayed": null,
+          "scenario": "d"
+        },
+        {
+          "error": null,
+          "status": "COMPLETED",
+          "success": true,
+          "replayed": null,
+          "scenario": "e"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": null,
+          "replayed": null,
+          "scenario": "locked"
+        }
+      ],
+      "audit_count": 0,
+      "event_count": 0,
+      "po_snapshots": null,
+      "pxk_snapshots": null,
+      "cooking_groups": null,
+      "receipt_counts": null,
+      "unit_provenance": [
+        [
+          "OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION",
+          "OPS_V1",
+          "synthetic-recipe-adoption-a",
+          "9ad014db8af2e548c0b4a7932aa41e957f0fd44ea9eb99b01f37a3affb5e4796",
+          "recipe:dish:100:school-type:1:ingredient:1",
+          "81f7c6081b64c4e14693cfad26df2f147134dcfb13b5acdc26b793d7487dbdf2",
+          "v1-ingredient-1",
+          "12.000000",
+          "v1-unit-9837090d3b3f",
+          "kg",
+          false
+        ],
+        [
+          "OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION",
+          "OPS_V1",
+          "synthetic-recipe-adoption-a",
+          "9ad014db8af2e548c0b4a7932aa41e957f0fd44ea9eb99b01f37a3affb5e4796",
+          "recipe:dish:100:school-type:1:ingredient:2",
+          "3d7069a1f67f5f19594a1befdcc9be962a02994c5019976a7dd4ba104b003ea0",
+          "v1-ingredient-2",
+          "0.500000",
+          "v1-unit-9837090d3b3f",
+          "kg",
+          false
+        ],
+        [
+          "OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION",
+          "OPS_V1",
+          "synthetic-recipe-c",
+          "c30d34f95bafb97c3fff2e67a358f895b6c65964f66478e1b6dcf67c05e28354",
+          "recipe:dish:100:school-type:1:ingredient:1",
+          "ec05938d280001c777fb711a29faf59e534513323f3781669179db39ce498f22",
+          "v1-ingredient-1",
+          "2.500000",
+          "v1-unit-9837090d3b3f",
+          "kg",
+          false
+        ],
+        [
+          "OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION",
+          "OPS_V1",
+          "synthetic-recipe-d",
+          "b2047421e1d2f41a2a407f694e4759cd6db0a917ad5d064637ae0a69a1ec31f3",
+          "recipe:dish:100:school-type:1:ingredient:1",
+          "17bfa242cd097f143660577dd530b3fba6e70c572618a3e3086f869207fe5122",
+          "v1-ingredient-1",
+          "2.750000",
+          "v1-unit-9837090d3b3f",
+          "kg",
+          false
+        ],
+        [
+          "OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION",
+          "OPS_V1",
+          "synthetic-recipe-e",
+          "0b94fa7a3092d48272ed31d09ac4c91a0d57bf889aac910d211079f46d443144",
+          "recipe:dish:100:school-type:1:ingredient:1",
+          "3a7bc5ec34c8728ff5f09c2ad0709797b6d4cf1f8b6867cdba9c03ed2e9fd570",
+          "v1-ingredient-1",
+          "2.750000",
+          "v1-unit-9837090d3b3f",
+          "kg",
+          false
+        ]
+      ],
+      "master_identities": [
+        [
+          "OPS_V1",
+          "CUSTOMER",
+          "school:21:customer",
+          "80bdb81409e1d08304ba8125fd9c083ea69fdb4732dc8db6d14aeedcdafa06c4"
+        ],
+        [
+          "OPS_V1",
+          "DELIVERY_LOCATION",
+          "school:21:delivery-location",
+          "bfa469b78e7ff9f0f4e13a61d52768a2b5c9db0f8812fa818e48f73ca27b7fb2"
+        ],
+        [
+          "OPS_V1",
+          "DISH",
+          "100",
+          "49871eba3583acdc5381a35c300ada7ecd948df894117b2c3da86844a7eb24d8"
+        ],
+        [
+          "OPS_V1",
+          "DISH_TYPE",
+          "1",
+          "c2ab41b5c24e9d3375713885016ba2563dd7d0b4253fa11aca05cb62eff3e5aa"
+        ],
+        [
+          "OPS_V1",
+          "INGREDIENT",
+          "1",
+          "a6800ee73dc3522508ed09be9386f177800b3ea5245bc5a99c10b42d795b8276"
+        ],
+        [
+          "OPS_V1",
+          "INGREDIENT",
+          "2",
+          "e6e6cbab5ff34eb6c4068c6bf9ebbe30476d9a232a1084d3b90dc77144dc86ae"
+        ],
+        [
+          "OPS_V1",
+          "INGREDIENT",
+          "3",
+          "d13ebcc818559fe56ef71ad6f4f1bc438641dda638f6fb78905e3f00d74a5785"
+        ],
+        [
+          "OPS_V1",
+          "INGREDIENT",
+          "4",
+          "b361d84acd77e931120550c9eacbd9ee1755fc7c0e34f728c85ce897b5dee6c6"
+        ],
+        [
+          "OPS_V1",
+          "INGREDIENT_ORDER_GROUP",
+          "2",
+          "505691e2431ad1ab67b63ea2ea979f36e592522caff8bebfc5a26ab041ef3f54"
+        ],
+        [
+          "OPS_V1",
+          "INGREDIENT_TYPE",
+          "37",
+          "a23049e6a1813f39b26ea67a3e627c3ce18fcc9bff8e15c8c128ccd7aaea78ed"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE",
+          "dish:100:school-type:1",
+          "9ec7fae6e31bdde6e832a9fb58bce5c172cc40177fa99b099a727dedde86e21a"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE",
+          "dish:100:school-type:2",
+          "15474dcfbf4a52e64e74a2eb2ae0216c837f3730f36affd4399362f65681e681"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE",
+          "recipe:dish:100:school-type:1:ingredient:1",
+          "bbdad1c7edc7d24edd93965849b2a3036ac6b4f31ce1cadf62ed2d26623a3d09"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE",
+          "recipe:dish:100:school-type:1:ingredient:2",
+          "9731f4d027dec88a6371c4a55a5dac1be5d59f14dc49dccf03571a25d35ecad2"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE",
+          "recipe:dish:100:school-type:1:ingredient:3",
+          "2f6684a52e3e8223a7b94260490f7c54fe8afeb31f28ea113e0bde05edea018b"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE",
+          "recipe:dish:100:school-type:1:ingredient:4",
+          "3f6cd2ae0f09f43a519535c77fee9e423f760048272937a803d5721419318b2d"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE",
+          "recipe:dish:100:school-type:2:ingredient:1",
+          "f26627c4f1a45a186f8934f962bfc5251398a34d99b0b020a80c50efd9223eff"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:1:revision:1",
+          "81f7c6081b64c4e14693cfad26df2f147134dcfb13b5acdc26b793d7487dbdf2"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:1:revision:2",
+          "ec05938d280001c777fb711a29faf59e534513323f3781669179db39ce498f22"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:1:revision:3",
+          "17bfa242cd097f143660577dd530b3fba6e70c572618a3e3086f869207fe5122"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:1:revision:4",
+          "3a7bc5ec34c8728ff5f09c2ad0709797b6d4cf1f8b6867cdba9c03ed2e9fd570"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:2:revision:1",
+          "3d7069a1f67f5f19594a1befdcc9be962a02994c5019976a7dd4ba104b003ea0"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:2:revision:2",
+          "c7aa625c3d35bfb9fbed85dec1ce1cd3764e63a4bef100aaa5cdc2413bf417ef"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:2:revision:3",
+          "05b3dcaa4079b914166586e039dc7593a76a3f9161ea77a59210bef8f9c671bc"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:2:revision:4",
+          "553dae9332f5e8333999e1c8d0932cc6e1857686476ad0ef3b8fb00ea76fccc8"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:3:revision:1",
+          "2edb6678ddfbbdc66310a67fb4170325da90b691b1dbff6d3b829ef3b5a227e0"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:3:revision:2",
+          "bc19c435ff167b3cd000139c36a3dc1663d05861b2383e62d491307d32ce129d"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:3:revision:3",
+          "1dfe979ac7f24a2fbdf3a02eb454ea34b0aa5bad82974f5f6b519206c4728535"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:4:revision:1",
+          "85399f66b37eecd36a54d2a7d22f478761726672d72c5f7fff670d8ffa173d75"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:4:revision:2",
+          "823a316f2172a08afd9f8c2f7e1a9894d9cda8f4dfedddacff62277f68f33589"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:4:revision:3",
+          "8760041c10fad1f8efae1493df2615f083b4050ce4312215b4c4fdb65e372a9d"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:1:ingredient:4:revision:4",
+          "b19fe4e6a2f4d071c30e2b14fc0b45581279f6fee92de132e79757d5e8c56c19"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_LINE_REVISION",
+          "recipe:dish:100:school-type:2:ingredient:1:revision:1",
+          "0c4cf1ec00b1a96846610ea72d0ac77bbae595b82643da18d6c0518fa7ecd031"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_VERSION",
+          "dish:100:school-type:1:version:1",
+          "c1853ad6c7d8ee32c5ecc81a8d7c949bdbb2afd7d5096020c068e4cf3ae88034"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_VERSION",
+          "dish:100:school-type:1:version:2",
+          "d827b498ee5e36383d48092e14881d2249c09e4706c23542d54107e344ff2f29"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_VERSION",
+          "dish:100:school-type:1:version:3",
+          "7a22da0f0b1b20f323911e9fe91cf5c0cac8208143003fbe484cddab75126323"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_VERSION",
+          "dish:100:school-type:1:version:4",
+          "a48155401e023b3aec5dc56745487ac5c1bad7daaa97337d5681728f74227893"
+        ],
+        [
+          "OPS_V1",
+          "RECIPE_VERSION",
+          "dish:100:school-type:2:version:1",
+          "1e8ef4408f76a6c894abdb93251116e9aa355f0766c5923ba2e2be8fb68a0899"
+        ],
+        [
+          "OPS_V1",
+          "SCHOOL",
+          "21",
+          "bd83170a8e12e95b212e190b37306b3047f82dbff6bffc968e7290883282823d"
+        ],
+        [
+          "OPS_V1",
+          "SCHOOL_TYPE",
+          "1",
+          "3c8d4fa9af973fa033167751d408923016aa723a606a3d5ee01f0e01dc6e5487"
+        ],
+        [
+          "OPS_V1",
+          "SCHOOL_TYPE",
+          "2",
+          "5d595c00824d7ee444eb2df9681ab6f3239022028a9895c09e0aa5204b8850d4"
+        ],
+        [
+          "OPS_V1",
+          "SUPPLIER",
+          "12",
+          "1eff7d7f1ed72cf11fae6f0911772c1841e996a6c4f436379f0619ba8e095e4a"
+        ],
+        [
+          "OPS_V1",
+          "SUPPLIER_ELIGIBILITY",
+          "ingredient:1:supplier:12",
+          "fec2bdde4bfdeb0195e2a9060e05dcad558ad0454e5c90d329b105bb603a2160"
+        ],
+        [
+          "OPS_V1",
+          "UNIT",
+          "Hũ",
+          "f8488e2ce32d8c8b9060201530bd28295ea2e03a1ea4e5e0bf42f4ea8c833def"
+        ],
+        [
+          "OPS_V1",
+          "UNIT",
+          "kg",
+          "26666290ad012bcad4ba3ffb45fa80e4bb246648dbe2c11cd36693f22f5be99d"
+        ]
+      ],
+      "recipe_composition": [
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-1",
+          "kg",
+          "12.000000",
+          "PRESENT",
+          "LOCKED",
+          false
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-1",
+          "kg",
+          "2.500000",
+          "PRESENT",
+          "LOCKED",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-1",
+          "kg",
+          "2.750000",
+          "PRESENT",
+          "LOCKED",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-1",
+          "kg",
+          "2.750000",
+          "PRESENT",
+          "RELEASED_FOR_PLANNING",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-2",
+          "kg",
+          "0.500000",
+          "PRESENT",
+          "LOCKED",
+          false
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-2",
+          "kg",
+          "0.000000",
+          "REMOVED",
+          "LOCKED",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-2",
+          "kg",
+          "0.000000",
+          "REMOVED",
+          "LOCKED",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-2",
+          "kg",
+          "0.750000",
+          "PRESENT",
+          "RELEASED_FOR_PLANNING",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-3",
+          "v1-unit-9837090d3b3f",
+          "1.000000",
+          "PRESENT",
+          "LOCKED",
+          false
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-3",
+          "v1-unit-9837090d3b3f",
+          "1.000000",
+          "PRESENT",
+          "LOCKED",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-3",
+          "v1-unit-9837090d3b3f",
+          "1.000000",
+          "PRESENT",
+          "RELEASED_FOR_PLANNING",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-4",
+          "v1-unit-9837090d3b3f",
+          "0.250000",
+          "PRESENT",
+          "LOCKED",
+          false
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-4",
+          "v1-unit-9837090d3b3f",
+          "2.500000",
+          "PRESENT",
+          "LOCKED",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-4",
+          "v1-unit-9837090d3b3f",
+          "2.500000",
+          "PRESENT",
+          "LOCKED",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-1",
+          "v1-ingredient-4",
+          "v1-unit-9837090d3b3f",
+          "2.500000",
+          "PRESENT",
+          "RELEASED_FOR_PLANNING",
+          true
+        ],
+        [
+          "v1-dish-100",
+          "v1-school-type-2",
+          "v1-ingredient-1",
+          "kg",
+          "1.500000",
+          "PRESENT",
+          "RELEASED_FOR_PLANNING",
+          false
+        ]
+      ],
+      "cooking_memberships": null,
+      "pxk_cooking_snapshots": null,
+      "supplier_document_codes": [["v1-supplier-12", "12"]],
+      "ingredient_document_codes": [
+        ["v1-ingredient-1", "1"],
+        ["v1-ingredient-2", "2"],
+        ["v1-ingredient-3", "3"],
+        ["v1-ingredient-4", "4"]
+      ]
+    },
+    "atlas_school_cooking_groups.sql": {
+      "commands": [
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "assign"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "clear"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "create"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "deactivate"
+        },
+        {
+          "error": "COOKING_GROUP_HAS_MEMBERS",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "deactivate-blocked"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "replay"
+        },
+        {
+          "error": "STALE_VERSION",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "stale"
+        }
+      ],
+      "audit_count": 4,
+      "event_count": 4,
+      "po_snapshots": null,
+      "pxk_snapshots": null,
+      "cooking_groups": [["Group X", true, 2, true]],
+      "receipt_counts": [
+        ["set_school_cooking_group", "COMPLETED", 2],
+        ["set_school_cooking_group", "FAILED_NON_RETRYABLE", 4],
+        ["upsert_cooking_group", "COMPLETED", 2],
+        ["upsert_cooking_group", "FAILED_NON_RETRYABLE", 1]
+      ],
+      "unit_provenance": null,
+      "master_identities": null,
+      "recipe_composition": null,
+      "cooking_memberships": null,
+      "pxk_cooking_snapshots": null,
+      "supplier_document_codes": null,
+      "ingredient_document_codes": null
+    },
+    "atlas_po_document_identity.sql": {
+      "commands": [
+        {
+          "error": "CAPABILITY_DENIED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "capability-denied"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "clear-supplier"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "create-item"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "create-item-replay"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "create-supplier"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-blank"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-bom"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-control"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-embedded-create"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-embedded-update"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-long"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-nbsp"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-prefix"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-tab"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-type"
+        },
+        {
+          "error": "VALIDATION_FAILED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "invalid-uuid"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "preserve-item"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "read"
+        },
+        {
+          "error": "SCOPE_DENIED",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "scope-denied"
+        },
+        {
+          "error": "STALE_VERSION",
+          "status": null,
+          "success": false,
+          "replayed": null,
+          "scenario": "stale-item"
+        },
+        {
+          "error": null,
+          "status": null,
+          "success": true,
+          "replayed": null,
+          "scenario": "update-item"
+        }
+      ],
+      "audit_count": 5,
+      "event_count": 5,
+      "po_snapshots": null,
+      "pxk_snapshots": null,
+      "cooking_groups": null,
+      "receipt_counts": [
+        ["create_ingredient", "COMPLETED", 1],
+        ["create_supplier", "COMPLETED", 1],
+        ["update_ingredient", "COMPLETED", 2],
+        ["update_ingredient", "FAILED_NON_RETRYABLE", 1],
+        ["update_supplier", "COMPLETED", 1]
+      ],
+      "unit_provenance": null,
+      "master_identities": null,
+      "recipe_composition": null,
+      "cooking_memberships": null,
+      "pxk_cooking_snapshots": null,
+      "supplier_document_codes": [
+        ["supplier-ccdc6db0-5295-4325-a347-dbc5d46263b5", null],
+        ["supplier-native-doc-test", null],
+        ["v1-supplier-0", null],
+        ["v1-supplier-53", "53"]
+      ],
+      "ingredient_document_codes": [
+        ["ingredient-native-doc-test", null],
+        ["native-document-item", "ITEM-B"],
+        ["v1-ingredient-01082", null],
+        ["v1-ingredient-1082", "1082"],
+        [
+          "v1-ingredient-123456789012345678901234567890",
+          "123456789012345678901234567890"
+        ],
+        ["v1-ingredient-956", "ITEM-EXPLICIT"]
+      ]
+    }
+  }
+}

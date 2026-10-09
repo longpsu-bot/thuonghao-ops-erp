@@ -43,6 +43,7 @@ export type SupplierPriority = {
 };
 
 export type IngredientMasterData = {
+  document_code: string | null;
   ingredient_id: string;
   ingredient_code: string;
   ingredient_name: string;
@@ -78,6 +79,7 @@ export type IngredientOrderGroupMasterData = {
 };
 
 export type SupplierMasterData = {
+  document_code: string | null;
   supplier_id: string;
   supplier_code: string;
   supplier_name: string;

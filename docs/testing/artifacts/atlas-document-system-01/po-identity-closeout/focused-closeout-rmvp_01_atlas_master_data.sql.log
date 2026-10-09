@@ -1,0 +1,49 @@
+ok 1 - RMVP-01 command runtime is NOLOGIN NOINHERIT and non-privileged
+ok 2 - runtime still owns all seven RMVP-01 master-data writes
+ok 3 - the RMVP-01 operator import remains outside authenticated, read, and command runtimes
+ok 4 - legacy evidence is private from API roles and the command runtime has only bounded recipe-import access
+ok 5 - API roles retain no private Atlas schema usage
+ok 6 - all nine RMVP-01 API functions are empty-search-path definers with exact API grants
+ok 7 - runtime can still execute all seven reviewed RMVP-01 API commands
+ok 8 - runtime has no Atlas schema CREATE privilege and inherits no role membership
+ok 9 - runtime has no Planning, Procurement, Evidence, Dispatch, or Reporting relation privilege
+ok 10 - runtime has no Atlas sequence privilege
+ok 11 - runtime write grants are column-scoped to the reviewed master-data mutations
+d1000000-0000-0000-0000-000000000101
+ok 12 - school portion command succeeds
+ok 13 - school exact replay returns the authoritative original response
+ok 14 - school defaults persist once and read back
+ok 15 - stale school updates are rejected
+ok 16 - negative school defaults are rejected
+ok 17 - supplier creation succeeds
+ok 18 - ingredient creation succeeds
+ok 19 - priority replacement succeeds
+ok 20 - duplicate supplier priorities are rejected before mutation
+ok 21 - ingredient deactivation safely retires active supplier priorities without deleting history
+ok 22 - priority history survives unrelated ingredient edits and lifecycle deactivation
+ok 23 - supplier name/contact update reads back
+ok 24 - ingredient field update reads back
+ok 25 - connected ingredient/supplier read returns shaped authoritative arrays
+ok 26 - school read exposes supported delivery/contract context
+ok 27 - each successful write has one completed idempotent receipt
+ok 28 - each successful master-data write emits one domain event
+ok 29 - each successful master-data write emits one audit event
+d1000000-0000-0000-0000-000000000102
+ok 30 - read capability denial is returned safely
+ok 31 - authenticated cannot read private master-data tables directly
+ok 32 - authenticated cannot invoke or inspect the privileged importer
+ok 33 - valid explicit snapshot imports successfully
+ok 34 - identical snapshot rerun replays the stored result
+ok 35 - completed import reports inserted records explicitly
+ok 36 - identical snapshot rerun reports every source record as skipped
+ok 37 - snapshot rerun does not duplicate target master data
+ok 38 - snapshot with a missing typed reference is rejected
+ok 39 - missing-reference result is explicit and countable
+ok 40 - rejected snapshot reports rejected source records explicitly
+ok 41 - rejected snapshot performs no partial target writes
+ok 42 - import evidence stores one completed and one rejected batch, not the replay
+ok 43 - completed import stores passed source/target reconciliation
+1..43
+NOTICE:  schema "extensions" already exists, skipping
+WARNING:  no privileges were granted for "grant_pg_cron_access"
+WARNING:  no privileges were granted for "grant_pg_net_access"

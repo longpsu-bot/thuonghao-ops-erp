@@ -25,7 +25,7 @@ for file in manifest["files"]:
         document = fitz.open(pdf)
         text = normalize("".join(page.get_text() for page in document))
         assert "undefined" not in text, f"Invalid fixture label: {pdf.name}"
-        missing = [cell for cell in sheet["cells"] if not cell.get("hidden") and isinstance(cell["value"], str) and (len(cell["value"]) > 7 or cell.get("quantity")) and normalize(cell["value"]) not in text]
+        missing = [cell for cell in sheet["cells"] if not cell.get("hidden") and isinstance(cell["value"], str) and (len(cell["value"]) > 7 or cell.get("quantity") or cell.get("documentCode")) and normalize(cell["value"]) not in text]
         report.append({"pdf": pdf.name, "pages": len(document), "missing_visible_strings": missing})
         for page_index, page in enumerate(document):
             page_text = normalize(page.get_text())

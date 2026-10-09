@@ -55,6 +55,7 @@ export const ingredientSupplierFixtureSuppliers: SupplierMasterData[] =
   Array.from({ length: 37 }, (_, index) => ({
     supplier_id: `supplier-${String(index + 1).padStart(2, "0")}`,
     supplier_code: `NCC-${String(index + 1).padStart(3, "0")}`,
+    document_code: null,
     supplier_name: supplierNames[index] ?? `Nhà cung ứng khu vực ${index + 1}`,
     supplier_status:
       index === 1 ? "INACTIVE" : index === 2 ? "SUSPENDED" : "ACTIVE",
@@ -83,6 +84,7 @@ export const ingredientSupplierFixtureIngredients: IngredientMasterData[] =
     return {
       ingredient_id: `ingredient-${String(index + 1).padStart(3, "0")}`,
       ingredient_code: `NL-${String(index + 1).padStart(4, "0")}`,
+      document_code: null,
       ingredient_name:
         ingredientNames[index] ??
         `Nguyên liệu sơ chế ${String(index + 1).padStart(3, "0")}`,

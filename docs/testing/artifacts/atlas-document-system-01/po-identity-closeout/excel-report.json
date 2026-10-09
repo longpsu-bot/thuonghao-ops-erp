@@ -1,0 +1,396 @@
+{
+  "excel_version": "16.0",
+  "workbooks": [
+    {
+      "file": "PO-ungrouped-null-note.xlsx",
+      "exact_text_checks": 55,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-ungrouped-null-note-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-ungrouped-null-note-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-ungrouped-null-note-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-grouped-supplier-note.xlsx",
+      "exact_text_checks": 58,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-grouped-supplier-note-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-grouped-supplier-note-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-grouped-supplier-note-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-two-schools-same-group.xlsx",
+      "exact_text_checks": 72,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-two-schools-same-group-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-two-schools-same-group-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-two-schools-same-group-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-two-schools-details_ing.xlsx",
+      "exact_text_checks": 24,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-two-schools-details_ing-sheet-1.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-two-schools-details_school.xlsx",
+      "exact_text_checks": 24,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-two-schools-details_school-sheet-1.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-two-schools-sum.xlsx",
+      "exact_text_checks": 24,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-two-schools-sum-sheet-1.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-grouped-multipage-500-note.xlsx",
+      "exact_text_checks": 511,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [
+            14, 20, 26, 32, 38, 44, 50, 56, 62, 68, 74, 80, 86, 92, 98, 104
+          ],
+          "pdf": "PO-grouped-multipage-500-note-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [13, 21, 34, 47],
+          "pdf": "PO-grouped-multipage-500-note-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [18],
+          "pdf": "PO-grouped-multipage-500-note-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-frozen-after-master-edits.xlsx",
+      "exact_text_checks": 58,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-frozen-after-master-edits-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-frozen-after-master-edits-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-frozen-after-master-edits-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-superseded-frozen-predecessor.xlsx",
+      "exact_text_checks": 58,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-superseded-frozen-predecessor-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-superseded-frozen-predecessor-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-superseded-frozen-predecessor-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-replacement-new-frozen-facts.xlsx",
+      "exact_text_checks": 58,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-replacement-new-frozen-facts-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-replacement-new-frozen-facts-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-replacement-new-frozen-facts-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-v1-numeric-outward-codes.xlsx",
+      "exact_text_checks": 106,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-v1-numeric-outward-codes-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-v1-numeric-outward-codes-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [],
+          "pdf": "PO-v1-numeric-outward-codes-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PO-long-explicit-document-code.xlsx",
+      "exact_text_checks": 132,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [14],
+          "pdf": "PO-long-explicit-document-code-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "horizontal_page_breaks": [14],
+          "pdf": "PO-long-explicit-document-code-sheet-2.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [16],
+          "pdf": "PO-long-explicit-document-code-sheet-3.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "V1-equivalent-PXK-13.xlsx",
+      "exact_text_checks": 114,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "TRƯỜNG TIỂU HỌC - THCS TÂN ĐỊNH",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [24],
+          "pdf": "V1-equivalent-PXK-13-sheet-1.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PXK-grouped-13-blank-working-notes.xlsx",
+      "exact_text_checks": 114,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "TRƯỜNG TIỂU HỌC - THCS TÂN ĐỊNH",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [24],
+          "pdf": "PXK-grouped-13-blank-working-notes-sheet-1.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "PXK-grouped-multipage-long-names.xlsx",
+      "exact_text_checks": 303,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "Trường Tiểu học mẫu với tên dài",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [35],
+          "pdf": "PXK-grouped-multipage-long-names-sheet-1.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    },
+    {
+      "file": "Dispatch-two-schools-same-group.xlsx",
+      "exact_text_checks": 228,
+      "native_save_reopen": true,
+      "normal_open": true,
+      "sheets": [
+        {
+          "vertical_page_breaks": 0,
+          "name": "04-20 Trường B",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [24],
+          "pdf": "Dispatch-two-schools-same-group-sheet-1.pdf"
+        },
+        {
+          "vertical_page_breaks": 0,
+          "name": "04-20 TRƯỜNG TIỂU HỌC - THCS TÂ",
+          "print_titles": "$1:$10",
+          "horizontal_page_breaks": [24],
+          "pdf": "Dispatch-two-schools-same-group-sheet-2.pdf"
+        }
+      ],
+      "clean_unchanged": true
+    }
+  ]
+}

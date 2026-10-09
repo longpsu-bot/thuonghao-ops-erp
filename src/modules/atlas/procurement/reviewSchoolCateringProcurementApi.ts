@@ -216,6 +216,7 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
       supplier_id: supplierAId,
       supplier_name: "NCC An Phú",
       supplier_status: "ACTIVE",
+      document_code: "53",
     },
     service_date: "2026-09-02",
     status: "DRAFT",
@@ -243,6 +244,7 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
         ingredient: {
           ingredient_id: ingredientId,
           ingredient_name: "Gạo thơm",
+          document_code: "1082",
         },
         ordered_quantity: "60.000000",
         supplier_note: null,
@@ -274,6 +276,7 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
         ingredient: {
           ingredient_id: ingredientId,
           ingredient_name: "Gạo thơm",
+          document_code: "1082",
         },
         ordered_quantity: "40.000000",
         supplier_note: null,
@@ -341,6 +344,13 @@ export function createReviewPurchaseOrdersFixture(
     };
     order.release_eligible = false;
     order.export_ready = true;
+    order.document_snapshot_complete = true;
+    order.current_revision.supplier_document_code_snapshot = "53";
+    for (const line of order.lines) {
+      line.ingredient_document_code_snapshot = "1082";
+      line.ingredient_name_snapshot = line.ingredient.ingredient_name;
+      line.unit_code_snapshot = line.unit.unit_code;
+    }
     order.commitment_state = "CURRENT";
     order.allowed_actions = {
       release: false,

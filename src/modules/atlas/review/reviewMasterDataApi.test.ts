@@ -13,6 +13,163 @@ import {
 import { createReviewMasterDataApi } from "./reviewMasterDataApi";
 
 describe("review-only master-data adapter", () => {
+  it.each([
+    "v1-ingredient-1082",
+    "V1-SUPPLIER-53",
+    "prefix-550e8400-e29b-41d4-a716-446655440000-suffix",
+    "10" + String.fromCharCode(1) + "82",
+    "10" + String.fromCharCode(9) + "82",
+    "10" + String.fromCharCode(10) + "82",
+    "10" + String.fromCharCode(127) + "82",
+  ])(
+    "rejects invalid document code %j in Ingredient and Supplier commands",
+    async (documentCode) => {
+      const api = createReviewMasterDataApi();
+      const catalog = await api.getIngredientsAndSuppliers(
+        "reviewer",
+        "review",
+      );
+      const ingredient = responseArray<IngredientMasterData>(
+        catalog,
+        "ingredients",
+      )![0]!;
+      const supplier = responseArray<SupplierMasterData>(
+        catalog,
+        "suppliers",
+      )![0]!;
+      for (const result of await Promise.all([
+        api.createIngredient(
+          commandRequest("reviewer", "review", 1, "CREATE", {
+            ingredient_name: "New",
+            purchase_unit_id: ingredient.purchase_unit_id,
+            ingredient_type_id: ingredient.ingredient_type_id,
+            ingredient_order_group_id: ingredient.ingredient_order_group_id,
+            order_step: ingredient.order_step,
+            document_code: documentCode,
+          }),
+        ),
+        api.createSupplier(
+          commandRequest("reviewer", "review", 1, "CREATE", {
+            supplier_name: "New",
+            document_code: documentCode,
+          }),
+        ),
+        api.updateIngredient(
+          commandRequest("reviewer", "review", ingredient.version, "UPDATE", {
+            ingredient_id: ingredient.ingredient_id,
+            document_code: documentCode,
+          }),
+        ),
+        api.updateSupplier(
+          commandRequest("reviewer", "review", supplier.version, "UPDATE", {
+            supplier_id: supplier.supplier_id,
+            document_code: documentCode,
+          }),
+        ),
+      ]))
+        expect(result).toMatchObject({
+          kind: "backend_error",
+          error: { error_code: "VALIDATION_FAILED" },
+        });
+      const rows = await api.getIngredientsAndSuppliers("reviewer", "review");
+      expect(
+        responseArray<IngredientMasterData>(rows, "ingredients"),
+      ).toHaveLength(
+        responseArray<IngredientMasterData>(catalog, "ingredients")!.length,
+      );
+      expect(responseArray<SupplierMasterData>(rows, "suppliers")).toHaveLength(
+        responseArray<SupplierMasterData>(catalog, "suppliers")!.length,
+      );
+    },
+  );
+  it("persists explicit nullable document codes separately from technical codes and preserves omitted updates", async () => {
+    const api = createReviewMasterDataApi();
+    const catalog = await api.getIngredientsAndSuppliers("reviewer", "review");
+    const ingredient = responseArray<IngredientMasterData>(
+      catalog,
+      "ingredients",
+    )![0]!;
+    const supplier = responseArray<SupplierMasterData>(
+      catalog,
+      "suppliers",
+    )![0]!;
+    const payload = {
+      ingredient_name: ingredient.ingredient_name,
+      purchase_unit_id: ingredient.purchase_unit_id,
+      ingredient_type_id: ingredient.ingredient_type_id,
+      ingredient_order_group_id: ingredient.ingredient_order_group_id,
+      order_step: ingredient.order_step,
+    };
+    const created = await api.createIngredient(
+      commandRequest("reviewer", "review", 1, "CREATE", {
+        ...payload,
+        ingredient_code: "arbitrary-technical-123",
+        document_code: "1082",
+      }),
+    );
+    expect(created.kind).toBe("success");
+    await api.createSupplier(
+      commandRequest("reviewer", "review", 1, "CREATE", {
+        supplier_name: "NCC mã chứng từ",
+        supplier_code: "arbitrary-supplier-123",
+        document_code: "53",
+      }),
+    );
+    let rows = await api.getIngredientsAndSuppliers("reviewer", "review");
+    const item = responseArray<IngredientMasterData>(rows, "ingredients")![0]!;
+    const vendor = responseArray<SupplierMasterData>(rows, "suppliers")![0]!;
+    expect(item).toMatchObject({
+      document_code: "1082",
+      ingredient_code: "arbitrary-technical-123",
+    });
+    expect(vendor).toMatchObject({
+      document_code: "53",
+      supplier_code: "arbitrary-supplier-123",
+    });
+    await api.updateIngredient(
+      commandRequest("reviewer", "review", item.version, "UPDATE", {
+        ...payload,
+        ingredient_id: item.ingredient_id,
+      }),
+    );
+    await api.updateSupplier(
+      commandRequest("reviewer", "review", vendor.version, "UPDATE", {
+        supplier_id: vendor.supplier_id,
+        supplier_name: vendor.supplier_name,
+      }),
+    );
+    rows = await api.getIngredientsAndSuppliers("reviewer", "review");
+    expect(
+      responseArray<IngredientMasterData>(rows, "ingredients")![0]!
+        .document_code,
+    ).toBe("1082");
+    expect(
+      responseArray<SupplierMasterData>(rows, "suppliers")![0]!.document_code,
+    ).toBe("53");
+    await api.updateIngredient(
+      commandRequest("reviewer", "review", item.version + 1, "UPDATE", {
+        ...payload,
+        ingredient_id: item.ingredient_id,
+        document_code: null,
+      }),
+    );
+    await api.updateSupplier(
+      commandRequest("reviewer", "review", vendor.version + 1, "UPDATE", {
+        supplier_id: vendor.supplier_id,
+        supplier_name: vendor.supplier_name,
+        document_code: null,
+      }),
+    );
+    rows = await api.getIngredientsAndSuppliers("reviewer", "review");
+    expect(
+      responseArray<IngredientMasterData>(rows, "ingredients")![0]!
+        .document_code,
+    ).toBeNull();
+    expect(
+      responseArray<SupplierMasterData>(rows, "suppliers")![0]!.document_code,
+    ).toBeNull();
+    expect(supplier.document_code).toBeNull();
+  });
   it("allows distinct same-name cooking groups and returns the exact ID for idempotent command replay", async () => {
     const api = createReviewMasterDataApi();
     const first = commandRequest(

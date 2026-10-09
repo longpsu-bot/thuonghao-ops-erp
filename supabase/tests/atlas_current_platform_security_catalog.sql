@@ -1742,14 +1742,15 @@ select is(
     'policy_count', 663,
     'policy_catalog_md5', 'c0df6670b465ff57fa621a7e947d89a6',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 328,
-    -- Includes three private cooking-group relational guards with fixed paths.
-    'private_function_catalog_md5', 'b298757cbf9af516aca3b48e3b2dddfa',
-    'trigger_count', 115,
-    'trigger_catalog_md5', 'ae17d1c0c3de6f9c0704d1acc3b0c9c8',
-    -- Includes the 21 reviewed cooking-group table/column/function grants.
-    'positive_target_grant_count', 1790,
-    'positive_target_grant_md5', '5d10f128b26484c126e8a05ae5045797',
+    'private_function_count', 332,
+    -- Cooking guards plus four bounded document-code/capture/immutability helpers.
+    'private_function_catalog_md5', 'e8b2e6249cb6fc04cf9cd4252d9228c6',
+    'trigger_count', 120,
+    'trigger_catalog_md5', 'd3248840c78593a3b487b266c58de014',
+    -- Adds four master document-code column privileges, two runtime-owner
+    -- function privileges and the bounded Procurement row-lock helper grant.
+    'positive_target_grant_count', 1797,
+    'positive_target_grant_md5', 'c9a97d2653215ff062a869985ff7e9ec',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 118,
     'pa_06a_write_count', 15,

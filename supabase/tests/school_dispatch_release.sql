@@ -103,14 +103,14 @@ values
     'CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO','Địa chỉ PXK đã cấu hình');
 insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code)
 values('26020000-0000-4000-8000-000000000031','pxk-kg','Kilôgam','mass');
-insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id)
+insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id,document_code)
 values('26020000-0000-4000-8000-000000000041','pxk-rice','Gạo thơm',
-  '26020000-0000-4000-8000-000000000031');
-insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status)
+  '26020000-0000-4000-8000-000000000031','1082');
+insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status,document_code)
 values
-  ('26020000-0000-4000-8000-000000000051','pxk-supplier-a','NCC An Phú','ACTIVE'),
-  ('26020000-0000-4000-8000-000000000052','pxk-supplier-b','NCC Bình Minh','ACTIVE'),
-  ('26020000-0000-4000-8000-000000000053','pxk-supplier-c','NCC Cửu Long','ACTIVE');
+  ('26020000-0000-4000-8000-000000000051','pxk-supplier-a','NCC An Phú','ACTIVE','53'),
+  ('26020000-0000-4000-8000-000000000052','pxk-supplier-b','NCC Bình Minh','ACTIVE','54'),
+  ('26020000-0000-4000-8000-000000000053','pxk-supplier-c','NCC Cửu Long','ACTIVE','55');
 insert into atlas_admin.supplier_eligibilities(
   supplier_id,ingredient_id,effective_from,priority,reason_note)
 values

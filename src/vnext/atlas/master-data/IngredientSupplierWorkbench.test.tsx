@@ -23,6 +23,7 @@ const ingredients = [
   {
     ingredient_id: "ingredient-active",
     ingredient_code: "NL-BI-MAT",
+    document_code: null,
     ingredient_name: "Bí mật",
     ingredient_status: "ACTIVE" as const,
     ingredient_type_id: "type-active",
@@ -48,6 +49,7 @@ const ingredients = [
   {
     ingredient_id: "ingredient-inactive",
     ingredient_code: "NL-NGUNG",
+    document_code: null,
     ingredient_name: "Nguyên liệu ngừng dùng",
     ingredient_status: "INACTIVE" as const,
     ingredient_type_id: "type-inactive",
@@ -66,6 +68,7 @@ const ingredients = [
   {
     ingredient_id: "ingredient-archived",
     ingredient_code: "NL-LUU-TRU",
+    document_code: null,
     ingredient_name: "Nguyên liệu lưu trữ",
     ingredient_status: "ARCHIVED" as const,
     ingredient_type_id: "type-active",
@@ -93,6 +96,7 @@ function readResult(): AtlasRpcResult {
         {
           supplier_id: "supplier-active",
           supplier_code: "NCC-MINH-TAM",
+          document_code: null,
           supplier_name: "NCC Minh Tâm",
           supplier_status: "ACTIVE",
           contact_name: "Minh Tâm",
@@ -103,6 +107,7 @@ function readResult(): AtlasRpcResult {
         {
           supplier_id: "supplier-inactive",
           supplier_code: "NCC-NGHI",
+          document_code: null,
           supplier_name: "NCC Đã nghỉ",
           supplier_status: "INACTIVE",
           contact_name: null,
@@ -113,6 +118,7 @@ function readResult(): AtlasRpcResult {
         {
           supplier_id: "supplier-suspended",
           supplier_code: "NCC-TAM-DUNG",
+          document_code: null,
           supplier_name: "NCC Tạm dừng",
           supplier_status: "SUSPENDED",
           contact_name: null,
@@ -807,6 +813,7 @@ describe("IngredientSupplierWorkbench", () => {
           {
             supplier_id: "supplier-active-2",
             supplier_code: "NCC-ACTIVE-2",
+            document_code: null,
             supplier_name: "NCC Hoàng Dung",
             supplier_status: "ACTIVE",
             contact_name: null,

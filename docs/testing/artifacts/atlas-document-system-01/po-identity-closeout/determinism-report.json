@@ -1,0 +1,140 @@
+{
+  "fixtureOnly": true,
+  "result": "PASS",
+  "specimens": [
+    {
+      "name": "PO-ungrouped-null-note.xlsx",
+      "sha256": "3252dcede7344d4dd1afabbe8f89205e01eea426f69704c7537e96dda965a2c5"
+    },
+    {
+      "name": "PO-ungrouped-null-note.pdf",
+      "sha256": "365f49cafb14bd18ab9a29ec4dcccf7ee37ecbfb6bcff6d957bba2db7fc07bd1"
+    },
+    {
+      "name": "PO-grouped-supplier-note.xlsx",
+      "sha256": "4f6cdb0a2d8ba95a552c01543d7ae30885913a7389cb9507cac132dec93e391e"
+    },
+    {
+      "name": "PO-grouped-supplier-note.pdf",
+      "sha256": "7fa050b6712dbe5c32d5a5b9b8ec52b06e3071052002c7f6accc94c3da07287d"
+    },
+    {
+      "name": "PO-two-schools-same-group.xlsx",
+      "sha256": "a41829ca61eb3cc829b47de03640e83ee29e223bf3f75049adc863b17a6c4268"
+    },
+    {
+      "name": "PO-two-schools-same-group.pdf",
+      "sha256": "b8a107838da4ebc98d2a578133c9d8e95789c8548af45196a02b1fd71a6fd425"
+    },
+    {
+      "name": "PO-two-schools-details_ing.xlsx",
+      "sha256": "630e4d3911d52d48d78446d7412a56f05f83b0f302af113de6256d32bf0c9a8e"
+    },
+    {
+      "name": "PO-two-schools-details_ing.pdf",
+      "sha256": "7edde5314a245422285cf31b524939cf43b58018b45d98eaf53bb526329914e9"
+    },
+    {
+      "name": "PO-two-schools-details_school.xlsx",
+      "sha256": "3801c389a6d6179ba0e5207760d039d11ef2e622b65274dde6f19eb5bf3289d0"
+    },
+    {
+      "name": "PO-two-schools-details_school.pdf",
+      "sha256": "1cd3cfcc8dba4f1f0264dbd5da2305b7aa5725ceb359bc2006d49c78fa4eeba3"
+    },
+    {
+      "name": "PO-two-schools-sum.xlsx",
+      "sha256": "90004f59018577bf3a34ae873b5b6fd61c4281513d99a39c686b27a012084d8d"
+    },
+    {
+      "name": "PO-two-schools-sum.pdf",
+      "sha256": "b93a321a9dba75ede5ddb3e0794e1a57cc896477c19901dd0c7ef3c5f6705da7"
+    },
+    {
+      "name": "PO-grouped-multipage-500-note.xlsx",
+      "sha256": "d865450a611f3655e62ee98e1df53fc54ee4725b69db1f58eb7d12dd85fb5d4f"
+    },
+    {
+      "name": "PO-grouped-multipage-500-note.pdf",
+      "sha256": "b90687f5b3fc2b1063ba2576ece53067d03c2f1e0db269bfa45dc235bf832664"
+    },
+    {
+      "name": "PO-frozen-after-master-edits.xlsx",
+      "sha256": "4f6cdb0a2d8ba95a552c01543d7ae30885913a7389cb9507cac132dec93e391e"
+    },
+    {
+      "name": "PO-frozen-after-master-edits.pdf",
+      "sha256": "7fa050b6712dbe5c32d5a5b9b8ec52b06e3071052002c7f6accc94c3da07287d"
+    },
+    {
+      "name": "PO-superseded-frozen-predecessor.xlsx",
+      "sha256": "db17aa368a56874ae7492d409335dcde1b8e04c16d8cabf115a974f5445042d6"
+    },
+    {
+      "name": "PO-superseded-frozen-predecessor.pdf",
+      "sha256": "dfbbb57e8b87414cdd358cce4a9973e51f5b6f1ef22d9fa88f37fbb8dcd26f4a"
+    },
+    {
+      "name": "PO-replacement-new-frozen-facts.xlsx",
+      "sha256": "d03bde92b7ff8173a0bf1164b8ea31e70654ec20e440fd48e79939e6519f7a80"
+    },
+    {
+      "name": "PO-replacement-new-frozen-facts.pdf",
+      "sha256": "0053a39ea284c3f0d8a4c4a077bfb29e0a04311e9281e148b3545c3461fb00ff"
+    },
+    {
+      "name": "PO-v1-numeric-outward-codes.xlsx",
+      "sha256": "dacc323ce632395071820c0295c417957558f35f2ed9ecc27e09f2b2635dbc56"
+    },
+    {
+      "name": "PO-v1-numeric-outward-codes.pdf",
+      "sha256": "466e5c02d941c174bf676d8ef5a0f9c2e81b43da1bb7aba4d093f11cfa2eebc8"
+    },
+    {
+      "name": "PO-long-explicit-document-code.xlsx",
+      "sha256": "4bec10f82979a97113414aa2d8f022a230ea90a78fe3d1aeae1a09ebedee57fa"
+    },
+    {
+      "name": "PO-long-explicit-document-code.pdf",
+      "sha256": "698ff4846c7be85f958d5520195f983ac2838af167f9cfb94655efcb4e61319e"
+    },
+    {
+      "name": "V1-equivalent-PXK-13.xlsx",
+      "sha256": "2cbd6fe268fd97f57be8b21d4ba0174880a485ba4dcfc8ea0cba8da65066bc12"
+    },
+    {
+      "name": "V1-equivalent-PXK-13.pdf",
+      "sha256": "058c838fa4faa53c01428fe1fc8b5fe1b1d5968ca7472971becd3a6dd359529e"
+    },
+    {
+      "name": "PXK-grouped-13-blank-working-notes.xlsx",
+      "sha256": "950f99ddea54cdc5bcaa9c31b9135ceb32661b13f4c365e5828346da71045849"
+    },
+    {
+      "name": "PXK-grouped-13-blank-working-notes.pdf",
+      "sha256": "c9564bc53d5d6e2668589fdc56094af92af68835c79b3eb8dff8e41bb8ce6b22"
+    },
+    {
+      "name": "PXK-grouped-multipage-long-names.xlsx",
+      "sha256": "0c0e4de89048ab60a8761b9c742fb7dd4105c6ce6c0c633a70d799657a3ca089"
+    },
+    {
+      "name": "PXK-grouped-multipage-long-names.pdf",
+      "sha256": "b1c89ae813aea3d29751b2cb7bc1b1f14d979b0a39be61c5c0aac3dd4d0a255c"
+    },
+    {
+      "name": "Dispatch-two-schools-same-group.xlsx",
+      "sha256": "63b81d296c35ae789e217732991dd382d5fcb2168321198490433926f78ba61a"
+    },
+    {
+      "name": "PO-supplier-date-all.zip",
+      "sha256": "00c3276c7a76431173d81a6e1bfad5e093831c2993d161fb5f707f439356fcda"
+    },
+    {
+      "name": "Dispatch-cooking-entity.zip",
+      "sha256": "b178822218ea25de41ece7c72b4f047525955f5be94f547a799f6c560f043035"
+    }
+  ],
+  "shopping": "NOT REGENERATED — accepted Shopping contract unchanged; run regression suites",
+  "normalization": "XLSX ZIP timestamps; Shopping fixture modified-time only. Production renderers unchanged by normalization."
+}

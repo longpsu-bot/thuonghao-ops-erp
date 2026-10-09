@@ -22,8 +22,20 @@ import {
 } from "../documents/documentPresentation";
 
 const QUANTITY_SCALE = 1_000_000n;
+function officialCode(value: string | null | undefined) {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    value === value.trim() &&
+    Array.from(value).length <= 200 &&
+    !/[\u0000-\u001f\u007f]/.test(value) &&
+    !/^v1-(ingredient|supplier)-/i.test(value) &&
+    !/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(value)
+  );
+}
 
 type PurchaseOrderExportLine = {
+  ingredientDocumentCode: string;
   ingredientName: string;
   orderedQuantity: string;
   unitCode: string;
@@ -45,6 +57,7 @@ type PurchaseOrderSchoolExportLine = PurchaseOrderExportLine & {
 export type PurchaseOrderExportData = {
   documentNumber: string;
   supplierName: string;
+  supplierDocumentCode: string;
   serviceDate: string;
   releasedRevision: number;
   status: string;
@@ -76,6 +89,23 @@ function dateLabel(value: string) {
 export function buildPurchaseOrderExportData(
   order: SchoolCateringPurchaseOrder,
 ): PurchaseOrderExportData {
+  const incompleteMessage =
+    "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.";
+  if (
+    ["RELEASED_TO_SUPPLIER", "SUPERSEDED"].includes(order.status) &&
+    (order.document_snapshot_complete !== true ||
+      !officialCode(order.current_revision.supplier_document_code_snapshot) ||
+      !order.current_revision.supplier_name_snapshot?.trim() ||
+      !order.lines.length ||
+      order.lines.some(
+        (line) =>
+          !officialCode(line.ingredient_document_code_snapshot) ||
+          !line.ingredient_name_snapshot?.trim() ||
+          !line.unit_code_snapshot?.trim(),
+      ))
+  ) {
+    throw new Error(incompleteMessage);
+  }
   if (
     !["RELEASED_TO_SUPPLIER", "SUPERSEDED"].includes(order.status) ||
     !order.document_number ||
@@ -95,6 +125,7 @@ export function buildPurchaseOrderExportData(
     string,
     {
       ingredientName: string;
+      ingredientDocumentCode: string;
       unitCode: string;
       supplierNote: string | null;
       quantity: bigint;
@@ -114,8 +145,9 @@ export function buildPurchaseOrderExportData(
     const current = summaries.get(key);
     const quantity = scaledQuantity(line.ordered_quantity);
     summaries.set(key, {
-      ingredientName: line.ingredient.ingredient_name,
-      unitCode: line.unit.unit_code,
+      ingredientDocumentCode: line.ingredient_document_code_snapshot!,
+      ingredientName: line.ingredient_name_snapshot!,
+      unitCode: line.unit_code_snapshot!,
       supplierNote: line.supplier_note,
       quantity: (current?.quantity ?? 0n) + quantity,
     });
@@ -133,9 +165,10 @@ export function buildPurchaseOrderExportData(
         schoolDisplayOrder: school.school_display_order,
         cookingGroupId: school.cooking_group_id ?? null,
         cookingGroupName: school.cooking_group_name ?? null,
-        ingredientName: line.ingredient.ingredient_name,
+        ingredientDocumentCode: line.ingredient_document_code_snapshot!,
+        ingredientName: line.ingredient_name_snapshot!,
         orderedQuantity: exactQuantity(schoolQuantity),
-        unitCode: line.unit.unit_code,
+        unitCode: line.unit_code_snapshot!,
         supplierNote: line.supplier_note,
       });
     }
@@ -159,10 +192,13 @@ export function buildPurchaseOrderExportData(
     replacementLabel: `${order.replaces_purchase_order_id ? ` · Thay thế PO: ${order.replaces_purchase_order_id}` : ""}${order.replaced_by_purchase_order_id ? ` · Được thay thế bởi PO: ${order.replaced_by_purchase_order_id}` : ""}`,
     documentNumber: order.document_number,
     supplierName: supplierSnapshot,
+    supplierDocumentCode:
+      order.current_revision.supplier_document_code_snapshot!,
     serviceDate: dateLabel(order.service_date),
     releasedRevision: order.current_revision.revision_number,
     summaryLines: Array.from(summaries.values(), (line) => ({
       ingredientName: line.ingredientName,
+      ingredientDocumentCode: line.ingredientDocumentCode,
       orderedQuantity: exactQuantity(line.quantity),
       unitCode: line.unitCode,
       supplierNote: line.supplierNote,
@@ -173,7 +209,6 @@ export function buildPurchaseOrderExportData(
 
 export type PurchaseOrderWorkbookMode =
   "all" | "details_ing" | "details_school" | "sum";
-const codeGap = "bản phát hành chưa lưu mã";
 const summaryHeaders = [
   "STT",
   "Mã hàng",
@@ -271,6 +306,30 @@ function noteChunks(note: string | null) {
   chunks.push(chunk);
   return chunks;
 }
+function lineChunks(line: PurchaseOrderExportLine) {
+  const notes = noteChunks(line.supplierNote);
+  const codes = line.ingredientDocumentCode.match(/[\s\S]{1,32}/gu)!;
+  return Array.from(
+    { length: Math.max(notes.length, codes.length) },
+    (_, index) => ({
+      note: notes[index] ?? null,
+      code: codes[index] ?? "",
+    }),
+  );
+}
+function codeRowHeight(code: string) {
+  // Full-em capacity for the narrow code cell, including wide native TNR glyphs.
+  return Math.max(30, Math.ceil(code.length / 4) * 15 + 8);
+}
+function codeHeaderHeight(
+  text: string,
+  width: number,
+  font: number,
+  minimum: number,
+) {
+  const capacity = Math.max(1, Math.floor((width * 5.25 - 6) / font));
+  return Math.max(minimum, Math.ceil(text.length / capacity) * (font + 3) + 8);
+}
 function selectedViews(mode: PurchaseOrderWorkbookMode) {
   if (!["all", "details_ing", "details_school", "sum"].includes(mode))
     throw new Error("Unknown PO document selection.");
@@ -333,11 +392,11 @@ export function buildPurchaseOrderPdfDefinition(
         fontSize: 11,
         margin: [0, 4, 0, 4],
       },
-      { text: `Mã NCC: ${codeGap}`, fontSize: 11 },
+      { text: `Mã NCC: ${data.supplierDocumentCode}`, fontSize: 11 },
     );
     if (view === "sum") {
       content.push(
-        { text: `Mã hàng: ${codeGap}.`, fontSize: 11, margin: [0, 0, 0, 8] },
+        { text: "", margin: [0, 0, 0, 8] },
         {
           table: {
             headerRows: 1,
@@ -346,9 +405,9 @@ export function buildPurchaseOrderPdfDefinition(
             body: [
               summaryHeaders.map((text) => ({ text, style: "tableHeader" })),
               ...data.summaryLines.flatMap((line, index) =>
-                noteChunks(line.supplierNote).map((note, continuation) => [
-                  continuation ? "↳" : index + 1,
-                  "",
+                lineChunks(line).map(({ note, code }, continuation) => [
+                  continuation ? "..." : index + 1,
+                  { text: code, fontSize: 12 },
                   line.ingredientName,
                   line.unitCode,
                   {
@@ -389,10 +448,10 @@ export function buildPurchaseOrderPdfDefinition(
         lines.forEach((line, index) => {
           const detail =
             view === "details_school" ? line.ingredientName : schoolLabel(line);
-          noteChunks(line.supplierNote).forEach((note, continuation) =>
+          lineChunks(line).forEach(({ note, code }, continuation) =>
             body.push([
-              continuation ? "↳" : index + 1,
-              "",
+              continuation ? "..." : index + 1,
+              { text: code, fontSize: 12 },
               detail,
               line.unitCode,
               {
@@ -499,7 +558,7 @@ function addDetailSheet(
   sheet.getCell("A6").value = `Nhà cung cấp: ${data.supplierName}`;
   sheet.mergeCells("A8:F8");
   sheet.getCell("A8").value =
-    `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel} · Mã NCC / Mã hàng: ${codeGap}`;
+    `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel} · Mã NCC: ${data.supplierDocumentCode}`;
   sheet.getCell("A8").font = { name: "Times New Roman", size: 9 };
   const quantityWidth = Math.max(
     12,
@@ -532,7 +591,10 @@ function addDetailSheet(
     [7, 12],
     [8, wrappedRowHeight(sheet.getCell("A8").text, formWidth, 9, 20)],
   ])
-    sheet.getRow(row!).height = height;
+    sheet.getRow(row!).height =
+      row === 8
+        ? codeHeaderHeight(sheet.getCell("A8").text, formWidth, 9, height!)
+        : height;
   sheet.getRow(9).values = [
     "STT",
     "Mã hàng",
@@ -598,16 +660,17 @@ function addDetailSheet(
         direction === "details_school"
           ? line.ingredientName
           : schoolLabel(line);
-      noteChunks(line.supplierNote).forEach((note, continuation) => {
+      lineChunks(line).forEach(({ note, code }, continuation) => {
         const height = Math.max(
           wrappedRowHeight(detail, descriptionWidth, 14, 30),
           noteRowHeight(note),
+          codeRowHeight(code),
         );
         room(height, true);
         const row = sheet.getRow(rowNumber++);
         row.values = [
-          continuation ? "↳" : index + 1,
-          "",
+          continuation ? "..." : index + 1,
+          code,
           detail,
           line.unitCode,
           null,
@@ -615,6 +678,7 @@ function addDetailSheet(
         ];
         row.font = { name: "Times New Roman", size: 14 };
         row.getCell(6).font = { name: "Times New Roman", size: noteFontSize };
+        row.getCell(2).font = { name: "Times New Roman", size: 12 };
         row.alignment = { vertical: "middle", wrapText: true };
         row.height = height;
         if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
@@ -670,9 +734,9 @@ function addSummarySheet(
   sheet.mergeCells("B7:F7");
   sheet.getCell("B7").value = data.serviceDate;
   sheet.mergeCells("A8:F8");
-  sheet.getCell("A8").value = `Mã NCC: ${codeGap}`;
+  sheet.getCell("A8").value = `Mã NCC: ${data.supplierDocumentCode}`;
   sheet.mergeCells("A9:F9");
-  sheet.getCell("A9").value = `Mã hàng: ${codeGap}.`;
+  sheet.getCell("A9").value = "";
   sheet.getCell("A9").font = { name: "Times New Roman", size: 10 };
   const quantityWidth = Math.max(
     10,
@@ -701,12 +765,15 @@ function addSummarySheet(
     [8, 105, 12, 22],
     [9, 105, 10, 20],
   ])
-    sheet.getRow(r!).height = wrappedRowHeight(
-      sheet.getCell(r!, r! <= 2 ? 3 : 1).text,
-      w!,
-      size,
-      minimum,
-    );
+    sheet.getRow(r!).height =
+      r === 8
+        ? codeHeaderHeight(sheet.getCell("A8").text, w!, size!, minimum!)
+        : wrappedRowHeight(
+            sheet.getCell(r!, r! <= 2 ? 3 : 1).text,
+            w!,
+            size,
+            minimum,
+          );
   sheet.getRow(3).height = 8;
   sheet.getRow(7).height = 24;
   sheet.getRow(10).values = summaryHeaders;
@@ -714,11 +781,11 @@ function addSummarySheet(
   styleWorksheetHeader(sheet.getRow(10));
   let rowNumber = 11;
   data.summaryLines.forEach((line, index) =>
-    noteChunks(line.supplierNote).forEach((note, continuation) => {
+    lineChunks(line).forEach(({ note, code }, continuation) => {
       const row = sheet.getRow(rowNumber++);
       row.values = [
-        continuation ? "↳" : index + 1,
-        "",
+        continuation ? "..." : index + 1,
+        code,
         line.ingredientName,
         line.unitCode,
         null,
@@ -727,9 +794,11 @@ function addSummarySheet(
       row.font = { name: "Times New Roman", size: 14 };
       row.alignment = { vertical: "middle", wrapText: true };
       row.getCell(6).font = { name: "Times New Roman", size: noteFontSize };
+      row.getCell(2).font = { name: "Times New Roman", size: 12 };
       row.height = Math.max(
         wrappedRowHeight(line.ingredientName, descriptionWidth, 14),
         noteRowHeight(note),
+        codeRowHeight(code),
       );
       if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
       borderRow(row);

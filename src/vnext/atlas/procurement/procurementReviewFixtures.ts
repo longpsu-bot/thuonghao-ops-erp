@@ -241,6 +241,7 @@ export function reviewOrder(
       revision_status: released ? "RELEASED" : "DRAFT",
       predecessor_revision_id: null,
       supplier_name_snapshot: released ? "NCC An Phú" : null,
+      supplier_document_code_snapshot: released ? "53" : null,
       delivery_location_snapshot: null,
       released_by_actor_id: null,
       released_at: null,
@@ -256,6 +257,9 @@ export function reviewOrder(
         },
         ordered_quantity: "60.000001",
         supplier_note: null,
+        ingredient_document_code_snapshot: released ? "1082" : null,
+        ingredient_name_snapshot: released ? "Gạo thơm" : null,
+        unit_code_snapshot: released ? "kg" : null,
         unit: { unit_id: "unit-kg", unit_code: "kg" },
         delivery_location: {
           delivery_location_id: "location-0",
@@ -284,6 +288,7 @@ export function reviewOrder(
     stale: scenario === "po_stale",
     release_eligible: !released && scenario !== "po_stale",
     export_ready: released,
+    document_snapshot_complete: released,
     blockers:
       scenario === "cancellation_required"
         ? ["CANCELLATION_REQUIRED"]

@@ -107,4 +107,44 @@ describe("loaded PO presentation exports", () => {
     fireEvent.click(button);
     expect(zip).not.toHaveBeenCalled();
   });
+  it("keeps incomplete historical records readable with safe guidance and no official exports", () => {
+    const orders = data();
+    const order = orders.purchase_orders[0]!;
+    order.document_snapshot_complete = false;
+    order.export_ready = false;
+    order.allowed_actions.export = false;
+    order.blockers = ["PO_DOCUMENT_SNAPSHOT_INCOMPLETE"];
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+          onExportXlsx={vi.fn()}
+          onExportPdf={vi.fn()}
+          onExportZip={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    expect(
+      screen.getByText(
+        /Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Gạo thơm").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("button", { name: "XLSX" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "PDF" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),
+    ).toBeDisabled();
+    expect(
+      screen.queryByText("PO_DOCUMENT_SNAPSHOT_INCOMPLETE"),
+    ).not.toBeInTheDocument();
+  });
 });

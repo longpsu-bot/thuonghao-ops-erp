@@ -1,5 +1,120 @@
 # ATLAS-DOCUMENT-SYSTEM-01
 
+## Final PO document identity closeout — 9 October 2026
+
+Owner instruction: continue PR #360 from `a2b753e18543b1cf2d1f4a851d53e18a2fb162e0`.
+School bands, Cooking Group authority, `Nấu tại`, frozen supplier notes and PXK
+blank working notes are accepted. The following bounded implementation extends
+the existing authority; older sections below describe earlier review states.
+
+Plan and acceptance criteria:
+
+- [x] Add nullable explicit Ingredient/Supplier `document_code` fields through
+      existing governed Master Data editors and commands. Populate only the exact
+      positive numeric suffix of proven `v1-ingredient-<n>` / `v1-supplier-<n>`
+      import codes. Leave unrelated/native technical codes untransformed.
+- [x] Require nonblank outward supplier/item codes for future official PO release;
+      atomically freeze supplier code, Ingredient code/name and Unit code in the
+      release successor. Preserve replacement, commitments and exact quantities.
+- [x] Read released/superseded labels from snapshots. Derive snapshot completeness;
+      retain incomplete historical records for reading but block official
+      regeneration with safe Vietnamese copy. Never backfill historical labels.
+- [x] All official PO XLSX/PDF modes and supplier/date ZIP consume frozen codes
+      and labels, preserving accepted layout, supplier notes and group snapshots.
+- [x] RED/GREEN tests cover provenance, explicit/null codes, label/code mutation,
+      replacement/predecessor history, missing snapshots and all export modes.
+      Run Master Data, supplier-note, Cooking Group, PXK, Shopping and security
+      regressions, chronological disposable replay and relevant 02D certification.
+- [x] Regenerate and review native specimens; update this existing task and gap
+      register. Deliver on the same branch with required exact-head CI tracked
+      on the existing Draft PR.
+
+Ownership: backend migration/SQL/API contracts; Admin frontend/model/review
+adapter; PO frontend/exporters/native evidence and integration. No existing
+migration edits, new workbench, lifecycle, dependency, PXK business change,
+Shopping/Need/Allocation change, hosted query/deployment, Live OPS access or merge.
+No supplier-address parsing or invented membership data. Missing V1 memberships
+are a cutover configuration gate; the existing Need performance finding remains.
+
+Official outward codes are required for this supplier document contract. Native
+Masters may retain null until explicitly authored; such records block release.
+Historical missing snapshots cannot become reproducible from current masters.
+Forward rollback must retain authored codes and released snapshot evidence.
+
+Closeout implementation and review:
+
+- CLI-generated migration `20261009105641_atlas_po_document_identity.sql` adds
+  nullable Master codes and immutable release facts. Previous 95 migrations are
+  unchanged. Repository count is 96; Staging stays at its Owner-verified 94/tip
+  `20261008015340_atlas_backend_convergence_02b_allocation`. No hosted queries or
+  writes, Retool changes, Live OPS access, merge or deployment occurred.
+- Exact V1 import provenance populates only positive numeric suffixes as text.
+  Native codes are explicit. Valid codes are trimmed, single-line, 1–200 Unicode
+  characters, excluding technical V1 prefixes, UUID substrings and controls.
+  Supplier, sorted Ingredients and exact Units are locked before atomic release
+  capture. Backend validation blocks absent codes before commitments are issued.
+- Released/superseded reads project immutable labels, codes, School contributions
+  and supplier notes; historical incomplete evidence remains readable with safe
+  missing labels and `document_snapshot_complete: false`. Official exports fail
+  closed. A replacement captures its own current facts and preserves predecessor
+  facts. No historical snapshot reconstruction/backfill is allowed.
+- Existing Ingredient/Supplier editors and Review show the Vietnamese document
+  code labels. Explicit null clears a code; omitted update preserves it. Existing
+  write scope, audit, optimistic version and receipt contracts are retained. New
+  inputs remain disabled during save/readback/recovery; recovery cannot clear a
+  newer draft or a different Actor's pending command.
+- Nine focused SQL suites pass 744 assertions: identity 31, PO release/history/
+  replacement 132, catalog 28, Master Data 43, Cooking Group 33, PXK 59, supplier
+  note 13, Purchase Review 147 and atomic Planning 258. The exact catalogue
+  contract passes 111 frontend tests. Catalog remains 115 private forced-RLS
+  tables, 118 physical/115 authenticated APIs, 31 capabilities and 663 normal
+  policies; 332 private functions, 120 triggers, 1,797 reviewed positive grants.
+  No browser table privileges, frontend service role or extra callable APIs.
+- Focused frontend regression covers 79 document tests, 33 procurement/PXK
+  integration tests, 113 Shopping V2/A+ tests, nine Cooking UI tests and 80 Admin
+  editor/model/review/hook/workbench tests. New edge checks preserve 200 Unicode
+  characters and complete code-point fragments. Format, typecheck, build and
+  whitespace checks pass; the existing bundle-size warning remains.
+- Production builders produce 33 byte-deterministic specimens: 16 XLSX, 15 PDF,
+  two ZIP; 15 exact-source quantity parity pairs. Native Excel 16.0 checks 16
+  workbooks/35 sheets/1,939 exact strings through open/save/reopen. PDF text and
+  print review checks 50 documents/119 pages, all rendered and visually reviewed
+  in 15 contact sheets. Frozen master mutation, predecessor/replacement, numeric
+  V1 codes and 200-character supplier/item codes have dedicated specimens.
+- Source/print review closed supplier-note projection, header completeness,
+  code-validation parity, editor readback and long-code wrapping/continuation
+  findings. It reports no remaining actionable finding in this bounded scope.
+
+[Closeout evidence and reproducible commands](../testing/artifacts/atlas-document-system-01/po-identity-closeout/README.md)
+record clean replay, focused results, deterministic/native manifests and final
+delivery gates. Exact-final-head GitHub CI is required on the same Draft PR #360
+before delivery; Owner product/visual acceptance remains pending.
+
+Authority closeout status: Cooking Group / `Nấu tại` **RESOLVED**; PO label
+immutability **RESOLVED**; V1 outward codes **RESOLVED for proven V1-derived
+records**; native code is an **explicit governed field**. Missing V1 memberships
+are a **CUTOVER_DATA_CONFIGURATION_GATE**. Supplier address remains **OPEN**:
+source-only/unmapped `contact_details` is never parsed. Complete V1 fidelity is
+not claimed. The unrelated four-second Need target miss remains open with its
+eight-second hard guard unchanged. An adjacent pre-existing Admin lifecycle
+save/readback guard issue is documented outside this bounded code-save correction.
+
+Local performance evidence is deliberately retained: the first clean cycle passes
+all 42 scale assertions (p95 6,595.519 ms). An initial second reset and its two
+unchanged retries failed a relative profiling assertion, then the elapsed hard
+guard (p95 7,465.438 / 10,808.546 / 9,095.231 ms). A fresh second reset passes all
+42 (p95 5,390.429 ms). All failed attempts remain in the closeout artifacts.
+The unchanged measured path/call counts exclude a demonstrated new identity
+dependency; the cause of local timing variability remains unproven and open.
+No Need optimization, test selection change or threshold relaxation occurred.
+
+Final chronological replay: two clean seed-disabled cycles each replay all 96
+migrations and pass 53 SQL suites / 3,643 assertions plus five semantic fixtures.
+Exact catalog, definition and assertion digests match. Semantic comparison passes
+after excluding the existing native-create technical code's embedded random UUID;
+all explicit document codes remain compared exactly. Raw cycle evidence retains
+that random technical code. `comparison.json` is PASS with no differences.
+
 ## Owner cooking-group / School-band amendment — 9 October 2026
 
 Implementation is complete and locally verified on the same

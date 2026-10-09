@@ -968,7 +968,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(103);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(104);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [
@@ -1119,6 +1119,7 @@ describe("Atlas staging dry-run and workflow", () => {
       "direct_ingredient_need_convergence.sql",
       "school_dispatch_release.sql",
       "atlas_school_cooking_groups.sql",
+      "atlas_po_document_identity.sql",
       "school_fulfilment_reconciliation.sql",
     ]) {
       expect(

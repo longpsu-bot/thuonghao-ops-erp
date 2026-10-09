@@ -6,9 +6,214 @@ import {
   buildPurchaseOrderPdfDefinition,
   createPurchaseOrderPdf,
   createPurchaseOrderXlsx,
+  createPurchaseOrderZip,
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("sizes long frozen supplier codes using a conservative header width", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    order.current_revision.supplier_document_code_snapshot = "W".repeat(200);
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order));
+    for (const sheet of book.worksheets) {
+      expect(sheet.getCell("A8").text).toContain("W".repeat(200));
+      expect(sheet.getRow(8).height).toBeGreaterThanOrEqual(68);
+    }
+  });
+  it("keeps a bounded long explicit code readable without clipping or repeating quantities", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const code = "W".repeat(200);
+    for (const line of order.lines)
+      line.ingredient_document_code_snapshot = code;
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order, "sum"));
+    const fragments: string[] = [];
+    const quantities: string[] = [];
+    book.worksheets[0]!.eachRow((row, index) => {
+      if (index < 11) return;
+      fragments.push(row.getCell(2).text);
+      if (row.getCell(5).text) quantities.push(row.getCell(5).text);
+      expect(row.height).toBeLessThanOrEqual(180);
+      expect(row.height).toBeGreaterThanOrEqual(
+        (row.getCell(2).text.length / 5) * 14,
+      );
+    });
+    expect(fragments.join("")).toBe(code);
+    expect(quantities).toEqual(["100"]);
+    const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, "sum"));
+    expect(pdf).toContain("...");
+    expect(pdf).not.toContain("↳");
+  });
+  it("counts and fragments document-code Unicode characters consistently with PostgreSQL", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const code = "A" + "𐐀".repeat(199);
+    for (const line of order.lines)
+      line.ingredient_document_code_snapshot = code;
+    expect(
+      buildPurchaseOrderExportData(order).summaryLines[0]!
+        .ingredientDocumentCode,
+    ).toBe(code);
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order, "sum"));
+    const fragments: string[] = [];
+    book.worksheets[0]!.eachRow((row, index) => {
+      if (index >= 11) fragments.push(row.getCell(2).text);
+    });
+    expect(fragments.join("")).toBe(code);
+    for (const fragment of fragments) {
+      expect(Array.from(fragment).length).toBeLessThanOrEqual(32);
+      expect(
+        Array.from(fragment).every(
+          (character) =>
+            character.length === 2 || !/[\uD800-\uDFFF]/.test(character),
+        ),
+      ).toBe(true);
+    }
+    order.lines[0]!.ingredient_document_code_snapshot += "𐐀";
+    expect(() => buildPurchaseOrderExportData(order)).toThrow(
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+    );
+  });
+  it("uses frozen outward codes and labels after current masters change", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    Object.assign(order, { document_snapshot_complete: true });
+    Object.assign(order.current_revision, {
+      supplier_document_code_snapshot: "53",
+    });
+    order.supplier.document_code = "999";
+    for (const line of order.lines) {
+      Object.assign(line, {
+        ingredient_document_code_snapshot: "1082",
+        ingredient_name_snapshot: "Tên A lúc phát hành",
+        unit_code_snapshot: "kg",
+      });
+      line.ingredient.ingredient_name = "Tên B hiện tại";
+      line.unit.unit_code = "đơn vị hiện tại";
+      line.ingredient.document_code = "888";
+    }
+    const data = buildPurchaseOrderExportData(order);
+    expect(data).toMatchObject({
+      supplierDocumentCode: "53",
+      summaryLines: [
+        {
+          ingredientDocumentCode: "1082",
+          ingredientName: "Tên A lúc phát hành",
+          unitCode: "kg",
+        },
+      ],
+    });
+    for (const mode of [
+      "all",
+      "details_ing",
+      "details_school",
+      "sum",
+    ] as const) {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      const visible = JSON.stringify(
+        workbook.worksheets.map((sheet) => sheet.getSheetValues()),
+      );
+      expect(visible).toContain("Mã NCC: 53");
+      expect(visible).toContain("1082");
+      expect(visible).not.toContain("Tên B hiện tại");
+      expect(visible).not.toContain("đơn vị hiện tại");
+      const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, mode));
+      expect(pdf).toContain("Mã NCC: 53");
+      expect(pdf).toContain("1082");
+      expect(pdf).toContain("Tên A lúc phát hành");
+      expect(pdf).not.toContain("Tên B hiện tại");
+      expect(pdf).not.toContain("v1-ingredient-");
+    }
+  });
+  it.each([
+    "header-code",
+    "line-code",
+    "line-name",
+    "unit-code",
+    "completeness",
+  ])("fails official regeneration closed for missing %s", async (missing) => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    Object.assign(order, {
+      document_snapshot_complete: missing !== "completeness",
+    });
+    Object.assign(order.current_revision, {
+      supplier_document_code_snapshot: missing === "header-code" ? null : "53",
+    });
+    for (const line of order.lines)
+      Object.assign(line, {
+        ingredient_document_code_snapshot:
+          missing === "line-code" ? null : "1082",
+        ingredient_name_snapshot: missing === "line-name" ? null : "Tên A",
+        unit_code_snapshot: missing === "unit-code" ? null : "kg",
+      });
+    expect(() => buildPurchaseOrderExportData(order)).toThrow(
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+    );
+    for (const mode of [
+      "all",
+      "details_ing",
+      "details_school",
+      "sum",
+    ] as const) {
+      await expect(createPurchaseOrderXlsx(order, mode)).rejects.toThrow(
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+      );
+      await expect(createPurchaseOrderPdf(order, mode)).rejects.toThrow(
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+      );
+      await expect(createPurchaseOrderZip([order], mode)).rejects.toThrow(
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+      );
+    }
+  });
+  it("keeps superseded predecessor business display separate from a replacement's new snapshots", () => {
+    const predecessor =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const before = buildPurchaseOrderExportData(predecessor);
+    const replacement = structuredClone(predecessor);
+    replacement.current_revision.supplier_document_code_snapshot = "NCC-NEW";
+    for (const line of replacement.lines) {
+      line.ingredient_document_code_snapshot = "ITEM-NEW";
+      line.ingredient_name_snapshot = "Tên mới được phát hành";
+      line.unit_code_snapshot = "Hộp";
+    }
+    predecessor.status = "SUPERSEDED";
+    predecessor.replaced_by_purchase_order_id = "replacement-id";
+    const old = buildPurchaseOrderExportData(predecessor);
+    expect(old.summaryLines).toEqual(before.summaryLines);
+    expect(old.schoolLines).toEqual(before.schoolLines);
+    expect(old.supplierDocumentCode).toBe(before.supplierDocumentCode);
+    expect(buildPurchaseOrderExportData(replacement)).toMatchObject({
+      supplierDocumentCode: "NCC-NEW",
+      summaryLines: [
+        {
+          ingredientDocumentCode: "ITEM-NEW",
+          ingredientName: "Tên mới được phát hành",
+          unitCode: "Hộp",
+        },
+      ],
+    });
+  });
+  it.each([
+    "v1-ingredient-1082",
+    "25000000-0000-4000-8000-000000000001",
+    "ITEM\nNEW",
+    "W".repeat(201),
+    " ITEM ",
+    "\u00a0ITEM\u00a0",
+  ])("rejects a technical identity in an official code cell: %s", (code) => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    order.lines[0]!.ingredient_document_code_snapshot = code;
+    expect(() => buildPurchaseOrderExportData(order)).toThrow(
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+    );
+  });
   it("accounts for whole-word wrapping of wide supplier instructions", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
@@ -314,8 +519,9 @@ describe("released purchase-order exports", () => {
     expect(summaryText).toContain("NCC An Phú lúc phát hành");
     expect(summaryText).not.toContain("Tên NCC hiện tại đã đổi");
     expect(summaryText).toContain("02/09/2026");
-    expect(summaryText).toContain("Mã hàng: bản phát hành chưa lưu mã");
-    expect(summaryText).toContain("Mã NCC: bản phát hành chưa lưu mã");
+    expect(summaryText).toContain("1082");
+    expect(summaryText).toContain("Mã NCC: 53");
+    expect(summaryText).not.toContain("chưa lưu mã");
     expect(schoolText).toContain("Trường Nguyễn Du");
     expect(ingredientText).toContain("Trường Trần Quốc Toản");
     expect(
@@ -452,10 +658,10 @@ describe("released purchase-order exports", () => {
     order.current_revision.supplier_name_snapshot = null;
 
     expect(() => buildPurchaseOrderExportData(order)).toThrow(
-      /supplier snapshot/i,
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
     );
     await expect(createPurchaseOrderXlsx(order)).rejects.toThrow(
-      /supplier snapshot/i,
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
     );
   });
 });
