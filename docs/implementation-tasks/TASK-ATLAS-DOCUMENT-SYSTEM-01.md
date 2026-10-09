@@ -1,5 +1,38 @@
 # ATLAS-DOCUMENT-SYSTEM-01
 
+## Hidden parsing metadata follow-up — 9 October 2026
+
+Owner request: make Ingredient IDs and parsing information hidden like Shopping
+List. Continue the same branch and Draft PR #360. Scope: existing PO/PXK exporters,
+their focused tests, fixture/native QA scripts and affected export documentation.
+
+Plan and acceptance criteria:
+
+- [x] Add hidden row IDs, scope, exact quantity and item/continuation kind after
+      the existing print columns in every PO/PXK Excel mode and ZIP member.
+- [x] Preserve every aggregated/continued row's immutable source association in
+      one very-hidden `_ATLAS_META` sheet with a distinct versioned output contract.
+- [x] Keep technical replacement IDs out of visible XLSX/PDF headers while
+      retaining readable replacement status and exact references in metadata.
+- [x] Preserve frozen business codes, School bands, `Nấu tại`, notes, quantities
+      and signature space. Reserve the metadata sheet name for single/grouped PXK.
+- [x] Pass focused tests and native Excel open/save/reopen plus PDF review.
+- [x] Complete the bounded source review with no actionable findings and prepare
+      the follow-up for the existing Draft PR's required GitHub Frontend CI.
+
+No backend/migration/security authority changes, new import workflow, dependencies,
+Shopping List V2/A+ edits, hosted data operations, deployment or merge. Metadata
+hiding is presentation only. Frontend revert is sufficient rollback. Contract:
+[operational document XLSX metadata](../api/operational-document-xlsx-metadata.md).
+
+Validation: 88 focused tests in six files, TypeScript, deterministic generation,
+native Excel round trips for six workbooks and all 16 PDF/native pages pass.
+Fixture-only evidence:
+[hidden parsing specimens](../testing/artifacts/atlas-document-system-01/hidden-parsing-metadata/README.md).
+The required Frontend CI remains the final gate on the current PR head; its live
+status and revision-specific evidence are recorded on PR #360. Keep the PR Draft
+for Owner visual/product acceptance.
+
 ## Final PO document identity closeout — 9 October 2026
 
 Owner instruction: continue PR #360 from `a2b753e18543b1cf2d1f4a851d53e18a2fb162e0`.

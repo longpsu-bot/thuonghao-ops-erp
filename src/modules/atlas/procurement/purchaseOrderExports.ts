@@ -2,6 +2,12 @@ import type { SchoolCateringPurchaseOrder } from "./schoolCateringProcurementMod
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import type { Row, Worksheet } from "exceljs";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
+import {
+  appendDocumentParsingMetadata,
+  prepareDocumentParsingColumns,
+  writeDocumentParsingRow,
+  type DocumentParsingRecord,
+} from "../documents/documentParsingMetadata";
 
 import {
   applyDocumentFont,
@@ -35,6 +41,9 @@ function officialCode(value: string | null | undefined) {
 }
 
 type PurchaseOrderExportLine = {
+  ingredientId: string;
+  unitId: string;
+  sources: Record<string, unknown>[];
   ingredientDocumentCode: string;
   ingredientName: string;
   orderedQuantity: string;
@@ -55,6 +64,7 @@ type PurchaseOrderSchoolExportLine = PurchaseOrderExportLine & {
 };
 
 export type PurchaseOrderExportData = {
+  documentId: string;
   documentNumber: string;
   supplierName: string;
   supplierDocumentCode: string;
@@ -129,6 +139,9 @@ export function buildPurchaseOrderExportData(
       unitCode: string;
       supplierNote: string | null;
       quantity: bigint;
+      ingredientId: string;
+      unitId: string;
+      sources: Record<string, unknown>[];
     }
   >();
   const schoolLines: PurchaseOrderSchoolExportLine[] = [];
@@ -144,7 +157,18 @@ export function buildPurchaseOrderExportData(
     const key = `${line.ingredient.ingredient_id}\u0000${line.unit.unit_id}\u0000${line.supplier_note ?? ""}`;
     const current = summaries.get(key);
     const quantity = scaledQuantity(line.ordered_quantity);
+    const source = {
+      purchase_order_line_id: line.purchase_order_line_id,
+      purchase_order_line_revision_id: line.purchase_order_line_revision_id,
+      ...line.source,
+      delivery_location_id: line.delivery_location.delivery_location_id,
+      ordered_quantity: line.ordered_quantity,
+      ingredient_document_code_snapshot: line.ingredient_document_code_snapshot,
+    };
     summaries.set(key, {
+      ingredientId: line.ingredient.ingredient_id,
+      unitId: line.unit.unit_id,
+      sources: [...(current?.sources ?? []), source],
       ingredientDocumentCode: line.ingredient_document_code_snapshot!,
       ingredientName: line.ingredient_name_snapshot!,
       unitCode: line.unit_code_snapshot!,
@@ -156,6 +180,7 @@ export function buildPurchaseOrderExportData(
       const schoolQuantity = scaledQuantity(school.ordered_quantity);
       breakdownTotal += schoolQuantity;
       schoolLines.push({
+        sources: [source],
         schoolId: school.school_id,
         locationId: school.delivery_location_id,
         locationName: school.delivery_location_name,
@@ -188,8 +213,9 @@ export function buildPurchaseOrderExportData(
   );
 
   return {
+    documentId: order.purchase_order_id,
     status: order.status,
-    replacementLabel: `${order.replaces_purchase_order_id ? ` · Thay thế PO: ${order.replaces_purchase_order_id}` : ""}${order.replaced_by_purchase_order_id ? ` · Được thay thế bởi PO: ${order.replaced_by_purchase_order_id}` : ""}`,
+    replacementLabel: `${order.replaces_purchase_order_id ? " · Đơn thay thế" : ""}${order.replaced_by_purchase_order_id ? " · Đã được thay thế" : ""}`,
     documentNumber: order.document_number,
     supplierName: supplierSnapshot,
     supplierDocumentCode:
@@ -197,6 +223,9 @@ export function buildPurchaseOrderExportData(
     serviceDate: dateLabel(order.service_date),
     releasedRevision: order.current_revision.revision_number,
     summaryLines: Array.from(summaries.values(), (line) => ({
+      ingredientId: line.ingredientId,
+      unitId: line.unitId,
+      sources: line.sources,
       ingredientName: line.ingredientName,
       ingredientDocumentCode: line.ingredientDocumentCode,
       orderedQuantity: exactQuantity(line.quantity),
@@ -526,6 +555,7 @@ function addDetailSheet(
   data: PurchaseOrderExportData,
   direction: "details_ing" | "details_school",
   logoId: number,
+  records: DocumentParsingRecord[],
 ) {
   const sheet = workbook.addWorksheet(
     `${data.serviceDate.replaceAll("/", "-")} - ${viewName[direction]}`,
@@ -683,6 +713,23 @@ function addDetailSheet(
         row.height = height;
         if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
         borderRow(row);
+        writeDocumentParsingRow(
+          sheet,
+          row,
+          6,
+          [
+            data.documentId,
+            line.ingredientId,
+            line.unitId,
+            line.schoolId,
+            line.locationId,
+            line.cookingGroupId,
+            line.orderedQuantity,
+            continuation ? "CONTINUATION" : "ITEM",
+          ],
+          line.sources,
+          records,
+        );
         pageUsed += height;
       });
     });
@@ -696,11 +743,13 @@ function addDetailSheet(
     9,
     `${data.documentNumber} · ${documentStatusLabel(data.status)}`,
   );
+  prepareDocumentParsingColumns(sheet, 6, 9);
 }
 function addSummarySheet(
   workbook: import("exceljs").Workbook,
   data: PurchaseOrderExportData,
   logoId: number,
+  records: DocumentParsingRecord[],
 ) {
   const sheet = workbook.addWorksheet(
     `${data.serviceDate.replaceAll("/", "-")} - Tổng`,
@@ -802,6 +851,23 @@ function addSummarySheet(
       );
       if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
       borderRow(row);
+      writeDocumentParsingRow(
+        sheet,
+        row,
+        6,
+        [
+          data.documentId,
+          line.ingredientId,
+          line.unitId,
+          null,
+          null,
+          null,
+          line.orderedQuantity,
+          continuation ? "CONTINUATION" : "ITEM",
+        ],
+        line.sources,
+        records,
+      );
     }),
   );
   applyDocumentFont(sheet);
@@ -811,6 +877,7 @@ function addSummarySheet(
     10,
     `${data.documentNumber} · ${documentStatusLabel(data.status)}`,
   );
+  prepareDocumentParsingColumns(sheet, 6, 10);
 }
 export async function createPurchaseOrderXlsx(
   order: SchoolCateringPurchaseOrder,
@@ -828,10 +895,37 @@ export async function createPurchaseOrderXlsx(
     base64: companyLogoDataUrl,
     extension: "jpeg",
   });
+  const records: DocumentParsingRecord[] = [
+    {
+      kind: "DOCUMENT",
+      documentId: order.purchase_order_id,
+      sheetName: "",
+      rowNumber: null,
+      data: {
+        document_type: "PO",
+        workbook_mode: mode,
+        purchase_order_id: order.purchase_order_id,
+        purchase_order_revision_id:
+          order.current_revision.purchase_order_revision_id,
+        revision_number: order.current_revision.revision_number,
+        service_date: order.service_date,
+        document_number: order.document_number,
+        status: order.status,
+        supplier_id: order.supplier.supplier_id,
+        supplier_document_code_snapshot:
+          order.current_revision.supplier_document_code_snapshot,
+        released_at: order.current_revision.released_at,
+        predecessor_revision_id: order.current_revision.predecessor_revision_id,
+        replaces_purchase_order_id: order.replaces_purchase_order_id,
+        replaced_by_purchase_order_id: order.replaced_by_purchase_order_id,
+      },
+    },
+  ];
   for (const view of selectedViews(mode)) {
-    if (view === "sum") addSummarySheet(workbook, data, logoId);
-    else addDetailSheet(workbook, data, view, logoId);
+    if (view === "sum") addSummarySheet(workbook, data, logoId, records);
+    else addDetailSheet(workbook, data, view, logoId, records);
   }
+  appendDocumentParsingMetadata(workbook, records);
   return workbook.xlsx.writeBuffer();
 }
 

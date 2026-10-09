@@ -1,0 +1,122 @@
+﻿{
+  "excel_version": "16.0",
+  "workbooks": [
+    {
+      "sheets": [
+        {
+          "pdf": "PO-hidden-parsing-all-sheet-1.pdf",
+          "print_titles": "$1:$9",
+          "name": "02-09-2026 - Theo hàng",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        },
+        {
+          "pdf": "PO-hidden-parsing-all-sheet-2.pdf",
+          "print_titles": "$1:$9",
+          "name": "02-09-2026 - Theo trường",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        },
+        {
+          "pdf": "PO-hidden-parsing-all-sheet-3.pdf",
+          "print_titles": "$1:$10",
+          "name": "02-09-2026 - Tổng",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        }
+      ],
+      "exact_text_checks": 169,
+      "normal_open": true,
+      "native_save_reopen": true,
+      "clean_unchanged": true,
+      "file": "PO-hidden-parsing-all.xlsx"
+    },
+    {
+      "sheets": [
+        {
+          "pdf": "PO-hidden-parsing-sum-sheet-1.pdf",
+          "print_titles": "$1:$10",
+          "name": "02-09-2026 - Tổng",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        }
+      ],
+      "exact_text_checks": 61,
+      "normal_open": true,
+      "native_save_reopen": true,
+      "clean_unchanged": true,
+      "file": "PO-hidden-parsing-sum.xlsx"
+    },
+    {
+      "sheets": [
+        {
+          "pdf": "PO-hidden-parsing-details_ing-sheet-1.pdf",
+          "print_titles": "$1:$9",
+          "name": "02-09-2026 - Theo hàng",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        }
+      ],
+      "exact_text_checks": 65,
+      "normal_open": true,
+      "native_save_reopen": true,
+      "clean_unchanged": true,
+      "file": "PO-hidden-parsing-details_ing.xlsx"
+    },
+    {
+      "sheets": [
+        {
+          "pdf": "PO-hidden-parsing-details_school-sheet-1.pdf",
+          "print_titles": "$1:$9",
+          "name": "02-09-2026 - Theo trường",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        }
+      ],
+      "exact_text_checks": 65,
+      "normal_open": true,
+      "native_save_reopen": true,
+      "clean_unchanged": true,
+      "file": "PO-hidden-parsing-details_school.xlsx"
+    },
+    {
+      "sheets": [
+        {
+          "pdf": "PXK-hidden-parsing-sheet-1.pdf",
+          "print_titles": "$1:$10",
+          "name": "Trường Tiểu học Nguyễn Du",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        }
+      ],
+      "exact_text_checks": 60,
+      "normal_open": true,
+      "native_save_reopen": true,
+      "clean_unchanged": true,
+      "file": "PXK-hidden-parsing.xlsx"
+    },
+    {
+      "sheets": [
+        {
+          "pdf": "PXK-hidden-parsing-batch-sheet-1.pdf",
+          "print_titles": "$1:$10",
+          "name": "09-24 Trường thứ hai",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        },
+        {
+          "pdf": "PXK-hidden-parsing-batch-sheet-2.pdf",
+          "print_titles": "$1:$10",
+          "name": "09-24 Trường Tiểu học Nguyễn Du",
+          "horizontal_page_breaks": [],
+          "vertical_page_breaks": 0
+        }
+      ],
+      "exact_text_checks": 113,
+      "normal_open": true,
+      "native_save_reopen": true,
+      "clean_unchanged": true,
+      "file": "PXK-hidden-parsing-batch.xlsx"
+    }
+  ]
+}

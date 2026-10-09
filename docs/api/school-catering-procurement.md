@@ -192,6 +192,11 @@ implementations retained behind shaped public wrappers.
 
 ## Released document identity closeout — PR #360
 
+The 9 October hidden-parsing follow-up stores technical Ingredient/Unit/document
+identities and released source links in hidden row columns and a very-hidden
+worksheet. Frozen business codes remain visible. See the
+[operational XLSX metadata contract](operational-document-xlsx-metadata.md).
+
 Authority: the Owner's final Document System closeout retains the accepted School
 bands, cooking groups, supplier notes, replacement and commitment semantics. The
 forward migration is `20261009105641_atlas_po_document_identity.sql`; earlier

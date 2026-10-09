@@ -38,8 +38,18 @@ try {
             $atlasValue=$atlasSheet.Range($atlasCell.address).Value2
             if($atlasValue -isnot [string] -or $atlasValue -cne $atlasCell.value) {throw "EXACT_TEXT_LOST: $($atlasFile.name) $($atlasCell.address)"}
             if($atlasCell.quantity -and ($atlasSheet.Range($atlasCell.address).NumberFormat -cne '@' -or $atlasSheet.Range($atlasCell.address).HorizontalAlignment -ne -4152)) {throw "QUANTITY_STYLE_LOST: $($atlasFile.name) $($atlasCell.address)"}
+            if($atlasCell.hidden -and -not $atlasSheet.Range($atlasCell.address).EntireColumn.Hidden) {throw "PARSING_COLUMN_VISIBLE: $($atlasFile.name) $($atlasCell.address)"}
             $atlasQuantityCount++
           }
+        }
+      }
+      foreach($atlasSheetRecord in $atlasFile.hiddenSheets) {
+        $atlasSheet=$atlasReopened.Worksheets.Item($atlasSheetRecord.name)
+        if($atlasSheet.Visible -ne 2) {throw "METADATA_SHEET_VISIBLE: $($atlasFile.name) $($atlasSheet.Name)"}
+        foreach($atlasCell in $atlasSheetRecord.cells) {
+          $atlasValue=$atlasSheet.Range($atlasCell.address).Value2
+          if($atlasValue -isnot [string] -or $atlasValue -cne $atlasCell.value) {throw "METADATA_TEXT_LOST: $($atlasFile.name) $($atlasCell.address)"}
+          $atlasQuantityCount++
         }
       }
     } finally {$atlasReopened.Close($false)}

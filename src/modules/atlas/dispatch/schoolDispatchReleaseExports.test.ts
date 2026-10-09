@@ -215,7 +215,9 @@ describe("School dispatch release exports", () => {
       await createGroupedSchoolDispatchXlsx([laterSchool, firstSchool]),
     );
 
-    expect(workbook.worksheets).toHaveLength(2);
+    expect(
+      workbook.worksheets.filter((s) => s.state === "visible"),
+    ).toHaveLength(2);
     expect(workbook.worksheets[0]!.getCell("A6").value).toContain("Trường A");
     expect(workbook.worksheets[1]!.getCell("A6").value).toContain("Trường B");
   });

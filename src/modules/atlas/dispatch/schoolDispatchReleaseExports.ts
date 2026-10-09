@@ -2,6 +2,12 @@ import type { Workbook } from "exceljs";
 import type { Column, Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import type { SchoolDispatchDocument } from "./schoolDispatchReleaseModel";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
+import {
+  appendDocumentParsingMetadata,
+  prepareDocumentParsingColumns,
+  writeDocumentParsingRow,
+  type DocumentParsingRecord,
+} from "../documents/documentParsingMetadata";
 
 import {
   applyDocumentFont,
@@ -123,9 +129,7 @@ export function buildSchoolDispatchPdfDefinition(
           { text: documentStatusLabel(document.status), bold: true },
           ` · Điểm giao: ${data.deliveryLocationName}`,
           ...(data.note ? [`\nGhi chú: ${data.note}`] : []),
-          ...(document.predecessor_release_id
-            ? [`\nThay thế phiếu: ${document.predecessor_release_id}`]
-            : []),
+          ...(document.predecessor_release_id ? ["\nPhiếu thay thế"] : []),
         ],
         fontSize: 11,
         margin: [0, 3, 0, 0],
@@ -216,9 +220,30 @@ function addSchoolDispatchSheet(
   document: SchoolDispatchDocument,
   sheetName: string,
   logoId: number,
+  records: DocumentParsingRecord[],
 ) {
   const data = buildSchoolDispatchExportData(document);
   const sheet = workbook.addWorksheet(sheetName);
+  records.push({
+    kind: "DOCUMENT",
+    documentId: document.school_dispatch_release_id,
+    sheetName,
+    rowNumber: null,
+    data: {
+      document_type: "PXK",
+      school_dispatch_release_id: document.school_dispatch_release_id,
+      document_number: document.document_number,
+      service_date: document.service_date,
+      school_id: document.school_id,
+      delivery_location_id: document.delivery_location_id,
+      cooking_group_id: document.cooking_group_id ?? null,
+      version: document.version,
+      status: document.status,
+      predecessor_release_id: document.predecessor_release_id,
+      source_fingerprint: document.source_fingerprint,
+      released_at: document.released_at,
+    },
+  });
   prepareDocumentSheet(sheet);
   const quantityWidth = Math.max(
     10,
@@ -296,7 +321,7 @@ function addSchoolDispatchSheet(
         font: { name: "Times New Roman", size: 11, bold: true },
       },
       {
-        text: ` · Điểm giao: ${data.deliveryLocationName}${data.note ? `\nGhi chú: ${data.note}` : ""}${document.predecessor_release_id ? `\nThay thế phiếu: ${document.predecessor_release_id}` : ""}`,
+        text: ` · Điểm giao: ${data.deliveryLocationName}${data.note ? `\nGhi chú: ${data.note}` : ""}${document.predecessor_release_id ? "\nPhiếu thay thế" : ""}`,
         font: { name: "Times New Roman", size: 11 },
       },
     ],
@@ -363,6 +388,31 @@ function addSchoolDispatchSheet(
     setExactQuantity(row.getCell(4), line.quantity);
     row.getCell(4).font = { name: "Times New Roman", size: 16 };
     borderRow(row);
+    const sourceLine = document.lines[index]!;
+    const lineId = sourceLine.school_dispatch_release_line_id ?? null;
+    const sources = sourceLine.sources.length
+      ? sourceLine.sources.map((source) => ({
+          school_dispatch_release_line_id: lineId,
+          ...source,
+        }))
+      : [{ school_dispatch_release_line_id: lineId }];
+    writeDocumentParsingRow(
+      sheet,
+      row,
+      8,
+      [
+        document.school_dispatch_release_id,
+        sourceLine.ingredient_id,
+        sourceLine.unit_id,
+        document.school_id,
+        document.delivery_location_id,
+        document.cooking_group_id ?? null,
+        sourceLine.quantity,
+        "ITEM",
+      ],
+      sources,
+      records,
+    );
   });
   const signatureRow = 11 + data.lines.length + 5;
   for (const row of [signatureRow, signatureRow + 1, signatureRow + 6]) {
@@ -434,6 +484,7 @@ function addSchoolDispatchSheet(
     10,
     `${data.documentNumber} · ${documentStatusLabel(document.status)}`,
   );
+  prepareDocumentParsingColumns(sheet, 8, 10);
 }
 
 export async function createSchoolDispatchXlsx(
@@ -446,12 +497,15 @@ export async function createSchoolDispatchXlsx(
     base64: companyLogoDataUrl,
     extension: "jpeg",
   });
+  const records: DocumentParsingRecord[] = [];
   addSchoolDispatchSheet(
     workbook,
     document,
-    safeWorksheetName(document.school_name),
+    safeWorksheetName(document.school_name, new Set(["_atlas_meta"])),
     logoId,
+    records,
   );
+  appendDocumentParsingMetadata(workbook, records);
   return workbook.xlsx.writeBuffer();
 }
 
@@ -471,7 +525,8 @@ export async function createGroupedSchoolDispatchXlsx(
     base64: companyLogoDataUrl,
     extension: "jpeg",
   });
-  const names = new Set<string>();
+  const names = new Set<string>(["_atlas_meta"]);
+  const records: DocumentParsingRecord[] = [];
   const ordered = [...documents].sort(
     (left, right) =>
       left.service_date.localeCompare(right.service_date) ||
@@ -484,8 +539,9 @@ export async function createGroupedSchoolDispatchXlsx(
       `${document.service_date.slice(5)} ${document.school_name}`,
       names,
     );
-    addSchoolDispatchSheet(workbook, document, name, logoId);
+    addSchoolDispatchSheet(workbook, document, name, logoId, records);
   }
+  appendDocumentParsingMetadata(workbook, records);
   return workbook.xlsx.writeBuffer();
 }
 

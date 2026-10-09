@@ -85,6 +85,7 @@ try {
                     ? { documentCode: true }
                     : {}),
                   ...(name !== "Shopping-list-APlus-preserved" &&
+                  !sheet.getColumn(cell.col).hidden &&
                   cell.numFmt === "@" &&
                   typeof cell.value === "string"
                     ? {
@@ -106,6 +107,18 @@ try {
           orientation: sheet.pageSetup.orientation,
           cells,
         };
+      });
+    const hiddenSheets = book.worksheets
+      .filter((s) => s.state === "veryHidden")
+      .map((sheet) => {
+        const cells = [];
+        sheet.eachRow((row) =>
+          row.eachCell((cell) => {
+            if (typeof cell.value === "string")
+              cells.push({ address: cell.address, value: cell.value });
+          }),
+        );
+        return { name: sheet.name, state: sheet.state, cells };
       });
     // Fixed ZIP timestamps only for review artifacts; production bytes are untouched.
     const parts = await packageCodec.readShoppingListPackage(
@@ -158,6 +171,7 @@ try {
       name: name + ".xlsx",
       sha256: crypto.createHash("sha256").update(stable).digest("hex"),
       sheets,
+      hiddenSheets,
       sourceQuantities,
       ...(sourceQuantities.length ? { exactSourceQuantityParity: "PASS" } : {}),
     });
@@ -227,7 +241,41 @@ try {
       xlsxQuantityParity: "PASS",
     });
   }
-  if (
+  if (process.argv.includes("--hidden-parsing-review")) {
+    manifest.generatedAt = "2026-10-09T00:00:00Z";
+    manifest.revision = "Hidden PO/PXK parsing metadata";
+    manifest.shoppingImport =
+      "Unchanged; Shopping List V2/A+ is outside this presentation follow-up";
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0];
+    order.replaces_purchase_order_id = "fixture-hidden-predecessor";
+    order.lines[0].supplier_note = "Giao trước 05:30; hàng nguyên bao.";
+    for (const mode of ["all", "sum", "details_ing", "details_school"])
+      await savePo(`PO-hidden-parsing-${mode}`, order, mode);
+    const document = createReviewSchoolDispatchDocument("RELEASED");
+    document.predecessor_release_id = "fixture-hidden-predecessor";
+    document.lines[0].school_dispatch_release_line_id =
+      "fixture-hidden-dispatch-line";
+    await saveXlsx(
+      "PXK-hidden-parsing",
+      await pxk.createSchoolDispatchXlsx(document),
+      document.lines.map((line) => line.quantity),
+    );
+    await savePdf(
+      "PXK-hidden-parsing",
+      await pxk.createSchoolDispatchPdf(document),
+      pxk.buildSchoolDispatchPdfDefinition(document),
+    );
+    const second = structuredClone(document);
+    second.school_dispatch_release_id = "fixture-hidden-second-release";
+    second.school_name = "Trường thứ hai";
+    second.document_number = "PXK-FIXTURE-SECOND";
+    await saveXlsx(
+      "PXK-hidden-parsing-batch",
+      await pxk.createGroupedSchoolDispatchXlsx([second, document]),
+      [...document.lines, ...second.lines].map((line) => line.quantity),
+    );
+  } else if (
     process.argv.includes("--cooking-revision") ||
     process.argv.includes("--po-identity-closeout")
   ) {

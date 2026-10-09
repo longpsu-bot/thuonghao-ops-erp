@@ -138,6 +138,11 @@ reservation, pick, cross-dock, DispatchPlan, trip, vehicle, driver, or load fact
 
 ## Persistence and security
 
+Released PXK single/grouped/ZIP Excel exports carry hidden Ingredient/Unit/School
+identities and very-hidden release/source references, following the
+[operational XLSX metadata contract](operational-document-xlsx-metadata.md).
+Printed replacement labels retain their meaning without exposing technical IDs.
+
 Private forced-RLS relations:
 
 - `atlas_dispatch.school_dispatch_releases`;

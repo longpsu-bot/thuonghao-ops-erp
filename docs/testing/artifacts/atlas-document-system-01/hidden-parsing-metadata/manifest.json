@@ -1,0 +1,3006 @@
+{
+  "fixtureOnly": true,
+  "generatedAt": "2026-10-09T00:00:00Z",
+  "files": [
+    {
+      "name": "PO-hidden-parsing-all.xlsx",
+      "sha256": "1f2179cdbb42b1b2f495c33064dfa90a5a5f83c90bbecf83f6f4a95b37c2143e",
+      "sheets": [
+        {
+          "name": "02-09-2026 - Theo hàng",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "CHI TIẾT GIAO HÀNG (THEO HÀNG)",
+              "hidden": false
+            },
+            {
+              "address": "D5",
+              "value": "Ngày dùng:",
+              "hidden": false
+            },
+            {
+              "address": "E5",
+              "value": "02/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": "PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế · Mã NCC: 53",
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "STT",
+              "hidden": false
+            },
+            {
+              "address": "B9",
+              "value": "Mã hàng",
+              "hidden": false
+            },
+            {
+              "address": "C9",
+              "value": "Trường học",
+              "hidden": false
+            },
+            {
+              "address": "D9",
+              "value": "Đơn vị",
+              "hidden": false
+            },
+            {
+              "address": "E9",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "F9",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "G9",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "H9",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "I9",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "J9",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "K9",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "L9",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "M9",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "N9",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A10",
+              "value": "Gạo thơm (kg)",
+              "hidden": false
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C11",
+              "value": "TRƯỜNG: Trường Nguyễn Du\nBếp chính Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E11",
+              "value": "60",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "60.000000"
+            },
+            {
+              "address": "F11",
+              "value": "Giao trước 05:30; hàng nguyên bao.",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "J11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "K11",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "60.000000",
+              "hidden": true
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A13",
+              "value": "Gạo thơm (kg)",
+              "hidden": false
+            },
+            {
+              "address": "A14",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B14",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C14",
+              "value": "TRƯỜNG: Trường Trần Quốc Toản\nBếp chính Trần Quốc Toản",
+              "hidden": false
+            },
+            {
+              "address": "D14",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E14",
+              "value": "40",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "40.000000"
+            },
+            {
+              "address": "G14",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H14",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I14",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "J14",
+              "value": "25000000-0000-4000-8000-000000000022",
+              "hidden": true
+            },
+            {
+              "address": "K14",
+              "value": "25000000-0000-4000-8000-000000000012",
+              "hidden": true
+            },
+            {
+              "address": "M14",
+              "value": "40.000000",
+              "hidden": true
+            },
+            {
+              "address": "N14",
+              "value": "ITEM",
+              "hidden": true
+            }
+          ]
+        },
+        {
+          "name": "02-09-2026 - Theo trường",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "CHI TIẾT GIAO HÀNG",
+              "hidden": false
+            },
+            {
+              "address": "D5",
+              "value": "Ngày dùng:",
+              "hidden": false
+            },
+            {
+              "address": "E5",
+              "value": "02/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": "PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế · Mã NCC: 53",
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "STT",
+              "hidden": false
+            },
+            {
+              "address": "B9",
+              "value": "Mã hàng",
+              "hidden": false
+            },
+            {
+              "address": "C9",
+              "value": "Tên hàng",
+              "hidden": false
+            },
+            {
+              "address": "D9",
+              "value": "Đơn vị",
+              "hidden": false
+            },
+            {
+              "address": "E9",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "F9",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "G9",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "H9",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "I9",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "J9",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "K9",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "L9",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "M9",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "N9",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A10",
+              "value": "TRƯỜNG: Trường Nguyễn Du\nBếp chính Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C11",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E11",
+              "value": "60",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "60.000000"
+            },
+            {
+              "address": "F11",
+              "value": "Giao trước 05:30; hàng nguyên bao.",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "J11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "K11",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "60.000000",
+              "hidden": true
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A13",
+              "value": "TRƯỜNG: Trường Trần Quốc Toản\nBếp chính Trần Quốc Toản",
+              "hidden": false
+            },
+            {
+              "address": "A14",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B14",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C14",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "D14",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E14",
+              "value": "40",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "40.000000"
+            },
+            {
+              "address": "G14",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H14",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I14",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "J14",
+              "value": "25000000-0000-4000-8000-000000000022",
+              "hidden": true
+            },
+            {
+              "address": "K14",
+              "value": "25000000-0000-4000-8000-000000000012",
+              "hidden": true
+            },
+            {
+              "address": "M14",
+              "value": "40.000000",
+              "hidden": true
+            },
+            {
+              "address": "N14",
+              "value": "ITEM",
+              "hidden": true
+            }
+          ]
+        },
+        {
+          "name": "02-09-2026 - Tổng",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "C1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "C2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU ĐẶT HÀNG",
+              "hidden": false
+            },
+            {
+              "address": "A5",
+              "value": "PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false
+            },
+            {
+              "address": "A7",
+              "value": "Ngày dùng:",
+              "hidden": false
+            },
+            {
+              "address": "B7",
+              "value": "02/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": "Mã NCC: 53",
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "A10",
+              "value": "STT",
+              "hidden": false
+            },
+            {
+              "address": "B10",
+              "value": "Mã hàng",
+              "hidden": false
+            },
+            {
+              "address": "C10",
+              "value": "Tên hàng",
+              "hidden": false
+            },
+            {
+              "address": "D10",
+              "value": "Đơn vị",
+              "hidden": false
+            },
+            {
+              "address": "E10",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "F10",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "G10",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "H10",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "I10",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "J10",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "K10",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "L10",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "M10",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "N10",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C11",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E11",
+              "value": "60",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "60.000000"
+            },
+            {
+              "address": "F11",
+              "value": "Giao trước 05:30; hàng nguyên bao.",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "60.000000",
+              "hidden": true
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A12",
+              "value": 2,
+              "hidden": false
+            },
+            {
+              "address": "B12",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C12",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "D12",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E12",
+              "value": "40",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "40.000000"
+            },
+            {
+              "address": "G12",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H12",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I12",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "M12",
+              "value": "40.000000",
+              "hidden": true
+            },
+            {
+              "address": "N12",
+              "value": "ITEM",
+              "hidden": true
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "state": "veryHidden",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C3",
+              "value": ""
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PO\",\"workbook_mode\":\"all\",\"purchase_order_id\":\"25000000-0000-4000-8000-000000000051\",\"purchase_order_revision_id\":\"25000000-0000-4000-8000-000000000053\",\"revision_number\":2,\"service_date\":\"2026-09-02\",\"document_number\":\"PO-20260902-2500000000004000\",\"status\":\"RELEASED_TO_SUPPLIER\",\"supplier_id\":\"25000000-0000-4000-8000-000000000041\",\"supplier_document_code_snapshot\":\"53\",\"released_at\":\"2026-09-01T08:00:00.000Z\",\"predecessor_revision_id\":\"25000000-0000-4000-8000-000000000052\",\"replaces_purchase_order_id\":\"fixture-hidden-predecessor\",\"replaced_by_purchase_order_id\":null}"
+            },
+            {
+              "address": "A4",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B4",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C4",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E4",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"60.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            },
+            {
+              "address": "A5",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B5",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C5",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E5",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000094\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000093\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000012\",\"ordered_quantity\":\"40.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            },
+            {
+              "address": "A6",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B6",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C6",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E6",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"60.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            },
+            {
+              "address": "A7",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B7",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C7",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E7",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000094\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000093\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000012\",\"ordered_quantity\":\"40.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            },
+            {
+              "address": "A8",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B8",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C8",
+              "value": "02-09-2026 - Tổng"
+            },
+            {
+              "address": "E8",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"60.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            },
+            {
+              "address": "A9",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B9",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C9",
+              "value": "02-09-2026 - Tổng"
+            },
+            {
+              "address": "E9",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000094\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000093\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000012\",\"ordered_quantity\":\"40.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            }
+          ]
+        }
+      ],
+      "sourceQuantities": [
+        "60.000000",
+        "40.000000",
+        "60.000000",
+        "40.000000",
+        "60.000000",
+        "40.000000"
+      ],
+      "exactSourceQuantityParity": "PASS"
+    },
+    {
+      "name": "PO-hidden-parsing-all.pdf",
+      "sha256": "b3e4a080fec4aecb061ef1bf82582fb95cd8f872c296cb05dcd4bd0a1dda5fea",
+      "visibleStrings": [
+        "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+        "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+        "CHI TIẾT GIAO HÀNG (THEO HÀNG)",
+        "Nhà cung cấp: NCC An Phú",
+        "Ngày dùng: 02/09/2026",
+        "Số đơn: PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế",
+        "Mã NCC: 53",
+        "Gạo thơm (kg)",
+        "Trường học",
+        "Số lượng",
+        "TRƯỜNG: Trường Nguyễn Du\nBếp chính Nguyễn Du",
+        "Giao trước 05:30; hàng nguyên bao.",
+        "TRƯỜNG: Trường Trần Quốc Toản\nBếp chính Trần Quốc Toản",
+        "CHI TIẾT GIAO HÀNG",
+        "Tên hàng",
+        "Gạo thơm",
+        "PHIẾU ĐẶT HÀNG",
+        "60",
+        "40"
+      ],
+      "quantities": ["60", "40", "60", "40", "60", "40"],
+      "xlsxQuantityParity": "PASS"
+    },
+    {
+      "name": "PO-hidden-parsing-sum.xlsx",
+      "sha256": "ca5376d17fd1dc3ade2e9d94d5677fcb5feb3e27638bcb716f20a56ee9d3a6ec",
+      "sheets": [
+        {
+          "name": "02-09-2026 - Tổng",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "C1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "C2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU ĐẶT HÀNG",
+              "hidden": false
+            },
+            {
+              "address": "A5",
+              "value": "PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false
+            },
+            {
+              "address": "A7",
+              "value": "Ngày dùng:",
+              "hidden": false
+            },
+            {
+              "address": "B7",
+              "value": "02/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": "Mã NCC: 53",
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "A10",
+              "value": "STT",
+              "hidden": false
+            },
+            {
+              "address": "B10",
+              "value": "Mã hàng",
+              "hidden": false
+            },
+            {
+              "address": "C10",
+              "value": "Tên hàng",
+              "hidden": false
+            },
+            {
+              "address": "D10",
+              "value": "Đơn vị",
+              "hidden": false
+            },
+            {
+              "address": "E10",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "F10",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "G10",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "H10",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "I10",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "J10",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "K10",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "L10",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "M10",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "N10",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C11",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E11",
+              "value": "60",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "60.000000"
+            },
+            {
+              "address": "F11",
+              "value": "Giao trước 05:30; hàng nguyên bao.",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "60.000000",
+              "hidden": true
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A12",
+              "value": 2,
+              "hidden": false
+            },
+            {
+              "address": "B12",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C12",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "D12",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E12",
+              "value": "40",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "40.000000"
+            },
+            {
+              "address": "G12",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H12",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I12",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "M12",
+              "value": "40.000000",
+              "hidden": true
+            },
+            {
+              "address": "N12",
+              "value": "ITEM",
+              "hidden": true
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "state": "veryHidden",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C3",
+              "value": ""
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PO\",\"workbook_mode\":\"sum\",\"purchase_order_id\":\"25000000-0000-4000-8000-000000000051\",\"purchase_order_revision_id\":\"25000000-0000-4000-8000-000000000053\",\"revision_number\":2,\"service_date\":\"2026-09-02\",\"document_number\":\"PO-20260902-2500000000004000\",\"status\":\"RELEASED_TO_SUPPLIER\",\"supplier_id\":\"25000000-0000-4000-8000-000000000041\",\"supplier_document_code_snapshot\":\"53\",\"released_at\":\"2026-09-01T08:00:00.000Z\",\"predecessor_revision_id\":\"25000000-0000-4000-8000-000000000052\",\"replaces_purchase_order_id\":\"fixture-hidden-predecessor\",\"replaced_by_purchase_order_id\":null}"
+            },
+            {
+              "address": "A4",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B4",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C4",
+              "value": "02-09-2026 - Tổng"
+            },
+            {
+              "address": "E4",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"60.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            },
+            {
+              "address": "A5",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B5",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C5",
+              "value": "02-09-2026 - Tổng"
+            },
+            {
+              "address": "E5",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000094\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000093\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000012\",\"ordered_quantity\":\"40.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            }
+          ]
+        }
+      ],
+      "sourceQuantities": ["60.000000", "40.000000"],
+      "exactSourceQuantityParity": "PASS"
+    },
+    {
+      "name": "PO-hidden-parsing-sum.pdf",
+      "sha256": "3e1eac1381b10a2384fedcfbc5fbcfd8f733ca8a9187dd4e5e62b0b321075039",
+      "visibleStrings": [
+        "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+        "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+        "PHIẾU ĐẶT HÀNG",
+        "Nhà cung cấp: NCC An Phú",
+        "Ngày dùng: 02/09/2026",
+        "Số đơn: PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế",
+        "Mã NCC: 53",
+        "Tên hàng",
+        "Số lượng",
+        "Gạo thơm",
+        "Giao trước 05:30; hàng nguyên bao.",
+        "60",
+        "40"
+      ],
+      "quantities": ["60", "40"],
+      "xlsxQuantityParity": "PASS"
+    },
+    {
+      "name": "PO-hidden-parsing-details_ing.xlsx",
+      "sha256": "bf676b66e9e27cd626b484f08d51d22ccb305d2022b535286cdfccf68d455723",
+      "sheets": [
+        {
+          "name": "02-09-2026 - Theo hàng",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "CHI TIẾT GIAO HÀNG (THEO HÀNG)",
+              "hidden": false
+            },
+            {
+              "address": "D5",
+              "value": "Ngày dùng:",
+              "hidden": false
+            },
+            {
+              "address": "E5",
+              "value": "02/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": "PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế · Mã NCC: 53",
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "STT",
+              "hidden": false
+            },
+            {
+              "address": "B9",
+              "value": "Mã hàng",
+              "hidden": false
+            },
+            {
+              "address": "C9",
+              "value": "Trường học",
+              "hidden": false
+            },
+            {
+              "address": "D9",
+              "value": "Đơn vị",
+              "hidden": false
+            },
+            {
+              "address": "E9",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "F9",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "G9",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "H9",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "I9",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "J9",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "K9",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "L9",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "M9",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "N9",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A10",
+              "value": "Gạo thơm (kg)",
+              "hidden": false
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C11",
+              "value": "TRƯỜNG: Trường Nguyễn Du\nBếp chính Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E11",
+              "value": "60",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "60.000000"
+            },
+            {
+              "address": "F11",
+              "value": "Giao trước 05:30; hàng nguyên bao.",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "J11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "K11",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "60.000000",
+              "hidden": true
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A13",
+              "value": "Gạo thơm (kg)",
+              "hidden": false
+            },
+            {
+              "address": "A14",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B14",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C14",
+              "value": "TRƯỜNG: Trường Trần Quốc Toản\nBếp chính Trần Quốc Toản",
+              "hidden": false
+            },
+            {
+              "address": "D14",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E14",
+              "value": "40",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "40.000000"
+            },
+            {
+              "address": "G14",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H14",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I14",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "J14",
+              "value": "25000000-0000-4000-8000-000000000022",
+              "hidden": true
+            },
+            {
+              "address": "K14",
+              "value": "25000000-0000-4000-8000-000000000012",
+              "hidden": true
+            },
+            {
+              "address": "M14",
+              "value": "40.000000",
+              "hidden": true
+            },
+            {
+              "address": "N14",
+              "value": "ITEM",
+              "hidden": true
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "state": "veryHidden",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C3",
+              "value": ""
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PO\",\"workbook_mode\":\"details_ing\",\"purchase_order_id\":\"25000000-0000-4000-8000-000000000051\",\"purchase_order_revision_id\":\"25000000-0000-4000-8000-000000000053\",\"revision_number\":2,\"service_date\":\"2026-09-02\",\"document_number\":\"PO-20260902-2500000000004000\",\"status\":\"RELEASED_TO_SUPPLIER\",\"supplier_id\":\"25000000-0000-4000-8000-000000000041\",\"supplier_document_code_snapshot\":\"53\",\"released_at\":\"2026-09-01T08:00:00.000Z\",\"predecessor_revision_id\":\"25000000-0000-4000-8000-000000000052\",\"replaces_purchase_order_id\":\"fixture-hidden-predecessor\",\"replaced_by_purchase_order_id\":null}"
+            },
+            {
+              "address": "A4",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B4",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C4",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E4",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"60.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            },
+            {
+              "address": "A5",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B5",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C5",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E5",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000094\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000093\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000012\",\"ordered_quantity\":\"40.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            }
+          ]
+        }
+      ],
+      "sourceQuantities": ["60.000000", "40.000000"],
+      "exactSourceQuantityParity": "PASS"
+    },
+    {
+      "name": "PO-hidden-parsing-details_ing.pdf",
+      "sha256": "448b617d8218057a29ec088f650acb41ff9b9cfeace2168aae9dd476c9689aad",
+      "visibleStrings": [
+        "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+        "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+        "CHI TIẾT GIAO HÀNG (THEO HÀNG)",
+        "Nhà cung cấp: NCC An Phú",
+        "Ngày dùng: 02/09/2026",
+        "Số đơn: PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế",
+        "Mã NCC: 53",
+        "Gạo thơm (kg)",
+        "Trường học",
+        "Số lượng",
+        "TRƯỜNG: Trường Nguyễn Du\nBếp chính Nguyễn Du",
+        "Giao trước 05:30; hàng nguyên bao.",
+        "TRƯỜNG: Trường Trần Quốc Toản\nBếp chính Trần Quốc Toản",
+        "60",
+        "40"
+      ],
+      "quantities": ["60", "40"],
+      "xlsxQuantityParity": "PASS"
+    },
+    {
+      "name": "PO-hidden-parsing-details_school.xlsx",
+      "sha256": "17439d1f6e206324ced50ddbe76c6467c4238480fa9c992ac439f902bbe2a5bb",
+      "sheets": [
+        {
+          "name": "02-09-2026 - Theo trường",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "CHI TIẾT GIAO HÀNG",
+              "hidden": false
+            },
+            {
+              "address": "D5",
+              "value": "Ngày dùng:",
+              "hidden": false
+            },
+            {
+              "address": "E5",
+              "value": "02/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": "PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế · Mã NCC: 53",
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "STT",
+              "hidden": false
+            },
+            {
+              "address": "B9",
+              "value": "Mã hàng",
+              "hidden": false
+            },
+            {
+              "address": "C9",
+              "value": "Tên hàng",
+              "hidden": false
+            },
+            {
+              "address": "D9",
+              "value": "Đơn vị",
+              "hidden": false
+            },
+            {
+              "address": "E9",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "F9",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "G9",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "H9",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "I9",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "J9",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "K9",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "L9",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "M9",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "N9",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A10",
+              "value": "TRƯỜNG: Trường Nguyễn Du\nBếp chính Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C11",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E11",
+              "value": "60",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "60.000000"
+            },
+            {
+              "address": "F11",
+              "value": "Giao trước 05:30; hàng nguyên bao.",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "J11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "K11",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "60.000000",
+              "hidden": true
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A13",
+              "value": "TRƯỜNG: Trường Trần Quốc Toản\nBếp chính Trần Quốc Toản",
+              "hidden": false
+            },
+            {
+              "address": "A14",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B14",
+              "value": "1082",
+              "hidden": false,
+              "documentCode": true
+            },
+            {
+              "address": "C14",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "D14",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "E14",
+              "value": "40",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "40.000000"
+            },
+            {
+              "address": "G14",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true
+            },
+            {
+              "address": "H14",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true
+            },
+            {
+              "address": "I14",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true
+            },
+            {
+              "address": "J14",
+              "value": "25000000-0000-4000-8000-000000000022",
+              "hidden": true
+            },
+            {
+              "address": "K14",
+              "value": "25000000-0000-4000-8000-000000000012",
+              "hidden": true
+            },
+            {
+              "address": "M14",
+              "value": "40.000000",
+              "hidden": true
+            },
+            {
+              "address": "N14",
+              "value": "ITEM",
+              "hidden": true
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "state": "veryHidden",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C3",
+              "value": ""
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PO\",\"workbook_mode\":\"details_school\",\"purchase_order_id\":\"25000000-0000-4000-8000-000000000051\",\"purchase_order_revision_id\":\"25000000-0000-4000-8000-000000000053\",\"revision_number\":2,\"service_date\":\"2026-09-02\",\"document_number\":\"PO-20260902-2500000000004000\",\"status\":\"RELEASED_TO_SUPPLIER\",\"supplier_id\":\"25000000-0000-4000-8000-000000000041\",\"supplier_document_code_snapshot\":\"53\",\"released_at\":\"2026-09-01T08:00:00.000Z\",\"predecessor_revision_id\":\"25000000-0000-4000-8000-000000000052\",\"replaces_purchase_order_id\":\"fixture-hidden-predecessor\",\"replaced_by_purchase_order_id\":null}"
+            },
+            {
+              "address": "A4",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B4",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C4",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E4",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"60.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            },
+            {
+              "address": "A5",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B5",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C5",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E5",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000094\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000093\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000012\",\"ordered_quantity\":\"40.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            }
+          ]
+        }
+      ],
+      "sourceQuantities": ["60.000000", "40.000000"],
+      "exactSourceQuantityParity": "PASS"
+    },
+    {
+      "name": "PO-hidden-parsing-details_school.pdf",
+      "sha256": "b1dce4adc7ebb201a76a67a9b454cf885c10125d737a0ab325cf52c9f84ed62c",
+      "visibleStrings": [
+        "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+        "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+        "CHI TIẾT GIAO HÀNG",
+        "Nhà cung cấp: NCC An Phú",
+        "Ngày dùng: 02/09/2026",
+        "Số đơn: PO-20260902-2500000000004000 · v2 · ĐÃ PHÁT HÀNH — CHÍNH THỨC · Đơn thay thế",
+        "Mã NCC: 53",
+        "TRƯỜNG: Trường Nguyễn Du\nBếp chính Nguyễn Du",
+        "Tên hàng",
+        "Số lượng",
+        "Gạo thơm",
+        "Giao trước 05:30; hàng nguyên bao.",
+        "TRƯỜNG: Trường Trần Quốc Toản\nBếp chính Trần Quốc Toản",
+        "60",
+        "40"
+      ],
+      "quantities": ["60", "40"],
+      "xlsxQuantityParity": "PASS"
+    },
+    {
+      "name": "PXK-hidden-parsing.xlsx",
+      "sha256": "2fbb499a40f8676c57bd293a47326f63d991caa80bd2779675c32ca12f3fd8ec",
+      "sheets": [
+        {
+          "name": "Trường Tiểu học Nguyễn Du",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU XUẤT KHO",
+              "hidden": false
+            },
+            {
+              "address": "A5",
+              "value": "Số phiếu: PXK-20260924-2600000000004000",
+              "hidden": false
+            },
+            {
+              "address": "F5",
+              "value": "Ngày:",
+              "hidden": false
+            },
+            {
+              "address": "G5",
+              "value": "24/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "TRƯỜNG: Trường Tiểu học Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "A7",
+              "value": "Địa chỉ: Số 1 Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": {
+                "richText": [
+                  {
+                    "font": {
+                      "bold": true,
+                      "size": 11,
+                      "name": "Times New Roman"
+                    },
+                    "text": "ĐÃ PHÁT HÀNH — CHÍNH THỨC"
+                  },
+                  {
+                    "font": {
+                      "size": 11,
+                      "name": "Times New Roman"
+                    },
+                    "text": " · Điểm giao: Bếp chính Nguyễn Du\nPhiếu thay thế"
+                  }
+                ]
+              },
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "Stt",
+              "hidden": false
+            },
+            {
+              "address": "B9",
+              "value": "Tên thực phẩm",
+              "hidden": false
+            },
+            {
+              "address": "C9",
+              "value": "Đvt",
+              "hidden": false
+            },
+            {
+              "address": "D9",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "E9",
+              "value": "Tình trạng cảm quan",
+              "hidden": false
+            },
+            {
+              "address": "G9",
+              "value": "Biện pháp xử lý",
+              "hidden": false
+            },
+            {
+              "address": "H9",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "E10",
+              "value": "Đạt",
+              "hidden": false
+            },
+            {
+              "address": "F10",
+              "value": "K Đạt",
+              "hidden": false
+            },
+            {
+              "address": "I10",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "J10",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "K10",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "L10",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "M10",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "N10",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "O10",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "P10",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "C11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "100",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "100.000000"
+            },
+            {
+              "address": "E11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "F11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "H11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "I11",
+              "value": "26000000-0000-4000-8000-000000000003",
+              "hidden": true
+            },
+            {
+              "address": "J11",
+              "value": "26000000-0000-4000-8000-000000000006",
+              "hidden": true
+            },
+            {
+              "address": "K11",
+              "value": "26000000-0000-4000-8000-000000000007",
+              "hidden": true
+            },
+            {
+              "address": "L11",
+              "value": "26000000-0000-4000-8000-000000000001",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "26000000-0000-4000-8000-000000000002",
+              "hidden": true
+            },
+            {
+              "address": "O11",
+              "value": "100.000000",
+              "hidden": true
+            },
+            {
+              "address": "P11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A17",
+              "value": "Người nhận hàng",
+              "hidden": false
+            },
+            {
+              "address": "C17",
+              "value": "Người giao hàng",
+              "hidden": false
+            },
+            {
+              "address": "F17",
+              "value": "Người lập phiếu",
+              "hidden": false
+            },
+            {
+              "address": "A18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            },
+            {
+              "address": "C18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            },
+            {
+              "address": "F18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "state": "veryHidden",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "26000000-0000-4000-8000-000000000003"
+            },
+            {
+              "address": "C3",
+              "value": "Trường Tiểu học Nguyễn Du"
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"26000000-0000-4000-8000-000000000003\",\"document_number\":\"PXK-20260924-2600000000004000\",\"service_date\":\"2026-09-24\",\"school_id\":\"26000000-0000-4000-8000-000000000001\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":\"fixture-hidden-predecessor\",\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A4",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B4",
+              "value": "26000000-0000-4000-8000-000000000003"
+            },
+            {
+              "address": "C4",
+              "value": "Trường Tiểu học Nguyễn Du"
+            },
+            {
+              "address": "E4",
+              "value": "{\"school_dispatch_release_line_id\":\"fixture-hidden-dispatch-line\",\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            }
+          ]
+        }
+      ],
+      "sourceQuantities": ["100.000000"],
+      "exactSourceQuantityParity": "PASS"
+    },
+    {
+      "name": "PXK-hidden-parsing.pdf",
+      "sha256": "a5df4d38b51d4cc6bff9a9535c9b54777a171d28d4a5107c22a502846050c6f7",
+      "visibleStrings": [
+        "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+        "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+        "PHIẾU XUẤT KHO",
+        "Số phiếu: PXK-20260924-2600000000004000",
+        "Ngày: 24/09/2026",
+        "TRƯỜNG: Trường Tiểu học Nguyễn Du",
+        "Địa chỉ: Số 1 Nguyễn Du",
+        "Tên thực phẩm",
+        "Số lượng",
+        "Tình trạng cảm quan",
+        "Biện pháp xử lý",
+        "Gạo thơm",
+        "Người nhận hàng",
+        "(Ký, ghi họ tên)",
+        "Người giao hàng",
+        "Người lập phiếu",
+        "100"
+      ],
+      "quantities": ["100"],
+      "xlsxQuantityParity": "PASS"
+    },
+    {
+      "name": "PXK-hidden-parsing-batch.xlsx",
+      "sha256": "fdc8ae639de25707a71ab2b6da9071b93bc52ffd16d0759b025ee62eccfc8ddf",
+      "sheets": [
+        {
+          "name": "09-24 Trường thứ hai",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU XUẤT KHO",
+              "hidden": false
+            },
+            {
+              "address": "A5",
+              "value": "Số phiếu: PXK-FIXTURE-SECOND",
+              "hidden": false
+            },
+            {
+              "address": "F5",
+              "value": "Ngày:",
+              "hidden": false
+            },
+            {
+              "address": "G5",
+              "value": "24/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "TRƯỜNG: Trường thứ hai",
+              "hidden": false
+            },
+            {
+              "address": "A7",
+              "value": "Địa chỉ: Số 1 Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": {
+                "richText": [
+                  {
+                    "font": {
+                      "bold": true,
+                      "size": 11,
+                      "name": "Times New Roman"
+                    },
+                    "text": "ĐÃ PHÁT HÀNH — CHÍNH THỨC"
+                  },
+                  {
+                    "font": {
+                      "size": 11,
+                      "name": "Times New Roman"
+                    },
+                    "text": " · Điểm giao: Bếp chính Nguyễn Du\nPhiếu thay thế"
+                  }
+                ]
+              },
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "Stt",
+              "hidden": false
+            },
+            {
+              "address": "B9",
+              "value": "Tên thực phẩm",
+              "hidden": false
+            },
+            {
+              "address": "C9",
+              "value": "Đvt",
+              "hidden": false
+            },
+            {
+              "address": "D9",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "E9",
+              "value": "Tình trạng cảm quan",
+              "hidden": false
+            },
+            {
+              "address": "G9",
+              "value": "Biện pháp xử lý",
+              "hidden": false
+            },
+            {
+              "address": "H9",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "E10",
+              "value": "Đạt",
+              "hidden": false
+            },
+            {
+              "address": "F10",
+              "value": "K Đạt",
+              "hidden": false
+            },
+            {
+              "address": "I10",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "J10",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "K10",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "L10",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "M10",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "N10",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "O10",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "P10",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "C11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "100",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "100.000000"
+            },
+            {
+              "address": "E11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "F11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "H11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "I11",
+              "value": "fixture-hidden-second-release",
+              "hidden": true
+            },
+            {
+              "address": "J11",
+              "value": "26000000-0000-4000-8000-000000000006",
+              "hidden": true
+            },
+            {
+              "address": "K11",
+              "value": "26000000-0000-4000-8000-000000000007",
+              "hidden": true
+            },
+            {
+              "address": "L11",
+              "value": "26000000-0000-4000-8000-000000000001",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "26000000-0000-4000-8000-000000000002",
+              "hidden": true
+            },
+            {
+              "address": "O11",
+              "value": "100.000000",
+              "hidden": true
+            },
+            {
+              "address": "P11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A17",
+              "value": "Người nhận hàng",
+              "hidden": false
+            },
+            {
+              "address": "C17",
+              "value": "Người giao hàng",
+              "hidden": false
+            },
+            {
+              "address": "F17",
+              "value": "Người lập phiếu",
+              "hidden": false
+            },
+            {
+              "address": "A18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            },
+            {
+              "address": "C18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            },
+            {
+              "address": "F18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "09-24 Trường Tiểu học Nguyễn Du",
+          "orientation": "portrait",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+              "hidden": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU XUẤT KHO",
+              "hidden": false
+            },
+            {
+              "address": "A5",
+              "value": "Số phiếu: PXK-20260924-2600000000004000",
+              "hidden": false
+            },
+            {
+              "address": "F5",
+              "value": "Ngày:",
+              "hidden": false
+            },
+            {
+              "address": "G5",
+              "value": "24/09/2026",
+              "hidden": false
+            },
+            {
+              "address": "A6",
+              "value": "TRƯỜNG: Trường Tiểu học Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "A7",
+              "value": "Địa chỉ: Số 1 Nguyễn Du",
+              "hidden": false
+            },
+            {
+              "address": "A8",
+              "value": {
+                "richText": [
+                  {
+                    "font": {
+                      "bold": true,
+                      "size": 11,
+                      "name": "Times New Roman"
+                    },
+                    "text": "ĐÃ PHÁT HÀNH — CHÍNH THỨC"
+                  },
+                  {
+                    "font": {
+                      "size": 11,
+                      "name": "Times New Roman"
+                    },
+                    "text": " · Điểm giao: Bếp chính Nguyễn Du\nPhiếu thay thế"
+                  }
+                ]
+              },
+              "hidden": false
+            },
+            {
+              "address": "A9",
+              "value": "Stt",
+              "hidden": false
+            },
+            {
+              "address": "B9",
+              "value": "Tên thực phẩm",
+              "hidden": false
+            },
+            {
+              "address": "C9",
+              "value": "Đvt",
+              "hidden": false
+            },
+            {
+              "address": "D9",
+              "value": "Số lượng",
+              "hidden": false
+            },
+            {
+              "address": "E9",
+              "value": "Tình trạng cảm quan",
+              "hidden": false
+            },
+            {
+              "address": "G9",
+              "value": "Biện pháp xử lý",
+              "hidden": false
+            },
+            {
+              "address": "H9",
+              "value": "Ghi chú",
+              "hidden": false
+            },
+            {
+              "address": "E10",
+              "value": "Đạt",
+              "hidden": false
+            },
+            {
+              "address": "F10",
+              "value": "K Đạt",
+              "hidden": false
+            },
+            {
+              "address": "I10",
+              "value": "__document_id",
+              "hidden": true
+            },
+            {
+              "address": "J10",
+              "value": "__ingredient_id",
+              "hidden": true
+            },
+            {
+              "address": "K10",
+              "value": "__unit_id",
+              "hidden": true
+            },
+            {
+              "address": "L10",
+              "value": "__school_id",
+              "hidden": true
+            },
+            {
+              "address": "M10",
+              "value": "__location_id",
+              "hidden": true
+            },
+            {
+              "address": "N10",
+              "value": "__cooking_group_id",
+              "hidden": true
+            },
+            {
+              "address": "O10",
+              "value": "__exported_quantity",
+              "hidden": true
+            },
+            {
+              "address": "P10",
+              "value": "__row_kind",
+              "hidden": true
+            },
+            {
+              "address": "A11",
+              "value": 1,
+              "hidden": false
+            },
+            {
+              "address": "B11",
+              "value": "Gạo thơm",
+              "hidden": false
+            },
+            {
+              "address": "C11",
+              "value": "kg",
+              "hidden": false
+            },
+            {
+              "address": "D11",
+              "value": "100",
+              "hidden": false,
+              "quantity": true,
+              "sourceExact": "100.000000"
+            },
+            {
+              "address": "E11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "F11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "G11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "H11",
+              "value": "",
+              "hidden": false
+            },
+            {
+              "address": "I11",
+              "value": "26000000-0000-4000-8000-000000000003",
+              "hidden": true
+            },
+            {
+              "address": "J11",
+              "value": "26000000-0000-4000-8000-000000000006",
+              "hidden": true
+            },
+            {
+              "address": "K11",
+              "value": "26000000-0000-4000-8000-000000000007",
+              "hidden": true
+            },
+            {
+              "address": "L11",
+              "value": "26000000-0000-4000-8000-000000000001",
+              "hidden": true
+            },
+            {
+              "address": "M11",
+              "value": "26000000-0000-4000-8000-000000000002",
+              "hidden": true
+            },
+            {
+              "address": "O11",
+              "value": "100.000000",
+              "hidden": true
+            },
+            {
+              "address": "P11",
+              "value": "ITEM",
+              "hidden": true
+            },
+            {
+              "address": "A17",
+              "value": "Người nhận hàng",
+              "hidden": false
+            },
+            {
+              "address": "C17",
+              "value": "Người giao hàng",
+              "hidden": false
+            },
+            {
+              "address": "F17",
+              "value": "Người lập phiếu",
+              "hidden": false
+            },
+            {
+              "address": "A18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            },
+            {
+              "address": "C18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            },
+            {
+              "address": "F18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "state": "veryHidden",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "fixture-hidden-second-release"
+            },
+            {
+              "address": "C3",
+              "value": "09-24 Trường thứ hai"
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"fixture-hidden-second-release\",\"document_number\":\"PXK-FIXTURE-SECOND\",\"service_date\":\"2026-09-24\",\"school_id\":\"26000000-0000-4000-8000-000000000001\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":\"fixture-hidden-predecessor\",\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A4",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B4",
+              "value": "fixture-hidden-second-release"
+            },
+            {
+              "address": "C4",
+              "value": "09-24 Trường thứ hai"
+            },
+            {
+              "address": "E4",
+              "value": "{\"school_dispatch_release_line_id\":\"fixture-hidden-dispatch-line\",\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            },
+            {
+              "address": "A5",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B5",
+              "value": "26000000-0000-4000-8000-000000000003"
+            },
+            {
+              "address": "C5",
+              "value": "09-24 Trường Tiểu học Nguyễn Du"
+            },
+            {
+              "address": "E5",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"26000000-0000-4000-8000-000000000003\",\"document_number\":\"PXK-20260924-2600000000004000\",\"service_date\":\"2026-09-24\",\"school_id\":\"26000000-0000-4000-8000-000000000001\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":\"fixture-hidden-predecessor\",\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A6",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B6",
+              "value": "26000000-0000-4000-8000-000000000003"
+            },
+            {
+              "address": "C6",
+              "value": "09-24 Trường Tiểu học Nguyễn Du"
+            },
+            {
+              "address": "E6",
+              "value": "{\"school_dispatch_release_line_id\":\"fixture-hidden-dispatch-line\",\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            }
+          ]
+        }
+      ],
+      "sourceQuantities": ["100.000000", "100.000000"],
+      "exactSourceQuantityParity": "PASS"
+    }
+  ],
+  "shoppingImport": "Unchanged; Shopping List V2/A+ is outside this presentation follow-up",
+  "precisionExceptions": [],
+  "revision": "Hidden PO/PXK parsing metadata"
+}

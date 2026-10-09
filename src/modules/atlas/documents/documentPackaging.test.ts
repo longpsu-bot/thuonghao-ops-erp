@@ -41,9 +41,24 @@ describe("presentation-only released document packaging", () => {
         return book;
       }),
     );
-    expect(books.map((book) => book.worksheets.length).sort()).toEqual([1, 2]);
-    const paired = books.find((book) => book.worksheets.length === 2)!;
-    expect(paired.worksheets.map((sheet) => sheet.getCell("A6").text)).toEqual([
+    for (const book of books)
+      expect(book.getWorksheet("_ATLAS_META")?.state).toBe("veryHidden");
+    expect(
+      books
+        .map(
+          (book) => book.worksheets.filter((s) => s.state === "visible").length,
+        )
+        .sort(),
+    ).toEqual([1, 2]);
+    const paired = books.find(
+      (book) =>
+        book.worksheets.filter((s) => s.state === "visible").length === 2,
+    )!;
+    expect(
+      paired.worksheets
+        .filter((s) => s.state === "visible")
+        .map((sheet) => sheet.getCell("A6").text),
+    ).toEqual([
       "TRƯỜNG: Trường Tiểu học Nguyễn Du\nNẤU TẠI: Bếp X",
       "TRƯỜNG: Trường B\nNẤU TẠI: Bếp X",
     ]);
@@ -61,7 +76,10 @@ describe("presentation-only released document packaging", () => {
     for (const file of files) {
       const book = new ExcelJS.Workbook();
       await book.xlsx.load(await file.async("arraybuffer"));
-      expect(book.worksheets.map((s) => s.name)).toEqual(["02-09-2026 - Tổng"]);
+      expect(book.getWorksheet("_ATLAS_META")?.state).toBe("veryHidden");
+      expect(
+        book.worksheets.filter((s) => s.state === "visible").map((s) => s.name),
+      ).toEqual(["02-09-2026 - Tổng"]);
     }
     a.allowed_actions.export = false;
     await expect(createPurchaseOrderZip([a], "all")).rejects.toThrow();
@@ -88,7 +106,10 @@ describe("presentation-only released document packaging", () => {
     )[0]!;
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(await file.async("arraybuffer"));
-    expect(book.worksheets).toHaveLength(2);
+    expect(book.getWorksheet("_ATLAS_META")?.state).toBe("veryHidden");
+    expect(book.worksheets.filter((s) => s.state === "visible")).toHaveLength(
+      2,
+    );
     a.export_ready = false;
     await expect(createSchoolDispatchZip([a], "date")).rejects.toThrow();
     await expect(createSchoolDispatchZip([], "date")).rejects.toThrow();

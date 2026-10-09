@@ -104,7 +104,9 @@ describe("printed exact quantities", () => {
         expect(sheet.getColumn(3).width).toBeGreaterThan(36);
         expect(sheet.getColumn(5).width).toBeLessThan(12.71);
       } else {
-        expect(sheet.columnCount).toBe(6);
+        expect(sheet.columns.filter((column) => !column.hidden)).toHaveLength(
+          6,
+        );
         expect(sheet.getColumn(3).width).toBe(34);
         expect(sheet.getColumn(5).width).toBe(12);
         expect(sheet.getColumn(6).width).toBe(32);

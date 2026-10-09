@@ -111,7 +111,9 @@ describe("Atlas document presentation boundaries", () => {
     order.lines[0]!.ordered_quantity = "1.234567";
     order.lines[0]!.school_breakdown[0]!.ordered_quantity = "1.234567";
     const workbook = await book(await createPurchaseOrderXlsx(order));
-    for (const sheet of workbook.worksheets) {
+    for (const sheet of workbook.worksheets.filter(
+      (s) => s.state === "visible",
+    )) {
       expect(JSON.stringify(sheet.getSheetValues())).toContain(
         "ĐÃ ĐƯỢC THAY THẾ",
       );
@@ -188,7 +190,11 @@ describe("Atlas document presentation boundaries", () => {
     b.school_dispatch_release_id = "second-release";
     const workbook = await book(await createGroupedSchoolDispatchXlsx([b, a]));
     expect(
-      new Set(workbook.worksheets.map((s) => s.name.toLowerCase())).size,
+      new Set(
+        workbook.worksheets
+          .filter((s) => s.state === "visible")
+          .map((s) => s.name.toLowerCase()),
+      ).size,
     ).toBe(2);
   });
 

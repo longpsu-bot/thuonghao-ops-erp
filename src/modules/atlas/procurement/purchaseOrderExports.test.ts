@@ -16,7 +16,7 @@ describe("released purchase-order exports", () => {
     order.current_revision.supplier_document_code_snapshot = "W".repeat(200);
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(await createPurchaseOrderXlsx(order));
-    for (const sheet of book.worksheets) {
+    for (const sheet of book.worksheets.filter((s) => s.state === "visible")) {
       expect(sheet.getCell("A8").text).toContain("W".repeat(200));
       expect(sheet.getRow(8).height).toBeGreaterThanOrEqual(68);
     }
@@ -282,7 +282,7 @@ describe("released purchase-order exports", () => {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await createPurchaseOrderXlsx(order, mode));
       for (const sheet of workbook.worksheets.filter(
-        (s) => !s.name.endsWith("Tổng"),
+        (s) => s.state === "visible" && !s.name.endsWith("Tổng"),
       )) {
         expect(sheet.getCell("F9").value).toBe("Ghi chú");
         expect(sheet.getCell("F11").value).toBe(
@@ -298,15 +298,17 @@ describe("released purchase-order exports", () => {
         s.name.endsWith("Theo trường"),
       );
       if (schoolSheet) {
-        expect(schoolSheet.getRow(9).values).toEqual([
-          undefined,
-          "STT",
-          "Mã hàng",
-          "Tên hàng",
-          "Đơn vị",
-          "Số lượng",
-          "Ghi chú",
-        ]);
+        expect((schoolSheet.getRow(9).values as unknown[]).slice(0, 7)).toEqual(
+          [
+            undefined,
+            "STT",
+            "Mã hàng",
+            "Tên hàng",
+            "Đơn vị",
+            "Số lượng",
+            "Ghi chú",
+          ],
+        );
         expect(schoolSheet.getCell("A10").text).toContain(
           "TRƯỜNG: Trường Nguyễn Du",
         );
@@ -500,7 +502,11 @@ describe("released purchase-order exports", () => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(bytes);
 
-    expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
+    expect(
+      workbook.worksheets
+        .filter((s) => s.state === "visible")
+        .map((sheet) => sheet.name),
+    ).toEqual([
       "02-09-2026 - Theo hàng",
       "02-09-2026 - Theo trường",
       "02-09-2026 - Tổng",
