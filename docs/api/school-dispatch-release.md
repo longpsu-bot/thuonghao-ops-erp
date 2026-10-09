@@ -10,6 +10,12 @@
 
 **Document grain:** service date + School + delivery location
 
+New releases freeze nullable cooking-group ID/name from the single Admin-owned
+current membership. Shaped released reads expose `cooking_group_id` and
+`cooking_group_name`; later master changes cannot rewrite them. See the bounded
+[School cooking groups amendment](school-cooking-groups.md). Historical releases
+are never backfilled, and the preview/readiness contract is unchanged.
+
 ## Boundary
 
 This contract implements the minimum School/day `PHIẾU XUẤT KHO` capability. It is

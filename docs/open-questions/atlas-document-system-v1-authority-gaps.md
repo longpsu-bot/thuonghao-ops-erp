@@ -1,7 +1,13 @@
-# Document System V1 authority gaps — pending Owner decision
+# Document System V1 authority gaps
 
-Status: **Class C proposal, NOT APPROVED; implementation blocked.** This records
-decisions inside ATLAS-DOCUMENT-SYSTEM-01 / Draft PR #360, not a new task or API.
+Status: **Outward-code and PO-label decisions remain OPEN.** The Owner authorized
+the bounded School Cooking Group amendment on 9 October 2026; its implementation
+and verification are recorded in the existing task. This records decisions inside
+ATLAS-DOCUMENT-SYSTEM-01 / Draft PR #360.
+
+School Cooking Group / “Nấu tại”: **APPROVED BOUNDED CLASS C AMENDMENT**.
+The current optional authority and minimum released pair are implemented and
+verified. V1 membership adoption still requires actual retained reconciliation.
 The [Owner fidelity review](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/360#issuecomment-6053928763)
 remains NOT ACCEPTED. CI and visual checks cannot approve these business facts.
 
@@ -52,31 +58,42 @@ PXK already reads frozen issuer/address, School/location and line labels from it
 
 Read-only V1 exporters use `po_export_groups`, `po_export_group_members` and
 `dispatch_export_grouped`: `entity_key`, `entity_type`, `group_name_xlsx`,
-`delivery_info`, `sub_delivery`. Current PO breakdowns and PXK releases capture
-School and delivery-location identities/order, not this group identity or
-membership. Generic proposed SchoolGroup filtering and legacy `contract_type`
-do not establish released cooking-group membership. Contract type determines an
-issuer fact in the import design; it is not a grouping rule.
+`delivery_info`, `sub_delivery`. These establish a reconciliation need, not values
+that can be imported without comparison. Actual retained PO/Dispatch membership
+values are unavailable in the repository. The
+[reconciliation matrix](../testing/artifacts/atlas-document-system-01/cooking-group-revision/v1-reconciliation.csv)
+therefore contains column headings only. V1 adoption remains blocked. A PO versus
+Dispatch disagreement must be reported as `COOKING_GROUP_RECONCILIATION_REQUIRED`;
+no name, address, contract-type or issuer heuristic resolves it.
 
-The revision groups only captured School/location IDs and preserves each release.
-Equal names do not merge entities. Date/entity ZIP means date or captured
-School/location, never an inferred company cooking group.
+The Owner's bounded amendment defines one Admin authority: Cooking Group master
+records and zero or one current group per School. New PO School breakdowns and
+PXK headers capture group ID/name at release. Historical rows are not backfilled.
+Exporters read captured pairs only; absent pairs omit `NẤU TẠI`. Two Schools in
+one group remain distinct recipients. Dispatch entity ZIP can use the captured
+group ID to coordinate downloads while preserving each School/location release.
+See the [API contract](../api/school-cooking-groups.md) and
+[existing task](../implementation-tasks/TASK-ATLAS-DOCUMENT-SYSTEM-01.md) for the
+forward migration and acceptance evidence.
 
 ## Bounded Class C decisions required
 
-Owner approval must settle the following before implementation:
+Owner approval must still settle the following before their implementation:
 
 1. Define item/supplier outward-code meanings and the explicit legacy mapping;
    decide which code/label/address facts must freeze at PO release.
-2. Define cooking-group identity, recipient grain, membership authority and
-   effective date. Decide whether group membership freezes with the document or
-   merely coordinates downloads; no name/contract-type heuristic is proposed.
+2. Reconcile actual retained V1 PO and Dispatch membership before adopting data.
+   The current optional Admin membership and frozen document pair are authorized;
+   no effective dating or membership lifecycle is required by this amendment.
 3. Approve a versioned read/snapshot correction for PO labels and any added facts,
    including historical compatibility. Historical documents must be identified
    as unavailable where facts were never captured; no fabricated backfill.
 4. Decide supplier/destination address semantics and whether the exposed export
    scope should expand beyond the current selected date/Schools.
 
-The freeze's Class C gate applies. No migration, API envelope, release lifecycle,
-master lookup, production data, Backend 02C or live Supabase/Retool change is
-included. Rollback of this revision is exporter/UI presentation only.
+The freeze's Class C gate remains for the open decisions. The cooking-group
+amendment adds one forward migration and shaped Admin APIs; it does not alter
+release lifecycles, quantities or production data. No Staging deployment or Live
+OPS query/write is authorized. Rollback effects are stated in the existing task;
+future deployment would require a forward correction, never deletion of captured
+historical facts.

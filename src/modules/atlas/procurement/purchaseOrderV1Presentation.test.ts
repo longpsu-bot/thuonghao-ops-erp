@@ -34,7 +34,7 @@ describe("Owner V1 PO presentation revision", () => {
       workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("A10").text,
     ).toContain(item);
     expect(
-      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("D11").text,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("C11").text,
     ).toBe("Ức gà");
   });
   it("keeps plain summary headers after PDF rendering and allows the complete large quantity to print", async () => {
@@ -103,11 +103,11 @@ describe("Owner V1 PO presentation revision", () => {
     const workbook = await load(await createPurchaseOrderXlsx(order));
     for (const suffix of ["Theo hàng", "Theo trường"]) {
       const sheet = workbook.getWorksheet(`02-09-2026 - ${suffix}`)!;
-      expect(sheet.columnCount).toBe(7);
-      expect(sheet.model.merges).toContain("A10:G10");
-      expect(sheet.getCell("C11").value).toBe(1);
-      expect(sheet.getCell("A11").text).toBe("");
-      expect(sheet.getCell("F11").value).toBe("60");
+      expect(sheet.columnCount).toBe(6);
+      expect(sheet.model.merges).toContain("A10:F10");
+      expect(sheet.getCell("A11").value).toBe(1);
+      expect(sheet.getCell("B11").text).toBe("");
+      expect(sheet.getCell("E11").value).toBe("60");
       expect(sheet.pageSetup.orientation).toBe("portrait");
     }
     expect(

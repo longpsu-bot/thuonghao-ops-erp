@@ -1,0 +1,194 @@
+BEGIN
+psql:/tmp/ui_quality_03c_a_school_defaults_bulk_editor.sql:3: NOTICE:  schema "extensions" already exists, skipping
+CREATE SCHEMA
+CREATE EXTENSION
+ no_plan
+---------
+(0 rows)
+
+                                           ok
+-----------------------------------------------------------------------------------------
+ ok 1 - 03C-A bulk command is an empty-search-path definer owned by the existing runtime
+(1 row)
+
+                        ok
+---------------------------------------------------
+ ok 2 - authenticated may execute the bulk command
+(1 row)
+
+                     ok
+---------------------------------------------
+ ok 3 - anon cannot execute the bulk command
+(1 row)
+
+                         ok
+-----------------------------------------------------
+ ok 4 - service_role cannot execute the bulk command
+(1 row)
+
+                                    is
+---------------------------------------------------------------------------
+ ok 5 - the existing active master_data.schools.write capability is reused
+(1 row)
+
+                        ok
+--------------------------------------------------
+ ok 6 - no bulk-specific School capability exists
+(1 row)
+
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 3
+SELECT 1
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+SET
+              set_config
+--------------------------------------
+ c3100000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                                        is
+----------------------------------------------------------------------------------
+ ok 7 - an authenticated authorized Actor can save two changed Schools atomically
+(1 row)
+
+                                     is
+-----------------------------------------------------------------------------
+ ok 8 - both changed Schools update and each version increments exactly once
+(1 row)
+
+                                   ok
+-------------------------------------------------------------------------
+ ok 9 - one-field edits preserve the other value sent by the Application
+(1 row)
+
+                                  is
+-----------------------------------------------------------------------
+ ok 10 - the untouched School remains byte-for-business-fact unchanged
+(1 row)
+
+                             is
+------------------------------------------------------------
+ ok 11 - success returns authoritative updated School facts
+(1 row)
+
+                             is
+-------------------------------------------------------------
+ ok 12 - one bulk Save creates one completed command receipt
+(1 row)
+
+                               is
+-----------------------------------------------------------------
+ ok 13 - one School domain event exists for every changed School
+(1 row)
+
+                                 is
+--------------------------------------------------------------------
+ ok 14 - one versioned audit record exists for every changed School
+(1 row)
+
+                    is
+------------------------------------------
+ ok 15 - an empty change list is rejected
+(1 row)
+
+                   is
+----------------------------------------
+ ok 16 - a duplicate School is rejected
+(1 row)
+
+                                 is
+---------------------------------------------------------------------
+ ok 17 - a malformed School identity and negative count are rejected
+(1 row)
+
+                         is
+----------------------------------------------------
+ ok 18 - a missing row expected_version is rejected
+(1 row)
+
+                           is
+---------------------------------------------------------
+ ok 19 - one missing School rejects the complete command
+(1 row)
+
+                                  is
+-----------------------------------------------------------------------
+ ok 20 - missing and stale batch failures leave every School unchanged
+(1 row)
+
+                                  is
+----------------------------------------------------------------------
+ ok 21 - missing and stale failures create no domain or audit changes
+(1 row)
+
+                                    is
+--------------------------------------------------------------------------
+ ok 22 - one stale School rejects the complete command with STALE_VERSION
+(1 row)
+
+                                     is
+----------------------------------------------------------------------------
+ ok 23 - stale response safely identifies the affected School by human name
+(1 row)
+
+                                    is
+--------------------------------------------------------------------------
+ ok 24 - an exact idempotent replay returns the stored successful outcome
+(1 row)
+
+                                     ok
+-----------------------------------------------------------------------------
+ ok 25 - idempotent replay does not increment versions or duplicate evidence
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ c3100000-0000-0000-0000-000000000102
+(1 row)
+
+INSERT 0 1
+RESET
+                                  is
+----------------------------------------------------------------------
+ ok 26 - the existing School write capability is enforced server-side
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ c3100000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                          is
+--------------------------------------------------------------------------------------
+ ok 27 - the existing RMVP-01.v1 single-School command remains callable and unchanged
+(1 row)
+
+ finish
+--------
+ 1..27
+(1 row)
+
+ROLLBACK

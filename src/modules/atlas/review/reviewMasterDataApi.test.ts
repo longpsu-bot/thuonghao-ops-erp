@@ -3,6 +3,8 @@ import {
   commandRequest,
   responseArray,
   type IngredientMasterData,
+  type CookingGroupMasterData,
+  type SchoolMasterData,
   type IngredientOrderGroupMasterData,
   type IngredientTypeMasterData,
   type SupplierMasterData,
@@ -11,6 +13,155 @@ import {
 import { createReviewMasterDataApi } from "./reviewMasterDataApi";
 
 describe("review-only master-data adapter", () => {
+  it("allows distinct same-name cooking groups and returns the exact ID for idempotent command replay", async () => {
+    const api = createReviewMasterDataApi();
+    const first = commandRequest(
+      "reviewer",
+      "review",
+      1,
+      "COOKING_GROUP_SAVED",
+      {
+        cooking_group_id: null,
+        cooking_group_name: "Bếp trùng tên",
+        active: true,
+      },
+    );
+    const second = commandRequest(
+      "reviewer",
+      "review",
+      1,
+      "COOKING_GROUP_SAVED",
+      {
+        cooking_group_id: null,
+        cooking_group_name: "Bếp trùng tên",
+        active: true,
+      },
+    );
+    const result = await api.upsertCookingGroup(first);
+    expect(result).toMatchObject({
+      kind: "success",
+      response: {
+        command_id: first.command_id,
+        affected_aggregate_ids: { cooking_group_id: expect.any(String) },
+      },
+    });
+    expect((await api.upsertCookingGroup(second)).kind).toBe("success");
+    expect(await api.upsertCookingGroup(first)).toEqual(result);
+    const rows = responseArray<CookingGroupMasterData>(
+      await api.getCookingGroups("reviewer", "review"),
+      "cooking_groups",
+    )!;
+    expect(rows).toHaveLength(2);
+    expect(new Set(rows.map((group) => group.cooking_group_id)).size).toBe(2);
+    expect(rows.map((group) => group.cooking_group_name)).toEqual([
+      "Bếp trùng tên",
+      "Bếp trùng tên",
+    ]);
+  });
+  it("keeps explicit cooking groups and School assignments inside the review session", async () => {
+    const api = createReviewMasterDataApi();
+    const initial = responseArray<SchoolMasterData>(
+      await api.getSchools("reviewer", "review"),
+      "schools",
+    )![0]!;
+    expect(
+      (
+        await api.upsertCookingGroup(
+          commandRequest("reviewer", "review", 1, "COOKING_GROUP_SAVED", {
+            cooking_group_id: null,
+            cooking_group_name: "Bếp thử",
+            active: true,
+          }),
+        )
+      ).kind,
+    ).toBe("success");
+    const group = responseArray<CookingGroupMasterData>(
+      await api.getCookingGroups("reviewer", "review"),
+      "cooking_groups",
+    )![0]!;
+    expect(
+      (
+        await api.setSchoolCookingGroup(
+          commandRequest(
+            "reviewer",
+            "review",
+            initial.version,
+            "SCHOOL_COOKING_GROUP_SET",
+            {
+              school_id: initial.school_id,
+              cooking_group_id: group.cooking_group_id,
+            },
+          ),
+        )
+      ).kind,
+    ).toBe("success");
+    const assigned = responseArray<SchoolMasterData>(
+      await api.getSchools("reviewer", "review"),
+      "schools",
+    )![0]!;
+    expect(assigned).toMatchObject({
+      cooking_group_id: group.cooking_group_id,
+      cooking_group_name: "Bếp thử",
+      version: initial.version + 1,
+    });
+    expect(
+      await api.upsertCookingGroup(
+        commandRequest(
+          "reviewer",
+          "review",
+          group.version,
+          "COOKING_GROUP_SAVED",
+          {
+            cooking_group_id: group.cooking_group_id,
+            cooking_group_name: "Bếp thử",
+            active: false,
+          },
+        ),
+      ),
+    ).toMatchObject({
+      kind: "backend_error",
+      error: { error_code: "COOKING_GROUP_HAS_MEMBERS" },
+    });
+    expect(
+      (
+        await api.setSchoolCookingGroup(
+          commandRequest(
+            "reviewer",
+            "review",
+            assigned.version,
+            "SCHOOL_COOKING_GROUP_SET",
+            { school_id: initial.school_id, cooking_group_id: null },
+          ),
+        )
+      ).kind,
+    ).toBe("success");
+    expect(
+      (
+        await api.upsertCookingGroup(
+          commandRequest(
+            "reviewer",
+            "review",
+            group.version,
+            "COOKING_GROUP_SAVED",
+            {
+              cooking_group_id: group.cooking_group_id,
+              cooking_group_name: "Bếp thử",
+              active: false,
+            },
+          ),
+        )
+      ).kind,
+    ).toBe("success");
+    expect(
+      responseArray(
+        await createReviewMasterDataApi().getCookingGroups(
+          "reviewer",
+          "review",
+        ),
+        "cooking_groups",
+      ),
+    ).toEqual([]);
+  });
   it("accepts code-free Ingredient and Supplier creation while preserving controlled explicit codes", async () => {
     const api = createReviewMasterDataApi();
     const initial = await api.getIngredientsAndSuppliers("reviewer", "review");

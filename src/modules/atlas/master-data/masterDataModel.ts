@@ -6,6 +6,8 @@ import type {
 } from "./masterDataApi";
 
 export type SchoolMasterData = {
+  cooking_group_id?: string | null;
+  cooking_group_name?: string | null;
   school_id: string;
   school_code: string;
   school_name: string;
@@ -24,6 +26,13 @@ export type SchoolMasterData = {
   delivery_address: string;
   delivery_instructions: string | null;
   contract_context: string | null;
+};
+
+export type CookingGroupMasterData = {
+  cooking_group_id: string;
+  cooking_group_name: string;
+  active: boolean;
+  version: number;
 };
 
 export type SupplierPriority = {
@@ -98,6 +107,8 @@ export function responseArray<T>(
 
 export function resultMessage(result: AtlasRpcResult) {
   if (result.kind === "backend_error") {
+    if (result.error.error_code === "COOKING_GROUP_HAS_MEMBERS")
+      return "Nhóm nấu vẫn còn trường được gán. Hãy bỏ hoặc đổi nhóm của các trường trước khi ngừng hoạt động.";
     if (result.error.error_code === "CAPABILITY_DENIED")
       return "Bạn không có quyền thực hiện thao tác này.";
     if (result.error.error_code === "SCOPE_DENIED")

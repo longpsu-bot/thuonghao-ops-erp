@@ -1,0 +1,194 @@
+BEGIN
+CREATE EXTENSION
+SET
+ no_plan
+---------
+(0 rows)
+
+                           is
+--------------------------------------------------------
+ ok 1 - D01 03A: NULL
+ ok 2 - D01 03B: NULL
+ ok 3 - D01 Pantry: NULL
+ ok 4 - D01 03A: empty
+ ok 5 - D01 03B: empty
+ ok 6 - D01 Pantry: empty
+ ok 7 - D01 03A: spaces
+ ok 8 - D01 03B: spaces
+ ok 9 - D01 Pantry: spaces
+ ok 10 - D01 03A: ASCII
+ ok 11 - D01 03B: ASCII
+ ok 12 - D01 Pantry: ASCII
+ ok 13 - D01 03A: trim
+ ok 14 - D01 03B: trim
+ ok 15 - D01 Pantry: trim
+ ok 16 - D01 03A: Vietnamese NFC
+ ok 17 - D01 03B: Vietnamese NFC
+ ok 18 - D01 Pantry: Vietnamese NFC
+ ok 19 - D01 03A: decomposed Vietnamese
+ ok 20 - D01 03B: decomposed Vietnamese
+ ok 21 - D01 Pantry: decomposed Vietnamese
+ ok 22 - D01 03A: already normalized
+ ok 23 - D01 03B: already normalized
+ ok 24 - D01 Pantry: already normalized
+ ok 25 - D01 03A: blank after trim
+ ok 26 - D01 03B: blank after trim
+ ok 27 - D01 Pantry: blank after trim
+ ok 28 - D01 03A: tabs retain current btrim contract
+ ok 29 - D01 03B: tabs retain current btrim contract
+ ok 30 - D01 Pantry: tabs retain current btrim contract
+(30 rows)
+
+                  is
+--------------------------------------
+ ok 31 - D02 03A: SQL NULL
+ ok 32 - D02 03B: SQL NULL
+ ok 33 - D02 Pantry: SQL NULL
+ ok 34 - D02 03A: JSON null
+ ok 35 - D02 03B: JSON null
+ ok 36 - D02 Pantry: JSON null
+ ok 37 - D02 03A: object
+ ok 38 - D02 03B: object
+ ok 39 - D02 Pantry: object
+ ok 40 - D02 03A: empty array
+ ok 41 - D02 03B: empty array
+ ok 42 - D02 Pantry: empty array
+ ok 43 - D02 03A: nested
+ ok 44 - D02 03B: nested
+ ok 45 - D02 Pantry: nested
+ ok 46 - D02 03A: array
+ ok 47 - D02 03B: array
+ ok 48 - D02 Pantry: array
+ ok 49 - D02 03A: number
+ ok 50 - D02 03B: number
+ ok 51 - D02 Pantry: number
+ ok 52 - D02 03A: boolean
+ ok 53 - D02 03B: boolean
+ ok 54 - D02 Pantry: boolean
+ ok 55 - D02 03A: Vietnamese UTF-8
+ ok 56 - D02 03B: Vietnamese UTF-8
+ ok 57 - D02 Pantry: Vietnamese UTF-8
+ ok 58 - D02 03A: object order A
+ ok 59 - D02 03B: object order A
+ ok 60 - D02 Pantry: object order A
+ ok 61 - D02 03A: object order B
+ ok 62 - D02 03B: object order B
+ ok 63 - D02 Pantry: object order B
+(33 rows)
+
+                            is
+----------------------------------------------------------
+ ok 64 - SQL NULL hashes UTF-8 JSON null in lowercase hex
+(1 row)
+
+                     is
+--------------------------------------------
+ ok 65 - D03 readiness: NULL
+ ok 66 - D03 generation: NULL
+ ok 67 - D03 readiness: blank
+ ok 68 - D03 generation: blank
+ ok 69 - D03 readiness: spaces
+ ok 70 - D03 generation: spaces
+ ok 71 - D03 readiness: normal
+ ok 72 - D03 generation: normal
+ ok 73 - D03 readiness: leap
+ ok 74 - D03 generation: leap
+ ok 75 - D03 readiness: non-leap
+ ok 76 - D03 generation: non-leap
+ ok 77 - D03 readiness: month 13
+ ok 78 - D03 generation: month 13
+ ok 79 - D03 readiness: month zero
+ ok 80 - D03 generation: month zero
+ ok 81 - D03 readiness: day 32
+ ok 82 - D03 generation: day 32
+ ok 83 - D03 readiness: short month
+ ok 84 - D03 generation: short month
+ ok 85 - D03 readiness: reversed
+ ok 86 - D03 generation: reversed
+ ok 87 - D03 readiness: timestamp
+ ok 88 - D03 generation: timestamp
+ ok 89 - D03 readiness: text
+ ok 90 - D03 generation: text
+ ok 91 - D03 readiness: surrounding spaces
+ ok 92 - D03 generation: surrounding spaces
+(28 rows)
+
+                                  ok
+-----------------------------------------------------------------------
+ ok 93 - authenticated cannot execute private pantry_02_normalize_text
+ ok 94 - anon cannot execute private pantry_02_normalize_text
+ ok 95 - service_role cannot execute private pantry_02_normalize_text
+ ok 96 - authenticated cannot execute private pantry_02_sha256
+ ok 97 - anon cannot execute private pantry_02_sha256
+ ok 98 - service_role cannot execute private pantry_02_sha256
+ ok 99 - authenticated cannot execute private rmvp_03a_normalize_text
+ ok 100 - anon cannot execute private rmvp_03a_normalize_text
+ ok 101 - service_role cannot execute private rmvp_03a_normalize_text
+ ok 102 - authenticated cannot execute private rmvp_03a_sha256
+ ok 103 - anon cannot execute private rmvp_03a_sha256
+ ok 104 - service_role cannot execute private rmvp_03a_sha256
+ ok 105 - authenticated cannot execute private rmvp_03b_normalize_text
+ ok 106 - anon cannot execute private rmvp_03b_normalize_text
+ ok 107 - service_role cannot execute private rmvp_03b_normalize_text
+ ok 108 - authenticated cannot execute private rmvp_03b_safe_date
+ ok 109 - anon cannot execute private rmvp_03b_safe_date
+ ok 110 - service_role cannot execute private rmvp_03b_safe_date
+ ok 111 - authenticated cannot execute private rmvp_03b_sha256
+ ok 112 - anon cannot execute private rmvp_03b_sha256
+ ok 113 - service_role cannot execute private rmvp_03b_sha256
+ ok 114 - authenticated cannot execute private rmvp_04_safe_date
+ ok 115 - anon cannot execute private rmvp_04_safe_date
+ ok 116 - service_role cannot execute private rmvp_04_safe_date
+(24 rows)
+
+                          ok
+------------------------------------------------------
+ ok 117 - D03 generation cannot call readiness parser
+(1 row)
+
+                         ok
+-----------------------------------------------------
+ ok 118 - D03 Planning cannot call generation parser
+(1 row)
+
+GRANT ROLE
+SET
+                    is
+-------------------------------------------
+ ok 119 - Planning executes 03B normalizer
+(1 row)
+
+                           is
+--------------------------------------------------------
+ ok 120 - Planning executes 03B hash and canonical hash
+(1 row)
+
+                      is
+----------------------------------------------
+ ok 121 - Planning executes Pantry normalizer
+(1 row)
+
+                   is
+----------------------------------------
+ ok 122 - Planning executes Pantry hash
+(1 row)
+
+RESET
+SET
+                    is
+------------------------------------------
+ ok 123 - read executes Pantry normalizer
+(1 row)
+
+                 is
+------------------------------------
+ ok 124 - read executes Pantry hash
+(1 row)
+
+RESET
+ finish
+--------
+ 1..124
+(1 row)
+
+ROLLBACK

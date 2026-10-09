@@ -144,6 +144,9 @@ export type PurchaseOrderLine = {
     school_id: string;
     school_name: string;
     school_display_order: number;
+    /** Captured at PO release; absent on pre-amendment historical snapshots. */
+    cooking_group_id?: string | null;
+    cooking_group_name?: string | null;
     delivery_location_id: string;
     delivery_location_name: string;
     ordered_quantity: ExactQuantity;

@@ -3,9 +3,54 @@ import {
   createSchoolDispatchReleaseApi,
   releaseSchoolDispatchDocumentRequest,
   schoolDispatchReleaseReadRequest,
+  schoolDispatchWorkbenchFromResult,
 } from "./schoolDispatchReleaseApi";
+import { createReviewSchoolDispatchWorkbench } from "./reviewSchoolDispatchReleaseApi";
+import { buildSchoolDispatchPdfDefinition } from "./schoolDispatchReleaseExports";
 
 describe("School dispatch release API", () => {
+  it("exports historical captured grouping after current membership changes or disappears", () => {
+    const response = createReviewSchoolDispatchWorkbench("current");
+    Object.assign(response.rows[0]!.preview, {
+      cooking_group_id: "group-y",
+      cooking_group_name: "Bếp Y hiện tại",
+    });
+    Object.assign(response.rows[0]!.current_release!, {
+      cooking_group_id: "group-x",
+      cooking_group_name: "Bếp X lúc phát hành",
+    });
+    const legacy = structuredClone(response.rows[0]!.current_release!);
+    delete legacy.cooking_group_id;
+    delete legacy.cooking_group_name;
+    response.rows[0]!.history.push(legacy);
+    const parsed = schoolDispatchWorkbenchFromResult({
+      kind: "success",
+      response: JSON.parse(JSON.stringify(response)),
+    })!;
+    const historical = JSON.stringify(
+      buildSchoolDispatchPdfDefinition(parsed.rows[0]!.current_release!),
+    );
+    expect(historical).toContain("NẤU TẠI: Bếp X lúc phát hành");
+    expect(historical).not.toContain("Bếp Y hiện tại");
+    expect(
+      JSON.stringify(
+        buildSchoolDispatchPdfDefinition(parsed.rows[0]!.history[1]!),
+      ),
+    ).not.toContain("NẤU TẠI:");
+    Object.assign(response.rows[0]!.preview, {
+      cooking_group_id: null,
+      cooking_group_name: null,
+    });
+    const removed = schoolDispatchWorkbenchFromResult({
+      kind: "success",
+      response: JSON.parse(JSON.stringify(response)),
+    })!;
+    expect(
+      JSON.stringify(
+        buildSchoolDispatchPdfDefinition(removed.rows[0]!.current_release!),
+      ),
+    ).toContain("NẤU TẠI: Bếp X lúc phát hành");
+  });
   it("builds the bounded School/date workbench request", () => {
     expect(
       schoolDispatchReleaseReadRequest("subject-1", "correlation-1", {

@@ -6,8 +6,10 @@ import type {
 import type {
   MasterDataApi,
   MasterDataBulkCommandRequest,
+  MasterDataCommandRequest,
 } from "../master-data/masterDataApi";
 import type {
+  CookingGroupMasterData,
   IngredientMasterData,
   IngredientOrderGroupMasterData,
   IngredientTypeMasterData,
@@ -347,7 +349,11 @@ function success(
 }
 
 function backendError(
-  errorCode: "CAPABILITY_DENIED" | "STALE_VERSION" | "VALIDATION_FAILED",
+  errorCode:
+    | "CAPABILITY_DENIED"
+    | "STALE_VERSION"
+    | "VALIDATION_FAILED"
+    | "COOKING_GROUP_HAS_MEMBERS",
 ): AtlasRpcResult {
   return {
     kind: "backend_error",
@@ -408,6 +414,11 @@ function payloadArray(
 export function createReviewMasterDataApi(
   scenario: AtlasReviewScenario = "ready",
 ): MasterDataApi {
+  let cookingGroups: CookingGroupMasterData[] = [];
+  const cookingGroupReceipts = new Map<
+    string,
+    { request: MasterDataCommandRequest; result: AtlasRpcResult }
+  >();
   let schools = createSchools();
   let suppliers = createSuppliers();
   let ingredients = createIngredients(suppliers);
@@ -424,6 +435,86 @@ export function createReviewMasterDataApi(
     });
 
   return {
+    getCookingGroups() {
+      const blocked = readBlock();
+      return Promise.resolve(
+        blocked ?? success({ cooking_groups: clone(cookingGroups) }),
+      );
+    },
+    upsertCookingGroup(request) {
+      const blocked = writeBlock();
+      if (blocked) return Promise.resolve(blocked);
+      const receipt = cookingGroupReceipts.get(request.command_id);
+      if (receipt)
+        return Promise.resolve(
+          JSON.stringify(receipt.request) === JSON.stringify(request)
+            ? clone(receipt.result)
+            : backendError("VALIDATION_FAILED"),
+        );
+      const id = payloadString(request, "cooking_group_id");
+      const name = payloadString(request, "cooking_group_name").trim();
+      const active = request.payload.active === true;
+      const group = cookingGroups.find((row) => row.cooking_group_id === id);
+      if (!name || name.length > 200 || (id && !group))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+      if (request.expected_version !== (group?.version ?? 1))
+        return Promise.resolve(backendError("STALE_VERSION"));
+      if (!active && schools.some((school) => school.cooking_group_id === id))
+        return Promise.resolve(backendError("COOKING_GROUP_HAS_MEMBERS"));
+      const savedGroup = {
+        cooking_group_id: id || crypto.randomUUID(),
+        cooking_group_name: name,
+        active,
+        version: group ? group.version + 1 : 1,
+      };
+      cookingGroups = [
+        ...cookingGroups.filter(
+          (row) => row.cooking_group_id !== savedGroup.cooking_group_id,
+        ),
+        savedGroup,
+      ];
+      schools = schools.map((school) =>
+        school.cooking_group_id === savedGroup.cooking_group_id
+          ? { ...school, cooking_group_name: name }
+          : school,
+      );
+      const result = success({
+        command_id: request.command_id,
+        affected_aggregate_ids: {
+          cooking_group_id: savedGroup.cooking_group_id,
+        },
+      });
+      cookingGroupReceipts.set(request.command_id, {
+        request: clone(request),
+        result: clone(result),
+      });
+      return Promise.resolve(result);
+    },
+    setSchoolCookingGroup(request) {
+      const blocked = writeBlock();
+      if (blocked) return Promise.resolve(blocked);
+      const id = payloadString(request, "school_id");
+      const index = schools.findIndex((school) => school.school_id === id);
+      const groupId = payloadString(request, "cooking_group_id");
+      const group = cookingGroups.find(
+        (row) => row.cooking_group_id === groupId,
+      );
+      if (
+        index < 0 ||
+        schools[index].school_status !== "ACTIVE" ||
+        (groupId && !group?.active)
+      )
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+      if (request.expected_version !== schools[index].version)
+        return Promise.resolve(backendError("STALE_VERSION"));
+      schools[index] = {
+        ...schools[index],
+        cooking_group_id: group?.cooking_group_id ?? null,
+        cooking_group_name: group?.cooking_group_name ?? null,
+        version: schools[index].version + 1,
+      };
+      return Promise.resolve(saved());
+    },
     getSchools() {
       if (scenario === "loading") return pendingResult();
       const blocked = readBlock();

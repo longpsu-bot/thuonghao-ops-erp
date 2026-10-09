@@ -12,6 +12,42 @@ async function entries(bytes: Uint8Array) {
   );
 }
 describe("presentation-only released document packaging", () => {
+  it("packages captured cooking-group identity without collapsing two School documents or matching names", async () => {
+    const a = createReviewSchoolDispatchDocument("RELEASED");
+    Object.assign(a, {
+      cooking_group_id: "group-x",
+      cooking_group_name: "Bếp X",
+    });
+    const b = structuredClone(a);
+    b.school_dispatch_release_id = "release-b";
+    b.school_id = "school-b";
+    b.school_name = "Trường B";
+    b.school_display_order = 2;
+    b.delivery_location_id = "location-b";
+    b.document_number = "PXK-B";
+    const c = structuredClone(b);
+    c.school_dispatch_release_id = "release-c";
+    c.document_number = "PXK-C";
+    Object.assign(c, { cooking_group_id: "different-id-same-name" });
+    const files = await entries(
+      await createSchoolDispatchZip([c, b, a], "entity"),
+    );
+    expect(files).toHaveLength(2);
+    expect(files.map((file) => file.name).join()).toContain("Bep-X");
+    const books = await Promise.all(
+      files.map(async (file) => {
+        const book = new ExcelJS.Workbook();
+        await book.xlsx.load(await file.async("arraybuffer"));
+        return book;
+      }),
+    );
+    expect(books.map((book) => book.worksheets.length).sort()).toEqual([1, 2]);
+    const paired = books.find((book) => book.worksheets.length === 2)!;
+    expect(paired.worksheets.map((sheet) => sheet.getCell("A6").text)).toEqual([
+      "TRƯỜNG: Trường Tiểu học Nguyễn Du\nNẤU TẠI: Bếp X",
+      "TRƯỜNG: Trường B\nNẤU TẠI: Bếp X",
+    ]);
+  });
   it("keeps official PO commitments separate and selects V1 sheets", async () => {
     const a =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;

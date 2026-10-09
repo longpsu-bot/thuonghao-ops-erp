@@ -1,6 +1,131 @@
 # ATLAS-DOCUMENT-SYSTEM-01
 
-## Current Owner fidelity revision
+## Owner cooking-group / School-band amendment — 9 October 2026
+
+Implementation is complete and locally verified on the same
+`feat/atlas-document-system-01` branch and Draft PR #360. Owner product/visual
+acceptance remains pending; final exact-head GitHub validation is recorded on the
+PR's checks and description. Starting main: `343f2b1ee743ee59a382708b7ab94321915e75f2`;
+reviewed PR head: `240cd88067903467293e93ce20c277d30b91bd7b`.
+The authorized checkout is `D:/Project/Repo/OPS/thuonghao-ops-erp`. It was switched
+from the clean unrelated Shopping List branch as explicitly instructed, then
+verified clean, at the reviewed head, with latest `origin/main` as an ancestor.
+
+This Owner instruction supersedes the earlier presentation-only prohibition
+against backend changes **only** for one Admin-owned optional current School
+cooking-group assignment and its immutable released-document snapshots. It does
+not approve deployment, V1 data adoption, outward codes or PO label repair.
+
+Implementation scope and acceptance:
+
+- [x] One current Cooking Group master and School membership authority. No
+      effective dating, approval lifecycle or per-document group authority.
+      Existing Admin capabilities, forced RLS, shaped APIs and command safety.
+- [x] Extend existing School Admin with optional controlled `Nấu tại` assignment
+      and compact group maintenance; backend remains authoritative.
+- [x] Freeze group ID/name on new released PO School contributions and PXK
+      headers. Preserve historical rows, School lineage and PXK grain.
+- [x] PO School bands replace repeated School cells where identity is established.
+      `Ghi chú` uses frozen supplier note, including null/multiline/boundary cases.
+      Ingredient comparison keeps necessary School identity.
+- [x] PXK School header shows captured `Nấu tại` only when grouped. Blank physical
+      row notes retain inspection meanings, writing space and signatures;
+      document release note appears once outside the item rows.
+- [x] CLI-generated forward migration, chronological disposable replay, Admin
+      and snapshot/security pgTAP, relevant 02B/02D and document/Shopping regression.
+- [x] Production-builder XLSX/PDF specimens, native Excel open/save/reopen,
+      pagination and full visual review; format/typecheck/build/frontend tests.
+- [x] Update this record and existing authority gaps truthfully.
+
+Delivery gate: commit/push only the same branch and require exact-final-head
+GitHub CI before recommending acceptance. Keep PR Draft for the Owner; do not
+merge, deploy or adopt V1 memberships automatically.
+
+Allowed files: new forward migration and focused SQL tests/catalog registrations;
+existing Admin API/model/School UI; PO/PXK read types/exporters and their tests;
+existing specimen certification tooling; affected API/documentation and evidence.
+No Shopping List contract/geometry/import change, Allocation writer/precision,
+Need, Recipe, Unit, PO commitment, PXK readiness, replacement/cancellation,
+Warehouse, Retool, Live OPS or hosted Staging change.
+
+Staging baseline is Owner-provided and independently verified before this task:
+94 migrations, tip `20261008015340_atlas_backend_convergence_02b_allocation`.
+This task must not redeploy or rediscover hosted data. Local synthetic verification
+does not certify hosted acceptance. Remaining V1 adoption needs retained actual
+membership values and reconciliation; missing values must not be guessed.
+
+School Cooking Group / “Nấu tại”: **APPROVED BOUNDED CLASS C AMENDMENT**.
+The implementation satisfies the approved current optional membership and minimum
+frozen ID/name contract. This records the bounded Owner decision; it does not
+grant overall V1 fidelity acceptance or solve the other Class C gaps.
+
+[Current evidence and reproducible commands](../testing/artifacts/atlas-document-system-01/cooking-group-revision/README.md):
+
+- One CLI-generated forward migration,
+  `20261009075715_atlas_school_cooking_groups.sql`; the previous 94 files are
+  unchanged. Two clean local seed-disabled database resets each replayed all 95
+  migrations, passed 52 SQL suites / 3,588 assertions and four semantic fixtures.
+  Migration manifests, catalog definitions, assertion digests and business
+  evidence match exactly (`comparison.json`: PASS, no differences). These are
+  database reset cycles, not a new independent full-volume 02D certification.
+- Cooking Group 33, PO 108, PXK 59, security catalog 28, supplier-note 13,
+  Admin 43, 02B helpers 124 and Allocation 417 assertions pass. Existing release,
+  commitment/replacement, fulfilment, Recipe/Need and Shopping read suites pass.
+  School defaults bulk remains covered. Exact catalog contract tests pass 111.
+- Source/visual review found and closed uncertain creation recovery and wide-glyph
+  print clipping defects. Creation recovery now replays the exact saved command
+  and confirms the returned group ID; same-name groups cannot clear a draft.
+  Final School/review UI regressions pass 32, final PO/V1/package/output checks
+  pass 35 and PXK/output checks pass 13. Shopping V2/A+ regressions pass 113.
+- Production builders generated 11 XLSX / 10 PDF / 2 ZIP fixtures with identical
+  hashes across two sequential generations. Native Excel 16.0 passes 11 workbooks,
+  20 sheets and 206 exact-text checks. All 32 PDF documents / 82 pages have zero
+  missing expected strings; all 11 contact sheets plus full-resolution note/PXK
+  details were reviewed. No clipping, horizontal cropping, split signatures or
+  header-only Dispatch pages; signature handwriting clearance is at least 100 pt.
+  Stress pagination and font-face differences remain explicitly reported.
+- Format, TypeScript compilation/typecheck, production build and whitespace checks
+  pass. A resource-contended local full frontend attempt timed out in unchanged
+  Recipe Adjustment UI tests and was stopped; it is retained in `frontend-tests.log`.
+  The unchanged file passes all 64 tests in isolation after disposable-database
+  cleanup (`recipe-ui-isolated.log`). Normal timeouts/checks are unchanged.
+  Full routine frontend validation belongs
+  to the required GitHub job on the final PR head; no earlier green head substitutes.
+
+Security: two private forced-RLS tables, three authenticated shaped APIs using
+existing GLOBAL Admin capabilities, dedicated runtimes, empty search paths and
+idempotent receipts. No new capability/role, direct browser table privilege or
+frontend service-role credential. Assignment/deactivation serialize through row
+locks and relational guards. School identity, snapshot lineage, released quantities
+and existing business commands retain their authority.
+
+Changed areas: the new migration and focused SQL suites/catalog assertions;
+`masterDataApi.ts` / `masterDataModel.ts`, RPC registry and review adapter;
+School Admin controller/table/compact `SchoolCookingGroupEditor.tsx`; PO/PXK
+read types/exporters/tests; existing specimen tooling; API contracts, this task,
+the existing authority-gap record and retained test/specimen evidence. No new
+persistent workbench or dependency is introduced.
+
+Open findings: actual V1 PO/Dispatch membership values are unavailable; the CSV
+has headings only and adoption remains blocked with
+`COOKING_GROUP_RECONCILIATION_REQUIRED` for unresolved evidence. Outward codes and
+PO Ingredient/Unit label immutability remain open. Local Need scale passes the
+unchanged eight-second regression deadline but misses the four-second operator
+target (p95 6275.680 / 5961.375 ms); hosted performance was not measured and this
+task does not change Need Generation. No remaining Critical/Important source or
+print review finding is reported.
+
+Deployment/rollback: zero Staging or Live OPS queries/writes. The Owner-provided
+hosted 94-migration baseline is retained. The migration seeds and backfills nothing;
+old captured facts stay null/absent and old exports omit `NẤU TẠI`. A future rollback
+must be a forward correction disabling maintenance/exposure while preserving
+current membership and released snapshots; do not drop captured historical facts.
+The disposable local project was stopped and its task-only volumes removed after
+evidence collection; unrelated Docker projects were left unchanged.
+
+The sections below preserve prior revision history and its earlier boundaries.
+
+## Prior Owner fidelity revision — 8 October 2026
 
 The 8 October 2026 approved printed-quantity decision is implemented as a
 presentation-only continuation of reviewed head `03580da349047881c247601538b3685f817ccbfb`:

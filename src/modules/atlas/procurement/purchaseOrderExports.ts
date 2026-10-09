@@ -38,6 +38,8 @@ type PurchaseOrderSchoolExportLine = PurchaseOrderExportLine & {
   unitId: string;
   schoolName: string;
   schoolDisplayOrder: number;
+  cookingGroupId: string | null;
+  cookingGroupName: string | null;
 };
 
 export type PurchaseOrderExportData = {
@@ -129,6 +131,8 @@ export function buildPurchaseOrderExportData(
         unitId: line.unit.unit_id,
         schoolName: school.school_name,
         schoolDisplayOrder: school.school_display_order,
+        cookingGroupId: school.cooking_group_id ?? null,
+        cookingGroupName: school.cooking_group_name ?? null,
         ingredientName: line.ingredient.ingredient_name,
         orderedQuantity: exactQuantity(schoolQuantity),
         unitCode: line.unit.unit_code,
@@ -190,9 +194,13 @@ function groupBy<T>(items: T[], keyFor: (item: T) => string) {
   return [...groups.values()];
 }
 function schoolLabel(line: PurchaseOrderSchoolExportLine) {
-  return line.schoolName === line.locationName
-    ? line.schoolName
-    : `${line.schoolName}\n${line.locationName}`;
+  return [
+    `TRƯỜNG: ${line.schoolName}`,
+    ...(line.cookingGroupId && line.cookingGroupName
+      ? [`NẤU TẠI: ${line.cookingGroupName}`]
+      : []),
+    ...(line.schoolName === line.locationName ? [] : [line.locationName]),
+  ].join("\n");
 }
 function detailGroups(
   data: PurchaseOrderExportData,
@@ -221,13 +229,40 @@ function groupLabel(
     ? schoolLabel(first)
     : `${first.ingredientName} (${first.unitCode})`;
 }
-// Excel cannot split a physical row; bounded fragments retain every note character.
+const noteColumnWidth = 32;
+const noteFontSize = 12;
+// Native TNR12 wide capitals reach 11.33pt. Use a full em rather than the
+// average-glyph estimate: continuous supplier instructions must fit their row.
+function noteRowHeight(note: string | null) {
+  const capacity = Math.max(
+    1,
+    Math.floor((noteColumnWidth * 5.25 - 6) / noteFontSize),
+  );
+  const lines = (note ?? "").split(/\r?\n/).reduce((total, line) => {
+    let rows = 1;
+    let used = 0;
+    // Excel moves a whole word to the next line when it does not fit. A plain
+    // character-count ceiling misses that unused space, even with wide glyphs.
+    for (const token of line.match(/\s+|\S+/g) ?? []) {
+      if (used && used + token.length > capacity) {
+        rows++;
+        used = 0;
+      }
+      rows += Math.floor((token.length - 1) / capacity);
+      used += ((token.length - 1) % capacity) + 1;
+    }
+    return total + rows;
+  }, 0);
+  return Math.max(30, lines * (noteFontSize + 3) + 8);
+}
+// Excel cannot split a physical row; the same conservative note metric bounds
+// each fragment and sizes its row, retaining every character across pages.
 function noteChunks(note: string | null) {
   if (!note) return [note];
   const chunks: string[] = [];
   let chunk = "";
   for (const character of note) {
-    if (chunk && wrappedRowHeight(chunk + character, 32, 12) > 180) {
+    if (chunk && noteRowHeight(chunk + character) > 180) {
       chunks.push(chunk);
       chunk = "";
     }
@@ -306,14 +341,7 @@ export function buildPurchaseOrderPdfDefinition(
         {
           table: {
             headerRows: 1,
-            widths: [
-              30,
-              55,
-              "*",
-              44,
-              quantityWidth,
-              data.summaryLines.some((line) => line.supplierNote) ? 110 : 60,
-            ],
+            widths: [25, 45, "*", 36, quantityWidth, 110],
             dontBreakRows: true,
             body: [
               summaryHeaders.map((text) => ({ text, style: "tableHeader" })),
@@ -342,55 +370,48 @@ export function buildPurchaseOrderPdfDefinition(
         const label = groupLabel(lines, view);
         const body: import("pdfmake/interfaces").TableCell[][] = [
           [
-            { text: label, colSpan: 5, bold: true, fillColor: "#e8e8e8" },
+            { text: label, colSpan: 6, bold: true, fillColor: "#e8e8e8" },
+            {},
             {},
             {},
             {},
             {},
           ],
           [
-            "",
             "STT",
+            "Mã hàng",
             view === "details_school" ? "Tên hàng" : "Trường học",
             "Đơn vị",
             "Số lượng",
+            "Ghi chú",
           ].map((text) => ({ text, style: "tableHeader" })),
         ];
         lines.forEach((line, index) => {
           const detail =
             view === "details_school" ? line.ingredientName : schoolLabel(line);
-          body.push([
-            "",
-            index + 1,
-            detail,
-            line.unitCode,
-            {
-              text: formatExactDocumentQuantity(line.orderedQuantity).text,
-              alignment: "right",
-              noWrap: true,
-            },
-          ]);
-          if (line.supplierNote)
-            noteChunks(line.supplierNote).forEach((note) =>
-              body.push([
-                {
-                  text: `Ghi chú (STT ${index + 1}, ${detail}): ${note}`,
-                  colSpan: 5,
-                  fontSize: 12,
-                },
-                {},
-                {},
-                {},
-                {},
-              ]),
-            );
+          noteChunks(line.supplierNote).forEach((note, continuation) =>
+            body.push([
+              continuation ? "↳" : index + 1,
+              "",
+              detail,
+              line.unitCode,
+              {
+                text: continuation
+                  ? ""
+                  : formatExactDocumentQuantity(line.orderedQuantity).text,
+                alignment: "right",
+                noWrap: true,
+              },
+              note ?? "",
+            ]),
+          );
         });
         content.push({
           table: {
             headerRows: 2,
             dontBreakRows: true,
             keepWithHeaderRows: 1,
-            widths: [12, 32, "*", 44, quantityWidth],
+            widths: [25, 45, "*", 36, quantityWidth, 110],
             body,
           },
           margin: [0, 8, 0, 0],
@@ -455,28 +476,30 @@ function addDetailSheet(
     tl: { col: 0, row: 0 },
     ext: { width: 58, height: 58 },
   });
-  sheet.mergeCells("B1:G1");
+  sheet.mergeCells("B1:F1");
   sheet.getCell("B1").value = companyName;
   sheet.getCell("B1").font = { name: "Times New Roman", size: 14, bold: true };
-  sheet.mergeCells("B2:G2");
+  sheet.getCell("B1").alignment = { horizontal: "center" };
+  sheet.mergeCells("B2:F2");
   sheet.getCell("B2").value = companyAddress;
   sheet.getCell("B2").font = {
     name: "Times New Roman",
     size: 12,
     italic: true,
   };
-  sheet.mergeCells("A4:G4");
+  sheet.getCell("B2").alignment = { horizontal: "center" };
+  sheet.mergeCells("A4:F4");
   sheet.getCell("A4").value = viewTitle[direction];
   sheet.getCell("A4").font = { name: "Times New Roman", size: 20, bold: true };
   sheet.getCell("A4").alignment = { horizontal: "center" };
-  sheet.getCell("E5").value = "Ngày dùng:";
-  sheet.mergeCells("F5:G5");
-  sheet.getCell("F5").value = data.serviceDate;
-  sheet.mergeCells("A6:D6");
+  sheet.getCell("D5").value = "Ngày dùng:";
+  sheet.mergeCells("E5:F5");
+  sheet.getCell("E5").value = data.serviceDate;
+  sheet.mergeCells("A6:F6");
   sheet.getCell("A6").value = `Nhà cung cấp: ${data.supplierName}`;
-  sheet.mergeCells("A8:G8");
+  sheet.mergeCells("A8:F8");
   sheet.getCell("A8").value =
-    `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel} · Mã NCC: ${codeGap}`;
+    `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel} · Mã NCC / Mã hàng: ${codeGap}`;
   sheet.getCell("A8").font = { name: "Times New Roman", size: 9 };
   const quantityWidth = Math.max(
     12,
@@ -487,45 +510,37 @@ function addDetailSheet(
     ),
   );
   // 139 columns fit landscape A4/Letter without shrinking the body font.
+  const noteWidth = noteColumnWidth;
   const descriptionWidth =
     quantityWidth > 18
-      ? Math.max(34, 139 - 47 - quantityWidth)
-      : 34 + Math.max(0, 24 - quantityWidth);
-  const formWidth = 47 + descriptionWidth + quantityWidth;
+      ? Math.max(34, 139 - 29 - noteWidth - quantityWidth)
+      : 34 + Math.max(0, 12 - quantityWidth);
+  const formWidth = 29 + noteWidth + descriptionWidth + quantityWidth;
   sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
   // Fixed scale preserves manual breaks; Excel fit-to-page ignores them.
   sheet.pageSetup.fitToPage = quantityWidth <= 18;
-  [
-    15,
-    13,
-    8,
-    descriptionWidth,
-    11,
-    quantityWidth / 2,
-    quantityWidth / 2,
-  ].forEach((width, i) => (sheet.getColumn(i + 1).width = width));
+  [7, 12, descriptionWidth, 10, quantityWidth, noteWidth].forEach(
+    (width, i) => (sheet.getColumn(i + 1).width = width),
+  );
   for (const [row, height] of [
     [1, 22],
     [2, 24],
     [3, 8],
     [4, 30],
     [5, 22],
-    [6, wrappedRowHeight(data.supplierName, 70, 14, 22)],
+    [6, wrappedRowHeight(sheet.getCell("A6").text, formWidth, 14, 22)],
     [7, 12],
     [8, wrappedRowHeight(sheet.getCell("A8").text, formWidth, 9, 20)],
   ])
     sheet.getRow(row!).height = height;
   sheet.getRow(9).values = [
-    direction === "details_school" ? "Trường học" : "Tên hàng",
-    null,
     "STT",
+    "Mã hàng",
     direction === "details_school" ? "Tên hàng" : "Trường học",
     "Đơn vị",
     "Số lượng",
-    null,
+    "Ghi chú",
   ];
-  sheet.mergeCells("A9:B9");
-  sheet.mergeCells("F9:G9");
   sheet.getRow(9).height = 46;
   styleWorksheetHeader(sheet.getRow(9));
   let rowNumber = 10;
@@ -543,7 +558,7 @@ function addDetailSheet(
   let pageUsed = headerHeight;
   let activeLabel = "";
   const band = (label: string) => {
-    sheet.mergeCells(rowNumber, 1, rowNumber, 7);
+    sheet.mergeCells(rowNumber, 1, rowNumber, 6);
     const row = sheet.getRow(rowNumber++);
     row.getCell(1).value = label;
     row.font = { name: "Times New Roman", size: 14, bold: true };
@@ -583,31 +598,29 @@ function addDetailSheet(
         direction === "details_school"
           ? line.ingredientName
           : schoolLabel(line);
-      const height = wrappedRowHeight(detail, descriptionWidth, 14, 30);
-      room(height, true);
-      const row = sheet.getRow(rowNumber++);
-      row.values = [null, null, index + 1, detail, line.unitCode, null, null];
-      sheet.mergeCells(row.number, 1, row.number, 2);
-      sheet.mergeCells(row.number, 6, row.number, 7);
-      row.font = { name: "Times New Roman", size: 14 };
-      row.alignment = { vertical: "middle", wrapText: true };
-      row.height = height;
-      setQuantity(row.getCell(6), line.orderedQuantity);
-      borderRow(row);
-      pageUsed += height;
-      if (line.supplierNote)
-        noteChunks(line.supplierNote).forEach((note) => {
-          const text = `Ghi chú (STT ${index + 1}, ${detail.replaceAll("\n", " / ")}): ${note}`;
-          const noteHeight = wrappedRowHeight(text, formWidth, 12, 24);
-          room(noteHeight, true);
-          sheet.mergeCells(rowNumber, 1, rowNumber, 7);
-          const noteRow = sheet.getRow(rowNumber++);
-          noteRow.getCell(1).value = text;
-          noteRow.font = { name: "Times New Roman", size: 12, italic: true };
-          noteRow.alignment = { vertical: "middle", wrapText: true };
-          noteRow.height = noteHeight;
-          pageUsed += noteHeight;
-        });
+      noteChunks(line.supplierNote).forEach((note, continuation) => {
+        const height = Math.max(
+          wrappedRowHeight(detail, descriptionWidth, 14, 30),
+          noteRowHeight(note),
+        );
+        room(height, true);
+        const row = sheet.getRow(rowNumber++);
+        row.values = [
+          continuation ? "↳" : index + 1,
+          "",
+          detail,
+          line.unitCode,
+          null,
+          note,
+        ];
+        row.font = { name: "Times New Roman", size: 14 };
+        row.getCell(6).font = { name: "Times New Roman", size: noteFontSize };
+        row.alignment = { vertical: "middle", wrapText: true };
+        row.height = height;
+        if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
+        borderRow(row);
+        pageUsed += height;
+      });
     });
     sheet.getRow(rowNumber++).height = 20;
     pageUsed += 20;
@@ -615,7 +628,7 @@ function addDetailSheet(
   applyDocumentFont(sheet);
   finishDocumentSheet(
     sheet,
-    "G",
+    "F",
     9,
     `${data.documentNumber} · ${documentStatusLabel(data.status)}`,
   );
@@ -669,16 +682,14 @@ function addSummarySheet(
         2,
     ),
   );
-  const noteWidth = data.summaryLines.some((line) => line.supplierNote)
-    ? 32
-    : 11.14;
+  const noteWidth = noteColumnWidth;
   sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
   sheet.pageSetup.fitToPage = quantityWidth <= 18;
   const descriptionWidth =
     quantityWidth > 18
-      ? Math.max(36, 139 - 16.14 - 12 - 9.71 - quantityWidth - noteWidth)
+      ? Math.max(36, 139 - 7 - 12 - 9.71 - quantityWidth - noteWidth)
       : 36 + Math.max(0, 12.71 - quantityWidth);
-  [16.14, 12, descriptionWidth, 9.71, quantityWidth, noteWidth].forEach(
+  [7, 12, descriptionWidth, 9.71, quantityWidth, noteWidth].forEach(
     (width, i) => (sheet.getColumn(i + 1).width = width),
   );
   for (const [r, w, size, minimum] of [
@@ -715,10 +726,10 @@ function addSummarySheet(
       ];
       row.font = { name: "Times New Roman", size: 14 };
       row.alignment = { vertical: "middle", wrapText: true };
-      row.getCell(6).font = { name: "Times New Roman", size: 12 };
+      row.getCell(6).font = { name: "Times New Roman", size: noteFontSize };
       row.height = Math.max(
         wrappedRowHeight(line.ingredientName, descriptionWidth, 14),
-        wrappedRowHeight(note, 32),
+        noteRowHeight(note),
       );
       if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
       borderRow(row);

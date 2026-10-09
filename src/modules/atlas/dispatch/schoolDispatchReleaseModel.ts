@@ -50,6 +50,9 @@ export type SchoolDispatchDocument = {
   predecessor_release_id: string | null;
   school_name: string;
   school_display_order: number;
+  /** Immutable release snapshot, never reconstructed from current membership. */
+  cooking_group_id?: string | null;
+  cooking_group_name?: string | null;
   delivery_location_name: string;
   delivery_address: string;
   document_issuer_name: string;

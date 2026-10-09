@@ -76,7 +76,10 @@ Its browser-facing command envelope accepts `requested_at` at most 60 seconds ah
 
 Each newly released school-catering PO line also freezes
 `school_breakdown_snapshot`: the exact contribution/supplier interval overlap grouped
-by immutable School ID/name/display order and delivery-location ID/name. The grouped
+by immutable School ID/name/display order and delivery-location ID/name. Entries
+also freeze nullable `cooking_group_id` and `cooking_group_name` from the single
+Admin-owned membership. See [School cooking groups](school-cooking-groups.md) for
+the Owner-authorized amendment; historical rows are never backfilled. The grouped
 quantities must sum exactly to the line `ordered_quantity`; otherwise release fails
 atomically. The shaped read exposes this as `line.school_breakdown`. Official export
 is fail-closed when any released line lacks a complete snapshot, including legacy

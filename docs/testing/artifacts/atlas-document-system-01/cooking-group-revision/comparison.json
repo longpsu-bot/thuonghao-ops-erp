@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "differences": [],
+  "compared": [
+    "suites",
+    "migrations",
+    "bootstrap",
+    "catalog_sha256",
+    "additional_catalog",
+    "catalog_verifier",
+    "business"
+  ]
+}

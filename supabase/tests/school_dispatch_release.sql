@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(54);
+select plan(59);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -301,6 +301,19 @@ create function pg_temp.pxk_procurement_command(
     'requested_at',transaction_timestamp()-interval '1 second',
     'reason_code',p_reason,'reason_note',null,'payload',p_payload);
 $$;
+create function pg_temp.pxk_ungrouped_release_isolated(p_request jsonb)
+returns jsonb language plpgsql volatile security definer set search_path='' as $$
+declare v_response jsonb; v_document jsonb;
+begin
+  delete from atlas_admin.school_cooking_group_memberships
+    where school_id='26020000-0000-4000-8000-000000000021';
+  v_response:=atlas_api.release_school_dispatch_document(p_request);
+  v_document:=atlas_core.school_dispatch_release_json((v_response->>'school_dispatch_release_id')::uuid);
+  v_response:=v_response||jsonb_build_object('captured_release',v_document);
+  raise exception using errcode='PXK99';
+exception when sqlstate 'PXK99' then return v_response;
+end;
+$$;
 create function pg_temp.pxk_procurement_family(p_location uuid)
 returns jsonb language sql stable security definer set search_path='' as $$
   select jsonb_build_object(
@@ -387,6 +400,19 @@ reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+reset role;
+insert into atlas_admin.cooking_groups(cooking_group_id,cooking_group_name) values
+ ('c7000000-0000-4000-8000-000000000001','Cooking X'),
+ ('c7000000-0000-4000-8000-000000000002','Cooking Y');
+insert into atlas_admin.school_cooking_group_memberships(school_id,cooking_group_id) values
+ ('26020000-0000-4000-8000-000000000021','c7000000-0000-4000-8000-000000000001');
+select ok((select response->>'success'='true'
+  and response#>'{captured_release,cooking_group_id}'='null'::jsonb
+  and response#>'{captured_release,cooking_group_name}'='null'::jsonb
+  from (select pg_temp.pxk_ungrouped_release_isolated(pg_temp.pxk_release(
+    'c7000000-0000-4000-8000-000000000011',0,null)) response) captured),
+  'actual new PXK release after clearing assignment freezes null cooking facts');
+set local role authenticated;
 insert into pxk_results values('release',atlas_api.release_school_dispatch_document(
   pg_temp.pxk_release('26060000-0000-4000-8000-000000000001',0,null,
     'Giao tại cổng phụ trước 06:00')));
@@ -422,6 +448,14 @@ select ok((select response #>> '{rows,0,state}'='CURRENT'
     and (response #>> '{rows,0,current_release,export_ready}')::boolean
   from pxk_results where name='read-released'),
   'read model exposes the released immutable PXK as current and exportable');
+select is((select cooking_group_name_snapshot from atlas_dispatch.school_dispatch_releases),
+  'Cooking X','new PXK release freezes cooking X');
+update atlas_admin.school_cooking_group_memberships set cooking_group_id='c7000000-0000-4000-8000-000000000002'
+where school_id='26020000-0000-4000-8000-000000000021';
+update atlas_admin.cooking_groups set cooking_group_name='Cooking X renamed'
+where cooking_group_id='c7000000-0000-4000-8000-000000000001';
+select is((select atlas_core.school_dispatch_release_json(school_dispatch_release_id)->>'cooking_group_name'
+  from atlas_dispatch.school_dispatch_releases),'Cooking X','historical PXK read retains X after assignment and rename');
 update atlas_admin.schools
 set school_name='Tên trường đã đổi',display_order=9,
   dispatch_document_issuer_name='Tên đơn vị đã đổi',
@@ -557,6 +591,11 @@ select ok((select count(*) filter(where release_status='SUPERSEDED')=1
   from atlas_dispatch.school_dispatch_releases),
   'successor release atomically supersedes the prior PXK and preserves both documents');
 
+select is((select cooking_group_name_snapshot from atlas_dispatch.school_dispatch_releases where release_status='RELEASED'),
+  'Cooking Y','new PXK successor captures current cooking Y');
+delete from atlas_admin.school_cooking_group_memberships where school_id='26020000-0000-4000-8000-000000000021';
+select ok((select bool_and(cooking_group_name_snapshot=case release_status when 'SUPERSEDED' then 'Cooking X' else 'Cooking Y' end)
+  from atlas_dispatch.school_dispatch_releases),'removal preserves both historical PXK snapshots');
 -- Move the allocation entirely to supplier B without recording cancellation or
 -- replacement PO evidence. The factual correction stands; PXK must stop.
 set session_replication_role=replica;

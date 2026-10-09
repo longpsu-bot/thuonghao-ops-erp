@@ -7,6 +7,9 @@ import type {
 
 export const MASTER_DATA_RPC_FUNCTIONS = {
   getSchools: "atlas_api.get_school_master_data",
+  getCookingGroups: "atlas_api.get_cooking_groups",
+  upsertCookingGroup: "atlas_api.upsert_cooking_group",
+  setSchoolCookingGroup: "atlas_api.set_school_cooking_group",
   getIngredientsAndSuppliers: "atlas_api.get_ingredient_supplier_master_data",
   updateSchoolDefaults: "atlas_api.update_school_portion_defaults",
   updateSchoolDefaultsBulk: "atlas_api.update_school_portion_defaults_bulk",
@@ -68,6 +71,24 @@ function readRequest(authSubject: string, correlationId: string) {
 
 export function createMasterDataApi(invoker: AtlasRpcInvoker) {
   return {
+    getCookingGroups(authSubject: string, correlationId: string) {
+      return invoker.invoke(
+        MASTER_DATA_RPC_FUNCTIONS.getCookingGroups,
+        readRequest(authSubject, correlationId),
+      );
+    },
+    upsertCookingGroup(request: MasterDataCommandRequest) {
+      return invoker.invoke(
+        MASTER_DATA_RPC_FUNCTIONS.upsertCookingGroup,
+        request,
+      );
+    },
+    setSchoolCookingGroup(request: MasterDataCommandRequest) {
+      return invoker.invoke(
+        MASTER_DATA_RPC_FUNCTIONS.setSchoolCookingGroup,
+        request,
+      );
+    },
     getSchools(authSubject: string, correlationId: string) {
       return invoker.invoke(
         MASTER_DATA_RPC_FUNCTIONS.getSchools,

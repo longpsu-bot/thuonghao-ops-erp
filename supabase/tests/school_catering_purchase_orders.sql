@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(101);
+select plan(108);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -304,6 +304,23 @@ exception when sqlstate 'PBR99' then
   return v_response;
 end;
 $$;
+-- Capture actual official successor inserts, then roll back their business work
+-- so the existing replacement/clock regressions retain their original fixture.
+create function pg_temp.prb_cooking_release_isolated(p_request jsonb)
+returns jsonb language plpgsql volatile security definer set search_path='' as $$
+declare v_response jsonb; v_snapshots jsonb;
+begin
+  v_response:=atlas_api.release_school_catering_purchase_order(p_request);
+  select jsonb_agg(line.school_breakdown_snapshot) into v_snapshots
+    from atlas_procurement.purchase_order_line_revisions line
+    join atlas_procurement.purchase_order_revisions revision using(purchase_order_revision_id)
+    where revision.purchase_order_id=(p_request#>>'{payload,purchase_order_id}')::uuid
+      and revision.is_current and revision.revision_status='RELEASED_TO_SUPPLIER';
+  v_response:=v_response||jsonb_build_object('captured_school_breakdowns',v_snapshots);
+  raise exception using errcode='PBR99';
+exception when sqlstate 'PBR99' then return v_response;
+end;
+$$;
 create function pg_temp.prb_replace(p_command uuid,p_supplier uuid)
 returns jsonb language sql stable security definer set search_path='' as $$
   select pg_temp.prb_command(p_command,po.version,
@@ -522,6 +539,13 @@ where supplier_id='24020000-0000-4000-8000-000000000052';
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+reset role;
+insert into atlas_admin.cooking_groups(cooking_group_id,cooking_group_name) values
+ ('c6000000-0000-4000-8000-000000000001','Cooking X'),
+ ('c6000000-0000-4000-8000-000000000002','Cooking Y');
+insert into atlas_admin.school_cooking_group_memberships(school_id,cooking_group_id) values
+ ('24020000-0000-4000-8000-000000000021','c6000000-0000-4000-8000-000000000001');
+set local role authenticated;
 insert into prb_results values('release-a',
   atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
     '24050000-0000-4000-8000-000000000016',
@@ -653,6 +677,58 @@ select ok((
 update atlas_admin.schools set school_name='PR-B School Alpha',display_order=1
 where school_id='24020000-0000-4000-8000-000000000021';
 
+-- The capture function feeds the INSERT-only official freeze trigger.
+select ok((select bool_and(school->>'cooking_group_name'='Cooking X')
+  from atlas_procurement.purchase_order_line_revisions line
+  cross join lateral jsonb_array_elements(line.school_breakdown_snapshot) school
+  where school->>'school_id'='24020000-0000-4000-8000-000000000021'),
+  'new official PO lines freeze cooking X for the exact School');
+update atlas_admin.school_cooking_group_memberships set cooking_group_id='c6000000-0000-4000-8000-000000000002'
+where school_id='24020000-0000-4000-8000-000000000021';
+update atlas_admin.cooking_groups set cooking_group_name='Cooking X renamed'
+where cooking_group_id='c6000000-0000-4000-8000-000000000001';
+select ok((select bool_and(school->>'cooking_group_name'='Cooking X')
+  from atlas_procurement.purchase_order_line_revisions line
+  cross join lateral jsonb_array_elements(line.school_breakdown_snapshot) school
+  where school->>'school_id'='24020000-0000-4000-8000-000000000021'),
+  'historical PO keeps cooking X after membership change and group rename');
+select ok((select bool_and(school->>'cooking_group_name'='Cooking Y')
+  from atlas_procurement.purchase_order_line_revisions line
+  cross join lateral jsonb_array_elements(atlas_core.school_catering_po_school_breakdown(
+    line.school_catering_allocation_supplier_split_id)) school
+  where line.school_breakdown_snapshot is not null
+    and school->>'school_id'='24020000-0000-4000-8000-000000000021'),
+  'future PO capture uses current cooking Y');
+select ok((select response->>'success'='true' and exists(
+  select 1 from jsonb_array_elements(response->'captured_school_breakdowns') breakdown
+  cross join lateral jsonb_array_elements(breakdown) school
+  where school->>'school_id'='24020000-0000-4000-8000-000000000021'
+    and school->>'cooking_group_name'='Cooking Y')
+  from (select pg_temp.prb_cooking_release_isolated(pg_temp.prb_release(
+    'c6000000-0000-4000-8000-000000000011','24020000-0000-4000-8000-000000000052')) response) captured),
+  'actual new official PO release after reassignment freezes cooking Y');
+delete from atlas_admin.school_cooking_group_memberships
+where school_id='24020000-0000-4000-8000-000000000021';
+select ok((select bool_and(school->'cooking_group_id'='null'::jsonb and school->'cooking_group_name'='null'::jsonb)
+  from atlas_procurement.purchase_order_line_revisions line
+  cross join lateral jsonb_array_elements(atlas_core.school_catering_po_school_breakdown(
+    line.school_catering_allocation_supplier_split_id)) school
+  where line.school_breakdown_snapshot is not null
+    and school->>'school_id'='24020000-0000-4000-8000-000000000021'),
+  'future PO capture after removal carries explicit null group facts');
+select ok((select response->>'success'='true' and exists(
+  select 1 from jsonb_array_elements(response->'captured_school_breakdowns') breakdown
+  cross join lateral jsonb_array_elements(breakdown) school
+  where school->>'school_id'='24020000-0000-4000-8000-000000000021'
+    and school->'cooking_group_id'='null'::jsonb and school->'cooking_group_name'='null'::jsonb)
+  from (select pg_temp.prb_cooking_release_isolated(pg_temp.prb_release(
+    'c6000000-0000-4000-8000-000000000012','24020000-0000-4000-8000-000000000052')) response) captured),
+  'actual new official PO release after removal freezes null cooking facts');
+select ok((select bool_and(school->>'cooking_group_name'='Cooking X')
+  from atlas_procurement.purchase_order_line_revisions line
+  cross join lateral jsonb_array_elements(line.school_breakdown_snapshot) school
+  where school->>'school_id'='24020000-0000-4000-8000-000000000021'),
+  'membership removal leaves historical PO snapshots unchanged');
 savepoint legacy_po_export_guard;
 set session_replication_role=replica;
 update atlas_procurement.purchase_order_line_revisions set school_breakdown_snapshot=null

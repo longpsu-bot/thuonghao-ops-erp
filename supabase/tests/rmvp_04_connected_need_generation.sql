@@ -163,7 +163,7 @@ select is(
     )
   ),
   jsonb_build_object(
-    'tables', 113,
+    'tables', 115,
     'views', 2,
     'rmvp04_triggers', 0,
     'rmvp06_validation_relations', array[

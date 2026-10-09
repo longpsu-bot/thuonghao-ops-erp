@@ -1,5 +1,5 @@
 import type { Workbook } from "exceljs";
-import type { Column, TDocumentDefinitions } from "pdfmake/interfaces";
+import type { Column, Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import type { SchoolDispatchDocument } from "./schoolDispatchReleaseModel";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
 
@@ -52,6 +52,8 @@ export function buildSchoolDispatchExportData(
     serviceDate: dateLabel(document.service_date),
     schoolName: document.school_name,
     schoolDisplayOrder: document.school_display_order,
+    cookingGroupId: document.cooking_group_id ?? null,
+    cookingGroupName: document.cooking_group_name ?? null,
     deliveryLocationName: document.delivery_location_name,
     deliveryAddress: document.delivery_address,
     issuerName: document.document_issuer_name,
@@ -77,6 +79,10 @@ export function buildSchoolDispatchPdfDefinition(
         formatExactDocumentQuantity(line.quantity).text.length * 8.5 + 6,
     ),
   );
+  const cookingHeader: Content[] =
+    data.cookingGroupId && data.cookingGroupName
+      ? [{ text: `NẤU TẠI: ${data.cookingGroupName}` }]
+      : [];
   return {
     pageSize: "A4",
     pageOrientation: quantityWidth > 90 ? "landscape" : "portrait",
@@ -109,7 +115,8 @@ export function buildSchoolDispatchPdfDefinition(
           { text: `Ngày: ${data.serviceDate}`, width: 136, alignment: "right" },
         ],
       },
-      { text: `Trường: ${data.schoolName}` },
+      { text: `TRƯỜNG: ${data.schoolName}` },
+      ...cookingHeader,
       { text: `Địa chỉ: ${data.deliveryAddress}` },
       {
         text: [
@@ -126,7 +133,8 @@ export function buildSchoolDispatchPdfDefinition(
       {
         table: {
           headerRows: 2,
-          widths: [28, "*", 30, quantityWidth, 46, 46, 90],
+          widths: [22, "*", 35, quantityWidth, 32, 32, 70, 82],
+          heights: 30,
           dontBreakRows: true,
           body: [
             [
@@ -137,6 +145,7 @@ export function buildSchoolDispatchPdfDefinition(
               { text: "Tình trạng cảm quan", bold: true, colSpan: 2 },
               {},
               { text: "Biện pháp xử lý", bold: true, rowSpan: 2 },
+              { text: "Ghi chú", bold: true, rowSpan: 2 },
             ],
             [
               "",
@@ -145,6 +154,7 @@ export function buildSchoolDispatchPdfDefinition(
               "",
               { text: "Đạt", bold: true },
               { text: "K Đạt", bold: true },
+              "",
               "",
             ],
             ...data.lines.map((line, index) => [
@@ -157,6 +167,7 @@ export function buildSchoolDispatchPdfDefinition(
                 noWrap: true,
                 alignment: "right" as const,
               },
+              "",
               "",
               "",
               "",
@@ -217,14 +228,15 @@ function addSchoolDispatchSheet(
     ),
   );
   const columnWidths = [
-    13,
+    7,
     quantityWidth > 18
-      ? Math.max(30, 139 - 13 - 8 - quantityWidth - 11 - 11 - 24)
+      ? Math.max(30, 139 - 7 - 8 - quantityWidth - 8 - 8 - 20 - 24)
       : 30 + Math.max(0, 12.28515625 - quantityWidth),
     8,
     quantityWidth,
-    11,
-    11,
+    8,
+    8,
+    20,
     24,
   ];
   sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
@@ -240,26 +252,26 @@ function addSchoolDispatchSheet(
     tl: { col: 0, row: 0 },
     ext: { width: 58, height: 58 },
   });
-  sheet.mergeCells("B1:G1");
+  sheet.mergeCells("B1:H1");
   sheet.getCell("B1").value = data.issuerName;
   sheet.getCell("B1").font = { name: "Times New Roman", size: 14, bold: true };
   sheet.getCell("B1").alignment = { horizontal: "center" };
-  sheet.mergeCells("B2:G2");
+  sheet.mergeCells("B2:H2");
   sheet.getCell("B2").value = `ĐC: ${data.issuerAddress}`;
   sheet.getCell("B2").alignment = { horizontal: "center" };
   sheet.getRow(1).height = wrappedRowHeight(
     data.issuerName,
-    formWidth - 13,
+    formWidth - 7,
     14,
     28,
   );
   sheet.getRow(2).height = wrappedRowHeight(
     `ĐC: ${data.issuerAddress}`,
-    formWidth - 13,
+    formWidth - 7,
     12,
     24,
   );
-  sheet.mergeCells("A4:G4");
+  sheet.mergeCells("A4:H4");
   sheet.getCell("A4").value = "PHIẾU XUẤT KHO";
   sheet.getCell("A4").font = { name: "Times New Roman", bold: true, size: 20 };
   sheet.getCell("A4").alignment = { horizontal: "center" };
@@ -267,14 +279,16 @@ function addSchoolDispatchSheet(
   sheet.mergeCells("A5:E5");
   sheet.getCell("A5").value = `Số phiếu: ${data.documentNumber}`;
   sheet.getCell("F5").value = "Ngày:";
+  sheet.mergeCells("G5:H5");
   sheet.getCell("G5").value = data.serviceDate;
   sheet.getCell("G5").alignment = { horizontal: "center" };
   sheet.getRow(5).height = 22;
-  sheet.mergeCells("A6:G6");
-  sheet.getCell("A6").value = `Trường: ${data.schoolName}`;
-  sheet.mergeCells("A7:G7");
+  sheet.mergeCells("A6:H6");
+  sheet.getCell("A6").value =
+    `TRƯỜNG: ${data.schoolName}${data.cookingGroupId && data.cookingGroupName ? `\nNẤU TẠI: ${data.cookingGroupName}` : ""}`;
+  sheet.mergeCells("A7:H7");
   sheet.getCell("A7").value = `Địa chỉ: ${data.deliveryAddress}`;
-  sheet.mergeCells("A8:G8");
+  sheet.mergeCells("A8:H8");
   sheet.getCell("A8").value = {
     richText: [
       {
@@ -310,6 +324,7 @@ function addSchoolDispatchSheet(
   sheet.mergeCells("D9:D10");
   sheet.mergeCells("E9:F9");
   sheet.mergeCells("G9:G10");
+  sheet.mergeCells("H9:H10");
   sheet.getCell("A9").value = "Stt";
   sheet.getCell("B9").value = "Tên thực phẩm";
   sheet.getCell("C9").value = "Đvt";
@@ -318,6 +333,7 @@ function addSchoolDispatchSheet(
   sheet.getCell("E10").value = "Đạt";
   sheet.getCell("F10").value = "K Đạt";
   sheet.getCell("G9").value = "Biện pháp xử lý";
+  sheet.getCell("H9").value = "Ghi chú";
   for (const rowNumber of [9, 10]) {
     const header = sheet.getRow(rowNumber);
     header.height = rowNumber === 9 ? 40 : 28;
@@ -339,6 +355,7 @@ function addSchoolDispatchSheet(
       "",
       "",
       "",
+      "",
     ];
     row.height = wrappedRowHeight(line.ingredientName, columnWidths[1]!, 16);
     row.font = { name: "Times New Roman", size: 16 };
@@ -351,7 +368,7 @@ function addSchoolDispatchSheet(
   for (const row of [signatureRow, signatureRow + 1, signatureRow + 6]) {
     sheet.mergeCells(row, 1, row, 2);
     sheet.mergeCells(row, 3, row, 5);
-    sheet.mergeCells(row, 6, row, 7);
+    sheet.mergeCells(row, 6, row, 8);
   }
   for (const [index, column] of [1, 3, 6].entries()) {
     sheet.getCell(signatureRow, column).value = [
@@ -413,7 +430,7 @@ function addSchoolDispatchSheet(
   applyDocumentFont(sheet);
   finishDocumentSheet(
     sheet,
-    "G",
+    "H",
     10,
     `${data.documentNumber} · ${documentStatusLabel(document.status)}`,
   );
@@ -557,7 +574,13 @@ export async function createSchoolDispatchZip(
     const key =
       mode === "date"
         ? document.service_date
-        : JSON.stringify([document.school_id, document.delivery_location_id]);
+        : document.cooking_group_id && document.cooking_group_name
+          ? JSON.stringify(["COOKING_GROUP", document.cooking_group_id])
+          : JSON.stringify([
+              "SCHOOL",
+              document.school_id,
+              document.delivery_location_id,
+            ]);
     const group = groups.get(key) ?? [];
     group.push(document);
     groups.set(key, group);
@@ -568,7 +591,7 @@ export async function createSchoolDispatchZip(
     const stem =
       mode === "date"
         ? `Dispatch-${first.service_date}`
-        : `Dispatch-${documentFilePart(first.school_name)}-${documentFilePart(first.delivery_location_name)}-${index + 1}-${first.service_date}-${group.at(-1)!.service_date}`;
+        : `Dispatch-${first.cooking_group_id && first.cooking_group_name ? documentFilePart(first.cooking_group_name) : `${documentFilePart(first.school_name)}-${documentFilePart(first.delivery_location_name)}`}-${index + 1}-${first.service_date}-${group.at(-1)!.service_date}`;
     files.push({
       name: `${stem}.xlsx`,
       bytes: await createGroupedSchoolDispatchXlsx(group),

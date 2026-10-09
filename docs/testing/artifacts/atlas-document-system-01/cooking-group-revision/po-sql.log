@@ -1,0 +1,809 @@
+BEGIN
+psql:/tmp/school_catering_purchase_orders.sql:3: NOTICE:  schema "extensions" already exists, skipping
+CREATE SCHEMA
+CREATE EXTENSION
+SET
+  plan
+--------
+ 1..108
+(1 row)
+
+                                        has_function
+--------------------------------------------------------------------------------------------
+ ok 1 - Function atlas_api.create_school_catering_purchase_order_drafts(jsonb) should exist
+(1 row)
+
+                                     has_function
+--------------------------------------------------------------------------------------
+ ok 2 - Function atlas_api.release_school_catering_purchase_order(jsonb) should exist
+(1 row)
+
+                                          has_function
+-------------------------------------------------------------------------------------------------
+ ok 3 - Function atlas_api.create_school_catering_purchase_order_replacement(jsonb) should exist
+(1 row)
+
+                                   has_function
+-----------------------------------------------------------------------------------
+ ok 4 - Function atlas_api.get_school_catering_purchase_orders(jsonb) should exist
+(1 row)
+
+                                                         function_owner_is
+------------------------------------------------------------------------------------------------------------------------------------
+ ok 5 - Function atlas_api.create_school_catering_purchase_order_drafts(jsonb) should be owned by atlas_procurement_command_runtime
+(1 row)
+
+                                                      function_owner_is
+------------------------------------------------------------------------------------------------------------------------------
+ ok 6 - Function atlas_api.release_school_catering_purchase_order(jsonb) should be owned by atlas_procurement_command_runtime
+(1 row)
+
+                                                            function_owner_is
+-----------------------------------------------------------------------------------------------------------------------------------------
+ ok 7 - Function atlas_api.create_school_catering_purchase_order_replacement(jsonb) should be owned by atlas_procurement_command_runtime
+(1 row)
+
+                                             function_owner_is
+------------------------------------------------------------------------------------------------------------
+ ok 8 - Function atlas_api.get_school_catering_purchase_orders(jsonb) should be owned by atlas_read_runtime
+(1 row)
+
+                                     ok
+----------------------------------------------------------------------------
+ ok 9 - PR-B entry functions are hardened definers with pinned search paths
+(1 row)
+
+                         ok
+-----------------------------------------------------
+ ok 10 - PR-B entry functions contain no dynamic SQL
+(1 row)
+
+                                                       function_privs_are
+--------------------------------------------------------------------------------------------------------------------------------
+ ok 11 - Role authenticated should be granted EXECUTE on function atlas_api.create_school_catering_purchase_order_drafts(jsonb)
+(1 row)
+
+                                                    function_privs_are
+--------------------------------------------------------------------------------------------------------------------------
+ ok 12 - Role authenticated should be granted EXECUTE on function atlas_api.release_school_catering_purchase_order(jsonb)
+(1 row)
+
+                                                         function_privs_are
+-------------------------------------------------------------------------------------------------------------------------------------
+ ok 13 - Role authenticated should be granted EXECUTE on function atlas_api.create_school_catering_purchase_order_replacement(jsonb)
+(1 row)
+
+                                                  function_privs_are
+-----------------------------------------------------------------------------------------------------------------------
+ ok 14 - Role authenticated should be granted EXECUTE on function atlas_api.get_school_catering_purchase_orders(jsonb)
+(1 row)
+
+                                                     function_privs_are
+-----------------------------------------------------------------------------------------------------------------------------
+ ok 15 - Role anon should be granted no privileges on function atlas_api.create_school_catering_purchase_order_drafts(jsonb)
+(1 row)
+
+                                                  function_privs_are
+-----------------------------------------------------------------------------------------------------------------------
+ ok 16 - Role anon should be granted no privileges on function atlas_api.release_school_catering_purchase_order(jsonb)
+(1 row)
+
+                                                        function_privs_are
+----------------------------------------------------------------------------------------------------------------------------------
+ ok 17 - Role anon should be granted no privileges on function atlas_api.create_school_catering_purchase_order_replacement(jsonb)
+(1 row)
+
+                                                 function_privs_are
+--------------------------------------------------------------------------------------------------------------------
+ ok 18 - Role anon should be granted no privileges on function atlas_api.get_school_catering_purchase_orders(jsonb)
+(1 row)
+
+                   has_column
+-------------------------------------------------
+ ok 19 - shared PO root declares its source kind
+(1 row)
+
+                             has_column
+---------------------------------------------------------------------
+ ok 20 - school-catering root stores the supplier/date identity date
+(1 row)
+
+                                    has_column
+----------------------------------------------------------------------------------
+ ok 21 - replacement roots point directly to the released commitment they replace
+(1 row)
+
+                          col_default_is
+------------------------------------------------------------------
+ ok 22 - legacy/wholesale inserts default to the existing PO kind
+(1 row)
+
+             has_check
+------------------------------------
+ ok 23 - purchase_orders_kind_check
+(1 row)
+
+                     has_check
+----------------------------------------------------
+ ok 24 - purchase_orders_school_catering_date_check
+(1 row)
+
+                                           ok
+-----------------------------------------------------------------------------------------
+ ok 25 - one active school-catering PO lineage is enforced per supplier and service date
+(1 row)
+
+                                 has_column
+----------------------------------------------------------------------------
+ ok 26 - stable PO line supports a school-catering Allocation Family source
+(1 row)
+
+                                     ok
+-----------------------------------------------------------------------------
+ ok 27 - wholesale PO stable-line source becomes nullable for the shared XOR
+(1 row)
+
+                   has_check
+-----------------------------------------------
+ ok 28 - purchase_order_lines_source_xor_check
+(1 row)
+
+                                    has_column
+----------------------------------------------------------------------------------
+ ok 29 - PO line revision supports an exact school-catering Supplier Split source
+(1 row)
+
+                                    has_column
+-----------------------------------------------------------------------------------
+ ok 30 - released PO line revision supports an immutable School quantity breakdown
+(1 row)
+
+                                      ok
+-------------------------------------------------------------------------------
+ ok 31 - wholesale PO line-revision source becomes nullable for the shared XOR
+(1 row)
+
+                       has_check
+--------------------------------------------------------
+ ok 32 - purchase_order_line_revisions_source_xor_check
+(1 row)
+
+                                          ok
+--------------------------------------------------------------------------------------
+ ok 33 - school-catering PO revisions permit a null multi-destination header location
+(1 row)
+
+                                      ok
+------------------------------------------------------------------------------
+ ok 34 - shared PO revision integrity is enforced by a deferred exact trigger
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 2
+INSERT 0 3
+INSERT 0 3
+SET
+INSERT 0 4
+INSERT 0 4
+INSERT 0 1
+INSERT 0 1
+INSERT 0 4
+INSERT 0 4
+INSERT 0 4
+SET
+CREATE TABLE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                              ok
+---------------------------------------------------------------
+ ok 35 - PR-A produces the three exact balanced input families
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                  ok
+----------------------------------------------------------------------
+ ok 36 - bounded range draft materialization succeeds for ready dates
+(1 row)
+
+                                     ok
+-----------------------------------------------------------------------------
+ ok 37 - ready dates materialize while blocked dates are returned explicitly
+(1 row)
+
+                       is
+-------------------------------------------------
+ ok 38 - a blocked date creates no incomplete PO
+(1 row)
+
+                                   is
+------------------------------------------------------------------------
+ ok 39 - ready families group into one PO per supplier and service date
+(1 row)
+
+                                       ok
+---------------------------------------------------------------------------------
+ ok 40 - school-catering roots start as internal DRAFTs without official numbers
+(1 row)
+
+                                   ok
+-------------------------------------------------------------------------
+ ok 41 - one supplier/date PO retains multiple school delivery locations
+(1 row)
+
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 42 - multi-destination DRAFT headers use the server-owned summary and exact date
+(1 row)
+
+                                            ok
+------------------------------------------------------------------------------------------
+ ok 43 - every school-catering PO line retains a non-null location and exact service date
+(1 row)
+
+                                     ok
+-----------------------------------------------------------------------------
+ ok 44 - stable PO lines and line revisions retain exactly one source family
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                                   ok
+-------------------------------------------------------------------------
+ ok 45 - PO read returns the complete backend-owned draft decision shape
+(1 row)
+
+                                      ok
+------------------------------------------------------------------------------
+ ok 46 - PO read serializes every exact ordered quantity as a lossless string
+(1 row)
+
+                                   ok
+-------------------------------------------------------------------------
+ ok 47 - only supplier/date DRAFTs using the changed family become stale
+(1 row)
+
+                    is
+------------------------------------------
+ ok 48 - a stale DRAFT cannot be released
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                      ok
+------------------------------------------------------------------------------
+ ok 49 - regeneration creates successor DRAFT revisions only for affected POs
+(1 row)
+
+                            ok
+-----------------------------------------------------------
+ ok 50 - unrelated supplier/date PO roots remain unchanged
+(1 row)
+
+                                   ok
+-------------------------------------------------------------------------
+ ok 51 - regeneration preserves both affected historical DRAFT snapshots
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                     is
+-----------------------------------------------------------------------------
+ ok 52 - release rejects caller-authored document numbers and unknown fields
+(1 row)
+
+UPDATE 1
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                          is
+-------------------------------------------------------
+ ok 53 - release revalidates current supplier activity
+(1 row)
+
+UPDATE 1
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+RESET
+INSERT 0 2
+INSERT 0 1
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                      ok
+----------------------------------------------
+ ok 54 - one current PO releases successfully
+(1 row)
+
+                                             ok
+--------------------------------------------------------------------------------------------
+ ok 55 - official PO number is generated server-side from the approved deterministic format
+(1 row)
+
+                                       ok
+---------------------------------------------------------------------------------
+ ok 56 - release creates a successor revision and preserves both DRAFT revisions
+(1 row)
+
+                                       ok
+---------------------------------------------------------------------------------
+ ok 57 - release advances the root once and stores the immutable official number
+(1 row)
+
+                                   is
+------------------------------------------------------------------------
+ ok 58 - exact release replay returns identical IDs and official number
+(1 row)
+
+                               is
+-----------------------------------------------------------------
+ ok 59 - same command identity with changed PO payload conflicts
+(1 row)
+
+                                   is
+------------------------------------------------------------------------
+ ok 60 - a second release attempt creates no second supplier commitment
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                              is
+---------------------------------------------------------------
+ ok 61 - draft materialization never regenerates a released PO
+(1 row)
+
+                                             ok
+---------------------------------------------------------------------------------------------
+ ok 62 - released successor lines preserve exact immutable source and predecessor references
+(1 row)
+
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 63 - release freezes a complete exact School breakdown on every official PO line
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                           ok
+----------------------------------------------------------------------------------------
+ ok 64 - read model exposes only a released PO as export-ready with its official number
+(1 row)
+
+                                             ok
+---------------------------------------------------------------------------------------------
+ ok 65 - released PO read exposes immutable School identity and order from the line snapshot
+(1 row)
+
+UPDATE 1
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                           ok
+----------------------------------------------------------------------------------------
+ ok 66 - released PO School labels and order do not follow later mutable master changes
+(1 row)
+
+UPDATE 1
+                                 ok
+---------------------------------------------------------------------
+ ok 67 - new official PO lines freeze cooking X for the exact School
+(1 row)
+
+UPDATE 1
+UPDATE 1
+                                       ok
+--------------------------------------------------------------------------------
+ ok 68 - historical PO keeps cooking X after membership change and group rename
+(1 row)
+
+                        ok
+--------------------------------------------------
+ ok 69 - future PO capture uses current cooking Y
+(1 row)
+
+                                     ok
+-----------------------------------------------------------------------------
+ ok 70 - actual new official PO release after reassignment freezes cooking Y
+(1 row)
+
+DELETE 1
+                                    ok
+---------------------------------------------------------------------------
+ ok 71 - future PO capture after removal carries explicit null group facts
+(1 row)
+
+                                       ok
+---------------------------------------------------------------------------------
+ ok 72 - actual new official PO release after removal freezes null cooking facts
+(1 row)
+
+                                 ok
+---------------------------------------------------------------------
+ ok 73 - membership removal leaves historical PO snapshots unchanged
+(1 row)
+
+SAVEPOINT
+SET
+UPDATE 2
+SET
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                          ok
+---------------------------------------------------------------------------------------
+ ok 74 - legacy released PO without a School snapshot fails closed for official export
+(1 row)
+
+ROLLBACK
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+SET
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                                      ok
+-------------------------------------------------------------------------------
+ ok 75 - the isolated date initially has two balanced current Handoff families
+(1 row)
+
+                                ok
+------------------------------------------------------------------
+ ok 76 - the initial source truth materializes one two-line DRAFT
+(1 row)
+
+SET
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+SET
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 77 - correction preserves the removed Allocation Family and prior DRAFT evidence
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+RESET
+                                           ok
+----------------------------------------------------------------------------------------
+ ok 78 - the remaining current-Handoff family can be rebalanced against corrected truth
+(1 row)
+
+                                            ok
+------------------------------------------------------------------------------------------
+ ok 79 - draft materialization regenerates only the supplier/date rooted in current truth
+(1 row)
+
+                                      ok
+------------------------------------------------------------------------------
+ ok 80 - the regenerated current DRAFT excludes the removed historical family
+(1 row)
+
+                                             ok
+--------------------------------------------------------------------------------------------
+ ok 81 - historical removed-family evidence does not keep the corrected current DRAFT stale
+(1 row)
+
+                                       ok
+--------------------------------------------------------------------------------
+ ok 82 - one release creates exactly one receipt, domain event, and audit event
+(1 row)
+
+INSERT 0 1
+                                ok
+------------------------------------------------------------------
+ ok 83 - legacy wholesale root inserts retain their default shape
+(1 row)
+
+                                                    ok
+----------------------------------------------------------------------------------------------------------
+ ok 84 - release and draft generation acquire uniqueness guards before deterministic ordered source locks
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                    ok
+--------------------------------------------------------------------------
+ ok 85 - the second supplier commitment is released before the correction
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+RESET
+                                           ok
+-----------------------------------------------------------------------------------------
+ ok 86 - allocation correction can redistribute exact School membership after PO release
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+RESET
+                                  ok
+----------------------------------------------------------------------
+ ok 87 - each affected positive supplier receives a replacement draft
+(1 row)
+
+                                       ok
+--------------------------------------------------------------------------------
+ ok 88 - old released roots stay active while separate replacement drafts exist
+(1 row)
+
+                                         ok
+------------------------------------------------------------------------------------
+ ok 89 - every replacement root has direct same-supplier/date released-root lineage
+(1 row)
+
+                                     ok
+----------------------------------------------------------------------------
+ ok 90 - replacement drafts carry no official number and no external status
+(1 row)
+
+                                          ok
+---------------------------------------------------------------------------------------
+ ok 91 - replacement drafts contain the complete current supplier/date instruction set
+(1 row)
+
+                                            ok
+-------------------------------------------------------------------------------------------
+ ok 92 - unchanged supplier total does not hide changed School-level commitment membership
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                         ok
+------------------------------------------------------------------------------------
+ ok 93 - read model derives replacement-required on both stale released commitments
+(1 row)
+
+                                                 is
+----------------------------------------------------------------------------------------------------
+ ok 94 - release fixture selects the exact prepared replacement despite a same-time unrelated Draft
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+RESET
+                                 ok
+--------------------------------------------------------------------
+ ok 95 - explicit replacement release assigns a new official number
+(1 row)
+
+                                            ok
+-------------------------------------------------------------------------------------------
+ ok 96 - replacement release atomically supersedes the old root and preserves both numbers
+(1 row)
+
+                                   ok
+-------------------------------------------------------------------------
+ ok 97 - atomic supersession records dedicated domain and audit evidence
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+RESET
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 98 - factual allocation correction remains saveable when a supplier becomes zero
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                                            is
+------------------------------------------------------------------------------------------
+ ok 99 - removed supplier derives cancellation-required instead of a replacement document
+(1 row)
+
+                                       ok
+--------------------------------------------------------------------------------
+ ok 100 - removed supplier leaves the old PO active and creates no zero-line PO
+(1 row)
+
+                                        ok
+----------------------------------------------------------------------------------
+ ok 101 - an unresolved removed-supplier commitment makes Procurement not current
+(1 row)
+
+                                          ok
+---------------------------------------------------------------------------------------
+ ok 102 - read model exposes cancellation-required and the bounded currentness failure
+(1 row)
+
+                                    is
+--------------------------------------------------------------------------
+ ok 103 - a stale replacement draft cannot bypass removed-supplier safety
+(1 row)
+
+                                   ok
+------------------------------------------------------------------------
+ ok 104 - this slice introduces no School-catering cancellation command
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ 24000000-0000-4000-8000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ diag
+------
+(0 rows)
+
+                                          is
+--------------------------------------------------------------------------------------
+ ok 105 - release permits a browser command timestamp 30 seconds ahead of server time
+(1 row)
+
+                                 is
+---------------------------------------------------------------------
+ ok 106 - release permits the 60-second positive clock-skew boundary
+(1 row)
+
+                                      is
+------------------------------------------------------------------------------
+ ok 107 - release rejects a command timestamp 61 seconds ahead of server time
+(1 row)
+
+                           is
+--------------------------------------------------------
+ ok 108 - release rejects a malformed command timestamp
+(1 row)
+
+ finish
+--------
+(0 rows)
+
+ROLLBACK

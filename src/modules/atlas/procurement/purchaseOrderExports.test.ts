@@ -9,6 +9,181 @@ import {
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("accounts for whole-word wrapping of wide supplier instructions", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const note = "WWWWWWWWWWW ".repeat(41) + "WWWWWWWW";
+    expect(note).toHaveLength(500);
+    order.lines[0]!.supplier_note = note;
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order, "sum"));
+    const fragments: string[] = [];
+    book.worksheets[0]!.eachRow((row, index) => {
+      if (index <= 10 || !row.getCell(6).text) return;
+      const fragment = row.getCell(6).text;
+      fragments.push(fragment);
+      // Each 11-W word is about125pt; two cannot share this physical note column.
+      const words = fragment
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length >= 8).length;
+      expect(row.height).toBeGreaterThanOrEqual(8 + words * 15);
+      expect(row.height).toBeLessThanOrEqual(180);
+    });
+    expect(fragments.join("")).toBe(note);
+  });
+  it.each(["details_school", "details_ing", "sum"] as const)(
+    "gives continuous wide 500-character notes enough native print height in %s",
+    async (mode) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      // Native TNR12 'W' is 11.33pt; a 32-character Excel column admits
+      // at most 14 of them per line after padding. Average-glyph estimates clip.
+      const note = "W".repeat(500);
+      order.lines[0]!.supplier_note = note;
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      const notes: string[] = [];
+      const quantities: string[] = [];
+      book.worksheets[0]!.eachRow((row, index) => {
+        if (index <= (mode === "sum" ? 10 : 9) || row.getCell(1).isMerged)
+          return;
+        if (row.getCell(6).text) {
+          const fragment = row.getCell(6).text;
+          notes.push(fragment);
+          expect(row.height).toBeGreaterThanOrEqual(
+            8 + Math.ceil(fragment.length / 14) * 15,
+          );
+          expect(row.height).toBeLessThanOrEqual(180);
+        }
+        if (row.getCell(5).text) quantities.push(row.getCell(5).text);
+      });
+      expect(notes.join("")).toBe(note);
+      expect(quantities).toEqual(["60", "40"]);
+    },
+  );
+  it("uses frozen School cooking bands and a real note column in every detail mode", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    for (const line of order.lines) {
+      Object.assign(line.school_breakdown[0]!, {
+        cooking_group_id: "captured-group-x",
+        cooking_group_name: "Bếp X lúc phát hành",
+      });
+    }
+    order.lines[0]!.supplier_note = "Giao trước 05:30\nĐóng gói riêng";
+    order.current_revision.reason_note = "Lý do nội bộ không phải ghi chú NCC";
+    for (const mode of ["all", "details_school", "details_ing"] as const) {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      for (const sheet of workbook.worksheets.filter(
+        (s) => !s.name.endsWith("Tổng"),
+      )) {
+        expect(sheet.getCell("F9").value).toBe("Ghi chú");
+        expect(sheet.getCell("F11").value).toBe(
+          "Giao trước 05:30\nĐóng gói riêng",
+        );
+        expect(sheet.getColumn(6).width).toBeGreaterThanOrEqual(28);
+        expect(JSON.stringify(sheet.getSheetValues())).toContain(
+          "NẤU TẠI: Bếp X lúc phát hành",
+        );
+        expect(sheet.pageSetup.orientation).toBe("portrait");
+      }
+      const schoolSheet = workbook.worksheets.find((s) =>
+        s.name.endsWith("Theo trường"),
+      );
+      if (schoolSheet) {
+        expect(schoolSheet.getRow(9).values).toEqual([
+          undefined,
+          "STT",
+          "Mã hàng",
+          "Tên hàng",
+          "Đơn vị",
+          "Số lượng",
+          "Ghi chú",
+        ]);
+        expect(schoolSheet.getCell("A10").text).toContain(
+          "TRƯỜNG: Trường Nguyễn Du",
+        );
+        expect(schoolSheet.getCell("C11").text).toBe("Gạo thơm");
+        expect(schoolSheet.getCell("A13").text).toContain(
+          "TRƯỜNG: Trường Trần Quốc Toản",
+        );
+        expect(schoolSheet.getCell("F14").text).toBe("");
+      }
+      const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, mode));
+      expect(pdf).toContain("NẤU TẠI: Bếp X lúc phát hành");
+      expect(pdf).toContain("Giao trước 05:30\\nĐóng gói riêng");
+      expect(pdf).not.toContain("Lý do nội bộ");
+    }
+  });
+
+  it.each([
+    {},
+    { cooking_group_id: null, cooking_group_name: null },
+    { cooking_group_name: "Tên chưa có authority" },
+  ])(
+    "prints an ordinary School without inferring cooking context from %j",
+    async (group) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      Object.assign(order.lines[0]!.school_breakdown[0]!, group);
+      order.lines[0]!.school_breakdown[0]!.delivery_location_name =
+        "Bếp theo tên điểm giao";
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(
+        await createPurchaseOrderXlsx(order, "details_school"),
+      );
+      const text = JSON.stringify(book.worksheets[0]!.getSheetValues());
+      expect(text).toContain("TRƯỜNG: Trường Nguyễn Du");
+      expect(text).not.toContain("NẤU TẠI:");
+      expect(
+        JSON.stringify(
+          buildPurchaseOrderPdfDefinition(order, "details_school"),
+        ),
+      ).not.toContain("NẤU TẠI:");
+    },
+  );
+
+  it.each(["details_school", "details_ing", "sum"] as const)(
+    "retains a 500-character multiline historical note in %s cells without repeating quantities",
+    async (mode) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      order.status = "SUPERSEDED";
+      const note = "a\n".repeat(240) + "END" + "z".repeat(17);
+      expect(note).toHaveLength(500);
+      order.lines[0]!.supplier_note = note;
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      const sheet = book.worksheets[0]!;
+      const fragments: string[] = [];
+      const quantities: string[] = [];
+      sheet.eachRow((row, index) => {
+        if (index > (mode === "sum" ? 10 : 9) && !row.getCell(1).isMerged) {
+          if (row.getCell(6).text) {
+            fragments.push(row.getCell(6).text);
+            expect(row.height).toBeLessThanOrEqual(180);
+          }
+          if (row.getCell(5).text) quantities.push(row.getCell(5).text);
+        }
+      });
+      expect(fragments.join("")).toBe(note);
+      expect(quantities).toEqual(["60", "40"]);
+      const pdf = buildPurchaseOrderPdfDefinition(order, mode);
+      const tables = (
+        pdf.content as { table?: { body: unknown[][] } }[]
+      ).flatMap((item) => (item.table ? [item.table] : []));
+      expect(
+        tables
+          .flatMap((table) =>
+            table.body.slice(mode === "sum" ? 1 : 2).map((row) => row.at(-1)),
+          )
+          .filter((cell) => typeof cell === "string")
+          .join(""),
+      ).toBe(note);
+    },
+  );
   it("keeps distinct line notes with their exact quantities in XLSX and PDF", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
@@ -151,18 +326,18 @@ describe("released purchase-order exports", () => {
     ).toContain("Trường Nguyễn Du");
     expect(
       workbook.getWorksheet("02-09-2026 - Theo trường")!.model.merges,
-    ).toContain("A10:G10");
+    ).toContain("A10:F10");
     expect(
       workbook.getWorksheet("02-09-2026 - Theo trường")!.model.merges,
-    ).toEqual(expect.arrayContaining(["F11:G11"]));
+    ).not.toContain("E11:F11");
     expect(
       workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A13").value,
     ).toContain("Trường Trần Quốc Toản");
     expect(
-      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").value,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11").value,
     ).toBe("60");
     expect(
-      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11")
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11")
         .numFmt ?? "General",
     ).toBe("@");
     expect(workbook.model.media).toHaveLength(1);
@@ -177,9 +352,9 @@ describe("released purchase-order exports", () => {
     ).toBe("Gạo thơm (kg)");
     expect(
       workbook.getWorksheet("02-09-2026 - Theo hàng")!.model.merges,
-    ).toContain("A10:G10");
+    ).toContain("A10:F10");
     expect(
-      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("D11").value,
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("C11").value,
     ).toContain("Trường Nguyễn Du");
     expect(
       workbook.getWorksheet("02-09-2026 - Theo hàng")!.getRow(10).height,
@@ -208,7 +383,7 @@ describe("released purchase-order exports", () => {
       workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("E11").value,
     ).toBe("9007199254740993.123456");
     expect(
-      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").value,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11").value,
     ).toBe("9007199254740992.123455");
   });
 

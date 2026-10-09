@@ -1,0 +1,16 @@
+$ pnpm ui:vnext:typegen && tsc -b --pretty false
+$ chakra typegen src/vnext/atlas/system.ts
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+T  Chakra CLI ⚡️
+[?25l|
+•  Generating conditions types[1G[Jo  ✅ Generated conditions typings
+[?25h[?25l|
+•  Generating recipe types[1G[Jo  ✅ Generated recipe typings
+[?25h[?25l|
+o  ✅ Generated utility typings
+[?25h[?25l|
+o  ✅ Generated token typings
+[?25h[?25l|
+•  Generating system types[1G[Jo  ✅ Generated system types
+[?25h|
+—  🎉 Done!
