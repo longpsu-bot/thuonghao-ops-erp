@@ -25,13 +25,17 @@ Shopping List V2/A+ edits, hosted data operations, deployment or merge. Metadata
 hiding is presentation only. Frontend revert is sufficient rollback. Contract:
 [operational document XLSX metadata](../api/operational-document-xlsx-metadata.md).
 
-Validation: 88 focused tests in six files, TypeScript, deterministic generation,
+Validation: 97 focused tests in seven files, TypeScript, deterministic generation,
 native Excel round trips for six workbooks and all 16 PDF/native pages pass.
 Fixture-only evidence:
 [hidden parsing specimens](../testing/artifacts/atlas-document-system-01/hidden-parsing-metadata/README.md).
 The required Frontend CI remains the final gate on the current PR head; its live
 status and revision-specific evidence are recorded on PR #360. Keep the PR Draft
 for Owner visual/product acceptance.
+The first follow-up CI caught six older V1 presentation assertions that counted
+hidden metadata as visible forms. These now separately assert accepted visible
+sheet/header geometry and very-hidden metadata with six visible/eight hidden
+columns. Their nine focused tests pass; no production or guard change was needed.
 
 ## Final PO document identity closeout — 9 October 2026
 

@@ -59,13 +59,18 @@ describe("Owner V1 PO presentation revision", () => {
   });
   it("matches V1 all-mode sheet order and the six-column summary positions without invented codes", async () => {
     const workbook = await load(await createPurchaseOrderXlsx(fixture()));
-    expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
+    expect(workbook.getWorksheet("_ATLAS_META")?.state).toBe("veryHidden");
+    expect(
+      workbook.worksheets
+        .filter((sheet) => sheet.state === "visible")
+        .map((sheet) => sheet.name),
+    ).toEqual([
       "02-09-2026 - Theo hàng",
       "02-09-2026 - Theo trường",
       "02-09-2026 - Tổng",
     ]);
     const summary = workbook.worksheets[2]!;
-    expect(summary.getRow(10).values).toEqual([
+    expect((summary.getRow(10).values as unknown[]).slice(0, 7)).toEqual([
       undefined,
       "STT",
       "Mã hàng",
@@ -94,9 +99,12 @@ describe("Owner V1 PO presentation revision", () => {
     ["sum", ["Tổng"]],
   ] as const)("supports the V1 %s selection mode", async (mode, suffixes) => {
     const workbook = await load(await createPurchaseOrderXlsx(fixture(), mode));
-    expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual(
-      suffixes.map((name) => `02-09-2026 - ${name}`),
-    );
+    expect(workbook.getWorksheet("_ATLAS_META")?.state).toBe("veryHidden");
+    expect(
+      workbook.worksheets
+        .filter((sheet) => sheet.state === "visible")
+        .map((sheet) => sheet.name),
+    ).toEqual(suffixes.map((name) => `02-09-2026 - ${name}`));
   });
   it("uses compact group bands and numbered rows in both directions, with all School identities kept distinct", async () => {
     const order = fixture();
@@ -105,7 +113,8 @@ describe("Owner V1 PO presentation revision", () => {
     const workbook = await load(await createPurchaseOrderXlsx(order));
     for (const suffix of ["Theo hàng", "Theo trường"]) {
       const sheet = workbook.getWorksheet(`02-09-2026 - ${suffix}`)!;
-      expect(sheet.columnCount).toBe(6);
+      expect(sheet.columns.filter((column) => !column.hidden)).toHaveLength(6);
+      expect(sheet.columns.filter((column) => column.hidden)).toHaveLength(8);
       expect(sheet.model.merges).toContain("A10:F10");
       expect(sheet.getCell("A11").value).toBe(1);
       expect(sheet.getCell("B11").text).toBe("1082");

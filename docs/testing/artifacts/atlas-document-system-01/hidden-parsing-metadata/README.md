@@ -17,7 +17,7 @@ Fixture-only PO/PXK specimens generated through the production exporters on
   the root XLSX files remain unchanged.
 - `pdf-text-report.json` covers every PDF/native print page with no missing
   expected visible strings. The two contact sheets display all 16 pages.
-- Focused automated validation: 88 tests in six files pass; TypeScript passes.
+- Focused automated validation: 97 tests in seven files pass; TypeScript passes.
   Shopping List V2/A+, backend schema/security and prior closeout evidence remain
   unchanged.
 
