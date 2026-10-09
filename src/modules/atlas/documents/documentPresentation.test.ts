@@ -59,28 +59,23 @@ describe("Atlas document presentation boundaries", () => {
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
     order.lines[0]!.supplier_note = "BEGIN" + "A\n".repeat(240) + "END";
     const workbook = await book(await createPurchaseOrderXlsx(order));
-    for (const [name, noteColumn, quantityColumn, first, prefix] of [
-      ["02-09-2026 - Tổng", 6, 5, 11, ""],
-      ["02-09-2026 - Theo trường", 1, 6, 11, "Ghi chú (STT 1, Gạo thơm): "],
-      [
-        "02-09-2026 - Theo hàng",
-        1,
-        6,
-        11,
-        "Ghi chú (STT 1, Trường Nguyễn Du / Bếp chính Nguyễn Du): ",
-      ],
+    for (const name of [
+      "02-09-2026 - Tổng",
+      "02-09-2026 - Theo trường",
+      "02-09-2026 - Theo hàng",
     ] as const) {
       const sheet = workbook.getWorksheet(name)!;
       const chunks: string[] = [],
         quantities: string[] = [];
       sheet.eachRow((row, n) => {
-        if (n < first) return;
-        const note = row.getCell(noteColumn).value;
-        if (typeof note === "string" && (!prefix || note.startsWith(prefix))) {
-          chunks.push(note.slice(prefix.length));
+        if (n < 11) return;
+        const noteCell = row.getCell(6);
+        const note = noteCell.value;
+        if (!noteCell.isMerged && typeof note === "string") {
+          chunks.push(note);
           expect(row.height).toBeLessThanOrEqual(180);
         }
-        const quantity = row.getCell(quantityColumn).value;
+        const quantity = row.getCell(5).value;
         if (
           typeof quantity === "string" &&
           /^\d+(?:\.\d{1,6})?$/.test(quantity)
@@ -90,14 +85,7 @@ describe("Atlas document presentation boundaries", () => {
       expect(chunks.join("")).toBe(order.lines[0]!.supplier_note);
       expect(quantities).toEqual(["60", "40"]);
     }
-    for (const [mode, prefix] of [
-      ["sum", ""],
-      ["details_school", "Ghi chú (STT 1, Gạo thơm): "],
-      [
-        "details_ing",
-        "Ghi chú (STT 1, Trường Nguyễn Du\nBếp chính Nguyễn Du): ",
-      ],
-    ] as const) {
+    for (const mode of ["sum", "details_school", "details_ing"] as const) {
       const pdf = buildPurchaseOrderPdfDefinition(order, mode);
       const tables = (
         pdf.content as { table?: { body: unknown[][] } }[]
@@ -106,10 +94,8 @@ describe("Atlas document presentation boundaries", () => {
         quantities: string[] = [];
       for (const item of tables) {
         for (const row of item.table!.body.slice(mode === "sum" ? 1 : 2)) {
-          const note =
-            mode === "sum" ? row.at(-1) : (row[0] as { text?: string }).text;
-          if (typeof note === "string" && (!prefix || note.startsWith(prefix)))
-            notes.push(note.slice(prefix.length));
+          const note = row.at(-1);
+          if (typeof note === "string") notes.push(note);
           const quantity = (row[4] as { text?: string }).text;
           if (quantity) quantities.push(quantity);
         }
@@ -137,10 +123,10 @@ describe("Atlas document presentation boundaries", () => {
       expect(sheet.pageSetup.printArea).toMatch(/^A1:/);
     }
     expect(
-      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").value,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11").value,
     ).toBe("1.234567");
     expect(
-      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("F11").numFmt,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11").numFmt,
     ).toBe("@");
     const pdf = buildPurchaseOrderPdfDefinition(order);
     expect(JSON.stringify(pdf)).toContain("ĐÃ ĐƯỢC THAY THẾ");
@@ -161,10 +147,10 @@ describe("Atlas document presentation boundaries", () => {
     ).toContain(a!.school_breakdown[0]!.school_name);
     for (const name of ["02-09-2026 - Theo trường", "02-09-2026 - Theo hàng"]) {
       const sheet = workbook.getWorksheet(name)!;
-      expect(sheet.model.merges).toContain("A10:G10");
-      expect(sheet.model.merges).toContain("A13:G13");
-      expect(sheet.getCell("F11").value).toBe("60");
-      expect(sheet.getCell("F14").value).toBe("40");
+      expect(sheet.model.merges).toContain("A10:F10");
+      expect(sheet.model.merges).toContain("A13:F13");
+      expect(sheet.getCell("E11").value).toBe("60");
+      expect(sheet.getCell("E14").value).toBe("40");
     }
     expect(
       workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("A10").value,

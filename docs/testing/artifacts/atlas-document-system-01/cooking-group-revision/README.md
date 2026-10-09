@@ -141,6 +141,13 @@ is retained. That file passes all 64 tests in isolation after cleanup, with norm
 timeouts. The required GitHub full frontend suite must pass on the final PR head;
 its exact commit and run are recorded in PR #360's description/checks.
 
+General document presentation/quantity regressions pass 30 tests
+(`document-regressions.log`). The first full GitHub job caught four old PO column
+and band-position assertions in those files. They now target the approved six
+columns, preserve full note/text and exact-quantity/identity guarantees, and assert
+the practical note/description/quantity widths. No production builder changed in
+this correction, so native specimens and SQL replay remain valid.
+
 After comparison passed, the explicitly disposable local project was stopped
 using its exact project ID and `--no-backup`. Its task-only volumes were removed;
 unrelated Docker projects were left unchanged. To reproduce, create/start the

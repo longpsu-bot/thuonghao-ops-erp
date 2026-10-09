@@ -81,8 +81,8 @@ describe("printed exact quantities", () => {
     });
     for (const [mode, column, expected] of [
       ["sum", 5, ["12.39"]],
-      ["details_ing", 6, ["12.34", "0.05"]],
-      ["details_school", 6, ["12.34", "0.05"]],
+      ["details_ing", 5, ["12.34", "0.05"]],
+      ["details_school", 5, ["12.34", "0.05"]],
     ] as const) {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await createPurchaseOrderXlsx(order, mode));
@@ -95,7 +95,7 @@ describe("printed exact quantities", () => {
       expect(totalMicros(values)).toBe(12_390_000n);
       const sheet = workbook.worksheets[0]!;
       expect(sheet.pageSetup.orientation).toBe("portrait");
-      expect(sheet.getCell(mode === "sum" ? "E11" : "F11").font.size).toBe(14);
+      expect(sheet.getCell("E11").font.size).toBe(14);
       expect(sheet.getCell(mode === "sum" ? "A10" : "C9").font.size).toBe(16);
       expect(
         buildPurchaseOrderPdfDefinition(order, mode).defaultStyle?.fontSize,
@@ -104,10 +104,10 @@ describe("printed exact quantities", () => {
         expect(sheet.getColumn(3).width).toBeGreaterThan(36);
         expect(sheet.getColumn(5).width).toBeLessThan(12.71);
       } else {
-        expect(sheet.getColumn(4).width).toBeGreaterThan(34);
-        expect(
-          sheet.getColumn(6).width! + sheet.getColumn(7).width!,
-        ).toBeLessThan(24);
+        expect(sheet.columnCount).toBe(6);
+        expect(sheet.getColumn(3).width).toBe(34);
+        expect(sheet.getColumn(5).width).toBe(12);
+        expect(sheet.getColumn(6).width).toBe(32);
       }
       const tables = (
         buildPurchaseOrderPdfDefinition(order, mode).content as {

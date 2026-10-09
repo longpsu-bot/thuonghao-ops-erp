@@ -91,6 +91,12 @@ grant overall V1 fidelity acceptance or solve the other Class C gaps.
   cleanup (`recipe-ui-isolated.log`). Normal timeouts/checks are unchanged.
   Full routine frontend validation belongs
   to the required GitHub job on the final PR head; no earlier green head substitutes.
+  The first pushed head's full job found four stale general-document assertions
+  addressing the old PO quantity/note columns and seven-column bands. Those two
+  test files now assert the approved six-column geometry while retaining complete
+  notes, exact quantity totals, source immutability and distinct identities; all
+  30 assertions pass. This follow-up changes tests/evidence only, so native
+  specimens and database replay remain valid. Final CI must validate the new head.
 
 Security: two private forced-RLS tables, three authenticated shaped APIs using
 existing GLOBAL Admin capabilities, dedicated runtimes, empty search paths and
