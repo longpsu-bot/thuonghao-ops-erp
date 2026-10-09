@@ -8,15 +8,15 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { AtlasVNextProvider } from "../AtlasVNextProvider";
-import { IngredientSupplierWorkbench } from "./IngredientSupplierWorkbench";
-import { createReviewMasterDataApi } from "../../../modules/atlas/review/reviewMasterDataApi";
+import { AtlasVNextProvider } from "../../../vnext/atlas/AtlasVNextProvider";
+import { IngredientSupplierWorkbench } from "../../../vnext/atlas/master-data/IngredientSupplierWorkbench";
+import { createReviewMasterDataApi } from "./reviewMasterDataApi";
 import {
   responseArray,
   type IngredientMasterData,
   type SupplierMasterData,
   type AtlasRpcResult,
-} from "../bridges/ingredientSupplierMasterData";
+} from "../../../vnext/atlas/bridges/ingredientSupplierMasterData";
 
 afterEach(cleanup);
 async function setup() {

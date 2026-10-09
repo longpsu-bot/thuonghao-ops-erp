@@ -106,3 +106,9 @@ lifecycle save/readback guard issue remain outside this bounded revision.
 Final exact-head Frontend CI owns the full routine suite. Focused development,
 release/replacement/history/security tests and native checks are reported in the
 existing task and PR; neither merge nor deployment is authorized.
+
+The first pushed closeout head failed the vNext import boundary because the new
+editor integration test directly imported the Review adapter from inside vNext.
+The cross-layer test now lives in `src/modules/atlas/review`; all six tests and
+the unchanged boundary check pass. No boundary allowlist or CI rule was relaxed.
+Final exact-head checks are recorded on the Draft PR.
