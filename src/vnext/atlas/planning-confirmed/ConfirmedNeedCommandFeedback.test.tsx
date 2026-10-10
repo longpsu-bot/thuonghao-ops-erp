@@ -5,6 +5,29 @@ import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ConfirmedNeedCommandFeedback } from "./ConfirmedNeedCommandFeedback";
 afterEach(cleanup);
 
+it("preserves different uncertain-write and recovery-read explanations", () => {
+  render(
+    <AtlasVNextProvider>
+      <ConfirmedNeedCommandFeedback
+        lock="unknown"
+        notice="Không thể thực hiện yêu cầu. Hãy tải lại dữ liệu."
+        readError="Bạn không có quyền truy cập nhu cầu xác nhận này."
+        busy={false}
+        onRecover={() => {}}
+      />
+    </AtlasVNextProvider>,
+  );
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Không thể thực hiện yêu cầu. Hãy tải lại dữ liệu.",
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Bạn không có quyền truy cập nhu cầu xác nhận này.",
+  );
+  expect(
+    screen.getByRole("button", { name: "Tải lại để xác nhận" }),
+  ).toBeEnabled();
+});
+
 it("shows one explanation when command feedback and read recovery repeat the same failure", () => {
   render(
     <AtlasVNextProvider>

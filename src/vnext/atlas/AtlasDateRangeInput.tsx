@@ -122,7 +122,7 @@ export function AtlasDateRangeInput({
                   aria-describedby={error ? errorId : undefined}
                   gap="var(--atlas-layout-zero, 0)"
                   aria-label="Từ ngày"
-                  aria-labelledby={undefined}
+                  aria-labelledby=""
                 />
                 <Text as="span" color="fg.muted" aria-hidden="true">
                   —
@@ -132,7 +132,7 @@ export function AtlasDateRangeInput({
                   aria-describedby={error ? errorId : undefined}
                   gap="var(--atlas-layout-zero, 0)"
                   aria-label="Đến ngày"
-                  aria-labelledby={undefined}
+                  aria-labelledby=""
                   pe={{
                     base: "var(--atlas-layout-mobile-target, 44px)",
                     lg: "var(--atlas-layout-calendar-inset, 40px)",

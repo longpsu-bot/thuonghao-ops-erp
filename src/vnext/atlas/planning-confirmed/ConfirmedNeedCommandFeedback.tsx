@@ -33,7 +33,7 @@ export function ConfirmedNeedCommandFeedback({
           Chưa xác định được kết quả. Các thao tác ghi đang tạm khóa.
         </Text>
       )}
-      {notice && !readError && <Text role="status">{notice}</Text>}
+      {notice && notice !== readError && <Text role="status">{notice}</Text>}
       {readError && (
         <Text role="alert" color="status.danger">
           <Icon asChild mr="xs">

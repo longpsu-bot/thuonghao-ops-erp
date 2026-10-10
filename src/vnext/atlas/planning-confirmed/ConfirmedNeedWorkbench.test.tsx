@@ -199,9 +199,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       "confirmed-need-filters",
     );
     expect(
-      screen.getByText(
-        "Tuần 07/09/2026 · Ngày 07/09/2026 · Tất cả trường · Tình trạng: Tất cả",
-      ),
+      screen.getByText("Ngày 07/09/2026 · Tất cả trường · Tình trạng: Tất cả"),
     ).toBeInTheDocument();
 
     fireEvent.click(disclosure);

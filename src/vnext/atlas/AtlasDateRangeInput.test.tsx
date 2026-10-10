@@ -71,9 +71,13 @@ describe("shared PO/PXK calendar range", () => {
     expect(screen.getAllByRole("alert")).toHaveLength(1);
     for (const segment of screen.getAllByRole("spinbutton"))
       expect(segment).toHaveAttribute("aria-invalid", "true");
-    for (const group of container.querySelectorAll(
-      '[data-scope="date-input"][data-part="segment-group"]',
-    )) {
+    expect(
+      container.querySelectorAll(
+        '[data-scope="date-input"][data-part="segment-group"]',
+      ),
+    ).toHaveLength(2);
+    for (const label of ["Từ ngày", "Đến ngày"]) {
+      const group = screen.getByRole("group", { name: label });
       expect(group).toHaveAttribute("aria-describedby", "range-error");
       expect(
         document.getElementById(group.getAttribute("aria-describedby")!),
