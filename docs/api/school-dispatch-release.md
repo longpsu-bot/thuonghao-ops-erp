@@ -166,3 +166,14 @@ the enhanced exports, but must retain frozen School order and issuer facts. Befo
 deployment enables new release traffic, every in-scope School must have both issuer
 configuration values populated through an authorized administrative rollout; this
 06D-E task does not write hosted School data.
+
+## Independent location and Dispatch snapshots
+
+Owner task `TASK-ATLAS-DOCUMENT-SCHOOL-GROUPING-02.md` adds future-release
+`cooking_location_id`, `cooking_location_name`, `cooking_location_kind`,
+`cooking_location_host_school_id`, `dispatch_group_id` and `dispatch_group_name`.
+Cooking compatibility aliases remain. Admin facts are locked during capture;
+renaming or moving a current relationship never changes released evidence.
+Historical absent/null fields are retained without backfill. PO School sections
+stay separate; Dispatch packaging uses only captured membership and retains all
+School/source lineage. See [explicit independent facts](school-cooking-groups.md).

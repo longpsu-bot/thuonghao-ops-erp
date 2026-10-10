@@ -1,0 +1,3421 @@
+{
+  "fixtureOnly": true,
+  "files": [
+    {
+      "name": "PO-School-measured-rows.xlsx",
+      "sheets": [
+        {
+          "name": "02-09-2026 - Theo hàng",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A4",
+              "value": "CHI TIẾT GIAO HÀNG (THEO HÀNG)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D5",
+              "value": "Ngày dùng:",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E5",
+              "value": "02/09/2026",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A7",
+              "value": "Số đơn: PO-20260902-2500000000004000",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A8",
+              "value": "Mã NCC: 53",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A9",
+              "value": "STT",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B9",
+              "value": "Mã hàng",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C9",
+              "value": "Trường học",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D9",
+              "value": "Đơn vị",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E9",
+              "value": "Số lượng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F9",
+              "value": "Ghi chú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G9",
+              "value": "__document_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H9",
+              "value": "__ingredient_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I9",
+              "value": "__unit_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J9",
+              "value": "__school_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K9",
+              "value": "__location_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "L9",
+              "value": "__cooking_group_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M9",
+              "value": "__exported_quantity",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N9",
+              "value": "__row_kind",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A10",
+              "value": "Gạo thơm (kg)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C11",
+              "value": "PHẠM VĂN CỘI",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E11",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J11",
+              "value": "fixture-school-0",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K11",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M11",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B12",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C12",
+              "value": "LÊ VĂN THẾ (Nấu tại: PHẠM VĂN CỘI)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D12",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E12",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G12",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H12",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I12",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J12",
+              "value": "fixture-school-1",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K12",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M12",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N12",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B13",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C13",
+              "value": "VĨNH TÂN",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D13",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E13",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G13",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H13",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I13",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J13",
+              "value": "fixture-school-2",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K13",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M13",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N13",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B14",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C14",
+              "value": "VĨNH TÂN - PHÂN HIỆU (Nấu tại: VĨNH TÂN)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D14",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E14",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G14",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H14",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I14",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J14",
+              "value": "fixture-school-3",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K14",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M14",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N14",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B15",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C15",
+              "value": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2) (Nấu tại: Công ty Thượng Hảo)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D15",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E15",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G15",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H15",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I15",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J15",
+              "value": "fixture-school-4",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K15",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M15",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N15",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B16",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C16",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D16",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E16",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G16",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H16",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I16",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J16",
+              "value": "fixture-school-5",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K16",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M16",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N16",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B17",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C17",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D17",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E17",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G17",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H17",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I17",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J17",
+              "value": "fixture-school-6",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K17",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M17",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N17",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A18",
+              "value": "Gạo thơm (kg) (tiếp)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B19",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C19",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D19",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E19",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G19",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H19",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I19",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J19",
+              "value": "fixture-school-7",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K19",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M19",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N19",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B20",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C20",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D20",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E20",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G20",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H20",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I20",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J20",
+              "value": "fixture-school-8",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K20",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M20",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N20",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A21",
+              "value": "Gạo thơm (kg) (tiếp)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B22",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C22",
+              "value": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D22",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E22",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G22",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H22",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I22",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J22",
+              "value": "fixture-school-9",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K22",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M22",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N22",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B23",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C23",
+              "value": "DÒNG MỘT\nDÒNG HAI\nDÒNG BA\nDÒNG BỐN",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D23",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E23",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G23",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H23",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I23",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J23",
+              "value": "fixture-school-10",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K23",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M23",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N23",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            }
+          ],
+          "schoolRows": [
+            {
+              "address": "C11",
+              "text": "PHẠM VĂN CỘI",
+              "height": 28,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 28,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C12",
+              "text": "LÊ VĂN THẾ (Nấu tại: PHẠM VĂN CỘI)",
+              "height": 44,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 44,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C13",
+              "text": "VĨNH TÂN",
+              "height": 28,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 28,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C14",
+              "text": "VĨNH TÂN - PHÂN HIỆU (Nấu tại: VĨNH TÂN)",
+              "height": 44,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 44,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C15",
+              "text": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2) (Nấu tại: Công ty Thượng Hảo)",
+              "height": 44,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 44,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C16",
+              "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 76,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 76,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C17",
+              "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 124,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 124,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C19",
+              "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 172,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 172,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C20",
+              "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 220,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 220,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C22",
+              "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+              "height": 156,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 156,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "C23",
+              "text": "DÒNG MỘT\nDÒNG HAI\nDÒNG BA\nDÒNG BỐN",
+              "height": 76,
+              "widthPoints": 240,
+              "bold": false,
+              "measuredHeight": 76,
+              "firstColumn": 3,
+              "lastColumn": 3,
+              "boundaryKind": "cell-borders"
+            }
+          ]
+        },
+        {
+          "name": "02-09-2026 - Theo trường",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A4",
+              "value": "CHI TIẾT GIAO HÀNG",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D5",
+              "value": "Ngày dùng:",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E5",
+              "value": "02/09/2026",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A7",
+              "value": "Số đơn: PO-20260902-2500000000004000",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A8",
+              "value": "Mã NCC: 53",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A9",
+              "value": "STT",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B9",
+              "value": "Mã hàng",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C9",
+              "value": "Tên hàng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D9",
+              "value": "Đơn vị",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E9",
+              "value": "Số lượng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F9",
+              "value": "Ghi chú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G9",
+              "value": "__document_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H9",
+              "value": "__ingredient_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I9",
+              "value": "__unit_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J9",
+              "value": "__school_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K9",
+              "value": "__location_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "L9",
+              "value": "__cooking_group_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M9",
+              "value": "__exported_quantity",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N9",
+              "value": "__row_kind",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A10",
+              "value": "PHẠM VĂN CỘI",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C11",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E11",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J11",
+              "value": "fixture-school-0",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K11",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M11",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A13",
+              "value": "LÊ VĂN THẾ (Nấu tại: PHẠM VĂN CỘI)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B14",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C14",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D14",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E14",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G14",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H14",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I14",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J14",
+              "value": "fixture-school-1",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K14",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M14",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N14",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A16",
+              "value": "VĨNH TÂN",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B17",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C17",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D17",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E17",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G17",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H17",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I17",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J17",
+              "value": "fixture-school-2",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K17",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M17",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N17",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A19",
+              "value": "VĨNH TÂN - PHÂN HIỆU (Nấu tại: VĨNH TÂN)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B20",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C20",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D20",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E20",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G20",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H20",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I20",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J20",
+              "value": "fixture-school-3",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K20",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M20",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N20",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A22",
+              "value": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2) (Nấu tại: Công ty Thượng Hảo)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B23",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C23",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D23",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E23",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G23",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H23",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I23",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J23",
+              "value": "fixture-school-4",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K23",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M23",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N23",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A25",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B26",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C26",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D26",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E26",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G26",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H26",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I26",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J26",
+              "value": "fixture-school-5",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K26",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M26",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N26",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A28",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B29",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C29",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D29",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E29",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G29",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H29",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I29",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J29",
+              "value": "fixture-school-6",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K29",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M29",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N29",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A31",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B32",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C32",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D32",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E32",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G32",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H32",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I32",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J32",
+              "value": "fixture-school-7",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K32",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M32",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N32",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A34",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B35",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C35",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D35",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E35",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G35",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H35",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I35",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J35",
+              "value": "fixture-school-8",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K35",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M35",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N35",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A37",
+              "value": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B38",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C38",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D38",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E38",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G38",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H38",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I38",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J38",
+              "value": "fixture-school-9",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K38",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M38",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N38",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A40",
+              "value": "DÒNG MỘT\nDÒNG HAI\nDÒNG BA\nDÒNG BỐN",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B41",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C41",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D41",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E41",
+              "value": "1",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G41",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H41",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I41",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J41",
+              "value": "fixture-school-10",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K41",
+              "value": "25000000-0000-4000-8000-000000000011",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M41",
+              "value": "1.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N41",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            }
+          ],
+          "schoolRows": [
+            {
+              "address": "A10",
+              "text": "PHẠM VĂN CỘI",
+              "height": 28,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 28,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A13",
+              "text": "LÊ VĂN THẾ (Nấu tại: PHẠM VĂN CỘI)",
+              "height": 28,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 28,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A16",
+              "text": "VĨNH TÂN",
+              "height": 28,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 28,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A19",
+              "text": "VĨNH TÂN - PHÂN HIỆU (Nấu tại: VĨNH TÂN)",
+              "height": 28,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 28,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A22",
+              "text": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2) (Nấu tại: Công ty Thượng Hảo)",
+              "height": 28,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 28,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A25",
+              "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 44,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 44,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A28",
+              "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 60,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 60,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A31",
+              "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 76,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 76,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A34",
+              "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 92,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 92,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A37",
+              "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+              "height": 76,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 76,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            },
+            {
+              "address": "A40",
+              "text": "DÒNG MỘT\nDÒNG HAI\nDÒNG BA\nDÒNG BỐN",
+              "height": 76,
+              "widthPoints": 642,
+              "bold": true,
+              "measuredHeight": 76,
+              "firstColumn": 1,
+              "lastColumn": 6,
+              "boundaryKind": "cell-borders"
+            }
+          ]
+        },
+        {
+          "name": "02-09-2026 - Tổng",
+          "cells": [
+            {
+              "address": "C1",
+              "value": "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU ĐẶT HÀNG",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A5",
+              "value": "Số đơn: PO-20260902-2500000000004000",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A6",
+              "value": "Nhà cung cấp: NCC An Phú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A7",
+              "value": "Ngày dùng:",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B7",
+              "value": "02/09/2026",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A8",
+              "value": "Mã NCC: 53",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A9",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A10",
+              "value": "STT",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B10",
+              "value": "Mã hàng",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C10",
+              "value": "Tên hàng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D10",
+              "value": "Đơn vị",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E10",
+              "value": "Số lượng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F10",
+              "value": "Ghi chú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G10",
+              "value": "__document_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H10",
+              "value": "__ingredient_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I10",
+              "value": "__unit_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J10",
+              "value": "__school_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K10",
+              "value": "__location_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "L10",
+              "value": "__cooking_group_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M10",
+              "value": "__exported_quantity",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N10",
+              "value": "__row_kind",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B11",
+              "value": "1082",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "C11",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D11",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E11",
+              "value": "11",
+              "hidden": false,
+              "quantity": true
+            },
+            {
+              "address": "G11",
+              "value": "25000000-0000-4000-8000-000000000051",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "H11",
+              "value": "25000000-0000-4000-8000-000000000021",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "I11",
+              "value": "25000000-0000-4000-8000-000000000031",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M11",
+              "value": "11.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N11",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            }
+          ],
+          "schoolRows": []
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C3",
+              "value": ""
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PO\",\"workbook_mode\":\"all\",\"purchase_order_id\":\"25000000-0000-4000-8000-000000000051\",\"purchase_order_revision_id\":\"25000000-0000-4000-8000-000000000053\",\"revision_number\":2,\"service_date\":\"2026-09-02\",\"document_number\":\"PO-20260902-2500000000004000\",\"status\":\"RELEASED_TO_SUPPLIER\",\"supplier_id\":\"25000000-0000-4000-8000-000000000041\",\"supplier_document_code_snapshot\":\"53\",\"released_at\":\"2026-09-01T08:00:00.000Z\",\"predecessor_revision_id\":\"25000000-0000-4000-8000-000000000052\",\"replaces_purchase_order_id\":null,\"replaced_by_purchase_order_id\":null}"
+            },
+            {
+              "address": "A4",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B4",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C4",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E4",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-0\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"PHẠM VĂN CỘI\",\"cooking_location_kind\":\"SCHOOL\",\"cooking_location_host_school_id\":\"fixture-school-0\",\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A5",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B5",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C5",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E5",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-1\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"PHẠM VĂN CỘI\",\"cooking_location_kind\":\"SCHOOL\",\"cooking_location_host_school_id\":\"fixture-host\",\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A6",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B6",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C6",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E6",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-2\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"VĨNH TÂN\",\"cooking_location_kind\":\"SCHOOL\",\"cooking_location_host_school_id\":\"fixture-school-2\",\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A7",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B7",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C7",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E7",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-3\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"VĨNH TÂN\",\"cooking_location_kind\":\"SCHOOL\",\"cooking_location_host_school_id\":\"fixture-host\",\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A8",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B8",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C8",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E8",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-4\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"Công ty Thượng Hảo\",\"cooking_location_kind\":\"COMPANY\",\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A9",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B9",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C9",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E9",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-5\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A10",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B10",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C10",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E10",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-6\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A11",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B11",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C11",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E11",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-7\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A12",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B12",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C12",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E12",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-8\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A13",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B13",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C13",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E13",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-9\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A14",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B14",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C14",
+              "value": "02-09-2026 - Theo hàng"
+            },
+            {
+              "address": "E14",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-10\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A15",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B15",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C15",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E15",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-0\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"PHẠM VĂN CỘI\",\"cooking_location_kind\":\"SCHOOL\",\"cooking_location_host_school_id\":\"fixture-school-0\",\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A16",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B16",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C16",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E16",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-1\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"PHẠM VĂN CỘI\",\"cooking_location_kind\":\"SCHOOL\",\"cooking_location_host_school_id\":\"fixture-host\",\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A17",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B17",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C17",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E17",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-2\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"VĨNH TÂN\",\"cooking_location_kind\":\"SCHOOL\",\"cooking_location_host_school_id\":\"fixture-school-2\",\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A18",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B18",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C18",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E18",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-3\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"VĨNH TÂN\",\"cooking_location_kind\":\"SCHOOL\",\"cooking_location_host_school_id\":\"fixture-host\",\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A19",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B19",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C19",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E19",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-4\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":\"fixture-location\",\"cooking_location_name\":\"Công ty Thượng Hảo\",\"cooking_location_kind\":\"COMPANY\",\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A20",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B20",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C20",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E20",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-5\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A21",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B21",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C21",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E21",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-6\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A22",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B22",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C22",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E22",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-7\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A23",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B23",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C23",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E23",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-8\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A24",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B24",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C24",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E24",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-9\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A25",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B25",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C25",
+              "value": "02-09-2026 - Theo trường"
+            },
+            {
+              "address": "E25",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\",\"school_id\":\"fixture-school-10\",\"service_date\":\"2026-09-02\",\"school_quantity\":\"1.000000\",\"supplier_note_snapshot\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null}"
+            },
+            {
+              "address": "A26",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B26",
+              "value": "25000000-0000-4000-8000-000000000051"
+            },
+            {
+              "address": "C26",
+              "value": "02-09-2026 - Tổng"
+            },
+            {
+              "address": "E26",
+              "value": "{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"11.000000\",\"ingredient_document_code_snapshot\":\"1082\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dispatch-explicit-Vinh-Tan.xlsx",
+      "sheets": [
+        {
+          "name": "09-24 VĨNH TÂN",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU XUẤT KHO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A5",
+              "value": "Số phiếu: PXK-VT-0 / PXK-VT-1",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F5",
+              "value": "Ngày:",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G5",
+              "value": "24/09/2026",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A6",
+              "value": "NHÓM DISPATCH: VĨNH TÂN",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A7",
+              "value": "Địa chỉ: Số 1 Nguyễn Du",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A9",
+              "value": "Stt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B9",
+              "value": "Tên thực phẩm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C9",
+              "value": "Đvt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D9",
+              "value": "Số lượng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E9",
+              "value": "Tình trạng cảm quan",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G9",
+              "value": "Biện pháp xử lý",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "H9",
+              "value": "Ghi chú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E10",
+              "value": "Đạt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F10",
+              "value": "Không đạt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "I10",
+              "value": "__document_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J10",
+              "value": "__ingredient_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K10",
+              "value": "__unit_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "L10",
+              "value": "__school_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M10",
+              "value": "__location_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N10",
+              "value": "__cooking_group_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "O10",
+              "value": "__exported_quantity",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "P10",
+              "value": "__row_kind",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B11",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C11",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D11",
+              "value": "0.200002",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "H11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "J11",
+              "value": "26000000-0000-4000-8000-000000000006",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K11",
+              "value": "26000000-0000-4000-8000-000000000007",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "O11",
+              "value": "0.200002",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "P11",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A17",
+              "value": "Người nhận hàng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C17",
+              "value": "Người giao hàng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F17",
+              "value": "Người lập phiếu",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            }
+          ],
+          "schoolRows": [
+            {
+              "address": "A6",
+              "text": "NHÓM DISPATCH: VĨNH TÂN",
+              "height": 28,
+              "widthPoints": 715.5,
+              "bold": false,
+              "measuredHeight": 28,
+              "firstColumn": 1,
+              "lastColumn": 8,
+              "boundaryKind": "adjacent-header-text",
+              "precedingText": "Số phiếu: PXK-VT-0 / PXK-VT-1",
+              "followingText": "Địa chỉ: Số 1 Nguyễn Du"
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "vt-release-0"
+            },
+            {
+              "address": "C3",
+              "value": "09-24 VĨNH TÂN"
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"vt-release-0\",\"document_number\":\"PXK-VT-0\",\"service_date\":\"2026-09-24\",\"school_id\":\"vt-0\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":\"vt\",\"dispatch_group_name\":\"VĨNH TÂN\",\"note\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":null,\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A4",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B4",
+              "value": "vt-release-1"
+            },
+            {
+              "address": "C4",
+              "value": "09-24 VĨNH TÂN"
+            },
+            {
+              "address": "E4",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"vt-release-1\",\"document_number\":\"PXK-VT-1\",\"service_date\":\"2026-09-24\",\"school_id\":\"vt-1\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":\"vt\",\"dispatch_group_name\":\"VĨNH TÂN\",\"note\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":null,\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A5",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B5",
+              "value": "vt-release-0"
+            },
+            {
+              "address": "C5",
+              "value": "09-24 VĨNH TÂN"
+            },
+            {
+              "address": "E5",
+              "value": "{\"school_dispatch_release_line_id\":\"vt-line-0\",\"school_id\":\"vt-0\",\"source_quantity\":\"0.100001\",\"dispatch_group_id\":\"vt\",\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            },
+            {
+              "address": "A6",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B6",
+              "value": "vt-release-1"
+            },
+            {
+              "address": "C6",
+              "value": "09-24 VĨNH TÂN"
+            },
+            {
+              "address": "E6",
+              "value": "{\"school_dispatch_release_line_id\":\"vt-line-1\",\"school_id\":\"vt-1\",\"source_quantity\":\"0.100001\",\"dispatch_group_id\":\"vt\",\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dispatch-long-school-header.xlsx",
+      "sheets": [
+        {
+          "name": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PH",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU XUẤT KHO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A5",
+              "value": "Số phiếu: PXK-LONG-SCHOOL-HEADER",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F5",
+              "value": "Ngày:",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G5",
+              "value": "24/09/2026",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A6",
+              "value": "TRƯỜNG: TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A7",
+              "value": "Địa chỉ: Số 1 Nguyễn Du",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A9",
+              "value": "Stt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B9",
+              "value": "Tên thực phẩm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C9",
+              "value": "Đvt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D9",
+              "value": "Số lượng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E9",
+              "value": "Tình trạng cảm quan",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G9",
+              "value": "Biện pháp xử lý",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "H9",
+              "value": "Ghi chú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E10",
+              "value": "Đạt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F10",
+              "value": "Không đạt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "I10",
+              "value": "__document_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J10",
+              "value": "__ingredient_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K10",
+              "value": "__unit_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "L10",
+              "value": "__school_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M10",
+              "value": "__location_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N10",
+              "value": "__cooking_group_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "O10",
+              "value": "__exported_quantity",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "P10",
+              "value": "__row_kind",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B11",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C11",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D11",
+              "value": "100",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "H11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "I11",
+              "value": "fixture-long-school-release",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J11",
+              "value": "26000000-0000-4000-8000-000000000006",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K11",
+              "value": "26000000-0000-4000-8000-000000000007",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "L11",
+              "value": "fixture-unrelated-long-school",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M11",
+              "value": "26000000-0000-4000-8000-000000000002",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "O11",
+              "value": "100.000000",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "P11",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A17",
+              "value": "Người nhận hàng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C17",
+              "value": "Người giao hàng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F17",
+              "value": "Người lập phiếu",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            }
+          ],
+          "schoolRows": [
+            {
+              "address": "A6",
+              "text": "TRƯỜNG: TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "height": 124,
+              "widthPoints": 703.5,
+              "bold": false,
+              "measuredHeight": 124,
+              "firstColumn": 1,
+              "lastColumn": 8,
+              "boundaryKind": "adjacent-header-text",
+              "precedingText": "Số phiếu: PXK-LONG-SCHOOL-HEADER",
+              "followingText": "Địa chỉ: Số 1 Nguyễn Du"
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "fixture-long-school-release"
+            },
+            {
+              "address": "C3",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PH"
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"fixture-long-school-release\",\"document_number\":\"PXK-LONG-SCHOOL-HEADER\",\"service_date\":\"2026-09-24\",\"school_id\":\"fixture-unrelated-long-school\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":null,\"dispatch_group_name\":null,\"note\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":null,\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A4",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B4",
+              "value": "fixture-long-school-release"
+            },
+            {
+              "address": "C4",
+              "value": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PH"
+            },
+            {
+              "address": "E4",
+              "value": "{\"school_dispatch_release_line_id\":\"26000000-0000-4000-8000-000000000005\",\"school_id\":\"fixture-unrelated-long-school\",\"source_quantity\":\"100.000000\",\"dispatch_group_id\":null,\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -12,7 +12,7 @@ async function entries(bytes: Uint8Array) {
   );
 }
 describe("presentation-only released document packaging", () => {
-  it("packages captured cooking-group identity without collapsing two School documents or matching names", async () => {
+  it("never uses captured cooking authority to package unrelated Schools together", async () => {
     const a = createReviewSchoolDispatchDocument("RELEASED");
     Object.assign(a, {
       cooking_group_id: "group-x",
@@ -25,15 +25,11 @@ describe("presentation-only released document packaging", () => {
     b.school_display_order = 2;
     b.delivery_location_id = "location-b";
     b.document_number = "PXK-B";
-    const c = structuredClone(b);
-    c.school_dispatch_release_id = "release-c";
-    c.document_number = "PXK-C";
-    Object.assign(c, { cooking_group_id: "different-id-same-name" });
     const files = await entries(
-      await createSchoolDispatchZip([c, b, a], "entity"),
+      await createSchoolDispatchZip([b, a], "entity"),
     );
     expect(files).toHaveLength(2);
-    expect(files.map((file) => file.name).join()).toContain("Bep-X");
+    expect(files.map((file) => file.name).join()).not.toContain("Bep-X");
     const books = await Promise.all(
       files.map(async (file) => {
         const book = new ExcelJS.Workbook();
@@ -49,18 +45,18 @@ describe("presentation-only released document packaging", () => {
           (book) => book.worksheets.filter((s) => s.state === "visible").length,
         )
         .sort(),
-    ).toEqual([1, 2]);
-    const paired = books.find(
-      (book) =>
-        book.worksheets.filter((s) => s.state === "visible").length === 2,
-    )!;
+    ).toEqual([1, 1]);
     expect(
-      paired.worksheets
-        .filter((s) => s.state === "visible")
-        .map((sheet) => sheet.getCell("A6").text),
+      books
+        .flatMap((book) =>
+          book.worksheets
+            .filter((s) => s.state === "visible")
+            .map((sheet) => sheet.getCell("A6").text),
+        )
+        .sort(),
     ).toEqual([
-      "TRƯỜNG: Trường Tiểu học Nguyễn Du\nNẤU TẠI: Bếp X",
       "TRƯỜNG: Trường B\nNẤU TẠI: Bếp X",
+      "TRƯỜNG: Trường Tiểu học Nguyễn Du\nNẤU TẠI: Bếp X",
     ]);
   });
   it("keeps official PO commitments separate and selects V1 sheets", async () => {

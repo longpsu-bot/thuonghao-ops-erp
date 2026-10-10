@@ -6,6 +6,12 @@ import type {
 } from "./masterDataApi";
 
 export type SchoolMasterData = {
+  cooking_location_id?: string | null;
+  cooking_location_name?: string | null;
+  cooking_location_kind?: "SCHOOL" | "COMPANY" | null;
+  cooking_location_host_school_id?: string | null;
+  dispatch_group_id?: string | null;
+  dispatch_group_name?: string | null;
   cooking_group_id?: string | null;
   cooking_group_name?: string | null;
   school_id: string;
@@ -28,7 +34,16 @@ export type SchoolMasterData = {
   contract_context: string | null;
 };
 
+export type DispatchGroupMasterData = {
+  dispatch_group_id: string;
+  dispatch_group_name: string;
+  active: boolean;
+  version: number;
+};
+
 export type CookingGroupMasterData = {
+  location_kind?: "SCHOOL" | "COMPANY" | null;
+  host_school_id?: string | null;
   cooking_group_id: string;
   cooking_group_name: string;
   active: boolean;
@@ -110,7 +125,11 @@ export function responseArray<T>(
 export function resultMessage(result: AtlasRpcResult) {
   if (result.kind === "backend_error") {
     if (result.error.error_code === "COOKING_GROUP_HAS_MEMBERS")
-      return "Nhóm nấu vẫn còn trường được gán. Hãy bỏ hoặc đổi nhóm của các trường trước khi ngừng hoạt động.";
+      return "Nơi nấu vẫn còn trường được gán. Hãy bỏ hoặc đổi nơi nấu của các trường trước khi ngừng hoạt động.";
+    if (result.error.error_code === "COOKING_LOCATION_RECONCILIATION_REQUIRED")
+      return "Nơi nấu chưa xác định loại và trường đặt bếp. Hãy đối soát và cập nhật nơi nấu trước khi gán.";
+    if (result.error.error_code === "DISPATCH_GROUP_HAS_MEMBERS")
+      return "Nhóm Dispatch vẫn còn trường được gán. Hãy bỏ hoặc đổi nhóm của các trường trước khi ngừng hoạt động.";
     if (result.error.error_code === "CAPABILITY_DENIED")
       return "Bạn không có quyền thực hiện thao tác này.";
     if (result.error.error_code === "SCOPE_DENIED")

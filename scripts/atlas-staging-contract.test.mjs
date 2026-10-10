@@ -968,7 +968,16 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(104);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(106);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS[0]).toEqual({
+      command: "node",
+      args: ["--test", "scripts/atlas-document-school-configuration.test.mjs"],
+    });
+    expect(
+      SUPABASE_FULL_INTEGRATION_COMMANDS.filter(({ args }) =>
+        args.includes("scripts/atlas-document-school-configuration.test.mjs"),
+      ),
+    ).toHaveLength(1);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [
@@ -991,7 +1000,7 @@ describe("Atlas staging dry-run and workflow", () => {
       command: "node",
       args: ["scripts/test-local-planning-final-closeout.mjs"],
     });
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS[1]).toEqual({
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS[2]).toEqual({
       command: "node",
       args: ["scripts/test-local-planning-legacy-adoption-upgrade.mjs"],
     });
@@ -1119,6 +1128,7 @@ describe("Atlas staging dry-run and workflow", () => {
       "direct_ingredient_need_convergence.sql",
       "school_dispatch_release.sql",
       "atlas_school_cooking_groups.sql",
+      "atlas_document_school_grouping_02.sql",
       "atlas_po_document_identity.sql",
       "school_fulfilment_reconciliation.sql",
     ]) {
@@ -2109,13 +2119,16 @@ describe("Atlas staging hosted evidence", () => {
       "get_school_fulfilment_reconciliation_workbench(request jsonb)";
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(118);
-    expect(authority.apiOwners).toHaveLength(118);
-    expect(authority.authenticatedApiSignatures).toHaveLength(115);
+    expect(authority.apiSignatures).toHaveLength(121);
+    expect(authority.apiOwners).toHaveLength(121);
+    expect(authority.authenticatedApiSignatures).toHaveLength(118);
     for (const name of [
       "get_cooking_groups",
       "upsert_cooking_group",
       "set_school_cooking_group",
+      "get_dispatch_groups",
+      "upsert_dispatch_group",
+      "set_school_dispatch_group",
     ]) {
       expect(authority.authenticatedApiSignatures).toContain(
         `${name}(request jsonb)`,
@@ -2143,8 +2156,8 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.authenticatedApiSignatures).not.toContain(
       dispatchSnapshotBase,
     );
-    expect(authority.policyCount).toBe(663);
-    expect(authority.policyDigest).toBe("c0df6670b465ff57fa621a7e947d89a6");
+    expect(authority.policyCount).toBe(672);
+    expect(authority.policyDigest).toBe("38ba098e23069ce416ed1cd60551a497");
   });
 
   it("compares authenticated EXECUTE against CAT-18 rather than physical CAT-15", () => {
@@ -2257,7 +2270,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 663");
+    expect(sql).toContain("normal_policy_count <> 672");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -2332,11 +2345,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [663, 1, true],
-    [663, 0, false],
-    [663, 2, false],
-    [662, 1, false],
-    [664, 1, false],
+    [672, 1, true],
+    [672, 0, false],
+    [672, 2, false],
+    [671, 1, false],
+    [673, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(132);
+select plan(135);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -540,9 +540,11 @@ where supplier_id='24020000-0000-4000-8000-000000000052';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
 reset role;
-insert into atlas_admin.cooking_groups(cooking_group_id,cooking_group_name) values
- ('c6000000-0000-4000-8000-000000000001','Cooking X'),
- ('c6000000-0000-4000-8000-000000000002','Cooking Y');
+insert into atlas_admin.cooking_groups(cooking_group_id,cooking_group_name,location_kind,host_school_id) values
+ ('c6000000-0000-4000-8000-000000000001','Cooking X','SCHOOL','24020000-0000-4000-8000-000000000021'),
+ ('c6000000-0000-4000-8000-000000000002','Công ty Thượng Hảo','COMPANY',null);
+insert into atlas_admin.dispatch_groups(dispatch_group_id,dispatch_group_name) values('c6000000-0000-4000-8000-000000000031','Dispatch route X');
+insert into atlas_admin.dispatch_group_members(school_id,dispatch_group_id) values('24020000-0000-4000-8000-000000000021','c6000000-0000-4000-8000-000000000031');
 insert into atlas_admin.school_cooking_group_memberships(school_id,cooking_group_id) values
  ('24020000-0000-4000-8000-000000000021','c6000000-0000-4000-8000-000000000001');
 -- A required official code is validated before creating a supplier commitment.
@@ -724,16 +726,21 @@ select ok((select bool_and(school->>'cooking_group_name'='Cooking X')
   cross join lateral jsonb_array_elements(line.school_breakdown_snapshot) school
   where school->>'school_id'='24020000-0000-4000-8000-000000000021'),
   'new official PO lines freeze cooking X for the exact School');
+select ok((select bool_and(school->>'cooking_location_kind'='SCHOOL' and school->>'cooking_location_host_school_id'='24020000-0000-4000-8000-000000000021' and school->>'cooking_location_id'='c6000000-0000-4000-8000-000000000001' and school->>'dispatch_group_name'='Dispatch route X') from atlas_procurement.purchase_order_line_revisions line cross join lateral jsonb_array_elements(line.school_breakdown_snapshot) school where school->>'school_id'='24020000-0000-4000-8000-000000000021'),'official capture includes explicit host and independent Dispatch facts');
+select throws_ok($$update atlas_procurement.purchase_order_line_revisions set school_breakdown_snapshot='[]'::jsonb where school_breakdown_snapshot is not null$$,'23514',null,'PO School snapshot cannot be mutated');
+update atlas_admin.dispatch_groups set dispatch_group_name='Dispatch renamed' where dispatch_group_id='c6000000-0000-4000-8000-000000000031';
+delete from atlas_admin.dispatch_group_members where school_id='24020000-0000-4000-8000-000000000021';
 update atlas_admin.school_cooking_group_memberships set cooking_group_id='c6000000-0000-4000-8000-000000000002'
 where school_id='24020000-0000-4000-8000-000000000021';
 update atlas_admin.cooking_groups set cooking_group_name='Cooking X renamed'
 where cooking_group_id='c6000000-0000-4000-8000-000000000001';
+select ok((select bool_and(school->>'cooking_location_kind'='SCHOOL' and school->>'cooking_location_host_school_id'='24020000-0000-4000-8000-000000000021' and school->>'cooking_location_id'='c6000000-0000-4000-8000-000000000001' and school->>'dispatch_group_name'='Dispatch route X') from atlas_procurement.purchase_order_line_revisions line cross join lateral jsonb_array_elements(line.school_breakdown_snapshot) school where school->>'school_id'='24020000-0000-4000-8000-000000000021'),'historical canonical location and Dispatch facts remain frozen');
 select ok((select bool_and(school->>'cooking_group_name'='Cooking X')
   from atlas_procurement.purchase_order_line_revisions line
   cross join lateral jsonb_array_elements(line.school_breakdown_snapshot) school
   where school->>'school_id'='24020000-0000-4000-8000-000000000021'),
   'historical PO keeps cooking X after membership change and group rename');
-select ok((select bool_and(school->>'cooking_group_name'='Cooking Y')
+select ok((select bool_and(school->>'cooking_group_name'='Công ty Thượng Hảo')
   from atlas_procurement.purchase_order_line_revisions line
   cross join lateral jsonb_array_elements(atlas_core.school_catering_po_school_breakdown(
     line.school_catering_allocation_supplier_split_id)) school
@@ -744,7 +751,7 @@ select ok((select response->>'success'='true' and exists(
   select 1 from jsonb_array_elements(response->'captured_school_breakdowns') breakdown
   cross join lateral jsonb_array_elements(breakdown) school
   where school->>'school_id'='24020000-0000-4000-8000-000000000021'
-    and school->>'cooking_group_name'='Cooking Y')
+    and school->>'cooking_group_name'='Công ty Thượng Hảo')
   from (select pg_temp.prb_cooking_release_isolated(pg_temp.prb_release(
     'c6000000-0000-4000-8000-000000000011','24020000-0000-4000-8000-000000000052')) response) captured),
   'actual new official PO release after reassignment freezes cooking Y');

@@ -1,7 +1,11 @@
 import type { Workbook } from "exceljs";
 import type { Column, Content, TDocumentDefinitions } from "pdfmake/interfaces";
-import type { SchoolDispatchDocument } from "./schoolDispatchReleaseModel";
+import type {
+  SchoolDispatchDocument,
+  SchoolDispatchLine,
+} from "./schoolDispatchReleaseModel";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
+import { measuredSchoolRowHeight } from "../documents/schoolRowMeasurement";
 import {
   appendDocumentParsingMetadata,
   prepareDocumentParsingColumns,
@@ -215,35 +219,117 @@ export function buildSchoolDispatchPdfDefinition(
   };
 }
 
+type DispatchRowSource = {
+  document: SchoolDispatchDocument;
+  line: SchoolDispatchLine;
+};
+
+// This object exists only for export presentation: no new School/PXK identity.
+function groupedDispatchPresentation(documents: SchoolDispatchDocument[]) {
+  const first = documents[0]!;
+  const rows = new Map<
+    string,
+    {
+      ingredientName: string;
+      unitCode: string;
+      quantity: bigint;
+      sources: DispatchRowSource[];
+    }
+  >();
+  for (const document of documents) {
+    buildSchoolDispatchExportData(document);
+    for (const line of document.lines) {
+      const key = JSON.stringify([
+        document.service_date,
+        document.dispatch_group_id,
+        line.ingredient_id,
+        line.unit_id,
+        document.note,
+      ]);
+      const current = rows.get(key);
+      rows.set(key, {
+        ingredientName: line.ingredient_name,
+        unitCode: line.unit_code,
+        quantity: (current?.quantity ?? 0n) + scaledQuantity(line.quantity),
+        sources: [...(current?.sources ?? []), { document, line }],
+      });
+    }
+  }
+  return {
+    ...buildSchoolDispatchExportData(first),
+    documentNumber: documents.map((d) => d.document_number).join(" / "),
+    schoolName: first.dispatch_group_name!,
+    cookingGroupId: null,
+    cookingGroupName: null,
+    deliveryLocationName: [
+      ...new Set(documents.map((d) => d.delivery_location_name)),
+    ].join(" / "),
+    deliveryAddress: [
+      ...new Set(documents.map((d) => d.delivery_address)),
+    ].join("\n"),
+    note:
+      documents
+        .filter((d) => d.note !== null)
+        .map((d) => `${d.school_name}: ${d.note}`)
+        .join("\n") || null,
+    lines: [...rows.values()].map((row) => ({
+      ingredientName: row.ingredientName,
+      unitCode: row.unitCode,
+      quantity: `${row.quantity / QUANTITY_SCALE}.${String(row.quantity % QUANTITY_SCALE).padStart(6, "0")}`,
+      sources: row.sources,
+    })),
+  };
+}
+
 function addSchoolDispatchSheet(
   workbook: Workbook,
   document: SchoolDispatchDocument,
   sheetName: string,
   logoId: number,
   records: DocumentParsingRecord[],
+  exportGroup?: SchoolDispatchDocument[],
 ) {
-  const data = buildSchoolDispatchExportData(document);
+  const data = exportGroup
+    ? groupedDispatchPresentation(exportGroup)
+    : {
+        ...buildSchoolDispatchExportData(document),
+        lines: document.lines.map((line) => ({
+          ingredientName: line.ingredient_name,
+          unitCode: line.unit_code,
+          quantity: line.quantity,
+          sources: [{ document, line }],
+        })),
+      };
   const sheet = workbook.addWorksheet(sheetName);
-  records.push({
-    kind: "DOCUMENT",
-    documentId: document.school_dispatch_release_id,
-    sheetName,
-    rowNumber: null,
-    data: {
-      document_type: "PXK",
-      school_dispatch_release_id: document.school_dispatch_release_id,
-      document_number: document.document_number,
-      service_date: document.service_date,
-      school_id: document.school_id,
-      delivery_location_id: document.delivery_location_id,
-      cooking_group_id: document.cooking_group_id ?? null,
-      version: document.version,
-      status: document.status,
-      predecessor_release_id: document.predecessor_release_id,
-      source_fingerprint: document.source_fingerprint,
-      released_at: document.released_at,
-    },
-  });
+  for (const sourceDocument of exportGroup ?? [document])
+    records.push({
+      kind: "DOCUMENT",
+      documentId: sourceDocument.school_dispatch_release_id,
+      sheetName,
+      rowNumber: null,
+      data: {
+        document_type: "PXK",
+        school_dispatch_release_id: sourceDocument.school_dispatch_release_id,
+        document_number: sourceDocument.document_number,
+        service_date: sourceDocument.service_date,
+        school_id: sourceDocument.school_id,
+        delivery_location_id: sourceDocument.delivery_location_id,
+        cooking_group_id: sourceDocument.cooking_group_id ?? null,
+        cooking_location_id: sourceDocument.cooking_location_id ?? null,
+        cooking_location_name: sourceDocument.cooking_location_name ?? null,
+        cooking_location_kind: sourceDocument.cooking_location_kind ?? null,
+        cooking_location_host_school_id:
+          sourceDocument.cooking_location_host_school_id ?? null,
+        dispatch_group_id: sourceDocument.dispatch_group_id ?? null,
+        dispatch_group_name: sourceDocument.dispatch_group_name ?? null,
+        note: sourceDocument.note,
+        version: sourceDocument.version,
+        status: sourceDocument.status,
+        predecessor_release_id: sourceDocument.predecessor_release_id,
+        source_fingerprint: sourceDocument.source_fingerprint,
+        released_at: sourceDocument.released_at,
+      },
+    });
   prepareDocumentSheet(sheet);
   const quantityWidth = Math.max(
     10,
@@ -309,8 +395,9 @@ function addSchoolDispatchSheet(
   sheet.getCell("G5").alignment = { horizontal: "center" };
   sheet.getRow(5).height = 22;
   sheet.mergeCells("A6:H6");
-  sheet.getCell("A6").value =
-    `TRƯỜNG: ${data.schoolName}${data.cookingGroupId && data.cookingGroupName ? `\nNẤU TẠI: ${data.cookingGroupName}` : ""}`;
+  sheet.getCell("A6").value = exportGroup
+    ? `NHÓM DISPATCH: ${data.schoolName}`
+    : `TRƯỜNG: ${data.schoolName}${data.cookingGroupId && data.cookingGroupName ? `\nNẤU TẠI: ${data.cookingGroupName}` : ""}`;
   sheet.mergeCells("A7:H7");
   sheet.getCell("A7").value = `Địa chỉ: ${data.deliveryAddress}`;
   sheet.mergeCells("A8:H8");
@@ -335,12 +422,15 @@ function addSchoolDispatchSheet(
   );
   for (const r of [6, 7]) {
     sheet.getCell(r, 1).font = { name: "Times New Roman", size: 14 };
-    sheet.getRow(r).height = wrappedRowHeight(
-      String(sheet.getCell(r, 1).value ?? ""),
-      formWidth,
-      14,
-      24,
-    );
+    sheet.getRow(r).height =
+      r === 6
+        ? measuredSchoolRowHeight(sheet.getCell("A6").text, sheet, 1, 8, false)
+        : wrappedRowHeight(
+            String(sheet.getCell(r, 1).value ?? ""),
+            formWidth,
+            14,
+            24,
+          );
   }
   sheet.getRow(4).height = 30;
   sheet.mergeCells("A9:A10");
@@ -394,31 +484,48 @@ function addSchoolDispatchSheet(
     setExactQuantity(row.getCell(4), line.quantity);
     row.getCell(4).font = { name: "Times New Roman", size: 16 };
     borderRow(row);
-    const sourceLine = document.lines[index]!;
-    const lineId = sourceLine.school_dispatch_release_line_id ?? null;
-    const sources = sourceLine.sources.length
-      ? sourceLine.sources.map((source) => ({
-          school_dispatch_release_line_id: lineId,
-          ...source,
-        }))
-      : [{ school_dispatch_release_line_id: lineId }];
-    writeDocumentParsingRow(
-      sheet,
-      row,
-      8,
-      [
-        document.school_dispatch_release_id,
-        sourceLine.ingredient_id,
-        sourceLine.unit_id,
-        document.school_id,
-        document.delivery_location_id,
-        document.cooking_group_id ?? null,
-        sourceLine.quantity,
-        "ITEM",
-      ],
-      sources,
-      records,
-    );
+    for (const { document: sourceDocument, line: sourceLine } of line.sources) {
+      const lineId = sourceLine.school_dispatch_release_line_id ?? null;
+      const sources = sourceLine.sources.length
+        ? sourceLine.sources.map((source) => ({
+            school_dispatch_release_line_id: lineId,
+            school_id: sourceDocument.school_id,
+            source_quantity: sourceLine.quantity,
+            dispatch_group_id: sourceDocument.dispatch_group_id ?? null,
+            note: sourceDocument.note,
+            ...source,
+          }))
+        : [
+            {
+              school_dispatch_release_line_id: lineId,
+              school_id: sourceDocument.school_id,
+              source_quantity: sourceLine.quantity,
+              dispatch_group_id: sourceDocument.dispatch_group_id ?? null,
+              note: sourceDocument.note,
+            },
+          ];
+      writeDocumentParsingRow(
+        sheet,
+        row,
+        8,
+        [
+          sourceDocument.school_dispatch_release_id,
+          sourceLine.ingredient_id,
+          sourceLine.unit_id,
+          sourceDocument.school_id,
+          sourceDocument.delivery_location_id,
+          sourceDocument.cooking_group_id ?? null,
+          line.quantity,
+          "ITEM",
+        ],
+        sources,
+        records,
+      );
+    }
+    if (exportGroup) {
+      // Plural authority lives in ROW_SOURCE, never an invented single PXK.
+      for (const column of [9, 12, 13, 14]) row.getCell(column).value = null;
+    }
   });
   const signatureRow = 11 + data.lines.length + 5;
   for (const row of [signatureRow, signatureRow + 1, signatureRow + 6]) {
@@ -540,12 +647,52 @@ export async function createGroupedSchoolDispatchXlsx(
       left.school_name.localeCompare(right.school_name, "vi") ||
       left.document_number.localeCompare(right.document_number),
   );
+  const groups = new Map<string, SchoolDispatchDocument[]>();
+  const ids = new Set<string>();
   for (const document of ordered) {
+    buildSchoolDispatchExportData(document);
+    if (ids.has(document.school_dispatch_release_id))
+      throw new Error("Duplicate PXK identity.");
+    ids.add(document.school_dispatch_release_id);
+    const key =
+      document.dispatch_group_id && document.dispatch_group_name
+        ? JSON.stringify([
+            document.service_date,
+            "DISPATCH_GROUP",
+            document.dispatch_group_id,
+          ])
+        : JSON.stringify([document.school_dispatch_release_id]);
+    const group = groups.get(key) ?? [];
+    group.push(document);
+    groups.set(key, group);
+  }
+  for (const group of groups.values()) {
+    const document = group[0]!;
+    const grouped = Boolean(
+      document.dispatch_group_id && document.dispatch_group_name,
+    );
+    if (
+      grouped &&
+      group.some(
+        (d) =>
+          d.dispatch_group_name !== document.dispatch_group_name ||
+          d.document_issuer_name !== document.document_issuer_name ||
+          d.document_issuer_address !== document.document_issuer_address,
+      )
+    )
+      throw new Error("Captured Dispatch group header evidence conflicts.");
     const name = safeWorksheetName(
-      `${document.service_date.slice(5)} ${document.school_name}`,
+      `${document.service_date.slice(5)} ${grouped ? document.dispatch_group_name : document.school_name}`,
       names,
     );
-    addSchoolDispatchSheet(workbook, document, name, logoId, records);
+    addSchoolDispatchSheet(
+      workbook,
+      document,
+      name,
+      logoId,
+      records,
+      grouped ? group : undefined,
+    );
   }
   appendDocumentParsingMetadata(workbook, records);
   return workbook.xlsx.writeBuffer();
@@ -636,8 +783,8 @@ export async function createSchoolDispatchZip(
     const key =
       mode === "date"
         ? document.service_date
-        : document.cooking_group_id && document.cooking_group_name
-          ? JSON.stringify(["COOKING_GROUP", document.cooking_group_id])
+        : document.dispatch_group_id && document.dispatch_group_name
+          ? JSON.stringify(["DISPATCH_GROUP", document.dispatch_group_id])
           : JSON.stringify([
               "SCHOOL",
               document.school_id,
@@ -653,7 +800,7 @@ export async function createSchoolDispatchZip(
     const stem =
       mode === "date"
         ? `Dispatch-${first.service_date}`
-        : `Dispatch-${first.cooking_group_id && first.cooking_group_name ? documentFilePart(first.cooking_group_name) : `${documentFilePart(first.school_name)}-${documentFilePart(first.delivery_location_name)}`}-${index + 1}-${first.service_date}-${group.at(-1)!.service_date}`;
+        : `Dispatch-${first.dispatch_group_id && first.dispatch_group_name ? documentFilePart(first.dispatch_group_name) : `${documentFilePart(first.school_name)}-${documentFilePart(first.delivery_location_name)}`}-${index + 1}-${first.service_date}-${group.at(-1)!.service_date}`;
     files.push({
       name: `${stem}.xlsx`,
       bytes: await createGroupedSchoolDispatchXlsx(group),

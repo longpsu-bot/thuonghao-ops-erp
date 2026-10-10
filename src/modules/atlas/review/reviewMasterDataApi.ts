@@ -10,6 +10,7 @@ import type {
 } from "../master-data/masterDataApi";
 import type {
   CookingGroupMasterData,
+  DispatchGroupMasterData,
   IngredientMasterData,
   IngredientOrderGroupMasterData,
   IngredientTypeMasterData,
@@ -355,7 +356,9 @@ function backendError(
     | "CAPABILITY_DENIED"
     | "STALE_VERSION"
     | "VALIDATION_FAILED"
-    | "COOKING_GROUP_HAS_MEMBERS",
+    | "COOKING_GROUP_HAS_MEMBERS"
+    | "DISPATCH_GROUP_HAS_MEMBERS"
+    | "COOKING_LOCATION_RECONCILIATION_REQUIRED",
 ): AtlasRpcResult {
   return {
     kind: "backend_error",
@@ -437,6 +440,11 @@ export function createReviewMasterDataApi(
     string,
     { request: MasterDataCommandRequest; result: AtlasRpcResult }
   >();
+  let dispatchGroups: DispatchGroupMasterData[] = [];
+  const dispatchGroupReceipts = new Map<
+    string,
+    { request: MasterDataCommandRequest; result: AtlasRpcResult }
+  >();
   let schools = createSchools();
   let suppliers = createSuppliers();
   let ingredients = createIngredients(suppliers);
@@ -479,7 +487,27 @@ export function createReviewMasterDataApi(
         return Promise.resolve(backendError("STALE_VERSION"));
       if (!active && schools.some((school) => school.cooking_group_id === id))
         return Promise.resolve(backendError("COOKING_GROUP_HAS_MEMBERS"));
-      const savedGroup = {
+      const locationKind =
+        request.payload.location_kind ?? group?.location_kind;
+      const hostSchoolId =
+        request.payload.host_school_id === undefined
+          ? (group?.host_school_id ?? null)
+          : request.payload.host_school_id;
+      if (
+        (locationKind !== "SCHOOL" && locationKind !== "COMPANY") ||
+        (locationKind === "SCHOOL" &&
+          !schools.some(
+            (school) =>
+              school.school_id === hostSchoolId &&
+              school.school_status === "ACTIVE",
+          )) ||
+        (locationKind === "COMPANY" &&
+          (hostSchoolId !== null || name !== "Công ty Thượng Hảo"))
+      )
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+      const savedGroup: CookingGroupMasterData = {
+        location_kind: locationKind,
+        host_school_id: typeof hostSchoolId === "string" ? hostSchoolId : null,
         cooking_group_id: id || crypto.randomUUID(),
         cooking_group_name: name,
         active,
@@ -493,7 +521,14 @@ export function createReviewMasterDataApi(
       ];
       schools = schools.map((school) =>
         school.cooking_group_id === savedGroup.cooking_group_id
-          ? { ...school, cooking_group_name: name }
+          ? {
+              ...school,
+              cooking_group_name: name,
+              cooking_location_id: savedGroup.cooking_group_id,
+              cooking_location_name: name,
+              cooking_location_kind: savedGroup.location_kind,
+              cooking_location_host_school_id: savedGroup.host_school_id,
+            }
           : school,
       );
       const result = success({
@@ -523,12 +558,100 @@ export function createReviewMasterDataApi(
         (groupId && !group?.active)
       )
         return Promise.resolve(backendError("VALIDATION_FAILED"));
+      if (group && !group.location_kind)
+        return Promise.resolve(
+          backendError("COOKING_LOCATION_RECONCILIATION_REQUIRED"),
+        );
       if (request.expected_version !== schools[index].version)
         return Promise.resolve(backendError("STALE_VERSION"));
       schools[index] = {
         ...schools[index],
+        cooking_location_id: group?.cooking_group_id ?? null,
+        cooking_location_name: group?.cooking_group_name ?? null,
+        cooking_location_kind: group?.location_kind ?? null,
+        cooking_location_host_school_id: group?.host_school_id ?? null,
         cooking_group_id: group?.cooking_group_id ?? null,
         cooking_group_name: group?.cooking_group_name ?? null,
+        version: schools[index].version + 1,
+      };
+      return Promise.resolve(saved());
+    },
+    getDispatchGroups() {
+      const blocked = readBlock();
+      return Promise.resolve(
+        blocked ?? success({ dispatch_groups: clone(dispatchGroups) }),
+      );
+    },
+    upsertDispatchGroup(request) {
+      const blocked = writeBlock();
+      if (blocked) return Promise.resolve(blocked);
+      const receipt = dispatchGroupReceipts.get(request.command_id);
+      if (receipt)
+        return Promise.resolve(
+          JSON.stringify(receipt.request) === JSON.stringify(request)
+            ? clone(receipt.result)
+            : backendError("VALIDATION_FAILED"),
+        );
+      const id = payloadString(request, "dispatch_group_id");
+      const name = payloadString(request, "dispatch_group_name").trim();
+      const active = request.payload.active === true;
+      const group = dispatchGroups.find((row) => row.dispatch_group_id === id);
+      if (!name || name.length > 200 || (id && !group))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+      if (request.expected_version !== (group?.version ?? 1))
+        return Promise.resolve(backendError("STALE_VERSION"));
+      if (!active && schools.some((school) => school.dispatch_group_id === id))
+        return Promise.resolve(backendError("DISPATCH_GROUP_HAS_MEMBERS"));
+      const savedGroup = {
+        dispatch_group_id: id || crypto.randomUUID(),
+        dispatch_group_name: name,
+        active,
+        version: group ? group.version + 1 : 1,
+      };
+      dispatchGroups = [
+        ...dispatchGroups.filter(
+          (row) => row.dispatch_group_id !== savedGroup.dispatch_group_id,
+        ),
+        savedGroup,
+      ];
+      schools = schools.map((school) =>
+        school.dispatch_group_id === savedGroup.dispatch_group_id
+          ? { ...school, dispatch_group_name: name }
+          : school,
+      );
+      const result = success({
+        command_id: request.command_id,
+        affected_aggregate_ids: {
+          dispatch_group_id: savedGroup.dispatch_group_id,
+        },
+      });
+      dispatchGroupReceipts.set(request.command_id, {
+        request: clone(request),
+        result: clone(result),
+      });
+      return Promise.resolve(result);
+    },
+    setSchoolDispatchGroup(request) {
+      const blocked = writeBlock();
+      if (blocked) return Promise.resolve(blocked);
+      const id = payloadString(request, "school_id");
+      const index = schools.findIndex((school) => school.school_id === id);
+      const groupId = payloadString(request, "dispatch_group_id");
+      const group = dispatchGroups.find(
+        (row) => row.dispatch_group_id === groupId,
+      );
+      if (
+        index < 0 ||
+        schools[index].school_status !== "ACTIVE" ||
+        (groupId && !group?.active)
+      )
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+      if (request.expected_version !== schools[index].version)
+        return Promise.resolve(backendError("STALE_VERSION"));
+      schools[index] = {
+        ...schools[index],
+        dispatch_group_id: group?.dispatch_group_id ?? null,
+        dispatch_group_name: group?.dispatch_group_name ?? null,
         version: schools[index].version + 1,
       };
       return Promise.resolve(saved());

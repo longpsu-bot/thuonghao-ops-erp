@@ -1,4 +1,5 @@
 import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
+import { SchoolDispatchGroupEditor } from "./SchoolDispatchGroupEditor";
 import { SchoolCookingGroupEditor } from "./SchoolCookingGroupEditor";
 import {
   Box,
@@ -152,12 +153,14 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
               onClick={() => void c.refresh()}
             >
               {c.confirmGroupSave
-                ? "Xác nhận lần lưu nhóm nấu"
-                : c.lock === "unknown" || c.lock === "readback"
-                  ? "Tải lại để xác nhận"
-                  : c.lock === "stale"
-                    ? "Tải lại dữ liệu hiện tại"
-                    : "Thử tải lại dữ liệu"}
+                ? "Xác nhận lần lưu nơi nấu"
+                : c.confirmDispatchGroupSave
+                  ? "Xác nhận lần lưu nhóm Dispatch"
+                  : c.lock === "unknown" || c.lock === "readback"
+                    ? "Tải lại để xác nhận"
+                    : c.lock === "stale"
+                      ? "Tải lại dữ liệu hiện tại"
+                      : "Thử tải lại dữ liệu"}
             </Button>
           )}
         </Box>
@@ -208,6 +211,12 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         />
       )}
 
+      {c.dispatchSupported && (
+        <SchoolDispatchGroupEditor
+          controller={c}
+          disabled={editingDisabled || Boolean(c.lock)}
+        />
+      )}
       {c.loading && c.schools.length === 0 && (
         <Text role="status" p="md">
           Đang tải dữ liệu trường học…
@@ -224,6 +233,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
           disabled={editingDisabled}
           onEdit={c.edit}
           cooking={c.cookingSupported ? c : undefined}
+          dispatch={c.dispatchSupported ? c : undefined}
         />
       )}
     </Box>
@@ -236,6 +246,7 @@ function SchoolDefaultsTable({
   disabled,
   onEdit,
   cooking,
+  dispatch,
 }: {
   schools: SchoolMasterData[];
   drafts: Record<string, { student: string; teacher: string }>;
@@ -246,6 +257,7 @@ function SchoolDefaultsTable({
     value: string,
   ) => void;
   cooking?: SchoolDefaultsController;
+  dispatch?: SchoolDefaultsController;
 }) {
   type SortKey = "order" | "school" | "type" | "status" | "location";
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
@@ -283,14 +295,18 @@ function SchoolDefaultsTable({
         stickyHeader
         tableLayout="fixed"
         minW={
-          cooking
-            ? "var(--atlas-layout-school-cooking-table-min, 1384px)"
-            : "var(--atlas-layout-school-table-min, 1154px)"
+          dispatch
+            ? "var(--atlas-layout-school-dispatch-table-width, 1614px)"
+            : cooking
+              ? "var(--atlas-layout-school-cooking-table-min, 1384px)"
+              : "var(--atlas-layout-school-table-min, 1154px)"
         }
         w={
-          cooking
-            ? "var(--atlas-layout-school-cooking-table-width, 1384px)"
-            : "var(--atlas-layout-school-table-width, 1154px)"
+          dispatch
+            ? "var(--atlas-layout-school-dispatch-table-width, 1614px)"
+            : cooking
+              ? "var(--atlas-layout-school-cooking-table-width, 1384px)"
+              : "var(--atlas-layout-school-table-width, 1154px)"
         }
       >
         <Table.ColumnGroup>
@@ -301,6 +317,9 @@ function SchoolDefaultsTable({
           <Table.Column w="var(--atlas-school-location-width, 260px)" />
           {cooking && (
             <Table.Column w="var(--atlas-school-cooking-width, 230px)" />
+          )}
+          {dispatch && (
+            <Table.Column w="var(--atlas-school-dispatch-width, 230px)" />
           )}
           <Table.Column w="var(--atlas-school-portion-width, 150px)" />
           <Table.Column w="var(--atlas-school-portion-width, 150px)" />
@@ -338,6 +357,7 @@ function SchoolDefaultsTable({
               onSort={onSort}
             />
             {cooking && <Table.ColumnHeader>Nấu tại</Table.ColumnHeader>}
+            {dispatch && <Table.ColumnHeader>Nhóm Dispatch</Table.ColumnHeader>}
             <Table.ColumnHeader textAlign="right">
               Học sinh mặc định
             </Table.ColumnHeader>
@@ -354,6 +374,10 @@ function SchoolDefaultsTable({
             };
             const dirty =
               Boolean(drafts[school.school_id]) ||
+              Boolean(
+                dispatch &&
+                Object.hasOwn(dispatch.dispatchDrafts, school.school_id),
+              ) ||
               Boolean(
                 cooking &&
                 Object.hasOwn(cooking.cookingDrafts, school.school_id),
@@ -421,15 +445,25 @@ function SchoolDefaultsTable({
                           cooking.editCooking(school, event.target.value)
                         }
                       >
-                        <option value="">Không gán nhóm nấu</option>
+                        <option value="">Không gán nơi nấu</option>
                         {cooking.cookingGroups
                           .filter((group) => group.active)
                           .map((group) => (
                             <option
                               key={group.cooking_group_id}
                               value={group.cooking_group_id}
+                              disabled={
+                                !group.location_kind ||
+                                (group.location_kind === "SCHOOL" &&
+                                  !group.host_school_id)
+                              }
                             >
                               {group.cooking_group_name}
+                              {!group.location_kind ||
+                              (group.location_kind === "SCHOOL" &&
+                                !group.host_school_id)
+                                ? " · Cần đối soát nơi nấu"
+                                : ""}
                             </option>
                           ))}
                         {school.cooking_group_id &&
@@ -455,6 +489,64 @@ function SchoolDefaultsTable({
                         onClick={() => void cooking.saveSchoolCooking(school)}
                       >
                         Lưu Nấu tại
+                      </Button>
+                    )}
+                  </Table.Cell>
+                )}
+                {dispatch && (
+                  <Table.Cell>
+                    <NativeSelect.Root
+                      size="sm"
+                      disabled={disabled || school.school_status !== "ACTIVE"}
+                    >
+                      <NativeSelect.Field
+                        aria-label={`Nhóm Dispatch — ${school.school_name}`}
+                        value={
+                          dispatch.dispatchDrafts[school.school_id] ??
+                          school.dispatch_group_id ??
+                          ""
+                        }
+                        onChange={(event) =>
+                          dispatch.editDispatch(school, event.target.value)
+                        }
+                      >
+                        <option value="">Không gán nhóm Dispatch</option>
+                        {dispatch.dispatchGroups
+                          .filter((group) => group.active)
+                          .map((group) => (
+                            <option
+                              key={group.dispatch_group_id}
+                              value={group.dispatch_group_id}
+                            >
+                              {group.dispatch_group_name}
+                            </option>
+                          ))}
+                        {school.dispatch_group_id &&
+                          !dispatch.dispatchGroups.some(
+                            (group) =>
+                              group.active &&
+                              group.dispatch_group_id ===
+                                school.dispatch_group_id,
+                          ) && (
+                            <option value={school.dispatch_group_id} disabled>
+                              {school.dispatch_group_name} · Ngừng hoạt động
+                            </option>
+                          )}
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                    {Object.hasOwn(
+                      dispatch.dispatchDrafts,
+                      school.school_id,
+                    ) && (
+                      <Button
+                        size="sm"
+                        mt="xs"
+                        disabled={disabled || Boolean(dispatch.lock)}
+                        aria-label={`Lưu Nhóm Dispatch — ${school.school_name}`}
+                        onClick={() => void dispatch.saveSchoolDispatch(school)}
+                      >
+                        Lưu Nhóm Dispatch
                       </Button>
                     )}
                   </Table.Cell>

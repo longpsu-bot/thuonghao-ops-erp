@@ -19,6 +19,9 @@ describe("RMVP-01 master-data API adapter", () => {
       getCookingGroups: "atlas_api.get_cooking_groups",
       upsertCookingGroup: "atlas_api.upsert_cooking_group",
       setSchoolCookingGroup: "atlas_api.set_school_cooking_group",
+      getDispatchGroups: "atlas_api.get_dispatch_groups",
+      upsertDispatchGroup: "atlas_api.upsert_dispatch_group",
+      setSchoolDispatchGroup: "atlas_api.set_school_dispatch_group",
       getIngredientsAndSuppliers:
         "atlas_api.get_ingredient_supplier_master_data",
       updateSchoolDefaults: "atlas_api.update_school_portion_defaults",
@@ -182,4 +185,37 @@ describe("RMVP-01 master-data API adapter", () => {
       results[2],
     );
   });
+});
+
+it("forwards independent Dispatch commands unchanged", async () => {
+  const invoke = vi.fn().mockResolvedValue(success);
+  const api = createMasterDataApi({ invoke });
+  await api.getDispatchGroups("subject", "correlation");
+  expect(invoke).toHaveBeenLastCalledWith(
+    "atlas_api.get_dispatch_groups",
+    expect.objectContaining({ payload: {} }),
+  );
+  const request = {
+    contract_version: "RMVP-01.v1",
+    command_id: "command",
+    correlation_id: "correlation",
+    idempotency_key: "dispatch:command",
+    expected_version: 7,
+    requested_by_auth_subject: "subject",
+    requested_at: "2026-10-10T00:00:00Z",
+    reason_code: "SCHOOL_DISPATCH_GROUP_SET",
+    reason_note: null,
+    payload: { school_id: "school", dispatch_group_id: null },
+  } satisfies MasterDataCommandRequest;
+  await api.setSchoolDispatchGroup(request);
+  expect(invoke).toHaveBeenLastCalledWith(
+    "atlas_api.set_school_dispatch_group",
+    request,
+  );
+  await api.upsertDispatchGroup(request);
+  expect(invoke).toHaveBeenLastCalledWith(
+    "atlas_api.upsert_dispatch_group",
+    request,
+  );
+  expect(invoke.mock.calls.at(-1)?.[1]).toBe(request);
 });

@@ -1,0 +1,73 @@
+{
+  "excel_version": "16.0",
+  "workbooks": [
+    {
+      "normal_open": true,
+      "file": "PO-School-measured-rows.xlsx",
+      "sheets": [
+        {
+          "print_titles": "$1:$9",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            18,
+            21
+          ],
+          "pdf": "PO-School-measured-rows-sheet-1.pdf",
+          "name": "02-09-2026 - Theo hàng"
+        },
+        {
+          "print_titles": "$1:$9",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            28,
+            40
+          ],
+          "pdf": "PO-School-measured-rows-sheet-2.pdf",
+          "name": "02-09-2026 - Theo trường"
+        },
+        {
+          "print_titles": "$1:$10",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [],
+          "pdf": "PO-School-measured-rows-sheet-3.pdf",
+          "name": "02-09-2026 - Tổng"
+        }
+      ],
+      "clean_unchanged": true,
+      "exact_text_checks": 435,
+      "native_save_reopen": true
+    },
+    {
+      "normal_open": true,
+      "file": "Dispatch-explicit-Vinh-Tan.xlsx",
+      "sheets": [
+        {
+          "print_titles": "$1:$10",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [],
+          "pdf": "Dispatch-explicit-Vinh-Tan-sheet-1.pdf",
+          "name": "09-24 VĨNH TÂN"
+        }
+      ],
+      "clean_unchanged": true,
+      "exact_text_checks": 65,
+      "native_save_reopen": true
+    },
+    {
+      "normal_open": true,
+      "file": "Dispatch-long-school-header.xlsx",
+      "sheets": [
+        {
+          "print_titles": "$1:$10",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [],
+          "pdf": "Dispatch-long-school-header-sheet-1.pdf",
+          "name": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PH"
+        }
+      ],
+      "clean_unchanged": true,
+      "exact_text_checks": 60,
+      "native_save_reopen": true
+    }
+  ]
+}

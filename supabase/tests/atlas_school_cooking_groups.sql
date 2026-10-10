@@ -142,20 +142,20 @@ select function_owner_is('atlas_api','get_cooking_groups',array['jsonb'],'atlas_
 set local role authenticated;
 select set_config('request.jwt.claim.sub','d1000000-0000-0000-0000-000000000101',true);
 insert into cg_results values('create',atlas_api.upsert_cooking_group(pg_temp.cg_request(
-  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Group X','active',true),1,'COOKING_GROUP_SAVED','create')));
+  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Group X','active',true,'location_kind','SCHOOL','host_school_id','d2000000-0000-0000-0000-000000000004'),1,'COOKING_GROUP_SAVED','create')));
 insert into cg_results values('replay',atlas_api.upsert_cooking_group(pg_temp.cg_request(
-  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Group X','active',true),1,'COOKING_GROUP_SAVED','create')));
+  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Group X','active',true,'location_kind','SCHOOL','host_school_id','d2000000-0000-0000-0000-000000000004'),1,'COOKING_GROUP_SAVED','create')));
 select is((select response->>'success' from cg_results where name='create'),'true','group create succeeds');
 select is((select response from cg_results where name='replay'),(select response from cg_results where name='create'),
   'exact group replay returns original immutable receipt');
 select is((atlas_api.upsert_cooking_group(pg_temp.cg_request(
-  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Conflicting','active',true),1,'COOKING_GROUP_SAVED','create'))->>'error_code'),
+  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Conflicting','active',true,'location_kind','SCHOOL','host_school_id','d2000000-0000-0000-0000-000000000004'),1,'COOKING_GROUP_SAVED','create'))->>'error_code'),
   'IDEMPOTENCY_CONFLICT','conflicting group replay rejects');
 select is((atlas_api.upsert_cooking_group(pg_temp.cg_request(
-  jsonb_build_object('cooking_group_id',null,'cooking_group_name',repeat('x',201),'active',true),1,'COOKING_GROUP_SAVED','too-long'))->>'error_code'),
+  jsonb_build_object('cooking_group_id',null,'cooking_group_name',repeat('x',201),'active',true,'location_kind','SCHOOL','host_school_id','d2000000-0000-0000-0000-000000000004'),1,'COOKING_GROUP_SAVED','too-long'))->>'error_code'),
   'VALIDATION_FAILED','group name length over 200 rejects');
 select is((atlas_api.upsert_cooking_group(pg_temp.cg_request(
-  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Group Bad','active',null),1,'COOKING_GROUP_SAVED','null-active'))->>'error_code'),
+  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Group Bad','active',null,'location_kind','SCHOOL','host_school_id','d2000000-0000-0000-0000-000000000004'),1,'COOKING_GROUP_SAVED','null-active'))->>'error_code'),
   'VALIDATION_FAILED','null active field rejects');
 insert into cg_results values('assign',atlas_api.set_school_cooking_group(pg_temp.cg_request(
   jsonb_build_object('school_id','d2000000-0000-0000-0000-000000000004',
@@ -177,7 +177,7 @@ insert into cg_results values('stale',atlas_api.set_school_cooking_group(pg_temp
 select is((select response->>'error_code' from cg_results where name='stale'),'STALE_VERSION','stale assignment cannot overwrite');
 insert into cg_results values('deactivate-blocked',atlas_api.upsert_cooking_group(pg_temp.cg_request(
   jsonb_build_object('cooking_group_id',(select response#>>'{affected_aggregate_ids,cooking_group_id}' from cg_results where name='create'),
-    'cooking_group_name','Group X','active',false),1,'COOKING_GROUP_SAVED','deactivate-blocked')));
+    'cooking_group_name','Group X','active',false,'location_kind','SCHOOL','host_school_id','d2000000-0000-0000-0000-000000000004'),1,'COOKING_GROUP_SAVED','deactivate-blocked')));
 select is((select response->>'error_code' from cg_results where name='deactivate-blocked'),
   'COOKING_GROUP_HAS_MEMBERS','deactivation cannot strand assigned Schools');
 select is((atlas_api.set_school_cooking_group(pg_temp.cg_request(
@@ -194,7 +194,7 @@ select is((atlas_api.get_school_master_data(pg_temp.cg_read())#>'{schools,0,cook
   'ungrouped School read returns null');
 insert into cg_results values('deactivate',atlas_api.upsert_cooking_group(pg_temp.cg_request(
   jsonb_build_object('cooking_group_id',(select response#>>'{affected_aggregate_ids,cooking_group_id}' from cg_results where name='create'),
-    'cooking_group_name','Group X','active',false),1,'COOKING_GROUP_SAVED','deactivate')));
+    'cooking_group_name','Group X','active',false,'location_kind','SCHOOL','host_school_id','d2000000-0000-0000-0000-000000000004'),1,'COOKING_GROUP_SAVED','deactivate')));
 select is((select response->>'success' from cg_results where name='deactivate'),'true','empty group can deactivate');
 select is((atlas_api.set_school_cooking_group(pg_temp.cg_request(
   jsonb_build_object('school_id','d2000000-0000-0000-0000-000000000004',
@@ -233,7 +233,7 @@ select is((atlas_api.get_cooking_groups(jsonb_set(pg_temp.cg_read(),'{requested_
   to_jsonb('d1000000-0000-0000-0000-000000000102'::text)))->>'error_code'),
   'CAPABILITY_DENIED','GLOBAL actor without read capability is denied');
 select is((atlas_api.upsert_cooking_group(jsonb_set(pg_temp.cg_request(
-  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Denied','active',true),1,'COOKING_GROUP_SAVED','denied'),
+  jsonb_build_object('cooking_group_id',null,'cooking_group_name','Denied','active',true,'location_kind','SCHOOL','host_school_id','d2000000-0000-0000-0000-000000000004'),1,'COOKING_GROUP_SAVED','denied'),
   '{requested_by_auth_subject}',to_jsonb('d1000000-0000-0000-0000-000000000102'::text)))->>'error_code'),
   'CAPABILITY_DENIED','GLOBAL actor without write capability is denied');
 reset role;

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   commandRequest,
   type CookingGroupMasterData,
+  type DispatchGroupMasterData,
   type MasterDataCommandRequest,
   responseArray,
   resultMessage,
@@ -62,10 +63,35 @@ export function useSchoolDefaultsWorkbench({
     id: "",
     name: "",
     active: true,
+    location_kind: "SCHOOL" as "SCHOOL" | "COMPANY" | "",
+    host_school_id: "",
   });
   const [groupDirty, setGroupDirty] = useState(false);
   const pendingGroup = useRef<{
     editor: typeof groupEditor;
+    request: MasterDataCommandRequest;
+    groupId: string | null;
+    confirmed: boolean;
+  } | null>(null);
+  const dispatchSupported = Boolean(
+    api.getDispatchGroups &&
+    api.upsertDispatchGroup &&
+    api.setSchoolDispatchGroup,
+  );
+  const [dispatchGroups, setDispatchGroups] = useState<
+    DispatchGroupMasterData[]
+  >([]);
+  const [dispatchDrafts, setDispatchDrafts] = useState<Record<string, string>>(
+    {},
+  );
+  const [dispatchGroupEditor, setDispatchGroupEditor] = useState({
+    id: "",
+    name: "",
+    active: true,
+  });
+  const [dispatchGroupDirty, setDispatchGroupDirty] = useState(false);
+  const pendingDispatchGroup = useRef<{
+    editor: typeof dispatchGroupEditor;
     request: MasterDataCommandRequest;
     groupId: string | null;
     confirmed: boolean;
@@ -130,12 +156,63 @@ export function useSchoolDefaultsWorkbench({
               group.cooking_group_id === pending.groupId &&
               (pending.confirmed ||
                 (group.cooking_group_name === pending.editor.name.trim() &&
-                  group.active === pending.editor.active)),
+                  group.active === pending.editor.active &&
+                  (group.location_kind ?? "") ===
+                    pending.editor.location_kind &&
+                  (group.host_school_id ?? "") ===
+                    pending.editor.host_school_id)),
           )
         ) {
           setGroupDirty(false);
-          setGroupEditor({ id: "", name: "", active: true });
+          setGroupEditor({
+            id: "",
+            name: "",
+            active: true,
+            location_kind: "SCHOOL",
+            host_school_id: "",
+          });
           pendingGroup.current = null;
+        }
+      }
+      if (dispatchSupported && api.getDispatchGroups) {
+        const groupResult = await api.getDispatchGroups(
+          authSubject,
+          correlationId,
+        );
+        if (generation !== requestGeneration.current) return false;
+        const groups = responseArray<DispatchGroupMasterData>(
+          groupResult,
+          "dispatch_groups",
+        );
+        if (!groups) {
+          setLoad((current) => ({
+            ...current,
+            loading: false,
+            error: resultMessage(groupResult),
+          }));
+          if (purpose === "readback") {
+            setLock("readback");
+            setNotice(
+              "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
+            );
+          }
+          return false;
+        }
+        setDispatchGroups(groups);
+        const pending = pendingDispatchGroup.current;
+        if (
+          pending &&
+          groups.some(
+            (group) =>
+              group.dispatch_group_id === pending.groupId &&
+              (pending.confirmed ||
+                (group.dispatch_group_name === pending.editor.name.trim() &&
+                  group.active === pending.editor.active)),
+          )
+        ) {
+          setDispatchGroupDirty(false);
+          setDispatchGroupEditor({ id: "", name: "", active: true });
+          pendingDispatchGroup.current = null;
         }
       }
       setLoad({ loading: false, schools, error: null });
@@ -148,10 +225,27 @@ export function useSchoolDefaultsWorkbench({
           }),
         ),
       );
+      setDispatchDrafts((current) =>
+        Object.fromEntries(
+          Object.entries(current).filter(([id, groupId]) => {
+            const school = schools.find((row) => row.school_id === id);
+            return school && (school.dispatch_group_id ?? "") !== groupId;
+          }),
+        ),
+      );
       if (pendingGroup.current) {
         setLock(pendingGroup.current.groupId ? "readback" : "unknown");
         setNotice(
           pendingGroup.current.groupId
+            ? "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức."
+            : "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
+        );
+        return false;
+      }
+      if (pendingDispatchGroup.current) {
+        setLock(pendingDispatchGroup.current.groupId ? "readback" : "unknown");
+        setNotice(
+          pendingDispatchGroup.current.groupId
             ? "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức."
             : "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
         );
@@ -165,7 +259,7 @@ export function useSchoolDefaultsWorkbench({
       }
       return true;
     },
-    [api, authSubject, correlationId, cookingSupported],
+    [api, authSubject, correlationId, cookingSupported, dispatchSupported],
   );
 
   useEffect(() => {
@@ -174,9 +268,20 @@ export function useSchoolDefaultsWorkbench({
     setDrafts({});
     setCookingDrafts({});
     setCookingGroups([]);
-    setGroupEditor({ id: "", name: "", active: true });
+    setGroupEditor({
+      id: "",
+      name: "",
+      active: true,
+      location_kind: "SCHOOL",
+      host_school_id: "",
+    });
     setGroupDirty(false);
     pendingGroup.current = null;
+    setDispatchDrafts({});
+    setDispatchGroups([]);
+    setDispatchGroupEditor({ id: "", name: "", active: true });
+    setDispatchGroupDirty(false);
+    pendingDispatchGroup.current = null;
     setLock(null);
     setNotice(null);
     setSaving(false);
@@ -204,13 +309,22 @@ export function useSchoolDefaultsWorkbench({
   const invalidDraftCount = countInvalidDraftSchools(drafts);
   const portionDirtyCount = Object.keys(drafts).length;
   const dirtyCount =
-    new Set([...Object.keys(drafts), ...Object.keys(cookingDrafts)]).size +
-    Number(groupDirty);
+    new Set([
+      ...Object.keys(drafts),
+      ...Object.keys(cookingDrafts),
+      ...Object.keys(dispatchDrafts),
+    ]).size +
+    Number(groupDirty) +
+    Number(dispatchGroupDirty);
   const visibleSchoolIds = new Set(
     visibleSchools.map((school) => school.school_id),
   );
   const hiddenDirtyCount = [
-    ...new Set([...Object.keys(drafts), ...Object.keys(cookingDrafts)]),
+    ...new Set([
+      ...Object.keys(drafts),
+      ...Object.keys(cookingDrafts),
+      ...Object.keys(dispatchDrafts),
+    ]),
   ].filter((id) => !visibleSchoolIds.has(id)).length;
 
   const edit = (
@@ -289,7 +403,14 @@ export function useSchoolDefaultsWorkbench({
       (!school || !Object.hasOwn(cookingDrafts, school.school_id))
     )
       return;
-    if (kind === "group" && (!groupDirty || !groupEditor.name.trim())) return;
+    if (
+      kind === "group" &&
+      (!groupDirty ||
+        !groupEditor.name.trim() ||
+        !groupEditor.location_kind ||
+        (groupEditor.location_kind === "SCHOOL" && !groupEditor.host_school_id))
+    )
+      return;
     const group = cookingGroups.find(
       (row) => row.cooking_group_id === groupEditor.id,
     );
@@ -309,6 +430,11 @@ export function useSchoolDefaultsWorkbench({
             cooking_group_id: groupEditor.id || null,
             cooking_group_name: groupEditor.name.trim(),
             active: groupEditor.active,
+            location_kind: groupEditor.location_kind,
+            host_school_id:
+              groupEditor.location_kind === "SCHOOL"
+                ? groupEditor.host_school_id
+                : null,
           },
     );
     setSaving(true);
@@ -345,7 +471,13 @@ export function useSchoolDefaultsWorkbench({
       if (current) {
         if (kind === "group") {
           setGroupDirty(false);
-          setGroupEditor({ id: "", name: "", active: true });
+          setGroupEditor({
+            id: "",
+            name: "",
+            active: true,
+            location_kind: "SCHOOL",
+            host_school_id: "",
+          });
           pendingGroup.current = null;
         }
         setNotice("Đã cập nhật và tải lại dữ liệu.");
@@ -354,6 +486,102 @@ export function useSchoolDefaultsWorkbench({
     }
     setSaving(false);
     pendingGroup.current = null;
+    if (
+      result.kind === "backend_error" &&
+      result.error.error_code === "STALE_VERSION"
+    )
+      setLock("stale");
+    setNotice(resultMessage(result));
+  };
+
+  const saveDispatch = async (
+    kind: "school" | "group",
+    school?: SchoolMasterData,
+  ) => {
+    if (
+      !authSubject ||
+      !dispatchSupported ||
+      saving ||
+      load.loading ||
+      load.error ||
+      lock
+    )
+      return;
+    if (
+      kind === "school" &&
+      (!school || !Object.hasOwn(dispatchDrafts, school.school_id))
+    )
+      return;
+    if (
+      kind === "group" &&
+      (!dispatchGroupDirty || !dispatchGroupEditor.name.trim())
+    )
+      return;
+    const group = dispatchGroups.find(
+      (row) => row.dispatch_group_id === dispatchGroupEditor.id,
+    );
+    const reason =
+      kind === "school" ? "SCHOOL_DISPATCH_GROUP_SET" : "DISPATCH_GROUP_SAVED";
+    const request = commandRequest(
+      authSubject,
+      correlationId,
+      kind === "school" ? school!.version : (group?.version ?? 1),
+      reason,
+      kind === "school"
+        ? {
+            school_id: school!.school_id,
+            dispatch_group_id: dispatchDrafts[school!.school_id] || null,
+          }
+        : {
+            dispatch_group_id: dispatchGroupEditor.id || null,
+            dispatch_group_name: dispatchGroupEditor.name.trim(),
+            active: dispatchGroupEditor.active,
+          },
+    );
+    setSaving(true);
+    setNotice(null);
+    const generation = requestGeneration.current;
+    if (kind === "group")
+      pendingDispatchGroup.current = {
+        editor: { ...dispatchGroupEditor },
+        request,
+        groupId: dispatchGroupEditor.id || null,
+        confirmed: false,
+      };
+    const result =
+      kind === "school"
+        ? await api.setSchoolDispatchGroup!(request)
+        : await api.upsertDispatchGroup!(request);
+    if (generation !== requestGeneration.current) return;
+    if (result.kind === "transport_error") {
+      setSaving(false);
+      setLock("unknown");
+      setNotice("Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.");
+      return;
+    }
+    if (result.kind === "success") {
+      if (kind === "group" && pendingDispatchGroup.current) {
+        const groupId =
+          result.response.affected_aggregate_ids?.dispatch_group_id;
+        if (typeof groupId === "string")
+          pendingDispatchGroup.current.groupId = groupId;
+        pendingDispatchGroup.current.confirmed = true;
+      }
+      const current = await readAuthority("readback");
+      if (generation + 1 !== requestGeneration.current) return;
+      setSaving(false);
+      if (current) {
+        if (kind === "group") {
+          setDispatchGroupDirty(false);
+          setDispatchGroupEditor({ id: "", name: "", active: true });
+          pendingDispatchGroup.current = null;
+        }
+        setNotice("Đã cập nhật và tải lại dữ liệu.");
+      }
+      return;
+    }
+    setSaving(false);
+    pendingDispatchGroup.current = null;
     if (
       result.kind === "backend_error" &&
       result.error.error_code === "STALE_VERSION"
@@ -394,6 +622,37 @@ export function useSchoolDefaultsWorkbench({
       setSaving(false);
       return current;
     }
+    const dispatchPending = pendingDispatchGroup.current;
+    if (dispatchPending && !dispatchPending.groupId) {
+      if (!api.upsertDispatchGroup || saving || load.loading) return false;
+      setSaving(true);
+      const generation = requestGeneration.current;
+      const result = await api.upsertDispatchGroup(dispatchPending.request);
+      if (generation !== requestGeneration.current) return false;
+      if (result.kind !== "success") {
+        setSaving(false);
+        setLock("unknown");
+        setNotice(
+          result.kind === "transport_error"
+            ? "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa."
+            : resultMessage(result),
+        );
+        return false;
+      }
+      const groupId = result.response.affected_aggregate_ids?.dispatch_group_id;
+      if (typeof groupId !== "string") {
+        setSaving(false);
+        setLock("unknown");
+        setNotice("Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.");
+        return false;
+      }
+      dispatchPending.groupId = groupId;
+      dispatchPending.confirmed = true;
+      const current = await readAuthority("recovery");
+      if (generation + 1 !== requestGeneration.current) return false;
+      setSaving(false);
+      return current;
+    }
     return readAuthority(lock ? "recovery" : "routine");
   };
 
@@ -423,19 +682,31 @@ export function useSchoolDefaultsWorkbench({
         id,
         name: group?.cooking_group_name ?? "",
         active: group?.active ?? true,
+        location_kind: group?.location_kind ?? (id ? "" : "SCHOOL"),
+        host_school_id: group?.host_school_id ?? "",
       });
       setGroupDirty(false);
     },
-    editGroup: (field: "name" | "active", value: string | boolean) => {
+    editGroup: (
+      field: "name" | "active" | "location_kind" | "host_school_id",
+      value: string | boolean,
+    ) => {
       pendingGroup.current = null;
       const next = { ...groupEditor, [field]: value };
+      if (field === "location_kind" && value === "COMPANY") {
+        next.host_school_id = "";
+        next.name = "Công ty Thượng Hảo";
+      }
       const group = cookingGroups.find(
         (row) => row.cooking_group_id === next.id,
       );
       setGroupEditor(next);
       setGroupDirty(
         next.name !== (group?.cooking_group_name ?? "") ||
-          next.active !== (group?.active ?? true),
+          next.active !== (group?.active ?? true) ||
+          next.location_kind !==
+            (group?.location_kind ?? (next.id ? "" : "SCHOOL")) ||
+          next.host_school_id !== (group?.host_school_id ?? ""),
       );
     },
     editCooking: (school: SchoolMasterData, value: string) => {
@@ -451,6 +722,49 @@ export function useSchoolDefaultsWorkbench({
     saveSchoolCooking: (school: SchoolMasterData) =>
       saveCooking("school", school),
     saveGroup: () => saveCooking("group"),
+    dispatchSupported,
+    dispatchGroups,
+    dispatchDrafts,
+    dispatchGroupEditor,
+    dispatchGroupDirty,
+    confirmDispatchGroupSave: Boolean(
+      pendingDispatchGroup.current && !pendingDispatchGroup.current.groupId,
+    ),
+    selectDispatchGroup: (id: string) => {
+      pendingDispatchGroup.current = null;
+      const group = dispatchGroups.find((row) => row.dispatch_group_id === id);
+      setDispatchGroupEditor({
+        id,
+        name: group?.dispatch_group_name ?? "",
+        active: group?.active ?? true,
+      });
+      setDispatchGroupDirty(false);
+    },
+    editDispatchGroup: (field: "name" | "active", value: string | boolean) => {
+      pendingDispatchGroup.current = null;
+      const next = { ...dispatchGroupEditor, [field]: value };
+      const group = dispatchGroups.find(
+        (row) => row.dispatch_group_id === next.id,
+      );
+      setDispatchGroupEditor(next);
+      setDispatchGroupDirty(
+        next.name !== (group?.dispatch_group_name ?? "") ||
+          next.active !== (group?.active ?? true),
+      );
+    },
+    editDispatch: (school: SchoolMasterData, value: string) => {
+      setDispatchDrafts((current) => {
+        const next = { ...current };
+        if (value === (school.dispatch_group_id ?? ""))
+          delete next[school.school_id];
+        else next[school.school_id] = value;
+        return next;
+      });
+      setNotice(null);
+    },
+    saveSchoolDispatch: (school: SchoolMasterData) =>
+      saveDispatch("school", school),
+    saveDispatchGroup: () => saveDispatch("group"),
     exitPending: pendingExit !== null,
     requestExit: (next: () => void) => {
       if (saving || load.loading || lock) return;
@@ -465,8 +779,18 @@ export function useSchoolDefaultsWorkbench({
       setDrafts({});
       setCookingDrafts({});
       setGroupDirty(false);
-      setGroupEditor({ id: "", name: "", active: true });
+      setGroupEditor({
+        id: "",
+        name: "",
+        active: true,
+        location_kind: "SCHOOL",
+        host_school_id: "",
+      });
       pendingGroup.current = null;
+      setDispatchDrafts({});
+      setDispatchGroupDirty(false);
+      setDispatchGroupEditor({ id: "", name: "", active: true });
+      pendingDispatchGroup.current = null;
       next();
     },
     invalidDraftCount,

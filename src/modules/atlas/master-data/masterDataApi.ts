@@ -10,6 +10,9 @@ export const MASTER_DATA_RPC_FUNCTIONS = {
   getCookingGroups: "atlas_api.get_cooking_groups",
   upsertCookingGroup: "atlas_api.upsert_cooking_group",
   setSchoolCookingGroup: "atlas_api.set_school_cooking_group",
+  getDispatchGroups: "atlas_api.get_dispatch_groups",
+  upsertDispatchGroup: "atlas_api.upsert_dispatch_group",
+  setSchoolDispatchGroup: "atlas_api.set_school_dispatch_group",
   getIngredientsAndSuppliers: "atlas_api.get_ingredient_supplier_master_data",
   updateSchoolDefaults: "atlas_api.update_school_portion_defaults",
   updateSchoolDefaultsBulk: "atlas_api.update_school_portion_defaults_bulk",
@@ -86,6 +89,24 @@ export function createMasterDataApi(invoker: AtlasRpcInvoker) {
     setSchoolCookingGroup(request: MasterDataCommandRequest) {
       return invoker.invoke(
         MASTER_DATA_RPC_FUNCTIONS.setSchoolCookingGroup,
+        request,
+      );
+    },
+    getDispatchGroups(authSubject: string, correlationId: string) {
+      return invoker.invoke(
+        MASTER_DATA_RPC_FUNCTIONS.getDispatchGroups,
+        readRequest(authSubject, correlationId),
+      );
+    },
+    upsertDispatchGroup(request: MasterDataCommandRequest) {
+      return invoker.invoke(
+        MASTER_DATA_RPC_FUNCTIONS.upsertDispatchGroup,
+        request,
+      );
+    },
+    setSchoolDispatchGroup(request: MasterDataCommandRequest) {
+      return invoker.invoke(
+        MASTER_DATA_RPC_FUNCTIONS.setSchoolDispatchGroup,
         request,
       );
     },

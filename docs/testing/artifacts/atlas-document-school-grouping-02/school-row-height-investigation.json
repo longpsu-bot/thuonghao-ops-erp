@@ -1,0 +1,297 @@
+{
+  "excelVersion": "16.0",
+  "excelBuild": "20430",
+  "normalFont": "Arial",
+  "font": "Times New Roman",
+  "fontSizePoints": 14,
+  "interpretation": "AutoFit observations only; native rendered PDF text and visual bounds are required to establish clipping.",
+  "checks": [
+    {
+      "bold": false,
+      "explicitLines": 1,
+      "autoFitHeight": 18.75,
+      "ownerHeight": 28,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 2,
+      "autoFitHeight": 37.5,
+      "ownerHeight": 44,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 3,
+      "autoFitHeight": 56.25,
+      "ownerHeight": 60,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 4,
+      "autoFitHeight": 75.0,
+      "ownerHeight": 76,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 5,
+      "autoFitHeight": 93.75,
+      "ownerHeight": 92,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 6,
+      "autoFitHeight": 112.5,
+      "ownerHeight": 108,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 7,
+      "autoFitHeight": 131.25,
+      "ownerHeight": 124,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 8,
+      "autoFitHeight": 150.0,
+      "ownerHeight": 140,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 9,
+      "autoFitHeight": 168.75,
+      "ownerHeight": 156,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 10,
+      "autoFitHeight": 187.5,
+      "ownerHeight": 172,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 11,
+      "autoFitHeight": 206.25,
+      "ownerHeight": 188,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 12,
+      "autoFitHeight": 225.0,
+      "ownerHeight": 204,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 13,
+      "autoFitHeight": 243.75,
+      "ownerHeight": 220,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 14,
+      "autoFitHeight": 262.5,
+      "ownerHeight": 236,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": false,
+      "explicitLines": 15,
+      "autoFitHeight": 281.25,
+      "ownerHeight": 252,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 1,
+      "autoFitHeight": 18.75,
+      "ownerHeight": 28,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 2,
+      "autoFitHeight": 37.5,
+      "ownerHeight": 44,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 3,
+      "autoFitHeight": 56.25,
+      "ownerHeight": 60,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 4,
+      "autoFitHeight": 75.0,
+      "ownerHeight": 76,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 5,
+      "autoFitHeight": 93.75,
+      "ownerHeight": 92,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 6,
+      "autoFitHeight": 112.5,
+      "ownerHeight": 108,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 7,
+      "autoFitHeight": 131.25,
+      "ownerHeight": 124,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 8,
+      "autoFitHeight": 150.0,
+      "ownerHeight": 140,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 9,
+      "autoFitHeight": 168.75,
+      "ownerHeight": 156,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 10,
+      "autoFitHeight": 187.5,
+      "ownerHeight": 172,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 11,
+      "autoFitHeight": 206.25,
+      "ownerHeight": 188,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 12,
+      "autoFitHeight": 225.0,
+      "ownerHeight": 204,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 13,
+      "autoFitHeight": 243.75,
+      "ownerHeight": 220,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 14,
+      "autoFitHeight": 262.5,
+      "ownerHeight": 236,
+      "widthPoints": 240.0
+    },
+    {
+      "bold": true,
+      "explicitLines": 15,
+      "autoFitHeight": 281.25,
+      "ownerHeight": 252,
+      "widthPoints": 240.0
+    },
+    {
+      "actualAddress": "C11",
+      "nativeAutoFitHeight": 18.75,
+      "allocated": 28.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C12",
+      "nativeAutoFitHeight": 37.5,
+      "allocated": 44.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C13",
+      "nativeAutoFitHeight": 18.75,
+      "allocated": 28.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C14",
+      "nativeAutoFitHeight": 37.5,
+      "allocated": 44.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C15",
+      "nativeAutoFitHeight": 37.5,
+      "allocated": 44.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C16",
+      "nativeAutoFitHeight": 75.0,
+      "allocated": 76.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C17",
+      "nativeAutoFitHeight": 131.25,
+      "allocated": 124.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C19",
+      "nativeAutoFitHeight": 187.5,
+      "allocated": 172.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C20",
+      "nativeAutoFitHeight": 243.75,
+      "allocated": 220.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C22",
+      "nativeAutoFitHeight": 168.75,
+      "allocated": 156.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    },
+    {
+      "actualAddress": "C23",
+      "nativeAutoFitHeight": 75.0,
+      "allocated": 76.0,
+      "widthPoints": 240.0,
+      "actualWidthPoints": 240.0
+    }
+  ]
+}
