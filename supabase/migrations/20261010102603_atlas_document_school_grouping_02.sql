@@ -220,7 +220,7 @@ begin
     or v_payload - array['school_id','dispatch_group_id']<>'{}'::jsonb
     or (v_payload->'dispatch_group_id'<>'null'::jsonb and v_group_id is null)
     or request->>'reason_code'<>'SCHOOL_DISPATCH_GROUP_SET' then
-    return atlas_core.pa_05b_command_error(request,'VALIDATION_FAILED','School cooking assignment is invalid.','ADMIN',v_name);
+    return atlas_core.pa_05b_command_error(request,'VALIDATION_FAILED','School Dispatch group assignment is invalid.','ADMIN',v_name);
   end if;
   v_prepare:=atlas_core.rmvp_01_prepare_command(request,v_name,'master_data.schools.write','school:'||v_school_id::text);
   if v_prepare->>'status'='RETURN' then return v_prepare->'response'; end if;
@@ -259,7 +259,7 @@ begin
 exception when serialization_failure or deadlock_detected then
   return atlas_core.pa_05b_command_error(request,'RETRYABLE_CONCURRENCY_FAILURE','Retry the exact School assignment request.','ADMIN',v_name,true);
 when others then
-  return atlas_core.pa_05b_command_error(request,'INTERNAL_COMMAND_FAILURE','School cooking assignment could not be saved safely.','ADMIN',v_name);
+  return atlas_core.pa_05b_command_error(request,'INTERNAL_COMMAND_FAILURE','School Dispatch group assignment could not be saved safely.','ADMIN',v_name);
 end;
 $$;
 
