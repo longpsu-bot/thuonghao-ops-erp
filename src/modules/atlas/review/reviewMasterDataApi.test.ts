@@ -172,6 +172,10 @@ describe("review-only master-data adapter", () => {
   });
   it("allows distinct same-name cooking groups and returns the exact ID for idempotent command replay", async () => {
     const api = createReviewMasterDataApi();
+    const host = responseArray<SchoolMasterData>(
+      await api.getSchools("reviewer", "review"),
+      "schools",
+    )![0]!;
     const first = commandRequest(
       "reviewer",
       "review",
@@ -180,6 +184,8 @@ describe("review-only master-data adapter", () => {
       {
         cooking_group_id: null,
         cooking_group_name: "Bếp trùng tên",
+        location_kind: "SCHOOL",
+        host_school_id: host.school_id,
         active: true,
       },
     );
@@ -191,6 +197,8 @@ describe("review-only master-data adapter", () => {
       {
         cooking_group_id: null,
         cooking_group_name: "Bếp trùng tên",
+        location_kind: "SCHOOL",
+        host_school_id: host.school_id,
         active: true,
       },
     );
@@ -227,6 +235,8 @@ describe("review-only master-data adapter", () => {
           commandRequest("reviewer", "review", 1, "COOKING_GROUP_SAVED", {
             cooking_group_id: null,
             cooking_group_name: "Bếp thử",
+            location_kind: "SCHOOL",
+            host_school_id: initial.school_id,
             active: true,
           }),
         )
@@ -271,6 +281,8 @@ describe("review-only master-data adapter", () => {
           {
             cooking_group_id: group.cooking_group_id,
             cooking_group_name: "Bếp thử",
+            location_kind: "SCHOOL",
+            host_school_id: initial.school_id,
             active: false,
           },
         ),
@@ -454,4 +466,130 @@ describe("review-only master-data adapter", () => {
       error: { error_code: "STALE_VERSION" },
     });
   });
+});
+
+it("review cooking and Dispatch memberships remain independent with backend-style versions", async () => {
+  const api = createReviewMasterDataApi();
+  const school = responseArray<SchoolMasterData>(
+    await api.getSchools("reviewer", "review"),
+    "schools",
+  )![0]!;
+  await api.upsertCookingGroup(
+    commandRequest("reviewer", "review", 1, "COOKING_GROUP_SAVED", {
+      cooking_group_id: null,
+      cooking_group_name: "Host kitchen",
+      location_kind: "SCHOOL",
+      host_school_id: school.school_id,
+      active: true,
+    }),
+  );
+  const cooking = responseArray<CookingGroupMasterData>(
+    await api.getCookingGroups("reviewer", "review"),
+    "cooking_groups",
+  )![0]!;
+  const dispatchResult = await api.upsertDispatchGroup(
+    commandRequest("reviewer", "review", 1, "DISPATCH_GROUP_SAVED", {
+      dispatch_group_id: null,
+      dispatch_group_name: "Export group",
+      active: true,
+    }),
+  );
+  expect(dispatchResult.kind).toBe("success");
+  const dispatch = responseArray<{ dispatch_group_id: string }>(
+    await api.getDispatchGroups("reviewer", "review"),
+    "dispatch_groups",
+  )![0]!;
+  await api.setSchoolCookingGroup(
+    commandRequest(
+      "reviewer",
+      "review",
+      school.version,
+      "SCHOOL_COOKING_GROUP_SET",
+      {
+        school_id: school.school_id,
+        cooking_group_id: cooking.cooking_group_id,
+      },
+    ),
+  );
+  const cooked = responseArray<SchoolMasterData>(
+    await api.getSchools("reviewer", "review"),
+    "schools",
+  )![0]!;
+  expect(cooked.dispatch_group_id).toBeUndefined();
+  expect(cooked.cooking_location_host_school_id).toBe(school.school_id);
+  await api.setSchoolDispatchGroup(
+    commandRequest(
+      "reviewer",
+      "review",
+      cooked.version,
+      "SCHOOL_DISPATCH_GROUP_SET",
+      {
+        school_id: school.school_id,
+        dispatch_group_id: dispatch.dispatch_group_id,
+      },
+    ),
+  );
+  const grouped = responseArray<SchoolMasterData>(
+    await api.getSchools("reviewer", "review"),
+    "schools",
+  )![0]!;
+  expect(grouped).toMatchObject({
+    cooking_group_id: cooking.cooking_group_id,
+    cooking_location_host_school_id: school.school_id,
+    dispatch_group_id: dispatch.dispatch_group_id,
+    version: cooked.version + 1,
+  });
+  await api.setSchoolCookingGroup(
+    commandRequest(
+      "reviewer",
+      "review",
+      grouped.version,
+      "SCHOOL_COOKING_GROUP_SET",
+      { school_id: school.school_id, cooking_group_id: null },
+    ),
+  );
+  const cleared = responseArray<SchoolMasterData>(
+    await api.getSchools("reviewer", "review"),
+    "schools",
+  )![0]!;
+  expect(cleared.dispatch_group_id).toBe(dispatch.dispatch_group_id);
+  expect(cleared.cooking_location_id).toBeNull();
+});
+it("review authoring rejects an inferred host and enforces the company identity", async () => {
+  const api = createReviewMasterDataApi();
+  const save = (payload: Record<string, string | null | boolean>) =>
+    api.upsertCookingGroup(
+      commandRequest("reviewer", "review", 1, "COOKING_GROUP_SAVED", payload),
+    );
+  expect(
+    (
+      await save({
+        cooking_group_id: null,
+        cooking_group_name: "Missing host",
+        active: true,
+      })
+    ).kind,
+  ).toBe("backend_error");
+  expect(
+    (
+      await save({
+        cooking_group_id: null,
+        cooking_group_name: "Other company",
+        location_kind: "COMPANY",
+        host_school_id: null,
+        active: true,
+      })
+    ).kind,
+  ).toBe("backend_error");
+  expect(
+    (
+      await save({
+        cooking_group_id: null,
+        cooking_group_name: "Công ty Thượng Hảo",
+        location_kind: "COMPANY",
+        host_school_id: null,
+        active: true,
+      })
+    ).kind,
+  ).toBe("success");
 });

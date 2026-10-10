@@ -53,6 +53,12 @@ export type SchoolDispatchDocument = {
   /** Immutable release snapshot, never reconstructed from current membership. */
   cooking_group_id?: string | null;
   cooking_group_name?: string | null;
+  cooking_location_id?: string | null;
+  cooking_location_name?: string | null;
+  cooking_location_kind?: "SCHOOL" | "COMPANY" | null;
+  cooking_location_host_school_id?: string | null;
+  dispatch_group_id?: string | null;
+  dispatch_group_name?: string | null;
   delivery_location_name: string;
   delivery_address: string;
   document_issuer_name: string;

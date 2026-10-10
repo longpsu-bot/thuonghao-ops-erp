@@ -29,6 +29,8 @@ const groups = [
     cooking_group_id: "group-x",
     cooking_group_name: "Bếp X",
     active: true,
+    location_kind: "SCHOOL",
+    host_school_id: school.school_id,
     version: 3,
   },
   {
@@ -101,9 +103,7 @@ it("offers only active groups and saves one explicit assignment with the School 
       ],
     },
   });
-  fireEvent.click(
-    screen.getByRole("button", { name: `Lưu Nấu tại — ${school.school_name}` }),
-  );
+  fireEvent.click(screen.getByLabelText(`Lưu Nấu tại — ${school.school_name}`));
   await waitFor(() => expect(api.setSchoolCookingGroup).toHaveBeenCalledOnce());
   expect(api.setSchoolCookingGroup).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -125,16 +125,16 @@ it("locks an uncertain assignment until authoritative readback, preserving its d
     diagnostic: { code: "NETWORK_FAILURE", safeMessage: "offline" },
   });
   const select = await selectGroup();
-  fireEvent.click(
-    screen.getByRole("button", { name: `Lưu Nấu tại — ${school.school_name}` }),
-  );
+  fireEvent.click(screen.getByLabelText(`Lưu Nấu tại — ${school.school_name}`));
   expect(
     await screen.findByText(
       "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
     ),
   ).toBeInTheDocument();
   expect(select).toBeDisabled();
-  fireEvent.click(screen.getByRole("button", { name: "Tải lại để xác nhận" }));
+  fireEvent.click(
+    screen.getByText("Tải lại để xác nhận", { selector: "button" }),
+  );
   await waitFor(() => expect(select).not.toBeDisabled());
   expect(select).toHaveValue("group-x");
   expect(api.setSchoolCookingGroup).toHaveBeenCalledOnce();
@@ -149,14 +149,17 @@ it("creates a group and permits explicit deactivation through the same editor", 
     },
   });
   fireEvent.click(
-    await screen.findByRole("button", { name: "Quản lý nhóm nấu" }),
+    await screen.findByText("Quản lý nơi nấu", { selector: "button" }),
   );
-  fireEvent.change(screen.getByLabelText("Tên nhóm nấu"), {
+  fireEvent.change(screen.getByLabelText("Tên nơi nấu"), {
     target: { value: "Bếp mới" },
   });
   expect(report).toHaveBeenLastCalledWith(
     expect.objectContaining({ unsaved: true }),
   );
+  fireEvent.change(screen.getByLabelText("Loại nơi nấu"), {
+    target: { value: "COMPANY" },
+  });
   api.getCookingGroups.mockResolvedValue({
     kind: "success",
     response: {
@@ -165,14 +168,16 @@ it("creates a group and permits explicit deactivation through the same editor", 
         ...groups,
         {
           cooking_group_id: "group-created",
-          cooking_group_name: "Bếp mới",
+          cooking_group_name: "Công ty Thượng Hảo",
+          location_kind: "COMPANY",
+          host_school_id: null,
           active: true,
           version: 1,
         },
       ],
     },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Lưu nhóm nấu" }));
+  fireEvent.click(screen.getByText("Lưu nơi nấu", { selector: "button" }));
   await waitFor(() =>
     expect(api.upsertCookingGroup).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -180,22 +185,24 @@ it("creates a group and permits explicit deactivation through the same editor", 
         reason_code: "COOKING_GROUP_SAVED",
         payload: {
           cooking_group_id: null,
-          cooking_group_name: "Bếp mới",
+          cooking_group_name: "Công ty Thượng Hảo",
+          location_kind: "COMPANY",
+          host_school_id: null,
           active: true,
         },
       }),
     ),
   );
   await waitFor(() =>
-    expect(screen.getByLabelText("Nhóm nấu")).not.toBeDisabled(),
+    expect(screen.getByLabelText("Nơi nấu")).not.toBeDisabled(),
   );
-  fireEvent.change(screen.getByLabelText("Nhóm nấu"), {
+  fireEvent.change(screen.getByLabelText("Nơi nấu"), {
     target: { value: "group-x" },
   });
-  fireEvent.change(screen.getByLabelText("Trạng thái nhóm nấu"), {
+  fireEvent.change(screen.getByLabelText("Trạng thái nơi nấu"), {
     target: { value: "INACTIVE" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Lưu nhóm nấu" }));
+  fireEvent.click(screen.getByText("Lưu nơi nấu", { selector: "button" }));
   await waitFor(() =>
     expect(api.upsertCookingGroup).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -203,6 +210,8 @@ it("creates a group and permits explicit deactivation through the same editor", 
         payload: {
           cooking_group_id: "group-x",
           cooking_group_name: "Bếp X",
+          location_kind: "SCHOOL",
+          host_school_id: school.school_id,
           active: false,
         },
       }),
@@ -217,23 +226,26 @@ it("never confirms uncertain creation using an existing same-name group and repl
   };
   const { api, report } = setup(unknown);
   fireEvent.click(
-    await screen.findByRole("button", { name: "Quản lý nhóm nấu" }),
+    await screen.findByText("Quản lý nơi nấu", { selector: "button" }),
   );
-  fireEvent.change(screen.getByLabelText("Tên nhóm nấu"), {
+  fireEvent.change(screen.getByLabelText("Tên nơi nấu"), {
     target: { value: "Bếp X" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Lưu nhóm nấu" }));
+  fireEvent.change(screen.getByLabelText("Trường đặt bếp"), {
+    target: { value: school.school_id },
+  });
+  fireEvent.click(screen.getByText("Lưu nơi nấu", { selector: "button" }));
   await screen.findByText(
     "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
   );
   const request = api.upsertCookingGroup.mock.calls[0]![0];
   fireEvent.click(
-    screen.getByRole("button", { name: "Xác nhận lần lưu nhóm nấu" }),
+    screen.getByText("Xác nhận lần lưu nơi nấu", { selector: "button" }),
   );
   await waitFor(() => expect(api.upsertCookingGroup).toHaveBeenCalledTimes(2));
   expect(api.upsertCookingGroup.mock.calls[1]![0]).toBe(request);
-  expect(screen.getByLabelText("Tên nhóm nấu")).toHaveValue("Bếp X");
-  expect(screen.getByLabelText("Tên nhóm nấu")).toBeDisabled();
+  expect(screen.getByLabelText("Tên nơi nấu")).toHaveValue("Bếp X");
+  expect(screen.getByLabelText("Tên nơi nấu")).toBeDisabled();
   expect(report).toHaveBeenLastCalledWith(
     expect.objectContaining({ unsaved: true, blocked: true }),
   );
@@ -245,12 +257,12 @@ it("never confirms uncertain creation using an existing same-name group and repl
     },
   });
   fireEvent.click(
-    screen.getByRole("button", { name: "Xác nhận lần lưu nhóm nấu" }),
+    screen.getByText("Xác nhận lần lưu nơi nấu", { selector: "button" }),
   );
   await screen.findByText(
     "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
   );
-  expect(screen.getByLabelText("Tên nhóm nấu")).toHaveValue("Bếp X");
+  expect(screen.getByLabelText("Tên nơi nấu")).toHaveValue("Bếp X");
   expect(report).toHaveBeenLastCalledWith(
     expect.objectContaining({ unsaved: true, blocked: true }),
   );
@@ -264,14 +276,18 @@ it("never confirms uncertain creation using an existing same-name group and repl
       ],
     },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Tải lại để xác nhận" }));
+  fireEvent.click(
+    screen.getByText("Tải lại để xác nhận", { selector: "button" }),
+  );
   await waitFor(() =>
-    expect(screen.getByLabelText("Tên nhóm nấu")).toHaveValue(""),
+    expect(screen.getByLabelText("Tên nơi nấu")).toHaveValue(""),
   );
   expect(api.upsertCookingGroup).toHaveBeenCalledTimes(3);
   expect(api.upsertCookingGroup.mock.calls[2]![0]).toBe(request);
-  expect(report).toHaveBeenLastCalledWith(
-    expect.objectContaining({ unsaved: false, blocked: false }),
+  await waitFor(() =>
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    ),
   );
 });
 it("retains assignment edits when the backend denies authority", async () => {
@@ -284,9 +300,7 @@ it("retains assignment edits when the backend denies authority", async () => {
     },
   });
   const select = await selectGroup();
-  fireEvent.click(
-    screen.getByRole("button", { name: `Lưu Nấu tại — ${school.school_name}` }),
-  );
+  fireEvent.click(screen.getByLabelText(`Lưu Nấu tại — ${school.school_name}`));
   expect(
     await screen.findByText("Bạn không có quyền thực hiện thao tác này."),
   ).toBeInTheDocument();
@@ -303,9 +317,7 @@ it("removes a current group through an explicit nullable assignment command", as
   );
   expect(select).toHaveValue("group-x");
   fireEvent.change(select, { target: { value: "" } });
-  fireEvent.click(
-    screen.getByRole("button", { name: `Lưu Nấu tại — ${school.school_name}` }),
-  );
+  fireEvent.click(screen.getByLabelText(`Lưu Nấu tại — ${school.school_name}`));
   await waitFor(() =>
     expect(api.setSchoolCookingGroup).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -323,9 +335,7 @@ it("locks a successful command if group authority cannot be read back", async ()
     kind: "transport_error",
     diagnostic: { code: "NETWORK_FAILURE", safeMessage: "offline" },
   });
-  fireEvent.click(
-    screen.getByRole("button", { name: `Lưu Nấu tại — ${school.school_name}` }),
-  );
+  fireEvent.click(screen.getByLabelText(`Lưu Nấu tại — ${school.school_name}`));
   expect(
     await screen.findByText(
       "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
@@ -338,16 +348,18 @@ it("locks a successful command if group authority cannot be read back", async ()
 it("keeps group drafts and School assignment drafts behind the existing dirty exit guard", async () => {
   const { exitRef, report } = setup();
   await selectGroup();
-  fireEvent.click(screen.getByRole("button", { name: "Quản lý nhóm nấu" }));
-  fireEvent.change(screen.getByLabelText("Tên nhóm nấu"), {
+  fireEvent.click(screen.getByText("Quản lý nơi nấu", { selector: "button" }));
+  fireEvent.change(screen.getByLabelText("Tên nơi nấu"), {
     target: { value: "Chưa lưu" },
   });
   const next = vi.fn();
   act(() => exitRef.current!.requestExit(next));
   expect(next).not.toHaveBeenCalled();
-  fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
+  fireEvent.click(
+    await screen.findByText("Bỏ thay đổi", { selector: "button" }),
+  );
   expect(next).toHaveBeenCalledOnce();
-  expect(screen.getByLabelText("Tên nhóm nấu")).toHaveValue("");
+  expect(screen.getByLabelText("Tên nơi nấu")).toHaveValue("");
   await waitFor(() =>
     expect(report).toHaveBeenLastCalledWith(
       expect.objectContaining({ unsaved: false }),
@@ -365,19 +377,57 @@ it("preserves a rejected deactivation and explains the current membership blocke
     },
   });
   await selectGroup();
-  fireEvent.click(screen.getByRole("button", { name: "Quản lý nhóm nấu" }));
-  fireEvent.change(screen.getByLabelText("Nhóm nấu"), {
+  fireEvent.click(screen.getByText("Quản lý nơi nấu", { selector: "button" }));
+  fireEvent.change(screen.getByLabelText("Nơi nấu"), {
     target: { value: "group-x" },
   });
-  fireEvent.change(screen.getByLabelText("Trạng thái nhóm nấu"), {
+  fireEvent.change(screen.getByLabelText("Trạng thái nơi nấu"), {
     target: { value: "INACTIVE" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Lưu nhóm nấu" }));
+  fireEvent.click(screen.getByText("Lưu nơi nấu", { selector: "button" }));
   expect(
     await screen.findByText(
-      "Nhóm nấu vẫn còn trường được gán. Hãy bỏ hoặc đổi nhóm của các trường trước khi ngừng hoạt động.",
+      "Nơi nấu vẫn còn trường được gán. Hãy bỏ hoặc đổi nơi nấu của các trường trước khi ngừng hoạt động.",
     ),
   ).toBeInTheDocument();
-  expect(screen.getByLabelText("Trạng thái nhóm nấu")).toHaveValue("INACTIVE");
+  expect(screen.getByLabelText("Trạng thái nơi nấu")).toHaveValue("INACTIVE");
   expect(api.getCookingGroups).toHaveBeenCalledOnce();
+});
+
+it("requires explicit host School identity instead of deriving it from the location name", async () => {
+  const { api } = setup();
+  fireEvent.click(
+    await screen.findByText("Quản lý nơi nấu", { selector: "button" }),
+  );
+  fireEvent.change(screen.getByLabelText("Tên nơi nấu"), {
+    target: { value: school.school_name },
+  });
+  expect(
+    screen.getByText("Lưu nơi nấu", { selector: "button" }),
+  ).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Trường đặt bếp"), {
+    target: { value: school.school_id },
+  });
+  api.upsertCookingGroup.mockResolvedValue({
+    kind: "backend_error",
+    error: {
+      success: false,
+      error_code: "VALIDATION_FAILED",
+      safe_message: "blocked",
+    },
+  });
+  fireEvent.click(screen.getByText("Lưu nơi nấu", { selector: "button" }));
+  await waitFor(() =>
+    expect(api.upsertCookingGroup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: {
+          cooking_group_id: null,
+          cooking_group_name: school.school_name,
+          location_kind: "SCHOOL",
+          host_school_id: school.school_id,
+          active: true,
+        },
+      }),
+    ),
+  );
 });

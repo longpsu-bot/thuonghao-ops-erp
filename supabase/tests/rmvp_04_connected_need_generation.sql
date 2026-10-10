@@ -163,7 +163,7 @@ select is(
     )
   ),
   jsonb_build_object(
-    'tables', 115,
+    'tables', 117,
     'views', 2,
     'rmvp04_triggers', 0,
     'rmvp06_validation_relations', array[
@@ -175,7 +175,7 @@ select is(
       'atlas_planning.confirmed_need_releases'
     ]::text[]
   ),
-  'RMVP04-10 RMVP-04 adds no relation, view, or source trigger while the current platform includes exact RMVP-06/07 and 02B evidence relations'
+  'RMVP04-10 RMVP-04 adds no relation, view, or source trigger while the current platform includes exact RMVP-06/07 and 02B evidence relations plus two independent Dispatch-grouping relations'
 );
 
 -- H0A2 normally prevents duplicate active Recipe roots in either scope. The

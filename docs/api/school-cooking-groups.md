@@ -1,77 +1,92 @@
-# School cooking groups — Document System Class C amendment
+# School cooking locations and Dispatch groups
 
-Authority: the Product Owner's bounded amendment to PR #360, recorded in
-`TASK-ATLAS-DOCUMENT-SYSTEM-01.md`. Admin owns one optional current School cooking
-group; School remains the business recipient. Cooking group is distinct from
-Customer grouping, issuer, delivery location, and export packaging.
+Authority: Owner task `TASK-ATLAS-DOCUMENT-SCHOOL-GROUPING-02.md`, superseding
+export combination by cooking group. Admin retains the existing cooking-group
+UUID/name authority as the physical Cooking Location; it does not create a second
+competing location table. School remains the business recipient.
 
-`atlas_admin.cooking_groups` stores UUID identity, trimmed 1–200 character name,
-boolean `active`, optimistic `version`, and ordinary creation/update timestamps.
-`atlas_admin.school_cooking_group_memberships` has School UUID as primary key and
-a required group UUID foreign key. Absence means no group. No approval, effective
-dating, membership lifecycle, or membership history is added.
+## Explicit independent facts
+
+`atlas_admin.cooking_groups` retains identity, name, active, version and timestamps,
+and adds `location_kind: SCHOOL | COMPANY | null` plus nullable `host_school_id`.
+SCHOOL requires an existing School UUID. COMPANY requires a null host and the exact canonical name `Công ty Thượng Hảo`. Legacy
+unresolved locations retain null kind/host until explicitly resolved; names never
+infer kind or host. `school_cooking_group_memberships` remains one current optional
+location per School, with School UUID as PK. No membership dating/history is added.
+
+`atlas_admin.dispatch_groups` stores independent UUID, trimmed 1–200 character
+name, active, version and timestamps. `atlas_admin.dispatch_group_members` has
+School UUID as PK and a required Dispatch group FK. Absence means no membership.
+A cooking assignment never creates or changes Dispatch membership, or vice versa.
 
 ## Admin APIs
 
-All three APIs use existing `RMVP-01.v1` envelopes and GLOBAL Admin authorization.
-Reads require `master_data.read`; writes require `master_data.schools.write`.
-Tables force RLS and have no browser/service-role table grants. APIs use existing
-dedicated runtimes, fixed empty search paths, and authenticated-only execution.
+All APIs retain `RMVP-01.v1`, GLOBAL authorization, `master_data.read` for reads
+and `master_data.schools.write` for writes. Tables force RLS with no browser or
+service-role table grants. Fixed empty paths, dedicated runtime owners and
+explicit authenticated-only execution preserve the existing security boundary.
 
-| Function                          | Payload                                                                           | Result                                                                                                      |
-| --------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `get_cooking_groups(jsonb)`       | `{}`                                                                              | `cooking_groups: [{ cooking_group_id, cooking_group_name, active, version }]`, including inactive groups    |
-| `upsert_cooking_group(jsonb)`     | `{ cooking_group_id: UUID or null, cooking_group_name: string, active: boolean }` | Standard command result with `affected_aggregate_ids.cooking_group_id` and `new_versions.aggregate_version` |
-| `set_school_cooking_group(jsonb)` | `{ school_id: UUID, cooking_group_id: UUID or null }`                             | Standard command result with `affected_aggregate_ids.school_id` and updated School version                  |
+| Function                    | Payload                                                                           | Result                                                                                                       |
+| --------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `get_cooking_groups`        | `{}`                                                                              | `cooking_groups: [{ cooking_group_id, cooking_group_name, active, version, location_kind, host_school_id }]` |
+| `upsert_cooking_group`      | `{ cooking_group_id, cooking_group_name, active, location_kind, host_school_id }` | Existing command result with affected Cooking Group identity/version                                         |
+| `set_school_cooking_group`  | `{ school_id, cooking_group_id: UUID or null }`                                   | Updated School identity/version                                                                              |
+| `get_dispatch_groups`       | `{}`                                                                              | `dispatch_groups: [{ dispatch_group_id, dispatch_group_name, active, version }]`                             |
+| `upsert_dispatch_group`     | `{ dispatch_group_id: UUID or null, dispatch_group_name, active }`                | Affected Dispatch Group identity/version                                                                     |
+| `set_school_dispatch_group` | `{ school_id, dispatch_group_id: UUID or null }`                                  | Updated School identity/version                                                                              |
 
-Creation uses explicit null group ID and expected version `1`; update uses current
-group version. Group saves require reason `COOKING_GROUP_SAVED`. Assignment and
-clearing use current School version and reason `SCHOOL_COOKING_GROUP_SET`. Clearing
-requires explicit null. Unknown payload fields and invalid/null types are rejected.
-Every success emits existing domain/audit events and completes an idempotent receipt.
-Exact replay returns the original response; conflicting replay or stale version
-cannot overwrite facts.
+Create uses null group ID and expected version 1; update uses the current group
+version. Cooking save/assignment reasons remain `COOKING_GROUP_SAVED` and
+`SCHOOL_COOKING_GROUP_SET`; Dispatch uses `DISPATCH_GROUP_SAVED` and
+`SCHOOL_DISPATCH_GROUP_SET`. Assignment/clear uses the current School version;
+clear requires explicit null. Every successful mutation records the existing
+idempotency receipt, domain event and audit evidence. Exact replay returns the
+original response; stale versions and conflicting replay cannot overwrite facts.
 
-Only active Schools can receive an active existing group. Missing group returns
-`NOT_FOUND`; inactive group returns `COOKING_GROUP_INACTIVE`; inactive School returns
-`SCHOOL_INACTIVE`. A group with members cannot deactivate
-(`COOKING_GROUP_HAS_MEMBERS`); operators must move or clear its Schools first.
-Relational guards also reject School deactivation while membership exists.
-Assignment locks School then target group; group updates lock the group and reject
-members, serializing assignment against deactivation. PK identity enforces zero or
-one group per School; many Schools may share a group.
+New Cooking Locations require explicit kind and host fields. Legacy update
+envelopes omitting both remain callable for existing IDs and preserve stored
+kind/host. Partial facts, unknown fields and invalid/null types reject. A new
+assignment to unresolved location returns
+`COOKING_LOCATION_RECONCILIATION_REQUIRED`. Missing targets return `NOT_FOUND`;
+inactive target returns `COOKING_GROUP_INACTIVE` or `DISPATCH_GROUP_INACTIVE`.
+Inactive Schools cannot receive membership (`SCHOOL_INACTIVE`). Groups with
+members cannot deactivate (`COOKING_GROUP_HAS_MEMBERS` or
+`DISPATCH_GROUP_HAS_MEMBERS`); membership also prevents School deactivation.
 
-The existing `get_school_master_data` response adds nullable `cooking_group_id` and
-`cooking_group_name` to every School row. No new School endpoint is introduced.
+`get_school_master_data` adds nullable `cooking_location_id`,
+`cooking_location_name`, `cooking_location_kind`,
+`cooking_location_host_school_id`, `dispatch_group_id` and `dispatch_group_name`.
+It preserves `cooking_group_id`/`cooking_group_name` compatibility aliases.
 
-## Released snapshots
+## Frozen operational evidence
 
-New official PO line inserts freeze nullable `cooking_group_id` and
-`cooking_group_name` in each School entry of `school_breakdown_snapshot`. New PXK
-release inserts freeze `cooking_group_id_snapshot` and `cooking_group_name_snapshot`;
-released shaped reads expose these as `cooking_group_id` and `cooking_group_name`.
-No group address is stored. Ungrouped snapshots carry nulls.
+Future official PO School breakdown entries and PXK release reads capture the
+same six canonical fields, retaining cooking compatibility aliases. PXK stores
+corresponding `_snapshot` columns. The private command-runtime locking helper
+locks ordered Schools, then ordered cooking and Dispatch groups before capture;
+assignment guards and group updates serialize changes against this capture.
 
-Both capture paths consume the same current Admin membership. Later moves, removal,
-group rename, or deactivation do not alter released snapshots. New captures use
-current facts. Old releases are not backfilled: absent/null values remain ordinary
-School headers. Exporters never reconstruct `Nấu tại` from current Admin data or
-text heuristics. School IDs and exact quantity lineage remain intact.
-
-PO `Ghi chú` remains frozen `supplier_note_snapshot`; PXK row `Ghi chú` is blank
-physical working space, with the release note retained at document level. This
-amendment does not resolve outward-code or released PO Ingredient/Unit label gaps.
+PO never combines different Schools for shared Cooking Location or Dispatch
+membership. Dispatch packaging may combine captured group/date/Ingredient/Unit/
+operational-note partitions while retaining every School/source identity and exact
+quantity. Self-cooking labels compare host School UUID with recipient UUID.
+Unresolved kind/host does not fabricate self-cooking or a suffix. Exporters consume
+frozen evidence only. Reassignment, rename, clear and deactivation preserve old
+releases. Historical absent/null fields remain absent/null; no backfill is run.
+School breakdown UPDATE is guarded, including historical null evidence; PXK's
+existing full-row immutable guard covers every new snapshot column.
 
 ## Verification and rollback
 
-`atlas_school_cooking_groups.sql` covers mutations, replay, versions, activity
-constraints, capability/scope denials, and private security posture. Existing PO/PXK
-suites cover capture and immutable history after moves, rename, and removal. The
-exact platform catalog includes the two tables, three APIs, guards, policies/grants.
+`atlas_document_school_grouping_02.sql` verifies explicit facts, independent
+mutation, replay/version checks, denied capabilities and private forced-RLS
+security. Existing cooking, PO and PXK suites preserve prior assertions and cover
+typed snapshots and history after rename/reassignment/removal. The exact platform
+catalog checks every added API, policy, owner and reviewed positive grant.
 
-Forward migration: `20261009075715_atlas_school_cooking_groups.sql`. It seeds no
-membership, reads no legacy/hosted data, and performs no historical backfill. Legacy
-adoption requires explicit PO/Dispatch reconciliation; absent retained values remain
-`COOKING_GROUP_RECONCILIATION_REQUIRED`. Forward rollback disables new maintenance
-or exposure while retaining current and frozen facts. Dropping released snapshot
-columns is not a valid rollback.
+Append-only migration: `20261010102603_atlas_document_school_grouping_02.sql`.
+It seeds no identities/memberships and writes no staging, live OPS or Retool data.
+Hosted configuration stays blocked by `SCHOOL_MASTER_RECONCILIATION_REQUIRED`
+until explicit source-to-Atlas identities are reconciled. Forward rollback revokes
+new authoring/exposure while retaining current and frozen facts. Dropping snapshots
+or reconstructing released values from current master data is not a valid rollback.

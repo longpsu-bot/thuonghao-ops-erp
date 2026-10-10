@@ -8,7 +8,12 @@ export type SchoolMasterDataApi = Pick<
   Partial<
     Pick<
       MasterDataApi,
-      "getCookingGroups" | "upsertCookingGroup" | "setSchoolCookingGroup"
+      | "getCookingGroups"
+      | "upsertCookingGroup"
+      | "setSchoolCookingGroup"
+      | "getDispatchGroups"
+      | "upsertDispatchGroup"
+      | "setSchoolDispatchGroup"
     >
   >;
 
@@ -20,6 +25,7 @@ export type {
 export {
   commandRequest,
   type CookingGroupMasterData,
+  type DispatchGroupMasterData,
   responseArray,
   resultMessage,
   schoolDefaultsBulkCommandRequest,

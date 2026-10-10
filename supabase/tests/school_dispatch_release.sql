@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(59);
+select plan(62);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -401,9 +401,11 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
 reset role;
-insert into atlas_admin.cooking_groups(cooking_group_id,cooking_group_name) values
- ('c7000000-0000-4000-8000-000000000001','Cooking X'),
- ('c7000000-0000-4000-8000-000000000002','Cooking Y');
+insert into atlas_admin.cooking_groups(cooking_group_id,cooking_group_name,location_kind,host_school_id) values
+ ('c7000000-0000-4000-8000-000000000001','Cooking X','SCHOOL','26020000-0000-4000-8000-000000000021'),
+ ('c7000000-0000-4000-8000-000000000002','Công ty Thượng Hảo','COMPANY',null);
+insert into atlas_admin.dispatch_groups(dispatch_group_id,dispatch_group_name) values('c7000000-0000-4000-8000-000000000031','Dispatch route X');
+insert into atlas_admin.dispatch_group_members(school_id,dispatch_group_id) values('26020000-0000-4000-8000-000000000021','c7000000-0000-4000-8000-000000000031');
 insert into atlas_admin.school_cooking_group_memberships(school_id,cooking_group_id) values
  ('26020000-0000-4000-8000-000000000021','c7000000-0000-4000-8000-000000000001');
 select ok((select response->>'success'='true'
@@ -450,10 +452,15 @@ select ok((select response #>> '{rows,0,state}'='CURRENT'
   'read model exposes the released immutable PXK as current and exportable');
 select is((select cooking_group_name_snapshot from atlas_dispatch.school_dispatch_releases),
   'Cooking X','new PXK release freezes cooking X');
+select ok((select bool_and(cooking_location_kind_snapshot='SCHOOL' and cooking_location_host_school_id_snapshot='26020000-0000-4000-8000-000000000021' and cooking_location_id_snapshot='c7000000-0000-4000-8000-000000000001' and dispatch_group_name_snapshot='Dispatch route X') from atlas_dispatch.school_dispatch_releases),'official capture includes explicit host and independent Dispatch facts');
+select throws_ok($$update atlas_dispatch.school_dispatch_releases set dispatch_group_name_snapshot='Mutated'$$,'23514','School dispatch release history is immutable.','PXK Dispatch snapshot cannot be mutated');
+update atlas_admin.dispatch_groups set dispatch_group_name='Dispatch renamed' where dispatch_group_id='c7000000-0000-4000-8000-000000000031';
+delete from atlas_admin.dispatch_group_members where school_id='26020000-0000-4000-8000-000000000021';
 update atlas_admin.school_cooking_group_memberships set cooking_group_id='c7000000-0000-4000-8000-000000000002'
 where school_id='26020000-0000-4000-8000-000000000021';
 update atlas_admin.cooking_groups set cooking_group_name='Cooking X renamed'
 where cooking_group_id='c7000000-0000-4000-8000-000000000001';
+select ok((select bool_and(cooking_location_kind_snapshot='SCHOOL' and cooking_location_host_school_id_snapshot='26020000-0000-4000-8000-000000000021' and cooking_location_id_snapshot='c7000000-0000-4000-8000-000000000001' and dispatch_group_name_snapshot='Dispatch route X') from atlas_dispatch.school_dispatch_releases),'historical canonical location and Dispatch facts remain frozen');
 select is((select atlas_core.school_dispatch_release_json(school_dispatch_release_id)->>'cooking_group_name'
   from atlas_dispatch.school_dispatch_releases),'Cooking X','historical PXK read retains X after assignment and rename');
 update atlas_admin.schools
@@ -592,9 +599,9 @@ select ok((select count(*) filter(where release_status='SUPERSEDED')=1
   'successor release atomically supersedes the prior PXK and preserves both documents');
 
 select is((select cooking_group_name_snapshot from atlas_dispatch.school_dispatch_releases where release_status='RELEASED'),
-  'Cooking Y','new PXK successor captures current cooking Y');
+  'Công ty Thượng Hảo','new PXK successor captures current cooking Y');
 delete from atlas_admin.school_cooking_group_memberships where school_id='26020000-0000-4000-8000-000000000021';
-select ok((select bool_and(cooking_group_name_snapshot=case release_status when 'SUPERSEDED' then 'Cooking X' else 'Cooking Y' end)
+select ok((select bool_and(cooking_group_name_snapshot=case release_status when 'SUPERSEDED' then 'Cooking X' else 'Công ty Thượng Hảo' end)
   from atlas_dispatch.school_dispatch_releases),'removal preserves both historical PXK snapshots');
 -- Move the allocation entirely to supplier B without recording cancellation or
 -- replacement PO evidence. The factual correction stands; PXK must stop.

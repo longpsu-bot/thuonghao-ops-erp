@@ -257,9 +257,20 @@ while current required codes are absent or invalid.
 
 This revision adds four private helpers, five triggers and seven reviewed positive
 grants, without a new table, API, capability, policy, role or browser table grant.
-The current catalogue is 115 private forced-RLS tables, 118 physical APIs, 115
-authenticated APIs, 663 normal policies, 332 private functions, 120 triggers and
-1797 reviewed positive grants. Forward rollback retains explicit codes and all
+The current catalogue is 117 private forced-RLS tables, 121 physical APIs, 118
+authenticated APIs, 672 normal policies, 336 private functions, 124 triggers and
+1825 reviewed positive grants. Forward rollback retains explicit codes and all
 released snapshot columns; removing or reconstructing them destroys evidence.
 Supplier address semantics remain open. PXK business authority and Shopping List
 V2/A+ are unchanged.
+
+## Independent location and Dispatch snapshots
+
+Owner task `TASK-ATLAS-DOCUMENT-SCHOOL-GROUPING-02.md` adds future-release
+`cooking_location_id`, `cooking_location_name`, `cooking_location_kind`,
+`cooking_location_host_school_id`, `dispatch_group_id` and `dispatch_group_name`.
+Cooking compatibility aliases remain. Admin facts are locked during capture;
+renaming or moving a current relationship never changes released evidence.
+Historical absent/null fields are retained without backfill. PO School sections
+stay separate; Dispatch packaging uses only captured membership and retains all
+School/source lineage. See [explicit independent facts](school-cooking-groups.md).

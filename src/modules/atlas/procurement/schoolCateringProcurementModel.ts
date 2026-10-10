@@ -151,6 +151,12 @@ export type PurchaseOrderLine = {
     /** Captured at PO release; absent on pre-amendment historical snapshots. */
     cooking_group_id?: string | null;
     cooking_group_name?: string | null;
+    cooking_location_id?: string | null;
+    cooking_location_name?: string | null;
+    cooking_location_kind?: "SCHOOL" | "COMPANY" | null;
+    cooking_location_host_school_id?: string | null;
+    dispatch_group_id?: string | null;
+    dispatch_group_name?: string | null;
     delivery_location_id: string;
     delivery_location_name: string;
     ordered_quantity: ExactQuantity;

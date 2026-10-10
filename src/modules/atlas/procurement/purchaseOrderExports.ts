@@ -2,6 +2,7 @@ import type { SchoolCateringPurchaseOrder } from "./schoolCateringProcurementMod
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import type { Row, Worksheet } from "exceljs";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
+import { measuredSchoolRowHeight } from "../documents/schoolRowMeasurement";
 import {
   appendDocumentParsingMetadata,
   prepareDocumentParsingColumns,
@@ -61,6 +62,11 @@ type PurchaseOrderSchoolExportLine = PurchaseOrderExportLine & {
   schoolDisplayOrder: number;
   cookingGroupId: string | null;
   cookingGroupName: string | null;
+  cookingLocationId: string | null;
+  cookingLocationName: string | null;
+  cookingLocationKind: "SCHOOL" | "COMPANY" | null;
+  cookingLocationHostSchoolId: string | null;
+  canonicalCookingSnapshot: boolean;
 };
 
 export type PurchaseOrderExportData = {
@@ -180,7 +186,22 @@ export function buildPurchaseOrderExportData(
       const schoolQuantity = scaledQuantity(school.ordered_quantity);
       breakdownTotal += schoolQuantity;
       schoolLines.push({
-        sources: [source],
+        sources: [
+          {
+            ...source,
+            school_id: school.school_id,
+            service_date: line.service_date,
+            school_quantity: school.ordered_quantity,
+            supplier_note_snapshot: line.supplier_note,
+            cooking_location_id: school.cooking_location_id ?? null,
+            cooking_location_name: school.cooking_location_name ?? null,
+            cooking_location_kind: school.cooking_location_kind ?? null,
+            cooking_location_host_school_id:
+              school.cooking_location_host_school_id ?? null,
+            dispatch_group_id: school.dispatch_group_id ?? null,
+            dispatch_group_name: school.dispatch_group_name ?? null,
+          },
+        ],
         schoolId: school.school_id,
         locationId: school.delivery_location_id,
         locationName: school.delivery_location_name,
@@ -190,6 +211,12 @@ export function buildPurchaseOrderExportData(
         schoolDisplayOrder: school.school_display_order,
         cookingGroupId: school.cooking_group_id ?? null,
         cookingGroupName: school.cooking_group_name ?? null,
+        cookingLocationId: school.cooking_location_id ?? null,
+        cookingLocationName: school.cooking_location_name ?? null,
+        cookingLocationKind: school.cooking_location_kind ?? null,
+        cookingLocationHostSchoolId:
+          school.cooking_location_host_school_id ?? null,
+        canonicalCookingSnapshot: Object.hasOwn(school, "cooking_location_id"),
         ingredientDocumentCode: line.ingredient_document_code_snapshot!,
         ingredientName: line.ingredient_name_snapshot!,
         orderedQuantity: exactQuantity(schoolQuantity),
@@ -259,12 +286,28 @@ function groupBy<T>(items: T[], keyFor: (item: T) => string) {
   return [...groups.values()];
 }
 function schoolLabel(line: PurchaseOrderSchoolExportLine) {
+  if (line.cookingLocationId && line.cookingLocationName) {
+    if (
+      line.cookingLocationKind === "SCHOOL" &&
+      line.cookingLocationHostSchoolId === line.schoolId
+    )
+      return line.schoolName;
+    if (
+      line.cookingLocationKind === "COMPANY" ||
+      (line.cookingLocationKind === "SCHOOL" &&
+        line.cookingLocationHostSchoolId)
+    )
+      return `${line.schoolName} (Nấu tại: ${line.cookingLocationName})`;
+    return line.schoolName;
+  }
+  if (line.canonicalCookingSnapshot) return line.schoolName;
+  // Historical group-only evidence has no host discriminator. Keep its
+  // captured context without inferring a self-cooking relationship.
   return [
     `TRƯỜNG: ${line.schoolName}`,
     ...(line.cookingGroupId && line.cookingGroupName
       ? [`NẤU TẠI: ${line.cookingGroupName}`]
       : []),
-    ...(line.schoolName === line.locationName ? [] : [line.locationName]),
   ].join("\n");
 }
 function detailGroups(
@@ -637,6 +680,10 @@ function addDetailSheet(
   const pageHeight = ((landscape ? 595.28 : 841.89) - 0.9 * 72) / scale - 12;
   let pageUsed = headerHeight;
   let activeLabel = "";
+  const bandHeight = (label: string) =>
+    direction === "details_school"
+      ? measuredSchoolRowHeight(label, sheet, 1, 6)
+      : wrappedRowHeight(label, formWidth, 14, 24);
   const band = (label: string) => {
     sheet.mergeCells(rowNumber, 1, rowNumber, 6);
     const row = sheet.getRow(rowNumber++);
@@ -647,7 +694,7 @@ function addDetailSheet(
       pattern: "solid",
       fgColor: { argb: "FFE8E8E8" },
     };
-    row.height = wrappedRowHeight(label, formWidth, 14, 24);
+    row.height = bandHeight(label);
     row.alignment = { vertical: "middle", wrapText: true };
     borderRow(row);
     pageUsed += row.height;
@@ -661,15 +708,16 @@ function addDetailSheet(
   for (const lines of detailGroups(data, direction)) {
     activeLabel = groupLabel(lines, direction);
     room(
-      wrappedRowHeight(activeLabel, formWidth, 14, 24) +
-        wrappedRowHeight(
-          direction === "details_school"
-            ? lines[0]!.ingredientName
-            : schoolLabel(lines[0]!),
-          descriptionWidth,
-          14,
-          30,
-        ),
+      bandHeight(activeLabel) +
+        (direction === "details_school"
+          ? wrappedRowHeight(lines[0]!.ingredientName, descriptionWidth, 14, 30)
+          : measuredSchoolRowHeight(
+              schoolLabel(lines[0]!),
+              sheet,
+              3,
+              3,
+              false,
+            )),
       false,
     );
     band(activeLabel);
@@ -680,8 +728,10 @@ function addDetailSheet(
           : schoolLabel(line);
       lineChunks(line).forEach(({ note }, continuation) => {
         const height = Math.max(
-          wrappedRowHeight(detail, descriptionWidth + 6, 14, 30),
-          noteRowHeight(note),
+          direction === "details_school"
+            ? wrappedRowHeight(detail, descriptionWidth + 6, 14, 30)
+            : measuredSchoolRowHeight(detail, sheet, 3, 3, false),
+          note ? noteRowHeight(note) : direction === "details_school" ? 30 : 28,
         );
         room(height, true);
         const row = sheet.getRow(rowNumber++);

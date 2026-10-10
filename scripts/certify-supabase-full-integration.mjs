@@ -38,6 +38,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "pa_05f_dispatch_setup_command_family.sql",
   "rmvp_01_atlas_master_data.sql",
   "atlas_school_cooking_groups.sql",
+  "atlas_document_school_grouping_02.sql",
   "atlas_po_document_identity.sql",
   "master_data_rehearsal_import.sql",
   "atlas_staging_master_load.sql",
@@ -129,6 +130,12 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
 );
 
 export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
+  pnpm(
+    "exec",
+    "vitest",
+    "run",
+    "scripts/atlas-document-school-configuration.test.mjs",
+  ),
   pnpm("exec", "supabase", "db", "reset", "--local", "--no-seed"),
   Object.freeze({
     command: "node",

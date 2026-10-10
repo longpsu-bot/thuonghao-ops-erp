@@ -29,7 +29,7 @@ export function SchoolCookingGroupEditor({
         aria-controls="school-cooking-group-editor"
         onClick={() => setOpen((current) => !current)}
       >
-        Quản lý nhóm nấu
+        Quản lý nơi nấu
       </Button>
       {open && (
         <Box
@@ -40,10 +40,10 @@ export function SchoolCookingGroupEditor({
           borderRadius="workbench"
         >
           <Heading as="h2" textStyle="section">
-            Nhóm nấu
+            Nơi nấu
           </Heading>
           <Text textStyle="helper" color="fg.muted" mb="sm">
-            Nhóm nấu được chọn tại từng trường. Ngừng hoạt động yêu cầu bỏ hoặc
+            Nơi nấu được chọn tại từng trường. Ngừng hoạt động yêu cầu bỏ hoặc
             đổi các trường đang được gán.
           </Text>
           <Grid
@@ -54,10 +54,10 @@ export function SchoolCookingGroupEditor({
             }}
           >
             <Field.Root>
-              <Field.Label>Nhóm nấu</Field.Label>
+              <Field.Label>Nơi nấu</Field.Label>
               <NativeSelect.Root disabled={disabled || c.groupDirty}>
                 <NativeSelect.Field
-                  aria-label="Nhóm nấu"
+                  aria-label="Nơi nấu"
                   value={c.groupEditor.id}
                   onChange={(event) => c.selectGroup(event.target.value)}
                 >
@@ -76,20 +76,20 @@ export function SchoolCookingGroupEditor({
               </NativeSelect.Root>
             </Field.Root>
             <Field.Root required>
-              <Field.Label>Tên nhóm nấu</Field.Label>
+              <Field.Label>Tên nơi nấu</Field.Label>
               <Input
-                aria-label="Tên nhóm nấu"
+                aria-label="Tên nơi nấu"
                 maxLength={200}
                 value={c.groupEditor.name}
-                disabled={disabled}
+                disabled={disabled || c.groupEditor.location_kind === "COMPANY"}
                 onChange={(event) => c.editGroup("name", event.target.value)}
               />
             </Field.Root>
             <Field.Root>
-              <Field.Label>Trạng thái nhóm nấu</Field.Label>
+              <Field.Label>Trạng thái nơi nấu</Field.Label>
               <NativeSelect.Root disabled={disabled}>
                 <NativeSelect.Field
-                  aria-label="Trạng thái nhóm nấu"
+                  aria-label="Trạng thái nơi nấu"
                   value={c.groupEditor.active ? "ACTIVE" : "INACTIVE"}
                   onChange={(event) =>
                     c.editGroup("active", event.target.value === "ACTIVE")
@@ -101,15 +101,67 @@ export function SchoolCookingGroupEditor({
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
             </Field.Root>
+            <Field.Root required>
+              <Field.Label>Loại nơi nấu</Field.Label>
+              <NativeSelect.Root disabled={disabled}>
+                <NativeSelect.Field
+                  aria-label="Loại nơi nấu"
+                  value={c.groupEditor.location_kind}
+                  onChange={(event) =>
+                    c.editGroup("location_kind", event.target.value)
+                  }
+                >
+                  <option value="">Chưa xác định</option>
+                  <option value="SCHOOL">Trường học</option>
+                  <option value="COMPANY">Công ty Thượng Hảo</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Field.Root>
+            {c.groupEditor.location_kind === "SCHOOL" && (
+              <Field.Root required>
+                <Field.Label>Trường đặt bếp</Field.Label>
+                <NativeSelect.Root disabled={disabled}>
+                  <NativeSelect.Field
+                    aria-label="Trường đặt bếp"
+                    value={c.groupEditor.host_school_id}
+                    onChange={(event) =>
+                      c.editGroup("host_school_id", event.target.value)
+                    }
+                  >
+                    <option value="">Chọn trường đặt bếp</option>
+                    {c.schools
+                      .filter(
+                        (school) =>
+                          school.school_status === "ACTIVE" ||
+                          school.school_id === c.groupEditor.host_school_id,
+                      )
+                      .map((school) => (
+                        <option key={school.school_id} value={school.school_id}>
+                          {school.school_name}
+                        </option>
+                      ))}
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Field.Root>
+            )}
           </Grid>
           <Flex gap="sm" mt="sm" wrap="wrap">
             <Button
               variant="businessPrimary"
               size="sm"
-              disabled={disabled || !c.groupDirty || !c.groupEditor.name.trim()}
+              disabled={
+                disabled ||
+                !c.groupDirty ||
+                !c.groupEditor.name.trim() ||
+                !c.groupEditor.location_kind ||
+                (c.groupEditor.location_kind === "SCHOOL" &&
+                  !c.groupEditor.host_school_id)
+              }
               onClick={() => void c.saveGroup()}
             >
-              Lưu nhóm nấu
+              Lưu nơi nấu
             </Button>
             {c.groupDirty && (
               <Button
@@ -118,7 +170,7 @@ export function SchoolCookingGroupEditor({
                 disabled={disabled}
                 onClick={() => c.selectGroup(c.groupEditor.id)}
               >
-                Bỏ thay đổi nhóm nấu
+                Bỏ thay đổi nơi nấu
               </Button>
             )}
           </Flex>
