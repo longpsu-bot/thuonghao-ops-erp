@@ -25,3 +25,5 @@ After deployment/configuration run current catalog/RLS verification, authenticat
 ## Implementation verification
 
 10 October2026: focused JavaScript verification passed211 tests across eight files; the new scoped reconciliation SQL passed41 assertions; existing School master/API and current security catalog passed71 assertions. Independent final review found no remaining actionable defects after preview/replay mapping drift fixes. GitHub exact-head validation and hosted rollout are separate gates; these local results do not claim hosted completion.
+
+Exact-head Frontend CI exposed an existing blocked Recipe Preview test that waited for a CSS exit animation jsdom does not run. The fixture now asserts the real closed state and delivers the same animationcancel completion already used by neighboring Recipe tests. Original blocker, no-Save, dialog-removal and preserved-reason assertions and timeouts are unchanged. The original focused case failed; the corrected case passes; independent review found no weakening. Recipe UI implementation is untouched.
