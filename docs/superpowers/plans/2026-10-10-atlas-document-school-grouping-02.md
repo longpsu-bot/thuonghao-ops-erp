@@ -42,4 +42,4 @@
 - Final independent review found no remaining actionable defects after the Company-name, unresolved-location, PXK-height and tied-order corrections.
 - Full local backend certification is blocked by the existing Storage container health failure during reset. GitHub full integration remains required.
 - Hosted Owner configuration is blocked by unreconciled School identities; the implementation fails closed and preserves released history.
-- One Draft PR and exact-head GitHub validation pending. No merge/deployment is authorized.
+- One [Draft PR #363](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/363) created. Exact-head GitHub frontend and explicitly dispatched full backend integration are tracked there. No merge/deployment is authorized.

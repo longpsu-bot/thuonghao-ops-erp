@@ -28,6 +28,14 @@ Grouped Dispatch XLSX/ZIP uses only captured Dispatch membership. Within one dat
 
 The School width/height method and native evidence are documented in [School row measurement](../testing/atlas-school-row-measurement.md). PO bands use actual visible columns A:F; hidden B contributes zero. `Theo hàng` uses only C. PXK School headers use A:H. All use Times New Roman 14 pt and the exact `28 + 16 × (lines − 1)` formula without a line cap.
 
+## Validation record
+
+On 10 October 2026, final focused SQL passed 299 assertions: grouping 41, cooking 33, platform catalog 28, PO 135 and PXK 62. Certification contract tests passed 111 assertions. Final document/export/Shopping List verification passed 193 tests across 11 files; focused Admin/API/controller tests also passed. School configuration/order planning passed five Node tests, including stale master rejection, exact memberships, targeted adjacency and unrelated tied-order preservation.
+
+Local `pnpm format`, `pnpm typecheck`, `pnpm build`, `pnpm ui:vnext:check` and whitespace checks passed. Native Excel open/save/reopen, printed full text/bounds and actual width/font/height checks passed three workbooks and 24 School rows; committed evidence is in `docs/testing/artifacts/atlas-document-school-grouping-02`. A fresh chronological reset applied all 98 migrations, including the final appended migration, before the local container restart failed. Local security advisor reported no issues. Final independent code review found no remaining actionable defects.
+
+The full local frontend run was stopped after unchanged recipe-screen tests exceeded their original timeouts during database replay. Full local Supabase certification was blocked by `supabase_storage_thuonghao-ops-erp` becoming unhealthy during reset/restart, after migration application. These runs are not recorded as passing. Required exact-head GitHub frontend and full backend results are tracked in [Draft PR #363](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/363); the full backend workflow was explicitly dispatched because Draft PR events run only smoke certification. No thresholds or CI gates were weakened.
+
 ## Migration and rollback effects
 
 `20261010102603_atlas_document_school_grouping_02.sql` is an appended migration; the 97 previously applied migrations are untouched. It adds current relationship authority and canonical snapshot fields for future releases, updates release/read models and guards PO School snapshot immutability. It performs no historical document backfill or hosted master configuration.
