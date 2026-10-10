@@ -142,13 +142,7 @@ describe("Owner V1 PO presentation revision", () => {
               typeof cell === "string" ? cell : (cell as { text: string }).text,
             ),
           ) ===
-          JSON.stringify([
-            "STT",
-            "Tên hàng",
-            "Đơn vị",
-            "Số lượng",
-            "Ghi chú",
-          ]),
+          JSON.stringify(["STT", "Tên hàng", "Đơn vị", "Số lượng", "Ghi chú"]),
       ),
     ).toBe(true);
   });

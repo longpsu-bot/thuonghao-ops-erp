@@ -107,8 +107,7 @@ describe("released purchase-order exports", () => {
       ))
         sheet.eachRow((row) =>
           row.eachCell((cell) => {
-            if (!sheet.getColumn(cell.col).hidden)
-              visibleText.push(cell.text);
+            if (!sheet.getColumn(cell.col).hidden) visibleText.push(cell.text);
           }),
         );
       const visible = visibleText.join("\n");
