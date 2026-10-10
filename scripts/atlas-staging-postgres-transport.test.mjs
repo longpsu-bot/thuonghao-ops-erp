@@ -104,3 +104,23 @@ describe("large snapshot Postgres transport", () => {
     expect(calls).toBe(1);
   });
 });
+
+it("bounds a read-only preflight and classifies timeout without exposing SQL or secrets", async () => {
+  let options;
+  await expect(
+    executeAtlasStagingPostgres(target, "select 1", {
+      environment,
+      readLinkedFile,
+      timeoutMs: 45000,
+      run: (_cmd, _args, opts) => {
+        options = opts;
+        return {
+          status: null,
+          error: { code: "ETIMEDOUT" },
+          stderr: "synthetic-db-secret raw source",
+        };
+      },
+    }),
+  ).rejects.toThrow("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
+  expect(options.timeout).toBe(45000);
+});

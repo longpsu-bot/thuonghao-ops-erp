@@ -1,0 +1,143 @@
+{
+  "source_project": "qnthofvccilhnefdcxnz",
+  "target_project": "rnzxmxiiqgtdevzregff",
+  "source_access": "READ_ONLY",
+  "target_access": "READ_ONLY",
+  "records": [
+    {
+      "legacy_school_id": "10",
+      "source_name": "BÌNH QUỚI - PHÂN HIỆU",
+      "current_atlas_school_id": "31834808-5b2d-5cf8-a419-2744e1c0a5a1",
+      "current_atlas_code": "v1-school-10",
+      "current_atlas_name": "BÌNH QUỚI",
+      "status": "NAME_MISMATCH",
+      "proposed_action": "RECONCILE_CURRENT_SOURCE_FACTS; preserve mapped School UUID"
+    },
+    {
+      "legacy_school_id": "52",
+      "source_name": "BÌNH QUỚI",
+      "current_atlas_school_id": null,
+      "current_atlas_code": null,
+      "current_atlas_name": null,
+      "status": "MISSING",
+      "proposed_action": "CREATE_CANONICAL_SCHOOL_AND_TYPED_MAPPING through existing controlled importer"
+    },
+    {
+      "legacy_school_id": "47",
+      "source_name": "CHUYÊN HÙNG VƯƠNG (Sáng)",
+      "current_atlas_school_id": null,
+      "current_atlas_code": null,
+      "current_atlas_name": null,
+      "status": "MISSING",
+      "proposed_action": "CREATE_CANONICAL_SCHOOL_AND_TYPED_MAPPING through existing controlled importer"
+    },
+    {
+      "legacy_school_id": "48",
+      "source_name": "CHUYÊN HÙNG VƯƠNG (Trưa)",
+      "current_atlas_school_id": null,
+      "current_atlas_code": null,
+      "current_atlas_name": null,
+      "status": "MISSING",
+      "proposed_action": "CREATE_CANONICAL_SCHOOL_AND_TYPED_MAPPING through existing controlled importer"
+    },
+    {
+      "legacy_school_id": "49",
+      "source_name": "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+      "current_atlas_school_id": null,
+      "current_atlas_code": null,
+      "current_atlas_name": null,
+      "status": "MISSING",
+      "proposed_action": "CREATE_CANONICAL_SCHOOL_AND_TYPED_MAPPING through existing controlled importer"
+    },
+    {
+      "legacy_school_id": "50",
+      "source_name": "CHUYÊN HÙNG VƯƠNG (Chiều)",
+      "current_atlas_school_id": null,
+      "current_atlas_code": null,
+      "current_atlas_name": null,
+      "status": "MISSING",
+      "proposed_action": "CREATE_CANONICAL_SCHOOL_AND_TYPED_MAPPING through existing controlled importer"
+    },
+    {
+      "legacy_school_id": "53",
+      "source_name": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+      "current_atlas_school_id": null,
+      "current_atlas_code": null,
+      "current_atlas_name": null,
+      "status": "MISSING",
+      "proposed_action": "CREATE_CANONICAL_SCHOOL_AND_TYPED_MAPPING through existing controlled importer"
+    },
+    {
+      "legacy_school_id": "40",
+      "source_name": "VĨNH TÂN",
+      "current_atlas_school_id": "083850be-37ca-6cfa-07f4-04f1d6ea499e",
+      "current_atlas_code": "v1-school-40",
+      "current_atlas_name": "VĨNH TÂN",
+      "status": "MATCH",
+      "proposed_action": "PRESERVE_TYPED_IDENTITY; review current facts through controlled preview"
+    },
+    {
+      "legacy_school_id": "38",
+      "source_name": "VĨNH TÂN - PHÂN HIỆU",
+      "current_atlas_school_id": "57d3da39-cade-aca7-f0df-9c36d2abc6d7",
+      "current_atlas_code": "v1-school-38",
+      "current_atlas_name": "VĨNH TÂN - PHÂN HIỆU",
+      "status": "MATCH",
+      "proposed_action": "PRESERVE_TYPED_IDENTITY; review current facts through controlled preview"
+    },
+    {
+      "legacy_school_id": "19",
+      "source_name": "PHÚ HOÀ ĐÔNG 1",
+      "current_atlas_school_id": "cb774e42-2471-5722-9784-bd3ae8e85c04",
+      "current_atlas_code": "v1-school-19",
+      "current_atlas_name": "PHÚ HOÀ ĐÔNG 1",
+      "status": "MATCH",
+      "proposed_action": "PRESERVE_TYPED_IDENTITY; review current facts through controlled preview"
+    },
+    {
+      "legacy_school_id": "46",
+      "source_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+      "current_atlas_school_id": "fc07984c-e274-11e9-ccce-e3617b5199e8",
+      "current_atlas_code": "v1-school-46",
+      "current_atlas_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+      "status": "MATCH",
+      "proposed_action": "PRESERVE_TYPED_IDENTITY; review current facts through controlled preview"
+    },
+    {
+      "legacy_school_id": "27",
+      "source_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+      "current_atlas_school_id": "797a2752-3906-5a6e-8782-92b54a9d992d",
+      "current_atlas_code": "v1-school-27",
+      "current_atlas_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+      "status": "MATCH",
+      "proposed_action": "PRESERVE_TYPED_IDENTITY; review current facts through controlled preview"
+    },
+    {
+      "legacy_school_id": "28",
+      "source_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+      "current_atlas_school_id": "cbd36562-c6af-597d-8824-39b4821ec843",
+      "current_atlas_code": "v1-school-28",
+      "current_atlas_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+      "status": "MATCH",
+      "proposed_action": "PRESERVE_TYPED_IDENTITY; review current facts through controlled preview"
+    },
+    {
+      "legacy_school_id": "17",
+      "source_name": "PHẠM VĂN CỘI",
+      "current_atlas_school_id": "4853fa02-44e7-5769-be89-c14e3e768c87",
+      "current_atlas_code": "v1-school-17",
+      "current_atlas_name": "PHẠM VĂN CỘI",
+      "status": "MATCH",
+      "proposed_action": "PRESERVE_TYPED_IDENTITY; review current facts through controlled preview"
+    },
+    {
+      "legacy_school_id": "14",
+      "source_name": "LÊ VĂN THẾ",
+      "current_atlas_school_id": "3278eae5-7dd6-504c-bb20-d81f4d33f4de",
+      "current_atlas_code": "v1-school-14",
+      "current_atlas_name": "LÊ VĂN THẾ",
+      "status": "MATCH",
+      "proposed_action": "PRESERVE_TYPED_IDENTITY; review current facts through controlled preview"
+    }
+  ]
+}

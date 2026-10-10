@@ -22,6 +22,93 @@ function reconciliationRequired(detail) {
   throw new Error(`SCHOOL_MASTER_RECONCILIATION_REQUIRED: ${detail}`);
 }
 
+// A report may describe missing/stale facts; it never resolves identity by name.
+// Ambiguous target mappings are reported so a caller can stop before mutation.
+export function buildSchoolMasterReconciliationReport({
+  source,
+  schools,
+  mappings,
+}) {
+  if (![source, schools, mappings].every(Array.isArray))
+    reconciliationRequired("Missing source or typed target evidence.");
+  const typed = mappings.filter(
+    (m) => m.source_system === "OPS_V1" && m.object_type === "SCHOOL",
+  );
+  const expected = new Map(ownerSchoolIdentityExpectations);
+  return [
+    "10",
+    "52",
+    "47",
+    "48",
+    "49",
+    "50",
+    "53",
+    "40",
+    "38",
+    "19",
+    "46",
+    "27",
+    "28",
+    "17",
+    "14",
+  ].map((legacyId) => {
+    const sourceRows = source.filter((r) => r.legacy_school_id === legacyId);
+    if (
+      sourceRows.length !== 1 ||
+      sourceRows[0].source_name !== expected.get(legacyId)
+    )
+      reconciliationRequired(
+        `Current source identity differs for OPS_V1/${legacyId}.`,
+      );
+    const matches = typed.filter((m) => m.legacy_id === legacyId);
+    const mapping = matches.length === 1 ? matches[0] : null;
+    const targets = mapping
+      ? schools.filter((s) => s.school_id === mapping.school_id)
+      : [];
+    const target = targets.length === 1 ? targets[0] : null;
+    const code = `v1-school-${legacyId}`;
+    const shared =
+      mapping &&
+      typed.some(
+        (m) => m.legacy_id !== legacyId && m.school_id === mapping.school_id,
+      );
+    const collision = schools.some(
+      (s) => s.school_code === code && s.school_id !== mapping?.school_id,
+    );
+    let status;
+    if (matches.length > 1 || shared || targets.length > 1)
+      status = "DUPLICATE_MAPPING";
+    else if (
+      collision ||
+      (mapping &&
+        (!uuid.test(mapping.school_id) ||
+          !target ||
+          target.school_code !== code))
+    )
+      status = "WRONG_MAPPING";
+    else if (!mapping) status = "MISSING";
+    else if (target.school_name !== sourceRows[0].source_name)
+      status = "NAME_MISMATCH";
+    else status = "MATCH";
+    return {
+      legacy_school_id: legacyId,
+      source_name: sourceRows[0].source_name,
+      current_atlas_school_id: mapping?.school_id ?? null,
+      current_atlas_code: target?.school_code ?? null,
+      current_atlas_name: target?.school_name ?? null,
+      status,
+      proposed_action:
+        status === "MATCH"
+          ? "PRESERVE_TYPED_IDENTITY; REVIEW_CURRENT_SOURCE_FACTS"
+          : status === "NAME_MISMATCH"
+            ? "RECONCILE_SOURCE_FACTS; PRESERVE_MAPPED_UUID"
+            : status === "MISSING"
+              ? "CONTROLLED_CREATE_WITH_TYPED_MAPPING"
+              : "STOP: SCHOOL_MASTER_RECONCILIATION_REQUIRED",
+    };
+  });
+}
+
 // Read-only plan builder. Inputs come from the existing controlled master
 // reconciliation path and its typed mapping readback, never a name lookup.
 export function buildSchoolDocumentConfiguration({ schools, mappings }) {
@@ -62,6 +149,16 @@ export function buildSchoolDocumentConfiguration({ schools, mappings }) {
       reconciliationRequired(
         `Canonical School mismatch for OPS_V1/${legacyId}.`,
       );
+    if (
+      mappings.some(
+        (m) =>
+          m.source_system === "OPS_V1" &&
+          m.object_type === "SCHOOL" &&
+          m.legacy_id !== legacyId &&
+          m.school_id === school.school_id,
+      )
+    )
+      reconciliationRequired("Multiple source Schools resolve to one target.");
     if ([...resolved.values()].includes(school.school_id))
       reconciliationRequired("Multiple source Schools resolve to one target.");
     resolved.set(legacyId, school.school_id);

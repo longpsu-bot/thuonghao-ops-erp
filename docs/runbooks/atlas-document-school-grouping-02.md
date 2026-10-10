@@ -14,6 +14,8 @@ Pass the canonical School readback and typed mapping readback to `buildSchoolDoc
 
 The builder returns `CONFIGURATION_PLAN_ONLY`; it performs no mutation. Its exact Dispatch memberships are Vĩnh Tân two Schools, Hùng Vương five Schools and Phú Hoà Đông 1 main/PH1/PH2. PH3 is excluded. Cooking assignments are independently proposed for Phạm Văn Cội/Lê Văn Thế, Vĩnh Tân/main branch, and the company kitchen for Hùng Vương Chiều Mặn 2.
 
+The subsequent Owner-authorized [School reconciliation runbook](atlas-staging-school-reconciliation.md) supplies the bounded controlled import and authenticated configuration path. It supersedes the earlier task's no-deployment scope after its explicit merge/reconciliation gates.
+
 After reconciliation and required migration/test gates pass, review that plan and use the authorized Admin commands with current versions/readback. Do not configure hosted data from fixtures. Verify no additional School is included in those Dispatch groups; all other Schools retain separate output.
 
 The ordering plan makes only the Bình Quới pair and five Hùng Vương Schools adjacent in the specified order. Stable sorting preserves canonical readback order for tied existing display orders and all unrelated relative order. It does not change database display-order values. Review available positions before applying targeted updates through the existing School master command. If the existing positions cannot express the approved adjacency without changing unrelated order, stop for an explicit ordering change; do not densely renumber or name-sort the master.
