@@ -21,6 +21,7 @@ import {
 } from "./ingredientSupplierModel";
 
 export type IngredientDraft = {
+  documentCode: string;
   ingredientName: string;
   purchaseUnitId: string;
   ingredientTypeId: string;
@@ -28,6 +29,7 @@ export type IngredientDraft = {
   orderStep: string;
 };
 export type SupplierDraft = {
+  documentCode: string;
   supplierName: string;
   contactName: string;
   contactPhone: string;
@@ -63,7 +65,7 @@ type IngredientReview = {
   expectedVersion: number;
   before: IngredientDraft | null;
   after: IngredientDraft & { orderStepValue: number };
-  payload: Record<string, string | number>;
+  payload: Record<string, string | number | null>;
 };
 type SupplierReview = {
   kind: "supplier";
@@ -71,7 +73,7 @@ type SupplierReview = {
   expectedVersion: number;
   before: SupplierDraft | null;
   after: SupplierDraft;
-  payload: Record<string, string>;
+  payload: Record<string, string | null>;
 };
 type PriorityReview = {
   kind: "priorities";
@@ -103,6 +105,7 @@ const emptyAuthority = (): Authority => ({
   ingredientOrderGroups: [],
 });
 const emptyIngredient = (): IngredientDraft => ({
+  documentCode: "",
   ingredientName: "",
   purchaseUnitId: "",
   ingredientTypeId: "",
@@ -110,12 +113,14 @@ const emptyIngredient = (): IngredientDraft => ({
   orderStep: "",
 });
 const emptySupplier = (): SupplierDraft => ({
+  documentCode: "",
   supplierName: "",
   contactName: "",
   contactPhone: "",
   contactEmail: "",
 });
 const ingredientDraftFor = (item: IngredientMasterData): IngredientDraft => ({
+  documentCode: item.document_code ?? "",
   ingredientName: item.ingredient_name,
   purchaseUnitId: item.purchase_unit_id ?? "",
   ingredientTypeId: item.ingredient_type_id ?? "",
@@ -123,6 +128,7 @@ const ingredientDraftFor = (item: IngredientMasterData): IngredientDraft => ({
   orderStep: item.order_step === null ? "" : String(item.order_step),
 });
 const supplierDraftFor = (item: SupplierMasterData): SupplierDraft => ({
+  documentCode: item.document_code ?? "",
   supplierName: item.supplier_name,
   contactName: item.contact_name ?? "",
   contactPhone: item.contact_phone ?? "",
@@ -131,9 +137,11 @@ const supplierDraftFor = (item: SupplierMasterData): SupplierDraft => ({
 const canonicalIngredientDraft = (draft: IngredientDraft) => ({
   ...draft,
   ingredientName: draft.ingredientName.trim(),
+  documentCode: draft.documentCode.trim(),
   orderStep: draft.orderStep.trim(),
 });
 const canonicalSupplierDraft = (draft: SupplierDraft): SupplierDraft => ({
+  documentCode: draft.documentCode.trim(),
   supplierName: draft.supplierName.trim(),
   contactName: draft.contactName.trim(),
   contactPhone: draft.contactPhone.trim(),
@@ -431,6 +439,7 @@ export function useIngredientSupplierWorkbench({
 
   const ingredientOrderStep = parseOrderStepDraft(ingredientDraft.orderStep);
   const ingredientValid = Boolean(
+    canonicalIngredientDraft(ingredientDraft).documentCode.length <= 200 &&
     canonicalIngredientDraft(ingredientDraft).ingredientName &&
     ingredientDraft.purchaseUnitId &&
     ingredientDraft.ingredientTypeId &&
@@ -438,6 +447,7 @@ export function useIngredientSupplierWorkbench({
     ingredientOrderStep,
   );
   const supplierValid = Boolean(
+    canonicalSupplierDraft(supplierDraft).documentCode.length <= 200 &&
     canonicalSupplierDraft(supplierDraft).supplierName,
   );
   const priorityErrors = selectedIngredient
@@ -457,6 +467,7 @@ export function useIngredientSupplierWorkbench({
     const payload = {
       ...(creating ? {} : { ingredient_id: activeSurface.id }),
       ingredient_name: after.ingredientName,
+      document_code: after.documentCode || null,
       purchase_unit_id: after.purchaseUnitId,
       ingredient_type_id: after.ingredientTypeId,
       ingredient_order_group_id: after.ingredientOrderGroupId,
@@ -485,6 +496,7 @@ export function useIngredientSupplierWorkbench({
       payload: {
         ...(creating ? {} : { supplier_id: activeSurface.id }),
         supplier_name: after.supplierName,
+        document_code: after.documentCode || null,
         contact_name: after.contactName,
         contact_phone: after.contactPhone,
         contact_email: after.contactEmail,
@@ -583,7 +595,8 @@ export function useIngredientSupplierWorkbench({
     }
     if (generation !== requestGeneration.current) return;
     await handleWriteResult(result, "Đã lưu và tải lại dữ liệu chính thức.");
-    if (generation === requestGeneration.current) setSaving(false);
+    const completionGeneration = generation + Number(result.kind === "success");
+    if (completionGeneration === requestGeneration.current) setSaving(false);
   };
 
   const confirmLifecycle = async () => {

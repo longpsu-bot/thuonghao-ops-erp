@@ -6,11 +6,16 @@ import {
   createPurchaseOrderReplacementRequest,
   createSchoolCateringProcurementApi,
   purchaseOrdersReadRequest,
+  purchaseOrdersFromResult,
   procurementWorkbenchReadRequest,
   releasePurchaseOrderRequest,
   saveSupplierAllocationRequest,
 } from "./schoolCateringProcurementApi";
-import { createReviewSchoolCateringProcurementApi } from "./reviewSchoolCateringProcurementApi";
+import {
+  createReviewPurchaseOrdersFixture,
+  createReviewSchoolCateringProcurementApi,
+} from "./reviewSchoolCateringProcurementApi";
+import { buildPurchaseOrderPdfDefinition } from "./purchaseOrderExports";
 
 const success: AtlasRpcResult = {
   kind: "success",
@@ -18,6 +23,38 @@ const success: AtlasRpcResult = {
 };
 
 describe("school-catering Procurement API adapter", () => {
+  it("exports captured cooking-group and supplier-note read facts even when current context differs", () => {
+    const response = createReviewPurchaseOrdersFixture("released_po");
+    const order = response.purchase_orders[0]!;
+    order.status = "SUPERSEDED";
+    order.current_revision.delivery_location_snapshot = {
+      cooking_group_name: "Bếp Y hiện tại",
+    };
+    order.lines[0]!.supplier_note = "Ghi chú NCC lúc phát hành";
+    order.current_revision.reason_note = "Lý do nội bộ sau thay đổi";
+    Object.assign(order.lines[0]!.school_breakdown[0]!, {
+      cooking_group_id: "group-x",
+      cooking_group_name: "Bếp X lúc phát hành",
+    });
+    const parsed = purchaseOrdersFromResult({
+      kind: "success",
+      response: JSON.parse(JSON.stringify(response)),
+    })!;
+    const historical = JSON.stringify(
+      buildPurchaseOrderPdfDefinition(
+        parsed.purchase_orders[0]!,
+        "details_school",
+      ),
+    );
+    expect(historical).toContain("NẤU TẠI: Bếp X lúc phát hành");
+    expect(historical).toContain("Ghi chú NCC lúc phát hành");
+    expect(historical).not.toContain("Bếp Y hiện tại");
+    expect(historical).not.toContain("Lý do nội bộ");
+    expect(
+      parsed.purchase_orders[0]!.lines[1]!.school_breakdown[0]!
+        .cooking_group_id,
+    ).toBeUndefined();
+  });
   it("builds the exact allocation workbench read envelope", () => {
     expect(
       procurementWorkbenchReadRequest("subject", "correlation", {

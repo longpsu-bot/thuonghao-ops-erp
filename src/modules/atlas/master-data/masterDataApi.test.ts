@@ -13,9 +13,12 @@ const success: AtlasRpcResult = {
 };
 
 describe("RMVP-01 master-data API adapter", () => {
-  it("maps exactly two reads and eight writes to the reviewed RPC registry", () => {
+  it("maps the master-data and cooking-group surface to the reviewed RPC registry", () => {
     expect(MASTER_DATA_RPC_FUNCTIONS).toEqual({
       getSchools: "atlas_api.get_school_master_data",
+      getCookingGroups: "atlas_api.get_cooking_groups",
+      upsertCookingGroup: "atlas_api.upsert_cooking_group",
+      setSchoolCookingGroup: "atlas_api.set_school_cooking_group",
       getIngredientsAndSuppliers:
         "atlas_api.get_ingredient_supplier_master_data",
       updateSchoolDefaults: "atlas_api.update_school_portion_defaults",
@@ -27,6 +30,41 @@ describe("RMVP-01 master-data API adapter", () => {
       updateSupplier: "atlas_api.update_supplier",
       replacePriorities: "atlas_api.replace_ingredient_supplier_priorities",
     });
+  });
+
+  it("forwards cooking-group commands unchanged and reads through the shaped API", async () => {
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createMasterDataApi({ invoke });
+    await api.getCookingGroups("subject-1", "correlation-1");
+    expect(invoke).toHaveBeenCalledWith("atlas_api.get_cooking_groups", {
+      contract_version: "RMVP-01.v1",
+      requested_by_auth_subject: "subject-1",
+      correlation_id: "correlation-1",
+      payload: {},
+    });
+    const request = {
+      contract_version: "RMVP-01.v1",
+      command_id: "command-1",
+      correlation_id: "correlation-1",
+      idempotency_key: "cooking:command-1",
+      expected_version: 7,
+      requested_by_auth_subject: "subject-1",
+      requested_at: "2026-10-09T00:00:00Z",
+      reason_code: "SCHOOL_COOKING_GROUP_SET",
+      reason_note: null,
+      payload: { school_id: "school-1", cooking_group_id: null },
+    } satisfies MasterDataCommandRequest;
+    await api.setSchoolCookingGroup(request);
+    expect(invoke).toHaveBeenLastCalledWith(
+      "atlas_api.set_school_cooking_group",
+      request,
+    );
+    await api.upsertCookingGroup(request);
+    expect(invoke).toHaveBeenLastCalledWith(
+      "atlas_api.upsert_cooking_group",
+      request,
+    );
+    expect(invoke.mock.calls.at(-1)?.[1]).toBe(request);
   });
 
   it("forwards the RMVP-01.v2 bulk School command without a false aggregate version", async () => {

@@ -7,7 +7,8 @@ select plan(28);
 
 -- D-047 regeneration adds one invoker helper and three SELECT-only policies.
 -- Five private grants: legacy schema USAGE, three relation SELECTs, helper EXECUTE.
--- Public API counts, browser privileges, forced RLS and triggers are unchanged.
+-- Cooking-group amendment adds two forced-RLS tables, three shaped APIs, nine policies,
+-- three relational guards/triggers and 21 precise grants; no capabilities or roles.
 
 -- Exact Atlas schema and relation posture.
 select is(
@@ -41,7 +42,7 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 113, 'views', 2),
+  jsonb_build_object('ordinary_tables', 115, 'views', 2),
   'CAT-02 exact whole-platform table and view totals include School PXK evidence'
 );
 
@@ -67,9 +68,9 @@ select is(
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 113,
-    'rls_enabled', 113,
-    'rls_forced', 113
+    'authoritative_tables', 115,
+    'rls_enabled', 115,
+    'rls_forced', 115
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -422,8 +423,8 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 654,
-    'md5', '1333f218f38f7e61db02fd18fcd64c70'
+    'count', 663,
+    'md5', 'c0df6670b465ff57fa621a7e947d89a6'
   ),
   'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
@@ -631,8 +632,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  115,
-  'CAT-14 physical atlas_api function count is exactly one hundred fifteen'
+  118,
+  'CAT-14 physical atlas_api function count is exactly one hundred eighteen'
 );
 
 select is(
@@ -680,6 +681,7 @@ select is(
     'get_confirmed_need_review(request jsonb)',
     'get_confirmed_need_shopping_list_export(request jsonb)',
     'get_confirmed_supplier_allocation_workbench(request jsonb)',
+    'get_cooking_groups(request jsonb)',
     'get_dish_recipe_operator_workbench(request jsonb)',
     'get_dish_recipe_workbench(request jsonb)',
     'get_dispatch_evidence_readiness(request jsonb)',
@@ -749,12 +751,14 @@ select is(
     'set_dish_lifecycle(request jsonb)',
     'set_ingredient_lifecycle(request jsonb)',
     'set_recipe_lifecycle(request jsonb)',
+    'set_school_cooking_group(request jsonb)',
     'supersede_recipe_composition_adjustment(request jsonb)',
     'update_dish(request jsonb)',
     'update_ingredient(request jsonb)',
     'update_school_portion_defaults(request jsonb)',
     'update_school_portion_defaults_bulk(request jsonb)',
     'update_supplier(request jsonb)',
+    'upsert_cooking_group(request jsonb)',
     'validate_attendance(request jsonb)',
     'validate_confirmed_needs(request jsonb)',
     'validate_need_generation_run(request jsonb)',
@@ -762,7 +766,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly one hundred fifteen physical functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly one hundred eighteen physical functions'
 );
 
 select is(
@@ -902,6 +906,7 @@ select is(
     'get_confirmed_need_review(request jsonb)=atlas_confirmed_need_review_runtime',
     'get_confirmed_need_shopping_list_export(request jsonb)=atlas_confirmed_need_review_runtime',
     'get_confirmed_supplier_allocation_workbench(request jsonb)=atlas_read_runtime',
+    'get_cooking_groups(request jsonb)=atlas_read_runtime',
     'get_dish_recipe_operator_workbench(request jsonb)=atlas_read_runtime',
     'get_dish_recipe_workbench(request jsonb)=atlas_read_runtime',
     'get_dispatch_evidence_readiness(request jsonb)=atlas_read_runtime',
@@ -971,12 +976,14 @@ select is(
     'set_dish_lifecycle(request jsonb)=atlas_master_data_command_runtime',
     'set_ingredient_lifecycle(request jsonb)=atlas_master_data_command_runtime',
     'set_recipe_lifecycle(request jsonb)=atlas_master_data_command_runtime',
+    'set_school_cooking_group(request jsonb)=atlas_master_data_command_runtime',
     'supersede_recipe_composition_adjustment(request jsonb)=atlas_master_data_command_runtime',
     'update_dish(request jsonb)=atlas_master_data_command_runtime',
     'update_ingredient(request jsonb)=atlas_master_data_command_runtime',
     'update_school_portion_defaults(request jsonb)=atlas_master_data_command_runtime',
     'update_school_portion_defaults_bulk(request jsonb)=atlas_master_data_command_runtime',
     'update_supplier(request jsonb)=atlas_master_data_command_runtime',
+    'upsert_cooking_group(request jsonb)=atlas_master_data_command_runtime',
     'validate_attendance(request jsonb)=atlas_planning_command_runtime',
     'validate_confirmed_needs(request jsonb)=atlas_confirmed_need_review_runtime',
     'validate_need_generation_run(request jsonb)=atlas_need_generation_runtime',
@@ -1033,6 +1040,7 @@ select is(
     'get_confirmed_need_review(request jsonb)',
     'get_confirmed_need_shopping_list_export(request jsonb)',
     'get_confirmed_supplier_allocation_workbench(request jsonb)',
+    'get_cooking_groups(request jsonb)',
     'get_dish_recipe_operator_workbench(request jsonb)',
     'get_dish_recipe_workbench(request jsonb)',
     'get_dispatch_evidence_readiness(request jsonb)',
@@ -1099,12 +1107,14 @@ select is(
     'set_dish_lifecycle(request jsonb)',
     'set_ingredient_lifecycle(request jsonb)',
     'set_recipe_lifecycle(request jsonb)',
+    'set_school_cooking_group(request jsonb)',
     'supersede_recipe_composition_adjustment(request jsonb)',
     'update_dish(request jsonb)',
     'update_ingredient(request jsonb)',
     'update_school_portion_defaults(request jsonb)',
     'update_school_portion_defaults_bulk(request jsonb)',
     'update_supplier(request jsonb)',
+    'upsert_cooking_group(request jsonb)',
     'validate_attendance(request jsonb)',
     'validate_confirmed_needs(request jsonb)',
     'validate_need_generation_run(request jsonb)',
@@ -1112,7 +1122,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly one hundred twelve functions'
+  'CAT-18 authenticated execute allowlist is exactly one hundred fifteen functions'
 );
 
 select ok(
@@ -1181,6 +1191,7 @@ select ok(
           ('get_confirmed_supplier_allocation_workbench', 'request jsonb'),
           ('get_dispatch_evidence_readiness', 'request jsonb'),
           ('get_generated_purchase_review', 'request jsonb'),
+          ('get_cooking_groups', 'request jsonb'),
           ('get_dish_recipe_operator_workbench', 'request jsonb'),
           ('get_dish_recipe_workbench', 'request jsonb'),
           ('get_ingredient_supplier_master_data', 'request jsonb'),
@@ -1248,12 +1259,14 @@ select ok(
           ('set_dish_lifecycle', 'request jsonb'),
           ('set_ingredient_lifecycle', 'request jsonb'),
           ('set_recipe_lifecycle', 'request jsonb'),
+          ('set_school_cooking_group', 'request jsonb'),
           ('supersede_recipe_composition_adjustment', 'request jsonb'),
           ('update_dish', 'request jsonb'),
           ('update_ingredient', 'request jsonb'),
           ('update_school_portion_defaults', 'request jsonb'),
           ('update_school_portion_defaults_bulk', 'request jsonb'),
           ('update_supplier', 'request jsonb'),
+          ('upsert_cooking_group', 'request jsonb'),
           ('validate_attendance', 'request jsonb'),
           ('validate_confirmed_needs', 'request jsonb'),
           ('validate_need_generation_run', 'request jsonb'),
@@ -1717,32 +1730,32 @@ select is(
   ),
   jsonb_build_object(
     'schema_count', 10,
-    'table_count', 113,
-    'table_catalog_md5', '615d2972962be55d46aa1ba5233cfefd',
+    'table_count', 115,
+    'table_catalog_md5', '94ae7d4e6f346b3d0ed136b44eadcda3',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 113,
-    'rls_forced', 113,
+    'rls_enabled', 115,
+    'rls_forced', 115,
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 654,
-    'policy_catalog_md5', '1333f218f38f7e61db02fd18fcd64c70',
+    'policy_count', 663,
+    'policy_catalog_md5', 'c0df6670b465ff57fa621a7e947d89a6',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 325,
-    -- Only the exact D047 proof gains join_collapse_limit=1; owner, ACL,
-    -- SECURITY DEFINER, search_path and all other catalog fingerprints stay fixed.
-    'private_function_catalog_md5', '2b8a48a2ecaa3abebe9dc03dcafbe364',
-    'trigger_count', 112,
-    'trigger_catalog_md5', '06e6cba439dc0c6c93fdbbd5a563627b',
-    -- Shopping List adds only owner/authenticated EXECUTE on its read RPC.
-    'positive_target_grant_count', 1769,
-    'positive_target_grant_md5', 'dcc09bebf1981fc0c92e3834d64ee60d',
+    'private_function_count', 332,
+    -- Cooking guards plus four bounded document-code/capture/immutability helpers.
+    'private_function_catalog_md5', 'e8b2e6249cb6fc04cf9cd4252d9228c6',
+    'trigger_count', 120,
+    'trigger_catalog_md5', 'd3248840c78593a3b487b266c58de014',
+    -- Adds four master document-code column privileges, two runtime-owner
+    -- function privileges and the bounded Procurement row-lock helper grant.
+    'positive_target_grant_count', 1797,
+    'positive_target_grant_md5', 'c9a97d2653215ff062a869985ff7e9ec',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 115,
+    'api_function_count', 118,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 112,
+    'authenticated_execute_count', 115,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),

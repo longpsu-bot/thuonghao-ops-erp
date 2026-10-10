@@ -1,0 +1,557 @@
+BEGIN
+CREATE EXTENSION
+SET
+ no_plan
+---------
+(0 rows)
+
+DO
+SET
+DO
+DO
+SET CONSTRAINTS
+INSERT 0 3
+              set_config
+--------------------------------------
+ b6000000-0000-0000-0000-000000000101
+(1 row)
+
+CREATE FUNCTION
+CREATE FUNCTION
+                                     is
+-----------------------------------------------------------------------------
+ ok 1 - minimum source facts are saved through the complete Planning command
+(1 row)
+
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+CREATE TABLE
+INSERT 0 21
+                    is
+-------------------------------------------
+ ok 2 - save current exact rice allocation
+(1 row)
+
+INSERT 0 21
+INSERT 0 1
+                is
+-----------------------------------
+ ok 3 - save other positive family
+(1 row)
+
+                                       is
+---------------------------------------------------------------------------------
+ ok 4 - complete preparation creates real Handoff and promotes exact allocations
+(1 row)
+
+INSERT 0 21
+ diag
+------
+(0 rows)
+
+                                 is
+--------------------------------------------------------------------
+ ok 5 - CONFIRMED_NEED complete command: exact
+ ok 6 - CONFIRMED_NEED complete command: precision_one
+ ok 7 - CONFIRMED_NEED complete command: precision_rounded_total
+ ok 8 - CONFIRMED_NEED complete command: precision_tiny
+ ok 9 - CONFIRMED_NEED complete command: precision_72
+ ok 10 - CONFIRMED_NEED complete command: range_limit
+ ok 11 - CONFIRMED_NEED complete command: range_max
+ ok 12 - CONFIRMED_NEED complete command: zero
+ ok 13 - CONFIRMED_NEED complete command: negative
+ ok 14 - CONFIRMED_NEED complete command: duplicate
+ ok 15 - CONFIRMED_NEED complete command: inactive
+ ok 16 - CONFIRMED_NEED complete command: ineligible
+ ok 17 - CONFIRMED_NEED complete command: imbalance
+ ok 18 - CONFIRMED_NEED complete command: residual
+ ok 19 - CONFIRMED_NEED complete command: note_trim
+ ok 20 - CONFIRMED_NEED complete command: note_blank
+ ok 21 - CONFIRMED_NEED complete command: note_500
+ ok 22 - CONFIRMED_NEED complete command: note_501
+ ok 23 - CONFIRMED_NEED complete command: source
+ ok 24 - CONFIRMED_NEED complete command: version
+ ok 25 - CONFIRMED_NEED complete command: retry
+ ok 26 - CONFIRMED_NEED complete command: batch_version
+ ok 27 - PURCHASE_HANDOFF complete command: exact
+ ok 28 - PURCHASE_HANDOFF complete command: precision_one
+ ok 29 - PURCHASE_HANDOFF complete command: precision_rounded_total
+ ok 30 - PURCHASE_HANDOFF complete command: note_500
+ ok 31 - PURCHASE_HANDOFF complete command: precision_tiny
+ ok 32 - PURCHASE_HANDOFF complete command: precision_72
+ ok 33 - PURCHASE_HANDOFF complete command: range_limit
+ ok 34 - PURCHASE_HANDOFF complete command: range_max
+ ok 35 - PURCHASE_HANDOFF complete command: zero
+ ok 36 - PURCHASE_HANDOFF complete command: negative
+ ok 37 - PURCHASE_HANDOFF complete command: duplicate
+ ok 38 - PURCHASE_HANDOFF complete command: inactive
+ ok 39 - PURCHASE_HANDOFF complete command: ineligible
+ ok 40 - PURCHASE_HANDOFF complete command: imbalance
+ ok 41 - PURCHASE_HANDOFF complete command: residual
+ ok 42 - PURCHASE_HANDOFF complete command: note_trim
+ ok 43 - PURCHASE_HANDOFF complete command: note_blank
+ ok 44 - PURCHASE_HANDOFF complete command: note_501
+ ok 45 - PURCHASE_HANDOFF complete command: source
+ ok 46 - PURCHASE_HANDOFF complete command: version
+ ok 47 - PURCHASE_HANDOFF complete command: retry
+(43 rows)
+
+                                              ok
+----------------------------------------------------------------------------------------------
+ ok 48 - CONFIRMED_NEED denied command changes no allocation facts: precision_one
+ ok 49 - CONFIRMED_NEED denied command changes no allocation facts: precision_rounded_total
+ ok 50 - CONFIRMED_NEED denied command changes no allocation facts: precision_tiny
+ ok 51 - CONFIRMED_NEED denied command changes no allocation facts: precision_72
+ ok 52 - CONFIRMED_NEED denied command changes no allocation facts: range_limit
+ ok 53 - CONFIRMED_NEED denied command changes no allocation facts: range_max
+ ok 54 - CONFIRMED_NEED denied command changes no allocation facts: zero
+ ok 55 - CONFIRMED_NEED denied command changes no allocation facts: negative
+ ok 56 - CONFIRMED_NEED denied command changes no allocation facts: duplicate
+ ok 57 - CONFIRMED_NEED denied command changes no allocation facts: inactive
+ ok 58 - CONFIRMED_NEED denied command changes no allocation facts: ineligible
+ ok 59 - CONFIRMED_NEED denied command changes no allocation facts: imbalance
+ ok 60 - CONFIRMED_NEED denied command changes no allocation facts: note_501
+ ok 61 - CONFIRMED_NEED denied command changes no allocation facts: source
+ ok 62 - CONFIRMED_NEED denied command changes no allocation facts: version
+ ok 63 - CONFIRMED_NEED denied command changes no allocation facts: retry
+ ok 64 - CONFIRMED_NEED denied command changes no allocation facts: batch_version
+ ok 65 - PURCHASE_HANDOFF denied command changes no allocation facts: precision_one
+ ok 66 - PURCHASE_HANDOFF denied command changes no allocation facts: precision_rounded_total
+ ok 67 - PURCHASE_HANDOFF denied command changes no allocation facts: precision_tiny
+ ok 68 - PURCHASE_HANDOFF denied command changes no allocation facts: precision_72
+ ok 69 - PURCHASE_HANDOFF denied command changes no allocation facts: range_limit
+ ok 70 - PURCHASE_HANDOFF denied command changes no allocation facts: range_max
+ ok 71 - PURCHASE_HANDOFF denied command changes no allocation facts: zero
+ ok 72 - PURCHASE_HANDOFF denied command changes no allocation facts: negative
+ ok 73 - PURCHASE_HANDOFF denied command changes no allocation facts: duplicate
+ ok 74 - PURCHASE_HANDOFF denied command changes no allocation facts: inactive
+ ok 75 - PURCHASE_HANDOFF denied command changes no allocation facts: ineligible
+ ok 76 - PURCHASE_HANDOFF denied command changes no allocation facts: imbalance
+ ok 77 - PURCHASE_HANDOFF denied command changes no allocation facts: note_501
+ ok 78 - PURCHASE_HANDOFF denied command changes no allocation facts: source
+ ok 79 - PURCHASE_HANDOFF denied command changes no allocation facts: version
+ ok 80 - PURCHASE_HANDOFF denied command changes no allocation facts: retry
+(33 rows)
+
+                                            is
+-------------------------------------------------------------------------------------------
+ ok 81 - CONFIRMED_NEED exact replay retains original response: exact
+ ok 82 - CONFIRMED_NEED exact replay retains original response: precision_one
+ ok 83 - CONFIRMED_NEED exact replay retains original response: precision_rounded_total
+ ok 84 - CONFIRMED_NEED exact replay retains original response: precision_tiny
+ ok 85 - CONFIRMED_NEED exact replay retains original response: precision_72
+ ok 86 - CONFIRMED_NEED exact replay retains original response: range_limit
+ ok 87 - CONFIRMED_NEED exact replay retains original response: range_max
+ ok 88 - CONFIRMED_NEED exact replay retains original response: zero
+ ok 89 - CONFIRMED_NEED exact replay retains original response: negative
+ ok 90 - CONFIRMED_NEED exact replay retains original response: duplicate
+ ok 91 - CONFIRMED_NEED exact replay retains original response: inactive
+ ok 92 - CONFIRMED_NEED exact replay retains original response: ineligible
+ ok 93 - CONFIRMED_NEED exact replay retains original response: imbalance
+ ok 94 - CONFIRMED_NEED exact replay retains original response: residual
+ ok 95 - CONFIRMED_NEED exact replay retains original response: note_trim
+ ok 96 - CONFIRMED_NEED exact replay retains original response: note_blank
+ ok 97 - CONFIRMED_NEED exact replay retains original response: note_500
+ ok 98 - CONFIRMED_NEED exact replay retains original response: note_501
+ ok 99 - CONFIRMED_NEED exact replay retains original response: source
+ ok 100 - CONFIRMED_NEED exact replay retains original response: version
+ ok 101 - CONFIRMED_NEED exact replay retains original response: batch_version
+ ok 102 - PURCHASE_HANDOFF exact replay retains original response: exact
+ ok 103 - PURCHASE_HANDOFF exact replay retains original response: precision_one
+ ok 104 - PURCHASE_HANDOFF exact replay retains original response: precision_rounded_total
+ ok 105 - PURCHASE_HANDOFF exact replay retains original response: note_500
+ ok 106 - PURCHASE_HANDOFF exact replay retains original response: precision_tiny
+ ok 107 - PURCHASE_HANDOFF exact replay retains original response: precision_72
+ ok 108 - PURCHASE_HANDOFF exact replay retains original response: range_limit
+ ok 109 - PURCHASE_HANDOFF exact replay retains original response: range_max
+ ok 110 - PURCHASE_HANDOFF exact replay retains original response: zero
+ ok 111 - PURCHASE_HANDOFF exact replay retains original response: negative
+ ok 112 - PURCHASE_HANDOFF exact replay retains original response: duplicate
+ ok 113 - PURCHASE_HANDOFF exact replay retains original response: inactive
+ ok 114 - PURCHASE_HANDOFF exact replay retains original response: ineligible
+ ok 115 - PURCHASE_HANDOFF exact replay retains original response: imbalance
+ ok 116 - PURCHASE_HANDOFF exact replay retains original response: residual
+ ok 117 - PURCHASE_HANDOFF exact replay retains original response: note_trim
+ ok 118 - PURCHASE_HANDOFF exact replay retains original response: note_blank
+ ok 119 - PURCHASE_HANDOFF exact replay retains original response: note_501
+ ok 120 - PURCHASE_HANDOFF exact replay retains original response: source
+ ok 121 - PURCHASE_HANDOFF exact replay retains original response: version
+(41 rows)
+
+                                           is
+----------------------------------------------------------------------------------------
+ ok 122 - CONFIRMED_NEED conflicting replay cannot overwrite: exact
+ ok 123 - CONFIRMED_NEED conflicting replay cannot overwrite: precision_one
+ ok 124 - CONFIRMED_NEED conflicting replay cannot overwrite: precision_rounded_total
+ ok 125 - CONFIRMED_NEED conflicting replay cannot overwrite: precision_tiny
+ ok 126 - CONFIRMED_NEED conflicting replay cannot overwrite: precision_72
+ ok 127 - CONFIRMED_NEED conflicting replay cannot overwrite: range_limit
+ ok 128 - CONFIRMED_NEED conflicting replay cannot overwrite: range_max
+ ok 129 - CONFIRMED_NEED conflicting replay cannot overwrite: zero
+ ok 130 - CONFIRMED_NEED conflicting replay cannot overwrite: negative
+ ok 131 - CONFIRMED_NEED conflicting replay cannot overwrite: duplicate
+ ok 132 - CONFIRMED_NEED conflicting replay cannot overwrite: inactive
+ ok 133 - CONFIRMED_NEED conflicting replay cannot overwrite: ineligible
+ ok 134 - CONFIRMED_NEED conflicting replay cannot overwrite: imbalance
+ ok 135 - CONFIRMED_NEED conflicting replay cannot overwrite: residual
+ ok 136 - CONFIRMED_NEED conflicting replay cannot overwrite: note_trim
+ ok 137 - CONFIRMED_NEED conflicting replay cannot overwrite: note_blank
+ ok 138 - CONFIRMED_NEED conflicting replay cannot overwrite: note_500
+ ok 139 - CONFIRMED_NEED conflicting replay cannot overwrite: note_501
+ ok 140 - CONFIRMED_NEED conflicting replay cannot overwrite: source
+ ok 141 - CONFIRMED_NEED conflicting replay cannot overwrite: version
+ ok 142 - CONFIRMED_NEED conflicting replay cannot overwrite: batch_version
+ ok 143 - PURCHASE_HANDOFF conflicting replay cannot overwrite: exact
+ ok 144 - PURCHASE_HANDOFF conflicting replay cannot overwrite: precision_one
+ ok 145 - PURCHASE_HANDOFF conflicting replay cannot overwrite: precision_rounded_total
+ ok 146 - PURCHASE_HANDOFF conflicting replay cannot overwrite: note_500
+ ok 147 - PURCHASE_HANDOFF conflicting replay cannot overwrite: precision_tiny
+ ok 148 - PURCHASE_HANDOFF conflicting replay cannot overwrite: precision_72
+ ok 149 - PURCHASE_HANDOFF conflicting replay cannot overwrite: range_limit
+ ok 150 - PURCHASE_HANDOFF conflicting replay cannot overwrite: range_max
+ ok 151 - PURCHASE_HANDOFF conflicting replay cannot overwrite: zero
+ ok 152 - PURCHASE_HANDOFF conflicting replay cannot overwrite: negative
+ ok 153 - PURCHASE_HANDOFF conflicting replay cannot overwrite: duplicate
+ ok 154 - PURCHASE_HANDOFF conflicting replay cannot overwrite: inactive
+ ok 155 - PURCHASE_HANDOFF conflicting replay cannot overwrite: ineligible
+ ok 156 - PURCHASE_HANDOFF conflicting replay cannot overwrite: imbalance
+ ok 157 - PURCHASE_HANDOFF conflicting replay cannot overwrite: residual
+ ok 158 - PURCHASE_HANDOFF conflicting replay cannot overwrite: note_trim
+ ok 159 - PURCHASE_HANDOFF conflicting replay cannot overwrite: note_blank
+ ok 160 - PURCHASE_HANDOFF conflicting replay cannot overwrite: note_501
+ ok 161 - PURCHASE_HANDOFF conflicting replay cannot overwrite: source
+ ok 162 - PURCHASE_HANDOFF conflicting replay cannot overwrite: version
+(41 rows)
+
+                                           is
+-----------------------------------------------------------------------------------------
+ ok 163 - CONFIRMED_NEED one success event / no failure event: exact
+ ok 164 - CONFIRMED_NEED one success event / no failure event: precision_one
+ ok 165 - CONFIRMED_NEED one success event / no failure event: precision_rounded_total
+ ok 166 - CONFIRMED_NEED one success event / no failure event: precision_tiny
+ ok 167 - CONFIRMED_NEED one success event / no failure event: precision_72
+ ok 168 - CONFIRMED_NEED one success event / no failure event: range_limit
+ ok 169 - CONFIRMED_NEED one success event / no failure event: range_max
+ ok 170 - CONFIRMED_NEED one success event / no failure event: zero
+ ok 171 - CONFIRMED_NEED one success event / no failure event: negative
+ ok 172 - CONFIRMED_NEED one success event / no failure event: duplicate
+ ok 173 - CONFIRMED_NEED one success event / no failure event: inactive
+ ok 174 - CONFIRMED_NEED one success event / no failure event: ineligible
+ ok 175 - CONFIRMED_NEED one success event / no failure event: imbalance
+ ok 176 - CONFIRMED_NEED one success event / no failure event: residual
+ ok 177 - CONFIRMED_NEED one success event / no failure event: note_trim
+ ok 178 - CONFIRMED_NEED one success event / no failure event: note_blank
+ ok 179 - CONFIRMED_NEED one success event / no failure event: note_500
+ ok 180 - CONFIRMED_NEED one success event / no failure event: note_501
+ ok 181 - CONFIRMED_NEED one success event / no failure event: source
+ ok 182 - CONFIRMED_NEED one success event / no failure event: version
+ ok 183 - CONFIRMED_NEED one success event / no failure event: retry
+ ok 184 - CONFIRMED_NEED one success event / no failure event: batch_version
+ ok 185 - PURCHASE_HANDOFF one success event / no failure event: exact
+ ok 186 - PURCHASE_HANDOFF one success event / no failure event: precision_one
+ ok 187 - PURCHASE_HANDOFF one success event / no failure event: precision_rounded_total
+ ok 188 - PURCHASE_HANDOFF one success event / no failure event: note_500
+ ok 189 - PURCHASE_HANDOFF one success event / no failure event: precision_tiny
+ ok 190 - PURCHASE_HANDOFF one success event / no failure event: precision_72
+ ok 191 - PURCHASE_HANDOFF one success event / no failure event: range_limit
+ ok 192 - PURCHASE_HANDOFF one success event / no failure event: range_max
+ ok 193 - PURCHASE_HANDOFF one success event / no failure event: zero
+ ok 194 - PURCHASE_HANDOFF one success event / no failure event: negative
+ ok 195 - PURCHASE_HANDOFF one success event / no failure event: duplicate
+ ok 196 - PURCHASE_HANDOFF one success event / no failure event: inactive
+ ok 197 - PURCHASE_HANDOFF one success event / no failure event: ineligible
+ ok 198 - PURCHASE_HANDOFF one success event / no failure event: imbalance
+ ok 199 - PURCHASE_HANDOFF one success event / no failure event: residual
+ ok 200 - PURCHASE_HANDOFF one success event / no failure event: note_trim
+ ok 201 - PURCHASE_HANDOFF one success event / no failure event: note_blank
+ ok 202 - PURCHASE_HANDOFF one success event / no failure event: note_501
+ ok 203 - PURCHASE_HANDOFF one success event / no failure event: source
+ ok 204 - PURCHASE_HANDOFF one success event / no failure event: version
+ ok 205 - PURCHASE_HANDOFF one success event / no failure event: retry
+(43 rows)
+
+                                           is
+-----------------------------------------------------------------------------------------
+ ok 206 - CONFIRMED_NEED one success audit / no failure audit: exact
+ ok 207 - CONFIRMED_NEED one success audit / no failure audit: precision_one
+ ok 208 - CONFIRMED_NEED one success audit / no failure audit: precision_rounded_total
+ ok 209 - CONFIRMED_NEED one success audit / no failure audit: precision_tiny
+ ok 210 - CONFIRMED_NEED one success audit / no failure audit: precision_72
+ ok 211 - CONFIRMED_NEED one success audit / no failure audit: range_limit
+ ok 212 - CONFIRMED_NEED one success audit / no failure audit: range_max
+ ok 213 - CONFIRMED_NEED one success audit / no failure audit: zero
+ ok 214 - CONFIRMED_NEED one success audit / no failure audit: negative
+ ok 215 - CONFIRMED_NEED one success audit / no failure audit: duplicate
+ ok 216 - CONFIRMED_NEED one success audit / no failure audit: inactive
+ ok 217 - CONFIRMED_NEED one success audit / no failure audit: ineligible
+ ok 218 - CONFIRMED_NEED one success audit / no failure audit: imbalance
+ ok 219 - CONFIRMED_NEED one success audit / no failure audit: residual
+ ok 220 - CONFIRMED_NEED one success audit / no failure audit: note_trim
+ ok 221 - CONFIRMED_NEED one success audit / no failure audit: note_blank
+ ok 222 - CONFIRMED_NEED one success audit / no failure audit: note_500
+ ok 223 - CONFIRMED_NEED one success audit / no failure audit: note_501
+ ok 224 - CONFIRMED_NEED one success audit / no failure audit: source
+ ok 225 - CONFIRMED_NEED one success audit / no failure audit: version
+ ok 226 - CONFIRMED_NEED one success audit / no failure audit: retry
+ ok 227 - CONFIRMED_NEED one success audit / no failure audit: batch_version
+ ok 228 - PURCHASE_HANDOFF one success audit / no failure audit: exact
+ ok 229 - PURCHASE_HANDOFF one success audit / no failure audit: precision_one
+ ok 230 - PURCHASE_HANDOFF one success audit / no failure audit: precision_rounded_total
+ ok 231 - PURCHASE_HANDOFF one success audit / no failure audit: note_500
+ ok 232 - PURCHASE_HANDOFF one success audit / no failure audit: precision_tiny
+ ok 233 - PURCHASE_HANDOFF one success audit / no failure audit: precision_72
+ ok 234 - PURCHASE_HANDOFF one success audit / no failure audit: range_limit
+ ok 235 - PURCHASE_HANDOFF one success audit / no failure audit: range_max
+ ok 236 - PURCHASE_HANDOFF one success audit / no failure audit: zero
+ ok 237 - PURCHASE_HANDOFF one success audit / no failure audit: negative
+ ok 238 - PURCHASE_HANDOFF one success audit / no failure audit: duplicate
+ ok 239 - PURCHASE_HANDOFF one success audit / no failure audit: inactive
+ ok 240 - PURCHASE_HANDOFF one success audit / no failure audit: ineligible
+ ok 241 - PURCHASE_HANDOFF one success audit / no failure audit: imbalance
+ ok 242 - PURCHASE_HANDOFF one success audit / no failure audit: residual
+ ok 243 - PURCHASE_HANDOFF one success audit / no failure audit: note_trim
+ ok 244 - PURCHASE_HANDOFF one success audit / no failure audit: note_blank
+ ok 245 - PURCHASE_HANDOFF one success audit / no failure audit: note_501
+ ok 246 - PURCHASE_HANDOFF one success audit / no failure audit: source
+ ok 247 - PURCHASE_HANDOFF one success audit / no failure audit: version
+ ok 248 - PURCHASE_HANDOFF one success audit / no failure audit: retry
+(43 rows)
+
+                                      is
+-------------------------------------------------------------------------------
+ ok 249 - CONFIRMED_NEED original receipt certainty: exact
+ ok 250 - CONFIRMED_NEED original receipt certainty: precision_one
+ ok 251 - CONFIRMED_NEED original receipt certainty: precision_rounded_total
+ ok 252 - CONFIRMED_NEED original receipt certainty: precision_tiny
+ ok 253 - CONFIRMED_NEED original receipt certainty: precision_72
+ ok 254 - CONFIRMED_NEED original receipt certainty: range_limit
+ ok 255 - CONFIRMED_NEED original receipt certainty: range_max
+ ok 256 - CONFIRMED_NEED original receipt certainty: zero
+ ok 257 - CONFIRMED_NEED original receipt certainty: negative
+ ok 258 - CONFIRMED_NEED original receipt certainty: duplicate
+ ok 259 - CONFIRMED_NEED original receipt certainty: inactive
+ ok 260 - CONFIRMED_NEED original receipt certainty: ineligible
+ ok 261 - CONFIRMED_NEED original receipt certainty: imbalance
+ ok 262 - CONFIRMED_NEED original receipt certainty: residual
+ ok 263 - CONFIRMED_NEED original receipt certainty: note_trim
+ ok 264 - CONFIRMED_NEED original receipt certainty: note_blank
+ ok 265 - CONFIRMED_NEED original receipt certainty: note_500
+ ok 266 - CONFIRMED_NEED original receipt certainty: note_501
+ ok 267 - CONFIRMED_NEED original receipt certainty: source
+ ok 268 - CONFIRMED_NEED original receipt certainty: version
+ ok 269 - CONFIRMED_NEED original receipt certainty: retry
+ ok 270 - CONFIRMED_NEED original receipt certainty: batch_version
+ ok 271 - PURCHASE_HANDOFF original receipt certainty: exact
+ ok 272 - PURCHASE_HANDOFF original receipt certainty: precision_one
+ ok 273 - PURCHASE_HANDOFF original receipt certainty: precision_rounded_total
+ ok 274 - PURCHASE_HANDOFF original receipt certainty: note_500
+ ok 275 - PURCHASE_HANDOFF original receipt certainty: precision_tiny
+ ok 276 - PURCHASE_HANDOFF original receipt certainty: precision_72
+ ok 277 - PURCHASE_HANDOFF original receipt certainty: range_limit
+ ok 278 - PURCHASE_HANDOFF original receipt certainty: range_max
+ ok 279 - PURCHASE_HANDOFF original receipt certainty: zero
+ ok 280 - PURCHASE_HANDOFF original receipt certainty: negative
+ ok 281 - PURCHASE_HANDOFF original receipt certainty: duplicate
+ ok 282 - PURCHASE_HANDOFF original receipt certainty: inactive
+ ok 283 - PURCHASE_HANDOFF original receipt certainty: ineligible
+ ok 284 - PURCHASE_HANDOFF original receipt certainty: imbalance
+ ok 285 - PURCHASE_HANDOFF original receipt certainty: residual
+ ok 286 - PURCHASE_HANDOFF original receipt certainty: note_trim
+ ok 287 - PURCHASE_HANDOFF original receipt certainty: note_blank
+ ok 288 - PURCHASE_HANDOFF original receipt certainty: note_501
+ ok 289 - PURCHASE_HANDOFF original receipt certainty: source
+ ok 290 - PURCHASE_HANDOFF original receipt certainty: version
+ ok 291 - PURCHASE_HANDOFF original receipt certainty: retry
+(43 rows)
+
+                                           ok
+----------------------------------------------------------------------------------------
+ ok 292 - CONFIRMED_NEED predecessor split history preserved: exact
+ ok 293 - CONFIRMED_NEED predecessor split history preserved: precision_one
+ ok 294 - CONFIRMED_NEED predecessor split history preserved: precision_rounded_total
+ ok 295 - CONFIRMED_NEED predecessor split history preserved: precision_tiny
+ ok 296 - CONFIRMED_NEED predecessor split history preserved: precision_72
+ ok 297 - CONFIRMED_NEED predecessor split history preserved: range_limit
+ ok 298 - CONFIRMED_NEED predecessor split history preserved: range_max
+ ok 299 - CONFIRMED_NEED predecessor split history preserved: zero
+ ok 300 - CONFIRMED_NEED predecessor split history preserved: negative
+ ok 301 - CONFIRMED_NEED predecessor split history preserved: duplicate
+ ok 302 - CONFIRMED_NEED predecessor split history preserved: inactive
+ ok 303 - CONFIRMED_NEED predecessor split history preserved: ineligible
+ ok 304 - CONFIRMED_NEED predecessor split history preserved: imbalance
+ ok 305 - CONFIRMED_NEED predecessor split history preserved: residual
+ ok 306 - CONFIRMED_NEED predecessor split history preserved: note_trim
+ ok 307 - CONFIRMED_NEED predecessor split history preserved: note_blank
+ ok 308 - CONFIRMED_NEED predecessor split history preserved: note_500
+ ok 309 - CONFIRMED_NEED predecessor split history preserved: note_501
+ ok 310 - CONFIRMED_NEED predecessor split history preserved: source
+ ok 311 - CONFIRMED_NEED predecessor split history preserved: version
+ ok 312 - CONFIRMED_NEED predecessor split history preserved: retry
+ ok 313 - CONFIRMED_NEED predecessor split history preserved: batch_version
+ ok 314 - PURCHASE_HANDOFF predecessor split history preserved: exact
+ ok 315 - PURCHASE_HANDOFF predecessor split history preserved: precision_one
+ ok 316 - PURCHASE_HANDOFF predecessor split history preserved: precision_rounded_total
+ ok 317 - PURCHASE_HANDOFF predecessor split history preserved: note_500
+ ok 318 - PURCHASE_HANDOFF predecessor split history preserved: precision_tiny
+ ok 319 - PURCHASE_HANDOFF predecessor split history preserved: precision_72
+ ok 320 - PURCHASE_HANDOFF predecessor split history preserved: range_limit
+ ok 321 - PURCHASE_HANDOFF predecessor split history preserved: range_max
+ ok 322 - PURCHASE_HANDOFF predecessor split history preserved: zero
+ ok 323 - PURCHASE_HANDOFF predecessor split history preserved: negative
+ ok 324 - PURCHASE_HANDOFF predecessor split history preserved: duplicate
+ ok 325 - PURCHASE_HANDOFF predecessor split history preserved: inactive
+ ok 326 - PURCHASE_HANDOFF predecessor split history preserved: ineligible
+ ok 327 - PURCHASE_HANDOFF predecessor split history preserved: imbalance
+ ok 328 - PURCHASE_HANDOFF predecessor split history preserved: residual
+ ok 329 - PURCHASE_HANDOFF predecessor split history preserved: note_trim
+ ok 330 - PURCHASE_HANDOFF predecessor split history preserved: note_blank
+ ok 331 - PURCHASE_HANDOFF predecessor split history preserved: note_501
+ ok 332 - PURCHASE_HANDOFF predecessor split history preserved: source
+ ok 333 - PURCHASE_HANDOFF predecessor split history preserved: version
+ ok 334 - PURCHASE_HANDOFF predecessor split history preserved: retry
+(43 rows)
+
+                                               ok
+-------------------------------------------------------------------------------------------------
+ ok 335 - CONFIRMED_NEED replay and conflict change no accepted facts: exact
+ ok 336 - CONFIRMED_NEED replay and conflict change no accepted facts: precision_one
+ ok 337 - CONFIRMED_NEED replay and conflict change no accepted facts: precision_rounded_total
+ ok 338 - CONFIRMED_NEED replay and conflict change no accepted facts: precision_tiny
+ ok 339 - CONFIRMED_NEED replay and conflict change no accepted facts: precision_72
+ ok 340 - CONFIRMED_NEED replay and conflict change no accepted facts: range_limit
+ ok 341 - CONFIRMED_NEED replay and conflict change no accepted facts: range_max
+ ok 342 - CONFIRMED_NEED replay and conflict change no accepted facts: zero
+ ok 343 - CONFIRMED_NEED replay and conflict change no accepted facts: negative
+ ok 344 - CONFIRMED_NEED replay and conflict change no accepted facts: duplicate
+ ok 345 - CONFIRMED_NEED replay and conflict change no accepted facts: inactive
+ ok 346 - CONFIRMED_NEED replay and conflict change no accepted facts: ineligible
+ ok 347 - CONFIRMED_NEED replay and conflict change no accepted facts: imbalance
+ ok 348 - CONFIRMED_NEED replay and conflict change no accepted facts: residual
+ ok 349 - CONFIRMED_NEED replay and conflict change no accepted facts: note_trim
+ ok 350 - CONFIRMED_NEED replay and conflict change no accepted facts: note_blank
+ ok 351 - CONFIRMED_NEED replay and conflict change no accepted facts: note_500
+ ok 352 - CONFIRMED_NEED replay and conflict change no accepted facts: note_501
+ ok 353 - CONFIRMED_NEED replay and conflict change no accepted facts: source
+ ok 354 - CONFIRMED_NEED replay and conflict change no accepted facts: version
+ ok 355 - CONFIRMED_NEED replay and conflict change no accepted facts: retry
+ ok 356 - CONFIRMED_NEED replay and conflict change no accepted facts: batch_version
+ ok 357 - PURCHASE_HANDOFF replay and conflict change no accepted facts: exact
+ ok 358 - PURCHASE_HANDOFF replay and conflict change no accepted facts: precision_one
+ ok 359 - PURCHASE_HANDOFF replay and conflict change no accepted facts: precision_rounded_total
+ ok 360 - PURCHASE_HANDOFF replay and conflict change no accepted facts: note_500
+ ok 361 - PURCHASE_HANDOFF replay and conflict change no accepted facts: precision_tiny
+ ok 362 - PURCHASE_HANDOFF replay and conflict change no accepted facts: precision_72
+ ok 363 - PURCHASE_HANDOFF replay and conflict change no accepted facts: range_limit
+ ok 364 - PURCHASE_HANDOFF replay and conflict change no accepted facts: range_max
+ ok 365 - PURCHASE_HANDOFF replay and conflict change no accepted facts: zero
+ ok 366 - PURCHASE_HANDOFF replay and conflict change no accepted facts: negative
+ ok 367 - PURCHASE_HANDOFF replay and conflict change no accepted facts: duplicate
+ ok 368 - PURCHASE_HANDOFF replay and conflict change no accepted facts: inactive
+ ok 369 - PURCHASE_HANDOFF replay and conflict change no accepted facts: ineligible
+ ok 370 - PURCHASE_HANDOFF replay and conflict change no accepted facts: imbalance
+ ok 371 - PURCHASE_HANDOFF replay and conflict change no accepted facts: residual
+ ok 372 - PURCHASE_HANDOFF replay and conflict change no accepted facts: note_trim
+ ok 373 - PURCHASE_HANDOFF replay and conflict change no accepted facts: note_blank
+ ok 374 - PURCHASE_HANDOFF replay and conflict change no accepted facts: note_501
+ ok 375 - PURCHASE_HANDOFF replay and conflict change no accepted facts: source
+ ok 376 - PURCHASE_HANDOFF replay and conflict change no accepted facts: version
+ ok 377 - PURCHASE_HANDOFF replay and conflict change no accepted facts: retry
+(43 rows)
+
+                                        is
+----------------------------------------------------------------------------------
+ ok 378 - CONFIRMED_NEED accepted revision retains source authority: exact
+ ok 379 - CONFIRMED_NEED accepted revision retains source authority: residual
+ ok 380 - CONFIRMED_NEED accepted revision retains source authority: note_trim
+ ok 381 - CONFIRMED_NEED accepted revision retains source authority: note_blank
+ ok 382 - CONFIRMED_NEED accepted revision retains source authority: note_500
+ ok 383 - PURCHASE_HANDOFF accepted revision retains source authority: exact
+ ok 384 - PURCHASE_HANDOFF accepted revision retains source authority: note_500
+ ok 385 - PURCHASE_HANDOFF accepted revision retains source authority: residual
+ ok 386 - PURCHASE_HANDOFF accepted revision retains source authority: note_trim
+ ok 387 - PURCHASE_HANDOFF accepted revision retains source authority: note_blank
+(10 rows)
+
+                       is
+-------------------------------------------------
+ ok 388 - CONFIRMED_NEED supplier note trimmed
+ ok 389 - PURCHASE_HANDOFF supplier note trimmed
+(2 rows)
+
+                          is
+-------------------------------------------------------
+ ok 390 - CONFIRMED_NEED blank supplier note is NULL
+ ok 391 - PURCHASE_HANDOFF blank supplier note is NULL
+(2 rows)
+
+                               is
+-----------------------------------------------------------------
+ ok 392 - CONFIRMED_NEED exactly 500 note characters preserved
+ ok 393 - PURCHASE_HANDOFF exactly 500 note characters preserved
+(2 rows)
+
+                             is
+------------------------------------------------------------
+ ok 394 - CONFIRMED_NEED note-only Save appends successor
+ ok 395 - PURCHASE_HANDOFF note-only Save appends successor
+(2 rows)
+
+                           ok
+--------------------------------------------------------
+ ok 396 - CONFIRMED_NEED note-only predecessor exists
+ ok 397 - PURCHASE_HANDOFF note-only predecessor exists
+(2 rows)
+
+                              is
+---------------------------------------------------------------
+ ok 398 - CONFIRMED_NEED note-only split ratio remains exact
+ ok 399 - PURCHASE_HANDOFF note-only split ratio remains exact
+(2 rows)
+
+                                is
+------------------------------------------------------------------
+ ok 400 - CONFIRMED_NEED note-only split quantity remains exact
+ ok 401 - PURCHASE_HANDOFF note-only split quantity remains exact
+(2 rows)
+
+                                     is
+-----------------------------------------------------------------------------
+ ok 402 - CONFIRMED_NEED accepted quantities reconcile exactly: exact
+ ok 403 - CONFIRMED_NEED accepted quantities reconcile exactly: residual
+ ok 404 - CONFIRMED_NEED accepted quantities reconcile exactly: note_trim
+ ok 405 - CONFIRMED_NEED accepted quantities reconcile exactly: note_blank
+ ok 406 - CONFIRMED_NEED accepted quantities reconcile exactly: note_500
+ ok 407 - PURCHASE_HANDOFF accepted quantities reconcile exactly: exact
+ ok 408 - PURCHASE_HANDOFF accepted quantities reconcile exactly: note_500
+ ok 409 - PURCHASE_HANDOFF accepted quantities reconcile exactly: residual
+ ok 410 - PURCHASE_HANDOFF accepted quantities reconcile exactly: note_trim
+ ok 411 - PURCHASE_HANDOFF accepted quantities reconcile exactly: note_blank
+(10 rows)
+
+                             is
+-------------------------------------------------------------
+ ok 412 - CONFIRMED_NEED six-decimal exact entry preserved
+ ok 413 - PURCHASE_HANDOFF six-decimal exact entry preserved
+(2 rows)
+
+                            is
+----------------------------------------------------------
+ ok 414 - CONFIRMED_NEED exact residual entry preserved
+ ok 415 - PURCHASE_HANDOFF exact residual entry preserved
+(2 rows)
+
+                             is
+-------------------------------------------------------------
+ ok 416 - CONFIRMED_NEED retry failure preserves certainty
+ ok 417 - PURCHASE_HANDOFF retry failure preserves certainty
+(2 rows)
+
+ finish
+--------
+ 1..417
+(1 row)
+
+ROLLBACK

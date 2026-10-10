@@ -29,6 +29,7 @@ import { ProcurementCommandFeedback } from "./ProcurementCommandFeedback";
 import {
   ProcurementOrdersStage,
   type ProcurementExport,
+  type ProcurementZipExport,
 } from "./ProcurementOrdersStage";
 import { ProcurementSchoolScope } from "./ProcurementSchoolScope";
 import { ProcurementSupplierDetail } from "./ProcurementSupplierDetail";
@@ -48,6 +49,7 @@ export type ProcurementWorkbenchProps = ProcurementControllerProps &
     schools?: ProcurementSchoolOption[];
     onExportXlsx?: ProcurementExport;
     onExportPdf?: ProcurementExport;
+    onExportZip?: ProcurementZipExport;
     onContextChange?: (context: {
       date: string;
       stage: "allocation" | "orders";
@@ -559,6 +561,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   onAction={(order) => void controller.orderAction(order)}
                   onExportXlsx={props.onExportXlsx}
                   onExportPdf={props.onExportPdf}
+                  onExportZip={props.onExportZip}
                 />
               )}
             </Tabs.Content>

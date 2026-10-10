@@ -9,6 +9,129 @@ import {
 } from "./schoolDispatchReleaseExports";
 
 describe("School dispatch release exports", () => {
+  it("allows short Vietnamese Unit labels to print whole at the accepted body font", () => {
+    const document = createReviewSchoolDispatchDocument("RELEASED");
+    document.lines = ["Cốc", "Quả"].map((unit_code) => ({
+      ...document.lines[0]!,
+      unit_code,
+    }));
+    const definition = buildSchoolDispatchPdfDefinition(document);
+    const table = (
+      definition.content as {
+        table?: { widths: unknown[]; body: unknown[][] };
+      }[]
+    ).find((node) => node.table)!.table!;
+    // These accepted Roboto15 labels need about28pt; allow padding/tone marks.
+    expect(table.widths[2]).toBeGreaterThanOrEqual(32);
+    expect(table.body.slice(2).map((row) => row[2])).toEqual(["Cốc", "Quả"]);
+    expect(table.body.slice(2).map((row) => row.at(-1))).toEqual(["", ""]);
+    expect(definition.pageOrientation).toBe("portrait");
+  });
+  it("prints captured cooking context with separate blank handwriting cells and one document note", async () => {
+    const document = createReviewSchoolDispatchDocument("SUPERSEDED");
+    Object.assign(document, {
+      cooking_group_id: "group-x",
+      cooking_group_name: "Bếp X khi phát hành",
+    });
+    document.note = "Giao tại cổng phụ trước 06:00";
+    document.lines.push({ ...document.lines[0]!, ingredient_name: "Cà rốt" });
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createSchoolDispatchXlsx(document));
+    const sheet = book.worksheets[0]!;
+    expect(sheet.getCell("A6").text).toBe(
+      "TRƯỜNG: Trường Tiểu học Nguyễn Du\nNẤU TẠI: Bếp X khi phát hành",
+    );
+    expect(sheet.getCell("H9").text).toBe("Ghi chú");
+    expect(sheet.getColumn(8).width).toBeGreaterThanOrEqual(20);
+    for (const row of [11, 12]) {
+      expect(sheet.getCell(row, 8).text).toBe("");
+      expect(sheet.getRow(row).height).toBeGreaterThanOrEqual(30);
+    }
+    expect(sheet.getRow(9).values).not.toContain("Trường");
+    expect(sheet.getCell("G9").text).toBe("Biện pháp xử lý");
+    expect(sheet.getCell("E10").text).toBe("Đạt");
+    expect(sheet.getCell("F10").text).toBe("Không đạt");
+    const worksheetText: string[] = [];
+    sheet.eachRow((row) =>
+      row.eachCell((cell) => {
+        if (!cell.isMerged || cell.address === cell.master.address)
+          worksheetText.push(cell.text);
+      }),
+    );
+    expect(worksheetText.join("\n").split(document.note)).toHaveLength(2);
+    const definition = buildSchoolDispatchPdfDefinition(document);
+    const text = JSON.stringify(definition);
+    expect(text).toContain("NẤU TẠI: Bếp X khi phát hành");
+    expect(text.split(document.note)).toHaveLength(2);
+    const table = (
+      definition.content as { table?: { body: unknown[][] } }[]
+    ).find((node) => node.table)!.table!;
+    expect(table.body[0]!.at(-1)).toMatchObject({ text: "Ghi chú" });
+    expect(table.body.slice(2).map((row) => row.at(-1))).toEqual(["", ""]);
+    expect(definition.pageOrientation).toBe("portrait");
+  });
+
+  it.each([
+    {},
+    { cooking_group_id: null, cooking_group_name: null },
+    { cooking_group_name: "Tên từ ghi chú" },
+  ])(
+    "does not infer cooking grouping from missing or unpaired snapshot fields %j",
+    async (group) => {
+      const document = createReviewSchoolDispatchDocument("RELEASED");
+      Object.assign(document, group);
+      document.delivery_location_name = "Bếp tên giống nhóm";
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(await createSchoolDispatchXlsx(document));
+      expect(book.worksheets[0]!.getCell("A6").text).toBe(
+        "TRƯỜNG: Trường Tiểu học Nguyễn Du",
+      );
+      expect(
+        JSON.stringify(book.worksheets[0]!.getSheetValues()),
+      ).not.toContain("NẤU TẠI:");
+      expect(
+        JSON.stringify(buildSchoolDispatchPdfDefinition(document)),
+      ).not.toContain("NẤU TẠI:");
+    },
+  );
+  it("preserves the V1 inspection purposes and adds handwriting notes for the same 13-item case", async () => {
+    const document = createReviewSchoolDispatchDocument("RELEASED");
+    document.lines = Array.from({ length: 13 }, (_, index) => ({
+      ...document.lines[0]!,
+      ingredient_id: `fixture-${index}`,
+      ingredient_name: index === 0 ? "Cà rốt" : `Thực phẩm ${index + 1}`,
+      quantity: "3.000000",
+    }));
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await createSchoolDispatchXlsx(document));
+    const sheet = workbook.worksheets[0]!;
+    expect(sheet.getCell("B1").value).toBe(document.document_issuer_name);
+    expect(sheet.getCell("B2").value).toBe(
+      `ĐC: ${document.document_issuer_address}`,
+    );
+    expect(sheet.getCell("A3").value).toBeNull();
+    expect(sheet.getCell("A4").value).toBe("PHIẾU XUẤT KHO");
+    expect(sheet.getCell("F5").value).toBe("Ngày:");
+    expect(sheet.getCell("G5").value).toBe("24/09/2026");
+    expect(sheet.getCell("A8").text).toContain("ĐÃ PHÁT HÀNH");
+    expect(sheet.getColumn(5).width).toBe(7);
+    expect(sheet.getColumn(6).width).toBe(11);
+    expect(sheet.getColumn(7).width).toBe(19);
+    expect(sheet.getCell("D23").value).toBe("3");
+    expect(sheet.getCell("A29").value).toBe("Người nhận hàng");
+    expect(sheet.getCell("C29").value).toBe("Người giao hàng");
+    expect(sheet.getCell("F29").value).toBe("Người lập phiếu");
+    expect(sheet.getCell("A30").value).toBe("(Ký, ghi họ tên)");
+    expect(sheet.getRow(29).height).toBe(24);
+    expect(sheet.getRow(30).height).toBe(24);
+    expect(sheet.pageSetup.printArea).toBe("A1:H35");
+    expect(JSON.stringify(sheet.getSheetValues())).not.toContain(
+      "Bùi Thị Linh Trang",
+    );
+    expect(JSON.stringify(sheet.getSheetValues())).not.toContain(
+      "Quách Thành Đạt",
+    );
+  });
   it.each(["RELEASED", "SUPERSEDED"] as const)(
     "keeps an immutable %s PXK exportable",
     (status) => {
@@ -43,20 +166,21 @@ describe("School dispatch release exports", () => {
       paperSize: 9,
       orientation: "portrait",
     });
-    expect(sheet.getColumn(1).width).toBeCloseTo(13, 1);
-    expect(sheet.getColumn(2).width).toBeCloseTo(37.43, 1);
-    expect(sheet.getColumn(7).width).toBe(14);
-    expect(sheet.getCell("A1").alignment.horizontal).toBe("center");
-    expect(sheet.getCell("A2").alignment.horizontal).toBe("center");
+    expect(sheet.getColumn(1).width).toBe(7);
+    expect(sheet.getColumn(2).width).toBeGreaterThan(30);
+    expect(sheet.getColumn(4).width).toBeLessThan(12.28515625);
+    expect(sheet.getColumn(7).width).toBe(19);
+    expect(sheet.getCell("B1").alignment.horizontal).toBe("center");
+    expect(sheet.getCell("B2").alignment.horizontal).toBe("center");
     expect(sheet.getCell("A9").value).toBe("Stt");
     expect(sheet.getCell("A5").value).toBe(
       "Số phiếu: PXK-20260924-2600000000004000",
     );
     expect(sheet.getCell("E9").value).toBe("Tình trạng cảm quan");
     expect(sheet.getCell("E10").value).toBe("Đạt");
-    expect(sheet.getCell("F10").value).toBe("K Đạt");
+    expect(sheet.getCell("F10").value).toBe("Không đạt");
     expect(sheet.getCell("G9").value).toBe("Biện pháp xử lý");
-    expect(sheet.getCell("D11").value).toBe(100);
+    expect(sheet.getCell("D11").value).toBe("100");
     expect(workbook.model.media).toHaveLength(1);
     expect(sheet.getRow(11).height).toBe(30);
     expect(JSON.stringify(sheet.getSheetValues())).toContain("Người nhận hàng");
@@ -91,7 +215,9 @@ describe("School dispatch release exports", () => {
       await createGroupedSchoolDispatchXlsx([laterSchool, firstSchool]),
     );
 
-    expect(workbook.worksheets).toHaveLength(2);
+    expect(
+      workbook.worksheets.filter((s) => s.state === "visible"),
+    ).toHaveLength(2);
     expect(workbook.worksheets[0]!.getCell("A6").value).toContain("Trường A");
     expect(workbook.worksheets[1]!.getCell("A6").value).toContain("Trường B");
   });

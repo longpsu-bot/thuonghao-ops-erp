@@ -1,0 +1,78 @@
+BEGIN
+CREATE EXTENSION
+SET
+ no_plan
+---------
+(0 rows)
+
+                        has_column
+----------------------------------------------------------
+ ok 1 - supplier note is an explicit immutable split fact
+(1 row)
+
+                    has_column
+---------------------------------------------------
+ ok 2 - PO line owns its generated historical note
+(1 row)
+
+              col_is_null
+----------------------------------------
+ ok 3 - existing splits default to null
+(1 row)
+
+               col_is_null
+------------------------------------------
+ ok 4 - existing PO lines default to null
+(1 row)
+
+                               ok
+----------------------------------------------------------------
+ ok 5 - browser cannot insert or forge an allocation split note
+(1 row)
+
+                            ok
+----------------------------------------------------------
+ ok 6 - browser cannot insert or forge a PO note snapshot
+(1 row)
+
+                         ok
+----------------------------------------------------
+ ok 7 - allocation split forced RLS remains enabled
+(1 row)
+
+                    ok
+-------------------------------------------
+ ok 8 - PO line forced RLS remains enabled
+(1 row)
+
+                                   ok
+-------------------------------------------------------------------------
+ ok 9 - backend snapshot freeze remains attached to every PO line insert
+(1 row)
+
+                                                    function_owner_is
+--------------------------------------------------------------------------------------------------------------------------
+ ok 10 - Function atlas_core.freeze_school_catering_po_line_output() should be owned by atlas_procurement_command_runtime
+(1 row)
+
+                          ok
+------------------------------------------------------
+ ok 11 - snapshot guard keeps fixed empty search_path
+(1 row)
+
+                                              function_owner_is
+-------------------------------------------------------------------------------------------------------------
+ ok 12 - Function atlas_api.get_school_catering_purchase_orders(jsonb) should be owned by atlas_read_runtime
+(1 row)
+
+                                                  function_owner_is
+---------------------------------------------------------------------------------------------------------------------
+ ok 13 - Function atlas_api.get_confirmed_supplier_allocation_workbench(jsonb) should be owned by atlas_read_runtime
+(1 row)
+
+ finish
+--------
+ 1..13
+(1 row)
+
+ROLLBACK

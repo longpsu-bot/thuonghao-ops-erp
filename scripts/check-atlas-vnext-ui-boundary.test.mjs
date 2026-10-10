@@ -2,6 +2,25 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("keeps Attendance document exports in connected composition, outside vNext views and business bridges", () => {
+    expect(
+      checkSources({
+        "src/AtlasVNextConnectedApp.tsx":
+          'import { downloadAttendanceImportTemplate } from "./modules/atlas/documents/attendanceImportTemplate";',
+      }),
+    ).toEqual([]);
+    for (const file of [
+      "src/vnext/atlas/planning/PlanningAttendanceStage.tsx",
+      "src/vnext/atlas/bridges/planning.ts",
+    ]) {
+      expect(
+        checkSources({
+          [file]:
+            'export * from "@/modules/atlas/documents/attendanceImportTemplate";',
+        }),
+      ).toHaveLength(1);
+    }
+  });
   it("allows only Recipe Adjustment business API/model through a bridge", () => {
     for (const module of ["recipeAdjustmentApi", "recipeAdjustmentModel"]) {
       const source = `export * from "@/modules/atlas/recipe-adjustments/${module}";`;

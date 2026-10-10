@@ -1,0 +1,282 @@
+[
+  {
+    "pdf": "PO-one-school-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-one-school-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-one-school-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-one-school.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiple-schools-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiple-schools-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiple-schools-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiple-schools.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-second-supplier-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-second-supplier-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-second-supplier-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-second-supplier.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiline-note-sheet-1.pdf",
+    "pages": 9,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiline-note-sheet-2.pdf",
+    "pages": 9,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiline-note-sheet-3.pdf",
+    "pages": 8,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiline-note.pdf",
+    "pages": 15,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multipage-precision-sheet-1.pdf",
+    "pages": 13,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multipage-precision-sheet-2.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multipage-precision-sheet-3.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multipage-precision.pdf",
+    "pages": 11,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-quantity-display-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-quantity-display-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-quantity-display-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-quantity-display.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-quantity-display-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-quantity-display.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-one-school-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-one-school.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-multipage-superseded-sheet-1.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-multipage-superseded.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Dispatch-grouped-distinct-destinations-sheet-1.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Dispatch-grouped-distinct-destinations-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Dispatch-grouped-distinct-destinations-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-all-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-all-sheet-2.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-all-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-all.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-details_ing-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-details_ing.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-details_school-sheet-1.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-details_school.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-sum-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-3F-sum.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-PXK-13-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-PXK-13.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Purchase-review-preliminary-sheet-1.pdf",
+    "pages": 5,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Purchase-review-preliminary-sheet-2.pdf",
+    "pages": 7,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Purchase-review-quantity-display-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Purchase-review-quantity-display-sheet-2.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Attendance-import-template-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Attendance-import-template-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Shopping-list-APlus-preserved-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  }
+]

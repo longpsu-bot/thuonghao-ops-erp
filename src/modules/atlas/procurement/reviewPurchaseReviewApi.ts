@@ -421,6 +421,7 @@ export function createReviewPurchaseJourney(
                 ingredient: {
                   ingredient_id: current.ingredient_id,
                   ingredient_name: current.ingredient_name,
+                  document_code: "1082", // Explicit synthetic review Master fact.
                 },
                 ordered_quantity: split.allocated_quantity,
                 supplier_note: split.supplier_note,
@@ -491,6 +492,11 @@ export function createReviewPurchaseJourney(
           request.payload.expected_purchase_order_revision_id
       )
         return error("STALE_VERSION");
+      if (
+        !po.supplier.document_code?.trim() ||
+        po.lines.some((line) => !line.ingredient.document_code?.trim())
+      )
+        return error("PO_DOCUMENT_CODE_REQUIRED");
       po.status = "RELEASED_TO_SUPPLIER";
       po.version += 1;
       po.document_number = `PO-${serviceDate.replaceAll("-", "")}-${po.purchase_order_id.slice(0, 8)}`;
@@ -503,7 +509,15 @@ export function createReviewPurchaseJourney(
         revision_status: "RELEASED_TO_SUPPLIER",
         released_by_actor_id: "review-operator",
         released_at: new Date().toISOString(),
+        supplier_name_snapshot: po.supplier.supplier_name,
+        supplier_document_code_snapshot: po.supplier.document_code,
       };
+      for (const line of po.lines) {
+        line.ingredient_document_code_snapshot = line.ingredient.document_code!;
+        line.ingredient_name_snapshot = line.ingredient.ingredient_name;
+        line.unit_code_snapshot = line.unit.unit_code;
+      }
+      po.document_snapshot_complete = true;
       po.allowed_actions = {
         release: false,
         export: true,

@@ -1,0 +1,52 @@
+{
+  "fixtureOnly": true,
+  "result": "PASS",
+  "specimens": [
+    {
+      "name": "PO-hidden-parsing-all.xlsx",
+      "sha256": "1f2179cdbb42b1b2f495c33064dfa90a5a5f83c90bbecf83f6f4a95b37c2143e"
+    },
+    {
+      "name": "PO-hidden-parsing-all.pdf",
+      "sha256": "b3e4a080fec4aecb061ef1bf82582fb95cd8f872c296cb05dcd4bd0a1dda5fea"
+    },
+    {
+      "name": "PO-hidden-parsing-sum.xlsx",
+      "sha256": "ca5376d17fd1dc3ade2e9d94d5677fcb5feb3e27638bcb716f20a56ee9d3a6ec"
+    },
+    {
+      "name": "PO-hidden-parsing-sum.pdf",
+      "sha256": "3e1eac1381b10a2384fedcfbc5fbcfd8f733ca8a9187dd4e5e62b0b321075039"
+    },
+    {
+      "name": "PO-hidden-parsing-details_ing.xlsx",
+      "sha256": "bf676b66e9e27cd626b484f08d51d22ccb305d2022b535286cdfccf68d455723"
+    },
+    {
+      "name": "PO-hidden-parsing-details_ing.pdf",
+      "sha256": "448b617d8218057a29ec088f650acb41ff9b9cfeace2168aae9dd476c9689aad"
+    },
+    {
+      "name": "PO-hidden-parsing-details_school.xlsx",
+      "sha256": "17439d1f6e206324ced50ddbe76c6467c4238480fa9c992ac439f902bbe2a5bb"
+    },
+    {
+      "name": "PO-hidden-parsing-details_school.pdf",
+      "sha256": "b1dce4adc7ebb201a76a67a9b454cf885c10125d737a0ab325cf52c9f84ed62c"
+    },
+    {
+      "name": "PXK-hidden-parsing.xlsx",
+      "sha256": "2fbb499a40f8676c57bd293a47326f63d991caa80bd2779675c32ca12f3fd8ec"
+    },
+    {
+      "name": "PXK-hidden-parsing.pdf",
+      "sha256": "a5df4d38b51d4cc6bff9a9535c9b54777a171d28d4a5107c22a502846050c6f7"
+    },
+    {
+      "name": "PXK-hidden-parsing-batch.xlsx",
+      "sha256": "fdc8ae639de25707a71ab2b6da9071b93bc52ffd16d0759b025ee62eccfc8ddf"
+    }
+  ],
+  "shopping": "Unchanged; Shopping List V2/A+ is outside this presentation follow-up",
+  "normalization": "XLSX ZIP timestamps; Shopping fixture modified-time only. Production renderers unchanged by normalization."
+}

@@ -1,0 +1,6 @@
+{
+  "seeds_enabled": false,
+  "reset_exit": 0,
+  "project": "atlas-document-system-360-cooking",
+  "command": "supabase db reset --local --no-seed"
+}

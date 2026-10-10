@@ -1,0 +1,30 @@
+1..28
+ok 1 - CAT-01 exact Atlas schema catalog excludes every deferred schema
+ok 2 - CAT-02 exact whole-platform table and view totals include School PXK evidence
+ok 3 - CAT-03 every authoritative Atlas table has RLS enabled and forced
+ok 4 - CAT-04 exact Atlas role catalogs and runtime posture are retained
+ok 5 - CAT-05 exact capability catalog includes the bounded School PXK capabilities
+ok 6 - CAT-06 exact Atlas schema ownership remains atlas_owner
+ok 7 - CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies
+ok 8 - CAT-08 no RLS policy exposes API roles or retired command runtime
+ok 9 - CAT-09 API roles have no private Atlas schema usage
+ok 10 - CAT-10 API roles have no private relation or sequence privilege
+ok 11 - CAT-11 retired command runtime has no Atlas privilege
+ok 12 - CAT-12 read runtime remains select-only with no schema creation or sequence privilege
+ok 13 - CAT-13 atlas_api schema usage allowlist is exactly authenticated
+ok 14 - CAT-14 physical atlas_api function count is exactly one hundred eighteen
+ok 15 - CAT-15 ordered atlas_api signature catalog is exactly one hundred eighteen physical functions
+ok 16 - CAT-16 PA-06A registry is exactly fifteen writes and four reads
+ok 17 - CAT-17 exact API function owner mapping is retained
+ok 18 - CAT-18 authenticated execute allowlist is exactly one hundred fifteen functions
+ok 19 - CAT-19 anon executes no Atlas API function
+ok 20 - CAT-20 service_role executes no Atlas API function
+ok 21 - CAT-21 no unreviewed atlas_api function or overload exists
+ok 22 - CAT-21A corrected Recipe functions retain fixed paths, intended owners, and revoke-first execution
+ok 23 - CAT-21B adoption evidence is forced-RLS and has only the two private runtime grants
+ok 24 - CAT-21C adoption evidence has the exact private RLS policy set
+ok 25 - CAT-21D adoption helpers are private invokers with fixed empty paths
+ok 26 - CAT-21E adoption evidence stores no conversion factor or converted quantity
+ok 27 - CAT-22 exact whole-platform security and catalog integrity summary is retained
+ok 28 - D047 proof preserves its fixed search path and bounds only join planning
+NOTICE:  schema "extensions" already exists, skipping

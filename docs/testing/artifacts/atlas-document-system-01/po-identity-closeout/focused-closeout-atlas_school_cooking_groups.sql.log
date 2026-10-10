@@ -1,0 +1,39 @@
+ok 1 - both current fact tables force RLS
+ok 2 - browser and service roles have no cooking table privileges
+ok 3 - only three shaped APIs with fixed empty search paths
+ok 4 - Function atlas_api.upsert_cooking_group(jsonb) should be owned by atlas_master_data_command_runtime
+ok 5 - Function atlas_api.set_school_cooking_group(jsonb) should be owned by atlas_master_data_command_runtime
+ok 6 - Function atlas_api.get_cooking_groups(jsonb) should be owned by atlas_read_runtime
+d1000000-0000-0000-0000-000000000101
+ok 7 - group create succeeds
+ok 8 - exact group replay returns original immutable receipt
+ok 9 - conflicting group replay rejects
+ok 10 - group name length over 200 rejects
+ok 11 - null active field rejects
+ok 12 - assignment succeeds
+ok 13 - assignment replay does not increment School version
+ok 14 - School shaped read includes explicit current group
+ok 15 - group shaped read includes governed identity
+ok 16 - stale assignment cannot overwrite
+ok 17 - deactivation cannot strand assigned Schools
+WARNING:  no privileges were granted for "grant_pg_cron_access"
+WARNING:  no privileges were granted for "grant_pg_net_access"
+ok 18 - missing group rejects
+ok 19 - removal requires explicit null
+ok 20 - explicit null clears membership
+ok 21 - ungrouped School read returns null
+ok 22 - empty group can deactivate
+ok 23 - inactive group rejects
+ok 24 - exactly successful mutations emit audit evidence; replay and failures do not
+ok 25 - two distinct Schools can share one authoritative group
+ok 26 - relational guard blocks deactivation with current members
+ok 27 - relational guard blocks inactive current School membership
+ok 28 - School PK prevents two current memberships
+ok 29 - inactive School rejects
+d1000000-0000-0000-0000-000000000102
+ok 30 - GLOBAL actor without read capability is denied
+ok 31 - GLOBAL actor without write capability is denied
+d1000000-0000-0000-0000-000000000101
+ok 32 - School-only scope cannot read GLOBAL Admin groups
+ok 33 - School-only scope cannot maintain GLOBAL Admin facts
+1..33

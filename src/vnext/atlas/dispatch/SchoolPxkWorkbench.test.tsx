@@ -39,6 +39,7 @@ function show(scenario: SchoolPxkScenario = "READY", expandedFilters = true) {
   const xlsx = vi.fn();
   const pdf = vi.fn();
   const groupedXlsx = vi.fn();
+  const zip = vi.fn();
   render(
     <AtlasVNextProvider>
       <SchoolPxkWorkbench
@@ -48,6 +49,7 @@ function show(scenario: SchoolPxkScenario = "READY", expandedFilters = true) {
         onExportXlsx={xlsx}
         onExportPdf={pdf}
         onExportGroupedXlsx={groupedXlsx}
+        onExportZip={zip}
       />
     </AtlasVNextProvider>,
   );
@@ -55,7 +57,7 @@ function show(scenario: SchoolPxkScenario = "READY", expandedFilters = true) {
     const filters = screen.queryByRole("button", { name: "Bộ lọc" });
     if (filters) fireEvent.click(filters);
   }
-  return { api, read, write, xlsx, pdf, groupedXlsx };
+  return { api, read, write, xlsx, pdf, groupedXlsx, zip };
 }
 async function open(label = "Phát hành") {
   const button = await screen.findByRole("button", { name: label });
@@ -63,6 +65,66 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("packages unique loaded history with the selected date/entity mode", async () => {
+    const h = show("HISTORY_WITH_SUPERSEDED");
+    const button = screen.getByRole("button", {
+      name: "Xuất ZIP Dispatch · phạm vi đã tải",
+    });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Nhóm file Dispatch" }),
+      { target: { value: "entity" } },
+    );
+    fireEvent.click(button);
+    expect(h.zip).toHaveBeenCalledOnce();
+    const [documents, mode] = h.zip.mock.calls[0]!;
+    expect(mode).toBe("entity");
+    expect(documents).toHaveLength(2);
+    expect(
+      new Set(
+        documents.map(
+          (d: { school_dispatch_release_id: string }) =>
+            d.school_dispatch_release_id,
+        ),
+      ).size,
+    ).toBe(2);
+    expect(h.write).not.toHaveBeenCalled();
+  });
+  it("blocks loaded exports for denied rows and an unsaved release note", async () => {
+    const row = pxkRow("REPLACEMENT_REQUIRED");
+    row.allowed_actions.export = false;
+    const api = createSchoolPxkReviewFixture("REPLACEMENT_REQUIRED");
+    vi.spyOn(api, "getWorkbench").mockResolvedValue(pxkSuccess(pxkData([row])));
+    const zip = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <SchoolPxkWorkbench
+          api={api}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          onExportZip={zip}
+        />
+      </AtlasVNextProvider>,
+    );
+    await open("Tạo phiếu thay thế");
+    const button = screen.getByRole("button", {
+      name: "Xuất ZIP Dispatch · phạm vi đã tải",
+    });
+    expect(button).toBeDisabled();
+    cleanup();
+    const h = show("REPLACEMENT_REQUIRED");
+    await open("Tạo phiếu thay thế");
+    const dirtyButton = screen.getByRole("button", {
+      name: "Xuất ZIP Dispatch · phạm vi đã tải",
+    });
+    expect(dirtyButton).toBeEnabled();
+    fireEvent.change(screen.getByRole("textbox", { name: /Ghi chú/ }), {
+      target: { value: "Chưa lưu" },
+    });
+    expect(dirtyButton).toBeDisabled();
+    expect(zip).not.toHaveBeenCalled();
+    expect(h.zip).not.toHaveBeenCalled();
+  });
   it("keeps compact search immediate and discloses the exact date, School and state filters", async () => {
     show("READY", false);
     await open();

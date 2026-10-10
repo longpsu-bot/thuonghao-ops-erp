@@ -5,6 +5,14 @@ import type {
 } from "./purchaseReviewApi";
 import { downloadBytes } from "./purchaseOrderExports";
 
+import {
+  initializeDocumentWorkbook,
+  wrappedRowHeight,
+  finishDocumentSheet,
+  setExactQuantity,
+  formatExactDocumentQuantity,
+} from "../documents/documentPresentation";
+
 export function generatedSupplierLabel(row: GeneratedPurchaseReviewRow) {
   if (!row.recommendation) return "Chưa xác định NCC";
   return (
@@ -97,8 +105,12 @@ function prepare(
   sheet.views = [{ state: "frozen", ySplit: 9, showGridLines: false }];
   sheet.pageSetup = {
     paperSize: 9,
-    orientation: "portrait",
-    fitToPage: true,
+    orientation:
+      widths[detail ? 5 : 4]! * (detail ? 2 : 1) > 18
+        ? "landscape"
+        : "portrait",
+    fitToPage: widths[detail ? 5 : 4]! * (detail ? 2 : 1) <= 18,
+    scale: 100,
     fitToWidth: 1,
     fitToHeight: 0,
     margins: {
@@ -215,14 +227,65 @@ export async function createGeneratedPurchaseReviewXlsx(
   }
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Atlas · Thượng Hảo";
+  initializeDocumentWorkbook(workbook, `Bản dự kiến · ${review.service_date}`);
   workbook.title = `Bản dự kiến · ${review.service_date}`;
   const summary = workbook.addWorksheet("Tổng");
   const detail = workbook.addWorksheet("Chi tiết");
-  prepare(summary, [7, 12, 36, 9, 18, 20], review, false);
-  prepare(detail, [15, 13, 8, 34, 11, 12, 12], review, true);
-  const suppliers = groupBy(
+  const totals = groupBy(
     review.rows,
+    (row) =>
+      `${row.recommendation?.supplier_id ?? "unresolved"}:${row.ingredient_id}:${row.unit_id}`,
+  ).map((rows) =>
+    exact(rows.reduce((sum, row) => sum + quantity(row.family_quantity), 0n)),
+  );
+  const quantityWidth = Math.max(
+    10,
+    ...[...totals, ...review.rows.map((row) => row.family_quantity)].map(
+      (value) => formatExactDocumentQuantity(value).text.length * 1.34 + 2,
+    ),
+  );
+  prepare(
+    summary,
+    [
+      7,
+      12,
+      quantityWidth > 18
+        ? Math.max(36, 139 - 7 - 12 - 9 - quantityWidth - 20)
+        : 36 + Math.max(0, 24 - quantityWidth),
+      9,
+      quantityWidth,
+      20,
+    ],
+    review,
+    false,
+  );
+  prepare(
+    detail,
+    [
+      15,
+      13,
+      8,
+      quantityWidth > 18
+        ? Math.max(34, 139 - 47 - quantityWidth)
+        : 34 + Math.max(0, 24 - quantityWidth),
+      11,
+      quantityWidth / 2,
+      quantityWidth / 2,
+    ],
+    review,
+    true,
+  );
+  const suppliers = groupBy(
+    [...review.rows].sort(
+      (a, b) =>
+        (a.recommendation?.supplier_id ?? "").localeCompare(
+          b.recommendation?.supplier_id ?? "",
+        ) ||
+        (a.school_id ?? "").localeCompare(b.school_id ?? "") ||
+        a.delivery_location_id.localeCompare(b.delivery_location_id) ||
+        a.ingredient_id.localeCompare(b.ingredient_id) ||
+        a.unit_id.localeCompare(b.unit_id),
+    ),
     (row) => row.recommendation?.supplier_id ?? "unresolved",
   ).sort((a, b) =>
     generatedSupplierLabel(a[0]!).localeCompare(
@@ -254,20 +317,13 @@ export async function createGeneratedPurchaseReviewXlsx(
       const row = summary.addRow([
         index + 1,
         null,
-        first.ingredient_name,
+        `${first.ingredient_name}\n${supplier}`,
         first.unit_code,
         total,
         null,
       ]);
       border(row, 6, index % 2 === 1);
-      row.getCell(5).alignment = {
-        horizontal: "right",
-        vertical: "middle",
-        wrapText: true,
-      };
-      row.getCell(5).numFmt = "@";
-      row.getCell(5).note =
-        "Exact generated quantity; text preserves six decimal places without Excel rounding.";
+      setExactQuantity(row.getCell(5), total);
     });
     for (const schoolRows of groupBy(
       rows,
@@ -281,7 +337,7 @@ export async function createGeneratedPurchaseReviewXlsx(
       );
       schoolRows.forEach((item, index) => {
         const row = detail.addRow([
-          null,
+          `${item.school_name ?? "Trường chưa xác định"} · ${item.location_name}\n${supplier}`,
           null,
           index + 1,
           item.ingredient_name,
@@ -290,13 +346,14 @@ export async function createGeneratedPurchaseReviewXlsx(
           null,
         ]);
         border(row, 7, index % 2 === 1);
+        detail.mergeCells(row.number, 1, row.number, 2);
         detail.mergeCells(row.number, 6, row.number, 7);
-        row.getCell(6).numFmt = "@";
-        row.getCell(6).alignment = {
-          horizontal: "right",
-          vertical: "middle",
-          wrapText: true,
-        };
+        row.getCell(1).font = { name: "Times New Roman", size: 12 };
+        row.height = Math.max(
+          44,
+          wrappedRowHeight(String(row.getCell(1).value), 28, 12),
+        );
+        setExactQuantity(row.getCell(6), item.family_quantity);
       });
       band(
         detail,
@@ -314,7 +371,23 @@ export async function createGeneratedPurchaseReviewXlsx(
       sheet === summary ? 6 : 7,
       "Người rà soát: ____________________    Ngày: ____________",
     );
-    sheet.pageSetup.printArea = `A1:${end}${sheet.rowCount}`;
+    sheet.eachRow((row, index) => {
+      if (index <= 9) return;
+      let h = row.height ?? 20;
+      row.eachCell((cell) => {
+        if (typeof cell.value === "string")
+          h = Math.max(
+            h,
+            wrappedRowHeight(
+              cell.value,
+              cell.isMerged ? 110 : (sheet.getColumn(cell.col).width ?? 12),
+              14,
+            ),
+          );
+      });
+      row.height = h;
+    });
+    finishDocumentSheet(sheet, end, 9, review.document_label);
   }
   return workbook.xlsx.writeBuffer();
 }

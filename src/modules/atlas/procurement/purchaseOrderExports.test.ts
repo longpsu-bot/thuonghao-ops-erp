@@ -6,9 +6,388 @@ import {
   buildPurchaseOrderPdfDefinition,
   createPurchaseOrderPdf,
   createPurchaseOrderXlsx,
+  createPurchaseOrderZip,
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("sizes long frozen supplier codes using a conservative header width", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    order.current_revision.supplier_document_code_snapshot = "W".repeat(200);
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order));
+    for (const sheet of book.worksheets.filter((s) => s.state === "visible")) {
+      expect(sheet.getCell("A8").text).toContain("W".repeat(200));
+      expect(sheet.getRow(8).height).toBeGreaterThanOrEqual(68);
+    }
+  });
+  it("keeps a bounded long explicit code readable without clipping or repeating quantities", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const code = "W".repeat(200);
+    for (const line of order.lines)
+      line.ingredient_document_code_snapshot = code;
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order, "sum"));
+    const sheet = book.worksheets[0]!;
+    expect(sheet.getColumn(2).hidden).toBe(true);
+    expect(sheet.getCell("B11").text).toBe(code);
+    expect(sheet.getCell("E11").text).toBe("100");
+    const visibleText: string[] = [];
+    sheet.eachRow((row) =>
+      row.eachCell((cell) => {
+        if (!sheet.getColumn(cell.col).hidden) visibleText.push(cell.text);
+      }),
+    );
+    expect(visibleText.join("\n")).not.toContain(code);
+    const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, "sum"));
+    expect(pdf).not.toContain(code);
+  });
+  it("counts and fragments document-code Unicode characters consistently with PostgreSQL", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const code = "A" + "𐐀".repeat(199);
+    for (const line of order.lines)
+      line.ingredient_document_code_snapshot = code;
+    expect(
+      buildPurchaseOrderExportData(order).summaryLines[0]!
+        .ingredientDocumentCode,
+    ).toBe(code);
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order, "sum"));
+    const sheet = book.worksheets[0]!;
+    expect(sheet.getColumn(2).hidden).toBe(true);
+    expect(sheet.getCell("B11").text).toBe(code);
+    expect(Array.from(sheet.getCell("B11").text)).toHaveLength(200);
+    order.lines[0]!.ingredient_document_code_snapshot += "𐐀";
+    expect(() => buildPurchaseOrderExportData(order)).toThrow(
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+    );
+  });
+  it("uses frozen outward codes and labels after current masters change", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    Object.assign(order, { document_snapshot_complete: true });
+    Object.assign(order.current_revision, {
+      supplier_document_code_snapshot: "53",
+    });
+    order.supplier.document_code = "999";
+    for (const line of order.lines) {
+      Object.assign(line, {
+        ingredient_document_code_snapshot: "1082",
+        ingredient_name_snapshot: "Tên A lúc phát hành",
+        unit_code_snapshot: "kg",
+      });
+      line.ingredient.ingredient_name = "Tên B hiện tại";
+      line.unit.unit_code = "đơn vị hiện tại";
+      line.ingredient.document_code = "888";
+    }
+    const data = buildPurchaseOrderExportData(order);
+    expect(data).toMatchObject({
+      supplierDocumentCode: "53",
+      summaryLines: [
+        {
+          ingredientDocumentCode: "1082",
+          ingredientName: "Tên A lúc phát hành",
+          unitCode: "kg",
+        },
+      ],
+    });
+    for (const mode of [
+      "all",
+      "details_ing",
+      "details_school",
+      "sum",
+    ] as const) {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      const visibleText: string[] = [];
+      for (const sheet of workbook.worksheets.filter(
+        (candidate) => candidate.state === "visible",
+      ))
+        sheet.eachRow((row) =>
+          row.eachCell((cell) => {
+            if (!sheet.getColumn(cell.col).hidden) visibleText.push(cell.text);
+          }),
+        );
+      const visible = visibleText.join("\n");
+      expect(visible).toContain("Mã NCC: 53");
+      expect(visible).not.toContain("1082");
+      expect(
+        JSON.stringify(workbook.getWorksheet("_ATLAS_META")!.getSheetValues()),
+      ).toContain("1082");
+      expect(visible).not.toContain("Tên B hiện tại");
+      expect(visible).not.toContain("đơn vị hiện tại");
+      const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, mode));
+      expect(pdf).toContain("Mã NCC: 53");
+      expect(pdf).not.toContain("1082");
+      expect(pdf).toContain("Tên A lúc phát hành");
+      expect(pdf).not.toContain("Tên B hiện tại");
+      expect(pdf).not.toContain("v1-ingredient-");
+    }
+  });
+  it.each([
+    "header-code",
+    "line-code",
+    "line-name",
+    "unit-code",
+    "completeness",
+  ])("fails official regeneration closed for missing %s", async (missing) => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    Object.assign(order, {
+      document_snapshot_complete: missing !== "completeness",
+    });
+    Object.assign(order.current_revision, {
+      supplier_document_code_snapshot: missing === "header-code" ? null : "53",
+    });
+    for (const line of order.lines)
+      Object.assign(line, {
+        ingredient_document_code_snapshot:
+          missing === "line-code" ? null : "1082",
+        ingredient_name_snapshot: missing === "line-name" ? null : "Tên A",
+        unit_code_snapshot: missing === "unit-code" ? null : "kg",
+      });
+    expect(() => buildPurchaseOrderExportData(order)).toThrow(
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+    );
+    for (const mode of [
+      "all",
+      "details_ing",
+      "details_school",
+      "sum",
+    ] as const) {
+      await expect(createPurchaseOrderXlsx(order, mode)).rejects.toThrow(
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+      );
+      await expect(createPurchaseOrderPdf(order, mode)).rejects.toThrow(
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+      );
+      await expect(createPurchaseOrderZip([order], mode)).rejects.toThrow(
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+      );
+    }
+  });
+  it("keeps superseded predecessor business display separate from a replacement's new snapshots", () => {
+    const predecessor =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const before = buildPurchaseOrderExportData(predecessor);
+    const replacement = structuredClone(predecessor);
+    replacement.current_revision.supplier_document_code_snapshot = "NCC-NEW";
+    for (const line of replacement.lines) {
+      line.ingredient_document_code_snapshot = "ITEM-NEW";
+      line.ingredient_name_snapshot = "Tên mới được phát hành";
+      line.unit_code_snapshot = "Hộp";
+    }
+    predecessor.status = "SUPERSEDED";
+    predecessor.replaced_by_purchase_order_id = "replacement-id";
+    const old = buildPurchaseOrderExportData(predecessor);
+    expect(old.summaryLines).toEqual(before.summaryLines);
+    expect(old.schoolLines).toEqual(before.schoolLines);
+    expect(old.supplierDocumentCode).toBe(before.supplierDocumentCode);
+    expect(buildPurchaseOrderExportData(replacement)).toMatchObject({
+      supplierDocumentCode: "NCC-NEW",
+      summaryLines: [
+        {
+          ingredientDocumentCode: "ITEM-NEW",
+          ingredientName: "Tên mới được phát hành",
+          unitCode: "Hộp",
+        },
+      ],
+    });
+  });
+  it.each([
+    "v1-ingredient-1082",
+    "25000000-0000-4000-8000-000000000001",
+    "ITEM\nNEW",
+    "W".repeat(201),
+    " ITEM ",
+    "\u00a0ITEM\u00a0",
+  ])("rejects a technical identity in an official code cell: %s", (code) => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    order.lines[0]!.ingredient_document_code_snapshot = code;
+    expect(() => buildPurchaseOrderExportData(order)).toThrow(
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+    );
+  });
+  it("accounts for whole-word wrapping of wide supplier instructions", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const note = "WWWWWWWWWWW ".repeat(41) + "WWWWWWWW";
+    expect(note).toHaveLength(500);
+    order.lines[0]!.supplier_note = note;
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order, "sum"));
+    const fragments: string[] = [];
+    book.worksheets[0]!.eachRow((row, index) => {
+      if (index <= 10 || !row.getCell(6).text) return;
+      const fragment = row.getCell(6).text;
+      fragments.push(fragment);
+      // Each 11-W word is about125pt; two cannot share this physical note column.
+      const words = fragment
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length >= 8).length;
+      expect(row.height).toBeGreaterThanOrEqual(8 + words * 15);
+      expect(row.height).toBeLessThanOrEqual(180);
+    });
+    expect(fragments.join("")).toBe(note);
+  });
+  it.each(["details_school", "details_ing", "sum"] as const)(
+    "gives continuous wide 500-character notes enough native print height in %s",
+    async (mode) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      // Native TNR12 'W' is 11.33pt; a 32-character Excel column admits
+      // at most 14 of them per line after padding. Average-glyph estimates clip.
+      const note = "W".repeat(500);
+      order.lines[0]!.supplier_note = note;
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      const notes: string[] = [];
+      const quantities: string[] = [];
+      book.worksheets[0]!.eachRow((row, index) => {
+        if (index <= (mode === "sum" ? 10 : 9) || row.getCell(1).isMerged)
+          return;
+        if (row.getCell(6).text) {
+          const fragment = row.getCell(6).text;
+          notes.push(fragment);
+          expect(row.height).toBeGreaterThanOrEqual(
+            8 + Math.ceil(fragment.length / 14) * 15,
+          );
+          expect(row.height).toBeLessThanOrEqual(180);
+        }
+        if (row.getCell(5).text) quantities.push(row.getCell(5).text);
+      });
+      expect(notes.join("")).toBe(note);
+      expect(quantities).toEqual(["60", "40"]);
+    },
+  );
+  it("uses frozen School cooking bands and a real note column in every detail mode", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    for (const line of order.lines) {
+      Object.assign(line.school_breakdown[0]!, {
+        cooking_group_id: "captured-group-x",
+        cooking_group_name: "Bếp X lúc phát hành",
+      });
+    }
+    order.lines[0]!.supplier_note = "Giao trước 05:30\nĐóng gói riêng";
+    order.current_revision.reason_note = "Lý do nội bộ không phải ghi chú NCC";
+    for (const mode of ["all", "details_school", "details_ing"] as const) {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      for (const sheet of workbook.worksheets.filter(
+        (s) => s.state === "visible" && !s.name.endsWith("Tổng"),
+      )) {
+        expect(sheet.getCell("F9").value).toBe("Ghi chú");
+        expect(sheet.getCell("F11").value).toBe(
+          "Giao trước 05:30\nĐóng gói riêng",
+        );
+        expect(sheet.getColumn(6).width).toBeGreaterThanOrEqual(28);
+        expect(JSON.stringify(sheet.getSheetValues())).toContain(
+          "NẤU TẠI: Bếp X lúc phát hành",
+        );
+        expect(sheet.pageSetup.orientation).toBe("portrait");
+      }
+      const schoolSheet = workbook.worksheets.find((s) =>
+        s.name.endsWith("Theo trường"),
+      );
+      if (schoolSheet) {
+        expect((schoolSheet.getRow(9).values as unknown[]).slice(0, 7)).toEqual(
+          [
+            undefined,
+            "STT",
+            "Mã hàng",
+            "Tên hàng",
+            "Đơn vị",
+            "Số lượng",
+            "Ghi chú",
+          ],
+        );
+        expect(schoolSheet.getCell("A10").text).toContain(
+          "TRƯỜNG: Trường Nguyễn Du",
+        );
+        expect(schoolSheet.getCell("C11").text).toBe("Gạo thơm");
+        expect(schoolSheet.getCell("A13").text).toContain(
+          "TRƯỜNG: Trường Trần Quốc Toản",
+        );
+        expect(schoolSheet.getCell("F14").text).toBe("");
+      }
+      const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, mode));
+      expect(pdf).toContain("NẤU TẠI: Bếp X lúc phát hành");
+      expect(pdf).toContain("Giao trước 05:30\\nĐóng gói riêng");
+      expect(pdf).not.toContain("Lý do nội bộ");
+    }
+  });
+
+  it.each([
+    {},
+    { cooking_group_id: null, cooking_group_name: null },
+    { cooking_group_name: "Tên chưa có authority" },
+  ])(
+    "prints an ordinary School without inferring cooking context from %j",
+    async (group) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      Object.assign(order.lines[0]!.school_breakdown[0]!, group);
+      order.lines[0]!.school_breakdown[0]!.delivery_location_name =
+        "Bếp theo tên điểm giao";
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(
+        await createPurchaseOrderXlsx(order, "details_school"),
+      );
+      const text = JSON.stringify(book.worksheets[0]!.getSheetValues());
+      expect(text).toContain("TRƯỜNG: Trường Nguyễn Du");
+      expect(text).not.toContain("NẤU TẠI:");
+      expect(
+        JSON.stringify(
+          buildPurchaseOrderPdfDefinition(order, "details_school"),
+        ),
+      ).not.toContain("NẤU TẠI:");
+    },
+  );
+
+  it.each(["details_school", "details_ing", "sum"] as const)(
+    "retains a 500-character multiline historical note in %s cells without repeating quantities",
+    async (mode) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      order.status = "SUPERSEDED";
+      const note = "a\n".repeat(240) + "END" + "z".repeat(17);
+      expect(note).toHaveLength(500);
+      order.lines[0]!.supplier_note = note;
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      const sheet = book.worksheets[0]!;
+      const fragments: string[] = [];
+      const quantities: string[] = [];
+      sheet.eachRow((row, index) => {
+        if (index > (mode === "sum" ? 10 : 9) && !row.getCell(1).isMerged) {
+          if (row.getCell(6).text) {
+            fragments.push(row.getCell(6).text);
+            expect(row.height).toBeLessThanOrEqual(180);
+          }
+          if (row.getCell(5).text) quantities.push(row.getCell(5).text);
+        }
+      });
+      expect(fragments.join("")).toBe(note);
+      expect(quantities).toEqual(["60", "40"]);
+      const pdf = buildPurchaseOrderPdfDefinition(order, mode);
+      const tables = (
+        pdf.content as { table?: { body: unknown[][] } }[]
+      ).flatMap((item) => (item.table ? [item.table] : []));
+      expect(
+        tables
+          .flatMap((table) =>
+            table.body.slice(mode === "sum" ? 1 : 2).map((row) => row.at(-1)),
+          )
+          .filter((cell) => typeof cell === "string")
+          .join(""),
+      ).toBe(note);
+    },
+  );
   it("keeps distinct line notes with their exact quantities in XLSX and PDF", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
@@ -22,15 +401,18 @@ describe("released purchase-order exports", () => {
     ]);
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
-    expect(workbook.getWorksheet("Tổng")!.getCell("E7").value).toBe("Ghi chú");
-    expect(workbook.getWorksheet("Tổng")!.getCell("E8").value).toBe(
-      "Loại 500g/gói",
-    );
-    expect(workbook.getWorksheet("Tổng")!.getCell("E9").value).toBe(
-      "Giao trước 05:30",
-    );
     expect(
-      workbook.getWorksheet("Tổng")!.getCell("E8").alignment?.wrapText,
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F10").value,
+    ).toBe("Ghi chú");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F11").value,
+    ).toBe("Loại 500g/gói");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F12").value,
+    ).toBe("Giao trước 05:30");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F11").alignment
+        ?.wrapText,
     ).toBe(true);
     const definition = buildPurchaseOrderPdfDefinition(order);
     expect(JSON.stringify(definition)).toContain("Giao trước 05:30");
@@ -42,7 +424,7 @@ describe("released purchase-order exports", () => {
     order.current_revision.supplier_name_snapshot = "NCC An Phú lúc phát hành";
     const data = buildPurchaseOrderExportData(order);
 
-    expect(data).toEqual({
+    expect(data).toMatchObject({
       documentNumber: "PO-20260902-2500000000004000",
       supplierName: "NCC An Phú lúc phát hành",
       serviceDate: "02/09/2026",
@@ -105,10 +487,10 @@ describe("released purchase-order exports", () => {
     expect(serialized).toContain("02/09/2026");
     expect(serialized).toContain("Gạo thơm");
     expect(serialized).toContain("Trường Nguyễn Du");
-    expect(serialized).toContain("60.000000");
+    expect(serialized).toContain('"text":"60"');
   });
 
-  it("creates the default three-sheet PO workbook with exact numeric quantities", async () => {
+  it("creates the default three-sheet PO workbook with exact text quantities", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
     order.supplier.supplier_name = "Tên NCC hiện tại đã đổi";
@@ -117,65 +499,81 @@ describe("released purchase-order exports", () => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(bytes);
 
-    expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
-      "Tổng",
-      "Theo trường",
-      "Theo hàng",
+    expect(
+      workbook.worksheets
+        .filter((s) => s.state === "visible")
+        .map((sheet) => sheet.name),
+    ).toEqual([
+      "02-09-2026 - Theo hàng",
+      "02-09-2026 - Theo trường",
+      "02-09-2026 - Tổng",
     ]);
     const summaryText = JSON.stringify(
-      workbook.getWorksheet("Tổng")!.getSheetValues(),
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getSheetValues(),
     );
     const schoolText = JSON.stringify(
-      workbook.getWorksheet("Theo trường")!.getSheetValues(),
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getSheetValues(),
     );
     const ingredientText = JSON.stringify(
-      workbook.getWorksheet("Theo hàng")!.getSheetValues(),
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getSheetValues(),
     );
     expect(summaryText).toContain("PHIẾU ĐẶT HÀNG");
     expect(summaryText).toContain("PO-20260902-2500000000004000");
     expect(summaryText).toContain("NCC An Phú lúc phát hành");
     expect(summaryText).not.toContain("Tên NCC hiện tại đã đổi");
     expect(summaryText).toContain("02/09/2026");
-    expect(summaryText).not.toContain("Mã hàng");
-    expect(summaryText).not.toContain("Mã NCC");
+    expect(summaryText).toContain("1082");
+    expect(summaryText).toContain("Mã NCC: 53");
+    expect(summaryText).not.toContain("chưa lưu mã");
     expect(schoolText).toContain("Trường Nguyễn Du");
     expect(ingredientText).toContain("Trường Trần Quốc Toản");
-    expect(workbook.getWorksheet("Tổng")!.getCell("D8").value).toBe(100);
-    expect(workbook.getWorksheet("Theo trường")!.getCell("A10").value).toBe(
-      "Trường Nguyễn Du",
-    );
-    expect(workbook.getWorksheet("Theo trường")!.model.merges).toContain(
-      "A10:B10",
-    );
-    expect(workbook.getWorksheet("Theo trường")!.model.merges).toContain(
-      "F10:G10",
-    );
-    expect(workbook.getWorksheet("Theo trường")!.getCell("A11").value).toBe(
-      "Trường Trần Quốc Toản",
-    );
-    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(60);
     expect(
-      workbook.getWorksheet("Theo trường")!.getCell("F10").numFmt ?? "General",
-    ).toBe("General");
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("E11").value,
+    ).toBe("100");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A10").value,
+    ).toContain("Trường Nguyễn Du");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.model.merges,
+    ).toContain("A10:F10");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.model.merges,
+    ).not.toContain("E11:F11");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A13").value,
+    ).toContain("Trường Trần Quốc Toản");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11").value,
+    ).toBe("60");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11")
+        .numFmt ?? "General",
+    ).toBe("@");
     expect(workbook.model.media).toHaveLength(1);
     expect(
-      workbook.getWorksheet("Theo trường")!.getCell("A9").fill,
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A9").fill,
     ).toMatchObject({
       type: "pattern",
       pattern: "solid",
     });
-    expect(workbook.getWorksheet("Theo hàng")!.getCell("A10").value).toBe(
-      "Gạo thơm",
-    );
-    expect(workbook.getWorksheet("Theo hàng")!.model.merges).toContain(
-      "A10:B10",
-    );
-    expect(workbook.getWorksheet("Theo hàng")!.getCell("A11").value).toBeNull();
-    expect(workbook.getWorksheet("Theo hàng")!.getRow(10).height).toBe(30);
-    expect(workbook.getWorksheet("Tổng")!.views[0]?.showGridLines).toBe(false);
-    expect(workbook.getWorksheet("Tổng")!.pageSetup.orientation).toBe(
-      "portrait",
-    );
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("A10").value,
+    ).toBe("Gạo thơm (kg)");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.model.merges,
+    ).toContain("A10:F10");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getCell("C11").value,
+    ).toContain("Trường Nguyễn Du");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo hàng")!.getRow(10).height,
+    ).toBeGreaterThanOrEqual(24);
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.views[0]?.showGridLines,
+    ).toBe(false);
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.pageSetup.orientation,
+    ).toBe("portrait");
   });
 
   it("retains unsafe exact XLSX quantities as text instead of losing precision", async () => {
@@ -190,12 +588,12 @@ describe("released purchase-order exports", () => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
 
-    expect(workbook.getWorksheet("Tổng")!.getCell("D8").value).toBe(
-      "9007199254740993.123456",
-    );
-    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(
-      "9007199254740992.123455",
-    );
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("E11").value,
+    ).toBe("9007199254740993.123456");
+    expect(
+      workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11").value,
+    ).toBe("9007199254740992.123455");
   });
 
   it("creates an actual PDF document from the same released snapshot", async () => {
@@ -213,16 +611,29 @@ describe("released purchase-order exports", () => {
     order.lines[0]!.supplier_note = "Giao trước 05:30; ".repeat(20).trim();
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
-    expect(workbook.getWorksheet("Tổng")!.getCell("E8").value).toBe(
-      order.lines[0]!.supplier_note,
+    const notes: string[] = [];
+    workbook.getWorksheet("02-09-2026 - Tổng")!.eachRow((row, n) => {
+      if (n >= 11 && typeof row.getCell(6).value === "string")
+        notes.push(row.getCell(6).value as string);
+    });
+    expect(notes.join("")).toBe(order.lines[0]!.supplier_note);
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getCell("F11").alignment
+        ?.wrapText,
+    ).toBe(true);
+    expect(
+      workbook.getWorksheet("02-09-2026 - Tổng")!.getRow(11).height,
+    ).toBeGreaterThan(18);
+    const pdf = buildPurchaseOrderPdfDefinition(order, "sum");
+    const tables = (pdf.content as { table?: { body: unknown[][] } }[]).filter(
+      (item) => item.table,
     );
     expect(
-      workbook.getWorksheet("Tổng")!.getCell("E8").alignment?.wrapText,
-    ).toBe(true);
-    expect(workbook.getWorksheet("Tổng")!.getRow(8).height).toBeGreaterThan(18);
-    expect(JSON.stringify(buildPurchaseOrderPdfDefinition(order))).toContain(
-      order.lines[0]!.supplier_note,
-    );
+      tables[0]!
+        .table!.body.slice(1)
+        .map((row) => row.at(-1))
+        .join(""),
+    ).toBe(order.lines[0]!.supplier_note);
     expect(
       new TextDecoder().decode(
         (await createPurchaseOrderPdf(order)).slice(0, 5),
@@ -250,10 +661,10 @@ describe("released purchase-order exports", () => {
     order.current_revision.supplier_name_snapshot = null;
 
     expect(() => buildPurchaseOrderExportData(order)).toThrow(
-      /supplier snapshot/i,
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
     );
     await expect(createPurchaseOrderXlsx(order)).rejects.toThrow(
-      /supplier snapshot/i,
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
     );
   });
 });

@@ -1,0 +1,298 @@
+[
+  {
+    "revision": "v1-revision/owner-reference-print",
+    "file": "3F_20-04-2026_ALL_GROUPED-sheet-1.pdf",
+    "pages": 2,
+    "fontSizes": {
+      "15.72": 18,
+      "13.68": 99,
+      "11.76": 4,
+      "19.56": 2
+    },
+    "quantitySamples": [["375", 13.68]]
+  },
+  {
+    "revision": "v1-revision/owner-reference-print",
+    "file": "3F_20-04-2026_ALL_GROUPED-sheet-2.pdf",
+    "pages": 3,
+    "fontSizes": {
+      "15.72": 27,
+      "13.68": 113,
+      "11.76": 6,
+      "19.56": 3
+    },
+    "quantitySamples": [["375", 13.68]]
+  },
+  {
+    "revision": "v1-revision/owner-reference-print",
+    "file": "3F_20-04-2026_ALL_GROUPED-sheet-3.pdf",
+    "pages": 1,
+    "fontSizes": {
+      "15.96": 11,
+      "14.04": 16,
+      "12.0": 3,
+      "20.04": 1
+    },
+    "quantitySamples": [["375", 14.04]]
+  },
+  {
+    "revision": "v1-revision/owner-reference-print",
+    "file": "Dispatch_GROUPED_20-04-2026-sheet-1.pdf",
+    "pages": 2,
+    "fontSizes": {
+      "15.0": 90,
+      "13.2": 2,
+      "11.28": 2,
+      "18.84": 2
+    },
+    "quantitySamples": [
+      ["560", 15.0],
+      ["560", 15.0]
+    ]
+  },
+  {
+    "revision": "quantity-precision",
+    "file": "V1-equivalent-3F-sum.pdf",
+    "pages": 1,
+    "fontSizes": {
+      "11.0": 1,
+      "9.0": 4,
+      "18.0": 1,
+      "12.0": 1,
+      "10.0": 23,
+      "8.0": 2
+    },
+    "quantitySamples": [
+      ["375", 10.0],
+      ["39.7", 10.0]
+    ]
+  },
+  {
+    "revision": "quantity-precision",
+    "file": "V1-equivalent-3F-details_ing.pdf",
+    "pages": 1,
+    "fontSizes": {
+      "11.0": 1,
+      "9.0": 3,
+      "18.0": 1,
+      "12.0": 1,
+      "10.0": 113,
+      "8.0": 2
+    },
+    "quantitySamples": [["375", 10.0]]
+  },
+  {
+    "revision": "quantity-precision",
+    "file": "V1-equivalent-3F-details_school.pdf",
+    "pages": 2,
+    "fontSizes": {
+      "11.0": 1,
+      "9.0": 3,
+      "18.0": 1,
+      "12.0": 1,
+      "10.0": 183,
+      "8.0": 4
+    },
+    "quantitySamples": [["375", 10.0]]
+  },
+  {
+    "revision": "quantity-precision",
+    "file": "V1-equivalent-PXK-13.pdf",
+    "pages": 1,
+    "fontSizes": {
+      "13.0": 1,
+      "10.0": 1,
+      "18.0": 1,
+      "11.0": 61,
+      "9.0": 2,
+      "12.0": 13,
+      "8.0": 2
+    },
+    "quantitySamples": [
+      ["560", 12.0],
+      ["560", 12.0]
+    ]
+  },
+  {
+    "revision": "quantity-precision",
+    "file": "native-qa/V1-equivalent-3F-sum-sheet-1.pdf",
+    "pages": 1,
+    "fontSizes": {
+      "12.0": 9,
+      "14.04": 20,
+      "9.96": 1,
+      "20.04": 1,
+      "9.0": 1,
+      "11.04": 2
+    },
+    "quantitySamples": [
+      ["375", 12.0],
+      ["39.7", 12.0]
+    ]
+  },
+  {
+    "revision": "quantity-precision",
+    "file": "native-qa/V1-equivalent-3F-details_ing-sheet-1.pdf",
+    "pages": 2,
+    "fontSizes": {
+      "11.4": 31,
+      "13.32": 110,
+      "8.52": 2,
+      "18.96": 2,
+      "10.44": 4
+    },
+    "quantitySamples": [["375", 11.4]]
+  },
+  {
+    "revision": "quantity-precision",
+    "file": "native-qa/V1-equivalent-3F-details_school-sheet-1.pdf",
+    "pages": 3,
+    "fontSizes": {
+      "11.4": 35,
+      "13.32": 129,
+      "8.52": 3,
+      "18.96": 3,
+      "10.44": 6
+    },
+    "quantitySamples": [["375", 11.4]]
+  },
+  {
+    "revision": "quantity-precision",
+    "file": "native-qa/V1-equivalent-PXK-13-sheet-1.pdf",
+    "pages": 2,
+    "fontSizes": {
+      "11.04": 21,
+      "12.96": 84,
+      "10.08": 8,
+      "18.36": 2
+    },
+    "quantitySamples": [
+      ["560", 11.04],
+      ["560", 11.04]
+    ]
+  },
+  {
+    "revision": "font-legibility",
+    "file": "V1-equivalent-3F-sum.pdf",
+    "pages": 1,
+    "fontSizes": {
+      "14.0": 19,
+      "12.0": 1,
+      "20.0": 1,
+      "11.0": 3,
+      "16.0": 10,
+      "8.0": 2
+    },
+    "quantitySamples": [
+      ["375", 14.0],
+      ["39.7", 14.0]
+    ]
+  },
+  {
+    "revision": "font-legibility",
+    "file": "V1-equivalent-3F-details_ing.pdf",
+    "pages": 2,
+    "fontSizes": {
+      "14.0": 100,
+      "12.0": 1,
+      "20.0": 1,
+      "11.0": 2,
+      "16.0": 35,
+      "8.0": 4
+    },
+    "quantitySamples": [["375", 14.0]]
+  },
+  {
+    "revision": "font-legibility",
+    "file": "V1-equivalent-3F-details_school.pdf",
+    "pages": 3,
+    "fontSizes": {
+      "14.0": 113,
+      "12.0": 1,
+      "20.0": 1,
+      "11.0": 2,
+      "16.0": 126,
+      "8.0": 6
+    },
+    "quantitySamples": [["375", 14.0]]
+  },
+  {
+    "revision": "font-legibility",
+    "file": "V1-equivalent-PXK-13.pdf",
+    "pages": 1,
+    "fontSizes": {
+      "14.0": 1,
+      "12.0": 1,
+      "18.0": 1,
+      "15.0": 76,
+      "11.0": 2,
+      "8.0": 2
+    },
+    "quantitySamples": [
+      ["560", 15.0],
+      ["560", 15.0]
+    ]
+  },
+  {
+    "revision": "font-legibility",
+    "file": "native-qa/V1-equivalent-3F-sum-sheet-1.pdf",
+    "pages": 1,
+    "fontSizes": {
+      "12.0": 5,
+      "15.96": 8,
+      "14.04": 17,
+      "9.96": 1,
+      "20.04": 1,
+      "9.0": 1,
+      "11.04": 2
+    },
+    "quantitySamples": [
+      ["375", 14.04],
+      ["39.7", 14.04]
+    ]
+  },
+  {
+    "revision": "font-legibility",
+    "file": "native-qa/V1-equivalent-3F-details_ing-sheet-1.pdf",
+    "pages": 2,
+    "fontSizes": {
+      "11.4": 8,
+      "15.24": 10,
+      "13.32": 123,
+      "8.52": 2,
+      "18.96": 2,
+      "10.44": 4
+    },
+    "quantitySamples": [["375", 13.32]]
+  },
+  {
+    "revision": "font-legibility",
+    "file": "native-qa/V1-equivalent-3F-details_school-sheet-1.pdf",
+    "pages": 3,
+    "fontSizes": {
+      "11.4": 12,
+      "15.24": 15,
+      "13.32": 136,
+      "8.52": 3,
+      "18.96": 3,
+      "10.44": 6
+    },
+    "quantitySamples": [["375", 13.32]]
+  },
+  {
+    "revision": "font-legibility",
+    "file": "native-qa/V1-equivalent-PXK-13-sheet-1.pdf",
+    "pages": 2,
+    "fontSizes": {
+      "11.04": 8,
+      "14.76": 91,
+      "12.96": 6,
+      "10.08": 8,
+      "18.36": 2
+    },
+    "quantitySamples": [
+      ["560", 14.76],
+      ["560", 14.76]
+    ]
+  }
+]

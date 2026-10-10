@@ -1,4 +1,8 @@
 const reasonLabels: Record<string, string> = {
+  PO_DOCUMENT_CODE_REQUIRED:
+    "Bổ sung mã hàng và mã NCC trên chứng từ trong Dữ liệu gốc trước khi phát hành.",
+  PO_DOCUMENT_SNAPSHOT_INCOMPLETE:
+    "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
   STALE_VERSION: "Dữ liệu đã thay đổi; hãy tải lại trước khi tiếp tục.",
   SOURCE_CHANGED: "Nhu cầu nguồn đã thay đổi; hãy tải lại và kiểm tra phân bổ.",
   ALLOCATION_IMBALANCED: "Tổng phân bổ chưa khớp nhu cầu.",

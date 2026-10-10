@@ -1,0 +1,434 @@
+{
+  "migrations": [
+    {
+      "name": "pa_04_supplier_direct_slice_1_foundation",
+      "version": "20260715052252"
+    },
+    {
+      "name": "pa_05b_supplier_direct_command_subset",
+      "version": "20260715105918"
+    },
+    {
+      "name": "pa_05c_authorized_read_api_wrappers",
+      "version": "20260715130617"
+    },
+    {
+      "name": "pa_05b_h1_runtime_role_hardening",
+      "version": "20260715144830"
+    },
+    {
+      "name": "pa_05d_planning_command_family",
+      "version": "20260715163344"
+    },
+    {
+      "name": "pa_05e_procurement_command_family",
+      "version": "20260716023909"
+    },
+    {
+      "name": "pa_05b_h2_multiline_dispatch_execution",
+      "version": "20260716054358"
+    },
+    {
+      "name": "pa_05f_dispatch_setup_command_family",
+      "version": "20260716084258"
+    },
+    {
+      "name": "pa_05b_h3_successful_trip_closure",
+      "version": "20260717021808"
+    },
+    {
+      "name": "pa_05c_h2_current_command_timeline_scope",
+      "version": "20260717042323"
+    },
+    {
+      "name": "pa_05c_h3_evidence_readiness_current_command_context",
+      "version": "20260718084742"
+    },
+    {
+      "name": "pa_06e_h0a1_school_customer_location_foundation",
+      "version": "20260719115318"
+    },
+    {
+      "name": "pa_06e_h0a2_recipe_bom_immutable_reference_foundation",
+      "version": "20260719140821"
+    },
+    {
+      "name": "pa_06e_h0a3a_weekly_menu_persistence_foundation",
+      "version": "20260719165444"
+    },
+    {
+      "name": "pa_06e_h0a3b_attendance_persistence_foundation",
+      "version": "20260720051142"
+    },
+    {
+      "name": "pa_06e_h0a4b_planning_input_readiness_persistence",
+      "version": "20260720135755"
+    },
+    {
+      "name": "pa_06e_h0a5b_need_generation_persistence",
+      "version": "20260721070121"
+    },
+    {
+      "name": "pa_06e_h0b1b_confirmed_need_persistence",
+      "version": "20260722041540"
+    },
+    {
+      "name": "pa_06e_h0cb_confirmed_need_materialization_command",
+      "version": "20260722144050"
+    },
+    {
+      "name": "pa_06e_h1a_planning_quantity_policy_persistence",
+      "version": "20260725204120"
+    },
+    {
+      "name": "pa_06e_h1b1_policy_bound_line_decision_persistence",
+      "version": "20260726115324"
+    },
+    {
+      "name": "rmvp_01_atlas_master_data",
+      "version": "20260726160315"
+    },
+    {
+      "name": "rmvp_02a_connected_recipes_bom",
+      "version": "20260727090000"
+    },
+    {
+      "name": "rmvp_02b_recipe_adjustments_effective_bom",
+      "version": "20260727120000"
+    },
+    {
+      "name": "rmvp_03a_connected_weekly_menu_attendance",
+      "version": "20260727150000"
+    },
+    {
+      "name": "pantry_02_connected_pantry_source",
+      "version": "20260729032653"
+    },
+    {
+      "name": "pantry_rdy_02_readiness_persistence",
+      "version": "20260730231951"
+    },
+    {
+      "name": "rmvp_03b_connected_planning_input_readiness",
+      "version": "20260731212845"
+    },
+    {
+      "name": "pantry_ng_02_direct_ingredient_persistence_materialization",
+      "version": "20260802090000"
+    },
+    {
+      "name": "rmvp_04_connected_need_generation",
+      "version": "20260802164523"
+    },
+    {
+      "name": "rmvp_05_connected_confirmed_need_review",
+      "version": "20260803102941"
+    },
+    {
+      "name": "rmvp_06_connected_confirmed_need_validation",
+      "version": "20260804073753"
+    },
+    {
+      "name": "rmvp_07_connected_confirmed_need_approval_release",
+      "version": "20260805202517"
+    },
+    {
+      "name": "planning_contract_01_atomic_planning_boundaries",
+      "version": "20260809120000"
+    },
+    {
+      "name": "confirmed_need_save_release_boundary",
+      "version": "20260811011339"
+    },
+    {
+      "name": "ui_quality_03a_recipe_lock_forward",
+      "version": "20260811064000"
+    },
+    {
+      "name": "ui_quality_03a_recipe_workflow",
+      "version": "20260811064724"
+    },
+    {
+      "name": "ui_quality_03b_recipe_adjustment_operator_workbench",
+      "version": "20260814010928"
+    },
+    {
+      "name": "ui_quality_03b_recipe_adjustment_corrections",
+      "version": "20260814045038"
+    },
+    {
+      "name": "ui_quality_03b_derived_ingredient_units",
+      "version": "20260814152310"
+    },
+    {
+      "name": "ui_quality_03c_a_school_defaults_bulk_editor",
+      "version": "20260814205439"
+    },
+    {
+      "name": "ui_quality_03c_b_authoritative_ingredient_catalogs",
+      "version": "20260815165003"
+    },
+    {
+      "name": "planning_contract_02a_recipe_replacement_evidence",
+      "version": "20260817025156"
+    },
+    {
+      "name": "planning_contract_02b_selective_confirmation_continuity",
+      "version": "20260817045218"
+    },
+    {
+      "name": "issue_213_recipe_save_activates_new_dish",
+      "version": "20260821150043"
+    },
+    {
+      "name": "issue_213_preserve_dish_activation_invariants",
+      "version": "20260821160145"
+    },
+    {
+      "name": "fix_planning_command_clock_skew",
+      "version": "20260822060130"
+    },
+    {
+      "name": "issue_223_daily_need_generation",
+      "version": "20260823033440"
+    },
+    {
+      "name": "issue_223_legacy_overlap_guard",
+      "version": "20260823055452"
+    },
+    {
+      "name": "issue_222_closed_loop_planning_corrections",
+      "version": "20260823090858"
+    },
+    {
+      "name": "daily_need_empty_source_preflight",
+      "version": "20260826011050"
+    },
+    {
+      "name": "school_catering_handoff_allocation",
+      "version": "20260831090000"
+    },
+    {
+      "name": "school_catering_purchase_orders",
+      "version": "20260831120000"
+    },
+    {
+      "name": "procurement_connected_contract_hardening",
+      "version": "20260901181519"
+    },
+    {
+      "name": "purchase_review_confirm_release",
+      "version": "20260903072648"
+    },
+    {
+      "name": "atlas_dish_creation_defaults",
+      "version": "20260904042117"
+    },
+    {
+      "name": "fix_rmvp_02b_command_clock_skew",
+      "version": "20260904071803"
+    },
+    {
+      "name": "master_data_creation_ux_02",
+      "version": "20260904081048"
+    },
+    {
+      "name": "recipe_effective_contract_01",
+      "version": "20260905105253"
+    },
+    {
+      "name": "recipe_effective_product_model_correction",
+      "version": "20260905161348"
+    },
+    {
+      "name": "recipe_active_on_create_lifecycle_correction",
+      "version": "20260906000923"
+    },
+    {
+      "name": "recipe_system_command_context_01",
+      "version": "20260906085653"
+    },
+    {
+      "name": "recipe_legacy_issuance_read_01",
+      "version": "20260906105509"
+    },
+    {
+      "name": "direct_need_school_date_mode",
+      "version": "20260907090000"
+    },
+    {
+      "name": "school_need_downstream_correction",
+      "version": "20260907110000"
+    },
+    {
+      "name": "school_catering_po_replacement",
+      "version": "20260907120000"
+    },
+    {
+      "name": "school_dispatch_release",
+      "version": "20260907130000"
+    },
+    {
+      "name": "school_fulfilment_reconciliation",
+      "version": "20260907140000"
+    },
+    {
+      "name": "pantry_v3_approved_replacement_preview_gate",
+      "version": "20260908000508"
+    },
+    {
+      "name": "scenario_b_procurement_contract_repair",
+      "version": "20260908142935"
+    },
+    {
+      "name": "scenario_c_confirmed_need_write_certainty_message",
+      "version": "20260908154640"
+    },
+    {
+      "name": "purchase_preparation_replacement_frontier",
+      "version": "20260908225248"
+    },
+    {
+      "name": "atlas_document_output_snapshots",
+      "version": "20260914105238"
+    },
+    {
+      "name": "master_data_rehearsal_import",
+      "version": "20260915153000"
+    },
+    {
+      "name": "master_data_rehearsal_recipe_import",
+      "version": "20260915160000"
+    },
+    {
+      "name": "master_data_rehearsal_school_optional_fields",
+      "version": "20260916010000"
+    },
+    {
+      "name": "master_data_owner_reviewed_resolutions",
+      "version": "20260916023500"
+    },
+    {
+      "name": "staging_master_reference_adoption",
+      "version": "20260916050000"
+    },
+    {
+      "name": "master_import_apply_invariant_alignment",
+      "version": "20260916070000"
+    },
+    {
+      "name": "weekly_menu_snapshot_integrity_scale",
+      "version": "20260917060426"
+    },
+    {
+      "name": "need_generation_integrity_scale",
+      "version": "20260918012128"
+    },
+    {
+      "name": "confirmed_need_partition_lookup_indexes",
+      "version": "20260918064938"
+    },
+    {
+      "name": "stabilize_need_generation_generic_plans",
+      "version": "20260920154302"
+    },
+    {
+      "name": "planning_operational_proposal",
+      "version": "20260923041223"
+    },
+    {
+      "name": "planning_legacy_adoption_unit_repair",
+      "version": "20260924030542"
+    },
+    {
+      "name": "planning_generation_tail_latency_02",
+      "version": "20260925015857"
+    },
+    {
+      "name": "planning_d047_current_source_regeneration",
+      "version": "20260926043448"
+    },
+    {
+      "name": "planning_final_closeout_completion",
+      "version": "20260926071101"
+    },
+    {
+      "name": "menu_slot_dish_decoupling",
+      "version": "20261001081941"
+    },
+    {
+      "name": "procurement_supplier_line_note",
+      "version": "20261001094403"
+    },
+    {
+      "name": "atlas_shopping_list_export_read",
+      "version": "20261005032608"
+    },
+    {
+      "name": "atlas_recipe_purchase_unit_read",
+      "version": "20261006112515"
+    },
+    {
+      "name": "atlas_backend_convergence_02b_helpers",
+      "version": "20261008015308"
+    },
+    {
+      "name": "atlas_backend_convergence_02b_allocation",
+      "version": "20261008015340"
+    },
+    {
+      "name": "atlas_school_cooking_groups",
+      "version": "20261009075715"
+    },
+    {
+      "name": "atlas_po_document_identity",
+      "version": "20261009105641"
+    }
+  ],
+  "bootstrap": {
+    "project": "atlas-document-system-360-cooking",
+    "reset_exit": 0,
+    "seeds_enabled": false,
+    "command": "supabase db reset --local --no-seed"
+  },
+  "catalog_sha256": "5ec051f92d77b645b6697b7642b0525535c35ba209d3632066ec0e7c011af609",
+  "additional_catalog": {
+    "views": {
+      "count": 2,
+      "sha256": "0c620443c8d269df8402b12911926bf05b61b75abf2830976d43bc1137d19be2"
+    },
+    "columns": {
+      "count": 1409,
+      "sha256": "c1cd9e37956cb1a389c493758cf0e06ea6a230afc4747906ac534b1de62f996a"
+    },
+    "schemas": {
+      "count": 10,
+      "sha256": "e08b6585b1d053dc32a558ba13e003560acbc88ee92e02909e380445f1ddfcd9"
+    },
+    "triggers": {
+      "count": 120,
+      "sha256": "12f073eb23b69984e80d332c69f22652f0a53fa278e6b3e575d96f51d272d4da"
+    },
+    "constraints": {
+      "count": 1258,
+      "sha256": "ba14d570aa9df4b50495cb1605c50a173fc448f9829c862e06443e672b404bf8"
+    },
+    "default_acls": {
+      "count": 0,
+      "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    "role_memberships": {
+      "count": 19,
+      "sha256": "e45c81f33bd85a0356fe87b8efaf662e4063524f61c5b9d709b2a0e4ad0d64ee"
+    }
+  },
+  "catalog_verifier": "PASS",
+  "suites": [
+    {
+      "suite": "need_generation_operational_scale.sql",
+      "exit": 1,
+      "plan": "1..42",
+      "assertions_sha256": "0de16fa8623a69ccf65453cdc1d553fb581512a15c14a8a3e0bdb0d04a095a0b"
+    }
+  ]
+}

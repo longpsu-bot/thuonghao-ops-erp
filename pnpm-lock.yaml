@@ -35,6 +35,9 @@ importers:
       exceljs:
         specifier: 4.4.0
         version: 4.4.0
+      jszip:
+        specifier: 3.10.1
+        version: 3.10.1
       pdfmake:
         specifier: 0.2.20
         version: 0.2.20

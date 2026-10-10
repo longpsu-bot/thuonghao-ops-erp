@@ -1,0 +1,230 @@
+BEGIN
+CREATE EXTENSION
+SET
+ no_plan
+---------
+(0 rows)
+
+GRANT
+GRANT
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 13
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+                    ok
+-------------------------------------------
+ ok 1 - both current fact tables force RLS
+(1 row)
+
+                                ok
+-------------------------------------------------------------------
+ ok 2 - browser and service roles have no cooking table privileges
+(1 row)
+
+                             ok
+-------------------------------------------------------------
+ ok 3 - only three shaped APIs with fixed empty search paths
+(1 row)
+
+                                             function_owner_is
+------------------------------------------------------------------------------------------------------------
+ ok 4 - Function atlas_api.upsert_cooking_group(jsonb) should be owned by atlas_master_data_command_runtime
+(1 row)
+
+                                               function_owner_is
+----------------------------------------------------------------------------------------------------------------
+ ok 5 - Function atlas_api.set_school_cooking_group(jsonb) should be owned by atlas_master_data_command_runtime
+(1 row)
+
+                                     function_owner_is
+-------------------------------------------------------------------------------------------
+ ok 6 - Function atlas_api.get_cooking_groups(jsonb) should be owned by atlas_read_runtime
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ d1000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+              is
+------------------------------
+ ok 7 - group create succeeds
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 8 - exact group replay returns original immutable receipt
+(1 row)
+
+                   is
+-----------------------------------------
+ ok 9 - conflicting group replay rejects
+(1 row)
+
+                     is
+--------------------------------------------
+ ok 10 - group name length over 200 rejects
+(1 row)
+
+                is
+-----------------------------------
+ ok 11 - null active field rejects
+(1 row)
+
+INSERT 0 1
+             is
+-----------------------------
+ ok 12 - assignment succeeds
+(1 row)
+
+                             is
+-------------------------------------------------------------
+ ok 13 - assignment replay does not increment School version
+(1 row)
+
+                             is
+------------------------------------------------------------
+ ok 14 - School shaped read includes explicit current group
+(1 row)
+
+                          is
+------------------------------------------------------
+ ok 15 - group shaped read includes governed identity
+(1 row)
+
+INSERT 0 1
+                    is
+-------------------------------------------
+ ok 16 - stale assignment cannot overwrite
+(1 row)
+
+INSERT 0 1
+                         is
+-----------------------------------------------------
+ ok 17 - deactivation cannot strand assigned Schools
+(1 row)
+
+              is
+-------------------------------
+ ok 18 - missing group rejects
+(1 row)
+
+                   is
+----------------------------------------
+ ok 19 - removal requires explicit null
+(1 row)
+
+INSERT 0 1
+                   is
+-----------------------------------------
+ ok 20 - explicit null clears membership
+(1 row)
+
+                     is
+--------------------------------------------
+ ok 21 - ungrouped School read returns null
+(1 row)
+
+INSERT 0 1
+                 is
+------------------------------------
+ ok 22 - empty group can deactivate
+(1 row)
+
+               is
+--------------------------------
+ ok 23 - inactive group rejects
+(1 row)
+
+RESET
+                                          is
+--------------------------------------------------------------------------------------
+ ok 24 - exactly successful mutations emit audit evidence; replay and failures do not
+(1 row)
+
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+                               is
+----------------------------------------------------------------
+ ok 25 - two distinct Schools can share one authoritative group
+(1 row)
+
+                             throws_ok
+-------------------------------------------------------------------
+ ok 26 - relational guard blocks deactivation with current members
+(1 row)
+
+                             throws_ok
+--------------------------------------------------------------------
+ ok 27 - relational guard blocks inactive current School membership
+(1 row)
+
+                     throws_ok
+----------------------------------------------------
+ ok 28 - School PK prevents two current memberships
+(1 row)
+
+DELETE 2
+UPDATE 1
+SET
+               is
+---------------------------------
+ ok 29 - inactive School rejects
+(1 row)
+
+              set_config
+--------------------------------------
+ d1000000-0000-0000-0000-000000000102
+(1 row)
+
+                           is
+--------------------------------------------------------
+ ok 30 - GLOBAL actor without read capability is denied
+(1 row)
+
+                           is
+---------------------------------------------------------
+ ok 31 - GLOBAL actor without write capability is denied
+(1 row)
+
+RESET
+DELETE 1
+INSERT 0 1
+SET
+              set_config
+--------------------------------------
+ d1000000-0000-0000-0000-000000000101
+(1 row)
+
+                            is
+-----------------------------------------------------------
+ ok 32 - School-only scope cannot read GLOBAL Admin groups
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 33 - School-only scope cannot maintain GLOBAL Admin facts
+(1 row)
+
+RESET
+ finish
+--------
+ 1..33
+(1 row)
+
+ROLLBACK

@@ -1,0 +1,33 @@
+{
+  "suite": "need_generation_operational_scale.sql",
+  "existing_regression_deadline_ms": 8000,
+  "operator_target_ms": 4000,
+  "operator_target_status": "MISSED",
+  "environment": "isolated disposable local Docker PostgreSQL; hosted performance not measured",
+  "cycles": [
+    {
+      "cycle": 1,
+      "assertions": 42,
+      "assertion_status": "PASS",
+      "metrics": {
+        "p50_ms": 6274.255,
+        "p95_ms": 6275.68,
+        "samples_ms": [4543.736, 6274.255, 6275.68],
+        "operator_target_ms": 4000,
+        "operator_target_met": false
+      }
+    },
+    {
+      "cycle": 2,
+      "assertions": 42,
+      "assertion_status": "PASS",
+      "metrics": {
+        "p50_ms": 4715.864,
+        "p95_ms": 5961.375,
+        "samples_ms": [3720.82, 4715.864, 5961.375],
+        "operator_target_ms": 4000,
+        "operator_target_met": false
+      }
+    }
+  ]
+}

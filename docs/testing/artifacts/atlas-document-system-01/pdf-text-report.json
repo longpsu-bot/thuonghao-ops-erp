@@ -1,0 +1,182 @@
+[
+  {
+    "pdf": "PO-one-school-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-one-school-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-one-school-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-one-school.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiple-schools-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiple-schools-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiple-schools-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiple-schools.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-second-supplier-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-second-supplier-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-second-supplier-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-second-supplier.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiline-note-sheet-1.pdf",
+    "pages": 7,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiline-note-sheet-2.pdf",
+    "pages": 24,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiline-note-sheet-3.pdf",
+    "pages": 24,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multiline-note.pdf",
+    "pages": 9,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multipage-precision-sheet-1.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multipage-precision-sheet-2.pdf",
+    "pages": 17,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multipage-precision-sheet-3.pdf",
+    "pages": 15,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-multipage-precision.pdf",
+    "pages": 5,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-one-school-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-one-school.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-multipage-superseded-sheet-1.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-multipage-superseded.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Dispatch-grouped-distinct-destinations-sheet-1.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Dispatch-grouped-distinct-destinations-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Dispatch-grouped-distinct-destinations-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Purchase-review-preliminary-sheet-1.pdf",
+    "pages": 5,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Purchase-review-preliminary-sheet-2.pdf",
+    "pages": 7,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Attendance-import-template-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Attendance-import-template-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Shopping-list-APlus-preserved-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  }
+]

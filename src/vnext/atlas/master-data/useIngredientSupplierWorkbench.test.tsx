@@ -11,6 +11,7 @@ import { useIngredientSupplierWorkbench } from "./useIngredientSupplierWorkbench
 const ingredient: IngredientMasterData = {
   ingredient_id: "ingredient-1",
   ingredient_code: "NL-001",
+  document_code: null,
   ingredient_name: "Rau muống",
   ingredient_status: "ACTIVE",
   ingredient_type_id: "type-1",
@@ -29,6 +30,7 @@ const ingredient: IngredientMasterData = {
 const supplier: SupplierMasterData = {
   supplier_id: "supplier-1",
   supplier_code: "NCC-001",
+  document_code: null,
   supplier_name: "NCC Minh Tâm",
   supplier_status: "ACTIVE",
   contact_name: null,
@@ -108,6 +110,71 @@ function apiWithRead(result: AtlasRpcResult = readSuccess()) {
 }
 
 describe("useIngredientSupplierWorkbench", () => {
+  it("keeps document-code drafts independent of technical codes and includes explicit nullable create payloads", async () => {
+    const api = apiWithRead(
+      readSuccess({
+        ingredients: [
+          {
+            ...ingredient,
+            ingredient_code: "v1-ingredient-1082",
+            document_code: null,
+          },
+        ],
+        suppliers: [
+          { ...supplier, supplier_code: "v1-supplier-53", document_code: null },
+        ],
+      }),
+    );
+    const { result } = renderHook(() =>
+      useIngredientSupplierWorkbench({ authSubject: "operator", api }),
+    );
+    await waitFor(() => expect(result.current.ingredients).toHaveLength(1));
+    act(() => result.current.requestIngredient(ingredient.ingredient_id));
+    expect(result.current.ingredientDraft.documentCode).toBe("");
+    act(() => result.current.requestSupplier(supplier.supplier_id));
+    expect(result.current.supplierDraft.documentCode).toBe("");
+    act(() => result.current.requestIngredient("NEW"));
+    act(() => {
+      result.current.setIngredientField("ingredientName", "Nguyên liệu mới");
+      result.current.setIngredientField("purchaseUnitId", "unit-1");
+      result.current.setIngredientField("ingredientTypeId", "type-1");
+      result.current.setIngredientField("ingredientOrderGroupId", "group-1");
+    });
+    act(() => result.current.openIngredientReview());
+    expect(result.current.review).toMatchObject({
+      kind: "ingredient",
+      mode: "create",
+      payload: { document_code: null },
+    });
+    act(() => result.current.setIngredientField("documentCode", " 1082 "));
+    act(() => result.current.openIngredientReview());
+    expect(result.current.review).toMatchObject({
+      payload: { document_code: "1082" },
+    });
+  });
+  it("includes a nullable or explicitly authored Supplier document code in creation review", async () => {
+    const api = apiWithRead();
+    const { result } = renderHook(() =>
+      useIngredientSupplierWorkbench({
+        authSubject: "operator",
+        api,
+      }),
+    );
+    await waitFor(() => expect(result.current.suppliers).toHaveLength(1));
+    act(() => result.current.requestSupplier("NEW"));
+    act(() => result.current.setSupplierField("supplierName", "NCC mới"));
+    act(() => result.current.openSupplierReview());
+    expect(result.current.review).toMatchObject({
+      kind: "supplier",
+      mode: "create",
+      payload: { document_code: null },
+    });
+    act(() => result.current.setSupplierField("documentCode", " 53 "));
+    act(() => result.current.openSupplierReview());
+    expect(result.current.review).toMatchObject({
+      payload: { document_code: "53" },
+    });
+  });
   beforeEach(() => vi.useRealTimers());
 
   it("keeps the Supplier owner through initial reads, refresh and identity reset", async () => {
@@ -194,6 +261,7 @@ describe("useIngredientSupplierWorkbench", () => {
         payload: {
           ingredient_id: "ingredient-1",
           ingredient_name: "Rau muống non",
+          document_code: null,
           purchase_unit_id: "unit-1",
           ingredient_type_id: "type-1",
           ingredient_order_group_id: "group-1",
@@ -223,6 +291,7 @@ describe("useIngredientSupplierWorkbench", () => {
         reason_code: "SUPPLIER_CREATE",
         payload: {
           supplier_name: "Nhà cung ứng Mới",
+          document_code: null,
           contact_name: "",
           contact_phone: "",
           contact_email: "",
@@ -313,6 +382,65 @@ describe("useIngredientSupplierWorkbench", () => {
     expect(result.current.ingredients[0]?.ingredient_name).toBe("Operator 2");
   });
 
+  it("does not let an old Actor's readback clear a newer Actor's pending save", async () => {
+    let resolveOldReadback!: (value: AtlasRpcResult) => void;
+    let resolveNewSave!: (value: AtlasRpcResult) => void;
+    const oldReadback = new Promise<AtlasRpcResult>((resolve) => {
+      resolveOldReadback = resolve;
+    });
+    const newSave = new Promise<AtlasRpcResult>((resolve) => {
+      resolveNewSave = resolve;
+    });
+    const api = apiWithRead();
+    api.getIngredientsAndSuppliers
+      .mockReset()
+      .mockResolvedValueOnce(readSuccess())
+      .mockReturnValueOnce(oldReadback)
+      .mockResolvedValueOnce(readSuccess())
+      .mockResolvedValueOnce(readSuccess());
+    api.updateIngredient
+      .mockResolvedValueOnce(writeSuccess)
+      .mockReturnValueOnce(newSave);
+    const { result, rerender } = renderHook(
+      ({ authSubject }) => useIngredientSupplierWorkbench({ authSubject, api }),
+      { initialProps: { authSubject: "operator-1" } },
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => {
+      result.current.openIngredient("ingredient-1");
+    });
+    act(() => result.current.setIngredientField("documentCode", "1082"));
+    act(() => result.current.openIngredientReview());
+    let oldSaving!: Promise<void>;
+    act(() => {
+      oldSaving = result.current.saveReview();
+    });
+    await waitFor(() =>
+      expect(api.getIngredientsAndSuppliers).toHaveBeenCalledTimes(2),
+    );
+    rerender({ authSubject: "operator-2" });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.openIngredient("ingredient-1"));
+    act(() => result.current.setIngredientField("documentCode", "999"));
+    act(() => result.current.openIngredientReview());
+    let newSaving!: Promise<void>;
+    act(() => {
+      newSaving = result.current.saveReview();
+    });
+    expect(result.current.saving).toBe(true);
+    await act(async () => {
+      resolveOldReadback(readSuccess());
+      await oldSaving;
+    });
+    expect(result.current.saving).toBe(true);
+    expect(result.current.ingredientDraft.documentCode).toBe("999");
+    await act(async () => {
+      resolveNewSave(writeSuccess);
+      await newSaving;
+    });
+    expect(result.current.saving).toBe(false);
+  });
+
   it("protects dirty close, row, and job transitions while local search leaves the draft intact", async () => {
     const second = {
       ...ingredient,
@@ -373,6 +501,7 @@ describe("useIngredientSupplierWorkbench", () => {
         reason_code: "INGREDIENT_CREATE",
         payload: {
           ingredient_name: "Bí đỏ",
+          document_code: null,
           purchase_unit_id: "unit-1",
           ingredient_type_id: "type-1",
           ingredient_order_group_id: "group-1",

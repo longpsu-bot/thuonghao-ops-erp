@@ -69,6 +69,42 @@ authorization, versioning, receipt semantics, and client timestamps are unchange
 
 ## Authority cutover and rollback
 
+### Document-facing code amendment — PR #360
+
+Ingredient and Supplier each own a nullable `document_code` text fact, distinct
+from their stable technical code and UUID. The existing
+`get_ingredient_supplier_master_data` adds `document_code` to every Ingredient and
+Supplier row. Existing v1 create/update commands accept the optional field under
+their existing write capabilities, GLOBAL scope, optimistic version, idempotent
+receipt and audit contracts. Omitted update preserves the current code; explicit
+null clears it. Creation may leave a native record null, including generated
+technical-code creation. Document codes are not required for upstream Planning.
+
+A nonnull document code must be trimmed, 1–200 Unicode code points, and single-line
+printable text. Control characters, a case-insensitive `v1-ingredient-` or
+`v1-supplier-` prefix, and any UUID substring are rejected as `VALIDATION_FAILED`.
+Boundary whitespace uses the JavaScript trim set, including NBSP and BOM; those boundary characters are rejected rather than captured. Explicit native alphanumeric codes are permitted. No uniqueness rule is added.
+The existing editors label this fact `Mã hàng trên chứng từ` or
+`Mã NCC trên chứng từ`; frontend code performs no provenance inference.
+
+The forward migration populates only exact technical codes matching
+`^v1-ingredient-[1-9][0-9]*$` or `^v1-supplier-[1-9][0-9]*$`, extracting the retained
+legacy numeric suffix as text. This provenance is defined by the approved V1
+import contracts, rather than inferred from a name, UUID, ordering or arbitrary
+technical code. New insert/import triggers provide the same deterministic fact
+when absent, preserving an explicitly supplied nonnull code. Subsequent master
+updates and import updates preserve governed explicit codes; the trigger does not
+rederive on update. Long numeric suffixes are never converted through machine
+numeric types. Zero, leading-zero and unrelated code forms remain null.
+
+Official school-catering PO release requires these outward codes and freezes them
+with Ingredient/Unit labels. Missing code blocks release with
+`PO_DOCUMENT_CODE_REQUIRED`; see the
+[PO document identity contract](../api/school-catering-procurement.md#released-document-identity-closeout--pr-360).
+The migration backfills only eligible current master codes. It never backfills
+historical released PO document facts. Rollback must preserve authored codes and
+all captured released facts through a forward migration.
+
 Import does not itself cut operational authority over. The operator must review the stored reconciliation and explicitly declare Atlas authoritative before directing users away from the legacy source. Until that declaration, the legacy export is source evidence and Atlas is a candidate target.
 
 Before authority cutover, rollback is a fresh local database reset followed by correction of the explicit snapshot. After authority cutover or after downstream Atlas facts reference imported master identities, do not delete or rewrite those identities. Correct data through versioned Atlas commands, or restore the whole Atlas database from a reviewed backup under an approved incident procedure.

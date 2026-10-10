@@ -1,0 +1,282 @@
+1..258
+ok 1 - PCT01-01 exact additive public registry exists
+ok 2 - PCT01-02 all consequential source Saves use the existing Planning runtime
+ok 3 - PCT01-03 preflight uses the existing read runtime
+ok 4 - PCT01-04 atomic generation uses the existing Need Generation runtime
+ok 5 - PCT01-05 every v2 function fixes an empty search_path
+ok 6 - PCT01-06 every v2 function is a security-definer boundary
+ok 7 - PCT01-07 authenticated receives exact function execution
+ok 8 - PCT01-08 anon cannot execute v2 functions
+ok 9 - PCT01-09 service_role cannot execute v2 functions
+ok 10 - PCT01-10 PUBLIC cannot execute v2 functions
+ok 11 - PCT01-11 browser roles cannot execute the private H0C helper
+ok 12 - PCT01-12 no cross-source completion capability exists
+ok 13 - PCT01-13 RMVP-03A.v1 remains callable
+ok 14 - PCT01-14 RMVP-03B.v1 remains callable
+ok 15 - PCT01-15 RMVP-04.v1 remains callable
+ok 16 - PCT01-16 PA-06E-H0C.v1 remains callable
+ok 17 - PCT01-17 no convenience persistence was added
+ok 18 - PCT01-18 the single private H0C algorithm retains its dedicated runtime
+ok 19 - PCT01-19 legacy-adoption predicate is stable, invoker-rights, owner-controlled, and fixes an empty search path
+ok 20 - PCT01-20 only the materialization runtime may execute the legacy-adoption predicate
+ok 21 - PCT01-21 the sole materializer delegates the bounded Unit inequality to the provenance predicate
+ok 22 - PCT01-22 date, School, and fail-closed split/merge guards remain unconditional
+e4000000-0000-0000-0000-000000000101
+ok 23 - PCT01-19 automatic preflight derives READY
+ok 24 - PCT01-20 initial currentness is NOT_GENERATED
+ok 25 - PCT01-21 read-only preflight creates no lifecycle evidence
+ok 26 - PCT01-22 atomic mixed generation accepts bounded positive client skew
+ok 27 - PCT01-23 atomic response uses the daily RMVP-04.v3 contract
+ok 28 - PCT01-24 committed result is CURRENT
+ok 29 - PCT01-25 one top-level receipt exists
+ok 30 - PCT01-26 receipt owns the public generation intent
+ok 31 - PCT01-27 run is deterministically validated and released
+ok 32 - PCT01-28 exact completed source identities are bound
+ok 33 - PCT01-29 mixed Recipe and Pantry families are generated
+ok 34 - PCT01-30 Recipe quantity is exact
+ok 35 - PCT01-31 Pantry quantity is exact
+ok 36 - PCT01-32 immutable release membership is every generated line
+ok 37 - PCT01-33 Confirmed Need remains at the human review boundary
+ok 38 - PCT01-34 H0C grouping preserves ingredient and delivery-location identity
+ok 39 - PCT01-35 H0C membership retains every theoretical contribution
+ok 40 - PCT01-D01 daily theoretical lines contain only the commanded service date
+ok 41 - PCT01-D02 daily Need run persists as D..D
+ok 42 - PCT01-D03 daily Confirmed Need persists as D..D
+ok 43 - PCT01-D04 Monday generation creates no Tuesday Need
+ok 44 - PCT01-36 composite execution event exists
+ok 45 - PCT01-37 internal H0C evidence is retained
+ok 46 - PCT01-38 exact replay returns the committed response
+ok 47 - PCT01-39 replay creates no receipt
+ok 48 - PCT01-40 changed command reuse is rejected
+ok 49 - PCT02B-01 all initial human decisions save through RMVP-05.v2
+ok 50 - PCT02B-02 every predecessor current line has human authority
+ok 51 - PCT02B-03 exact 100-to-98 human adjustment is recorded before correction
+ok 52 - PCT01-41 MISSING sources remain blocked
+ok 53 - PCT01-42 blocked execute returns all-source preflight error
+ok 54 - PCT01-43 blocker creates no partial run
+ok 55 - PCT01-44 blocker creates no partial Confirmed Need
+ok 56 - SC-A1-01 the real command sequence reaches reconfirmation
+ok 57 - SC-A1-02 every current family is explicitly allocated
+ok 58 - SC-A1-03 one released PO and PXK establish historical commitments
+ok 59 - SC-A1-04 governed source correction materializes the 12 kg successor
+ok 60 - SC-A1-05 system correction clears authority without fabricating authorship
+ok 61 - SC-A1-06 exact invalidation remains while human reconfirmation succeeds
+ok 62 - SC-A1-07 decision #2 directly continues #1 and authorizes 12 kg
+ok 63 - SC-A1-08 original human decision #1 remains byte-for-byte unchanged
+ok 64 - SC-A1-09 Confirmed Need correction does not edit historical PO or PXK
+ok 65 - PCT01-S01 consequential Pantry correction completes atomically
+ok 66 - PCT01-S02 Pantry successor Save reports consumed Need as OUTDATED
+ok 67 - PCT01-45 successor source identity makes Need OUTDATED
+ok 68 - PCT01-46 prior source snapshot remains immutable
+ok 69 - PCT01-47 atomic successor correction succeeds
+ok 70 - PCT01-48 successor points directly to prior run
+ok 71 - PCT01-49 prior immutable release remains
+ok 72 - PCT01-50 correction reuses the accepted Confirmed Need batch
+ok 73 - PCT01-51 Confirmed Need correction advances one version after the human Save
+ok 74 - PCT01-52 corrected result is CURRENT
+ok 75 - PCT01-53 prior run is invalidated without deletion
+ok 76 - PCT01-54 successor run is released
+ok 77 - PCT01-55 correction owns one receipt
+ok 78 - PCT01-56 automatic readiness preserves both evaluations
+ok 79 - PCT01-57 prior source membership is unchanged
+ok 80 - PCT01-58 superseded Confirmed Need revisions remain historical
+ok 81 - PCT01-59 current contribution membership points only to the successor
+ok 82 - PCT01-60 correction retains H0C domain evidence
+ok 83 - PCT02B-04 public correction reports two backend-carried decisions
+ok 84 - PCT02B-05 public correction reports only changed and three new lines for review
+ok 85 - PCT02B-06 public correction reports one materially changed line
+ok 86 - PCT02B-07 correction reports all three exact new aggregates
+ok 87 - PCT02B-08 correction reports the exact removed aggregate
+ok 88 - PCT02B-09 both unchanged aggregates get exact CARRIED_FORWARD evidence
+ok 89 - PCT02B-10 changed aggregate gets exact proposal invalidation evidence
+ok 90 - PCT02B-11 carry preserves authority and quantity while change clears only affected authority
+ok 91 - PCT02B-12 original human reason, actor, and time remain immutable
+ok 92 - PCT02B-13 system carry manufactures no human decision
+ok 93 - PCT02B-14 authoritative read-model counts preserve compatibility and add 02B state
+ok 94 - PCT02B-15 backend classifies carried, changed, and new current lines exactly
+ok 95 - PCT02B-16 continuity evidence rejects update
+ok 96 - PCT02B-17 continuity evidence rejects delete
+ok 97 - PCT02B-18 arbitrary pointer clearing remains rejected
+ok 98 - PCT02B-18A temporary Spinach has one real human decision before its removal
+ok 99 - PCT02B-19 successor source removes reviewed Spinach and one unreviewed business fact
+ok 100 - PCT02B-20 third generation completes atomically
+ok 101 - PCT02B-21 only Oil and Carrot carry from the direct predecessor
+ok 102 - PCT02B-21A reviewed and unreviewed removals both count as removed business facts
+ok 103 - PCT02B-22 two removals create only one invalidation row because the other predecessor was unreviewed
+ok 104 - PCT02B-23 returning to the old Rice proposal does not resurrect decision #1
+ok 105 - PCT02B-24 Rice and prior-unreviewed Potato still require review
+ok 106 - PCT02B-24A RMVP-05 excludes both removals from current totals and reports the same removed count
+ok 107 - PCT02B-25 multi-generation carry retains both original human IDs
+ok 108 - PCT02B-26 source-driven reconfirmation succeeds without fake notes
+ok 109 - PCT02B-27 reconfirmed Rice is the direct human successor decision #2
+ok 110 - PCT02B-28 truly new Potato starts its human chain at decision #1
+ok 111 - PCT02B-29 both source-driven proposal acceptances require no note
+ok 112 - PCT02B-30 saving other lines creates no new decision for carried lines
+ok 113 - PCT02B-31 irrelevant source change completes through its public boundary
+ok 114 - PCT02B-32 fourth generation completes atomically
+ok 115 - PCT02B-33 all four valid current decisions carry on unchanged facts
+ok 116 - PCT02B-34 all-unchanged successor requires no human review
+ok 117 - PCT02B-35 every carried line has exact successor evidence
+ok 118 - PCT02B-36 four system carries manufacture zero human decisions
+ok 119 - PCT02B-37 one original manual adjustment carries through three successors
+ok 120 - PCT02B-38 exact generation replay returns the committed result
+ok 121 - PCT02B-39 exact replay creates no duplicate continuity evidence
+ok 122 - PCT02B-40 every current fact has one valid human authority
+ok 123 - PCT02B-40A a carried line remains editable through normal human Save
+ok 124 - PCT02B-40B carried-line edit appends one direct human successor
+ok 125 - PCT02B-41 source becomes outdated before the policy transition
+ok 126 - PCT02B-42 policy-incompatible successor completes atomically
+ok 127 - PCT02B-43 equal quantities under a different policy do not carry
+ok 128 - PCT02B-44 every prior authority is invalidated by policy incompatibility
+ok 129 - PCT02B-45 every current line requires review after the policy change
+ok 130 - PCT02B-46 policy invalidation has exact immutable evidence per line
+ok 131 - PCT02B-47 policy invalidation clears only the current authority pointers
+e4000000-0000-0000-0000-000000000101
+ok 132 - PCT01-S01 hosted Attendance 111/10 preview can save against defaults 100/10
+ok 133 - PCT01-S02 hosted Attendance 111/10 preview has zero blockers
+ok 134 - PCT01-S02A hosted Attendance 111/10 preview retains only the defaults warning
+e4000000-0000-0000-0000-000000000102
+e4000000-0000-0000-0000-000000000101
+ok 135 - PCT01-S03 each source-specific consequential Save completes in one call
+ok 136 - PCT01-S04 source completions return their exact successor contracts
+ok 137 - PCT01-S05 each source completion owns exactly one top-level receipt
+ok 138 - PCT01-S06 each consequential Save establishes authoritative completed state
+ok 139 - PCT01-S07 completed snapshots contain every-and-only submitted member
+ok 140 - PCT01-S08 Attendance 111/10 is authoritative in the completed snapshot
+ok 141 - PCT01-S09 Pantry derives Delivery Location and Unit on the server
+ok 142 - PCT01-S10 new completed sources report downstream Need as NOT_GENERATED
+e4000000-0000-0000-0000-000000000102
+e4000000-0000-0000-0000-000000000101
+ok 143 - PCT01-S11 exact replay returns each original committed source response
+ok 144 - PCT01-S12 source replay creates no duplicate receipt
+e4000000-0000-0000-0000-000000000102
+e4000000-0000-0000-0000-000000000101
+ok 145 - PCT01-S13 changed idempotency reuse is rejected for every source
+e4000000-0000-0000-0000-000000000102
+e4000000-0000-0000-0000-000000000101
+ok 146 - PCT01-S14 stale versions are rejected for every source
+e4000000-0000-0000-0000-000000000102
+e4000000-0000-0000-0000-000000000101
+ok 147 - PCT01-S15 stale source signatures are rejected for every source
+ok 148 - PCT01-S16 deterministic invalid submissions fail before partial completion
+ok 149 - PCT01-S17 invalid source submissions create no partial aggregate
+e4000000-0000-0000-0000-000000000102
+e4000000-0000-0000-0000-000000000101
+ok 150 - PCT01-S18 exact completed content returns explicit NO_CHANGE for every source
+ok 151 - PCT01-S19 replay and no-change preserve one immutable completed snapshot
+e4000000-0000-0000-0000-000000000102
+e4000000-0000-0000-0000-000000000101
+ok 152 - PCT01-S20 Weekly Menu capability cannot authorize Attendance or Pantry Save
+ok 153 - PCT01-S21 source-specific capabilities remain independent
+ok 154 - PCT01-S22 authoritative current snapshot pointers match each Save response
+ok 155 - PCT01-S23 authoritative current versions match each Save response
+ok 156 - PCT01-S24 Pantry correction preserves the prior immutable snapshot value
+ok 157 - PCT01-S25 Pantry correction preserves the prior immutable snapshot signature
+e4000000-0000-0000-0000-000000000102
+e4000000-0000-0000-0000-000000000101
+ok 158 - PCT01-CS01 materially future Planning v2 commands fail closed
+ok 159 - PCT01-CS02 materially future responses identify requested_at safely
+ok 160 - PCT01-CS03 malformed requested_at remains rejected
+ok 161 - PCT01-CS04 malformed requested_at retains field evidence
+ok 162 - PCT01-CS05 rejected time envelopes create no source, run, or Confirmed Need mutation
+ok 163 - PCT01-L00 active multi-day overlap lookup has its matching partial index
+ok 164 - PCT01-L01 active historical 17..23 is a distinct daily overlap blocker
+ok 165 - PCT01-L02 v3 17..17 returns the stable historical-overlap error
+ok 166 - PCT01-L03 blocked 17..23 overlap creates no D..D authority
+ok 167 - PCT01-L04 active 17..23 Need and Confirmed Need remain unchanged/readable
+ok 168 - PCT01-L05 public v2 cannot create an arbitrary multi-day root
+ok 169 - PCT01-L05A public v2 exact-day compatibility cannot bypass legacy overlap
+ok 170 - PCT01-L06 rejected public v2 leaves the one historical range unchanged
+
+ok 171 - PCT01-L07 v3 17..17 is also blocked by active historical 17..21
+ok 172 - PCT01-L08 blocked 17..21 overlap creates no D..D authority
+ok 173 - PCT01-L09 active 17..21 Need and Confirmed Need remain unchanged/readable
+
+ok 174 - PCT01-L10 invalidated containing and active non-containing ranges do not block D
+ok 175 - PCT01-L11 successful daily generation leaves nonblocking legacy rows unchanged/readable
+
+
+ok 176 - PCT01-D05 v3 rejects caller-authored multi-day ranges
+ok 177 - PCT01-D06 rejected range writes nothing and Tuesday writes one chain
+ok 178 - PCT01-D07 Tuesday daily generation succeeds
+ok 179 - PCT01-D08 Tuesday run is D..D
+ok 180 - PCT01-D09 Tuesday theoretical evidence is date-isolated
+ok 181 - PCT01-D10 Tuesday Confirmed Need and every line are daily
+ok 182 - PCT01-D11 Tuesday binds the exact approved parent snapshots
+ok 183 - PCT01-D12 Tuesday does not mutate Monday identity or versions
+ok 184 - PCT01-D13 exactly one current Tuesday Confirmed Need chain exists
+ok 185 - PCT01-D14 daily generation creates no downstream operational facts
+ok 186 - PCT01-D15 exact Tuesday retry replays without history
+ok 187 - PCT01-D16 committed Tuesday result is current
+ok 188 - PCT01-D18 Tuesday replay owns one receipt and no extra history
+ok 189 - D047 ordinary CURRENT remains NO_CHANGE
+ok 190 - D047 ordinary CURRENT creates no successor
+ok 191 - D047 target adoption does not change source currentness
+ok 192 - D047 private pre-generation proof needs no theoretical successor
+ok 193 - D047 helper is stable invoker with empty search path
+ok 194 - D047 helper is private to the generation runtime
+ok 195 - D047 evidence remains private
+ok 196 - D047 missing-evidence cannot trigger regeneration
+ok 197 - D047 public command remains NO_CHANGE for missing-evidence
+ok 198 - D047 native-canh-ga cannot trigger regeneration
+ok 199 - D047 public command remains NO_CHANGE for native-canh-ga
+ok 200 - D047 mixed-lineage cannot trigger regeneration
+ok 201 - D047 public command remains NO_CHANGE for mixed-lineage
+ok 202 - D047 target-not-released cannot trigger regeneration
+ok 203 - D047 public command remains NO_CHANGE for target-not-released
+ok 204 - D047 ordinary-successor cannot trigger regeneration
+ok 205 - D047 public command remains NO_CHANGE for ordinary-successor
+ok 206 - D047 missing-target-unit-mapping cannot trigger regeneration
+ok 207 - D047 public command remains NO_CHANGE for missing-target-unit-mapping
+ok 208 - D047 fingerprint-mismatch cannot trigger regeneration
+ok 209 - D047 public command remains NO_CHANGE for fingerprint-mismatch
+ok 210 - D047 incomplete-import cannot trigger regeneration
+ok 211 - D047 public command remains NO_CHANGE for incomplete-import
+ok 212 - D047 unproven-reconciliation cannot trigger regeneration
+ok 213 - D047 public command remains NO_CHANGE for unproven-reconciliation
+ok 214 - D047 changed-target-quantity cannot trigger regeneration
+ok 215 - D047 public command remains NO_CHANGE for changed-target-quantity
+ok 216 - D047 downstream commitment rejects before correction
+ok 217 - D047 downstream blocker leaves predecessor released
+ok 218 - D047 CURRENT predecessor executes correction instead of NO_CHANGE
+ok 219 - D047 predecessor is invalidated
+ok 220 - D047 exactly one direct successor is released
+ok 221 - D047 existing batch is corrected
+ok 222 - D047 all fingerprints remain byte-identical
+ok 223 - D047 corrected current target naturally returns NO_CHANGE
+ok 224 - D047 repeat cannot create a second successor
+ok 225 - D047 corrected successor is ineligible
+ok 226 - D047 historical predecessor is ineligible after correction
+ok 227 - D047 correction fabricates no human decision
+ok 228 - D047 correction creates no Handoff
+ok 229 - D047 successor retains exact numeric and source identities
+ok 230 - D047 exactly one governed Unit transition reaches the materializer
+ok 231 - D047 invalidation has truthful correction reason and command-derived note
+ok 232 - D047 readiness reevaluation preserves unchanged-source review reason
+ok 233 - D047 real source drift retains upstream reason
+ok 234 - D047 predecessor theoretical rows remain byte-identical
+ok 235 - D047 predecessor release snapshot remains byte-identical
+ok 236 - D047 retained pre-D046 proposal pairs remain null without backfill
+ok 237 - D047 all current proposals use exact Ingredient step and Unit snapshots
+ok 238 - PCT01-D19 unrelated Thursday source successor is accepted
+ok 239 - PCT01-D20 Thursday-only source change leaves Tuesday current
+ok 240 - PCT01-N01 an initial D..D date with no Menu or Pantry line is not executable
+ok 241 - PCT01-N02 compatible completed parent headers remain selected evidence
+ok 242 - PCT01-N03 direct initial execution fails with the authoritative preflight blocker
+ok 243 - PCT01-N04 blocked execution leaves no Planning authority or materialization
+ok 244 - PCT01-N05 the normal failed top-level receipt remains as audit evidence
+ok 245 - PCT01-N06 preflight blocker is not persisted in RMVP-03B readiness history
+ok 246 - PCT01-N07 Attendance-only D does not become executable
+ok 247 - PCT01-N08 Attendance-only preflight remains read-only
+ok 248 - PCT01-N09 positive Pantry-only D remains eligible
+ok 249 - PCT01-N10 Pantry-only D executes successfully
+ok 250 - PCT01-N11 Pantry-only execution retains independent PANTRY_DIRECT behavior
+ok 251 - PCT01-N12 an existing current daily Need remains current and openable
+ok 252 - active legacy-false Dish resolves its valid released Recipe
+ok 253 - PCT01-N13 active legacy-false Menu Dish with a released Recipe establishes daily source readiness
+ok 254 - PCT01-N14 legacy-false Menu execution reports missing Attendance instead of dropping demand
+ok 255 - PCT01-N15 missing Attendance leaves no persisted run
+ok 256 - PCT01-N16 inactive Menu Dish is not relabeled as neutral no-demand
+ok 257 - PCT01-N17 inactive Menu Dish retains the generator integrity blocker
+ok 258 - PCT01-N18 mixed Menu D remains eligible through its generating Dish
+NOTICE:  schema "extensions" already exists, skipping

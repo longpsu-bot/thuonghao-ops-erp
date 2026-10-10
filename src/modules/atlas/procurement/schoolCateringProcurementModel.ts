@@ -126,11 +126,15 @@ export type PurchaseOrderCommitmentState =
   | "SUPERSEDED";
 
 export type PurchaseOrderLine = {
+  ingredient_document_code_snapshot?: string | null;
+  ingredient_name_snapshot?: string | null;
+  unit_code_snapshot?: string | null;
   purchase_order_line_revision_id: string;
   purchase_order_line_id: string;
   ingredient: {
     ingredient_id: string;
     ingredient_name: string;
+    document_code?: string | null;
   };
   ordered_quantity: ExactQuantity;
   supplier_note: string | null;
@@ -144,6 +148,9 @@ export type PurchaseOrderLine = {
     school_id: string;
     school_name: string;
     school_display_order: number;
+    /** Captured at PO release; absent on pre-amendment historical snapshots. */
+    cooking_group_id?: string | null;
+    cooking_group_name?: string | null;
     delivery_location_id: string;
     delivery_location_name: string;
     ordered_quantity: ExactQuantity;
@@ -161,6 +168,7 @@ export type SchoolCateringPurchaseOrder = {
     supplier_id: string;
     supplier_name: string;
     supplier_status: string;
+    document_code?: string | null;
   };
   service_date: string;
   status: PurchaseOrderStatus;
@@ -176,6 +184,7 @@ export type SchoolCateringPurchaseOrder = {
     revision_status: string;
     predecessor_revision_id: string | null;
     supplier_name_snapshot: string | null;
+    supplier_document_code_snapshot?: string | null;
     delivery_location_snapshot: unknown;
     released_by_actor_id: string | null;
     released_at: string | null;
@@ -185,6 +194,8 @@ export type SchoolCateringPurchaseOrder = {
   stale: boolean;
   release_eligible: boolean;
   export_ready: boolean;
+  /** Absent on pre-amendment reads; official regeneration fails closed. */
+  document_snapshot_complete?: boolean;
   blockers: string[];
   warnings: string[];
   allowed_actions: {

@@ -14,11 +14,18 @@ join atlas_core.capabilities capability using(capability_code)
 where true
 on conflict(role_capability_id) do update set capability_id=excluded.capability_id;
 
-insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status)
+insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status,document_code)
 values
-  ('c7100000-0000-4000-8000-000000000001','PR-A-VERIFY-A','PR-A Verify Supplier A','ACTIVE'),
-  ('c7100000-0000-4000-8000-000000000002','PR-A-VERIFY-B','PR-A Verify Supplier B','ACTIVE')
+  ('c7100000-0000-4000-8000-000000000001','PR-A-VERIFY-A','PR-A Verify Supplier A','ACTIVE','53'),
+  ('c7100000-0000-4000-8000-000000000002','PR-A-VERIFY-B','PR-A Verify Supplier B','ACTIVE','54')
 on conflict(supplier_id) do update set supplier_status='ACTIVE';
+
+-- Explicit synthetic business facts for official-PO release tests, never a
+-- production inference from these native technical identities.
+update atlas_admin.ingredients set document_code='1082'
+where ingredient_id='b6500000-0000-0000-0000-000000000006' and document_code is null;
+update atlas_admin.ingredients set document_code='956'
+where ingredient_id='b6500000-0000-0000-0000-000000000007' and document_code is null;
 
 insert into atlas_admin.supplier_eligibilities(
   supplier_id,ingredient_id,effective_from,priority,reason_note

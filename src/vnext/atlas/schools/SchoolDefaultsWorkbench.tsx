@@ -1,4 +1,5 @@
 import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
+import { SchoolCookingGroupEditor } from "./SchoolCookingGroupEditor";
 import {
   Box,
   Badge,
@@ -30,6 +31,7 @@ import { parsePortionDraft } from "./schoolDefaultsModel";
 import {
   useSchoolDefaultsWorkbench,
   type SchoolDefaultsWorkbenchProps,
+  type SchoolDefaultsController,
 } from "./useSchoolDefaultsWorkbench";
 
 export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
@@ -45,7 +47,11 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   });
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const editingDisabled =
-    c.saving || c.lock === "unknown" || c.lock === "readback";
+    c.saving ||
+    c.loading ||
+    Boolean(c.error) ||
+    c.lock === "unknown" ||
+    c.lock === "readback";
   const activeCount = c.schools.filter(
     (school) => school.school_status === "ACTIVE",
   ).length;
@@ -141,14 +147,17 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
             <Button
               mt="xs"
               size="sm"
-              loading={c.loading}
+              loading={c.loading || c.saving}
+              disabled={c.loading || c.saving}
               onClick={() => void c.refresh()}
             >
-              {c.lock === "unknown" || c.lock === "readback"
-                ? "Tải lại để xác nhận"
-                : c.lock === "stale"
-                  ? "Tải lại dữ liệu hiện tại"
-                  : "Thử tải lại dữ liệu"}
+              {c.confirmGroupSave
+                ? "Xác nhận lần lưu nhóm nấu"
+                : c.lock === "unknown" || c.lock === "readback"
+                  ? "Tải lại để xác nhận"
+                  : c.lock === "stale"
+                    ? "Tải lại dữ liệu hiện tại"
+                    : "Thử tải lại dữ liệu"}
             </Button>
           )}
         </Box>
@@ -183,7 +192,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
             c.loading ||
             c.saving ||
             Boolean(c.lock) ||
-            c.dirtyCount === 0 ||
+            c.portionDirtyCount === 0 ||
             c.invalidDraftCount > 0
           }
           onClick={() => void c.save()}
@@ -191,6 +200,13 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
           Lưu thay đổi
         </Button>
       </Flex>
+
+      {c.cookingSupported && (
+        <SchoolCookingGroupEditor
+          controller={c}
+          disabled={editingDisabled || Boolean(c.lock)}
+        />
+      )}
 
       {c.loading && c.schools.length === 0 && (
         <Text role="status" p="md">
@@ -207,6 +223,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
           drafts={c.drafts}
           disabled={editingDisabled}
           onEdit={c.edit}
+          cooking={c.cookingSupported ? c : undefined}
         />
       )}
     </Box>
@@ -218,6 +235,7 @@ function SchoolDefaultsTable({
   drafts,
   disabled,
   onEdit,
+  cooking,
 }: {
   schools: SchoolMasterData[];
   drafts: Record<string, { student: string; teacher: string }>;
@@ -227,6 +245,7 @@ function SchoolDefaultsTable({
     field: "student" | "teacher",
     value: string,
   ) => void;
+  cooking?: SchoolDefaultsController;
 }) {
   type SortKey = "order" | "school" | "type" | "status" | "location";
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
@@ -263,8 +282,16 @@ function SchoolDefaultsTable({
         data-sticky-header=""
         stickyHeader
         tableLayout="fixed"
-        minW="var(--atlas-layout-school-table-min, 1154px)"
-        w="var(--atlas-layout-school-table-width, 1154px)"
+        minW={
+          cooking
+            ? "var(--atlas-layout-school-cooking-table-min, 1384px)"
+            : "var(--atlas-layout-school-table-min, 1154px)"
+        }
+        w={
+          cooking
+            ? "var(--atlas-layout-school-cooking-table-width, 1384px)"
+            : "var(--atlas-layout-school-table-width, 1154px)"
+        }
       >
         <Table.ColumnGroup>
           <Table.Column w="var(--atlas-school-order-width, 64px)" />
@@ -272,6 +299,9 @@ function SchoolDefaultsTable({
           <Table.Column w="var(--atlas-school-type-width, 150px)" />
           <Table.Column w="var(--atlas-school-state-width, 140px)" />
           <Table.Column w="var(--atlas-school-location-width, 260px)" />
+          {cooking && (
+            <Table.Column w="var(--atlas-school-cooking-width, 230px)" />
+          )}
           <Table.Column w="var(--atlas-school-portion-width, 150px)" />
           <Table.Column w="var(--atlas-school-portion-width, 150px)" />
         </Table.ColumnGroup>
@@ -307,6 +337,7 @@ function SchoolDefaultsTable({
               sort={sort}
               onSort={onSort}
             />
+            {cooking && <Table.ColumnHeader>Nấu tại</Table.ColumnHeader>}
             <Table.ColumnHeader textAlign="right">
               Học sinh mặc định
             </Table.ColumnHeader>
@@ -321,7 +352,12 @@ function SchoolDefaultsTable({
               student: String(school.default_student_portions),
               teacher: String(school.default_teacher_portions),
             };
-            const dirty = Boolean(drafts[school.school_id]);
+            const dirty =
+              Boolean(drafts[school.school_id]) ||
+              Boolean(
+                cooking &&
+                Object.hasOwn(cooking.cookingDrafts, school.school_id),
+              );
             const studentInvalid = parsePortionDraft(draft.student) === null;
             const teacherInvalid = parsePortionDraft(draft.teacher) === null;
             return (
@@ -368,6 +404,61 @@ function SchoolDefaultsTable({
                     {school.delivery_address}
                   </Text>
                 </Table.Cell>
+                {cooking && (
+                  <Table.Cell>
+                    <NativeSelect.Root
+                      size="sm"
+                      disabled={disabled || school.school_status !== "ACTIVE"}
+                    >
+                      <NativeSelect.Field
+                        aria-label={`Nấu tại — ${school.school_name}`}
+                        value={
+                          cooking.cookingDrafts[school.school_id] ??
+                          school.cooking_group_id ??
+                          ""
+                        }
+                        onChange={(event) =>
+                          cooking.editCooking(school, event.target.value)
+                        }
+                      >
+                        <option value="">Không gán nhóm nấu</option>
+                        {cooking.cookingGroups
+                          .filter((group) => group.active)
+                          .map((group) => (
+                            <option
+                              key={group.cooking_group_id}
+                              value={group.cooking_group_id}
+                            >
+                              {group.cooking_group_name}
+                            </option>
+                          ))}
+                        {school.cooking_group_id &&
+                          !cooking.cookingGroups.some(
+                            (group) =>
+                              group.active &&
+                              group.cooking_group_id ===
+                                school.cooking_group_id,
+                          ) && (
+                            <option value={school.cooking_group_id} disabled>
+                              {school.cooking_group_name} · Ngừng hoạt động
+                            </option>
+                          )}
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                    {Object.hasOwn(cooking.cookingDrafts, school.school_id) && (
+                      <Button
+                        size="sm"
+                        mt="xs"
+                        disabled={disabled || Boolean(cooking.lock)}
+                        aria-label={`Lưu Nấu tại — ${school.school_name}`}
+                        onClick={() => void cooking.saveSchoolCooking(school)}
+                      >
+                        Lưu Nấu tại
+                      </Button>
+                    )}
+                  </Table.Cell>
+                )}
                 <Table.Cell>
                   <Input
                     type="text"

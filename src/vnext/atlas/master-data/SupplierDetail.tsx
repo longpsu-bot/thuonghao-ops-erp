@@ -75,6 +75,14 @@ export function SupplierDetail({
           />
         </Field.Root>
         <SupplierField
+          label="Mã NCC trên chứng từ"
+          value={c.supplierDraft.documentCode}
+          onChange={(value) => c.setSupplierField("documentCode", value)}
+          maxLength={200}
+          disabled={c.saving || c.loading || Boolean(c.lock)}
+          helperText="Có thể để trống khi tạo dữ liệu gốc. Cần có mã trước khi phát hành đơn mua hàng."
+        />
+        <SupplierField
           label="Người liên hệ"
           value={c.supplierDraft.contactName}
           onChange={(value) => c.setSupplierField("contactName", value)}
@@ -106,10 +114,16 @@ function SupplierField({
   label,
   value,
   onChange,
+  helperText,
+  maxLength,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  helperText?: string;
+  maxLength?: number;
+  disabled?: boolean;
 }) {
   return (
     <Field.Root>
@@ -117,8 +131,11 @@ function SupplierField({
       <Input
         aria-label={label}
         value={value}
+        maxLength={maxLength}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
       />
+      {helperText && <Field.HelperText>{helperText}</Field.HelperText>}
     </Field.Root>
   );
 }

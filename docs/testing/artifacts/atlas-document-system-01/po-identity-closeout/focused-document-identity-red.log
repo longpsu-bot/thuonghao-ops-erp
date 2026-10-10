@@ -1,0 +1,30 @@
+not ok 1 - Ingredient owns explicit outward document code
+# Failed test 1: "Ingredient owns explicit outward document code"
+not ok 2 - Supplier owns explicit outward document code
+# Failed test 2: "Supplier owns explicit outward document code"
+not ok 3 - PO header freezes supplier outward code
+# Failed test 3: "PO header freezes supplier outward code"
+not ok 4 - PO line freezes item outward code
+# Failed test 4: "PO line freezes item outward code"
+not ok 5 - PO line freezes Ingredient display name
+# Failed test 5: "PO line freezes Ingredient display name"
+not ok 6 - PO line freezes Unit display code
+# Failed test 6: "PO line freezes Unit display code"
+not ok 7 - exact V1 item provenance becomes numeric text
+# Failed test 7: "exact V1 item provenance becomes numeric text"
+#         have: NULL
+#         want: 1082
+not ok 8 - legacy suffix is text without numeric overflow
+# Failed test 8: "legacy suffix is text without numeric overflow"
+#         have: NULL
+#         want: 123456789012345678901234567890
+not ok 9 - exact V1 supplier provenance becomes numeric text
+# Failed test 9: "exact V1 supplier provenance becomes numeric text"
+#         have: NULL
+#         want: 53
+ok 10 - unapproved technical prefix form stays null
+ok 11 - zero legacy form stays null
+ok 12 - native item has no invented outward code
+ok 13 - native supplier has no invented outward code
+1..13
+# Looks like you failed 9 tests of 13

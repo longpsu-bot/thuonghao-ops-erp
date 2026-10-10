@@ -1,0 +1,19 @@
+{
+  "scope": "Final read-only source and native print review",
+  "status": "PASS",
+  "remaining_actionable_findings": [],
+  "closed_findings": [
+    "Frozen supplier-note projection",
+    "Frozen supplier-name completeness",
+    "Unicode code length/boundary validation parity",
+    "Unicode code-point fragmentation",
+    "Save/readback input protection",
+    "Wide supplier/item codes and printable continuation"
+  ],
+  "exclusions": [
+    "Owner product acceptance",
+    "Hosted acceptance",
+    "Final replay/CI evidence is recorded separately"
+  ],
+  "reviewer": "amendment_review"
+}

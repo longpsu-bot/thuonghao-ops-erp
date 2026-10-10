@@ -1,0 +1,151 @@
+ok 1 - revision source is explicit
+ok 2 - confirmed contribution lineage exists
+ok 3 - replacement-aware preparation frontier is private backend logic
+ok 4 - Function atlas_core.purchase_review_preparation_po_frontier(date) should be owned by atlas_procurement_command_runtime
+ok 5 - Role authenticated should be granted no privileges on function atlas_core.purchase_review_preparation_po_frontier(date)
+ok 6 - Role atlas_confirmed_need_review_runtime should be granted EXECUTE on function atlas_core.purchase_review_preparation_po_frontier(date)
+b6000000-0000-0000-0000-000000000101
+ok 7 - explicit null filter returns safe validation error
+ok 8 - scalar School filter returns safe validation error
+ok 9 - object state filter returns safe validation error
+ok 10 - unknown allocation state is rejected
+ok 11 - generated review is readable before decisions
+ok 12 - generated Need uses exact100
+ok 13 - unique priority suggests100 without accepting it
+ok 14 - incomplete saved Need blocks allocation
+ok 15 - incomplete saved Need never substitutes zero or generated quantity
+ok 16 - a shared family is findable by its second School
+ok 17 - a shared family retains both contributing Schools
+ok 18 - preview writes zero allocation revisions
+ok 19 - preview writes zero Handoffs
+ok 20 - preview writes zero POs
+ok 21 - preview writes zero receipts
+ok 22 - preview writes zero acceptance events
+ok 23 - retired generation batch is excluded from current allocation, without deleting its history
+ok 24 - confirmed100 accepts explicit60/40
+ok 25 - Planning can change100 to120 before commitment
+ok 26 - 100 to120 stales60/40
+ok 27 - stale decision retains60 until explicit Save
+ok 28 - rebalance suggests72 without accepting it
+ok 29 - rebalance suggests48 without accepting it
+ok 30 - Save rejects incomplete confirmed source without generated fallback
+ok 31 - no eligible supplier remains unresolved in generated review
+ok 32 - tied supplier priority remains unresolved rather than choosing arbitrarily
+ok 33 - confirmed Save rechecks effective supplier eligibility
+ok 34 - generated read leaks no out-of-scope rows
+ok 35 - confirmed allocation read leaks no out-of-scope rows
+ok 36 - confirmed allocation Save independently denies out-of-scope source
+ok 37 - Planning saves confirmed120
+ok 38 - confirmed allocation rejects imbalance
+ok 39 - confirmed allocation rejects duplicate Supplier
+ok 40 - confirmed allocation rejects stale fingerprint
+ok 41 - confirmed allocation rejects stale source batch version
+ok 42 - confirmed allocation rejects stale expected version
+ok 43 - allocation reads saved120, not generated100
+ok 44 - explicit72/48 is accepted
+ok 45 - allocation retains pre-Handoff authority
+ok 46 - persisted exact split sum is120
+ok 47 - exact Save replay returns original durable result
+ok 48 - same allocation command identity with changed splits conflicts
+ok 49 - confirmed allocation creates no Handoff
+ok 50 - confirmed allocation creates no official PO
+ok 51 - incomplete allocation evidence cannot commit even through direct backend insertion
+ok 52 - confirmed-only allocation never creates official drafts
+ok 53 - Planning may correct saved120 to125 before Handoff
+ok 54 - source change marks allocation stale
+ok 55 - stale72/48 remains immutable history
+ok 56 - Planning commitment fails closed on stale and missing allocation
+ok 57 - blocked commitment leaves Planning editable
+ok 58 - operator quantities are never silently rounded to six places
+ok 59 - released-before-Handoff source supports explicit allocation recovery without reopening Need
+ok 60 - MC-Q04 final PO write was reached before the injected failure
+ok 61 - MC-Q04 failed PO child is not a successful preparation
+ok 62 - MC-Q04 failed PO child rolls back release, Handoff, promotion, PO and audit evidence
+ok 63 - MC-Q04 failed preparation retains no child receipt or accepted child command
+ok 64 - one atomic preparation command reaches official drafts
+ok 65 - historical multi-Handoff family retains plural exact lineage
+ok 66 - preparation rejects extra PO lines outside the current saved split set
+ok 67 - preparation replays the complete durable result
+ok 68 - promoted allocation retains School evidence
+ok 69 - promoted allocation read uses Handoff authority
+ok 70 - promoted family quantity is a public exact-decimal string
+ok 71 - promoted family quantity retains exact six-decimal text
+ok 72 - every promoted contribution quantity has the public exact-decimal JSON type
+ok 73 - every promoted contribution quantity retains exact six-decimal text
+ok 74 - promoted split allocated quantities remain exact strings
+ok 75 - promoted split ratios remain exact strings
+ok 76 - operator explicitly saves75/50
+ok 77 - all positive families explicitly allocated
+ok 78 - complete current allocation allows Planning release
+ok 79 - real Handoff and promotion succeed
+ok 80 - Handoff appends committed successor
+ok 81 - confirmed predecessor retained
+ok 82 - promotion preserves exact125 without rebalance
+ok 83 - official drafts consume Handoff successors
+ok 84 - supplier A PO preserves75
+ok 85 - supplier B PO preserves50
+ok 86 - both supplier POs release
+ok 87 - official numbers are backend generated
+(b6500000-0000-0000-0000-000000000050,,2026-11-02,2026-11-02,REOPENED,7,b6000000-0000-0000-0000-000000000001,"2026-10-09 11:32:24.411699+00",b6000000-0000-0000-0000-000000000001,"2026-10-09 11:32:24.411699+00",b6000000-0000-0000-0000-000000000001,"2026-10-09 11:32:24.411699+00","2026-10-09 11:32:24.411699+00",NEED_GENERATION,b6550000-0000-0000-0000-000000000001,3,b6550000-0000-0000-0000-000000000005,b6550000-0000-0000-0000-000000000001,3,b6550000-0000-0000-0000-000000000005,,,)
+ok 88 - Scenario C governed correction remains append-only after released supplier POs
+ok 89 - Scenario C saves complete current same-supplier allocation after correction
+ok 90 - Scenario C preparation accepts a valid released-PO replacement frontier
+ok 91 - Scenario C preparation commits the corrected Planning release
+ok 92 - Scenario C preparation reuses the historical Handoff root
+ok 93 - Scenario C preparation appends a released SUPERSEDING Handoff revision
+ok 94 - Scenario C preparation promotes corrected allocation to Handoff authority
+ok 95 - Scenario C promoted allocation retains its confirmed-source predecessor
+ok 96 - Scenario C promotion preserves the complete corrected quantity
+ok 97 - Scenario C preparation leaves released PO roots and document numbers byte-for-byte unchanged
+ok 98 - Scenario C preparation leaves released PO commitment revisions and quantities unchanged
+ok 99 - Scenario C preparation creates no replacement Draft automatically
+ok 100 - Scenario C replacement frontier does not weaken the exact PO coverage predicate
+ok 101 - Scenario C released POs derive REPLACEMENT_REQUIRED after preparation
+ok 102 - mixed frontier fixture materializes the exact ordinary supplier Draft
+ok 103 - mixed frontier ordinary Draft exactly covers its current supplier allocation
+ok 104 - mixed frontier released supplier independently requires replacement
+ok 105 - preparation accepts an exact ordinary Draft beside a replacement frontier
+ok 106 - mixed frontier preparation leaves both supplier PO roots byte-for-byte unchanged
+ok 107 - mixed frontier preparation creates no automatic replacement Draft
+ok 108 - an extra active stale Draft outside current suppliers blocks preparation
+ok 109 - an extra active stale Draft returns the safe preparation error
+ok 110 - an extra active stale Draft returns a non-empty operator blocker
+ok 111 - blocked extra-Draft preparation rolls back Planning release, Handoff and allocation promotion
+ok 112 - blocked extra-Draft preparation leaves the old released PO unchanged
+ok 113 - blocked extra-Draft preparation leaves the stale Draft unchanged
+ok 114 - a removed supplier reaches the preparation frontier only after valid correction and allocation
+ok 115 - CANCELLATION_REQUIRED remains fail-closed during atomic preparation
+ok 116 - known cancellation frontier returns a non-empty operator blocker
+ok 117 - missing supplier/date PO coverage remains fail-closed
+ok 118 - known missing coverage returns a non-empty operator blocker
+ok 119 - Scenario C explicit replacement command remains independently available
+ok 120 - Scenario C replacement Draft points directly to the old released PO
+ok 121 - Scenario C replacement Draft contains the complete corrected supplier quantity, not the delta
+ok 122 - preparation remains idempotently valid with a complete current replacement Draft
+ok 123 - preparation leaves the existing replacement root, revision, lines and quantities byte-for-byte unchanged
+ok 124 - preparation with an existing replacement leaves the old released PO unchanged
+ok 125 - preparation creates no second replacement root
+ok 126 - preparation preserves the replacement predecessor lineage
+(b6500000-0000-0000-0000-000000000050,,2026-11-02,2026-11-02,REOPENED,12,b6000000-0000-0000-0000-000000000001,"2026-10-09 11:32:24.411699+00",b6000000-0000-0000-0000-000000000001,"2026-10-09 11:32:24.411699+00",b6000000-0000-0000-0000-000000000001,"2026-10-09 11:32:24.411699+00","2026-10-09 11:32:24.411699+00",NEED_GENERATION,b6550000-0000-0000-0000-000000000001,3,b6550000-0000-0000-0000-000000000005,b6550000-0000-0000-0000-000000000001,3,b6550000-0000-0000-0000-000000000005,,,)
+ok 127 - second correction appends a new complete Confirmed Need revision
+ok 128 - second correction saves the complete revised supplier allocation
+ok 129 - second-correction preparation reaches the new Handoff authority
+ok 130 - ordinary preparation never mutates the stale replacement Draft
+ok 131 - second-correction preparation leaves the released predecessor unchanged
+ok 132 - second-correction preparation creates no replacement root
+ok 133 - second-correction preparation appends the expected Handoff successor
+ok 134 - second-correction preparation promotes the new allocation to Handoff authority
+ok 135 - second-correction Handoff promotion preserves the complete new quantity
+ok 136 - the untouched replacement Draft derives stale against the new Handoff authority
+ok 137 - the explicit replacement command regenerates after new Handoff authority
+ok 138 - explicit regeneration reuses the same replacement root
+ok 139 - explicit regeneration advances the replacement root version once
+ok 140 - explicit regeneration appends one replacement revision
+ok 141 - explicit regeneration uses the new complete supplier quantity, not the delta
+ok 142 - explicit regeneration preserves direct predecessor lineage
+ok 143 - explicit regeneration leaves the released predecessor unchanged
+ok 144 - current legacy Handoff rows remain visible when no active generated source exists
+ok 145 - legacy rows retain Handoff authority
+ok 146 - skipped unready PO date cannot become successful preparation
+ok 147 - eligibility changes and blocked preparation never rewrite released PO snapshots
+1..147

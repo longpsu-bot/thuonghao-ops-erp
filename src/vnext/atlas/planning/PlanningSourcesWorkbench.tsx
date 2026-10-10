@@ -126,7 +126,11 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
         {c.job === "menu" ? (
           <PlanningMenuStage c={c} visibleSchoolIds={visibleSchoolIds} />
         ) : c.job === "attendance" ? (
-          <PlanningAttendanceStage c={c} visibleSchoolIds={visibleSchoolIds} />
+          <PlanningAttendanceStage
+            c={c}
+            visibleSchoolIds={visibleSchoolIds}
+            onExportTemplate={props.onExportAttendanceTemplate}
+          />
         ) : (
           <PlanningPantryStage c={c} visibleSchoolIds={visibleSchoolIds} />
         )}

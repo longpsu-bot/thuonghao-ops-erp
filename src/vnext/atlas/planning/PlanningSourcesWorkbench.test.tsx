@@ -60,6 +60,40 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("downloads the scoped blank attendance template without previewing or saving attendance", async () => {
+    const fixture = createPlanningReviewFixture();
+    const preview = vi.spyOn(fixture.api, "previewAttendance");
+    const save = vi.spyOn(fixture.api, "saveCompletedAttendance");
+    const exportTemplate = vi.fn().mockResolvedValue(undefined);
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          onExportAttendanceTemplate={exportTemplate}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("table", { name: "Thực đơn theo trường" });
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Tải mẫu sĩ số XLSX" }),
+    );
+    await screen.findByText(
+      "Đã tải mẫu nhập. Sĩ số chỉ được ghi nhận sau khi rà soát và Lưu.",
+    );
+    expect(exportTemplate).toHaveBeenCalledWith(
+      reviewWeek,
+      expect.arrayContaining([
+        expect.objectContaining({
+          school_id: fixture.planning.schools[0]!.school_id,
+        }),
+      ]),
+    );
+    expect(preview).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+  });
   it("does not move focus into an inactive source owner when its pending Review finishes", async () => {
     const fixture = createPlanningReviewFixture();
     let finish!: () => void;

@@ -1,0 +1,252 @@
+[
+  {
+    "pdf": "PO-ungrouped-null-note-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-ungrouped-null-note-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-ungrouped-null-note-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-ungrouped-null-note.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-grouped-supplier-note-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-grouped-supplier-note-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-grouped-supplier-note-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-grouped-supplier-note.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-same-group-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-same-group-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-same-group-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-same-group.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-details_ing-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-details_ing.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-details_school-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-details_school.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-sum-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-two-schools-sum.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-grouped-multipage-500-note-sheet-1.pdf",
+    "pages": 17,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-grouped-multipage-500-note-sheet-2.pdf",
+    "pages": 5,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-grouped-multipage-500-note-sheet-3.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-grouped-multipage-500-note.pdf",
+    "pages": 16,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-frozen-after-master-edits-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-frozen-after-master-edits-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-frozen-after-master-edits-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-frozen-after-master-edits.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-frozen-predecessor-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-frozen-predecessor-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-frozen-predecessor-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-superseded-frozen-predecessor.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-replacement-new-frozen-facts-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-replacement-new-frozen-facts-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-replacement-new-frozen-facts-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-replacement-new-frozen-facts.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-v1-numeric-outward-codes-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-v1-numeric-outward-codes-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-v1-numeric-outward-codes-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-v1-numeric-outward-codes.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-long-explicit-document-code-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-long-explicit-document-code-sheet-2.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-long-explicit-document-code-sheet-3.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-long-explicit-document-code.pdf",
+    "pages": 6,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-PXK-13-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "V1-equivalent-PXK-13.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-grouped-13-blank-working-notes-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-grouped-13-blank-working-notes.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-grouped-multipage-long-names-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-grouped-multipage-long-names.pdf",
+    "pages": 4,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Dispatch-two-schools-same-group-sheet-1.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "Dispatch-two-schools-same-group-sheet-2.pdf",
+    "pages": 2,
+    "missing_visible_strings": []
+  }
+]

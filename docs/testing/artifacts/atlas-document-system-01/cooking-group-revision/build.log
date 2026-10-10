@@ -1,0 +1,39 @@
+$ pnpm ui:vnext:typegen && tsc -b && vite build
+$ chakra typegen src/vnext/atlas/system.ts
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+T  Chakra CLI ⚡️
+[?25l|
+•  Generating conditions types[1G[Jo  ✅ Generated conditions typings
+[?25h[?25l|
+•  Generating recipe types[1G[Jo  ✅ Generated recipe typings
+[?25h[?25l|
+•  Generating utility types[1G[Jo  ✅ Generated utility typings
+[?25h[?25l|
+•  Generating token types[1G[Jo  ✅ Generated token typings
+[?25h[?25l|
+•  Generating system types[1G[Jo  ✅ Generated system types
+[?25h|
+—  🎉 Done!
+
+vite v8.1.4 building client environment for production...
+[2K
+transforming...✓ 6741 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/_atlas-build.json                        0.16 kB │ gzip:   0.15 kB
+dist/index.html                               0.51 kB │ gzip:   0.34 kB
+dist/assets/thuong-hao-logo-DfW3Ruuz.jpg     17.78 kB
+dist/assets/rolldown-runtime-BHe-jwch.js      0.95 kB │ gzip:   0.56 kB
+dist/assets/jszip.min-Cad_jjNy.js            95.88 kB │ gzip:  28.45 kB
+dist/assets/vfs_fonts-Z6R6tjat.js           830.02 kB │ gzip: 454.01 kB
+dist/assets/pdfmake-B8z3lv3z.js           1,326.60 kB │ gzip: 570.35 kB
+dist/assets/index-CsUu_IbL.js             2,458.55 kB │ gzip: 686.06 kB
+
+[INEFFECTIVE_DYNAMIC_IMPORT] node_modules/.pnpm/exceljs@4.4.0/node_modules/exceljs/dist/exceljs.min.js is dynamically imported by src/modules/atlas/dispatch/schoolDispatchReleaseExports.ts, src/modules/atlas/documents/attendanceImportTemplate.ts, src/modules/atlas/procurement/purchaseOrderExports.ts but also statically imported by src/modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList.ts, dynamic import will not move module into another chunk.
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 7.47s

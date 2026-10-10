@@ -1,0 +1,77 @@
+{
+  "authority": "Disposable local development database only. These focused tests used the 95-migration ledger plus development application of the new versioned migration. Final clean 96 replay is separately recorded by the root closeout runner.",
+  "migration": "supabase/migrations/20261009105641_atlas_po_document_identity.sql",
+  "sha256": "aefe0efdd1faeff5ad8dca7734a316efbb356956bd056f757b590acf844245d3",
+  "normalized_lf_sha256": "aefe0efdd1faeff5ad8dca7734a316efbb356956bd056f757b590acf844245d3",
+  "local_project": "atlas-document-system-360-cooking",
+  "command": "ATLAS_LOCAL_DB_CONTAINER=supabase_db_atlas-document-system-360-cooking node scripts/test-local-purchase-review.mjs <suite>",
+  "total_assertions": 744,
+  "results": [
+    {
+      "suite": "atlas_po_document_identity.sql",
+      "assertions": 31,
+      "result": "PASS",
+      "log": "focused-closeout-atlas_po_document_identity.sql.log"
+    },
+    {
+      "suite": "school_catering_purchase_orders.sql",
+      "assertions": 132,
+      "result": "PASS",
+      "log": "focused-closeout-school_catering_purchase_orders.sql.log"
+    },
+    {
+      "suite": "atlas_current_platform_security_catalog.sql",
+      "assertions": 28,
+      "result": "PASS",
+      "log": "focused-closeout-atlas_current_platform_security_catalog.sql.log"
+    },
+    {
+      "suite": "rmvp_01_atlas_master_data.sql",
+      "assertions": 43,
+      "result": "PASS",
+      "log": "focused-closeout-rmvp_01_atlas_master_data.sql.log"
+    },
+    {
+      "suite": "atlas_school_cooking_groups.sql",
+      "assertions": 33,
+      "result": "PASS",
+      "log": "focused-closeout-atlas_school_cooking_groups.sql.log"
+    },
+    {
+      "suite": "school_dispatch_release.sql",
+      "assertions": 59,
+      "result": "PASS",
+      "log": "focused-closeout-school_dispatch_release.sql.log"
+    },
+    {
+      "suite": "procurement_supplier_line_note.sql",
+      "assertions": 13,
+      "result": "PASS",
+      "log": "focused-closeout-procurement_supplier_line_note.sql.log"
+    },
+    {
+      "suite": "purchase_review_confirm_release.sql",
+      "assertions": 147,
+      "result": "PASS",
+      "log": "focused-closeout-purchase_review_confirm_release.sql.log"
+    },
+    {
+      "suite": "planning_contract_01_atomic_planning_boundaries.sql",
+      "assertions": 258,
+      "result": "PASS",
+      "log": "focused-closeout-planning_contract_01_atomic_planning_boundaries.sql.log"
+    }
+  ],
+  "red_evidence": [
+    "focused-document-identity-red.log",
+    "focused-document-release-safety-red.log",
+    "focused-document-note-name-red.log"
+  ],
+  "review_regressions": [
+    "Frozen supplier_note survives corrected allocation, replacement, and supersession",
+    "Unicode-blank historical supplier name prevents official export",
+    "Embedded UUID and control-character codes rejected by authoring and release, historical completeness fails closed",
+    "JavaScript boundary whitespace rejected consistently; numeric legacy suffix remains text"
+  ],
+  "rollback": "Forward-only preserve authored master document_code and every released snapshot. Historical release rows are never backfilled."
+}

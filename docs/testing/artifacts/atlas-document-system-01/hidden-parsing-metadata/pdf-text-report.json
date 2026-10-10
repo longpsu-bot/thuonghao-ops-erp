@@ -1,0 +1,72 @@
+[
+  {
+    "pdf": "PO-hidden-parsing-all-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-all-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-all-sheet-3.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-all.pdf",
+    "pages": 3,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-sum-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-sum.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-details_ing-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-details_ing.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-details_school-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PO-hidden-parsing-details_school.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-hidden-parsing-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-hidden-parsing.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-hidden-parsing-batch-sheet-1.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  },
+  {
+    "pdf": "PXK-hidden-parsing-batch-sheet-2.pdf",
+    "pages": 1,
+    "missing_visible_strings": []
+  }
+]

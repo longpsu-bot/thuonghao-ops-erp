@@ -1,0 +1,12 @@
+
+ RUN  v4.1.10 D:/Project/Repo/OPS/thuonghao-ops-erp
+
+ ❯ src/modules/admin/RecipeAdjustmentWorkbench.test.tsx (64 tests | 8 failed) 146980ms
+     × previews and creates a base SYSTEM_DISH target with Dish and School Type only 7241ms
+     × keeps the SYSTEM_DISH result general and optionally inspects an active matching-type School 5074ms
+     × keeps a success mutation locked until exact adjustment and revision evidence is read back 5404ms
+     × keeps a transport_error mutation locked until exact adjustment and revision evidence is read back 7015ms
+     × shows no Unit decision for REPLACE until quantity override derives the substitute Unit 5665ms
+     × reviews the exact changed line, preserves quantity, and invalidates preview after editing 5870ms
+     × clears stale payload and preview when Business Object or Authority changes 5802ms
+     × does not carry Recipe targets across an Authority change 2019ms

@@ -4,13 +4,22 @@ import type { MasterDataApi } from "../../../modules/atlas/master-data/masterDat
 export type SchoolMasterDataApi = Pick<
   MasterDataApi,
   "getSchools" | "updateSchoolDefaultsBulk"
->;
+> &
+  Partial<
+    Pick<
+      MasterDataApi,
+      "getCookingGroups" | "upsertCookingGroup" | "setSchoolCookingGroup"
+    >
+  >;
 
 export type {
+  MasterDataCommandRequest,
   MasterDataBulkCommandRequest,
   SchoolDefaultsBulkChange,
 } from "../../../modules/atlas/master-data/masterDataApi";
 export {
+  commandRequest,
+  type CookingGroupMasterData,
   responseArray,
   resultMessage,
   schoolDefaultsBulkCommandRequest,

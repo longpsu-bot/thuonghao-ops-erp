@@ -1,0 +1,20 @@
+{
+  "scope": "Focused local development checks; GitHub owns routine full suite",
+  "document_exports": "79 unique tests across five export/presentation/quantity/packaging files: exporter37 rerun plus related42 previously passed",
+  "procurement_pxk_integration": {
+    "files": 5,
+    "tests": 33
+  },
+  "shopping_cooking_ui": {
+    "files": 6,
+    "tests": 122,
+    "shopping": 113,
+    "cooking": 9
+  },
+  "admin": "80 unique editor/model/review/hook/workbench tests passed across focused runs; review adapter13 covered again",
+  "catalog_contract": 111,
+  "unicode_chunk_boundary": 1,
+  "typecheck": "PASS",
+  "build": "PASS (existing bundle size warning)",
+  "known_development_failures": "One Unicode fixture initially gave conflicting codes to repeated Ingredient lines; corrected fixture. One unchanged PDF test hit 5000 ms during parallel build/native contention; default-timeout rerun passed. No test timeouts weakened."
+}

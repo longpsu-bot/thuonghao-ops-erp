@@ -127,6 +127,7 @@ export function IngredientDetail({
       {archived ? (
         <Box p="md">
           <Text>Nguyên liệu đã lưu trữ chỉ có thể xem.</Text>
+          <Fact label="Mã hàng trên chứng từ" value={item?.document_code} />
           <Fact label="Đơn vị mua" value={item?.purchase_unit_name} />
           <Fact label="Loại nguyên liệu" value={item?.ingredient_type_name} />
           <Fact
@@ -165,6 +166,21 @@ export function IngredientDetail({
                 c.setIngredientField("purchaseUnitId", value)
               }
             />
+            <Field.Root>
+              <Field.Label>Mã hàng trên chứng từ</Field.Label>
+              <Input
+                value={c.ingredientDraft.documentCode}
+                maxLength={200}
+                disabled={c.saving || c.loading || Boolean(c.lock)}
+                onChange={(event) =>
+                  c.setIngredientField("documentCode", event.target.value)
+                }
+              />
+              <Field.HelperText>
+                Có thể để trống khi tạo dữ liệu gốc. Cần có mã trước khi phát
+                hành đơn mua hàng.
+              </Field.HelperText>
+            </Field.Root>
             <SelectField
               label="Loại nguyên liệu"
               value={c.ingredientDraft.ingredientTypeId}

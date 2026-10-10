@@ -18,6 +18,7 @@ import {
 const activeSupplier: SupplierMasterData = {
   supplier_id: "supplier-active",
   supplier_code: "NCC-MINH-TAM",
+  document_code: null,
   supplier_name: "NCC Minh Tâm",
   supplier_status: "ACTIVE",
   contact_name: "Tâm",
@@ -29,12 +30,14 @@ const inactiveSupplier: SupplierMasterData = {
   ...activeSupplier,
   supplier_id: "supplier-inactive",
   supplier_code: "NCC-CU",
+  document_code: null,
   supplier_name: "Nhà cung ứng Cũ",
   supplier_status: "INACTIVE",
 };
 const ingredient: IngredientMasterData = {
   ingredient_id: "ingredient-1",
   ingredient_code: "NL-RAU-MUONG",
+  document_code: null,
   ingredient_name: "Rau muống",
   ingredient_status: "ACTIVE",
   ingredient_type_id: "type-1",

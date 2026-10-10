@@ -1,0 +1,280 @@
+BEGIN
+psql:/tmp/rmvp_01_atlas_master_data.sql:3: NOTICE:  schema "extensions" already exists, skipping
+CREATE SCHEMA
+CREATE EXTENSION
+ no_plan
+---------
+(0 rows)
+
+GRANT
+psql:/tmp/rmvp_01_atlas_master_data.sql:8: WARNING:  no privileges were granted for "grant_pg_cron_access"
+psql:/tmp/rmvp_01_atlas_master_data.sql:8: WARNING:  no privileges were granted for "grant_pg_net_access"
+GRANT
+                                   ok
+------------------------------------------------------------------------
+ ok 1 - RMVP-01 command runtime is NOLOGIN NOINHERIT and non-privileged
+(1 row)
+
+                               is
+----------------------------------------------------------------
+ ok 2 - runtime still owns all seven RMVP-01 master-data writes
+(1 row)
+
+                                              ok
+----------------------------------------------------------------------------------------------
+ ok 3 - the RMVP-01 operator import remains outside authenticated, read, and command runtimes
+(1 row)
+
+                                                       ok
+----------------------------------------------------------------------------------------------------------------
+ ok 4 - legacy evidence is private from API roles and the command runtime has only bounded recipe-import access
+(1 row)
+
+                          ok
+-------------------------------------------------------
+ ok 5 - API roles retain no private Atlas schema usage
+(1 row)
+
+                                             ok
+--------------------------------------------------------------------------------------------
+ ok 6 - all nine RMVP-01 API functions are empty-search-path definers with exact API grants
+(1 row)
+
+                                    is
+--------------------------------------------------------------------------
+ ok 7 - runtime can still execute all seven reviewed RMVP-01 API commands
+(1 row)
+
+                                         ok
+-------------------------------------------------------------------------------------
+ ok 8 - runtime has no Atlas schema CREATE privilege and inherits no role membership
+(1 row)
+
+                                                ok
+--------------------------------------------------------------------------------------------------
+ ok 9 - runtime has no Planning, Procurement, Evidence, Dispatch, or Reporting relation privilege
+(1 row)
+
+                       ok
+-------------------------------------------------
+ ok 10 - runtime has no Atlas sequence privilege
+(1 row)
+
+                                          is
+--------------------------------------------------------------------------------------
+ ok 11 - runtime write grants are column-scoped to the reviewed master-data mutations
+(1 row)
+
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 13
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+SET
+              set_config
+--------------------------------------
+ d1000000-0000-0000-0000-000000000101
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+                   is
+-----------------------------------------
+ ok 12 - school portion command succeeds
+(1 row)
+
+                                   is
+-------------------------------------------------------------------------
+ ok 13 - school exact replay returns the authoritative original response
+(1 row)
+
+                         is
+----------------------------------------------------
+ ok 14 - school defaults persist once and read back
+(1 row)
+
+                    is
+-------------------------------------------
+ ok 15 - stale school updates are rejected
+(1 row)
+
+                      is
+-----------------------------------------------
+ ok 16 - negative school defaults are rejected
+(1 row)
+
+                 is
+------------------------------------
+ ok 17 - supplier creation succeeds
+(1 row)
+
+                  is
+--------------------------------------
+ ok 18 - ingredient creation succeeds
+(1 row)
+
+                  is
+---------------------------------------
+ ok 19 - priority replacement succeeds
+(1 row)
+
+                                 is
+--------------------------------------------------------------------
+ ok 20 - duplicate supplier priorities are rejected before mutation
+(1 row)
+
+                                                 is
+----------------------------------------------------------------------------------------------------
+ ok 21 - ingredient deactivation safely retires active supplier priorities without deleting history
+(1 row)
+
+                                           is
+-----------------------------------------------------------------------------------------
+ ok 22 - priority history survives unrelated ingredient edits and lifecycle deactivation
+(1 row)
+
+                       is
+-------------------------------------------------
+ ok 23 - supplier name/contact update reads back
+(1 row)
+
+                     is
+--------------------------------------------
+ ok 24 - ingredient field update reads back
+(1 row)
+
+                                       ok
+--------------------------------------------------------------------------------
+ ok 25 - connected ingredient/supplier read returns shaped authoritative arrays
+(1 row)
+
+                               is
+-----------------------------------------------------------------
+ ok 26 - school read exposes supported delivery/contract context
+(1 row)
+
+                                 is
+--------------------------------------------------------------------
+ ok 27 - each successful write has one completed idempotent receipt
+(1 row)
+
+                                is
+------------------------------------------------------------------
+ ok 28 - each successful master-data write emits one domain event
+(1 row)
+
+                               is
+-----------------------------------------------------------------
+ ok 29 - each successful master-data write emits one audit event
+(1 row)
+
+SET
+              set_config
+--------------------------------------
+ d1000000-0000-0000-0000-000000000102
+(1 row)
+
+                        is
+---------------------------------------------------
+ ok 30 - read capability denial is returned safely
+(1 row)
+
+                               throws_ok
+-----------------------------------------------------------------------
+ ok 31 - authenticated cannot read private master-data tables directly
+(1 row)
+
+                               throws_ok
+------------------------------------------------------------------------
+ ok 32 - authenticated cannot invoke or inspect the privileged importer
+(1 row)
+
+RESET
+CREATE TABLE
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+                          is
+------------------------------------------------------
+ ok 33 - valid explicit snapshot imports successfully
+(1 row)
+
+                             is
+------------------------------------------------------------
+ ok 34 - identical snapshot rerun replays the stored result
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 35 - completed import reports inserted records explicitly
+(1 row)
+
+                                   is
+-------------------------------------------------------------------------
+ ok 36 - identical snapshot rerun reports every source record as skipped
+(1 row)
+
+                              is
+--------------------------------------------------------------
+ ok 37 - snapshot rerun does not duplicate target master data
+(1 row)
+
+                             is
+-------------------------------------------------------------
+ ok 38 - snapshot with a missing typed reference is rejected
+(1 row)
+
+                             is
+------------------------------------------------------------
+ ok 39 - missing-reference result is explicit and countable
+(1 row)
+
+                                  is
+----------------------------------------------------------------------
+ ok 40 - rejected snapshot reports rejected source records explicitly
+(1 row)
+
+                             is
+-------------------------------------------------------------
+ ok 41 - rejected snapshot performs no partial target writes
+(1 row)
+
+                                         is
+-------------------------------------------------------------------------------------
+ ok 42 - import evidence stores one completed and one rejected batch, not the replay
+(1 row)
+
+                                 ok
+---------------------------------------------------------------------
+ ok 43 - completed import stores passed source/target reconciliation
+(1 row)
+
+ finish
+--------
+ 1..43
+(1 row)
+
+ROLLBACK

@@ -968,7 +968,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(102);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(104);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [
@@ -1118,6 +1118,8 @@ describe("Atlas staging dry-run and workflow", () => {
     for (const hardeningContractTest of [
       "direct_ingredient_need_convergence.sql",
       "school_dispatch_release.sql",
+      "atlas_school_cooking_groups.sql",
+      "atlas_po_document_identity.sql",
       "school_fulfilment_reconciliation.sql",
     ]) {
       expect(
@@ -2107,9 +2109,18 @@ describe("Atlas staging hosted evidence", () => {
       "get_school_fulfilment_reconciliation_workbench(request jsonb)";
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(115);
-    expect(authority.apiOwners).toHaveLength(115);
-    expect(authority.authenticatedApiSignatures).toHaveLength(112);
+    expect(authority.apiSignatures).toHaveLength(118);
+    expect(authority.apiOwners).toHaveLength(118);
+    expect(authority.authenticatedApiSignatures).toHaveLength(115);
+    for (const name of [
+      "get_cooking_groups",
+      "upsert_cooking_group",
+      "set_school_cooking_group",
+    ]) {
+      expect(authority.authenticatedApiSignatures).toContain(
+        `${name}(request jsonb)`,
+      );
+    }
     expect(authority.apiSignatures).toContain(
       "get_confirmed_need_shopping_list_export(request jsonb)",
     );
@@ -2132,8 +2143,8 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.authenticatedApiSignatures).not.toContain(
       dispatchSnapshotBase,
     );
-    expect(authority.policyCount).toBe(654);
-    expect(authority.policyDigest).toBe("1333f218f38f7e61db02fd18fcd64c70");
+    expect(authority.policyCount).toBe(663);
+    expect(authority.policyDigest).toBe("c0df6670b465ff57fa621a7e947d89a6");
   });
 
   it("compares authenticated EXECUTE against CAT-18 rather than physical CAT-15", () => {
@@ -2246,7 +2257,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 654");
+    expect(sql).toContain("normal_policy_count <> 663");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -2321,11 +2332,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [654, 1, true],
-    [654, 0, false],
-    [654, 2, false],
-    [653, 1, false],
-    [655, 1, false],
+    [663, 1, true],
+    [663, 0, false],
+    [663, 2, false],
+    [662, 1, false],
+    [664, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

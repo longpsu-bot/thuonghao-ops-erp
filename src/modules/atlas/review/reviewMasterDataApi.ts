@@ -6,8 +6,10 @@ import type {
 import type {
   MasterDataApi,
   MasterDataBulkCommandRequest,
+  MasterDataCommandRequest,
 } from "../master-data/masterDataApi";
 import type {
+  CookingGroupMasterData,
   IngredientMasterData,
   IngredientOrderGroupMasterData,
   IngredientTypeMasterData,
@@ -240,6 +242,7 @@ function createSuppliers(): SupplierMasterData[] {
     return {
       supplier_id: `review-supplier-${number.toString().padStart(2, "0")}`,
       supplier_code: `NCC${number.toString().padStart(3, "0")}`,
+      document_code: null,
       supplier_name: name,
       supplier_status:
         index === 21 ? "SUSPENDED" : index === 22 ? "INACTIVE" : "ACTIVE",
@@ -313,6 +316,7 @@ function createIngredients(
     return {
       ingredient_id: `review-ingredient-${number.toString().padStart(3, "0")}`,
       ingredient_code: `NL${number.toString().padStart(4, "0")}`,
+      document_code: null,
       ingredient_name: name,
       ingredient_status:
         index % 29 === 0 && index > 0
@@ -347,7 +351,11 @@ function success(
 }
 
 function backendError(
-  errorCode: "CAPABILITY_DENIED" | "STALE_VERSION" | "VALIDATION_FAILED",
+  errorCode:
+    | "CAPABILITY_DENIED"
+    | "STALE_VERSION"
+    | "VALIDATION_FAILED"
+    | "COOKING_GROUP_HAS_MEMBERS",
 ): AtlasRpcResult {
   return {
     kind: "backend_error",
@@ -397,6 +405,22 @@ function payloadNumber(
   return typeof value === "number" ? value : Number.NaN;
 }
 
+function validDocumentCode(request: { payload: Record<string, JsonValue> }) {
+  const code = request.payload.document_code;
+  return (
+    code === undefined ||
+    code === null ||
+    (typeof code === "string" &&
+      code.trim().length > 0 &&
+      Array.from(code.trim()).length <= 200 &&
+      !/^v1-(ingredient|supplier)-/i.test(code.trim()) &&
+      !/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(
+        code,
+      ) &&
+      !/[\u0000-\u001f\u007f]/.test(code))
+  );
+}
+
 function payloadArray(
   request: { payload: Record<string, JsonValue> },
   key: string,
@@ -408,6 +432,11 @@ function payloadArray(
 export function createReviewMasterDataApi(
   scenario: AtlasReviewScenario = "ready",
 ): MasterDataApi {
+  let cookingGroups: CookingGroupMasterData[] = [];
+  const cookingGroupReceipts = new Map<
+    string,
+    { request: MasterDataCommandRequest; result: AtlasRpcResult }
+  >();
   let schools = createSchools();
   let suppliers = createSuppliers();
   let ingredients = createIngredients(suppliers);
@@ -424,6 +453,86 @@ export function createReviewMasterDataApi(
     });
 
   return {
+    getCookingGroups() {
+      const blocked = readBlock();
+      return Promise.resolve(
+        blocked ?? success({ cooking_groups: clone(cookingGroups) }),
+      );
+    },
+    upsertCookingGroup(request) {
+      const blocked = writeBlock();
+      if (blocked) return Promise.resolve(blocked);
+      const receipt = cookingGroupReceipts.get(request.command_id);
+      if (receipt)
+        return Promise.resolve(
+          JSON.stringify(receipt.request) === JSON.stringify(request)
+            ? clone(receipt.result)
+            : backendError("VALIDATION_FAILED"),
+        );
+      const id = payloadString(request, "cooking_group_id");
+      const name = payloadString(request, "cooking_group_name").trim();
+      const active = request.payload.active === true;
+      const group = cookingGroups.find((row) => row.cooking_group_id === id);
+      if (!name || name.length > 200 || (id && !group))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+      if (request.expected_version !== (group?.version ?? 1))
+        return Promise.resolve(backendError("STALE_VERSION"));
+      if (!active && schools.some((school) => school.cooking_group_id === id))
+        return Promise.resolve(backendError("COOKING_GROUP_HAS_MEMBERS"));
+      const savedGroup = {
+        cooking_group_id: id || crypto.randomUUID(),
+        cooking_group_name: name,
+        active,
+        version: group ? group.version + 1 : 1,
+      };
+      cookingGroups = [
+        ...cookingGroups.filter(
+          (row) => row.cooking_group_id !== savedGroup.cooking_group_id,
+        ),
+        savedGroup,
+      ];
+      schools = schools.map((school) =>
+        school.cooking_group_id === savedGroup.cooking_group_id
+          ? { ...school, cooking_group_name: name }
+          : school,
+      );
+      const result = success({
+        command_id: request.command_id,
+        affected_aggregate_ids: {
+          cooking_group_id: savedGroup.cooking_group_id,
+        },
+      });
+      cookingGroupReceipts.set(request.command_id, {
+        request: clone(request),
+        result: clone(result),
+      });
+      return Promise.resolve(result);
+    },
+    setSchoolCookingGroup(request) {
+      const blocked = writeBlock();
+      if (blocked) return Promise.resolve(blocked);
+      const id = payloadString(request, "school_id");
+      const index = schools.findIndex((school) => school.school_id === id);
+      const groupId = payloadString(request, "cooking_group_id");
+      const group = cookingGroups.find(
+        (row) => row.cooking_group_id === groupId,
+      );
+      if (
+        index < 0 ||
+        schools[index].school_status !== "ACTIVE" ||
+        (groupId && !group?.active)
+      )
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+      if (request.expected_version !== schools[index].version)
+        return Promise.resolve(backendError("STALE_VERSION"));
+      schools[index] = {
+        ...schools[index],
+        cooking_group_id: group?.cooking_group_id ?? null,
+        cooking_group_name: group?.cooking_group_name ?? null,
+        version: schools[index].version + 1,
+      };
+      return Promise.resolve(saved());
+    },
     getSchools() {
       if (scenario === "loading") return pendingResult();
       const blocked = readBlock();
@@ -539,6 +648,8 @@ export function createReviewMasterDataApi(
     createIngredient(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
+      if (!validDocumentCode(request))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const code =
         request.payload.ingredient_code === undefined
           ? `ingredient-${crypto.randomUUID()}`
@@ -573,6 +684,7 @@ export function createReviewMasterDataApi(
         {
           ingredient_id: id,
           ingredient_code: code,
+          document_code: payloadString(request, "document_code").trim() || null,
           ingredient_name: payloadString(request, "ingredient_name"),
           ingredient_status: "ACTIVE",
           ingredient_type_id: type.ingredient_type_id,
@@ -596,6 +708,8 @@ export function createReviewMasterDataApi(
     updateIngredient(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
+      if (!validDocumentCode(request))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const id = payloadString(request, "ingredient_id");
       const index = ingredients.findIndex(
         (ingredient) => ingredient.ingredient_id === id,
@@ -620,6 +734,12 @@ export function createReviewMasterDataApi(
         return Promise.resolve(backendError("VALIDATION_FAILED"));
       ingredients[index] = {
         ...ingredients[index],
+        ...(Object.hasOwn(request.payload, "document_code")
+          ? {
+              document_code:
+                payloadString(request, "document_code").trim() || null,
+            }
+          : {}),
         ingredient_name: payloadString(request, "ingredient_name"),
         ingredient_type_id: type.ingredient_type_id,
         ingredient_type_name: type.ingredient_type_name,
@@ -663,6 +783,8 @@ export function createReviewMasterDataApi(
     createSupplier(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
+      if (!validDocumentCode(request))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const code =
         request.payload.supplier_code === undefined
           ? `supplier-${crypto.randomUUID()}`
@@ -682,6 +804,7 @@ export function createReviewMasterDataApi(
         {
           supplier_id: `review-supplier-${number.toString().padStart(2, "0")}`,
           supplier_code: code,
+          document_code: payloadString(request, "document_code").trim() || null,
           supplier_name: payloadString(request, "supplier_name"),
           supplier_status: "ACTIVE",
           contact_name: payloadString(request, "contact_name") || null,
@@ -697,6 +820,8 @@ export function createReviewMasterDataApi(
     updateSupplier(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
+      if (!validDocumentCode(request))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const id = payloadString(request, "supplier_id");
       const index = suppliers.findIndex(
         (supplier) => supplier.supplier_id === id,
@@ -706,6 +831,12 @@ export function createReviewMasterDataApi(
         return Promise.resolve(backendError("STALE_VERSION"));
       suppliers[index] = {
         ...suppliers[index],
+        ...(Object.hasOwn(request.payload, "document_code")
+          ? {
+              document_code:
+                payloadString(request, "document_code").trim() || null,
+            }
+          : {}),
         supplier_name: payloadString(request, "supplier_name"),
         contact_name: payloadString(request, "contact_name") || null,
         contact_phone: payloadString(request, "contact_phone") || null,

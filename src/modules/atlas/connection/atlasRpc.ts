@@ -27,6 +27,9 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.get_operator_blockers": "get_operator_blockers",
   "atlas_api.get_command_audit_timeline": "get_command_audit_timeline",
   "atlas_api.get_school_master_data": "get_school_master_data",
+  "atlas_api.get_cooking_groups": "get_cooking_groups",
+  "atlas_api.upsert_cooking_group": "upsert_cooking_group",
+  "atlas_api.set_school_cooking_group": "set_school_cooking_group",
   "atlas_api.get_ingredient_supplier_master_data":
     "get_ingredient_supplier_master_data",
   "atlas_api.update_school_portion_defaults": "update_school_portion_defaults",

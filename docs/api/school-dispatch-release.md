@@ -10,6 +10,12 @@
 
 **Document grain:** service date + School + delivery location
 
+New releases freeze nullable cooking-group ID/name from the single Admin-owned
+current membership. Shaped released reads expose `cooking_group_id` and
+`cooking_group_name`; later master changes cannot rewrite them. See the bounded
+[School cooking groups amendment](school-cooking-groups.md). Historical releases
+are never backfilled, and the preview/readiness contract is unchanged.
+
 ## Boundary
 
 This contract implements the minimum School/day `PHIẾU XUẤT KHO` capability. It is
@@ -131,6 +137,11 @@ No readiness SQL reads or requires receipt, inventory, stock, lot, balance,
 reservation, pick, cross-dock, DispatchPlan, trip, vehicle, driver, or load facts.
 
 ## Persistence and security
+
+Released PXK single/grouped/ZIP Excel exports carry hidden Ingredient/Unit/School
+identities and very-hidden release/source references, following the
+[operational XLSX metadata contract](operational-document-xlsx-metadata.md).
+Printed replacement labels retain their meaning without exposing technical IDs.
 
 Private forced-RLS relations:
 

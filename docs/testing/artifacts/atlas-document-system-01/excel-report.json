@@ -1,0 +1,344 @@
+{
+  "workbooks": [
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 3,
+      "sheets": [
+        {
+          "print_titles": "$1:$7",
+          "pdf": "PO-one-school-sheet-1.pdf",
+          "name": "Tổng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-one-school-sheet-2.pdf",
+          "name": "Theo trường",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-one-school-sheet-3.pdf",
+          "name": "Theo hàng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "PO-one-school.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 6,
+      "sheets": [
+        {
+          "print_titles": "$1:$7",
+          "pdf": "PO-multiple-schools-sheet-1.pdf",
+          "name": "Tổng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-multiple-schools-sheet-2.pdf",
+          "name": "Theo trường",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-multiple-schools-sheet-3.pdf",
+          "name": "Theo hàng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "PO-multiple-schools.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 3,
+      "sheets": [
+        {
+          "print_titles": "$1:$7",
+          "pdf": "PO-second-supplier-sheet-1.pdf",
+          "name": "Tổng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-second-supplier-sheet-2.pdf",
+          "name": "Theo trường",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-second-supplier-sheet-3.pdf",
+          "name": "Theo hàng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "PO-second-supplier.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 6,
+      "sheets": [
+        {
+          "print_titles": "$1:$7",
+          "pdf": "PO-superseded-sheet-1.pdf",
+          "name": "Tổng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-superseded-sheet-2.pdf",
+          "name": "Theo trường",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-superseded-sheet-3.pdf",
+          "name": "Theo hàng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "PO-superseded.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 6,
+      "sheets": [
+        {
+          "print_titles": "$1:$7",
+          "pdf": "PO-multiline-note-sheet-1.pdf",
+          "name": "Tổng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            12,
+            16,
+            20
+          ]
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-multiline-note-sheet-2.pdf",
+          "name": "Theo trường",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-multiline-note-sheet-3.pdf",
+          "name": "Theo hàng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "PO-multiline-note.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 180,
+      "sheets": [
+        {
+          "print_titles": "$1:$7",
+          "pdf": "PO-multipage-precision-sheet-1.pdf",
+          "name": "Tổng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            24
+          ]
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-multipage-precision-sheet-2.pdf",
+          "name": "Theo trường",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            13,
+            16
+          ]
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "PO-multipage-precision-sheet-3.pdf",
+          "name": "Theo hàng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            14,
+            18
+          ]
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "PO-multipage-precision.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 1,
+      "sheets": [
+        {
+          "print_titles": "$1:$10",
+          "pdf": "PXK-one-school-sheet-1.pdf",
+          "name": "Trường Tiểu học Nguyễn Du",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "PXK-one-school.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 60,
+      "sheets": [
+        {
+          "print_titles": "$1:$10",
+          "pdf": "PXK-multipage-superseded-sheet-1.pdf",
+          "name": "Trường Tiểu học mẫu với tên dài",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            30
+          ]
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "PXK-multipage-superseded.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 62,
+      "sheets": [
+        {
+          "print_titles": "$1:$10",
+          "pdf": "Dispatch-grouped-distinct-destinations-sheet-1.pdf",
+          "name": "09-24 Trường Tiểu học mẫu với t",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            30
+          ]
+        },
+        {
+          "print_titles": "$1:$10",
+          "pdf": "Dispatch-grouped-distinct-destinations-sheet-2.pdf",
+          "name": "09-24 Trường Tiểu học Nguyễn Du",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        },
+        {
+          "print_titles": "$1:$10",
+          "pdf": "Dispatch-grouped-distinct-destinations-sheet-3.pdf",
+          "name": "09-24 Trường Tiểu học Nguyễn  2",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "Dispatch-grouped-distinct-destinations.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 80,
+      "sheets": [
+        {
+          "print_titles": "$1:$9",
+          "pdf": "Purchase-review-preliminary-sheet-1.pdf",
+          "name": "Tổng",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            21,
+            34
+          ]
+        },
+        {
+          "print_titles": "$1:$9",
+          "pdf": "Purchase-review-preliminary-sheet-2.pdf",
+          "name": "Chi tiết",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            21
+          ]
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "Purchase-review-preliminary.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 0,
+      "sheets": [
+        {
+          "print_titles": "$1:$6",
+          "pdf": "Attendance-import-template-sheet-1.pdf",
+          "name": "Nhập sĩ số",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [
+            29
+          ]
+        },
+        {
+          "print_titles": "$1:$1",
+          "pdf": "Attendance-import-template-sheet-2.pdf",
+          "name": "Mã trường",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "Attendance-import-template.xlsx"
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 12,
+      "sheets": [
+        {
+          "print_titles": "$1:$3",
+          "pdf": "Shopping-list-APlus-preserved-sheet-1.pdf",
+          "name": "2026-09-07",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": []
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "file": "Shopping-list-APlus-preserved.xlsx"
+    }
+  ],
+  "excel_version": "16.0"
+}
