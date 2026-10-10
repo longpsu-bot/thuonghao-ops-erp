@@ -50,7 +50,7 @@ describe("School dispatch release exports", () => {
     expect(sheet.getRow(9).values).not.toContain("Trường");
     expect(sheet.getCell("G9").text).toBe("Biện pháp xử lý");
     expect(sheet.getCell("E10").text).toBe("Đạt");
-    expect(sheet.getCell("F10").text).toBe("K Đạt");
+    expect(sheet.getCell("F10").text).toBe("Không đạt");
     const worksheetText: string[] = [];
     sheet.eachRow((row) =>
       row.eachCell((cell) => {
@@ -114,9 +114,9 @@ describe("School dispatch release exports", () => {
     expect(sheet.getCell("F5").value).toBe("Ngày:");
     expect(sheet.getCell("G5").value).toBe("24/09/2026");
     expect(sheet.getCell("A8").text).toContain("ĐÃ PHÁT HÀNH");
-    expect(sheet.getColumn(5).width).toBe(8);
-    expect(sheet.getColumn(6).width).toBe(8);
-    expect(sheet.getColumn(7).width).toBe(20);
+    expect(sheet.getColumn(5).width).toBe(7);
+    expect(sheet.getColumn(6).width).toBe(11);
+    expect(sheet.getColumn(7).width).toBe(19);
     expect(sheet.getCell("D23").value).toBe("3");
     expect(sheet.getCell("A29").value).toBe("Người nhận hàng");
     expect(sheet.getCell("C29").value).toBe("Người giao hàng");
@@ -178,7 +178,7 @@ describe("School dispatch release exports", () => {
     );
     expect(sheet.getCell("E9").value).toBe("Tình trạng cảm quan");
     expect(sheet.getCell("E10").value).toBe("Đạt");
-    expect(sheet.getCell("F10").value).toBe("K Đạt");
+    expect(sheet.getCell("F10").value).toBe("Không đạt");
     expect(sheet.getCell("G9").value).toBe("Biện pháp xử lý");
     expect(sheet.getCell("D11").value).toBe("100");
     expect(workbook.model.media).toHaveLength(1);

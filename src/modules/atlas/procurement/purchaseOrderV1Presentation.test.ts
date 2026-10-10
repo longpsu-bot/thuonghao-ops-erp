@@ -57,7 +57,7 @@ describe("Owner V1 PO presentation revision", () => {
       "99999999999999.123456".length * 1.34 + 2,
     );
   });
-  it("matches V1 all-mode sheet order and the six-column summary positions without invented codes", async () => {
+  it("keeps V1 all-mode order while hiding item codes from the printed summary", async () => {
     const workbook = await load(await createPurchaseOrderXlsx(fixture()));
     expect(workbook.getWorksheet("_ATLAS_META")?.state).toBe("veryHidden");
     expect(
@@ -70,15 +70,12 @@ describe("Owner V1 PO presentation revision", () => {
       "02-09-2026 - Tổng",
     ]);
     const summary = workbook.worksheets[2]!;
-    expect((summary.getRow(10).values as unknown[]).slice(0, 7)).toEqual([
-      undefined,
-      "STT",
-      "Mã hàng",
-      "Tên hàng",
-      "Đơn vị",
-      "Số lượng",
-      "Ghi chú",
-    ]);
+    expect(summary.getColumn(2).hidden).toBe(true);
+    expect(
+      (summary.getRow(10).values as unknown[])
+        .slice(1, 7)
+        .filter((_, index) => !summary.getColumn(index + 1).hidden),
+    ).toEqual(["STT", "Tên hàng", "Đơn vị", "Số lượng", "Ghi chú"]);
     expect(summary.getCell("C1").text).toContain("THƯỢNG HẢO");
     expect(summary.getCell("C2").text).toContain("96/3");
     expect(summary.getCell("A4").text).toBe("PHIẾU ĐẶT HÀNG");
@@ -113,8 +110,8 @@ describe("Owner V1 PO presentation revision", () => {
     const workbook = await load(await createPurchaseOrderXlsx(order));
     for (const suffix of ["Theo hàng", "Theo trường"]) {
       const sheet = workbook.getWorksheet(`02-09-2026 - ${suffix}`)!;
-      expect(sheet.columns.filter((column) => !column.hidden)).toHaveLength(6);
-      expect(sheet.columns.filter((column) => column.hidden)).toHaveLength(8);
+      expect(sheet.columns.filter((column) => !column.hidden)).toHaveLength(5);
+      expect(sheet.columns.filter((column) => column.hidden)).toHaveLength(9);
       expect(sheet.model.merges).toContain("A10:F10");
       expect(sheet.getCell("A11").value).toBe(1);
       expect(sheet.getCell("B11").text).toBe("1082");
@@ -125,15 +122,15 @@ describe("Owner V1 PO presentation revision", () => {
       workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("A13").text,
     ).toContain(order.lines[0]!.school_breakdown[0]!.school_name);
   });
-  it("uses Ngày dùng and frozen document codes in PDF, keeping the six-column summary", () => {
+  it("uses Ngày dùng and supplier code in PDF while keeping item code hidden", () => {
     const definition = buildPurchaseOrderPdfDefinition(fixture());
     const text = JSON.stringify(definition);
     expect(text).toContain("Ngày dùng");
     expect(text).not.toContain("Ngày giao");
     expect(text).toContain("Mã NCC: 53");
-    expect(text).toContain("1082");
+    expect(text).not.toContain("1082");
     expect(text).not.toContain("chưa lưu mã");
-    expect(text).toContain("Mã hàng");
+    expect(text).not.toContain("Mã hàng");
     const tables = (
       definition.content as { table?: { body: unknown[][] } }[]
     ).filter((item) => item.table);
@@ -147,7 +144,6 @@ describe("Owner V1 PO presentation revision", () => {
           ) ===
           JSON.stringify([
             "STT",
-            "Mã hàng",
             "Tên hàng",
             "Đơn vị",
             "Số lượng",

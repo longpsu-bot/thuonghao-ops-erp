@@ -29,22 +29,19 @@ describe("released purchase-order exports", () => {
       line.ingredient_document_code_snapshot = code;
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(await createPurchaseOrderXlsx(order, "sum"));
-    const fragments: string[] = [];
-    const quantities: string[] = [];
-    book.worksheets[0]!.eachRow((row, index) => {
-      if (index < 11) return;
-      fragments.push(row.getCell(2).text);
-      if (row.getCell(5).text) quantities.push(row.getCell(5).text);
-      expect(row.height).toBeLessThanOrEqual(180);
-      expect(row.height).toBeGreaterThanOrEqual(
-        (row.getCell(2).text.length / 5) * 14,
-      );
-    });
-    expect(fragments.join("")).toBe(code);
-    expect(quantities).toEqual(["100"]);
+    const sheet = book.worksheets[0]!;
+    expect(sheet.getColumn(2).hidden).toBe(true);
+    expect(sheet.getCell("B11").text).toBe(code);
+    expect(sheet.getCell("E11").text).toBe("100");
+    const visibleText: string[] = [];
+    sheet.eachRow((row) =>
+      row.eachCell((cell) => {
+        if (!sheet.getColumn(cell.col).hidden) visibleText.push(cell.text);
+      }),
+    );
+    expect(visibleText.join("\n")).not.toContain(code);
     const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, "sum"));
-    expect(pdf).toContain("...");
-    expect(pdf).not.toContain("↳");
+    expect(pdf).not.toContain(code);
   });
   it("counts and fragments document-code Unicode characters consistently with PostgreSQL", async () => {
     const order =
@@ -58,20 +55,10 @@ describe("released purchase-order exports", () => {
     ).toBe(code);
     const book = new ExcelJS.Workbook();
     await book.xlsx.load(await createPurchaseOrderXlsx(order, "sum"));
-    const fragments: string[] = [];
-    book.worksheets[0]!.eachRow((row, index) => {
-      if (index >= 11) fragments.push(row.getCell(2).text);
-    });
-    expect(fragments.join("")).toBe(code);
-    for (const fragment of fragments) {
-      expect(Array.from(fragment).length).toBeLessThanOrEqual(32);
-      expect(
-        Array.from(fragment).every(
-          (character) =>
-            character.length === 2 || !/[\uD800-\uDFFF]/.test(character),
-        ),
-      ).toBe(true);
-    }
+    const sheet = book.worksheets[0]!;
+    expect(sheet.getColumn(2).hidden).toBe(true);
+    expect(sheet.getCell("B11").text).toBe(code);
+    expect(Array.from(sheet.getCell("B11").text)).toHaveLength(200);
     order.lines[0]!.ingredient_document_code_snapshot += "𐐀";
     expect(() => buildPurchaseOrderExportData(order)).toThrow(
       "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
@@ -114,16 +101,27 @@ describe("released purchase-order exports", () => {
     ] as const) {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await createPurchaseOrderXlsx(order, mode));
-      const visible = JSON.stringify(
-        workbook.worksheets.map((sheet) => sheet.getSheetValues()),
-      );
+      const visibleText: string[] = [];
+      for (const sheet of workbook.worksheets.filter(
+        (candidate) => candidate.state === "visible",
+      ))
+        sheet.eachRow((row) =>
+          row.eachCell((cell) => {
+            if (!sheet.getColumn(cell.col).hidden)
+              visibleText.push(cell.text);
+          }),
+        );
+      const visible = visibleText.join("\n");
       expect(visible).toContain("Mã NCC: 53");
-      expect(visible).toContain("1082");
+      expect(visible).not.toContain("1082");
+      expect(
+        JSON.stringify(workbook.getWorksheet("_ATLAS_META")!.getSheetValues()),
+      ).toContain("1082");
       expect(visible).not.toContain("Tên B hiện tại");
       expect(visible).not.toContain("đơn vị hiện tại");
       const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, mode));
       expect(pdf).toContain("Mã NCC: 53");
-      expect(pdf).toContain("1082");
+      expect(pdf).not.toContain("1082");
       expect(pdf).toContain("Tên A lúc phát hành");
       expect(pdf).not.toContain("Tên B hiện tại");
       expect(pdf).not.toContain("v1-ingredient-");

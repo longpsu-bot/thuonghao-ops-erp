@@ -246,6 +246,7 @@ const summaryHeaders = [
   "Số lượng",
   "Ghi chú",
 ];
+const pdfSummaryHeaders = ["STT", "Tên hàng", "Đơn vị", "Số lượng", "Ghi chú"];
 
 function groupBy<T>(items: T[], keyFor: (item: T) => string) {
   const groups = new Map<string, T[]>();
@@ -336,19 +337,7 @@ function noteChunks(note: string | null) {
   return chunks;
 }
 function lineChunks(line: PurchaseOrderExportLine) {
-  const notes = noteChunks(line.supplierNote);
-  const codes = line.ingredientDocumentCode.match(/[\s\S]{1,32}/gu)!;
-  return Array.from(
-    { length: Math.max(notes.length, codes.length) },
-    (_, index) => ({
-      note: notes[index] ?? null,
-      code: codes[index] ?? "",
-    }),
-  );
-}
-function codeRowHeight(code: string) {
-  // Full-em capacity for the narrow code cell, including wide native TNR glyphs.
-  return Math.max(30, Math.ceil(code.length / 4) * 15 + 8);
+  return noteChunks(line.supplierNote).map((note) => ({ note }));
 }
 function codeHeaderHeight(
   text: string,
@@ -415,13 +404,9 @@ export function buildPurchaseOrderPdfDefinition(
       },
       { text: viewTitle[view], style: "heading" },
       { text: `Nhà cung cấp: ${data.supplierName}`, fontSize: 14 },
-      { text: `Ngày dùng: ${data.serviceDate}`, bold: true },
-      {
-        text: `Số đơn: ${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel}`,
-        fontSize: 11,
-        margin: [0, 4, 0, 4],
-      },
-      { text: `Mã NCC: ${data.supplierDocumentCode}`, fontSize: 11 },
+      { text: `Mã NCC: ${data.supplierDocumentCode}`, fontSize: 14 },
+      { text: `Ngày dùng: ${data.serviceDate}`, bold: true, fontSize: 14 },
+      { text: `Số đơn: ${data.documentNumber}`, fontSize: 14 },
     );
     if (view === "sum") {
       content.push(
@@ -429,14 +414,16 @@ export function buildPurchaseOrderPdfDefinition(
         {
           table: {
             headerRows: 1,
-            widths: [25, 45, "*", 36, quantityWidth, 110],
+            widths: [25, "*", 36, quantityWidth, 130],
             dontBreakRows: true,
             body: [
-              summaryHeaders.map((text) => ({ text, style: "tableHeader" })),
+              pdfSummaryHeaders.map((text) => ({
+                text,
+                style: "tableHeader",
+              })),
               ...data.summaryLines.flatMap((line, index) =>
-                lineChunks(line).map(({ note, code }, continuation) => [
+                lineChunks(line).map(({ note }, continuation) => [
                   continuation ? "..." : index + 1,
-                  { text: code, fontSize: 12 },
                   line.ingredientName,
                   line.unitCode,
                   {
@@ -458,8 +445,7 @@ export function buildPurchaseOrderPdfDefinition(
         const label = groupLabel(lines, view);
         const body: import("pdfmake/interfaces").TableCell[][] = [
           [
-            { text: label, colSpan: 6, bold: true, fillColor: "#e8e8e8" },
-            {},
+            { text: label, colSpan: 5, bold: true, fillColor: "#e8e8e8" },
             {},
             {},
             {},
@@ -467,7 +453,6 @@ export function buildPurchaseOrderPdfDefinition(
           ],
           [
             "STT",
-            "Mã hàng",
             view === "details_school" ? "Tên hàng" : "Trường học",
             "Đơn vị",
             "Số lượng",
@@ -477,10 +462,9 @@ export function buildPurchaseOrderPdfDefinition(
         lines.forEach((line, index) => {
           const detail =
             view === "details_school" ? line.ingredientName : schoolLabel(line);
-          lineChunks(line).forEach(({ note, code }, continuation) =>
+          lineChunks(line).forEach(({ note }, continuation) =>
             body.push([
               continuation ? "..." : index + 1,
-              { text: code, fontSize: 12 },
               detail,
               line.unitCode,
               {
@@ -499,7 +483,7 @@ export function buildPurchaseOrderPdfDefinition(
             headerRows: 2,
             dontBreakRows: true,
             keepWithHeaderRows: 1,
-            widths: [25, 45, "*", 36, quantityWidth, 110],
+            widths: [25, "*", 36, quantityWidth, 130],
             body,
           },
           margin: [0, 8, 0, 0],
@@ -586,10 +570,13 @@ function addDetailSheet(
   sheet.getCell("E5").value = data.serviceDate;
   sheet.mergeCells("A6:F6");
   sheet.getCell("A6").value = `Nhà cung cấp: ${data.supplierName}`;
+  sheet.getCell("A6").font = { name: "Times New Roman", size: 14 };
+  sheet.mergeCells("A7:F7");
+  sheet.getCell("A7").value = `Số đơn: ${data.documentNumber}`;
+  sheet.getCell("A7").font = { name: "Times New Roman", size: 14 };
   sheet.mergeCells("A8:F8");
-  sheet.getCell("A8").value =
-    `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel} · Mã NCC: ${data.supplierDocumentCode}`;
-  sheet.getCell("A8").font = { name: "Times New Roman", size: 9 };
+  sheet.getCell("A8").value = `Mã NCC: ${data.supplierDocumentCode}`;
+  sheet.getCell("A8").font = { name: "Times New Roman", size: 14 };
   const quantityWidth = Math.max(
     12,
     ...data.schoolLines.map(
@@ -608,9 +595,10 @@ function addDetailSheet(
   sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
   // Fixed scale preserves manual breaks; Excel fit-to-page ignores them.
   sheet.pageSetup.fitToPage = quantityWidth <= 18;
-  [7, 12, descriptionWidth, 10, quantityWidth, noteWidth].forEach(
+  [7, 12, descriptionWidth + 6, 10, quantityWidth, noteWidth + 6].forEach(
     (width, i) => (sheet.getColumn(i + 1).width = width),
   );
+  sheet.getColumn(2).hidden = true;
   for (const [row, height] of [
     [1, 22],
     [2, 24],
@@ -618,12 +606,12 @@ function addDetailSheet(
     [4, 30],
     [5, 22],
     [6, wrappedRowHeight(sheet.getCell("A6").text, formWidth, 14, 22)],
-    [7, 12],
-    [8, wrappedRowHeight(sheet.getCell("A8").text, formWidth, 9, 20)],
+    [7, wrappedRowHeight(sheet.getCell("A7").text, formWidth, 14, 22)],
+    [8, wrappedRowHeight(sheet.getCell("A8").text, formWidth, 14, 22)],
   ])
     sheet.getRow(row!).height =
       row === 8
-        ? codeHeaderHeight(sheet.getCell("A8").text, formWidth, 9, height!)
+        ? codeHeaderHeight(sheet.getCell("A8").text, formWidth, 14, height!)
         : height;
   sheet.getRow(9).values = [
     "STT",
@@ -690,17 +678,16 @@ function addDetailSheet(
         direction === "details_school"
           ? line.ingredientName
           : schoolLabel(line);
-      lineChunks(line).forEach(({ note, code }, continuation) => {
+      lineChunks(line).forEach(({ note }, continuation) => {
         const height = Math.max(
-          wrappedRowHeight(detail, descriptionWidth, 14, 30),
+          wrappedRowHeight(detail, descriptionWidth + 6, 14, 30),
           noteRowHeight(note),
-          codeRowHeight(code),
         );
         room(height, true);
         const row = sheet.getRow(rowNumber++);
         row.values = [
           continuation ? "..." : index + 1,
-          code,
+          continuation ? "" : line.ingredientDocumentCode,
           detail,
           line.unitCode,
           null,
@@ -708,7 +695,6 @@ function addDetailSheet(
         ];
         row.font = { name: "Times New Roman", size: 14 };
         row.getCell(6).font = { name: "Times New Roman", size: noteFontSize };
-        row.getCell(2).font = { name: "Times New Roman", size: 12 };
         row.alignment = { vertical: "middle", wrapText: true };
         row.height = height;
         if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
@@ -774,16 +760,17 @@ function addSummarySheet(
   sheet.getCell("A4").font = { name: "Times New Roman", bold: true, size: 20 };
   sheet.getCell("A4").alignment = { horizontal: "center" };
   sheet.mergeCells("A5:F5");
-  sheet.getCell("A5").value =
-    `${data.documentNumber} · v${data.releasedRevision} · ${documentStatusLabel(data.status)}${data.replacementLabel}`;
-  sheet.getCell("A5").font = { name: "Times New Roman", size: 9 };
+  sheet.getCell("A5").value = `Số đơn: ${data.documentNumber}`;
+  sheet.getCell("A5").font = { name: "Times New Roman", size: 14 };
   sheet.mergeCells("A6:F6");
   sheet.getCell("A6").value = `Nhà cung cấp: ${data.supplierName}`;
+  sheet.getCell("A6").font = { name: "Times New Roman", size: 14 };
   sheet.getCell("A7").value = "Ngày dùng:";
   sheet.mergeCells("B7:F7");
   sheet.getCell("B7").value = data.serviceDate;
   sheet.mergeCells("A8:F8");
   sheet.getCell("A8").value = `Mã NCC: ${data.supplierDocumentCode}`;
+  sheet.getCell("A8").font = { name: "Times New Roman", size: 14 };
   sheet.mergeCells("A9:F9");
   sheet.getCell("A9").value = "";
   sheet.getCell("A9").font = { name: "Times New Roman", size: 10 };
@@ -802,16 +789,17 @@ function addSummarySheet(
     quantityWidth > 18
       ? Math.max(36, 139 - 7 - 12 - 9.71 - quantityWidth - noteWidth)
       : 36 + Math.max(0, 12.71 - quantityWidth);
-  [7, 12, descriptionWidth, 9.71, quantityWidth, noteWidth].forEach(
+  [7, 12, descriptionWidth + 6, 9.71, quantityWidth, noteWidth + 6].forEach(
     (width, i) => (sheet.getColumn(i + 1).width = width),
   );
+  sheet.getColumn(2).hidden = true;
   for (const [r, w, size, minimum] of [
     [1, descriptionWidth + 9.71 + quantityWidth + noteWidth, 14, 22],
     [2, descriptionWidth + 9.71 + quantityWidth + noteWidth, 12, 20],
     [4, 105, 20, 30],
-    [5, 105, 9, 22],
+    [5, 105, 14, 22],
     [6, 105, 14, 26],
-    [8, 105, 12, 22],
+    [8, 105, 14, 22],
     [9, 105, 10, 20],
   ])
     sheet.getRow(r!).height =
@@ -830,11 +818,11 @@ function addSummarySheet(
   styleWorksheetHeader(sheet.getRow(10));
   let rowNumber = 11;
   data.summaryLines.forEach((line, index) =>
-    lineChunks(line).forEach(({ note, code }, continuation) => {
+    lineChunks(line).forEach(({ note }, continuation) => {
       const row = sheet.getRow(rowNumber++);
       row.values = [
         continuation ? "..." : index + 1,
-        code,
+        continuation ? "" : line.ingredientDocumentCode,
         line.ingredientName,
         line.unitCode,
         null,
@@ -843,11 +831,9 @@ function addSummarySheet(
       row.font = { name: "Times New Roman", size: 14 };
       row.alignment = { vertical: "middle", wrapText: true };
       row.getCell(6).font = { name: "Times New Roman", size: noteFontSize };
-      row.getCell(2).font = { name: "Times New Roman", size: 12 };
       row.height = Math.max(
-        wrappedRowHeight(line.ingredientName, descriptionWidth, 14),
+        wrappedRowHeight(line.ingredientName, descriptionWidth + 6, 14),
         noteRowHeight(note),
-        codeRowHeight(code),
       );
       if (!continuation) setQuantity(row.getCell(5), line.orderedQuantity);
       borderRow(row);

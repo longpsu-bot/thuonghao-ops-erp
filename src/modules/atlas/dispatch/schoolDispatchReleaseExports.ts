@@ -137,7 +137,7 @@ export function buildSchoolDispatchPdfDefinition(
       {
         table: {
           headerRows: 2,
-          widths: [22, "*", 35, quantityWidth, 32, 32, 70, 82],
+          widths: [22, "*", 35, quantityWidth, 28, 40, 68, 80],
           heights: 30,
           dontBreakRows: true,
           body: [
@@ -156,8 +156,8 @@ export function buildSchoolDispatchPdfDefinition(
               "",
               "",
               "",
-              { text: "Đạt", bold: true },
-              { text: "K Đạt", bold: true },
+              { text: "Đạt", bold: true, noWrap: true },
+              { text: "Không đạt", bold: true, noWrap: true },
               "",
               "",
             ],
@@ -259,10 +259,10 @@ function addSchoolDispatchSheet(
       : 30 + Math.max(0, 12.28515625 - quantityWidth),
     8,
     quantityWidth,
-    8,
-    8,
-    20,
-    24,
+    7,
+    11,
+    19,
+    23,
   ];
   sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
   // Fixed scale keeps the signature block together at manual page breaks.
@@ -356,7 +356,7 @@ function addSchoolDispatchSheet(
   sheet.getCell("D9").value = "Số lượng";
   sheet.getCell("E9").value = "Tình trạng cảm quan";
   sheet.getCell("E10").value = "Đạt";
-  sheet.getCell("F10").value = "K Đạt";
+  sheet.getCell("F10").value = "Không đạt";
   sheet.getCell("G9").value = "Biện pháp xử lý";
   sheet.getCell("H9").value = "Ghi chú";
   for (const rowNumber of [9, 10]) {
@@ -370,6 +370,12 @@ function addSchoolDispatchSheet(
     };
     borderRow(header);
   }
+  for (const cell of [sheet.getCell("E10"), sheet.getCell("F10")])
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle",
+      wrapText: false,
+    };
   data.lines.forEach((line, index) => {
     const row = sheet.getRow(11 + index);
     row.values = [
