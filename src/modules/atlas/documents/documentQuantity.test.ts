@@ -105,18 +105,18 @@ describe("printed exact quantities", () => {
         expect(sheet.getColumn(5).width).toBeLessThan(12.71);
       } else {
         expect(sheet.columns.filter((column) => !column.hidden)).toHaveLength(
-          6,
+          5,
         );
-        expect(sheet.getColumn(3).width).toBe(34);
+        expect(sheet.getColumn(3).width).toBe(40);
         expect(sheet.getColumn(5).width).toBe(12);
-        expect(sheet.getColumn(6).width).toBe(32);
+        expect(sheet.getColumn(6).width).toBe(38);
       }
       const tables = (
         buildPurchaseOrderPdfDefinition(order, mode).content as {
           table?: { widths: unknown[] };
         }[]
       ).filter((item) => item.table);
-      expect(tables[0]!.table!.widths[4]).toBeLessThan(110);
+      expect(tables[0]!.table!.widths[3]).toBeLessThan(110);
       const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, mode));
       for (const printed of expected)
         expect(pdf).toContain(`"text":"${printed}"`);

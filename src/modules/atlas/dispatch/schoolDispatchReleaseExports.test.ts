@@ -169,7 +169,7 @@ describe("School dispatch release exports", () => {
     expect(sheet.getColumn(1).width).toBe(7);
     expect(sheet.getColumn(2).width).toBeGreaterThan(30);
     expect(sheet.getColumn(4).width).toBeLessThan(12.28515625);
-    expect(sheet.getColumn(7).width).toBe(20);
+    expect(sheet.getColumn(7).width).toBe(19);
     expect(sheet.getCell("B1").alignment.horizontal).toBe("center");
     expect(sheet.getCell("B2").alignment.horizontal).toBe("center");
     expect(sheet.getCell("A9").value).toBe("Stt");

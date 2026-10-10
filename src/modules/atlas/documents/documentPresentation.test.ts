@@ -96,7 +96,7 @@ describe("Atlas document presentation boundaries", () => {
         for (const row of item.table!.body.slice(mode === "sum" ? 1 : 2)) {
           const note = row.at(-1);
           if (typeof note === "string") notes.push(note);
-          const quantity = (row[4] as { text?: string }).text;
+          const quantity = (row[3] as { text?: string }).text;
           if (quantity) quantities.push(quantity);
         }
       }
@@ -115,12 +115,10 @@ describe("Atlas document presentation boundaries", () => {
       (s) => s.state === "visible",
     )) {
       expect(JSON.stringify(sheet.getSheetValues())).toContain(
-        "ĐÃ ĐƯỢC THAY THẾ",
-      );
-      expect(JSON.stringify(sheet.getSheetValues())).toContain(
         order.document_number,
       );
       expect(sheet.pageSetup.printTitlesRow).toMatch(/^1:/);
+      expect(sheet.headerFooter.oddFooter).toContain("ĐÃ ĐƯỢC THAY THẾ");
       expect(sheet.headerFooter.oddFooter).toContain("&P / &N");
       expect(sheet.pageSetup.printArea).toMatch(/^A1:/);
     }
