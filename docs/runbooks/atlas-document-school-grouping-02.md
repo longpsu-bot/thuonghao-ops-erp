@@ -44,6 +44,8 @@ Full Integration also exposed a deterministic browser-fixture collision: an earl
 
 The final pre-merge copy correction names Dispatch Group assignment explicitly in `set_school_dispatch_group` validation and safe-failure messages. Error codes and business semantics are unchanged; Cooking Location assignment messages retain their own terminology. The hosted rollout order is: merge the exact-head-validated grouping PR; reconcile canonical typed School mappings through the controlled master path; then deploy migration 98 and configure the approved independent relationships. Any ambiguous identity blocks hosted mutation with `SCHOOL_MASTER_RECONCILIATION_REQUIRED`.
 
+Focused School Admin verification exposed an asynchronous test race: the Cooking Location editor clears before the workspace-status effect reports its final readback state. The test now awaits the existing final-status assertion through the standard `waitFor`; all asserted values and test timeouts remain unchanged.
+
 `20261010102603_atlas_document_school_grouping_02.sql` is an appended migration; the 97 previously applied migrations are untouched. It adds current relationship authority and canonical snapshot fields for future releases, updates release/read models and guards PO School snapshot immutability. It performs no historical document backfill or hosted master configuration.
 
 Rollback requires a separately reviewed migration and application compatibility plan. Do not drop captured canonical fields, rewrite released JSON or remove referenced relationship identities. Retain the existing compatibility cooking fields and historical read behavior. No automatic down migration, deployment, merge or production write is included in this task.

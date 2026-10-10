@@ -284,8 +284,10 @@ it("never confirms uncertain creation using an existing same-name group and repl
   );
   expect(api.upsertCookingGroup).toHaveBeenCalledTimes(3);
   expect(api.upsertCookingGroup.mock.calls[2]![0]).toBe(request);
-  expect(report).toHaveBeenLastCalledWith(
-    expect.objectContaining({ unsaved: false, blocked: false }),
+  await waitFor(() =>
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({ unsaved: false, blocked: false }),
+    ),
   );
 });
 it("retains assignment edits when the backend denies authority", async () => {
