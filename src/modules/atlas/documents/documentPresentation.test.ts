@@ -129,7 +129,7 @@ describe("Atlas document presentation boundaries", () => {
       workbook.getWorksheet("02-09-2026 - Theo trường")!.getCell("E11").numFmt,
     ).toBe("@");
     const pdf = buildPurchaseOrderPdfDefinition(order);
-    expect(JSON.stringify(pdf)).toContain("ĐÃ ĐƯỢC THAY THẾ");
+    expect(JSON.stringify(pdf.content)).not.toContain("ĐÃ ĐƯỢC THAY THẾ");
     expect(pdf.footer).toBeTypeOf("function");
   });
 
