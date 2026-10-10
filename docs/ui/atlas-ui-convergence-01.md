@@ -22,22 +22,22 @@ Release and replacement stay per individual document.
 
 ## Discovery and decisions
 
-| Observed issue                                                            | Severity | Affected workbenches                  | Decision                                                              | Outcome / reason                     |
-| ------------------------------------------------------------------------- | -------- | ------------------------------------- | --------------------------------------------------------------------- | ------------------------------------ |
-| Editable week plus day obscures exact-day operation                       | P0       | Confirmed Need                        | One Atlas day picker, derive week                                     | Implemented                          |
-| Document read UI restricts existing range contracts to one day            | P0       | PO, PXK                               | Shared range picker and local seven-day bound                         | Implemented                          |
-| Empty filtered Attendance reads like confirmed zero                       | P0       | Attendance                            | Distinguish no matches from explicit zero                             | Implemented                          |
-| Workspace active/inactive boundaries and reused icons are weak            | P1       | All 13                                | Compact bounded tabs; registry owns 13 distinct icons                 | Implemented                          |
-| Refresh offsets and unrelated control heights                             | P1       | All 13                                | Small shared workbar/actions, 40px desktop and 44px narrow targets    | Implemented                          |
-| Internal tabs compete with workspace level                                | P1       | Internal workbench views              | Flat section navigation below bounded workspaces                      | Implemented                          |
-| Raw backend English in source/readiness feedback                          | P1       | Confirmed Need, Pantry, Recipes       | Frontend code-to-Vietnamese mapping; preserve codes                   | Implemented                          |
-| Empty source and empty filtered scope conflated                           | P1       | Menu, Attendance, Pantry              | Concise scope-aware copy near content                                 | Implemented                          |
-| Fragmented export utilities and abbreviation-only actions                 | P1       | PO, PXK                               | Coherent secondary utility groups and explicit wording                | Implemented                          |
-| Cancelled keyboard date change leaves the date field ahead of loaded data | P1       | Confirmed Need                        | Reset only the cancelled picker draft and restore focus               | Implemented; red/green regression    |
-| Long School name overlaps the PXK date cell                               | P1       | PXK                                   | Wrap school identity within its existing column                       | Implemented                          |
-| Range error does not describe both editable date groups                   | P2       | PO, PXK                               | One error below the workbar, invalid segments and linked descriptions | Implemented                          |
-| Empty/unknown blockers expose implementation text                         | P2       | Confirmed Need, Pantry, Change Orders | Known code translations plus concise Vietnamese fallback              | Implemented                          |
-| School refresh differs from shared grammar                                | P2       | Schools                               | Apply presentation wrapper after #363 integration                     | Implemented; #363 behavior preserved |
+| Observed issue                                                            | Severity | Affected workbenches                  | Decision                                                                             | Outcome / reason                     |
+| ------------------------------------------------------------------------- | -------- | ------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------ |
+| Editable week plus day obscures exact-day operation                       | P0       | Confirmed Need                        | One Atlas day picker, derive week                                                    | Implemented                          |
+| Document read UI restricts existing range contracts to one day            | P0       | PO, PXK                               | Shared range picker and local seven-day bound                                        | Implemented                          |
+| Empty filtered Attendance reads like confirmed zero                       | P0       | Attendance                            | Distinguish no matches from explicit zero                                            | Implemented                          |
+| Workspace active/inactive boundaries and reused icons are weak            | P1       | All 13                                | Compact bounded tabs; registry owns 13 distinct icons                                | Implemented                          |
+| Refresh offsets and unrelated control heights                             | P1       | All 13                                | Small shared workbar/actions, 40px desktop and 44px narrow targets                   | Implemented                          |
+| Internal tabs compete with workspace level                                | P1       | Internal workbench views              | Flat section navigation below bounded workspaces                                     | Implemented                          |
+| Raw backend English in source/readiness feedback                          | P1       | Confirmed Need, Pantry, Recipes       | Frontend code-to-Vietnamese mapping; preserve codes                                  | Implemented                          |
+| Empty source and empty filtered scope conflated                           | P1       | Menu, Attendance, Pantry              | Concise scope-aware copy near content                                                | Implemented                          |
+| Fragmented export utilities and abbreviation-only actions                 | P1       | PO, PXK                               | Coherent secondary utility groups and explicit wording                               | Implemented                          |
+| Cancelled keyboard date change leaves the date field ahead of loaded data | P1       | Confirmed Need                        | Reset cancelled picker draft; restore focus after quick and pointer cancellation     | Implemented; red/green regression    |
+| Long School name overlaps the PXK date cell                               | P1       | PXK                                   | Wrap school identity within its existing column                                      | Implemented                          |
+| Range endpoints lack distinct accessible names and shared error context   | P2       | PO, PXK                               | Name both endpoints; one workbar error with invalid segments and linked descriptions | Implemented                          |
+| Empty/unknown blockers expose implementation text                         | P2       | Confirmed Need, Pantry, Change Orders | Known code translations plus concise Vietnamese fallback                             | Implemented                          |
+| School refresh differs from shared grammar                                | P2       | Schools                               | Apply presentation wrapper after #363 integration                                    | Implemented; #363 behavior preserved |
 
 ## Workbench coverage
 
@@ -73,7 +73,11 @@ mobile switcher all read icons from the same 13-icon registry.
 - [x] Remaining workbench alignment, empty-state and operator-copy tests.
 - [x] Browser review across all 13 owners with populated fixtures and narrow state.
 - [x] Before/after Owner contact sheet.
-- [ ] Full requested frontend validation, fresh product/code review, Draft PR and exact-head CI.
+- [x] Requested local commands, targeted failure retries, fresh code review and Draft PR #364.
+
+Handoff requires green Frontend CI on the final branch head, visible in
+[Draft PR #364's checks](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/364/checks).
+The PR stays Draft for Owner product acceptance.
 
 No Staging, Live OPS or Retool writes; no deployment or merge.
 PR #363's School/export grouping/domain behavior is integrated from main and is not reimplemented.
@@ -109,7 +113,7 @@ certified by these screenshots. No login provisioning or Staging writes were use
 ## Validation and rollback
 
 Focused tests preceded format, typecheck, tests, build, UI boundary and whitespace
-checks. Final validation results are recorded below before handoff.
+checks. Validation closeout continued on 11 October 2026; results are below.
 Rollback reverts this frontend/docs change; there is no migration or data rollback.
 Security review: no service-role credentials, privilege/RLS changes, API contract
 changes, domain quantity calculations or backend-authoritative outcomes were added.
@@ -118,6 +122,23 @@ are UI documentation and browser evidence. Package and lock files are unchanged.
 
 ### Final validation
 
-Full local validation and exact-head GitHub Actions are in progress. The full test
-scope is run with one worker to fit this Windows machine's available memory;
-timeouts, assertions, test scope and CI settings are unchanged.
+Local `pnpm format`, `pnpm typecheck`, `pnpm build`, `pnpm ui:vnext:check` and
+`git diff --check` passed. The full local `pnpm test --maxWorkers=1` run covered
+206 files and 2,754 tests: 2,737 passed and 17 initially failed. That run included
+outdated date-surface expectations and five-second timing failures on this
+memory-constrained Windows machine. Subsequent focused runs passed every
+initially failed case. The final ten-file retry passed 20 cases; its stale Week
+assertion and remaining Planning timeout both passed in the final two-case retry.
+No timeout, assertion, accessibility check, test scope or CI setting was weakened.
+
+Date/range hook tests, seven-day boundary tests, retained export scope tests,
+workspace/icon and workbar contracts, Vietnamese copy tests and dirty-date
+cancellation regressions also passed during development. Quick and pointer
+cancellation both retain the unsaved quantity, restore the displayed day and
+restore keyboard focus after the replacement date field commits.
+
+GitHub Actions owns complete certification on the final PR head, including frozen
+installation, formatting, typecheck, the full test suite, build, UI boundary and
+diff checks. Use the linked PR checks for its final-head result; the initial local
+run's failures are disclosed separately rather than represented as a green local
+full-suite run.

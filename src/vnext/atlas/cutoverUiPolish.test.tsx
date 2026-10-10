@@ -162,9 +162,21 @@ describe("Atlas pre-cutover UI polish", () => {
       screen.getByLabelText("Nhập Phiếu đi chợ .xlsx"),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-    expect(screen.getByRole("textbox", { name: "Tuần phục vụ" })).toHaveValue(
-      "07/09/2026 – 13/09/2026",
-    );
+    const workbar = screen.getByRole("group", {
+      name: "Phạm vi xác nhận nhu cầu",
+    });
+    expect(
+      within(workbar).queryByRole("textbox", { name: "Tuần phục vụ" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(workbar).getByRole("spinbutton", { name: "Day" }),
+    ).toHaveTextContent("07");
+    expect(
+      within(workbar).getByRole("spinbutton", { name: "Month" }),
+    ).toHaveTextContent("09");
+    expect(
+      within(workbar).getByRole("spinbutton", { name: "Year" }),
+    ).toHaveTextContent("2026");
   });
 
   it("gives Allocation one heading without duplicate primary navigation", async () => {

@@ -43,6 +43,21 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const [dateReset, setDateReset] = useState(0);
   const dateField = useRef<HTMLDivElement>(null);
   const cancelledDate = useRef(false);
+  useEffect(() => {
+    if (c.pendingTransition) {
+      cancelledDate.current = false;
+      return;
+    }
+    if (!cancelledDate.current) return;
+    // Restore after the replacement field commits and the dialog trap closes.
+    const frame = requestAnimationFrame(() => {
+      dateField.current
+        ?.querySelector<HTMLElement>('[data-type="day"]')
+        ?.focus({ preventScroll: true });
+      cancelledDate.current = false;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [c.pendingTransition, dateReset]);
   const [workbookBusy, setWorkbookBusy] = useState(false);
   const [workbookError, setWorkbookError] = useState<string | null>(null);
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
@@ -499,8 +514,10 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
           <ConfirmedNeedDirtyExitDialog
             open={Boolean(c.pendingTransition)}
             onCancel={() => {
-              cancelledDate.current = Boolean(c.pendingTransition?.date);
-              if (cancelledDate.current) setDateReset((value) => value + 1);
+              if (c.pendingTransition?.date) {
+                cancelledDate.current = true;
+                setDateReset((value) => value + 1);
+              }
               c.cancelTransition();
             }}
             onDiscard={c.discardTransition}
