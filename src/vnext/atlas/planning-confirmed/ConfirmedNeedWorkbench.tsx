@@ -12,7 +12,12 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
-import { AtlasWeekRangeInput } from "../AtlasWeekRangeInput";
+import { AtlasDateInput } from "../AtlasDateInput";
+import {
+  AtlasWorkbar,
+  AtlasWorkbarActions,
+  AtlasWorkbarField,
+} from "../AtlasWorkbar";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { AtlasTaskContext } from "../AtlasTaskContext";
@@ -20,7 +25,7 @@ import {
   useConfirmedNeedWorkbench,
   type ConfirmedNeedWorkbenchProps,
 } from "./useConfirmedNeedWorkbench";
-import { preflightMessage, weekDates } from "./confirmedNeedAuthority";
+import { preflightMessage } from "./confirmedNeedAuthority";
 import { ConfirmedNeedTable } from "./ConfirmedNeedTable";
 import { ConfirmedNeedDirtyExitDialog } from "./ConfirmedNeedDirtyExitDialog";
 import { ConfirmedNeedCommandFeedback } from "./ConfirmedNeedCommandFeedback";
@@ -35,6 +40,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [detailKey, setDetailKey] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [dateReset, setDateReset] = useState(0);
+  const dateField = useRef<HTMLDivElement>(null);
+  const cancelledDate = useRef(false);
   const [workbookBusy, setWorkbookBusy] = useState(false);
   const [workbookError, setWorkbookError] = useState<string | null>(null);
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
@@ -53,7 +61,6 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   useEffect(() => {
     if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
   }, [filtersOpen]);
-  const days = weekDates(c.week);
   const contextKey = `${c.date}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;
   const detailOpen = detailKey === contextKey;
   const contextDisabled = c.busy || Boolean(c.lock);
@@ -85,27 +92,26 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
           ariaLabel="Ngữ cảnh xác nhận nhu cầu"
           moduleLabel="Lập nhu cầu"
           jobLabel="Xác nhận nhu cầu"
-          compactSummary={`${dateSummary} · ${scopeSummary}`}
+          compactSummary={scopeSummary}
           details={[
             { label: "Ngày phục vụ", value: dateSummary },
             { label: "Trường / điểm giao", value: scopeSummary },
           ]}
         />
         <Box minW="var(--atlas-layout-zero, 0)">
-          <Grid
+          <AtlasWorkbar
+            display="grid"
             role="group"
             aria-label="Phạm vi xác nhận nhu cầu"
             bg="bg.toolbar"
             px={{ base: "sm", md: "md" }}
             py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
             gap="sm"
-            alignItems="start"
             borderBottomWidth="var(--atlas-layout-edge, 1px)"
             borderColor="border.default"
             templateColumns={{
               base: "minmax(0, 1fr) auto auto",
-              lg: "repeat(2, minmax(0, 1fr))",
-              xl: "minmax(150px, 1fr) minmax(140px, 0.9fr) minmax(160px, 1.1fr) minmax(145px, 1fr) minmax(130px, 0.8fr) auto",
+              lg: "minmax(150px, 0.9fr) minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(130px, 0.8fr) auto",
             }}
           >
             <Box
@@ -122,42 +128,23 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   );
               }}
             >
-              <Box
+              <AtlasWorkbarField
+                ref={dateField}
                 display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
                 order={{ base: 4, lg: 1 }}
                 gridColumn={{ base: "1 / -1", lg: "auto" }}
               >
-                <AtlasWeekRangeInput
-                  label="Tuần phục vụ"
-                  value={c.week}
+                <AtlasDateInput
+                  key={dateReset}
+                  label="Ngày phục vụ"
+                  value={c.date}
                   disabled={contextDisabled}
-                  onValueChange={(week) => c.transition({ week })}
+                  onValueChange={(date) => c.transition({ date })}
                 />
-              </Box>
-              <Field.Root
-                display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
-                order={{ base: 5, lg: 2 }}
-                gridColumn={{ base: "1 / -1", lg: "auto" }}
-              >
-                <Field.Label>Ngày phục vụ</Field.Label>
-                <NativeSelect.Root disabled={contextDisabled}>
-                  <NativeSelect.Field
-                    aria-label="Ngày phục vụ"
-                    value={c.date}
-                    onChange={(e) => c.transition({ date: e.target.value })}
-                  >
-                    {days.map((d) => (
-                      <option key={d} value={d}>
-                        {viDate(d)}
-                      </option>
-                    ))}
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
-              </Field.Root>
+              </AtlasWorkbarField>
               <Box
                 display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
-                order={{ base: 6, lg: 3 }}
+                order={{ base: 5, lg: 2 }}
                 gridColumn={{ base: "1 / -1", lg: "auto" }}
               >
                 <Text textStyle="label" mb="xs">
@@ -171,7 +158,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 />
               </Box>
               <Field.Root
-                order={{ base: filtersOpen ? 7 : 0, lg: 4 }}
+                order={{ base: filtersOpen ? 6 : 0, lg: 3 }}
                 gridColumn={{ base: filtersOpen ? "1 / -1" : "1", lg: "auto" }}
               >
                 <Field.Label
@@ -192,7 +179,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               </Field.Root>
               <Field.Root
                 display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
-                order={{ base: 8, lg: 5 }}
+                order={{ base: 7, lg: 4 }}
                 gridColumn={{ base: "1 / -1", lg: "auto" }}
               >
                 <Field.Label>Tình trạng</Field.Label>
@@ -230,25 +217,20 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               textStyle="helper"
               color="fg.muted"
             >
-              Tuần {viDate(c.week)} · Ngày {dateSummary} · {scopeSummary} · Tình
-              trạng: {filterSummary}
+              Ngày {dateSummary} · {scopeSummary} · Tình trạng: {filterSummary}
             </Text>
-            <Box
+            <AtlasWorkbarActions
               ref={compactFilterOnward}
-              order={{ base: 2, lg: 6 }}
+              order={{ base: 2, lg: 5 }}
               gridColumn={{ base: "3", lg: "auto" }}
-              pt={{
-                base: "var(--atlas-layout-zero, 0)",
-                xl: "var(--atlas-layout-refresh-offset, 26px)",
-              }}
             >
               <AtlasRefreshButton
                 loading={c.busy}
                 disabled={Boolean(c.lock)}
                 onClick={() => c.transition({ refresh: true })}
               />
-            </Box>
-          </Grid>
+            </AtlasWorkbarActions>
+          </AtlasWorkbar>
           <AtlasOperationStatus operation={c.operation} />
           <ConfirmedNeedCommandFeedback
             lock={c.lock}
@@ -268,9 +250,6 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             </Text>
           ) : !c.workbench ? (
             <Box p="md">
-              <Text textStyle="label" mb="xs">
-                Ngày phục vụ {viDate(c.date)}
-              </Text>
               <Text>{preflightMessage(c.preflight)}</Text>
               {(c.canGenerate || c.operation.status === "RUNNING") && (
                 <Button
@@ -519,8 +498,19 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
           )}
           <ConfirmedNeedDirtyExitDialog
             open={Boolean(c.pendingTransition)}
-            onCancel={c.cancelTransition}
+            onCancel={() => {
+              cancelledDate.current = Boolean(c.pendingTransition?.date);
+              if (cancelledDate.current) setDateReset((value) => value + 1);
+              c.cancelTransition();
+            }}
             onDiscard={c.discardTransition}
+            finalFocusEl={() =>
+              cancelledDate.current
+                ? (dateField.current?.querySelector<HTMLElement>(
+                    '[data-type="day"]',
+                  ) ?? null)
+                : null
+            }
           />
         </Box>
       </Grid>

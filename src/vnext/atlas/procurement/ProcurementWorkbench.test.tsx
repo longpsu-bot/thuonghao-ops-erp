@@ -60,6 +60,36 @@ const openFilters = () => {
     fireEvent.click(disclosure);
 };
 describe("Procurement vNext operator workbench", () => {
+  it("preserves selected PO and immutable export scope after an invalid range edit", async () => {
+    const fixture = createProcurementReviewFixture("po_released");
+    const read = vi.spyOn(fixture.procurementApi, "getPurchaseOrders");
+    const xlsx = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          ownerStage="orders"
+          onExportXlsx={xlsx}
+        />
+      </AtlasVNextProvider>,
+    );
+    openFilters();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Xem đơn NCC An Phú" }),
+    );
+    const endMonth = screen.getAllByRole("spinbutton")[4]!;
+    fireEvent.focus(endMonth);
+    fireEvent.keyDown(endMonth, { key: "ArrowUp" });
+    expect(await screen.findByText("Chọn tối đa 7 ngày.")).toBeVisible();
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
+    expect(xlsx).toHaveBeenCalledWith(fixture.orders.purchase_orders[0], "all");
+  });
   it("aggregates selected Supplier draft status and reports retained date/stage context", async () => {
     const fixture = createProcurementReviewFixture("manual_split");
     const report = vi.fn();

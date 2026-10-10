@@ -48,11 +48,13 @@ export function PlanningAttendanceStage({
     <>
       <Flex p="sm" gap="sm" align="center" justify="space-between" wrap="wrap">
         <Text textStyle="helper" color="fg.muted">
-          {valid
-            ? `Học sinh ${students} · Giáo viên ${teachers} · Tổng ${students + teachers}`
-            : "Cần sửa số suất trước khi tính tổng."}
+          {!visible.length
+            ? "Không có sĩ số phù hợp bộ lọc trong ngày."
+            : valid
+              ? `Học sinh ${students} · Giáo viên ${teachers} · Tổng ${students + teachers}`
+              : "Cần sửa số suất trước khi tính tổng."}
         </Text>
-        <Flex gap="sm">
+        <Flex gap="sm" wrap="wrap">
           <Button
             size="sm"
             disabled={!c.data || !onExportTemplate || templatePending}

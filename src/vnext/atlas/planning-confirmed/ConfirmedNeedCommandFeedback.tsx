@@ -25,7 +25,7 @@ export function ConfirmedNeedCommandFeedback({
       }
       aria-live="polite"
     >
-      {lock === "unknown" && (
+      {lock === "unknown" && !notice && !readError && (
         <Text color="fg.primary">
           <Icon asChild mr="xs">
             <Warning aria-hidden="true" />
@@ -33,7 +33,7 @@ export function ConfirmedNeedCommandFeedback({
           Chưa xác định được kết quả. Các thao tác ghi đang tạm khóa.
         </Text>
       )}
-      {notice && <Text role="status">{notice}</Text>}
+      {notice && !readError && <Text role="status">{notice}</Text>}
       {readError && (
         <Text role="alert" color="status.danger">
           <Icon asChild mr="xs">

@@ -1,0 +1,123 @@
+# Atlas UI convergence 01
+
+Owner-authorized application-wide presentation task, 10 October 2026.
+Starting main: `2f3741f38fe26adc9505ffd773c07c11c70b8c0e`.
+Dedicated branch: `fix/atlas-ui-convergence-01`. The original dirty checkout is untouched.
+PR #363 merged during this task; its main commit
+`40bfda08439e61cbcac82e5416dc3442f75aa951` was integrated before final review and validation.
+
+## Authority and scope
+
+ARCH-002 and **FACTS EXPLICIT → STATE DERIVED → SUPPORTING OBJECTS GENERATED**
+remain authoritative. **OPERATOR SURFACE MINIMAL** applies to presentation:
+backend commands, quantities, eligibility, concurrency and audit remain unchanged.
+This task expressly supersedes v3's underline-only workspace treatment with compact,
+bounded tabs. It introduces no domain concept, dependency, RPC change or migration.
+
+Confirmed Need has one editable service day; its Monday/week context is derived.
+PO and PXK expose 1–7 consecutive calendar days inclusive, including cross-week
+ranges. Contextual opening defaults to one day. Invalid drafts issue no scope read
+and retain the last valid loaded authority and export scope. Allocation stays daily.
+Release and replacement stay per individual document.
+
+## Discovery and decisions
+
+| Observed issue                                                            | Severity | Affected workbenches                  | Decision                                                              | Outcome / reason                     |
+| ------------------------------------------------------------------------- | -------- | ------------------------------------- | --------------------------------------------------------------------- | ------------------------------------ |
+| Editable week plus day obscures exact-day operation                       | P0       | Confirmed Need                        | One Atlas day picker, derive week                                     | Implemented                          |
+| Document read UI restricts existing range contracts to one day            | P0       | PO, PXK                               | Shared range picker and local seven-day bound                         | Implemented                          |
+| Empty filtered Attendance reads like confirmed zero                       | P0       | Attendance                            | Distinguish no matches from explicit zero                             | Implemented                          |
+| Workspace active/inactive boundaries and reused icons are weak            | P1       | All 13                                | Compact bounded tabs; registry owns 13 distinct icons                 | Implemented                          |
+| Refresh offsets and unrelated control heights                             | P1       | All 13                                | Small shared workbar/actions, 40px desktop and 44px narrow targets    | Implemented                          |
+| Internal tabs compete with workspace level                                | P1       | Internal workbench views              | Flat section navigation below bounded workspaces                      | Implemented                          |
+| Raw backend English in source/readiness feedback                          | P1       | Confirmed Need, Pantry, Recipes       | Frontend code-to-Vietnamese mapping; preserve codes                   | Implemented                          |
+| Empty source and empty filtered scope conflated                           | P1       | Menu, Attendance, Pantry              | Concise scope-aware copy near content                                 | Implemented                          |
+| Fragmented export utilities and abbreviation-only actions                 | P1       | PO, PXK                               | Coherent secondary utility groups and explicit wording                | Implemented                          |
+| Cancelled keyboard date change leaves the date field ahead of loaded data | P1       | Confirmed Need                        | Reset only the cancelled picker draft and restore focus               | Implemented; red/green regression    |
+| Long School name overlaps the PXK date cell                               | P1       | PXK                                   | Wrap school identity within its existing column                       | Implemented                          |
+| Range error does not describe both editable date groups                   | P2       | PO, PXK                               | One error below the workbar, invalid segments and linked descriptions | Implemented                          |
+| Empty/unknown blockers expose implementation text                         | P2       | Confirmed Need, Pantry, Change Orders | Known code translations plus concise Vietnamese fallback              | Implemented                          |
+| School refresh differs from shared grammar                                | P2       | Schools                               | Apply presentation wrapper after #363 integration                     | Implemented; #363 behavior preserved |
+
+## Workbench coverage
+
+All 13 registry owners were inspected in code and in the populated browser fixture
+at desktop and 360px. This is targeted convergence, not a universal form/table rewrite.
+
+| Workbench             | Final presentation and retained behavior                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Schools               | Shared search/type/Refresh baseline; editable attendance and #363 domain behavior preserved                                    |
+| Ingredients           | Aligned search/status/Refresh; one primary add action; existing dense data table                                               |
+| Suppliers             | Same action grammar; existing contacts, filters and supplier authority                                                         |
+| Menu                  | Shared workbar; scope-aware filtered empty message; weekly source behavior retained                                            |
+| Attendance            | Shared workbar; no matches distinguished from confirmed zero; pending review preserved                                         |
+| Pantry                | Shared workbar; Vietnamese blockers and scope-aware empty message                                                              |
+| Confirmed Need        | One editable service day; derived Monday context; dirty-date cancellation and focus preserved                                  |
+| Supplier Allocation   | Single-day workbar retained; backend allocation authority unchanged                                                            |
+| Purchase Orders       | Inclusive 1–7 day range; supplier identity first; visible service date and explicit Excel/PDF/ZIP labels                       |
+| PXK / Dispatch        | Same range control; school identity first; cooking-location context secondary; collapsed history and coherent export utilities |
+| Dishes / Recipes      | Shared workbar; readable Vietnamese readiness messages; source/governance ownership unchanged                                  |
+| Change Orders         | Aligned date/search/status/Refresh; translated blockers; named local table viewport                                            |
+| School Reconciliation | Shared range/search/Refresh baseline; named local table viewport; evidence and quantities unchanged                            |
+
+Workspace tabs have resting boundaries, different active surfaces and accent edges.
+Unsaved, attention and blocked markers have different shapes and readable labels.
+Internal task tabs remain flat and visually subordinate. Launcher, desktop tabs and
+mobile switcher all read icons from the same 13-icon registry.
+
+## Execution and acceptance
+
+- [x] Workspace/launcher/icons and accessibility regression tests.
+- [x] Shared workbar and Confirmed Need exact-day/dirty-transition tests.
+- [x] PO/PXK range limits, exact existing API parameters, loaded export scope tests.
+- [x] Remaining workbench alignment, empty-state and operator-copy tests.
+- [x] Browser review across all 13 owners with populated fixtures and narrow state.
+- [x] Before/after Owner contact sheet.
+- [ ] Full requested frontend validation, fresh product/code review, Draft PR and exact-head CI.
+
+No Staging, Live OPS or Retool writes; no deployment or merge.
+PR #363's School/export grouping/domain behavior is integrated from main and is not reimplemented.
+
+## Deferred backend findings
+
+None identified. No approved contract conflict was found. No P0/P1 remains open in
+the fresh code review; the two review findings and subsequent range accessibility
+finding were fixed and reviewed again.
+
+## Browser evidence and limitations
+
+The [Owner contact sheet](../testing/artifacts/atlas-ui-convergence-01/owner-contact-sheet.jpg)
+has 18 views, including workspace/date before-and-after, document range lists,
+selected details, export utilities, Master Data, internal navigation and mobile.
+The [all-owner sheet](../testing/artifacts/atlas-ui-convergence-01/all-workbenches.jpg)
+shows every workbench. See the [evidence index](../testing/artifacts/atlas-ui-convergence-01/README.md)
+for full-resolution images and provenance.
+
+No document-level overflow was observed at 360, 650, 1366, 1440 or 1920px.
+Tables retain local scrolling. Browser measurements confirmed approximately 40px
+desktop and 44px mobile workbar controls with a common bottom edge. The seven-day
+cross-week range loaded; an eighth day displayed `Chọn tối đa 7 ngày.` while
+retaining the last valid list/export scope and disabling invalid-scope refresh.
+The narrow calendar trigger has its own space after the date segments.
+
+The real connected entry was inspected but showed its connection gate: this
+isolated checkout has no configured authenticated connection. Operational browser
+review therefore uses the actual workbench components with local fixture adapters.
+These fixtures never contact hosted services. Hosted connected behavior is not
+certified by these screenshots. No login provisioning or Staging writes were used.
+
+## Validation and rollback
+
+Focused tests preceded format, typecheck, tests, build, UI boundary and whitespace
+checks. Final validation results are recorded below before handoff.
+Rollback reverts this frontend/docs change; there is no migration or data rollback.
+Security review: no service-role credentials, privilege/RLS changes, API contract
+changes, domain quantity calculations or backend-authoritative outcomes were added.
+Changed implementation files are confined to `src/vnext/atlas`; supporting files
+are UI documentation and browser evidence. Package and lock files are unchanged.
+
+### Final validation
+
+Full local validation and exact-head GitHub Actions are in progress. The full test
+scope is run with one worker to fit this Windows machine's available memory;
+timeouts, assertions, test scope and CI settings are unchanged.

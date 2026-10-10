@@ -9,9 +9,10 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
-import { AtlasDateInput } from "../AtlasDateInput";
+import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import {
@@ -28,6 +29,7 @@ import {
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
 export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
+  const rangeErrorId = useId();
   const c = useSchoolPxkWorkbench(props);
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: Boolean(c.note.trim()),
@@ -102,7 +104,11 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
       setExporting(false);
     }
   };
-  const dateSummary = c.date.split("-").reverse().join("/");
+  const dateSummary =
+    c.date.split("-").reverse().join("/") +
+    (c.dateEnd !== c.date
+      ? ` — ${c.dateEnd.split("-").reverse().join("/")}`
+      : "");
   const scopeSummary =
     c.schoolIds.length === 0
       ? "Tất cả trường"
@@ -136,7 +142,8 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
       >
         Phiếu xuất kho
       </Heading>
-      <Grid
+      <AtlasWorkbar
+        display="grid"
         bg="bg.toolbar"
         px={{ base: "sm", md: "md" }}
         py="sm"
@@ -145,10 +152,10 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
         flexShrink="0"
         role="group"
         aria-label="Phạm vi phiếu xuất kho"
-        templateColumns={{
+        gridTemplateColumns={{
           base: "minmax(0, 1fr) auto auto",
           md: "repeat(2, minmax(0, 1fr))",
-          xl: "minmax(150px, 0.9fr) minmax(180px, 1.4fr) minmax(160px, 1.3fr) minmax(140px, 1fr) auto",
+          xl: "minmax(310px, 1.6fr) minmax(180px, 1.4fr) minmax(160px, 1.3fr) minmax(140px, 1fr) auto",
         }}
       >
         <Box
@@ -171,12 +178,14 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
             order={{ base: 4, md: 1 }}
             gridColumn={{ base: "1 / -1", md: "auto" }}
           >
-            <AtlasDateInput
+            <AtlasDateRangeInput
               key={dateReset}
-              label="Ngày phục vụ"
-              value={c.date}
+              label="Khoảng ngày"
+              value={c.range}
+              error={c.rangeError}
+              errorMessageId={rangeErrorId}
               disabled={disabled}
-              onValueChange={(date) => transition({ date })}
+              onValueChange={(range) => transition({ range })}
             />
           </Box>
           <Box
@@ -190,7 +199,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
             <AtlasSchoolScope
               schools={c.schools}
               value={c.schoolIds}
-              disabled={disabled || !c.schools.length}
+              disabled={disabled || Boolean(c.rangeError) || !c.schools.length}
               onApply={(schoolIds) => transition({ schoolIds })}
             />
           </Box>
@@ -260,19 +269,30 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
         >
           Ngày {dateSummary} · {scopeSummary} · Tình trạng: {stateSummary}
         </Text>
-        <Box
+        <AtlasWorkbarActions
           ref={compactFilterOnward}
           order={{ base: 2, md: 5 }}
           gridColumn={{ base: "3", md: "auto" }}
-          alignSelf="center"
         >
           <AtlasRefreshButton
             loading={c.loading}
-            disabled={disabled}
+            disabled={disabled || Boolean(c.rangeError)}
             onClick={() => transition({ refresh: true })}
           />
-        </Box>
-      </Grid>
+        </AtlasWorkbarActions>
+      </AtlasWorkbar>
+      {c.rangeError && (
+        <Text
+          id={rangeErrorId}
+          role="alert"
+          textStyle="helper"
+          color="status.danger"
+          px="md"
+          py="xs"
+        >
+          {c.rangeError}
+        </Text>
+      )}
       <SchoolPxkCommandFeedback
         lock={c.lock}
         notice={c.notice}
@@ -300,51 +320,57 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
             )
             .join(" · ")}
         </Text>
-        {props.onExportGroupedXlsx && (
-          <Button
-            variant="tertiary"
-            minH={{
-              base: "var(--atlas-layout-mobile-target, 44px)",
-              lg: "compact",
-            }}
-            disabled={
-              !c.canExportLoaded || exporting || !releasedDocuments.length
-            }
-            onClick={() => void exportLoaded(false)}
+        {(props.onExportGroupedXlsx || props.onExportZip) && (
+          <AtlasWorkbar
+            aria-label="Xuất phiếu trong phạm vi đã tải"
+            justifyContent="flex-end"
           >
-            Xuất PXK đã phát hành
-          </Button>
-        )}
-        {props.onExportZip && (
-          <Flex gap="sm" align="end" wrap="wrap">
-            <Field.Root w="var(--atlas-export-mode-width, 230px)">
-              <Field.Label>Nhóm file Dispatch</Field.Label>
-              <NativeSelect.Root
-                size="sm"
-                disabled={!c.canExportLoaded || exporting}
+            {props.onExportZip && (
+              <Field.Root
+                w={{
+                  base: "full",
+                  md: "var(--atlas-export-mode-width, 230px)",
+                }}
               >
-                <NativeSelect.Field
-                  value={exportMode}
-                  onChange={(event) =>
-                    setExportMode(event.target.value as "date" | "entity")
+                <Field.Label>Nhóm file xuất kho</Field.Label>
+                <NativeSelect.Root disabled={!c.canExportLoaded || exporting}>
+                  <NativeSelect.Field
+                    value={exportMode}
+                    onChange={(event) =>
+                      setExportMode(event.target.value as "date" | "entity")
+                    }
+                  >
+                    <option value="date">Theo ngày</option>
+                    <option value="entity">Theo trường / điểm giao</option>
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Field.Root>
+            )}
+            <AtlasWorkbarActions>
+              {props.onExportGroupedXlsx && (
+                <Button
+                  variant="secondary"
+                  disabled={
+                    !c.canExportLoaded || exporting || !releasedDocuments.length
                   }
+                  onClick={() => void exportLoaded(false)}
                 >
-                  <option value="date">Theo ngày</option>
-                  <option value="entity">Theo trường / điểm giao</option>
-                </NativeSelect.Field>
-                <NativeSelect.Indicator />
-              </NativeSelect.Root>
-            </Field.Root>
-            <Button
-              size="sm"
-              variant="tertiary"
-              loading={exporting}
-              disabled={!c.canExportLoaded || !releasedDocuments.length}
-              onClick={() => void exportLoaded(true)}
-            >
-              Xuất ZIP Dispatch · phạm vi đã tải
-            </Button>
-          </Flex>
+                  Xuất Excel · phạm vi đã tải
+                </Button>
+              )}
+              {props.onExportZip && (
+                <Button
+                  variant="secondary"
+                  loading={exporting}
+                  disabled={!c.canExportLoaded || !releasedDocuments.length}
+                  onClick={() => void exportLoaded(true)}
+                >
+                  Xuất ZIP · phạm vi đã tải
+                </Button>
+              )}
+            </AtlasWorkbarActions>
+          </AtlasWorkbar>
         )}
       </Flex>
       {exportError && (
@@ -416,10 +442,14 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
       <SchoolPxkDirtyExitDialog
         open={Boolean(c.pendingTransition)}
         onCancel={() => {
-          dialogDestination.current = c.pendingTransition?.date ? "date" : null;
+          dialogDestination.current =
+            c.pendingTransition?.date || c.pendingTransition?.range
+              ? "date"
+              : null;
           // DateInput retains an edited segment internally when its controlled
           // ISO value is unchanged. Remount only a cancelled date edit.
-          if (c.pendingTransition?.date) setDateReset((value) => value + 1);
+          if (c.pendingTransition?.date || c.pendingTransition?.range)
+            setDateReset((value) => value + 1);
           c.cancelTransition();
         }}
         onDiscard={() => {
@@ -444,7 +474,15 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
                   ).find(
                     (element) =>
                       element.dataset.type ===
-                      dialogTrigger.current?.dataset.type,
+                        dialogTrigger.current?.dataset.type &&
+                      element
+                        .closest('[data-part="segment-group"]')
+                        ?.id.split(":")
+                        .at(-1) ===
+                        dialogTrigger.current
+                          ?.closest('[data-part="segment-group"]')
+                          ?.id.split(":")
+                          .at(-1),
                   ) ??
                   dateControl.current?.querySelector<HTMLElement>(
                     '[role="spinbutton"]',

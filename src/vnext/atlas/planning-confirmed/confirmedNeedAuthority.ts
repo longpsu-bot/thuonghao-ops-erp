@@ -64,22 +64,60 @@ export function noDemand(p: PlanningInputPreflightData | null) {
 export function preflightMessage(p: PlanningInputPreflightData | null) {
   if (!p) return "Chưa tải được dữ liệu cho ngày phục vụ.";
   if (p.downstream_currentness === "LEGACY_OVERLAP")
-    return (
-      p.legacy_overlap?.safe_message ??
-      "Ngày này thuộc nhu cầu đã lập trước đây. Nhu cầu lịch sử vẫn có hiệu lực; không thể tạo đè tại đây."
-    );
+    return "Ngày này thuộc nhu cầu đã lập trước đây. Nhu cầu lịch sử vẫn có hiệu lực; không thể tạo đè tại đây.";
   if (correctionBlocked(p))
     return "Nhu cầu đã được chuyển sang mua hàng. Cần dùng quy trình điều chỉnh hiện có; không thể cập nhật trực tiếp tại đây.";
   if (noDemand(p)) return "Không có nhu cầu cần lập cho ngày này.";
   if (p.readiness_state === "BLOCKED")
     return (
-      p.issues.find((i) => i.severity === "BLOCKING")?.message ??
-      "Cần xử lý dữ liệu nguồn trước khi tạo nhu cầu."
+      preflightIssueCopy[
+        p.issues.find((i) => i.severity === "BLOCKING")?.issue_code ?? ""
+      ] ?? "Cần kiểm tra dữ liệu nguồn trước khi tạo nhu cầu."
     );
   if (p.downstream_currentness === "OUTDATED")
     return "Dữ liệu nguồn đã thay đổi sau lần tính gần nhất.";
   return "Dữ liệu đã sẵn sàng.";
 }
+
+// Presentation mapping only; returned backend issue evidence is kept intact.
+const preflightIssueCopy: Record<string, string> = {
+  MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT:
+    "Chưa có thực đơn đã lưu cho ngày này.",
+  MISSING_ATTENDANCE_APPROVAL_SNAPSHOT:
+    "Chưa có sĩ số đã xác nhận cho ngày này.",
+  MISSING_PANTRY_APPROVAL_SNAPSHOT:
+    "Chưa có dữ liệu Hàng đặt riêng đã xác nhận cho ngày này.",
+  ATTENDANCE_MISSING: "Cần lưu sĩ số trước khi tạo nhu cầu.",
+  SOURCE_SNAPSHOT_OWNERSHIP_MISMATCH:
+    "Dữ liệu nguồn không thuộc đúng phạm vi cần xử lý.",
+  WEEKLY_MENU_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD:
+    "Thực đơn đã lưu chưa có ngày này.",
+  ATTENDANCE_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD:
+    "Sĩ số đã lưu chưa có ngày này.",
+  PANTRY_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD:
+    "Hàng đặt riêng đã xác nhận chưa có ngày này.",
+  STALE_OR_MISMATCHED_SNAPSHOT_BINDING:
+    "Dữ liệu nguồn đã thay đổi. Hãy làm mới trước khi tiếp tục.",
+  REQUEST_WITHOUT_CURRENT_READY_EVALUATION:
+    "Dữ liệu nguồn chưa sẵn sàng để tạo nhu cầu.",
+  MENU_SCHOOL_DATE_WITHOUT_ATTENDANCE:
+    "Có thực đơn nhưng chưa có sĩ số cho trường và ngày này.",
+  ATTENDANCE_SCHOOL_DATE_WITHOUT_MENU:
+    "Có sĩ số nhưng chưa có thực đơn cho trường và ngày này.",
+  ZERO_ATTENDANCE_FOR_PLANNED_MENU:
+    "Thực đơn đã có nhưng tổng sĩ số của trường và ngày này bằng 0.",
+  AMBIGUOUS_WEEKLY_MENU_SOURCE:
+    "Có nhiều thực đơn phù hợp. Cần kiểm tra nguồn trước khi tiếp tục.",
+  STALE_WEEKLY_MENU_SOURCE:
+    "Thực đơn đã thay đổi. Hãy làm mới trước khi tiếp tục.",
+  AMBIGUOUS_ATTENDANCE_SOURCE:
+    "Có nhiều bản sĩ số phù hợp. Cần kiểm tra nguồn trước khi tiếp tục.",
+  STALE_ATTENDANCE_SOURCE: "Sĩ số đã thay đổi. Hãy làm mới trước khi tiếp tục.",
+  AMBIGUOUS_PANTRY_SOURCE:
+    "Có nhiều bản Hàng đặt riêng phù hợp. Cần kiểm tra nguồn trước khi tiếp tục.",
+  STALE_PANTRY_SOURCE:
+    "Hàng đặt riêng đã thay đổi. Hãy làm mới trước khi tiếp tục.",
+};
 export function mondayOf(date: string) {
   const day = new Date(`${date}T12:00:00Z`);
   day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));

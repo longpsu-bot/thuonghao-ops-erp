@@ -17,6 +17,7 @@ import {
 import { useImperativeHandle, useState } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
@@ -81,18 +82,19 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         </Heading>
       </Box>
 
-      <Grid
+      <AtlasWorkbar
+        display="grid"
+        aria-label="Bộ lọc trường học"
         bg="bg.toolbar"
         p="md"
         gap="sm"
         alignItems="end"
         templateColumns={{
-          base: "minmax(0, 1fr)",
-          md: "repeat(2, minmax(0, 1fr))",
-          xl: "minmax(240px, 1.4fr) minmax(180px, 1fr) auto",
+          base: "minmax(0, 1fr) auto",
+          lg: "minmax(240px, 1.4fr) minmax(180px, 1fr) auto",
         }}
       >
-        <Field.Root>
+        <Field.Root gridColumn={{ base: "1 / -1", lg: "auto" }}>
           <Field.Label>Tìm trường</Field.Label>
           <Input
             aria-label="Tìm trường"
@@ -119,12 +121,14 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
             <NativeSelect.Indicator />
           </NativeSelect.Root>
         </Field.Root>
-        <AtlasRefreshButton
-          loading={c.loading}
-          disabled={c.saving || c.lock === "unknown" || c.lock === "readback"}
-          onClick={() => void c.refresh()}
-        />
-      </Grid>
+        <AtlasWorkbarActions>
+          <AtlasRefreshButton
+            loading={c.loading}
+            disabled={c.saving || c.lock === "unknown" || c.lock === "readback"}
+            onClick={() => void c.refresh()}
+          />
+        </AtlasWorkbarActions>
+      </AtlasWorkbar>
 
       {(c.notice || c.error) && (
         <Box

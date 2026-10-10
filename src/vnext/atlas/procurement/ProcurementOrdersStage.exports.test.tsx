@@ -51,14 +51,14 @@ describe("loaded PO presentation exports", () => {
     expect(zip).toHaveBeenCalledWith(orders.purchase_orders, "details_ing");
     fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "XLSX" })).toBeEnabled(),
+      expect(screen.getByRole("button", { name: "Xuất Excel" })).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "XLSX" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
     expect(xlsx).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "PDF" })).toBeEnabled(),
+      expect(screen.getByRole("button", { name: "Xuất PDF" })).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "PDF" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất PDF" }));
     expect(pdf).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
   });
   it("includes loaded eligible orders despite local search and excludes denied/draft/unready rows", () => {
@@ -135,10 +135,10 @@ describe("loaded PO presentation exports", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("Gạo thơm").length).toBeGreaterThan(0);
     expect(
-      screen.queryByRole("button", { name: "XLSX" }),
+      screen.queryByRole("button", { name: "Xuất Excel" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "PDF" }),
+      screen.queryByRole("button", { name: "Xuất PDF" }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),

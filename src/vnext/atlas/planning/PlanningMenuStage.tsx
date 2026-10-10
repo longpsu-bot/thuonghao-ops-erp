@@ -321,6 +321,11 @@ export function PlanningMenuStage({
           </Flex>
         </Box>
       )}
+      {!visibleSchoolIds.length && (
+        <Text role="status" p="sm" color="fg.muted">
+          Không có trường phù hợp bộ lọc.
+        </Text>
+      )}
       <AtlasTableViewport
         label="Bảng thực đơn theo trường"
         data-testid="weekly-menu-scroll"

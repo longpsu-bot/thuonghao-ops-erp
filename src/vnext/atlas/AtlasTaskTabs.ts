@@ -5,11 +5,10 @@ export const atlasPrimaryTabList = {
   gap: "xs",
   w: "var(--atlas-layout-fit-content, fit-content)",
   maxW: "full",
-  p: "xs",
-  bg: "bg.toolbar",
+  bg: "transparent",
   borderBottomWidth: "var(--atlas-layout-edge, 1px)",
-  borderColor: "border.default",
-  borderRadius: "control",
+  borderColor: "border.subtle",
+  borderRadius: "var(--atlas-layout-zero, 0)",
   overflowX: "auto",
 } as const;
 
@@ -23,10 +22,11 @@ export const atlasPrimaryTabTrigger = {
   py: "sm",
   color: "fg.muted",
   fontWeight: "semibold",
-  borderRadius: "control",
+  borderRadius: "var(--atlas-layout-zero, 0)",
   borderWidth: "var(--atlas-layout-edge, 1px)",
   borderColor: "transparent",
   position: "relative",
+  _hover: { bg: "bg.subtle", color: "fg.primary" },
   _after: {
     content: '""',
     position: "absolute",

@@ -143,7 +143,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       within(context).getByRole("heading", { level: 1 }),
     ).toHaveAccessibleDescription("Lập nhu cầu");
     expect(context).toHaveTextContent("Xác nhận nhu cầu");
-    expect(context).toHaveTextContent("07/09/2026 · Tất cả trường");
+    expect(context).toHaveTextContent("Tất cả trường");
 
     const viewport = screen.getByRole("region", {
       name: "Bảng xác nhận nhu cầu",
