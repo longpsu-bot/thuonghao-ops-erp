@@ -5,6 +5,10 @@ Starting main: `2f3741f38fe26adc9505ffd773c07c11c70b8c0e`.
 Dedicated branch: `fix/atlas-ui-convergence-01`. The original dirty checkout is untouched.
 PR #363 merged during this task; its main commit
 `40bfda08439e61cbcac82e5416dc3442f75aa951` was integrated before final review and validation.
+Main then advanced with PR #365 to `6bf31593276f73aab5ddc9fa27785e8167291024`.
+That main commit was integrated before final-head certification. Its School
+reconciliation tooling is inherited from main and was not executed by this UI
+task. The only UI overlap was Recipe tests; both sets of assertions were retained.
 
 ## Authority and scope
 
@@ -129,6 +133,8 @@ outdated date-surface expectations and five-second timing failures on this
 memory-constrained Windows machine. Subsequent focused runs passed every
 initially failed case. The final ten-file retry passed 20 cases; its stale Week
 assertion and remaining Planning timeout both passed in the final two-case retry.
+After integrating PR #365, the overlapping Recipe capability suite passed all
+28 tests, retaining the upstream recovery/animation checks and this task's copy check.
 No timeout, assertion, accessibility check, test scope or CI setting was weakened.
 
 Date/range hook tests, seven-day boundary tests, retained export scope tests,
