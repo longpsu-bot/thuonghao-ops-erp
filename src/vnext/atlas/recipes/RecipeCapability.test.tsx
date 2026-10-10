@@ -392,12 +392,15 @@ describe("Unified Recipe capability and Change Order operator job", () => {
         const recover = await screen.findByRole("button", {
           name: "Tải lại để xác nhận",
         });
-        expect(status).toHaveBeenLastCalledWith(
-          expect.objectContaining({
-            unsaved: true,
-            blocked: true,
-            attention: "Atlas chưa thể xác nhận thao tác đã hoàn tất hay chưa.",
-          }),
+        await waitFor(() =>
+          expect(status).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+              unsaved: true,
+              blocked: true,
+              attention:
+                "Atlas chưa thể xác nhận thao tác đã hoàn tất hay chưa.",
+            }),
+          ),
         );
         await waitFor(() =>
           expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
