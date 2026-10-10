@@ -32,6 +32,7 @@ export async function executeAtlasStagingPostgres(
     environment = process.env,
     cwd = process.cwd(),
     run = spawnSync,
+    timeoutMs = 20 * 60 * 1000,
     readLinkedFile = (path) => readFileSync(path, "utf8"),
   } = {},
 ) {
@@ -68,6 +69,12 @@ export async function executeAtlasStagingPostgres(
     PGAPPNAME: "atlas-staging-master-load",
     PGCLIENTENCODING: "UTF8",
   };
+  if (
+    !Number.isInteger(timeoutMs) ||
+    timeoutMs < 20000 ||
+    timeoutMs > 20 * 60 * 1000
+  )
+    throw new Error("STAGING_POSTGRES_TIMEOUT_INVALID");
   let result;
   try {
     result = run(
@@ -89,13 +96,15 @@ export async function executeAtlasStagingPostgres(
         input: statement,
         encoding: "utf8",
         shell: false,
-        timeout: 20 * 60 * 1000,
+        timeout: timeoutMs,
         maxBuffer: 32 * 1024 * 1024,
       },
     );
   } catch {
     throw new Error("STAGING_POSTGRES_EXECUTION_FAILED");
   }
+  if (result.error?.code === "ETIMEDOUT")
+    throw new Error("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
   if (result.status !== 0 || result.error)
     throw new Error("STAGING_POSTGRES_EXECUTION_FAILED");
   let value;

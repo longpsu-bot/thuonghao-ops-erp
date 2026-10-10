@@ -148,3 +148,12 @@ test("places Bình Quới pair and all five Hùng Vương adjacent without chang
     ),
   );
 });
+
+test("rejects another legacy School sharing an Owner School UUID", () => {
+  const f = fixture();
+  f.mappings.push({ ...f.mappings[0], legacy_id: "999" });
+  assert.throws(
+    () => buildSchoolDocumentConfiguration(f),
+    /SCHOOL_MASTER_RECONCILIATION_REQUIRED/,
+  );
+});

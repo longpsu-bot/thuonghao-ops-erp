@@ -42,6 +42,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "atlas_po_document_identity.sql",
   "master_data_rehearsal_import.sql",
   "atlas_staging_master_load.sql",
+  "atlas_staging_school_reconciliation.sql",
   "rmvp_02a_connected_recipes_bom.sql",
   "master_data_rehearsal_recipe_import.sql",
   "rmvp_02b_recipe_adjustments_effective_bom.sql",
@@ -103,30 +104,35 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
         command: "node",
         args: Object.freeze(["scripts/test-local-count-unit-policies.mjs"]),
       })
-    : file === "atlas_staging_master_load.sql"
+    : file === "atlas_staging_school_reconciliation.sql"
       ? Object.freeze({
           command: "node",
-          args: Object.freeze(["scripts/test-local-staging-master-load.mjs"]),
+          args: Object.freeze(["scripts/test-local-school-reconciliation.mjs"]),
         })
-      : [
-            "purchase_review_confirm_release.sql",
-            "atlas_backend_convergence_02b_allocation.sql",
-          ].includes(file)
+      : file === "atlas_staging_master_load.sql"
         ? Object.freeze({
             command: "node",
-            args: Object.freeze([
-              "scripts/test-local-purchase-review.mjs",
-              file,
-            ]),
+            args: Object.freeze(["scripts/test-local-staging-master-load.mjs"]),
           })
-        : pnpm(
-            "exec",
-            "supabase",
-            "test",
-            "db",
-            `supabase/tests/${file}`,
-            "--local",
-          ),
+        : [
+              "purchase_review_confirm_release.sql",
+              "atlas_backend_convergence_02b_allocation.sql",
+            ].includes(file)
+          ? Object.freeze({
+              command: "node",
+              args: Object.freeze([
+                "scripts/test-local-purchase-review.mjs",
+                file,
+              ]),
+            })
+          : pnpm(
+              "exec",
+              "supabase",
+              "test",
+              "db",
+              `supabase/tests/${file}`,
+              "--local",
+            ),
 );
 
 export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([

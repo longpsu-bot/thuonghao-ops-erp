@@ -1,0 +1,119 @@
+name: Atlas Staging School Reconciliation
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full certified current-main SHA
+        required: true
+        type: string
+      operation:
+        description: Reconcile canonical School masters at migration 97, or configure relationships after migration 98
+        required: true
+        type: choice
+        options:
+          - reconcile
+          - configure
+      apply:
+        description: Apply the reviewed fifteen-School reconciliation or approved configuration
+        required: true
+        type: boolean
+        default: false
+      target_project_ref:
+        description: Exact Atlas Staging project confirmation for apply
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-staging-master-data-load
+  cancel-in-progress: false
+
+jobs:
+  load:
+    name: Guarded School reconciliation and authenticated configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: atlas-staging
+    steps:
+      - name: Check out requested exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Verify exact current main before repository execution
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
+          test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare verified TLS and exact Staging PostgreSQL link
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+          EXPECTED_PROJECT: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$EXPECTED_PROJECT" = "rnzxmxiiqgtdevzregff"
+          command -v psql >/dev/null
+          ca="$RUNNER_TEMP/supabase-root-ca.crt"
+          curl --fail --silent --show-error --proto '=https' \
+            'https://supabase-downloads.s3.ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt' \
+            --output "$ca"
+          echo "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  $ca" | sha256sum --check --status
+          bundle="$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
+          cat /etc/ssl/certs/ca-certificates.crt "$ca" > "$bundle"
+          echo "ATLAS_STAGING_CA_BUNDLE=$bundle" >> "$GITHUB_ENV"
+          pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
+      - name: Preview or apply bounded Schools and verify authoritative APIs
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          OPERATION: ${{ inputs.operation }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--commit-sha "$REQUESTED_SHA")
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            args+=(--apply --target-project-ref "$CONFIRMED_TARGET")
+          fi
+          case "$OPERATION" in
+            reconcile) node scripts/reconcile-atlas-staging-schools.mjs "${args[@]}" ;;
+            configure) node scripts/configure-atlas-staging-schools.mjs "${args[@]}" ;;
+            *) exit 1 ;;
+          esac
+      - name: Remove transient linked metadata and public CA bundle
+        if: always()
+        shell: bash
+        run: |
+          rm -f supabase/.temp/pooler-url supabase/.temp/project-ref
+          rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
