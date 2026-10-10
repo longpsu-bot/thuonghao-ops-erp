@@ -14,11 +14,13 @@ join atlas_core.capabilities capability using(capability_code)
 where true
 on conflict(role_capability_id) do update set capability_id=excluded.capability_id;
 
+-- Confirmed Need prerequisites may already own these synthetic supplier IDs
+-- without document codes; author the explicit PO facts on that path as well.
 insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status,document_code)
 values
   ('c7100000-0000-4000-8000-000000000001','PR-A-VERIFY-A','PR-A Verify Supplier A','ACTIVE','53'),
   ('c7100000-0000-4000-8000-000000000002','PR-A-VERIFY-B','PR-A Verify Supplier B','ACTIVE','54')
-on conflict(supplier_id) do update set supplier_status='ACTIVE';
+on conflict(supplier_id) do update set supplier_status='ACTIVE',document_code=excluded.document_code;
 
 -- Explicit synthetic business facts for official-PO release tests, never a
 -- production inference from these native technical identities.

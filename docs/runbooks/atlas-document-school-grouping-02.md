@@ -38,6 +38,8 @@ The full local frontend run was stopped after unchanged recipe-screen tests exce
 
 Initial CI exposed a Node/Vitest collection mismatch and three stale global catalog fixtures. The configuration tests now use the repository's Vitest runner in both frontend and full backend certification. The corrected runner/contract checks pass 116 tests, and all 315 catalog assertions pass with the explicit new identities retained.
 
+Full Integration also exposed a deterministic browser-fixture collision: an earlier allocation verifier created the synthetic Supplier A without a document code, and the procurement fixture's conflict update refreshed only its status. The backend correctly blocked PO release with `PO_DOCUMENT_CODE_REQUIRED`. The procurement fixture now refreshes its explicit synthetic supplier document code on conflict; the existing readiness, numbering, release and lineage assertions are retained. Fresh local replay applied all 98 migrations, passed the 158 PO boundary SQL assertions, and passed the complete procurement browser verifier through replacement release and immutable history. This correction affects local certification fixtures only.
+
 ## Migration and rollback effects
 
 `20261010102603_atlas_document_school_grouping_02.sql` is an appended migration; the 97 previously applied migrations are untouched. It adds current relationship authority and canonical snapshot fields for future releases, updates release/read models and guards PO School snapshot immutability. It performs no historical document backfill or hosted master configuration.
