@@ -130,13 +130,12 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
 );
 
 export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
-  Object.freeze({
-    command: "node",
-    args: Object.freeze([
-      "--test",
-      "scripts/atlas-document-school-configuration.test.mjs",
-    ]),
-  }),
+  pnpm(
+    "exec",
+    "vitest",
+    "run",
+    "scripts/atlas-document-school-configuration.test.mjs",
+  ),
   pnpm("exec", "supabase", "db", "reset", "--local", "--no-seed"),
   Object.freeze({
     command: "node",

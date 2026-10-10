@@ -393,7 +393,17 @@ function addSchoolDispatchSheet(
   sheet.mergeCells("G5:H5");
   sheet.getCell("G5").value = data.serviceDate;
   sheet.getCell("G5").alignment = { horizontal: "center" };
-  sheet.getRow(5).height = 22;
+  sheet.getRow(5).height = exportGroup
+    ? wrappedRowHeight(
+        sheet.getCell("A5").text,
+        [1, 2, 3, 4, 5].reduce(
+          (width, column) => width + (sheet.getColumn(column).width ?? 0),
+          0,
+        ),
+        12,
+        22,
+      )
+    : 22;
   sheet.mergeCells("A6:H6");
   sheet.getCell("A6").value = exportGroup
     ? `NHÓM DISPATCH: ${data.schoolName}`

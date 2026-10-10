@@ -94,6 +94,7 @@ try {
       .map((sheet) => {
         const cells = [];
         const schoolRows = [];
+        const headerRows = [];
         sheet.eachRow((row) =>
           row.eachCell((cell) => {
             if (
@@ -114,6 +115,19 @@ try {
               });
             const dispatchHeader =
               name.startsWith("Dispatch-") && cell.address === "A6";
+            if (name.startsWith("Dispatch-") && cell.address === "A5") {
+              headerRows.push({
+                address: cell.address,
+                text: cell.text,
+                height: row.height,
+                firstColumn: 1,
+                lastColumn: 5,
+                precedingText: sheet.getCell("A4").text,
+                precedingLastColumn: 8,
+                followingText: sheet.getCell("A6").text,
+                followingLastColumn: 8,
+              });
+            }
             if (
               typeof cell.value === "string" &&
               (dispatchHeader ||
@@ -151,14 +165,16 @@ try {
                 ...(dispatchHeader
                   ? {
                       precedingText: sheet.getCell("A5").text,
+                      precedingLastColumn: 5,
                       followingText: sheet.getCell("A7").text,
+                      followingLastColumn: 8,
                     }
                   : {}),
               });
             }
           }),
         );
-        return { name: sheet.name, cells, schoolRows };
+        return { name: sheet.name, cells, schoolRows, headerRows };
       });
     const hiddenSheets = b.worksheets
       .filter((s) => s.state === "veryHidden")
@@ -218,12 +234,37 @@ try {
     "Dispatch-long-school-header.xlsx",
     await pxk.createSchoolDispatchXlsx(longSchool),
   );
+  const hungVuongNames = [
+    "CHUYÊN HÙNG VƯƠNG (Sáng)",
+    "CHUYÊN HÙNG VƯƠNG (Trưa)",
+    "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+    "CHUYÊN HÙNG VƯƠNG (Chiều)",
+    "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+  ];
+  const hungVuongDocs = hungVuongNames.map((name, i) => {
+    const d = createReviewSchoolDispatchDocument("RELEASED");
+    Object.assign(d, {
+      school_id: `hv-${i}`,
+      school_name: name,
+      school_dispatch_release_id: `hv-release-${i}`,
+      document_number: `PXK-20260924-260000000000400${i}`,
+      dispatch_group_id: "hv",
+      dispatch_group_name: "CHUYÊN HÙNG VƯƠNG",
+    });
+    d.lines[0].quantity = "0.100001";
+    d.lines[0].school_dispatch_release_line_id = `hv-line-${i}`;
+    return d;
+  });
+  await save(
+    "Dispatch-Hung-Vuong-five-numbers.xlsx",
+    await pxk.createGroupedSchoolDispatchXlsx(hungVuongDocs),
+  );
   await fs.writeFile(
     path.join(output, "manifest.json"),
     JSON.stringify(manifest, null, 2) + "\n",
   );
   console.log(
-    "Generated 3 fixture-only workbooks; measured School bands include 1–5+ lines, narrower Theo hàng cells and short/long PXK School headers.",
+    "Generated 4 fixture-only workbooks; measured School bands include 1–5+ lines, narrower Theo hàng cells, short/long PXK School headers and all five grouped Hùng Vương release numbers.",
   );
 } finally {
   await server.close();

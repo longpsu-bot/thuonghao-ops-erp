@@ -970,8 +970,13 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(fullIntegration).not.toContain("supabase test db");
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(106);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS[0]).toEqual({
-      command: "node",
-      args: ["--test", "scripts/atlas-document-school-configuration.test.mjs"],
+      command: "pnpm",
+      args: [
+        "exec",
+        "vitest",
+        "run",
+        "scripts/atlas-document-school-configuration.test.mjs",
+      ],
     });
     expect(
       SUPABASE_FULL_INTEGRATION_COMMANDS.filter(({ args }) =>

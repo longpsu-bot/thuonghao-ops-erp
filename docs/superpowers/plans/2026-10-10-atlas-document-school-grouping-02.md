@@ -38,7 +38,7 @@
 - Backend authority, immutable future snapshots, independent Admin controls, measured PO/PXK headers, Dispatch grouping and fail-closed configuration planning implemented.
 - Focused SQL, Admin/API, export/Shopping List, measurement and ordering tests pass. Fresh chronological replay applies all 98 migrations; no hosted writes.
 - Local frontend format/typecheck/build and UI boundary checks pass. Full local frontend run stopped after unchanged recipe-screen timeouts during database replay; required GitHub frontend certification remains the full-suite gate.
-- Native open/save/reopen/PDF verification passes for all three fixture workbooks. Printed glyph and physical width/font/formula QA pass for 24 PO/PXK School rows; exact formula preserved.
+- Native open/save/reopen/PDF verification passes for four fixture workbooks. Printed glyph and physical width/font/formula QA pass for 25 PO/PXK School rows and three PXK-number headers; exact formula preserved. Grouped number headers expand to retain all five Hùng Vương release numbers.
 - Final independent review found no remaining actionable defects after the Company-name, unresolved-location, PXK-height and tied-order corrections.
 - Full local backend certification is blocked by the existing Storage container health failure during reset. GitHub full integration remains required.
 - Hosted Owner configuration is blocked by unreconciled School identities; the implementation fails closed and preserves released history.

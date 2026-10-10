@@ -36,6 +36,19 @@ const visible = (b: ExcelJS.Workbook) =>
   b.worksheets.filter((s) => s.state === "visible");
 
 describe("Owner independent School cooking and Dispatch evidence", () => {
+  it("keeps every original PXK number readable when five documents combine", async () => {
+    const docs = Array.from({ length: 5 }, (_, i) =>
+      dispatch(i, `School ${i}`, "CHUYÊN HÙNG VƯƠNG"),
+    );
+    for (const [i, doc] of docs.entries())
+      doc.document_number = `PXK-20260924-260000000000400${i}`;
+    const sheet = visible(
+      await book(await createGroupedSchoolDispatchXlsx(docs)),
+    )[0]!;
+    for (const doc of docs)
+      expect(sheet.getCell("A5").text).toContain(doc.document_number);
+    expect(sheet.getRow(5).height).toBeGreaterThan(22);
+  });
   it("measures PXK School headers across actual visible columns without a cap", async () => {
     const doc = dispatch(1, "TRƯỜNG " + "PHÂN HIỆU THƯỢNG HẢO ".repeat(24));
     const sheet = visible(

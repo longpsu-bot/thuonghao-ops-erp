@@ -1006,7 +1006,8 @@
               "lastColumn": 3,
               "boundaryKind": "cell-borders"
             }
-          ]
+          ],
+          "headerRows": []
         },
         {
           "name": "02-09-2026 - Theo trường",
@@ -2058,7 +2059,8 @@
               "lastColumn": 6,
               "boundaryKind": "cell-borders"
             }
-          ]
+          ],
+          "headerRows": []
         },
         {
           "name": "02-09-2026 - Tổng",
@@ -2256,7 +2258,8 @@
               "quantity": false
             }
           ],
-          "schoolRows": []
+          "schoolRows": [],
+          "headerRows": []
         }
       ],
       "hiddenSheets": [
@@ -2950,7 +2953,22 @@
               "lastColumn": 8,
               "boundaryKind": "adjacent-header-text",
               "precedingText": "Số phiếu: PXK-VT-0 / PXK-VT-1",
-              "followingText": "Địa chỉ: Số 1 Nguyễn Du"
+              "precedingLastColumn": 5,
+              "followingText": "Địa chỉ: Số 1 Nguyễn Du",
+              "followingLastColumn": 8
+            }
+          ],
+          "headerRows": [
+            {
+              "address": "A5",
+              "text": "Số phiếu: PXK-VT-0 / PXK-VT-1",
+              "height": 23,
+              "firstColumn": 1,
+              "lastColumn": 5,
+              "precedingText": "PHIẾU XUẤT KHO",
+              "precedingLastColumn": 8,
+              "followingText": "NHÓM DISPATCH: VĨNH TÂN",
+              "followingLastColumn": 8
             }
           ]
         }
@@ -3344,7 +3362,22 @@
               "lastColumn": 8,
               "boundaryKind": "adjacent-header-text",
               "precedingText": "Số phiếu: PXK-LONG-SCHOOL-HEADER",
-              "followingText": "Địa chỉ: Số 1 Nguyễn Du"
+              "precedingLastColumn": 5,
+              "followingText": "Địa chỉ: Số 1 Nguyễn Du",
+              "followingLastColumn": 8
+            }
+          ],
+          "headerRows": [
+            {
+              "address": "A5",
+              "text": "Số phiếu: PXK-LONG-SCHOOL-HEADER",
+              "height": 22,
+              "firstColumn": 1,
+              "lastColumn": 5,
+              "precedingText": "PHIẾU XUẤT KHO",
+              "precedingLastColumn": 8,
+              "followingText": "TRƯỜNG: TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+              "followingLastColumn": 8
             }
           ]
         }
@@ -3412,6 +3445,493 @@
             {
               "address": "E4",
               "value": "{\"school_dispatch_release_line_id\":\"26000000-0000-4000-8000-000000000005\",\"school_id\":\"fixture-unrelated-long-school\",\"source_quantity\":\"100.000000\",\"dispatch_group_id\":null,\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dispatch-Hung-Vuong-five-numbers.xlsx",
+      "sheets": [
+        {
+          "name": "09-24 CHUYÊN HÙNG VƯƠNG",
+          "cells": [
+            {
+              "address": "B1",
+              "value": "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B2",
+              "value": "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A4",
+              "value": "PHIẾU XUẤT KHO",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A5",
+              "value": "Số phiếu: PXK-20260924-2600000000004004 / PXK-20260924-2600000000004003 / PXK-20260924-2600000000004000 / PXK-20260924-2600000000004002 / PXK-20260924-2600000000004001",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F5",
+              "value": "Ngày:",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G5",
+              "value": "24/09/2026",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A6",
+              "value": "NHÓM DISPATCH: CHUYÊN HÙNG VƯƠNG",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A7",
+              "value": "Địa chỉ: Số 1 Nguyễn Du",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A9",
+              "value": "Stt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "B9",
+              "value": "Tên thực phẩm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C9",
+              "value": "Đvt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D9",
+              "value": "Số lượng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E9",
+              "value": "Tình trạng cảm quan",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G9",
+              "value": "Biện pháp xử lý",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "H9",
+              "value": "Ghi chú",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E10",
+              "value": "Đạt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F10",
+              "value": "Không đạt",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "I10",
+              "value": "__document_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "J10",
+              "value": "__ingredient_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K10",
+              "value": "__unit_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "L10",
+              "value": "__school_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "M10",
+              "value": "__location_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "N10",
+              "value": "__cooking_group_id",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "O10",
+              "value": "__exported_quantity",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "P10",
+              "value": "__row_kind",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "B11",
+              "value": "Gạo thơm",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C11",
+              "value": "kg",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "D11",
+              "value": "0.500005",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "E11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "G11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "H11",
+              "value": "",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "J11",
+              "value": "26000000-0000-4000-8000-000000000006",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "K11",
+              "value": "26000000-0000-4000-8000-000000000007",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "O11",
+              "value": "0.500005",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "P11",
+              "value": "ITEM",
+              "hidden": true,
+              "quantity": false
+            },
+            {
+              "address": "A17",
+              "value": "Người nhận hàng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C17",
+              "value": "Người giao hàng",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F17",
+              "value": "Người lập phiếu",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "A18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "C18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            },
+            {
+              "address": "F18",
+              "value": "(Ký, ghi họ tên)",
+              "hidden": false,
+              "quantity": false
+            }
+          ],
+          "schoolRows": [
+            {
+              "address": "A6",
+              "text": "NHÓM DISPATCH: CHUYÊN HÙNG VƯƠNG",
+              "height": 28,
+              "widthPoints": 715.5,
+              "bold": false,
+              "measuredHeight": 28,
+              "firstColumn": 1,
+              "lastColumn": 8,
+              "boundaryKind": "adjacent-header-text",
+              "precedingText": "Số phiếu: PXK-20260924-2600000000004004 / PXK-20260924-2600000000004003 / PXK-20260924-2600000000004000 / PXK-20260924-2600000000004002 / PXK-20260924-2600000000004001",
+              "precedingLastColumn": 5,
+              "followingText": "Địa chỉ: Số 1 Nguyễn Du",
+              "followingLastColumn": 8
+            }
+          ],
+          "headerRows": [
+            {
+              "address": "A5",
+              "text": "Số phiếu: PXK-20260924-2600000000004004 / PXK-20260924-2600000000004003 / PXK-20260924-2600000000004000 / PXK-20260924-2600000000004002 / PXK-20260924-2600000000004001",
+              "height": 68,
+              "firstColumn": 1,
+              "lastColumn": 5,
+              "precedingText": "PHIẾU XUẤT KHO",
+              "precedingLastColumn": 8,
+              "followingText": "NHÓM DISPATCH: CHUYÊN HÙNG VƯƠNG",
+              "followingLastColumn": 8
+            }
+          ]
+        }
+      ],
+      "hiddenSheets": [
+        {
+          "name": "_ATLAS_META",
+          "cells": [
+            {
+              "address": "A1",
+              "value": "contract_version"
+            },
+            {
+              "address": "B1",
+              "value": "ATLAS_OPERATIONAL_DOCUMENT_V1"
+            },
+            {
+              "address": "A2",
+              "value": "record_kind"
+            },
+            {
+              "address": "B2",
+              "value": "document_id"
+            },
+            {
+              "address": "C2",
+              "value": "sheet_name"
+            },
+            {
+              "address": "D2",
+              "value": "row_number"
+            },
+            {
+              "address": "E2",
+              "value": "payload_json"
+            },
+            {
+              "address": "A3",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B3",
+              "value": "hv-release-4"
+            },
+            {
+              "address": "C3",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E3",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"hv-release-4\",\"document_number\":\"PXK-20260924-2600000000004004\",\"service_date\":\"2026-09-24\",\"school_id\":\"hv-4\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":\"hv\",\"dispatch_group_name\":\"CHUYÊN HÙNG VƯƠNG\",\"note\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":null,\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A4",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B4",
+              "value": "hv-release-3"
+            },
+            {
+              "address": "C4",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E4",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"hv-release-3\",\"document_number\":\"PXK-20260924-2600000000004003\",\"service_date\":\"2026-09-24\",\"school_id\":\"hv-3\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":\"hv\",\"dispatch_group_name\":\"CHUYÊN HÙNG VƯƠNG\",\"note\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":null,\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A5",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B5",
+              "value": "hv-release-0"
+            },
+            {
+              "address": "C5",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E5",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"hv-release-0\",\"document_number\":\"PXK-20260924-2600000000004000\",\"service_date\":\"2026-09-24\",\"school_id\":\"hv-0\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":\"hv\",\"dispatch_group_name\":\"CHUYÊN HÙNG VƯƠNG\",\"note\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":null,\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A6",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B6",
+              "value": "hv-release-2"
+            },
+            {
+              "address": "C6",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E6",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"hv-release-2\",\"document_number\":\"PXK-20260924-2600000000004002\",\"service_date\":\"2026-09-24\",\"school_id\":\"hv-2\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":\"hv\",\"dispatch_group_name\":\"CHUYÊN HÙNG VƯƠNG\",\"note\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":null,\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A7",
+              "value": "DOCUMENT"
+            },
+            {
+              "address": "B7",
+              "value": "hv-release-1"
+            },
+            {
+              "address": "C7",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E7",
+              "value": "{\"document_type\":\"PXK\",\"school_dispatch_release_id\":\"hv-release-1\",\"document_number\":\"PXK-20260924-2600000000004001\",\"service_date\":\"2026-09-24\",\"school_id\":\"hv-1\",\"delivery_location_id\":\"26000000-0000-4000-8000-000000000002\",\"cooking_group_id\":null,\"cooking_location_id\":null,\"cooking_location_name\":null,\"cooking_location_kind\":null,\"cooking_location_host_school_id\":null,\"dispatch_group_id\":\"hv\",\"dispatch_group_name\":\"CHUYÊN HÙNG VƯƠNG\",\"note\":null,\"version\":1,\"status\":\"RELEASED\",\"predecessor_release_id\":null,\"source_fingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"released_at\":\"2026-09-23T08:00:00.000Z\"}"
+            },
+            {
+              "address": "A8",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B8",
+              "value": "hv-release-4"
+            },
+            {
+              "address": "C8",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E8",
+              "value": "{\"school_dispatch_release_line_id\":\"hv-line-4\",\"school_id\":\"hv-4\",\"source_quantity\":\"0.100001\",\"dispatch_group_id\":\"hv\",\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            },
+            {
+              "address": "A9",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B9",
+              "value": "hv-release-3"
+            },
+            {
+              "address": "C9",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E9",
+              "value": "{\"school_dispatch_release_line_id\":\"hv-line-3\",\"school_id\":\"hv-3\",\"source_quantity\":\"0.100001\",\"dispatch_group_id\":\"hv\",\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            },
+            {
+              "address": "A10",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B10",
+              "value": "hv-release-0"
+            },
+            {
+              "address": "C10",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E10",
+              "value": "{\"school_dispatch_release_line_id\":\"hv-line-0\",\"school_id\":\"hv-0\",\"source_quantity\":\"0.100001\",\"dispatch_group_id\":\"hv\",\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            },
+            {
+              "address": "A11",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B11",
+              "value": "hv-release-2"
+            },
+            {
+              "address": "C11",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E11",
+              "value": "{\"school_dispatch_release_line_id\":\"hv-line-2\",\"school_id\":\"hv-2\",\"source_quantity\":\"0.100001\",\"dispatch_group_id\":\"hv\",\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
+            },
+            {
+              "address": "A12",
+              "value": "ROW_SOURCE"
+            },
+            {
+              "address": "B12",
+              "value": "hv-release-1"
+            },
+            {
+              "address": "C12",
+              "value": "09-24 CHUYÊN HÙNG VƯƠNG"
+            },
+            {
+              "address": "E12",
+              "value": "{\"school_dispatch_release_line_id\":\"hv-line-1\",\"school_id\":\"hv-1\",\"source_quantity\":\"0.100001\",\"dispatch_group_id\":\"hv\",\"note\":null,\"confirmed_need_line_revision_id\":\"26000000-0000-4000-8000-000000000011\",\"confirmed_need_line_decision_id\":\"26000000-0000-4000-8000-000000000012\",\"allocation_family_revision_id\":\"26000000-0000-4000-8000-000000000013\",\"allocation_family_contribution_id\":\"26000000-0000-4000-8000-000000000014\",\"allocation_supplier_split_id\":\"26000000-0000-4000-8000-000000000015\",\"purchase_order_id\":\"26000000-0000-4000-8000-000000000016\",\"purchase_order_revision_id\":\"26000000-0000-4000-8000-000000000017\",\"purchase_order_line_revision_id\":\"26000000-0000-4000-8000-000000000018\",\"covered_quantity\":\"100.000000\"}"
             }
           ]
         }

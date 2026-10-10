@@ -1,43 +1,51 @@
 {
   "method": "Native PDF glyph sequence equals source after NFC/whitespace normalization; bordered cells enclose glyph boxes; unbordered PXK School headers stay within horizontal table bounds and between neighboring header glyphs.",
   "minimumClearancePoints": 0.5,
-  "manifestSha256": "85eacd805178dee4efd0515172029fbd22c0447571502366bfb084b68d01b840",
+  "manifestSha256": "23ebaa11269b948b2ff0a9fd33669b69cb53c0562bf7a645fb691f6bf96efc36",
   "evidenceFiles": [
     {
       "path": "PO-School-measured-rows.xlsx",
-      "sha256": "2c8ba127230d834879599a589a6950a8c97a9b5156ec5a6cfca3a1a5e438423a"
+      "sha256": "5b8f35cac610016e1730f27ad79365b6e74d70727d5c20e64e76bf3de8584442"
     },
     {
       "path": "native-qa/PO-School-measured-rows-sheet-1.pdf",
-      "sha256": "723c3f62bcc2723602a2d4cffca7e0b4447650e12e50f744a096998cf6beef89"
+      "sha256": "a1b66a5897d1a4c0f1d2010debdb180427261e40cabb65ca1df69213aeb8628a"
     },
     {
       "path": "native-qa/PO-School-measured-rows-sheet-2.pdf",
-      "sha256": "fbf130bc8d55c38b4c1b89bc6aa8fb72cb451e0f8802ff692c069b8d77a0742d"
+      "sha256": "4e9440bc58c25d046a62861ca30ba2073de467a38a3b8129db95a19c08226c14"
     },
     {
       "path": "native-qa/PO-School-measured-rows-sheet-3.pdf",
-      "sha256": "9aab8a725c0c4e9a39e11843b565d57cf726f71c9979b97eff5c3b32bc3dda82"
+      "sha256": "83e7a902a09fde9e12d88ea57b58eea7fff9010dadeeefb9d7ad30bd37f9e023"
     },
     {
       "path": "Dispatch-explicit-Vinh-Tan.xlsx",
-      "sha256": "ca18d15ad3d12947388e0080da3cc929c1505620535830fe1d5b6dbe0ec9f649"
+      "sha256": "6dfae769d07c0830a53b71a37918cb94bc0474ca72b7b6a0bc38feecd7d75144"
     },
     {
       "path": "native-qa/Dispatch-explicit-Vinh-Tan-sheet-1.pdf",
-      "sha256": "030fe3fd3dbbf3ccc3463ca83c2664e8969104b9267eb33ea264d4d39d2c2e7a"
+      "sha256": "963adec68d1416a88e95efccd5678623ae1eaaf09db96b152f3b32fd64b6d070"
     },
     {
       "path": "Dispatch-long-school-header.xlsx",
-      "sha256": "117e6d5d7548ba63b1d2eae469c9605e7a94d3fc7b0957bdf50da7c4acdeaf94"
+      "sha256": "4eb64211e8ab55a5d60a52cf32eb571e77ffee736e2488a671d8e9b6fa578b57"
     },
     {
       "path": "native-qa/Dispatch-long-school-header-sheet-1.pdf",
-      "sha256": "ab86346aecbcaa912b5f61faea88ddd4a4ced4c496a37a2df776fbb5c6e3ec5d"
+      "sha256": "67fac08a185de564b7e9864f3328332cc2c96b8a096c441a56a8d87068e99f7a"
+    },
+    {
+      "path": "Dispatch-Hung-Vuong-five-numbers.xlsx",
+      "sha256": "8cdc99cf9ecc65111be67c5afd4199cf2c45e73e521332bd9d8920bb0631d53c"
+    },
+    {
+      "path": "native-qa/Dispatch-Hung-Vuong-five-numbers-sheet-1.pdf",
+      "sha256": "941e186bccc4c7e79fa9540d8296ffae06802499338c096f92dc157d3d6d1042"
     }
   ],
   "status": "PASS",
-  "checkedSchoolRows": 24,
+  "checkedSchoolRows": 25,
   "checks": [
     {
       "file": "PO-School-measured-rows.xlsx",
@@ -423,9 +431,9 @@
       "printedFullTextMatches": true,
       "text": "NHÓM DISPATCH: VĨNH TÂN",
       "printedLineCount": 1,
-      "geometryMethod": "unbordered PXK header bounded horizontally by table borders and vertically by row5/row7 neighboring glyphs",
-      "cellBounds": [22.44, 107.924, 569.4, 135.021],
-      "topClearancePoints": 8.137,
+      "geometryMethod": "unbordered PXK header bounded horizontally by actual merged-column table borders and vertically by full neighboring header glyph blocks",
+      "cellBounds": [22.44, 108.284, 569.4, 135.861],
+      "topClearancePoints": 8.617,
       "bottomClearancePoints": 8.4,
       "leftClearancePoints": 1.44,
       "rightClearancePoints": 402.432,
@@ -441,12 +449,84 @@
       "printedFullTextMatches": true,
       "text": "TRƯỜNG: TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN\nHIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN\nHIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN\nHIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN\nHIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN\nHIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN\nHIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
       "printedLineCount": 7,
-      "geometryMethod": "unbordered PXK header bounded horizontally by table borders and vertically by row5/row7 neighboring glyphs",
+      "geometryMethod": "unbordered PXK header bounded horizontally by actual merged-column table borders and vertically by full neighboring header glyph blocks",
       "cellBounds": [22.44, 108.9099, 567.0, 206.4469],
       "topClearancePoints": 3.817,
       "bottomClearancePoints": 3.84,
       "leftClearancePoints": 1.56,
       "rightClearancePoints": 10.1748,
+      "page": 1
+    },
+    {
+      "file": "Dispatch-Hung-Vuong-five-numbers.xlsx",
+      "sheet": "09-24 CHUYÊN HÙNG VƯƠNG",
+      "address": "A6",
+      "sourceText": "NHÓM DISPATCH: CHUYÊN HÙNG VƯƠNG",
+      "allocatedHeightPoints": 28,
+      "deterministicMeasuredLineCount": 1.0,
+      "printedFullTextMatches": true,
+      "text": "NHÓM DISPATCH: CHUYÊN HÙNG VƯƠNG",
+      "printedLineCount": 1,
+      "geometryMethod": "unbordered PXK header bounded horizontally by actual merged-column table borders and vertically by full neighboring header glyph blocks",
+      "cellBounds": [22.44, 135.884, 569.4, 168.261],
+      "topClearancePoints": 13.417,
+      "bottomClearancePoints": 8.4,
+      "leftClearancePoints": 1.44,
+      "rightClearancePoints": 334.2566,
+      "page": 1
+    }
+  ],
+  "checkedDocumentNumberRows": 3,
+  "headerChecks": [
+    {
+      "file": "Dispatch-explicit-Vinh-Tan.xlsx",
+      "sheet": "09-24 VĨNH TÂN",
+      "address": "A5",
+      "sourceText": "Số phiếu: PXK-VT-0 / PXK-VT-1",
+      "allocatedHeightPoints": 23,
+      "printedFullTextMatches": true,
+      "text": "Số phiếu: PXK-VT-0 / PXK-VT-1",
+      "printedLineCount": 1,
+      "geometryMethod": "unbordered PXK header bounded horizontally by actual merged-column table borders and vertically by full neighboring header glyph blocks",
+      "cellBounds": [22.44, 92.9, 325.99, 116.901],
+      "topClearancePoints": 6.384,
+      "bottomClearancePoints": 8.617,
+      "leftClearancePoints": 1.32,
+      "rightClearancePoints": 176.923,
+      "page": 1
+    },
+    {
+      "file": "Dispatch-long-school-header.xlsx",
+      "sheet": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PH",
+      "address": "A5",
+      "sourceText": "Số phiếu: PXK-LONG-SCHOOL-HEADER",
+      "allocatedHeightPoints": 22,
+      "printedFullTextMatches": true,
+      "text": "Số phiếu: PXK-LONG-SCHOOL-HEADER",
+      "printedLineCount": 1,
+      "geometryMethod": "unbordered PXK header bounded horizontally by actual merged-column table borders and vertically by full neighboring header glyph blocks",
+      "cellBounds": [22.44, 93.7918, 320.59, 112.7269],
+      "topClearancePoints": 5.9981,
+      "bottomClearancePoints": 3.817,
+      "leftClearancePoints": 1.32,
+      "rightClearancePoints": 134.0836,
+      "page": 1
+    },
+    {
+      "file": "Dispatch-Hung-Vuong-five-numbers.xlsx",
+      "sheet": "09-24 CHUYÊN HÙNG VƯƠNG",
+      "address": "A5",
+      "sourceText": "Số phiếu: PXK-20260924-2600000000004004 / PXK-20260924-2600000000004003 / PXK-20260924-2600000000004000 / PXK-20260924-2600000000004002 / PXK-20260924-2600000000004001",
+      "allocatedHeightPoints": 68,
+      "printedFullTextMatches": true,
+      "text": "Số phiếu: PXK-20260924-2600000000004004 / PXK-20260924-\n2600000000004003 / PXK-20260924-2600000000004000 / PXK-20260924-\n2600000000004002 / PXK-20260924-2600000000004001",
+      "printedLineCount": 3,
+      "geometryMethod": "unbordered PXK header bounded horizontally by actual merged-column table borders and vertically by full neighboring header glyph blocks",
+      "cellBounds": [22.44, 92.9, 325.99, 149.301],
+      "topClearancePoints": 11.184,
+      "bottomClearancePoints": 13.417,
+      "leftClearancePoints": 1.32,
+      "rightClearancePoints": 20.728,
       "page": 1
     }
   ]
