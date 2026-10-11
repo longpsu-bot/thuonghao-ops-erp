@@ -472,6 +472,42 @@ describe("bounded Planning master closure", () => {
       );
     },
   );
+  it("projects only internal working metadata after retaining the complete signed input", () => {
+    const snapshot = fixture();
+    snapshot.source_fingerprints = { fixture: "original fingerprints" };
+    snapshot.unit_alias_evidence = [{ original: "aliases remain evidence" }];
+    snapshot.snapshot_checksum = checksumOpsV1MasterSnapshot(snapshot);
+    const sql = buildPlanningCatchupSql(snapshot, {
+      targetProjectRef: "rnzxmxiiqgtdevzregff",
+    });
+    const encoded = sql.match(/convert_from\(decode\('([^']+)','base64'\)/)[1];
+    expect(JSON.parse(Buffer.from(encoded, "base64").toString("utf8"))).toEqual(
+      snapshot,
+    );
+    const scope = sql.match(
+      /create or replace function pg_temp\.planning_catchup_scope[\s\S]*?end \$\$;/,
+    )[0];
+    expect(scope).toContain(
+      "return jsonb_build_object('records',scoped,'snapshot_id',snapshot->'snapshot_id','snapshot_checksum',snapshot->'snapshot_checksum','exported_at',snapshot->'exported_at','catchup_dish_ids',dish_ids);",
+    );
+    expect(scope).not.toContain("return snapshot||");
+    expect(
+      sql.indexOf(
+        "atlas_legacy.master_snapshot_hash(snapshot-'snapshot_checksum')",
+      ),
+    ).toBeLessThan(
+      sql.indexOf(
+        "scoped:=pg_temp.planning_catchup_scope(snapshot,prior.reconciliation",
+      ),
+    );
+    expect(sql).toContain(
+      "jsonb_array_elements(snapshot->'source_diagnostics')",
+    );
+    expect(sql).toContain(
+      "jsonb_array_elements(snapshot#>'{records,schools}')",
+    );
+    expect(sql).toContain("snapshot->'source_counts'");
+  });
   it("uses only literal SQLSTATE notices after critical planner and hash boundaries", () => {
     const sql = readFileSync(
       new URL(

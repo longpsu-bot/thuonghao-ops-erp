@@ -40,7 +40,9 @@ begin
  select coalesce(jsonb_agg(r.value),'[]') into ingredient_ids from jsonb_array_elements(records->'ingredient_order_groups') r where exists
  (select 1 from jsonb_array_elements(scoped->'ingredients') i where i.value->>'ingredient_order_group_legacy_id'=r.value->>'legacy_id');
  scoped:=jsonb_set(scoped,'{ingredient_order_groups}',ingredient_ids);
- return snapshot||jsonb_build_object('records',scoped,'catchup_dish_ids',dish_ids);
+ -- Internal helper payload only; the caller retains and validates the complete signed snapshot.
+ -- Keep exact scoped records, identity evidence and supplier eligibility effective-date input.
+ return jsonb_build_object('records',scoped,'snapshot_id',snapshot->'snapshot_id','snapshot_checksum',snapshot->'snapshot_checksum','exported_at',snapshot->'exported_at','catchup_dish_ids',dish_ids);
 end $$;
 
 create or replace function pg_temp.planning_catchup_protected(actions jsonb)

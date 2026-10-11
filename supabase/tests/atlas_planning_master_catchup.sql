@@ -240,6 +240,50 @@ begin
  return pg_temp.catchup_signed(snapshot||jsonb_build_object('snapshot_id','synthetic-owner-zero-bom-tui','records',records,'source_counts',jsonb_build_object('schools',14,'ingredients',4,'dishes',4,'recipes',7,'bill_of_materials',3)));
 end $$;
 
+-- Same signed source through the minimal working envelope and the previous
+-- full-envelope behavior. All helper replacement is pg_temp-only and restored.
+create temp table envelope_source as
+select pg_temp.catchup_signed(jsonb_set(jsonb_set(pg_temp.catchup_owner_fixture(),
+ '{records,suppliers}','[{"legacy_id":"envelope-supplier","supplier_code":"v1-envelope-supplier","supplier_name":"Envelope fixture","supplier_status":"ACTIVE"}]'),
+ '{records,supplier_eligibilities}','[{"legacy_id":"envelope-membership","supplier_legacy_id":"envelope-supplier","ingredient_legacy_id":"1215","priority":1}]')
+ ||jsonb_build_object('snapshot_id','synthetic-large-envelope','source_counts',(pg_temp.catchup_owner_fixture()->'source_counts')||'{"suppliers":1,"supplier_eligibilities":1}'::jsonb,'unused_metadata',jsonb_build_object('padding',repeat('x',1048576)),
+ 'source_fingerprints',jsonb_build_array(jsonb_build_object('legacy_id','unused-fingerprint','fingerprint',repeat('a',64))))) snapshot;
+create temp table envelope_evidence(label text primary key,value jsonb);
+insert into envelope_evidence select 'original',snapshot from envelope_source;
+insert into envelope_evidence select 'protected',pg_temp.planning_catchup_protected('[]');
+insert into envelope_evidence select 'minimal-scope',pg_temp.planning_catchup_scope(snapshot) from envelope_source;
+select is((select array_agg(key order by key) from envelope_evidence e cross join lateral jsonb_object_keys(e.value) key where label='minimal-scope'),
+ array['catchup_dish_ids','exported_at','records','snapshot_checksum','snapshot_id'],'working scope exposes only the five required fields');
+select ok((select octet_length(s.snapshot::text)-octet_length(e.value::text)>1048576 from envelope_source s cross join envelope_evidence e where e.label='minimal-scope'),'unused signed metadata is absent from the working Recipe input');
+select is((select value->>'snapshot_checksum' from envelope_evidence where label='minimal-scope'),(select snapshot->>'snapshot_checksum' from envelope_source),'working envelope retains the original complete-source checksum');
+insert into envelope_evidence select 'minimal-plan',pg_temp.run_planning_master_catchup(snapshot,false,null,null) from envelope_source;
+create temp table envelope_scope_definition as select pg_get_functiondef('pg_temp.planning_catchup_scope(jsonb,jsonb)'::regprocedure) definition;
+do $$
+declare definition text; copy_definition text;
+begin
+ select d.definition into definition from envelope_scope_definition d;
+ copy_definition:=replace(definition,'planning_catchup_scope(','planning_catchup_scope_minimal_baseline(');
+ if copy_definition=definition then raise exception 'ENVELOPE_FIXTURE_FUNCTION_COPY_FAILED'; end if;
+ execute copy_definition;
+end $$;
+create or replace function pg_temp.planning_catchup_scope(snapshot jsonb, prior_scope jsonb default null)
+returns jsonb language sql stable set search_path='' as $$
+ select snapshot||pg_temp.planning_catchup_scope_minimal_baseline(snapshot,prior_scope)
+$$;
+insert into envelope_evidence select 'full-plan',pg_temp.run_planning_master_catchup(snapshot,false,null,null) from envelope_source;
+do $$ begin execute (select definition from envelope_scope_definition); end $$;
+select is(pg_get_functiondef('pg_temp.planning_catchup_scope(jsonb,jsonb)'::regprocedure),(select definition from envelope_scope_definition),'full-envelope parity wrapper restores the exact candidate helper before remaining regressions');
+select ok((select count(*)=2 and bool_and(value->>'success'='true') from envelope_evidence where label in ('minimal-plan','full-plan')),'minimal and previous full envelopes both complete the signed-source preview');
+select is((select value->'actions' from envelope_evidence where label='minimal-plan'),(select value->'actions' from envelope_evidence where label='full-plan'),'minimal envelope preserves every action and its order');
+select is((select value->'issues' from envelope_evidence where label='minimal-plan'),(select value->'issues' from envelope_evidence where label='full-plan'),'minimal envelope preserves every issue');
+select is((select value->>'plan_checksum' from envelope_evidence where label='minimal-plan'),(select value->>'plan_checksum' from envelope_evidence where label='full-plan'),'minimal envelope preserves the complete plan checksum');
+select is((select value from envelope_evidence where label='minimal-plan'),(select value from envelope_evidence where label='full-plan'),'minimal envelope preserves the complete preview response');
+select is((select snapshot from envelope_source),(select value from envelope_evidence where label='original'),'both previews leave the complete signed source unchanged');
+select is(pg_temp.planning_catchup_protected('[]'),(select value from envelope_evidence where label='protected'),'envelope parity previews change no protected target facts or mappings');
+select is((select pg_temp.run_planning_master_catchup(jsonb_set(snapshot,'{unused_metadata,padding}','"tampered"'),false,null,null)->>'error_code' from envelope_source),'SNAPSHOT_CHECKSUM_MISMATCH','excluded working metadata is still covered by original-source checksum validation');
+select is((select array_agg(i->>'source_record_id' order by i->>'source_record_id') from envelope_evidence e cross join lateral jsonb_array_elements(e.value->'issues') i where e.label='minimal-plan' and i->>'code'='SOURCE_RECIPE_EMPTY'),array['3456','3457','3468','3469'],'minimal envelope retains all four physical empty-root source IDs');
+select is((select a#>>'{values,effective_from}' from envelope_evidence e cross join lateral jsonb_array_elements(e.value->'actions') a where e.label='minimal-plan' and a->>'object_type'='SUPPLIER_ELIGIBILITY' and a->>'legacy_id'='envelope-membership'),'2026-09-15','supplier membership keeps effective dating from the original exported_at');
+
 savepoint owner_policy;
 insert into evidence values ('owner-preview',pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),false,null,null));
 select diag(value::text) from evidence where label='owner-preview' and value->>'success' is distinct from 'true';
