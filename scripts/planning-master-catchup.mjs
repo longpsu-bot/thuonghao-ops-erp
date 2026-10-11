@@ -158,10 +158,18 @@ export function derivePlanningCatchup(snapshot, mappings) {
 
 export function buildPlanningCatchupSql(
   snapshot,
-  { targetProjectRef, apply = false, planChecksum, actorId } = {},
+  {
+    targetProjectRef,
+    apply = false,
+    planChecksum,
+    actorId,
+    diagnosticBoundary = false,
+  } = {},
 ) {
   if (targetProjectRef !== "rnzxmxiiqgtdevzregff")
     throw new Error("EXACT_STAGING_TARGET_REQUIRED");
+  if (diagnosticBoundary && apply)
+    throw new Error("DIAGNOSTIC_BOUNDARY_PREVIEW_ONLY");
   assertPlanningSource(snapshot);
   if (
     apply &&
@@ -193,7 +201,7 @@ set statement_timeout='15min';
 set lock_timeout='30s';
 set client_min_messages='notice';
 set plan_cache_mode='force_generic_plan';
-\\warn CATCHUP_CLIENT_SETTINGS_DONE
+${diagnosticBoundary ? "set client_connection_check_interval='2s';\n" : ""}\\warn CATCHUP_CLIENT_SETTINGS_DONE
 ${sql}
 \\warn CATCHUP_CLIENT_HELPERS_DONE
 \\warn CATCHUP_CLIENT_QUERY_BEGIN

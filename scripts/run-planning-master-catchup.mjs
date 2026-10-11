@@ -40,6 +40,7 @@ export function verifyPlanningPreviewCheckout(commitSha, cwd = process.cwd()) {
 export async function runPlanningMasterCatchup({
   commitSha,
   apply = false,
+  diagnosticBoundary = false,
   targetConfirmation,
   snapshotFile,
   snapshotOutput,
@@ -53,6 +54,9 @@ export async function runPlanningMasterCatchup({
   executeTarget = executeAtlasStagingPostgres,
   onPhase = () => {},
 } = {}) {
+  if (diagnosticBoundary && apply)
+    throw new Error("DIAGNOSTIC_BOUNDARY_PREVIEW_ONLY");
+  if (diagnosticBoundary) onPhase("PLANNING_CATCHUP_DIAGNOSTIC_BOUNDARY_MODE");
   const phase = async (name, action) => {
     onPhase(`PLANNING_CATCHUP_${name}_START`);
     const value = await action();
@@ -131,11 +135,14 @@ export async function runPlanningMasterCatchup({
     buildPlanningCatchupSql(snapshot, {
       targetProjectRef: target.projectRef,
       apply,
+      diagnosticBoundary,
       planChecksum,
       actorId,
     }),
   );
-  const result = await phase("PLAN_EXECUTION", () => execute(planSql));
+  const result = await phase("PLAN_EXECUTION", () =>
+    execute(planSql, diagnosticBoundary ? { timeoutMs: 60000 } : {}),
+  );
   if (
     result.snapshot_checksum &&
     result.snapshot_checksum !== snapshot.snapshot_checksum
@@ -199,6 +206,14 @@ export async function runPlanningMasterCatchup({
   }
   return {
     ...result,
+    ...(diagnosticBoundary
+      ? {
+          diagnostic_boundary: true,
+          execution_mode: "DIAGNOSTIC_PREVIEW",
+          backend_status: result.status,
+          status: "DIAGNOSTIC_PREVIEW",
+        }
+      : {}),
     commit_sha: commitSha,
     target_project_ref: target.projectRef,
     migration_count: installed.length,
@@ -233,6 +248,25 @@ export async function runPlanningMasterCatchup({
   };
 }
 
+export function writePlanningCatchupReports(result, directory) {
+  const dir = resolve(directory);
+  writeFileSync(
+    resolve(dir, "planning-master-plan.json"),
+    JSON.stringify(result, null, 2) + "\n",
+    { mode: 0o600, flag: "wx" },
+  );
+  writeFileSync(
+    resolve(
+      dir,
+      result.diagnostic_boundary
+        ? "planning-master-diagnostic-report.tsv"
+        : "planning-master-report.tsv",
+    ),
+    formatPlanningCatchupReport(result),
+    { mode: 0o600, flag: "wx" },
+  );
+}
+
 async function main() {
   const args = process.argv.slice(2).filter((a) => a !== "--"),
     flags = new Map();
@@ -243,6 +277,7 @@ async function main() {
       ![
         "--commit-sha",
         "--apply",
+        "--diagnostic-boundary",
         "--target-project-ref",
         "--snapshot-file",
         "--snapshot-output",
@@ -252,7 +287,7 @@ async function main() {
       ].includes(k)
     )
       throw new Error("INVALID_ARGUMENT");
-    if (k === "--apply") flags.set(k, true);
+    if (k === "--apply" || k === "--diagnostic-boundary") flags.set(k, true);
     else {
       const v = args[++i];
       if (!v || v.startsWith("--")) throw new Error("MISSING_ARGUMENT");
@@ -262,6 +297,7 @@ async function main() {
   const result = await runPlanningMasterCatchup({
     commitSha: flags.get("--commit-sha"),
     apply: flags.has("--apply"),
+    diagnosticBoundary: flags.has("--diagnostic-boundary"),
     targetConfirmation: flags.get("--target-project-ref"),
     snapshotFile: flags.get("--snapshot-file"),
     snapshotOutput: flags.get("--snapshot-output"),
@@ -271,17 +307,7 @@ async function main() {
     onPhase: (marker) => writeSync(2, `${marker}\n`),
   });
   if (flags.has("--report-dir")) {
-    const dir = resolve(flags.get("--report-dir"));
-    writeFileSync(
-      resolve(dir, "planning-master-plan.json"),
-      JSON.stringify(result, null, 2) + "\n",
-      { mode: 0o600, flag: "wx" },
-    );
-    writeFileSync(
-      resolve(dir, "planning-master-report.tsv"),
-      formatPlanningCatchupReport(result),
-      { mode: 0o600, flag: "wx" },
-    );
+    writePlanningCatchupReports(result, flags.get("--report-dir"));
   }
   const { actions, report, protected: fingerprints, ...summary } = result;
   console.log(JSON.stringify(summary, null, 2));

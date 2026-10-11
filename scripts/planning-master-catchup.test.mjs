@@ -335,6 +335,44 @@ describe("bounded Planning master closure", () => {
       }),
     ).toThrow("REVIEWED_PLAN");
   });
+  it("enables connection checks only for the optional diagnostic preview", () => {
+    const snapshot = fixture();
+    const options = { targetProjectRef: "rnzxmxiiqgtdevzregff" };
+    const normal = buildPlanningCatchupSql(snapshot, options);
+    expect(normal).not.toContain("client_connection_check_interval");
+    expect(
+      buildPlanningCatchupSql(snapshot, {
+        ...options,
+        diagnosticBoundary: false,
+      }),
+    ).toBe(normal);
+    const diagnostic = buildPlanningCatchupSql(snapshot, {
+      ...options,
+      diagnosticBoundary: true,
+    });
+    const setting = "set client_connection_check_interval='2s';\n";
+    expect(diagnostic.split(setting)).toHaveLength(2);
+    expect(diagnostic.replace(setting, "")).toBe(normal);
+    expect(diagnostic.indexOf(setting)).toBeLessThan(
+      diagnostic.indexOf("CATCHUP_CLIENT_SETTINGS_DONE"),
+    );
+    expect(diagnostic.indexOf(setting)).toBeLessThan(
+      diagnostic.indexOf(
+        "create or replace function pg_temp.planning_catchup_scope",
+      ),
+    );
+  });
+  it("rejects diagnostic apply before validating or encoding source data", () => {
+    expect(() =>
+      buildPlanningCatchupSql(null, {
+        targetProjectRef: "rnzxmxiiqgtdevzregff",
+        apply: true,
+        diagnosticBoundary: true,
+        planChecksum: "a".repeat(64),
+        actorId: "ee120000-0000-4000-8000-000000000001",
+      }),
+    ).toThrow("DIAGNOSTIC_BOUNDARY_PREVIEW_ONLY");
+  });
   it("models only the exact candidate validator in temporary preview scope", () => {
     const migration = readFileSync(
       new URL(

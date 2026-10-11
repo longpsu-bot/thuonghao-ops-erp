@@ -5,6 +5,7 @@ import {
   mkdirSync,
   writeFileSync,
   readFileSync,
+  existsSync,
   rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,6 +13,7 @@ import { join } from "node:path";
 import {
   planningCatchupFailureCode,
   runPlanningMasterCatchup,
+  writePlanningCatchupReports,
 } from "./run-planning-master-catchup.mjs";
 import { checksumOpsV1MasterSnapshot } from "./ops-v1-master-snapshot-contract.mjs";
 
@@ -136,6 +138,72 @@ function fixture() {
   };
 }
 describe("Planning catch-up runner safety", () => {
+  it.each([false, true])(
+    "writes an unmistakable detached TSV name for diagnostic mode %s",
+    (diagnostic) => {
+      const f = fixture();
+      const result = {
+        diagnostic_boundary: diagnostic,
+        status: diagnostic ? "DIAGNOSTIC_PREVIEW" : "PREVIEW",
+        report: [],
+      };
+      writePlanningCatchupReports(result, f.options.cwd);
+      const name = diagnostic
+        ? "planning-master-diagnostic-report.tsv"
+        : "planning-master-report.tsv";
+      const other = diagnostic
+        ? "planning-master-report.tsv"
+        : "planning-master-diagnostic-report.tsv";
+      expect(existsSync(join(f.options.cwd, name))).toBe(true);
+      expect(existsSync(join(f.options.cwd, other))).toBe(false);
+      expect(
+        readFileSync(join(f.options.cwd, name), "utf8").trim().split("\t"),
+      ).toHaveLength(9);
+      expect(
+        JSON.parse(
+          readFileSync(
+            join(f.options.cwd, "planning-master-plan.json"),
+            "utf8",
+          ),
+        ).status,
+      ).toBe(result.status);
+    },
+  );
+  it("rejects diagnostic apply before authorization, checkout, source or SQL", async () => {
+    const f = fixture();
+    await expect(
+      runPlanningMasterCatchup({
+        ...f.apply,
+        diagnosticBoundary: true,
+        environment: {},
+      }),
+    ).rejects.toThrow("DIAGNOSTIC_BOUNDARY_PREVIEW_ONLY");
+    expect(f.options.verifyApply).not.toHaveBeenCalled();
+    expect(f.options.extractSnapshot).not.toHaveBeenCalled();
+    expect(f.options.executeTarget).not.toHaveBeenCalled();
+  });
+  it("bounds diagnostic preview to 60 seconds and labels its result separately", async () => {
+    const f = fixture();
+    const phases = [];
+    const result = await runPlanningMasterCatchup({
+      ...f.options,
+      diagnosticBoundary: true,
+      onPhase: (phase) => phases.push(phase),
+    });
+    const [migration, plan] = f.options.executeTarget.mock.calls;
+    expect(migration[2].timeoutMs).toBe(45000);
+    expect(plan[2].timeoutMs).toBe(60000);
+    expect(plan[1]).toContain("set client_connection_check_interval='2s'");
+    expect(plan[1]).toContain("set statement_timeout='15min'");
+    expect(result).toMatchObject({
+      diagnostic_boundary: true,
+      execution_mode: "DIAGNOSTIC_PREVIEW",
+      status: "DIAGNOSTIC_PREVIEW",
+      backend_status: "PREVIEW",
+    });
+    expect(phases[0]).toBe("PLANNING_CATCHUP_DIAGNOSTIC_BOUNDARY_MODE");
+    expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
+  });
   it("forwards sanitized transport phases before a plan execution timeout", async () => {
     const f = fixture();
     const phases = [];
@@ -150,6 +218,7 @@ describe("Planning catch-up runner safety", () => {
     await expect(
       runPlanningMasterCatchup({
         ...f.options,
+        diagnosticBoundary: true,
         onPhase: (marker) => phases.push(marker),
       }),
     ).rejects.toThrow("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
@@ -159,6 +228,8 @@ describe("Planning catch-up runner safety", () => {
       "CATCHUP_SERVER_SOURCE_CHECKED",
     ]);
     expect(phases).not.toContain("PLANNING_CATCHUP_PLAN_EXECUTION_DONE");
+    expect(phases[0]).toBe("PLANNING_CATCHUP_DIAGNOSTIC_BOUNDARY_MODE");
+    expect(f.options.executeTarget.mock.calls[1][2].timeoutMs).toBe(60000);
     expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
   });
   it("emits fixed phase markers in order and bounds only migration preflight", async () => {
@@ -186,6 +257,7 @@ describe("Planning catch-up runner safety", () => {
     const [migration, plan] = f.options.executeTarget.mock.calls;
     expect(migration[2].timeoutMs).toBe(45000);
     expect(plan[2]).not.toHaveProperty("timeoutMs");
+    expect(plan[1]).not.toContain("client_connection_check_interval");
     expect(plan[1]).toContain("set statement_timeout='15min'");
     expect(phases.join(" ")).not.toMatch(
       /fixture-only-token|select|runner-test|snapshot_checksum/,

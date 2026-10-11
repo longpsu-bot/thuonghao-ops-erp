@@ -21,6 +21,11 @@ on:
         required: true
         type: boolean
         default: false
+      diagnostic_boundary:
+        description: Diagnostic Planning preview only with a 60-second client timeout; not full certification
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -45,9 +50,11 @@ jobs:
       - name: Verify exact current main before repository execution
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
+          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary }}
         shell: bash
         run: |
           set -euo pipefail
+          test "$DIAGNOSTIC_BOUNDARY" = "false"
           test "$GITHUB_REF" = "refs/heads/main"
           [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           git fetch --no-tags origin main:refs/remotes/origin/main
@@ -165,6 +172,7 @@ jobs:
       - name: Fresh read-only V1 snapshot and deterministic dependency-closed preview
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
+          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary }}
           ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
@@ -172,7 +180,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -m 700 "$RUNNER_TEMP/planning-preview"
-          node scripts/run-planning-master-catchup.mjs --commit-sha "$REQUESTED_SHA" --report-dir "$RUNNER_TEMP/planning-preview"
+          args=(--commit-sha "$REQUESTED_SHA" --report-dir "$RUNNER_TEMP/planning-preview")
+          if [ "$DIAGNOSTIC_BOUNDARY" = "true" ]; then
+            args+=(--diagnostic-boundary)
+          fi
+          node scripts/run-planning-master-catchup.mjs "${args[@]}"
       - name: Read-only real Google fetch, strict parse and Preview
         if: always()
         env:
@@ -192,10 +204,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: planning-master-preview-${{ inputs.commit_sha }}
+          name: ${{ inputs.diagnostic_boundary && 'planning-master-diagnostic-preview' || 'planning-master-preview' }}-${{ inputs.commit_sha }}
           path: |
             ${{ runner.temp }}/planning-preview/planning-master-plan.json
-            ${{ runner.temp }}/planning-preview/planning-master-report.tsv
+            ${{ runner.temp }}/planning-preview/${{ inputs.diagnostic_boundary && 'planning-master-diagnostic-report.tsv' || 'planning-master-report.tsv' }}
             ${{ runner.temp }}/planning-preview/weekly-menu-read-only.json
           if-no-files-found: ignore
           retention-days: 7

@@ -24,7 +24,15 @@ The transport retains only exact approved client lines and PostgreSQL NOTICE SQL
 
 The first absent marker narrows the next investigation; it does not by itself prove a specific slow expression. For apply, the query continues through existing authorization, write, reconciliation and replay checks after plan hashing. A completed client query can still return a business `BLOCKED` result. Missing NOTICE markers may also reflect an interrupted connection before buffered stderr is recovered.
 
-This instrumentation changes no source canonicalization, fingerprints, planner actions, migration-parity requirements, apply authorization or timeout budgets. Diagnostic failures must not trigger an automatic hosted retry or apply.
+This instrumentation changes no source canonicalization, fingerprints, planner actions, migration-parity requirements or apply authorization. Normal execution retains its existing timeout budgets. Diagnostic failures must not trigger an automatic hosted retry or apply.
+
+## Optional diagnostic boundary preview
+
+Use `--diagnostic-boundary` only for an explicitly authorized preview investigation. It rejects apply before source access, emits `PLANNING_CATCHUP_DIAGNOSTIC_BOUNDARY_MODE`, and limits the catchup execution client to 60 seconds so buffered phase markers become available promptly. The normal 20-minute client budget remains unchanged when the flag is absent.
+
+Only this mode adds session-local `SET client_connection_check_interval='2s'` before helper definitions, allowing PostgreSQL to check for a disconnected client during execution. It does not guarantee cancellation during every kind of server wait or establish the restart cause. The existing generic-plan candidate, complete signed source, SQL statement/lock timeouts, helpers, actions and hashes remain unchanged.
+
+A completed result is explicitly marked `diagnostic_boundary: true`, `execution_mode: DIAGNOSTIC_PREVIEW` and `status: DIAGNOSTIC_PREVIEW`; `backend_status` retains the underlying result status. A diagnostic run, including one that completes successfully, is not final preview certification or apply authorization. A timeout yields only recovered phase evidence, not a completed plan. No automatic retry follows it.
 
 ## Bounded generic-plan candidate
 
