@@ -101,7 +101,12 @@ export async function runPlanningMasterCatchup({
   };
   const execute = async (sql, options = {}) =>
     parseStagingMasterResult(
-      await executeTarget(target, sql, { environment, cwd, ...options }),
+      await executeTarget(target, sql, {
+        environment,
+        cwd,
+        onPhase,
+        ...options,
+      }),
     );
   const migrationState = await phase("TARGET_MIGRATION_PREFLIGHT", () =>
     execute(

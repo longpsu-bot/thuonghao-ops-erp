@@ -379,4 +379,75 @@ describe("bounded Planning master closure", () => {
     expect(sql).toContain("atlas_legacy.master_import_validate_values(");
     expect(sql).not.toContain("planning_catchup_preview_validate_values");
   });
+  it("emits fixed psql boundaries around settings, helpers and the final query", () => {
+    const sql = buildPlanningCatchupSql(fixture(), {
+      targetProjectRef: "rnzxmxiiqgtdevzregff",
+    });
+    expect(sql.match(/^\\warn .*$/gm)).toEqual([
+      "\\warn CATCHUP_CLIENT_SCRIPT_BEGIN",
+      "\\warn CATCHUP_CLIENT_SETTINGS_DONE",
+      "\\warn CATCHUP_CLIENT_HELPERS_DONE",
+      "\\warn CATCHUP_CLIENT_QUERY_BEGIN",
+      "\\warn CATCHUP_CLIENT_QUERY_DONE",
+    ]);
+    expect(sql.indexOf("CATCHUP_CLIENT_SCRIPT_BEGIN")).toBeLessThan(
+      sql.indexOf("set statement_timeout='15min'"),
+    );
+    expect(sql.indexOf("set lock_timeout='30s'")).toBeLessThan(
+      sql.indexOf("CATCHUP_CLIENT_SETTINGS_DONE"),
+    );
+    expect(sql.indexOf("CATCHUP_CLIENT_SETTINGS_DONE")).toBeLessThan(
+      sql.indexOf("create or replace function pg_temp.planning_catchup_scope"),
+    );
+    expect(sql.indexOf("CATCHUP_CLIENT_HELPERS_DONE")).toBeGreaterThan(
+      sql.indexOf(
+        "create or replace function pg_temp.run_planning_master_catchup",
+      ),
+    );
+    expect(sql.indexOf("CATCHUP_CLIENT_QUERY_BEGIN")).toBeLessThan(
+      sql.indexOf("select pg_temp.run_planning_master_catchup(convert_from"),
+    );
+    expect(sql.trim()).toMatch(/\\warn CATCHUP_CLIENT_QUERY_DONE$/);
+  });
+  it("uses only literal SQLSTATE notices after critical planner and hash boundaries", () => {
+    const sql = readFileSync(
+      new URL(
+        "../supabase/packages/atlas-planning-master-catchup.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(
+      [
+        ...sql.matchAll(
+          /raise notice using errcode='(PZ\d{3})',message='([^']+)'/g,
+        ),
+      ]
+        .map((m) => [m[1], m[2]])
+        .sort(),
+    ).toEqual([
+      ["PZ001", "CATCHUP_SERVER_ENTRY"],
+      ["PZ002", "CATCHUP_SERVER_SOURCE_CHECKED"],
+      ["PZ003", "CATCHUP_SERVER_RECIPE_PLAN_DONE"],
+      ["PZ004", "CATCHUP_SERVER_PROTECTED_DONE"],
+      ["PZ005", "CATCHUP_SERVER_MAPPING_HASH_DONE"],
+      ["PZ006", "CATCHUP_SERVER_PLAN_HASH_DONE"],
+    ]);
+    for (const [marker, predecessor] of [
+      ["SOURCE_CHECKED", "DUPLICATE_SOURCE_IDENTITY"],
+      [
+        "RECIPE_PLAN_DONE",
+        "extension:=atlas_legacy.master_import_recipe_plan(composed);",
+      ],
+      [
+        "PROTECTED_DONE",
+        "protected_value:=pg_temp.planning_catchup_protected(actions);",
+      ],
+      ["MAPPING_HASH_DONE", "mapping_fp:=atlas_legacy.master_snapshot_hash("],
+      ["PLAN_HASH_DONE", "plan_fp:=atlas_legacy.master_snapshot_hash(plan);"],
+    ])
+      expect(sql.indexOf(`CATCHUP_SERVER_${marker}`)).toBeGreaterThan(
+        sql.indexOf(predecessor),
+      );
+  });
 });

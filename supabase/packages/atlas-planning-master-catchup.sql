@@ -112,7 +112,7 @@ end $$;
 
 create or replace function pg_temp.planning_catchup_plan(snapshot jsonb)
 returns jsonb language plpgsql stable set search_path='' as $$
-declare scoped jsonb; composed jsonb; empty_roots jsonb; prior atlas_legacy.import_batches%rowtype; r jsonb; a jsonb; vals jsonb; observed jsonb; target uuid; kind text; key text; action text; actions jsonb:='[]'; issues jsonb:='[]'; extension jsonb; orders jsonb; report jsonb; summary jsonb; plan jsonb; next_tail integer; prior_fp text; mapped boolean;
+declare scoped jsonb; composed jsonb; empty_roots jsonb; prior atlas_legacy.import_batches%rowtype; r jsonb; a jsonb; vals jsonb; observed jsonb; target uuid; kind text; key text; action text; actions jsonb:='[]'; issues jsonb:='[]'; extension jsonb; orders jsonb; report jsonb; summary jsonb; plan jsonb; next_tail integer; prior_fp text; mapped boolean; protected_value jsonb; mapping_fp text; plan_fp text;
 begin
  if current_user<>'postgres' or to_regclass('public.schools') is not null then raise exception 'STAGING_MASTER_TARGET_DENIED'; end if;
  if snapshot->>'contract_version' is distinct from 'OPS-V1-MASTER-SNAPSHOT.v1' or snapshot->>'source_system' is distinct from 'OPS_V1' or snapshot->>'source_project_ref' is distinct from 'qnthofvccilhnefdcxnz' then raise exception 'SOURCE_CONTRACT_INVALID'; end if;
@@ -120,6 +120,7 @@ begin
  if snapshot->'source_access' is distinct from '{"role_name":"supabase_read_only_user","has_required_select":true,"has_non_select_privilege":false,"bypass_rls":true,"superuser":false,"create_role":false,"create_db":false}'::jsonb then raise exception 'SOURCE_NOT_PROVEN_READ_ONLY'; end if;
  if jsonb_typeof(snapshot->'records') is distinct from 'object' or jsonb_typeof(snapshot->'source_diagnostics') is distinct from 'array' or nullif(snapshot->>'snapshot_id','') is null then raise exception 'SOURCE_CONTRACT_INVALID'; end if;
  if exists(select 1 from jsonb_each(snapshot->'records') e cross join lateral jsonb_array_elements(e.value) r group by e.key,r.value->>'legacy_id' having count(*)<>1) then raise exception 'DUPLICATE_SOURCE_IDENTITY'; end if;
+ raise notice using errcode='PZ002',message='CATCHUP_SERVER_SOURCE_CHECKED';
  select * into prior from atlas_legacy.import_batches where source_system='OPS_V1' and snapshot_id=snapshot->>'snapshot_id';
  if found and (prior.snapshot_contract_version<>'ATLAS-PLANNING-CATCHUP.v1' or prior.snapshot_checksum<>snapshot->>'snapshot_checksum') then raise exception 'SNAPSHOT_ID_CONFLICT'; end if;
  scoped:=pg_temp.planning_catchup_scope(snapshot,prior.reconciliation->'catchup_dish_ids');
@@ -153,6 +154,7 @@ begin
  from jsonb_array_elements(scoped#>'{records,recipes}') r where exists
  (select 1 from jsonb_array_elements(scoped#>'{records,recipe_lines}') l where l.value->>'recipe_legacy_id'=r.value->>'legacy_id');
  extension:=atlas_legacy.master_import_recipe_plan(composed);
+ raise notice using errcode='PZ003',message='CATCHUP_SERVER_RECIPE_PLAN_DONE';
  issues:=coalesce(extension->'issues','[]')||(empty_roots->'issues');
  for a in select value from jsonb_array_elements(extension->'actions') where value->>'action'<>'MISSING_FROM_SOURCE' loop
   if a->>'action' not in ('CREATE','NO_CHANGE','BLOCKED') then raise exception 'EXISTING_RECIPE_CHANGE_FORBIDDEN'; end if;
@@ -191,8 +193,14 @@ begin
  'CURRENT_ATLAS_ID',case when a.value->'before_values'<>'null'::jsonb then a.value->>'target_id' end,'CURRENT_ATLAS_VALUE',a.value->'before_values',
  'PROPOSED_ATLAS_ID',a.value->>'target_id','ACTION',case a.value->>'action' when 'NO_CHANGE' then 'DEPENDENCY_ONLY' else a.value->>'action' end,'SOURCE_RECIPE_ID',a.value#>>'{source_evidence,source_record_id}','DEPENDENCY_REASON',a.value->>'dependency_reason') order by a.value->>'object_type',a.value->>'legacy_id'),'[]') into report from jsonb_array_elements(actions) a;
  select jsonb_object_agg(x.kind,x.n) into summary from (select value->>'object_type' kind,count(*) n from jsonb_array_elements(actions) group by 1)x;
- plan:=jsonb_build_object('success',not exists(select 1 from jsonb_array_elements(issues) i where i.value->>'severity'='BLOCKER'),'snapshot_id',snapshot->>'snapshot_id','snapshot_checksum',snapshot->>'snapshot_checksum','actions',actions,'issues',issues,'report',report,'summary',summary,'school_orders',orders,'catchup_dish_ids',scoped->'catchup_dish_ids','protected',pg_temp.planning_catchup_protected(actions),'mapping_fingerprint',atlas_legacy.master_snapshot_hash((select coalesce(jsonb_agg(to_jsonb(m) order by m.object_type,m.legacy_id),'[]') from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1')));
- return plan||jsonb_build_object('plan_checksum',atlas_legacy.master_snapshot_hash(plan));
+ protected_value:=pg_temp.planning_catchup_protected(actions);
+ raise notice using errcode='PZ004',message='CATCHUP_SERVER_PROTECTED_DONE';
+ mapping_fp:=atlas_legacy.master_snapshot_hash((select coalesce(jsonb_agg(to_jsonb(m) order by m.object_type,m.legacy_id),'[]') from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1'));
+ raise notice using errcode='PZ005',message='CATCHUP_SERVER_MAPPING_HASH_DONE';
+ plan:=jsonb_build_object('success',not exists(select 1 from jsonb_array_elements(issues) i where i.value->>'severity'='BLOCKER'),'snapshot_id',snapshot->>'snapshot_id','snapshot_checksum',snapshot->>'snapshot_checksum','actions',actions,'issues',issues,'report',report,'summary',summary,'school_orders',orders,'catchup_dish_ids',scoped->'catchup_dish_ids','protected',protected_value,'mapping_fingerprint',mapping_fp);
+ plan_fp:=atlas_legacy.master_snapshot_hash(plan);
+ raise notice using errcode='PZ006',message='CATCHUP_SERVER_PLAN_HASH_DONE';
+ return plan||jsonb_build_object('plan_checksum',plan_fp);
 end $$;
 
 create or replace function pg_temp.planning_catchup_fingerprints(actions jsonb)
@@ -206,6 +214,7 @@ create or replace function pg_temp.run_planning_master_catchup(snapshot jsonb, a
 returns jsonb language plpgsql volatile set search_path='' as $$
 declare plan jsonb; prior atlas_legacy.import_batches%rowtype; batch uuid; a jsonb; scoped jsonb; result jsonb; protected jsonb; current_values jsonb; error_detail text;
 begin
+ raise notice using errcode='PZ001',message='CATCHUP_SERVER_ENTRY';
  begin
   if apply_requested then
    lock table atlas_admin.schools,atlas_admin.ingredients,atlas_admin.suppliers,atlas_admin.supplier_eligibilities,atlas_admin.units,atlas_admin.school_types,atlas_admin.ingredient_types,atlas_admin.ingredient_order_groups,atlas_admin.dish_types,atlas_admin.dishes,atlas_admin.recipes,atlas_admin.recipe_versions,atlas_admin.recipe_lines,atlas_admin.recipe_line_revisions,atlas_legacy.import_batches,atlas_legacy.master_data_mappings,atlas_legacy.recipe_unit_adoption_evidence in share row exclusive mode;

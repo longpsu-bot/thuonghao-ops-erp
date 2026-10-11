@@ -136,6 +136,31 @@ function fixture() {
   };
 }
 describe("Planning catch-up runner safety", () => {
+  it("forwards sanitized transport phases before a plan execution timeout", async () => {
+    const f = fixture();
+    const phases = [];
+    f.options.executeTarget
+      .mockReset()
+      .mockResolvedValueOnce(f.response({ migrations: ["20260101000000"] }))
+      .mockImplementationOnce(async (_target, _sql, transportOptions) => {
+        transportOptions.onPhase("CATCHUP_CLIENT_SCRIPT_BEGIN");
+        transportOptions.onPhase("CATCHUP_SERVER_SOURCE_CHECKED");
+        throw new Error("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
+      });
+    await expect(
+      runPlanningMasterCatchup({
+        ...f.options,
+        onPhase: (marker) => phases.push(marker),
+      }),
+    ).rejects.toThrow("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
+    expect(phases.slice(-3)).toEqual([
+      "PLANNING_CATCHUP_PLAN_EXECUTION_START",
+      "CATCHUP_CLIENT_SCRIPT_BEGIN",
+      "CATCHUP_SERVER_SOURCE_CHECKED",
+    ]);
+    expect(phases).not.toContain("PLANNING_CATCHUP_PLAN_EXECUTION_DONE");
+    expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
+  });
   it("emits fixed phase markers in order and bounds only migration preflight", async () => {
     const f = fixture();
     const phases = [];

@@ -188,7 +188,17 @@ export function buildPlanningCatchupSql(
     sql = `${definition}\n${sql.replace(call, `${temporary}(`)}`;
   }
   const encoded = Buffer.from(JSON.stringify(snapshot)).toString("base64");
-  return `set statement_timeout='15min';\nset lock_timeout='30s';\n${sql}\nselect pg_temp.run_planning_master_catchup(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb,${apply},${apply ? `'${planChecksum}'` : "null"},${apply ? `'${actorId}'::uuid` : "null"}) as result;`;
+  return `\\warn CATCHUP_CLIENT_SCRIPT_BEGIN
+set statement_timeout='15min';
+set lock_timeout='30s';
+set client_min_messages='notice';
+\\warn CATCHUP_CLIENT_SETTINGS_DONE
+${sql}
+\\warn CATCHUP_CLIENT_HELPERS_DONE
+\\warn CATCHUP_CLIENT_QUERY_BEGIN
+select pg_temp.run_planning_master_catchup(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb,${apply},${apply ? `'${planChecksum}'` : "null"},${apply ? `'${actorId}'::uuid` : "null"}) as result;
+\\warn CATCHUP_CLIENT_QUERY_DONE
+`;
 }
 
 export function formatPlanningCatchupReport(plan) {

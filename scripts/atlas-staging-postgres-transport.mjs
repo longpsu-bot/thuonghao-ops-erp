@@ -4,6 +4,39 @@ import { join } from "node:path";
 import { validateApprovedAtlasStagingTarget } from "./atlas-staging-contract.mjs";
 
 const STAGING = "rnzxmxiiqgtdevzregff";
+const CLIENT_PHASES = new Set([
+  "CATCHUP_CLIENT_SCRIPT_BEGIN",
+  "CATCHUP_CLIENT_SETTINGS_DONE",
+  "CATCHUP_CLIENT_HELPERS_DONE",
+  "CATCHUP_CLIENT_QUERY_BEGIN",
+  "CATCHUP_CLIENT_QUERY_DONE",
+]);
+const SERVER_PHASES = new Map([
+  ["PZ001", "CATCHUP_SERVER_ENTRY"],
+  ["PZ002", "CATCHUP_SERVER_SOURCE_CHECKED"],
+  ["PZ003", "CATCHUP_SERVER_RECIPE_PLAN_DONE"],
+  ["PZ004", "CATCHUP_SERVER_PROTECTED_DONE"],
+  ["PZ005", "CATCHUP_SERVER_MAPPING_HASH_DONE"],
+  ["PZ006", "CATCHUP_SERVER_PLAN_HASH_DONE"],
+]);
+function emitSafePostgresPhases(stderr, onPhase) {
+  if (typeof stderr !== "string") return;
+  const emitted = new Set();
+  for (const line of stderr.split(/\r?\n/)) {
+    const notice = line.match(
+      /^(?:psql:<stdin>:\d+:[ \t]*)?NOTICE:[ \t]+(PZ00[1-6])[ \t]*$/,
+    );
+    const phase = CLIENT_PHASES.has(line)
+      ? line
+      : SERVER_PHASES.get(notice?.[1]);
+    // No prefixes, message text or unknown codes escape. Repetition is bounded
+    // to the fixed marker count while retaining first-observed wire order.
+    if (phase && !emitted.has(phase)) {
+      emitted.add(phase);
+      onPhase(phase);
+    }
+  }
+}
 function safePostgresFailureCode(stderr) {
   const diagnostic = typeof stderr === "string" ? stderr : "";
   // psql's SQLSTATE verbosity omits server messages. Accept only a bounded
@@ -62,6 +95,7 @@ export async function executeAtlasStagingPostgres(
     cwd = process.cwd(),
     run = spawnSync,
     timeoutMs = 20 * 60 * 1000,
+    onPhase = () => {},
     readLinkedFile = (path) => readFileSync(path, "utf8"),
   } = {},
 ) {
@@ -134,6 +168,7 @@ export async function executeAtlasStagingPostgres(
   } catch {
     throw new Error("STAGING_POSTGRES_EXECUTION_FAILED");
   }
+  emitSafePostgresPhases(result.stderr, onPhase);
   if (result.error?.code === "ETIMEDOUT")
     throw new Error("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
   if (result.status !== 0 || result.error)
