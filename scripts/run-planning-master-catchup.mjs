@@ -14,6 +14,14 @@ import {
   formatPlanningCatchupReport,
 } from "./planning-master-catchup.mjs";
 
+export function planningCatchupFailureCode(error) {
+  return /^(?:[A-Z_]+|STAGING_POSTGRES_SQLSTATE_[0-9A-Z]{5})$/.test(
+    error?.message ?? "",
+  )
+    ? error.message
+    : "PLANNING_CATCHUP_FAILED";
+}
+
 export function verifyPlanningPreviewCheckout(commitSha, cwd = process.cwd()) {
   if (!/^[a-f0-9]{40}$/.test(commitSha ?? ""))
     throw new Error("EXACT_COMMIT_REQUIRED");
@@ -259,10 +267,6 @@ if (
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 )
   main().catch((e) => {
-    console.error(
-      /^[A-Z_]+$/.test(e?.message ?? "")
-        ? e.message
-        : "PLANNING_CATCHUP_FAILED",
-    );
+    console.error(planningCatchupFailureCode(e));
     process.exitCode = 1;
   });

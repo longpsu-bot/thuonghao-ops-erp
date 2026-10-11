@@ -4,6 +4,35 @@ import { join } from "node:path";
 import { validateApprovedAtlasStagingTarget } from "./atlas-staging-contract.mjs";
 
 const STAGING = "rnzxmxiiqgtdevzregff";
+function safePostgresFailureCode(stderr) {
+  const diagnostic = typeof stderr === "string" ? stderr : "";
+  // psql's SQLSTATE verbosity omits server messages. Accept only a bounded
+  // uppercase state at the start of a server diagnostic, never arbitrary text.
+  const state = diagnostic.match(
+    /^(?:psql:<stdin>:\d+:[ \t]*)?(?:ERROR|FATAL):[ \t]+([0-9A-Z]{5})(?=[: \t\r]|$)/m,
+  )?.[1];
+  if (state) return `STAGING_POSTGRES_SQLSTATE_${state}`;
+  // libpq connection failures may have no SQLSTATE. Return fixed categories
+  // only; addresses, server prose, SQL and credentials never leave this helper.
+  const connectionLines = diagnostic
+    .split(/\r?\n/)
+    .filter((line) =>
+      /^(?:psql: error: |FATAL:[ \t]+|server closed the connection unexpectedly)/.test(
+        line,
+      ),
+    );
+  if (connectionLines.some((line) => line.includes("too many clients already")))
+    return "STAGING_POSTGRES_TOO_MANY_CLIENTS";
+  if (connectionLines.some((line) => line.includes("timeout expired")))
+    return "STAGING_POSTGRES_CONNECTION_TIMED_OUT";
+  if (
+    connectionLines.some((line) =>
+      line.includes("server closed the connection unexpectedly"),
+    )
+  )
+    return "STAGING_POSTGRES_CONNECTION_CLOSED";
+  return "STAGING_POSTGRES_EXECUTION_FAILED";
+}
 export function validatedStagingPoolerUrl(value, projectRef) {
   if (projectRef !== STAGING) throw new Error("EXACT_STAGING_TARGET_REQUIRED");
   let url;
@@ -87,6 +116,8 @@ export async function executeAtlasStagingPostgres(
         "--no-password",
         "--set",
         "ON_ERROR_STOP=1",
+        "--set",
+        "VERBOSITY=sqlstate",
         "--dbname",
         url,
       ],
@@ -106,7 +137,7 @@ export async function executeAtlasStagingPostgres(
   if (result.error?.code === "ETIMEDOUT")
     throw new Error("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
   if (result.status !== 0 || result.error)
-    throw new Error("STAGING_POSTGRES_EXECUTION_FAILED");
+    throw new Error(safePostgresFailureCode(result.stderr));
   let value;
   try {
     value = JSON.parse(String(result.stdout ?? "").trim());

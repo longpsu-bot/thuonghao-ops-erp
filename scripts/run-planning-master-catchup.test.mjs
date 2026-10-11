@@ -9,7 +9,10 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runPlanningMasterCatchup } from "./run-planning-master-catchup.mjs";
+import {
+  planningCatchupFailureCode,
+  runPlanningMasterCatchup,
+} from "./run-planning-master-catchup.mjs";
 import { checksumOpsV1MasterSnapshot } from "./ops-v1-master-snapshot-contract.mjs";
 
 const staging = "rnzxmxiiqgtdevzregff";
@@ -17,6 +20,24 @@ const commitSha = "a".repeat(40);
 const planChecksum = "b".repeat(64);
 const actorId = "00000000-0000-4000-8000-000000000001";
 const roots = [];
+it("retains safe transport SQLSTATE diagnostics and withholds raw failure prose", () => {
+  expect(
+    planningCatchupFailureCode(new Error("STAGING_POSTGRES_SQLSTATE_53300")),
+  ).toBe("STAGING_POSTGRES_SQLSTATE_53300");
+  expect(
+    planningCatchupFailureCode(
+      new Error("STAGING_POSTGRES_EXECUTION_TIMED_OUT"),
+    ),
+  ).toBe("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
+  for (const message of [
+    "STAGING_POSTGRES_SQLSTATE_533000",
+    "select private_source from facts",
+    "password=synthetic-secret",
+  ])
+    expect(planningCatchupFailureCode(new Error(message))).toBe(
+      "PLANNING_CATCHUP_FAILED",
+    );
+});
 afterEach(() => {
   for (const root of roots.splice(0))
     rmSync(root, { recursive: true, force: true });

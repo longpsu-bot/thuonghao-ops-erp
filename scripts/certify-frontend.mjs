@@ -33,7 +33,7 @@ export function certifyFrontend({
         .replace(/\u001b\[[0-9;]*m/g, "")
         .split(/\r?\n/);
       const failureSummary = lines.filter((line) =>
-        /\bFAIL\s|\bTest Files\b|\bTests\s+\d|\bErrors\s+\d|^Subprocess:/.test(
+        /\bFAIL\s|\bTest Files\b|\bTests\s+\d|\bErrors\s+\d|^Subprocess:|^\s*(?:[A-Za-z]*Error:|Expected\b|Received\b|[+-] (?:Expected|Received)\b)/.test(
           line,
         ),
       );

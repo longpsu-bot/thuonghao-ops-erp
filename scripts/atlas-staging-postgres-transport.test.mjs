@@ -49,9 +49,13 @@ describe("large snapshot Postgres transport", () => {
     expect(call.opts.env.PGSSLROOTCERT).toBe("/tmp/ca.pem");
     expect(call.opts.env.PGPASSWORD).toBe("synthetic-db-secret");
     expect(call.args).toContain("ON_ERROR_STOP=1");
+    expect(call.args).toContain("VERBOSITY=sqlstate");
     expect(call.args).toContain("--no-password");
     expect(JSON.stringify(call.args)).not.toContain("synthetic-db-secret");
     expect(JSON.stringify(call.args)).not.toContain(sql);
+    expect(call.opts.env.PGCONNECT_TIMEOUT).toBe("20");
+    expect(call.opts.timeout).toBe(20 * 60 * 1000);
+    expect(call.opts.maxBuffer).toBe(32 * 1024 * 1024);
   });
   it("refuses missing credentials, mismatched links and live OPS before executing psql", async () => {
     let calls = 0;
@@ -102,6 +106,69 @@ describe("large snapshot Postgres transport", () => {
       }),
     ).rejects.toThrow("STAGING_POSTGRES_EXECUTION_FAILED");
     expect(calls).toBe(1);
+  });
+});
+
+describe("safe PostgreSQL failure classification", () => {
+  it.each([
+    ["ERROR:  57014\n", "STAGING_POSTGRES_SQLSTATE_57014"],
+    ["FATAL:  53300\n", "STAGING_POSTGRES_SQLSTATE_53300"],
+    ["psql:<stdin>:12: ERROR:  42P01\n", "STAGING_POSTGRES_SQLSTATE_42P01"],
+    [
+      "ERROR:  23505: synthetic-db-secret raw source\nDETAIL: private SQL",
+      "STAGING_POSTGRES_SQLSTATE_23505",
+    ],
+    [
+      "psql: error: connection to server failed: timeout expired",
+      "STAGING_POSTGRES_CONNECTION_TIMED_OUT",
+    ],
+    [
+      "psql: error: server closed the connection unexpectedly",
+      "STAGING_POSTGRES_CONNECTION_CLOSED",
+    ],
+    [
+      "psql: error: connection failed: FATAL: sorry, too many clients already",
+      "STAGING_POSTGRES_TOO_MANY_CLIENTS",
+    ],
+    ["ERROR:  abcde\n", "STAGING_POSTGRES_EXECUTION_FAILED"],
+    ["ERROR:  123456\n", "STAGING_POSTGRES_EXECUTION_FAILED"],
+    ["DETAIL: source value ERROR:  57014", "STAGING_POSTGRES_EXECUTION_FAILED"],
+    ["synthetic-db-secret raw source", "STAGING_POSTGRES_EXECUTION_FAILED"],
+  ])("returns only the safe code for %s", async (stderr, code) => {
+    let calls = 0;
+    const outcome = await executeAtlasStagingPostgres(
+      target,
+      "select 'private SQL'",
+      {
+        environment,
+        readLinkedFile,
+        run: () => {
+          calls++;
+          return { status: 1, stderr, stdout: "private source payload" };
+        },
+      },
+    ).catch((error) => error);
+    expect(outcome).toBeInstanceOf(Error);
+    expect(outcome.message).toBe(code);
+    expect(outcome.cause).toBeUndefined();
+    expect(outcome.message).not.toMatch(
+      /synthetic-db-secret|private|raw source/,
+    );
+    expect(calls).toBe(1);
+  });
+
+  it("keeps process timeout precedence over a server SQLSTATE", async () => {
+    await expect(
+      executeAtlasStagingPostgres(target, "select 1", {
+        environment,
+        readLinkedFile,
+        run: () => ({
+          status: null,
+          error: { code: "ETIMEDOUT" },
+          stderr: "ERROR:  57014",
+        }),
+      }),
+    ).rejects.toThrow("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
   });
 });
 

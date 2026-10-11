@@ -782,6 +782,9 @@ describe("Atlas staging dry-run and workflow", () => {
         args[0] === "test"
           ? [
               "\u001b[31mFAIL first.test.ts > preserves a draft\u001b[0m",
+              "Error: expect(element).toHaveFocus()",
+              "Expected element with focus: <button>range</button>",
+              "Received element with focus: <body />",
               ...Array.from(
                 { length: 180 },
                 () => "<div>large diagnostic</div>",
@@ -805,6 +808,9 @@ describe("Atlas staging dry-run and workflow", () => {
       "FAIL second.test.ts > rejects stale authority",
     );
     expect(diagnostic).toContain("Tests 2 failed | 100 passed");
+    expect(diagnostic).toContain("Error: expect(element).toHaveFocus()");
+    expect(diagnostic).toContain("Expected element with focus:");
+    expect(diagnostic).toContain("Received element with focus:");
     expect(diagnostic.split("\n").length).toBeLessThanOrEqual(205);
     expect(runCommand.mock.calls.some(([, args]) => args[0] === "build")).toBe(
       false,
