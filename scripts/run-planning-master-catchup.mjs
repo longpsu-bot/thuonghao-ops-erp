@@ -15,7 +15,7 @@ import {
 } from "./planning-master-catchup.mjs";
 
 export function planningCatchupFailureCode(error) {
-  return /^(?:[A-Z_]+|STAGING_POSTGRES_SQLSTATE_[0-9A-Z]{5})$/.test(
+  return /^(?:(?!STAGING_POSTGRES_SQLSTATE_)[A-Z_]+|STAGING_POSTGRES_SQLSTATE_[0-9A-Z]{5})$/.test(
     error?.message ?? "",
   )
     ? error.message

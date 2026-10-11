@@ -31,6 +31,8 @@ it("retains safe transport SQLSTATE diagnostics and withholds raw failure prose"
   ).toBe("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
   for (const message of [
     "STAGING_POSTGRES_SQLSTATE_533000",
+    "STAGING_POSTGRES_SQLSTATE_ABCDEF",
+    "STAGING_POSTGRES_SQLSTATE_ABCD_EXTRA",
     "select private_source from facts",
     "password=synthetic-secret",
   ])
