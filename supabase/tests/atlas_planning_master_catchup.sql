@@ -84,6 +84,7 @@ insert into atlas_planning.attendance_lines (
 from atlas_admin.schools where school_code='v1-school-21';
 create temp table operational_before as select to_jsonb(l) value from atlas_planning.attendance_lines l;
 create temp table evidence(label text primary key,value jsonb);
+select lives_ok($$select pg_temp.planning_catchup_plan(pg_temp.catchup_fixture())$$,'bounded planner executes directly without hidden SQL exceptions');
 insert into evidence values ('preview',pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),false,null,null));
 select diag(value::text) from evidence where label='preview' and value->>'success' is distinct from 'true';
 select is((select value->>'success' from evidence where label='preview'),'true','dependency-closed source previews successfully');
@@ -96,6 +97,24 @@ select is((select count(*) from evidence e cross join lateral jsonb_array_elemen
 select ok(not exists(select 1 from evidence e cross join lateral jsonb_array_elements(e.value->'actions') a where e.label='preview' and a->>'legacy_id'='99'),'unreferenced School and Ingredient catalogues stay outside catch-up scope');
 select is(pg_temp.run_planning_master_catchup(jsonb_set(pg_temp.catchup_fixture(),'{snapshot_checksum}','"corrupt"'),false,null,null)->>'error_code','SNAPSHOT_CHECKSUM_MISMATCH','source checksum drift blocks before planning');
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{source_access,has_non_select_privilege}','true')),false,null,null)->>'error_code','SOURCE_NOT_PROVEN_READ_ONLY','source privilege drift fails closed');
+-- Preserve the normalized diagnostic rather than reducing it to a generic error.
+-- An unrelated blocker must not enter this missing-Dish closure's issue list.
+create temp table source_blocker_fixture as select
+ '[{"entity":"dishes","legacy_id":"100","code":"FIXTURE_SOURCE_DISH_BLOCKER","field":"dish_type_legacy_id","detail":"Dish 100 has an unresolved source type.","severity":"BLOCKER"}]'::jsonb expected_issues,
+ pg_temp.planning_catchup_protected('[]') target_before;
+insert into evidence values ('source-blocked',pg_temp.run_planning_master_catchup(
+ pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{source_diagnostics}',
+  (pg_temp.catchup_fixture()->'source_diagnostics')
+  || (select expected_issues from source_blocker_fixture)
+  || '[{"entity":"ingredients","legacy_id":"999","code":"UNRELATED_SOURCE_BLOCKER","detail":"Outside the missing Dish closure.","severity":"BLOCKER"}]'::jsonb
+ )),false,null,null
+));
+select is((select value->>'success' from evidence where label='source-blocked'),'false','scoped source blocker fails preview closed');
+select is((select value->>'status' from evidence where label='source-blocked'),'BLOCKED','scoped source blocker has explicit BLOCKED status');
+select is((select value->>'error_code' from evidence where label='source-blocked'),'SOURCE_DEPENDENCY_BLOCKED','scoped source blocker retains its dependency error classification');
+select is((select value->'issues' from evidence where label='source-blocked'),(select expected_issues from source_blocker_fixture),'blocked preview retains exact scoped entity, legacy identity, code, field, detail and severity');
+select is(pg_temp.planning_catchup_protected('[]'),(select target_before from source_blocker_fixture),'blocked preview changes no target facts, typed mappings or Unit-adoption evidence');
+select is((select count(*) from atlas_legacy.import_batches),1::bigint,'blocked preview creates no import receipt');
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,ingredients}',(pg_temp.catchup_fixture()#>'{records,ingredients}')-1)),false,null,null)->>'error_code','MISSING_RECIPE_DEPENDENCY','missing BoM Ingredient stops the complete closure');
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,units}','[]')),false,null,null)->>'error_code','MISSING_RECIPE_DEPENDENCY','missing BoM Unit stops the complete closure');
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,recipes}','[]')),false,null,null)->>'error_code','MISSING_RECIPE_SCOPE','missing Dish cannot be imported without Recipe scope');

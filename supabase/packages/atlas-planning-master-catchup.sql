@@ -45,7 +45,7 @@ end $$;
 
 create or replace function pg_temp.planning_catchup_protected(actions jsonb)
 returns jsonb language plpgsql stable set search_path='' as $$
-declare t record; result jsonb:='{}'; v jsonb; predicate text; kind text; col text;
+declare t record; result jsonb:='{}'; v jsonb; predicate text; kind text; col text; fp text;
 begin
  for t in select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
  where n.nspname in ('atlas_admin','atlas_planning','atlas_procurement','atlas_dispatch','atlas_warehouse','atlas_core','atlas_identity') and c.relkind in ('r','p') order by 1,2 loop
@@ -57,12 +57,12 @@ begin
   execute format('select jsonb_build_object(''rows'',count(*),''sha256'',atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(to_jsonb(t) order by to_jsonb(t)::text),''[]''::jsonb))) from %I.%I t where %s',t.nspname,t.relname,predicate) into v using actions;
   result:=result||jsonb_build_object(t.nspname||'.'||t.relname,v);
  end loop;
- select atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(to_jsonb(m) order by m.object_type,m.legacy_id),'[]')) into v from atlas_legacy.master_data_mappings m where not exists
+ select atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(to_jsonb(m) order by m.object_type,m.legacy_id),'[]')) into fp from atlas_legacy.master_data_mappings m where not exists
  (select 1 from jsonb_array_elements(actions) a where m.source_system='OPS_V1' and m.object_type=a.value->>'object_type' and m.legacy_id=a.value->>'legacy_id' and a.value->>'action' in ('CREATE','UPDATE'));
- result:=result||jsonb_build_object('unrelated_mappings',v);
- select atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(to_jsonb(e) order by e.recipe_unit_adoption_evidence_id),'[]')) into v from atlas_legacy.recipe_unit_adoption_evidence e where not exists
+ result:=result||jsonb_build_object('unrelated_mappings',fp);
+ select atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(to_jsonb(e) order by e.recipe_unit_adoption_evidence_id),'[]')) into fp from atlas_legacy.recipe_unit_adoption_evidence e where not exists
  (select 1 from jsonb_array_elements(actions) a where a.value->>'object_type'='RECIPE_LINE_REVISION' and a.value->>'action'='CREATE' and a.value->>'target_id'=e.target_recipe_line_revision_id::text);
- return result||jsonb_build_object('unrelated_unit_adoption_evidence',v);
+ return result||jsonb_build_object('unrelated_unit_adoption_evidence',fp);
 end $$;
 
 create or replace function pg_temp.planning_catchup_plan(snapshot jsonb)
@@ -187,7 +187,11 @@ begin
   return result;
  exception when others then
   get stacked diagnostics error_detail=PG_EXCEPTION_DETAIL;
+  if sqlerrm='SOURCE_DEPENDENCY_BLOCKED' then
+   scoped:=pg_temp.planning_catchup_scope(snapshot);
+   select jsonb_object_agg(e.key,jsonb_array_length(e.value)) into result from jsonb_each(scoped->'records') e;
+  end if;
   return jsonb_build_object('success',false,'status','BLOCKED','error_code',case when sqlerrm ~ '^[A-Z_]+$' then sqlerrm else 'CATCHUP_DATABASE_INVARIANT_FAILURE' end,'sqlstate',sqlstate)
-   ||case when sqlerrm='SOURCE_DEPENDENCY_BLOCKED' then jsonb_build_object('issues',error_detail::jsonb) else '{}'::jsonb end;
+   ||case when sqlerrm='SOURCE_DEPENDENCY_BLOCKED' then jsonb_build_object('issues',error_detail::jsonb,'scope_counts',result) else '{}'::jsonb end;
  end;
 end $$;

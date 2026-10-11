@@ -128,6 +128,43 @@ export async function runPlanningMasterCatchup({
       throw new Error("CATCHUP_REPLAY_FAILED");
     result.replay_status = replay.status;
   }
+  if (!result.report && result.error_code === "SOURCE_DEPENDENCY_BLOCKED") {
+    const kinds = {
+      recipes: "RECIPE",
+      ingredients: "INGREDIENT",
+      recipe_lines: "RECIPE_LINE",
+      schools: "SCHOOL",
+      dishes: "DISH",
+    };
+    result.report = result.issues.map((issue) => {
+      const row = snapshot.records[issue.entity]?.find(
+        (r) => r.legacy_id === issue.legacy_id,
+      );
+      const dish = snapshot.records.dishes.find(
+        (d) => d.legacy_id === row?.dish_legacy_id,
+      );
+      const ingredient = snapshot.records.ingredients.find(
+        (i) => i.legacy_id === row?.ingredient_legacy_id,
+      );
+      return {
+        SOURCE_SYSTEM: "OPS_V1",
+        OBJECT_TYPE: kinds[issue.entity] ?? issue.entity,
+        LEGACY_ID: issue.legacy_id,
+        SOURCE_NAME:
+          row?.ingredient_name ??
+          row?.school_name ??
+          row?.dish_name ??
+          dish?.dish_name ??
+          ingredient?.ingredient_name ??
+          issue.legacy_id,
+        CURRENT_ATLAS_ID: null,
+        CURRENT_ATLAS_VALUE: null,
+        PROPOSED_ATLAS_ID: null,
+        ACTION: "BLOCKED",
+        DEPENDENCY_REASON: `${issue.code}: ${issue.field}=${issue.detail ?? "—"}; target plan withheld until source resolution`,
+      };
+    });
+  }
   return {
     ...result,
     commit_sha: commitSha,

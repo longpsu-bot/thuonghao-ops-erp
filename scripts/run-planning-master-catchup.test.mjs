@@ -113,6 +113,45 @@ function fixture() {
   };
 }
 describe("Planning catch-up runner safety", () => {
+  it("reports exact source blockers without inventing target identities or applying", async () => {
+    const f = fixture();
+    f.options.executeTarget
+      .mockReset()
+      .mockResolvedValueOnce(f.response({ migrations: ["20260101000000"] }))
+      .mockResolvedValueOnce(
+        f.response({
+          success: false,
+          status: "BLOCKED",
+          error_code: "SOURCE_DEPENDENCY_BLOCKED",
+          issues: [
+            {
+              entity: "ingredients",
+              legacy_id: "1215",
+              code: "UNSUPPORTED_UNIT",
+              field: "purchase_unit",
+              detail: "Túi",
+            },
+          ],
+        }),
+      );
+    const result = await runPlanningMasterCatchup(f.options);
+    expect(result.report).toEqual([
+      {
+        SOURCE_SYSTEM: "OPS_V1",
+        OBJECT_TYPE: "INGREDIENT",
+        LEGACY_ID: "1215",
+        SOURCE_NAME: "1215",
+        CURRENT_ATLAS_ID: null,
+        CURRENT_ATLAS_VALUE: null,
+        PROPOSED_ATLAS_ID: null,
+        ACTION: "BLOCKED",
+        DEPENDENCY_REASON:
+          "UNSUPPORTED_UNIT: purchase_unit=Túi; target plan withheld until source resolution",
+      },
+    ]);
+    expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
+    expect(result.plan_checksum).toBeUndefined();
+  });
   it("retains a private immutable snapshot only when explicitly requested for preview", async () => {
     const f = fixture();
     const snapshotOutput = join(
