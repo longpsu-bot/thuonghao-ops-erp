@@ -1,0 +1,293 @@
+name: Atlas Post-Apply Range Smoke 367
+
+on:
+  push:
+    branches:
+      - verify/atlas-weekly-menu-postapply-367
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-postapply-range-smoke-367
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Authenticated read-only range UI smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: atlas-staging
+    steps:
+      - name: Check out exact merged main
+        uses: actions/checkout@v4
+        with:
+          ref: 76056a2f00f56ff7217b092a5b5be23e82c4477f
+          fetch-depth: 0
+
+      - name: Verify exact authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "76056a2f00f56ff7217b092a5b5be23e82c4477f"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse origin/main)" = "76056a2f00f56ff7217b092a5b5be23e82c4477f"
+          test -z "$(git status --porcelain)"
+          command -v google-chrome
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Authenticated read-only range smoke
+        env:
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+          EXACT_URL: https://52e99e97.thuonghao-ops-erp.pages.dev/
+          EXACT_SHA: 76056a2f00f56ff7217b092a5b5be23e82c4477f
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/range-smoke.mjs" <<'NODE'
+          import { spawn } from "node:child_process";
+          import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+          import { tmpdir } from "node:os";
+          import { join } from "node:path";
+          import {
+            cdp,
+            waitForAuthenticatedDesktopShell,
+          } from "./scripts/staging-planning-browser.mjs";
+
+          const target = process.env.EXACT_URL;
+          const sha = process.env.EXACT_SHA;
+          const email = process.env.ATLAS_STAGING_TEST_EMAIL;
+          const password = process.env.ATLAS_STAGING_TEST_PASSWORD;
+          if (!target || !sha || !email || !password) throw new Error("RANGE_SMOKE_CONFIG_REQUIRED");
+
+          const manifestResponse = await fetch(new URL("_atlas-build.json", target));
+          if (!manifestResponse.ok) throw new Error("RANGE_SMOKE_BUILD_MANIFEST_UNAVAILABLE");
+          const manifestText = await manifestResponse.text();
+          if (!manifestText.includes(sha) || !manifestText.includes('"dirty":false'))
+            throw new Error("RANGE_SMOKE_BUILD_MANIFEST_MISMATCH");
+
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          async function until(fn, label, timeout = 60000, interval = 250) {
+            const end = Date.now() + timeout;
+            while (Date.now() < end) {
+              const value = await fn();
+              if (value) return value;
+              await sleep(interval);
+            }
+            throw new Error(`RANGE_SMOKE_${label}`);
+          }
+          const profile = mkdtempSync(join(tmpdir(), "atlas-range-smoke-"));
+          const chrome = spawn(
+            process.env.CHROME_BIN || "google-chrome",
+            [
+              "--headless=new",
+              "--no-sandbox",
+              "--disable-dev-shm-usage",
+              "--remote-debugging-port=9227",
+              "--window-size=1600,1100",
+              `--user-data-dir=${profile}`,
+              "about:blank",
+            ],
+            { stdio: "ignore" },
+          );
+          let connection;
+          try {
+            const page = await until(async () => {
+              try {
+                const pages = await (await fetch("http://127.0.0.1:9227/json/list")).json();
+                return pages.find((item) => item.type === "page") || null;
+              } catch {
+                return null;
+              }
+            }, "CHROME_START", 15000);
+            connection = await cdp(page.webSocketDebuggerUrl);
+            const send = connection.send;
+            const evaluate = async (expression) => {
+              const result = await send("Runtime.evaluate", {
+                expression,
+                returnByValue: true,
+                awaitPromise: true,
+              });
+              if (result.exceptionDetails) throw new Error("RANGE_SMOKE_BROWSER_EVALUATION");
+              return result.result.value;
+            };
+            const input = async (selector, value) => {
+              await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled)throw Error('missing');const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;e.focus();set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));e.blur();return true;})()`);
+            };
+            const clickSelector = async (selector, label = "CLICK") => {
+              await until(
+                () => evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});return Boolean(e&&!e.disabled&&e.getAttribute('aria-disabled')!=='true');})()`),
+                label,
+              );
+              await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.click();return true;})()`);
+            };
+            const clickText = async (scope, text, label = "BUTTON") => {
+              await until(
+                () => evaluate(`(()=>{const root=document.querySelector(${JSON.stringify(scope)});const e=root?[...root.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(text)}&&!b.disabled):null;return Boolean(e);})()`),
+                label,
+              );
+              await evaluate(`(()=>{const root=document.querySelector(${JSON.stringify(scope)});const e=[...root.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(text)}&&!b.disabled);e.click();return true;})()`);
+            };
+            const screenshot = async (name) => {
+              const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+              writeFileSync(join(process.env.RUNNER_TEMP, name), Buffer.from(shot.data, "base64"));
+            };
+            const openWorkbench = async (name) => {
+              await clickSelector('button[aria-label="Bàn làm việc"]', "LAUNCHER");
+              await until(
+                () => evaluate(`Boolean(document.querySelector('[role="dialog"][aria-label="Bàn làm việc"]'))`),
+                "LAUNCHER_DIALOG",
+              );
+              const selector = `[role="dialog"][aria-label="Bàn làm việc"] button[aria-label="${name}"]`;
+              await clickSelector(selector, "WORKBENCH_" + name);
+              await until(
+                () => evaluate(`(()=>{const e=document.querySelector('section[aria-label="${name}"]');const panel=e?.closest('[role="tabpanel"]');return Boolean(e&&panel&&!panel.hidden);})()`),
+                "WORKBENCH_VISIBLE_" + name,
+              );
+            };
+            const readRange = (section, label) =>
+              evaluate(`(()=>{const root=document.querySelector(${JSON.stringify(section)});const e=root?.querySelector(${JSON.stringify(`button[aria-label="Mở lịch — ${label}"]`)});return e?{text:e.textContent.trim(),disabled:Boolean(e.disabled),invalid:e.getAttribute('aria-invalid')}:null;})()`);
+            const assertOneDay = (value, code) => {
+              const match = value?.text?.match(/^(\\d{2}\/\\d{2}\/\\d{4})\\s+—\\s+(\\d{2}\/\\d{2}\/\\d{4})$/);
+              if (!match || match[1] !== match[2] || value.disabled) throw new Error(code);
+            };
+            const selectRange = async (section, label, start, end) => {
+              const trigger = `${section} button[aria-label="Mở lịch — ${label}"]`;
+              await clickSelector(trigger, "RANGE_TRIGGER");
+              const calendar = `[role="application"][aria-label="Lịch — ${label}"]`;
+              await until(() => evaluate(`Boolean(document.querySelector(${JSON.stringify(calendar)}))`), "RANGE_CALENDAR");
+              const day = (date) => `${calendar} [data-part="table-cell-trigger"][data-view="day"][data-value="${date}"]`;
+              await clickSelector(day(start), "RANGE_START");
+              if (!(await evaluate(`Boolean(document.querySelector(${JSON.stringify(calendar)}))`))) {
+                await clickSelector(trigger, "RANGE_REOPEN");
+                await until(() => evaluate(`Boolean(document.querySelector(${JSON.stringify(calendar)}))`), "RANGE_REOPENED");
+              }
+              await clickSelector(day(end), "RANGE_END");
+              const expected = `${start.split("-").reverse().join("/")} — ${end.split("-").reverse().join("/")}`;
+              return until(async () => {
+                const value = await readRange(section, label);
+                return value?.text === expected && value.invalid !== "true" ? value : null;
+              }, "RANGE_SETTLED");
+            };
+
+            await send("Page.enable");
+            await send("Runtime.enable");
+            await send("Page.navigate", { url: target });
+            await until(() => evaluate("Boolean(document.querySelector('#atlas-signin-email'))"), "SIGNIN_FORM");
+            if ((await evaluate("location.origin")) !== new URL(target).origin)
+              throw new Error("RANGE_SMOKE_ORIGIN_MISMATCH");
+            await input("#atlas-signin-email", email);
+            await input("#atlas-signin-password", password);
+            await clickText("body", "Đăng nhập", "SIGNIN");
+            await waitForAuthenticatedDesktopShell({ evaluate, timeout: 60000, interval: 250 });
+
+            await openWorkbench("Xác nhận nhu cầu");
+            const confirmedSection = 'section[aria-label="Xác nhận nhu cầu"]';
+            const confirmedInitial = await until(async () => {
+              const value = await readRange(confirmedSection, "Khoảng ngày");
+              return value && !value.disabled ? value : null;
+            }, "CONFIRMED_RANGE_READY");
+            assertOneDay(confirmedInitial, "RANGE_SMOKE_CONFIRMED_INITIAL_NOT_ONE_DAY");
+            const confirmedSeven = await selectRange(
+              confirmedSection,
+              "Khoảng ngày",
+              "2026-10-12",
+              "2026-10-18",
+            );
+            const dayNavigator = await until(
+              () => evaluate(`(()=>{const root=document.querySelector('section[aria-label="Xác nhận nhu cầu"] [role="group"][aria-label="Ngày trong khoảng"]');if(!root)return null;const buttons=[...root.querySelectorAll('button')];return buttons.length===7?buttons.map(b=>b.textContent.trim()):null;})()`),
+              "CONFIRMED_DAY_NAVIGATOR",
+            );
+            const shoppingButtons = await evaluate(`(()=>{const root=document.querySelector('section[aria-label="Xác nhận nhu cầu"]');return root?[...root.querySelectorAll('button')].filter(b=>['Xuất Phiếu đi chợ','Nhập Phiếu đi chợ'].includes(b.textContent.trim())).map(b=>({label:b.textContent.trim(),disabled:Boolean(b.disabled)})):[];})()`);
+            await screenshot("confirmed-need-range.png");
+
+            await openWorkbench("Phân bổ NCC");
+            const allocationSection = 'section[aria-label="Phân bổ NCC"]';
+            const allocationInitial = await until(async () => {
+              const value = await readRange(allocationSection, "Khoảng ngày");
+              return value && !value.disabled ? value : null;
+            }, "ALLOCATION_RANGE_READY");
+            assertOneDay(allocationInitial, "RANGE_SMOKE_ALLOCATION_INITIAL_NOT_ONE_DAY");
+            const allocationSeven = await selectRange(
+              allocationSection,
+              "Khoảng ngày",
+              "2026-10-12",
+              "2026-10-18",
+            );
+            const allocationSurface = await until(
+              () => evaluate(`(()=>{const root=document.querySelector('section[aria-label="Phân bổ NCC"]');if(!root)return null;const table=root.querySelector('table[aria-label="Phân bổ nhà cung ứng"]');const headers=table?[...table.querySelectorAll('th')].map(e=>e.textContent.trim()):[];const multi=[...root.querySelectorAll('*')].some(e=>e.children.length===0&&e.textContent.trim()==='Chọn 1 ngày để chuẩn bị đơn mua.');const prepare=[...root.querySelectorAll('button')].find(b=>b.textContent.trim()==='Tiếp tục lên đơn');return headers.includes('Ngày dùng')&&multi?{headers,multiDayGuidance:multi,preparePresent:Boolean(prepare),prepareEnabled:Boolean(prepare&&!prepare.disabled),rangeError:Boolean(root.querySelector('[role="alert"]'))}:null;})()`),
+              "ALLOCATION_MULTI_DAY_SURFACE",
+            );
+            if (allocationSurface.prepareEnabled)
+              throw new Error("RANGE_SMOKE_MULTI_DAY_PREPARATION_ENABLED");
+            await screenshot("supplier-allocation-range.png");
+
+            const result = {
+              status: "PASS",
+              exactSha: sha,
+              exactUrl: target,
+              confirmedNeed: {
+                initial: confirmedInitial.text,
+                sevenDay: confirmedSeven.text,
+                navigatorCount: dayNavigator.length,
+                navigatorLabels: dayNavigator,
+                shoppingButtons,
+              },
+              supplierAllocation: {
+                initial: allocationInitial.text,
+                sevenDay: allocationSeven.text,
+                hasServiceDateColumn: allocationSurface.headers.includes("Ngày dùng"),
+                multiDayGuidance: allocationSurface.multiDayGuidance,
+                preparationEnabled: allocationSurface.prepareEnabled,
+              },
+              businessActionsClicked: 0,
+            };
+            writeFileSync(
+              join(process.env.RUNNER_TEMP, "atlas-postapply-range-smoke.json"),
+              JSON.stringify(result, null, 2) + "\n",
+              { mode: 0o600 },
+            );
+            console.log(JSON.stringify({
+              status: result.status,
+              confirmed_initial: result.confirmedNeed.initial,
+              confirmed_7d: result.confirmedNeed.sevenDay,
+              confirmed_navigator_count: result.confirmedNeed.navigatorCount,
+              allocation_initial: result.supplierAllocation.initial,
+              allocation_7d: result.supplierAllocation.sevenDay,
+              allocation_service_date_column: result.supplierAllocation.hasServiceDateColumn,
+              allocation_multi_day_guidance: result.supplierAllocation.multiDayGuidance,
+              allocation_preparation_enabled: result.supplierAllocation.preparationEnabled,
+              business_actions_clicked: 0,
+            }, null, 2));
+          } finally {
+            connection?.close();
+            chrome.kill();
+            await sleep(500);
+            rmSync(profile, { recursive: true, force: true });
+          }
+          NODE
+          node "$RUNNER_TEMP/range-smoke.mjs"
+
+      - name: Upload read-only smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-postapply-range-smoke-367
+          path: |
+            ${{ runner.temp }}/atlas-postapply-range-smoke.json
+            ${{ runner.temp }}/confirmed-need-range.png
+            ${{ runner.temp }}/supplier-allocation-range.png
+          if-no-files-found: ignore
+          retention-days: 7
