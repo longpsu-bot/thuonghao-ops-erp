@@ -542,5 +542,10 @@ describe("protected School order forward correction", () => {
         /scripts\/fixtures\/atlas-school-order-forward-correction\.json/g,
       ),
     ).toHaveLength(2);
+    expect(
+      integration.match(
+        /scripts\/test-local-school-order-forward-correction\.mjs/g,
+      ),
+    ).toHaveLength(2);
   });
 });
