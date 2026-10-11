@@ -129,7 +129,7 @@ describe("Planning catch-up runner safety", () => {
               legacy_id: "1215",
               code: "UNSUPPORTED_UNIT",
               field: "purchase_unit",
-              detail: "Túi",
+              detail: "Bao",
             },
           ],
         }),
@@ -146,11 +146,78 @@ describe("Planning catch-up runner safety", () => {
         PROPOSED_ATLAS_ID: null,
         ACTION: "BLOCKED",
         DEPENDENCY_REASON:
-          "UNSUPPORTED_UNIT: purchase_unit=Túi; target plan withheld until source resolution",
+          "UNSUPPORTED_UNIT: purchase_unit=Bao; target plan withheld until source resolution",
       },
     ]);
     expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
     expect(result.plan_checksum).toBeUndefined();
+  });
+  it("retains empty Recipe identity and source evidence in the immutable preview and report without rewriting composition", async () => {
+    const f = fixture();
+    const recipe = {
+      legacy_id: "dish:2034:school-type:1",
+      source_record_id: "3456",
+      dish_legacy_id: "2034",
+      school_type_legacy_id: "1",
+      recipe_status: "ACTIVE",
+      basis_portions: 100,
+    };
+    const diagnostic = {
+      severity: "INFO",
+      code: "SOURCE_RECIPE_EMPTY",
+      entity: "recipes",
+      legacy_id: recipe.legacy_id,
+      field: "composition",
+      detail: "3456",
+    };
+    f.snapshot.records.recipes.push(recipe);
+    f.snapshot.source_diagnostics.push(diagnostic);
+    f.snapshot.snapshot_checksum = checksumOpsV1MasterSnapshot(f.snapshot);
+    const report = [
+      {
+        SOURCE_SYSTEM: "OPS_V1",
+        OBJECT_TYPE: "RECIPE",
+        LEGACY_ID: recipe.legacy_id,
+        SOURCE_RECIPE_ID: "3456",
+        ACTION: "CREATE",
+        DEPENDENCY_REASON:
+          "SOURCE_RECIPE_EMPTY: source_recipe_id=3456; root only; RECIPE_NOT_READY; no released composition",
+      },
+    ];
+    f.options.executeTarget
+      .mockReset()
+      .mockResolvedValueOnce(f.response({ migrations: ["20260101000000"] }))
+      .mockResolvedValueOnce(
+        f.response({
+          success: true,
+          status: "PREVIEW",
+          snapshot_checksum: f.snapshot.snapshot_checksum,
+          report,
+        }),
+      );
+    const snapshotOutput = join(f.options.cwd, "empty-recipe-snapshot.json");
+    const result = await runPlanningMasterCatchup({
+      ...f.options,
+      snapshotOutput,
+    });
+    expect(JSON.parse(readFileSync(snapshotOutput, "utf8"))).toEqual(
+      f.snapshot,
+    );
+    expect(result.source.empty_recipe_evidence).toEqual([
+      {
+        legacy_id: "dish:2034:school-type:1",
+        source_record_id: "3456",
+        code: "SOURCE_RECIPE_EMPTY",
+      },
+    ]);
+    expect(result.report).toEqual(report);
+    const sql = f.options.executeTarget.mock.calls[1][1];
+    const encoded = sql.match(/convert_from\(decode\('([^']+)','base64'\)/)[1];
+    const payload = JSON.parse(Buffer.from(encoded, "base64").toString("utf8"));
+    expect(payload.records.recipes).toEqual([recipe]);
+    expect(payload.records.recipe_lines).toEqual([]);
+    expect(sql).toMatch(/::jsonb,false,null,null\) as result;/);
+    expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
   });
   it("retains a private immutable snapshot only when explicitly requested for preview", async () => {
     const f = fixture();

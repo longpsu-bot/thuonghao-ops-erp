@@ -118,7 +118,7 @@ select is((select count(*) from atlas_legacy.import_batches),1::bigint,'blocked 
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,ingredients}',(pg_temp.catchup_fixture()#>'{records,ingredients}')-1)),false,null,null)->>'error_code','MISSING_RECIPE_DEPENDENCY','missing BoM Ingredient stops the complete closure');
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,units}','[]')),false,null,null)->>'error_code','MISSING_RECIPE_DEPENDENCY','missing BoM Unit stops the complete closure');
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,recipes}','[]')),false,null,null)->>'error_code','MISSING_RECIPE_SCOPE','missing Dish cannot be imported without Recipe scope');
-select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,recipe_lines}','[]')),false,null,null)->>'error_code','RECIPE_EMPTY','missing Dish cannot import empty Recipe compositions');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,recipe_lines}','[]')),false,null,null)->>'success','true','active empty Recipes may preview root-only under the Owner-approved policy');
 select ok(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,school_types}','[]')),false,null,null)->>'success'='false','missing typed School scope cannot become a general Recipe');
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,schools,9,school_name}','"Unreviewed School 33 identity"')),false,null,null)->>'error_code','SCHOOL_33_SOURCE_DRIFT','School 33 source identity drift cannot be guessed');
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,schools,0,display_order}','3')),false,null,null)->>'error_code','OWNER_SCHOOL_SEQUENCE_DRIFT','Vinh Tan branch cannot precede main');
@@ -192,5 +192,72 @@ select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(p
 update atlas_admin.schools set default_teacher_portions=888,version=version+1 where school_id='ee120000-0000-4000-8000-000000000033';
 select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,(select value->>'plan_checksum' from evidence where label='preview'),'ee120000-0000-4000-8000-000000000001')->>'error_code','TARGET_DRIFT','same-snapshot replay fails after target facts drift');
 select is((select default_teacher_portions from atlas_admin.schools where school_id='ee120000-0000-4000-8000-000000000033'),888,'replay leaves later operator facts intact');
+-- Exact Owner cases. Dish 2036 has independent composition; Ingredient 1204 has
+-- the same name as Dish 2041. Neither is authority to fill the four empty roots.
+create function pg_temp.catchup_owner_fixture() returns jsonb language plpgsql as $$
+declare snapshot jsonb:=pg_temp.catchup_fixture(); records jsonb:=snapshot->'records'; dishes jsonb:='[]'; recipes jsonb:='[]'; lines jsonb:='[]'; row record;
+begin
+ for row in select * from (values
+  ('2034','Cá basa phi lê sốt me + thịt heo kho tiêu'),
+  ('2036','Cá basa phi lê sốt me + thịt heo kho tiêu (THĐ)'),
+  ('2041','Bánh bông lan kem Thiên Ân 40g'),
+  ('2062','Thạch rau câu Zòn Zòn')
+ ) d(id,name) loop
+  dishes:=dishes||jsonb_build_array((records#>'{dishes,0}')||jsonb_build_object('legacy_id',row.id,'dish_code','v1-dish-'||row.id,'dish_name',row.name));
+ end loop;
+ for row in select * from (values
+  ('2034','1','3456'),('2034','2','3457'),('2041','1','3468'),('2041','2','3469'),
+  ('2036','1','synthetic-comparison-2036'),('2062','1','3510'),('2062','2','3511')
+ ) r(dish,type,source) loop
+  recipes:=recipes||jsonb_build_array((records#>'{recipes,0}')||jsonb_build_object('legacy_id','dish:'||row.dish||':school-type:'||row.type,'dish_legacy_id',row.dish,'school_type_legacy_id',row.type,'source_record_id',row.source));
+  if row.dish='2062' then
+   lines:=lines||jsonb_build_array((records#>'{recipe_lines,0}')||jsonb_build_object('legacy_id','recipe:dish:2062:school-type:'||row.type||':ingredient:1215','recipe_legacy_id','dish:2062:school-type:'||row.type,'ingredient_legacy_id','1215','unit_legacy_id','Túi','quantity_per_basis','100','source_record_id','synthetic-bom-'||row.source));
+  elsif row.dish='2036' then
+   lines:=lines||jsonb_build_array((records#>'{recipe_lines,0}')||jsonb_build_object('legacy_id','recipe:dish:2036:school-type:1:ingredient:1','recipe_legacy_id','dish:2036:school-type:1','unit_legacy_id','kg','source_record_id','synthetic-comparison-bom'));
+  end if;
+ end loop;
+ records:=records||jsonb_build_object('dishes',dishes,'recipes',recipes,'recipe_lines',lines,
+  'ingredients',(records->'ingredients')||jsonb_build_array(
+   (records#>'{ingredients,0}')||jsonb_build_object('legacy_id','1215','ingredient_code','v1-ingredient-1215','ingredient_name','Thạch rau câu Zòn Zòn','purchase_unit_legacy_id','Túi'),
+   (records#>'{ingredients,0}')||jsonb_build_object('legacy_id','1204','ingredient_code','v1-ingredient-1204','ingredient_name','Bánh bông lan kem Thiên Ân 40g','purchase_unit_legacy_id','Cái')),
+  'units',(records->'units')||jsonb_build_array(jsonb_build_object('legacy_id','Túi','unit_code','v1-unit-67df33ade68a','unit_name','Túi','dimension_code','COUNT','decimal_scale',0,'unit_status','ACTIVE')));
+ return pg_temp.catchup_signed(snapshot||jsonb_build_object('snapshot_id','synthetic-owner-zero-bom-tui','records',records,'source_counts',jsonb_build_object('schools',14,'ingredients',4,'dishes',4,'recipes',7,'bill_of_materials',3)));
+end $$;
+
+savepoint owner_policy;
+insert into evidence values ('owner-preview',pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),false,null,null));
+select diag(value::text) from evidence where label='owner-preview' and value->>'success' is distinct from 'true';
+select is((select value->>'success' from evidence where label='owner-preview'),'true','zero-BoM roots and exact Túi positive BoM coexist in one accepted plan');
+select is((select count(*) from evidence e cross join lateral jsonb_array_elements(e.value->'issues') i where e.label='owner-preview' and i->>'code'='SOURCE_RECIPE_EMPTY' and i->>'severity'='INFO'),4::bigint,'four empty source Recipes retain INFO evidence instead of blockers');
+select is((select array_agg(i->>'source_record_id' order by i->>'source_record_id') from evidence e cross join lateral jsonb_array_elements(e.value->'issues') i where e.label='owner-preview' and i->>'code'='SOURCE_RECIPE_EMPTY'),array['3456','3457','3468','3469'],'empty-root diagnostics retain exact physical V1 Recipe IDs');
+select is((select array_agg(a->>'SOURCE_RECIPE_ID' order by a->>'SOURCE_RECIPE_ID') from evidence e cross join lateral jsonb_array_elements(e.value->'report') a where e.label='owner-preview' and a->>'DEPENDENCY_REASON' like 'SOURCE_RECIPE_EMPTY:%'),array['3456','3457','3468','3469'],'review report preserves all four physical source IDs without changing stable identity');
+select ok(not exists(select 1 from evidence e cross join lateral jsonb_array_elements(e.value->'actions') a where e.label='owner-preview' and a->>'object_type' in ('RECIPE_VERSION','RECIPE_LINE','RECIPE_LINE_REVISION') and (a->>'legacy_id' like '%dish:2034:%' or a->>'legacy_id' like '%dish:2041:%')),'empty-root plan never fabricates child actions');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,school_types}','[]')),false,null,null)->>'error_code','INVALID_RECIPE_SCOPE','empty root does not excuse missing School Type');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,recipes,0,basis_portions}','0')),false,null,null)->>'error_code','INVALID_RECIPE_BASIS','empty root does not excuse invalid basis');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,recipes,0,recipe_status}','"INACTIVE"')),false,null,null)->>'error_code','INVALID_RECIPE_LIFECYCLE','empty-root approval does not silently activate an inactive source Recipe');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,recipes,0,source_record_id}','null')),false,null,null)->>'error_code','RECIPE_SOURCE_EVIDENCE_REQUIRED','empty root requires source Recipe evidence');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,recipe_lines,1,ingredient_legacy_id}','"missing"')),false,null,null)->>'error_code','MISSING_RECIPE_DEPENDENCY','invalid positive BoM reference stays BLOCKED rather than becoming an empty root');
+insert into evidence values ('owner-apply',pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),true,(select value->>'plan_checksum' from evidence where label='owner-preview'),'ee120000-0000-4000-8000-000000000001'));
+select diag(value::text) from evidence where label='owner-apply' and value->>'success' is distinct from 'true';
+select is((select value->>'status' from evidence where label='owner-apply'),'APPLIED','approved empty roots and positive Túi Recipes apply atomically');
+select is((select count(*) from atlas_admin.recipes r join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2034','v1-dish-2041') and r.recipe_status='ACTIVE'),4::bigint,'all four typed empty Recipe roots exist as valid editable masters');
+select is((select count(*) from atlas_admin.recipe_versions v join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2034','v1-dish-2041')),0::bigint,'no Recipe Version is fabricated for either empty Dish');
+select is((select count(*) from atlas_admin.recipe_lines l join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2034','v1-dish-2041')),0::bigint,'neither independent Dish2036 composition nor same-name Ingredient1204 is copied');
+select is((select count(*) from atlas_admin.recipe_line_revisions l join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2034','v1-dish-2041')),0::bigint,'no empty Recipe line revision is fabricated');
+select is((select count(*) from atlas_admin.ingredients where ingredient_code='v1-ingredient-1204'),0::bigint,'same-name Ingredient1204 remains outside the dependency closure');
+select ok((select bool_and(m.recipe_id=atlas_legacy.master_import_target_id(pg_temp.catchup_owner_fixture(),'RECIPE',m.legacy_id)) from atlas_legacy.master_data_mappings m where m.object_type='RECIPE' and m.source_system='OPS_V1' and m.legacy_id in ('dish:2034:school-type:1','dish:2034:school-type:2','dish:2041:school-type:1','dish:2041:school-type:2')),'empty Recipe roots preserve the stable Dish plus School Type mapping');
+select is(atlas_core.rmvp_03a_menu_issues('2026-10-12',jsonb_build_array(jsonb_build_object('school_id',(select school_id from atlas_admin.schools where school_code='v1-school-21'),'service_date','2026-10-12','menu_slot_code','soup','dish_id',(select dish_id from atlas_admin.dishes where dish_code=code))))->'blockers','[]'::jsonb,'canonical empty '||code||' resolves as a valid Menu Dish') from unnest(array['v1-dish-2034','v1-dish-2041']) code;
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-10-12',jsonb_build_array(jsonb_build_object('school_id',(select school_id from atlas_admin.schools where school_code='v1-school-21'),'service_date','2026-10-12','menu_slot_code','soup','dish_id',(select dish_id from atlas_admin.dishes where dish_code=code)))), '$.warnings[*] ? (@.code == "RECIPE_NOT_READY")'),'empty '||code||' remains derived RECIPE_NOT_READY') from unnest(array['v1-dish-2034','v1-dish-2041']) code;
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-10-12',jsonb_build_array(jsonb_build_object('school_id',(select school_id from atlas_admin.schools where school_code='v1-school-21'),'service_date','2026-10-12','menu_slot_code','soup','dish_id',(select dish_id from atlas_admin.dishes where dish_code=code)))), '$.warnings[*] ? (@.code == "EFFECTIVE_BOM_BLOCKED")'),'empty '||code||' effective composition fails closed') from unnest(array['v1-dish-2034','v1-dish-2041']) code;
+select is((select count(*) from atlas_admin.recipe_versions v join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2036','v1-dish-2062') and v.recipe_version_status='RELEASED_FOR_PLANNING'),3::bigint,'positive compositions retain normal released version materialization');
+select is((select count(*) from atlas_admin.recipe_line_revisions l join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) join atlas_admin.ingredients i using(ingredient_id) join atlas_admin.units u on u.unit_id=i.purchase_unit_id where d.dish_code='v1-dish-2062' and i.ingredient_code='v1-ingredient-1215' and l.unit_id=i.purchase_unit_id and u.unit_code='v1-unit-67df33ade68a' and u.unit_name='Túi' and u.dimension_code='COUNT' and u.decimal_scale=0 and u.unit_status='ACTIVE' and l.quantity_per_basis=100),2::bigint,'Recipes3510/3511 use Ingredient1215 identical canonical Túi Unit and exact quantity100');
+select is((select count(*) from atlas_legacy.recipe_unit_adoption_evidence where snapshot_id='synthetic-owner-zero-bom-tui'),0::bigint,'matching canonical Túi facts create no Unit adoption mismatch or conversion');
+select is((select array_agg(v.source_evidence->>'source_record_id' order by v.source_evidence->>'source_record_id') from atlas_admin.recipe_versions v join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code='v1-dish-2062'),array['3510','3511'],'positive Recipe versions retain exact source Recipe evidence');
+create temp table owner_after_apply as select pg_temp.planning_catchup_fingerprints((select value->'actions' from evidence where label='owner-preview')) value;
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),true,(select value->>'plan_checksum' from evidence where label='owner-preview'),'ee120000-0000-4000-8000-000000000001')->>'status','REPLAYED','root-only and positive Recipes replay idempotently');
+select is(pg_temp.planning_catchup_fingerprints((select value->'actions' from evidence where label='owner-preview')),(select value from owner_after_apply),'replay changes no empty roots, versions, lines, mappings or Unit evidence');
+select is((select count(*) from atlas_legacy.import_batches where snapshot_id='synthetic-owner-zero-bom-tui'),1::bigint,'empty-root replay creates no duplicate receipt');
+select is((select count(*) from atlas_legacy.import_batches b cross join lateral jsonb_array_elements(b.reconciliation->'actions') a where b.snapshot_id='synthetic-owner-zero-bom-tui' and a#>>'{source_evidence,diagnostic}'='SOURCE_RECIPE_EMPTY' and a#>>'{source_evidence,source_record_id}' in ('3456','3457','3468','3469')),4::bigint,'receipt permanently retains source Recipe IDs without an invented Recipe Version');
+rollback to savepoint owner_policy;
 select * from finish();
 rollback;

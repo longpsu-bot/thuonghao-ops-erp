@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { ownerSchoolIdentityExpectations } from "./atlas-document-school-configuration.mjs";
 import {
   parseSchoolConfigurationArguments,
+  repositorySchoolConfigurationMigrationVersions,
   runAtlasStagingSchoolConfiguration,
 } from "./configure-atlas-staging-schools.mjs";
 
@@ -41,7 +42,10 @@ function fixture() {
   )
     .filter((f) => /^\d{14}_.+\.sql$/.test(f))
     .map((f) => f.slice(0, 14))
+    // This separate configuration tool retains its approved 98-migration gate.
+    .filter((version) => version <= "20261010102603")
     .sort();
+  const repositoryVersions = [...versions];
   const calls = [];
   const subject = randomUUID();
   const commands = [];
@@ -140,6 +144,7 @@ function fixture() {
     verifyCheckout: vi.fn(),
     executeTarget,
     fetchImpl,
+    readRepositoryVersions: () => repositoryVersions,
   };
   return {
     state,
@@ -154,6 +159,19 @@ function fixture() {
 }
 
 describe("bounded authenticated School configuration", () => {
+  it("retains the separate tool's pinned baseline and rejects newer repository migrations", async () => {
+    const f = fixture();
+    expect(f.versions).toHaveLength(98);
+    expect(f.versions.at(-1)).toBe("20261010102603");
+    await expect(
+      runAtlasStagingSchoolConfiguration({
+        ...f.options,
+        readRepositoryVersions: repositorySchoolConfigurationMigrationVersions,
+      }),
+    ).rejects.toThrow("MIGRATION_PARITY_REQUIRED");
+    expect(f.options.fetchImpl).not.toHaveBeenCalled();
+    expect(f.commands).toHaveLength(0);
+  });
   it("accepts only the bounded CLI flags and requires each flag value", () => {
     expect(
       parseSchoolConfigurationArguments(["--commit-sha", "a".repeat(40)]),

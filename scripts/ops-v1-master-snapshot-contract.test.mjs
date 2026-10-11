@@ -106,14 +106,95 @@ describe("approved master snapshot contract", () => {
     ["kg", "kg"],
     [" Hủ ", "Hũ"],
     ["Hũ", "Hũ"],
+    ["Túi", "Túi"],
   ])("canonicalizes the approved alias %s", (raw, canonical) => {
     expect(canonicalizeUnitSourceLabel(raw)).toBe(canonical);
   });
   it("rejects unapproved tokens instead of fuzzy matching", () => {
-    for (const raw of ["123", "KG", "hu", "", null, "kilogram"])
+    for (const raw of ["123", "KG", "hu", "", null, "kilogram", "Bao", "Tui"])
       expect(() => canonicalizeUnitSourceLabel(raw)).toThrow(
         /UNSUPPORTED_UNIT/,
       );
+  });
+  it("keeps Túi as a distinct controlled COUNT Unit shared by Ingredient and source BoM", () => {
+    const s = source();
+    s.ingredients[0] = {
+      ...s.ingredients[0],
+      id: "1215",
+      name: "Thạch rau câu Zòn Zòn",
+      purchase_unit: "Túi",
+    };
+    s.ingredient_suppliers = [];
+    s.dishes[0].id = "2062";
+    s.recipes.forEach((r, i) => {
+      r.id = String(3510 + i);
+      r.dish_id = "2062";
+    });
+    s.bill_of_materials.forEach((r, i) => {
+      r.recipe_id = String(3510 + i);
+      r.ingredient_id = "1215";
+      r.purchase_unit = "Túi";
+      r.usable_quantity = "100.000000";
+    });
+    const snapshot = normalized(s);
+    expect(snapshot.records.units.filter((u) => u.legacy_id === "Túi")).toEqual(
+      [
+        {
+          legacy_id: "Túi",
+          unit_code: "v1-unit-67df33ade68a",
+          unit_name: "Túi",
+          dimension_code: "COUNT",
+          decimal_scale: 0,
+          unit_status: "ACTIVE",
+        },
+      ],
+    );
+    expect(
+      snapshot.records.ingredients.find((r) => r.legacy_id === "1215")
+        .purchase_unit_legacy_id,
+    ).toBe("Túi");
+    expect(snapshot.records.recipe_lines).toHaveLength(2);
+    for (const line of snapshot.records.recipe_lines) {
+      expect(line.unit_legacy_id).toBe("Túi");
+      expect(line.quantity_per_basis).toBe("100");
+    }
+    expect(
+      snapshot.source_diagnostics.filter((d) => d.severity === "BLOCKER"),
+    ).toEqual([]);
+    expect(snapshot.unit_alias_evidence).toContainEqual({
+      source_label: "Túi",
+      canonical_label: "Túi",
+    });
+    for (const label of ["Gói", "Cái", "Bịch"])
+      expect(canonicalizeUnitSourceLabel(label)).not.toBe("Túi");
+  });
+  it("preserves active zero-BoM Recipe roots and exact source IDs with INFO evidence", () => {
+    const s = source();
+    s.bill_of_materials = [];
+    const snapshot = normalized(s);
+    expect(snapshot.records.recipes).toHaveLength(2);
+    expect(snapshot.records.recipe_lines).toEqual([]);
+    expect(
+      snapshot.source_diagnostics.filter(
+        (d) => d.code === "SOURCE_RECIPE_EMPTY",
+      ),
+    ).toEqual(
+      ["200", "201"].map((sourceId, index) => ({
+        code: "SOURCE_RECIPE_EMPTY",
+        entity: "recipes",
+        legacy_id: `dish:100:school-type:${index + 1}`,
+        field: "composition",
+        detail: sourceId,
+        severity: "INFO",
+      })),
+    );
+    expect(snapshot.records.recipes.map((r) => r.source_record_id)).toEqual([
+      "200",
+      "201",
+    ]);
+    expect(
+      snapshot.source_diagnostics.filter((d) => d.severity === "BLOCKER"),
+    ).toEqual([]);
   });
   it("uses Recipe business identity rather than churn-prone source row IDs", () => {
     expect(recipeLegacyId({ dishId: "100", schoolTypeId: 1 })).toBe(
@@ -260,7 +341,7 @@ describe("approved master snapshot contract", () => {
     expect(n.source_diagnostics.map((d) => d.code)).toEqual(
       expect.arrayContaining([
         "UNSUPPORTED_UNIT",
-        "RECIPE_EMPTY",
+        "SOURCE_RECIPE_EMPTY",
         "INACTIVE_INGREDIENT_REFERENCE",
       ]),
     );

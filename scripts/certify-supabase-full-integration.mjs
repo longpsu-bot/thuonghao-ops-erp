@@ -45,6 +45,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "atlas_staging_school_reconciliation.sql",
   "atlas_planning_master_catchup.sql",
   "atlas_planning_school_order.sql",
+  "atlas_planning_tui_count_unit.sql",
   "atlas_staging_school_order_forward_correction.sql",
   "rmvp_02a_connected_recipes_bom.sql",
   "master_data_rehearsal_recipe_import.sql",

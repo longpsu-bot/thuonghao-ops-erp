@@ -1,8 +1,12 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { checksumOpsV1MasterSnapshot } from "./ops-v1-master-snapshot-contract.mjs";
 import {
   derivePlanningCatchup,
   buildPlanningCatchupSql,
+  planningCatchupPreviewValidationPolicy,
+  formatPlanningCatchupReport,
 } from "./planning-master-catchup.mjs";
 
 function fixture() {
@@ -122,6 +126,171 @@ describe("bounded Planning master closure", () => {
     expect(p.records.supplier_eligibilities).toHaveLength(1);
     expect(p.records.customers).toEqual([]);
   });
+  it("preserves empty 2034 and 2041 roots without copying 2036 or synthesizing Ingredient 1204", () => {
+    const s = fixture();
+    s.records.dishes = [
+      {
+        legacy_id: "2034",
+        dish_name: "Cá basa phi lê sốt me + thịt heo kho tiêu",
+      },
+      {
+        legacy_id: "2036",
+        dish_name: "Cá basa phi lê sốt me + thịt heo kho tiêu (THĐ)",
+      },
+      { legacy_id: "2041", dish_name: "Bánh bông lan kem Thiên Ân 40g" },
+    ].map((d) => ({ ...d, dish_type_legacy_id: "1", dish_status: "ACTIVE" }));
+    const identities = [
+      ["2034", "1", "3456"],
+      ["2034", "2", "3457"],
+      ["2036", "1", "3460"],
+      ["2041", "1", "3468"],
+      ["2041", "2", "3469"],
+    ];
+    s.records.school_types.push({ legacy_id: "2" });
+    s.records.recipes = identities.map(([dish, school, source]) => ({
+      legacy_id: `dish:${dish}:school-type:${school}`,
+      source_record_id: source,
+      dish_legacy_id: dish,
+      school_type_legacy_id: school,
+      recipe_status: "ACTIVE",
+      basis_portions: 100,
+    }));
+    s.records.recipe_lines = [
+      {
+        ...s.records.recipe_lines[0],
+        legacy_id: "recipe:dish:2036:school-type:1:ingredient:5",
+        recipe_legacy_id: "dish:2036:school-type:1",
+        quantity_per_basis: "100",
+      },
+    ];
+    s.records.ingredients.push({
+      ...s.records.ingredients[0],
+      legacy_id: "1204",
+      ingredient_name: "Bánh bông lan kem Thiên Ân 40g",
+    });
+    s.source_diagnostics.push(
+      ...s.records.recipes
+        .filter((r) => r.dish_legacy_id !== "2036")
+        .map((r) => ({
+          severity: "INFO",
+          code: "SOURCE_RECIPE_EMPTY",
+          entity: "recipes",
+          legacy_id: r.legacy_id,
+          field: "composition",
+          detail: r.source_record_id,
+        })),
+    );
+    s.snapshot_checksum = checksumOpsV1MasterSnapshot(s);
+    const plan = derivePlanningCatchup(s, []);
+    expect(plan.records.recipes).toEqual(s.records.recipes);
+    expect(plan.records.recipe_lines).toEqual(s.records.recipe_lines);
+    expect(plan.records.ingredients.map((r) => r.legacy_id)).toEqual(["5"]);
+    expect(
+      plan.records.recipes
+        .filter((r) => r.dish_legacy_id !== "2036")
+        .map((r) => r.source_record_id),
+    ).toEqual(["3456", "3457", "3468", "3469"]);
+    expect(derivePlanningCatchup(s, [])).toEqual(plan);
+    expect(
+      derivePlanningCatchup(
+        s,
+        s.records.dishes.map((d) => ({
+          object_type: "DISH",
+          legacy_id: d.legacy_id,
+        })),
+      ).records.recipes,
+    ).toEqual([]);
+  });
+  it.each(["MISSING_DISH", "UNSUPPORTED_SCHOOL_RECIPE"])(
+    "keeps invalid empty Recipe references blocked: %s",
+    (code) => {
+      const s = fixture();
+      s.records.recipe_lines = [];
+      s.source_diagnostics.push({
+        severity: "BLOCKER",
+        code,
+        entity: "recipes",
+        legacy_id: "dish:9:school-type:1",
+      });
+      s.snapshot_checksum = checksumOpsV1MasterSnapshot(s);
+      expect(() => derivePlanningCatchup(s, mappings)).toThrow(
+        "SOURCE_DEPENDENCY_BLOCKED:recipes",
+      );
+    },
+  );
+  it("does not confuse a missing Recipe with an empty typed root", () => {
+    const s = fixture();
+    s.records.recipes = [];
+    s.snapshot_checksum = checksumOpsV1MasterSnapshot(s);
+    expect(() => derivePlanningCatchup(s, mappings)).toThrow(
+      "MISSING_RECIPE:9",
+    );
+  });
+  it("keeps invalid nonpositive source lines blocked rather than treating them as empty composition", () => {
+    const s = fixture();
+    s.records.recipe_lines[0].quantity_per_basis = "0";
+    s.source_diagnostics.push({
+      severity: "BLOCKER",
+      code: "INVALID_QUANTITY",
+      entity: "recipe_lines",
+      legacy_id: s.records.recipe_lines[0].legacy_id,
+    });
+    s.snapshot_checksum = checksumOpsV1MasterSnapshot(s);
+    expect(() => derivePlanningCatchup(s, mappings)).toThrow(
+      "SOURCE_DEPENDENCY_BLOCKED:recipe_lines",
+    );
+  });
+  it("still blocks an empty Recipe with a missing School Type", () => {
+    const s = fixture();
+    s.records.recipe_lines = [];
+    s.records.school_types = [];
+    s.snapshot_checksum = checksumOpsV1MasterSnapshot(s);
+    expect(() => derivePlanningCatchup(s, mappings)).toThrow(
+      "MISSING_DEPENDENCY:school_types:1",
+    );
+  });
+  it("retains all empty Recipe source IDs in the original nine report columns", () => {
+    const roots = [
+      ["dish:2034:school-type:1", "3456"],
+      ["dish:2034:school-type:2", "3457"],
+      ["dish:2041:school-type:1", "3468"],
+      ["dish:2041:school-type:2", "3469"],
+    ];
+    const report = formatPlanningCatchupReport({
+      report: roots.map(([key, id]) => ({
+        SOURCE_SYSTEM: "OPS_V1",
+        OBJECT_TYPE: "RECIPE",
+        LEGACY_ID: key,
+        SOURCE_RECIPE_ID: id,
+        SOURCE_NAME: key,
+        ACTION: "CREATE",
+        DEPENDENCY_REASON: `SOURCE_RECIPE_EMPTY: source_recipe_id=${id}; root only; RECIPE_NOT_READY; no released composition`,
+      })),
+    });
+    const [header, ...rows] = report
+      .trim()
+      .split("\n")
+      .map((line) => line.split("\t"));
+    expect(header).toEqual([
+      "SOURCE_SYSTEM",
+      "OBJECT_TYPE",
+      "LEGACY_ID",
+      "SOURCE_NAME",
+      "CURRENT_ATLAS_ID",
+      "CURRENT_ATLAS_VALUE",
+      "PROPOSED_ATLAS_ID",
+      "ACTION",
+      "DEPENDENCY_REASON",
+    ]);
+    expect(rows).toHaveLength(4);
+    for (const [index, row] of rows.entries()) {
+      expect(row).toHaveLength(9);
+      expect(row[2]).toBe(roots[index][0]);
+      expect(row[8]).toContain(`source_recipe_id=${roots[index][1]}`);
+      expect(row[8]).toContain("SOURCE_RECIPE_EMPTY");
+      expect(row[8]).toContain("RECIPE_NOT_READY");
+    }
+  });
   it("maps NULL-source School orders to deterministic tail", () => {
     expect(derivePlanningCatchup(fixture(), mappings).schoolOrders).toEqual([
       { legacy_id: "33", display_order: 16 },
@@ -165,5 +334,49 @@ describe("bounded Planning master closure", () => {
         apply: true,
       }),
     ).toThrow("REVIEWED_PLAN");
+  });
+  it("models only the exact candidate validator in temporary preview scope", () => {
+    const migration = readFileSync(
+      new URL(
+        "../supabase/migrations/20261011162800_atlas_planning_tui_count_unit.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const definition = migration
+      .replace(/\r\n/g, "\n")
+      .match(
+        /CREATE OR REPLACE FUNCTION atlas_legacy\.master_import_validate_values[\s\S]*?end \$function\$\s*;/i,
+      )[0];
+    const sql = buildPlanningCatchupSql(fixture(), {
+      targetProjectRef: "rnzxmxiiqgtdevzregff",
+    });
+    expect(sql).toContain(
+      definition.replace(
+        "atlas_legacy.master_import_validate_values",
+        "pg_temp.planning_catchup_preview_validate_values",
+      ),
+    );
+    expect(sql).not.toMatch(
+      /create or replace function atlas_legacy\.master_import_validate_values/i,
+    );
+    expect(sql).not.toMatch(/set role atlas_owner|reset role/i);
+    expect(sql).not.toContain("atlas_legacy.master_import_validate_values(");
+    expect(sql).toContain("pg_temp.planning_catchup_preview_validate_values(");
+    expect(planningCatchupPreviewValidationPolicy()).toMatchObject({
+      mode: "SESSION_LOCAL_CANDIDATE",
+      migration_version: "20261011162800",
+      definition_checksum: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+  });
+  it("uses deployed authoritative validation for apply without a candidate overlay", () => {
+    const sql = buildPlanningCatchupSql(fixture(), {
+      targetProjectRef: "rnzxmxiiqgtdevzregff",
+      apply: true,
+      planChecksum: "a".repeat(64),
+      actorId: "ee120000-0000-4000-8000-000000000001",
+    });
+    expect(sql).toContain("atlas_legacy.master_import_validate_values(");
+    expect(sql).not.toContain("planning_catchup_preview_validate_values");
   });
 });

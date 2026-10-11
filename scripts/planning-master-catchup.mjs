@@ -1,8 +1,44 @@
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import {
   checksumOpsV1MasterSnapshot,
   canonicalMasterJson,
 } from "./ops-v1-master-snapshot-contract.mjs";
+
+function previewValidatorDefinition() {
+  const migration = readFileSync(
+    new URL(
+      "../supabase/migrations/20261011162800_atlas_planning_tui_count_unit.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  ).replace(/\r\n/g, "\n");
+  const definitions = [
+    ...migration.matchAll(
+      /CREATE OR REPLACE FUNCTION atlas_legacy\.master_import_validate_values\(kind text, legacy text, source_row jsonb, v jsonb\)[\s\S]*?end \$function\$\s*;/gi,
+    ),
+  ];
+  if (definitions.length !== 1)
+    throw new Error("CANDIDATE_VALIDATOR_STRUCTURE_CHANGED");
+  const definition = definitions[0][0];
+  const remainder = migration
+    .replace(definition, "")
+    .replace(/^\s*--.*$/gm, "")
+    .trim();
+  if (!/^set role atlas_owner;\s*reset role;$/i.test(remainder))
+    throw new Error("CANDIDATE_VALIDATOR_STRUCTURE_CHANGED");
+  return definition;
+}
+
+export function planningCatchupPreviewValidationPolicy() {
+  return {
+    mode: "SESSION_LOCAL_CANDIDATE",
+    migration_version: "20261011162800",
+    definition_checksum: createHash("sha256")
+      .update(previewValidatorDefinition())
+      .digest("hex"),
+  };
+}
 
 export function assertPlanningSource(snapshot) {
   if (snapshot?.snapshot_checksum !== checksumOpsV1MasterSnapshot(snapshot))
@@ -62,7 +98,8 @@ export function derivePlanningCatchup(snapshot, mappings) {
       const lines = source.recipe_lines.filter(
         (l) => l.recipe_legacy_id === r.legacy_id,
       );
-      if (!lines.length) throw new Error(`RECIPE_EMPTY:${r.legacy_id}`);
+      // Empty composition preserves the typed root; only positive, valid source
+      // lines authorize Recipe Versions in the backend catch-up plan.
       for (const l of lines) {
         add("recipe_lines", l.legacy_id);
         const i = add("ingredients", l.ingredient_legacy_id);
@@ -132,13 +169,24 @@ export function buildPlanningCatchupSql(
       !/^[a-f0-9-]{36}$/.test(actorId ?? ""))
   )
     throw new Error("REVIEWED_PLAN_AND_ACTOR_REQUIRED");
-  const sql = readFileSync(
+  let sql = readFileSync(
     new URL(
       "../supabase/packages/atlas-planning-master-catchup.sql",
       import.meta.url,
     ),
     "utf8",
   );
+  if (!apply) {
+    const call = "atlas_legacy.master_import_validate_values(";
+    if (sql.split(call).length !== 2)
+      throw new Error("CANDIDATE_VALIDATOR_CALL_CHANGED");
+    const temporary = "pg_temp.planning_catchup_preview_validate_values";
+    const definition = previewValidatorDefinition().replace(
+      "atlas_legacy.master_import_validate_values",
+      temporary,
+    );
+    sql = `${definition}\n${sql.replace(call, `${temporary}(`)}`;
+  }
   const encoded = Buffer.from(JSON.stringify(snapshot)).toString("base64");
   return `set statement_timeout='15min';\nset lock_timeout='30s';\n${sql}\nselect pg_temp.run_planning_master_catchup(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb,${apply},${apply ? `'${planChecksum}'` : "null"},${apply ? `'${actorId}'::uuid` : "null"}) as result;`;
 }

@@ -168,15 +168,10 @@ describe("Atlas pre-cutover UI polish", () => {
     expect(
       within(workbar).queryByRole("textbox", { name: "Tuần phục vụ" }),
     ).not.toBeInTheDocument();
-    expect(
-      within(workbar).getByRole("spinbutton", { name: "Day" }),
-    ).toHaveTextContent("07");
-    expect(
-      within(workbar).getByRole("spinbutton", { name: "Month" }),
-    ).toHaveTextContent("09");
-    expect(
-      within(workbar).getByRole("spinbutton", { name: "Year" }),
-    ).toHaveTextContent("2026");
+    const range = within(workbar).getByLabelText("Mở lịch — Khoảng ngày");
+    expect(range).toBeEnabled();
+    expect(range).toHaveAttribute("aria-invalid", "false");
+    expect(range).toHaveTextContent(/^07\/09\/2026 — 07\/09\/2026$/);
   });
 
   it("gives Allocation one heading without duplicate primary navigation", async () => {

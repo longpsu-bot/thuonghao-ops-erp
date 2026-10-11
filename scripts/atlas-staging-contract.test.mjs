@@ -1032,7 +1032,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(110);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(111);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: ["scripts/test-local-planning-master-catchup.mjs"],
@@ -1045,6 +1045,17 @@ describe("Atlas staging dry-run and workflow", () => {
         "test",
         "db",
         "supabase/tests/atlas_planning_school_order.sql",
+        "--local",
+      ],
+    });
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "pnpm",
+      args: [
+        "exec",
+        "supabase",
+        "test",
+        "db",
+        "supabase/tests/atlas_planning_tui_count_unit.sql",
         "--local",
       ],
     });

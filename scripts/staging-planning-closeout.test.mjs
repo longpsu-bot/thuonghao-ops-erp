@@ -1126,6 +1126,7 @@ const approvedCountPolicyNames = [
   ["v1-unit-2d183c73d76a", "Bó"],
   ["v1-unit-469606e98b7e", "Gói"],
   ["v1-unit-46bab433cc1a", "Cốc"],
+  ["v1-unit-67df33ade68a", "Túi"],
   ["v1-unit-83bea5cf6378", "Miếng"],
   ["v1-unit-91a0b1c14124", "Cái"],
   ["v1-unit-9837090d3b3f", "Hũ"],
@@ -1164,6 +1165,26 @@ function approvedPolicyRows() {
     },
   ];
 }
+
+test("closeout requires the exact added Túi policy without accepting a replacement label", () => {
+  const rows = approvedPolicyRows();
+  assert.equal(closeoutVerifier.planningCloseoutPoliciesAccepted(rows), true);
+  assert.equal(
+    closeoutVerifier.planningCloseoutPoliciesAccepted(
+      rows.filter((row) => row.unit_code !== "v1-unit-67df33ade68a"),
+    ),
+    false,
+  );
+  const renamed = rows.map((row) =>
+    row.unit_code === "v1-unit-67df33ade68a"
+      ? { ...row, unit_name: "Gói" }
+      : row,
+  );
+  assert.equal(
+    closeoutVerifier.planningCloseoutPoliciesAccepted(renamed),
+    false,
+  );
+});
 
 function pristineResumeSnapshot() {
   return {

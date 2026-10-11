@@ -10,6 +10,7 @@ import { parseStagingMasterResult } from "./import-atlas-staging-master-data.mjs
 import {
   assertPlanningSource,
   buildPlanningCatchupSql,
+  planningCatchupPreviewValidationPolicy,
   formatPlanningCatchupReport,
 } from "./planning-master-catchup.mjs";
 
@@ -171,11 +172,29 @@ export async function runPlanningMasterCatchup({
     target_project_ref: target.projectRef,
     migration_count: installed.length,
     migration_tip: installed.at(-1),
+    preview_validation_policy: apply
+      ? null
+      : planningCatchupPreviewValidationPolicy(),
     source: {
       snapshot_id: snapshot.snapshot_id,
       snapshot_checksum: snapshot.snapshot_checksum,
       exported_at: snapshot.exported_at,
       source_counts: snapshot.source_counts,
+      empty_recipe_evidence: snapshot.source_diagnostics
+        .filter(
+          (issue) =>
+            issue.severity === "INFO" &&
+            issue.code === "SOURCE_RECIPE_EMPTY" &&
+            issue.entity === "recipes",
+        )
+        .map((issue) => ({
+          legacy_id: issue.legacy_id,
+          source_record_id:
+            snapshot.records.recipes.find(
+              (r) => r.legacy_id === issue.legacy_id,
+            )?.source_record_id ?? issue.detail,
+          code: issue.code,
+        })),
       canonical_counts: Object.fromEntries(
         Object.entries(snapshot.records).map(([k, v]) => [k, v.length]),
       ),

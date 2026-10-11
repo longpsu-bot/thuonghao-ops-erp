@@ -348,6 +348,25 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
     );
   });
 
+  it("retains Túi as a distinct active COUNT Unit in the reference importer", () => {
+    const snapshot = sourceSnapshot({
+      ingredients: [
+        { ...sourceSnapshot().ingredients[0], purchase_unit: "Túi" },
+      ],
+      ingredientSuppliers: [],
+    });
+    const manifest = transformV1ReferenceSnapshot(snapshot);
+    expect(manifest.units).toContainEqual(
+      expect.objectContaining({
+        unit_id: deterministicV1Uuid("unit:Túi"),
+        unit_code: "v1-unit-67df33ade68a",
+        unit_name: "Túi",
+        dimension_code: "COUNT",
+        decimal_scale: 0,
+        unit_status: "ACTIVE",
+      }),
+    );
+  });
   it("builds one SELECT-only source snapshot statement over the six approved tables", () => {
     const sql = buildV1SourceSnapshotSql();
     const sqlWithoutStringLiterals = sql.replace(/'(?:''|[^'])*'/g, "''");

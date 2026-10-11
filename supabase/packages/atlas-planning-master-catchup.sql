@@ -65,9 +65,43 @@ begin
  return result||jsonb_build_object('unrelated_unit_adoption_evidence',fp);
 end $$;
 
+-- Owner-approved zero-BoM policy is confined to this catch-up. The general
+-- importer still rejects empty effective compositions. This helper emits roots
+-- only; execution continues through the existing Recipe writer and guards.
+create or replace function pg_temp.planning_catchup_empty_roots(snapshot jsonb)
+returns jsonb language plpgsql stable set search_path='' as $$
+declare r jsonb; key text; target uuid; dish uuid; school_type uuid; vals jsonb; observed jsonb; evidence jsonb; actions jsonb:='[]'; issues jsonb:='[]';
+begin
+ for r in select p.value from jsonb_array_elements(snapshot#>'{records,recipes}') p where not exists
+ (select 1 from jsonb_array_elements(snapshot#>'{records,recipe_lines}') l where l.value->>'recipe_legacy_id'=p.value->>'legacy_id') order by p.value->>'legacy_id' collate "C" loop
+  key:=r->>'legacy_id'; target:=atlas_legacy.master_import_target_id(snapshot,'RECIPE',key);
+  dish:=atlas_legacy.master_import_target_id(snapshot,'DISH',r->>'dish_legacy_id');
+  school_type:=atlas_legacy.master_import_target_id(snapshot,'SCHOOL_TYPE',r->>'school_type_legacy_id');
+  if key is distinct from 'dish:'||(r->>'dish_legacy_id')||':school-type:'||(r->>'school_type_legacy_id') or target is null or dish is null or school_type is null
+   or not exists(select 1 from jsonb_array_elements(snapshot#>'{records,dishes}') d where d.value->>'legacy_id'=r->>'dish_legacy_id' and d.value->>'dish_status'='ACTIVE')
+   or not exists(select 1 from jsonb_array_elements(snapshot#>'{records,school_types}') s where s.value->>'legacy_id'=r->>'school_type_legacy_id' and s.value->>'school_type_status'='ACTIVE') then raise exception 'INVALID_RECIPE_SCOPE'; end if;
+  if r->>'basis_portions' is distinct from '100' then raise exception 'INVALID_RECIPE_BASIS'; end if;
+  if r->>'recipe_status' is distinct from 'ACTIVE' then raise exception 'INVALID_RECIPE_LIFECYCLE'; end if;
+  if nullif(btrim(r->>'source_record_id'),'') is null then raise exception 'RECIPE_SOURCE_EVIDENCE_REQUIRED'; end if;
+  vals:=jsonb_build_object('dish_id',dish,'school_type_id',school_type,'recipe_status','ACTIVE');
+  observed:=atlas_legacy.master_import_read('RECIPE',target);
+  if observed is null and exists(select 1 from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1' and m.object_type='RECIPE' and m.legacy_id=key) then raise exception 'TYPED_DEPENDENCY_MISSING'; end if;
+  if observed is not null and not exists(select 1 from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1' and m.object_type='RECIPE' and m.legacy_id=key and m.recipe_id=target) then raise exception 'UNOWNED_EXISTING_RECIPE'; end if;
+  if observed is not null and (observed->'dish_id' is distinct from vals->'dish_id' or observed->'school_type_id' is distinct from vals->'school_type_id' or observed->>'recipe_status' is distinct from 'ACTIVE') then raise exception 'RECIPE_SCOPE_IMMUTABLE'; end if;
+  if exists(select 1 from atlas_admin.recipes x where x.recipe_id<>target and x.dish_id=dish and x.school_type_id=school_type and x.recipe_status='ACTIVE') then raise exception 'RECIPE_SCOPE_CONFLICT'; end if;
+  if exists(select 1 from atlas_admin.recipe_versions v where v.recipe_id=target) or exists(select 1 from atlas_admin.recipe_lines l where l.recipe_id=target) then raise exception 'EMPTY_RECIPE_TARGET_COMPOSITION_EXISTS'; end if;
+  if observed is null and atlas_core.uiq03a_dish_used_operationally(dish) then raise exception 'RECIPE_COMMITTED_USE'; end if;
+  evidence:=jsonb_build_object('source_kind','OPS_V1_MASTER_SNAPSHOT','source_system','OPS_V1','snapshot_id',snapshot->>'snapshot_id','snapshot_checksum',snapshot->>'snapshot_checksum','stable_recipe_key',key,'source_record_id',r->>'source_record_id','diagnostic','SOURCE_RECIPE_EMPTY');
+  actions:=actions||jsonb_build_array(atlas_legacy.master_recipe_action('RECIPE',key,case when observed is null then 'CREATE' else 'NO_CHANGE' end,target,vals,atlas_legacy.master_snapshot_hash((r-'source_record_id')||jsonb_build_object('composition','[]'::jsonb)))
+   ||jsonb_build_object('before_values',observed,'source_evidence',evidence,'dependency_reason','SOURCE_RECIPE_EMPTY: source_recipe_id='||(r->>'source_record_id')||'; preserve typed root only; no effective composition, RECIPE_NOT_READY'));
+  issues:=issues||jsonb_build_array(jsonb_build_object('severity','INFO','code','SOURCE_RECIPE_EMPTY','entity','recipes','object_type','RECIPE','legacy_id',key,'source_record_id',r->>'source_record_id'));
+ end loop;
+ return jsonb_build_object('actions',actions,'issues',issues);
+end $$;
+
 create or replace function pg_temp.planning_catchup_plan(snapshot jsonb)
 returns jsonb language plpgsql stable set search_path='' as $$
-declare scoped jsonb; prior atlas_legacy.import_batches%rowtype; r jsonb; a jsonb; vals jsonb; observed jsonb; target uuid; kind text; key text; action text; actions jsonb:='[]'; issues jsonb:='[]'; extension jsonb; orders jsonb; report jsonb; summary jsonb; plan jsonb; next_tail integer; prior_fp text; mapped boolean;
+declare scoped jsonb; composed jsonb; empty_roots jsonb; prior atlas_legacy.import_batches%rowtype; r jsonb; a jsonb; vals jsonb; observed jsonb; target uuid; kind text; key text; action text; actions jsonb:='[]'; issues jsonb:='[]'; extension jsonb; orders jsonb; report jsonb; summary jsonb; plan jsonb; next_tail integer; prior_fp text; mapped boolean;
 begin
  if current_user<>'postgres' or to_regclass('public.schools') is not null then raise exception 'STAGING_MASTER_TARGET_DENIED'; end if;
  if snapshot->>'contract_version' is distinct from 'OPS-V1-MASTER-SNAPSHOT.v1' or snapshot->>'source_system' is distinct from 'OPS_V1' or snapshot->>'source_project_ref' is distinct from 'qnthofvccilhnefdcxnz' then raise exception 'SOURCE_CONTRACT_INVALID'; end if;
@@ -83,7 +117,6 @@ begin
  if jsonb_array_length(issues)>0 then raise exception using message='SOURCE_DEPENDENCY_BLOCKED',detail=issues::text; end if;
  -- Exact closure completeness, including references excluded from the source normalizer.
  if exists(select 1 from jsonb_array_elements(scoped#>'{records,dishes}') d where not exists(select 1 from jsonb_array_elements(scoped#>'{records,recipes}') r where r.value->>'dish_legacy_id'=d.value->>'legacy_id')) then raise exception 'MISSING_RECIPE_SCOPE'; end if;
- if exists(select 1 from jsonb_array_elements(scoped#>'{records,recipes}') r where not exists(select 1 from jsonb_array_elements(scoped#>'{records,recipe_lines}') l where l.value->>'recipe_legacy_id'=r.value->>'legacy_id')) then raise exception 'RECIPE_EMPTY'; end if;
  if exists(select 1 from jsonb_array_elements(scoped#>'{records,recipe_lines}') l where not exists(select 1 from jsonb_array_elements(scoped#>'{records,ingredients}') i where i.value->>'legacy_id'=l.value->>'ingredient_legacy_id') or not exists(select 1 from jsonb_array_elements(scoped#>'{records,units}') u where u.value->>'legacy_id'=l.value->>'unit_legacy_id')) then raise exception 'MISSING_RECIPE_DEPENDENCY'; end if;
   foreach kind in array array['SCHOOL_TYPE','UNIT','INGREDIENT_TYPE','INGREDIENT_ORDER_GROUP','DISH_TYPE','SUPPLIER','INGREDIENT','SUPPLIER_ELIGIBILITY'] loop
   for r in select value from jsonb_array_elements(scoped#>array['records',atlas_legacy.master_import_entity(kind)]) order by value->>'legacy_id' collate "C" loop
@@ -102,13 +135,21 @@ begin
    actions:=actions||jsonb_build_array(atlas_legacy.master_recipe_action(kind,key,action,target,vals,atlas_legacy.master_snapshot_hash(r))||jsonb_build_object('before_values',observed,'dependency_reason','Missing Dish dependency closure'));
   end loop;
  end loop;
- extension:=atlas_legacy.master_import_recipe_plan(scoped);
- issues:=coalesce(extension->'issues','[]');
+ empty_roots:=pg_temp.planning_catchup_empty_roots(scoped);
+ -- Only the old Recipe composition planner receives this projection. The
+ -- immutable scoped snapshot and source evidence retain every Recipe root.
+ select jsonb_set(scoped,'{records,recipes}',coalesce(jsonb_agg(r.value),'[]')) into composed
+ from jsonb_array_elements(scoped#>'{records,recipes}') r where exists
+ (select 1 from jsonb_array_elements(scoped#>'{records,recipe_lines}') l where l.value->>'recipe_legacy_id'=r.value->>'legacy_id');
+ extension:=atlas_legacy.master_import_recipe_plan(composed);
+ issues:=coalesce(extension->'issues','[]')||(empty_roots->'issues');
  for a in select value from jsonb_array_elements(extension->'actions') where value->>'action'<>'MISSING_FROM_SOURCE' loop
   if a->>'action' not in ('CREATE','NO_CHANGE','BLOCKED') then raise exception 'EXISTING_RECIPE_CHANGE_FORBIDDEN'; end if;
   if a->>'action'='CREATE' and atlas_legacy.master_import_read(a->>'object_type',(a->>'target_id')::uuid) is not null then raise exception 'TARGET_ID_COLLISION'; end if;
   actions:=actions||jsonb_build_array(a||jsonb_build_object('before_values',atlas_legacy.master_import_read(a->>'object_type',(a->>'target_id')::uuid),'dependency_reason','Missing active source Dish and complete Recipes/BoM'));
  end loop;
+ -- Dish actions precede root actions for the existing FK-preserving writer.
+ actions:=actions||(empty_roots->'actions');
  select coalesce(max((s.value->>'display_order')::integer),0) into next_tail from jsonb_array_elements(snapshot#>'{records,schools}') s where not exists
  (select 1 from jsonb_array_elements(snapshot->'source_diagnostics') d where d.value->>'code'='INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED' and d.value->>'legacy_id'=s.value->>'legacy_id');
  orders:='[]';
@@ -137,7 +178,7 @@ begin
  select coalesce(jsonb_agg(jsonb_build_object('SOURCE_SYSTEM','OPS_V1','OBJECT_TYPE',a.value->>'object_type','LEGACY_ID',a.value->>'legacy_id',
  'SOURCE_NAME',coalesce(a.value#>>'{values,school_name}',a.value#>>'{values,dish_name}',a.value#>>'{values,ingredient_name}',a.value#>>'{values,supplier_name}',a.value->>'legacy_id'),
  'CURRENT_ATLAS_ID',case when a.value->'before_values'<>'null'::jsonb then a.value->>'target_id' end,'CURRENT_ATLAS_VALUE',a.value->'before_values',
- 'PROPOSED_ATLAS_ID',a.value->>'target_id','ACTION',case a.value->>'action' when 'NO_CHANGE' then 'DEPENDENCY_ONLY' else a.value->>'action' end,'DEPENDENCY_REASON',a.value->>'dependency_reason') order by a.value->>'object_type',a.value->>'legacy_id'),'[]') into report from jsonb_array_elements(actions) a;
+ 'PROPOSED_ATLAS_ID',a.value->>'target_id','ACTION',case a.value->>'action' when 'NO_CHANGE' then 'DEPENDENCY_ONLY' else a.value->>'action' end,'SOURCE_RECIPE_ID',a.value#>>'{source_evidence,source_record_id}','DEPENDENCY_REASON',a.value->>'dependency_reason') order by a.value->>'object_type',a.value->>'legacy_id'),'[]') into report from jsonb_array_elements(actions) a;
  select jsonb_object_agg(x.kind,x.n) into summary from (select value->>'object_type' kind,count(*) n from jsonb_array_elements(actions) group by 1)x;
  plan:=jsonb_build_object('success',not exists(select 1 from jsonb_array_elements(issues) i where i.value->>'severity'='BLOCKER'),'snapshot_id',snapshot->>'snapshot_id','snapshot_checksum',snapshot->>'snapshot_checksum','actions',actions,'issues',issues,'report',report,'summary',summary,'school_orders',orders,'catchup_dish_ids',scoped->'catchup_dish_ids','protected',pg_temp.planning_catchup_protected(actions),'mapping_fingerprint',atlas_legacy.master_snapshot_hash((select coalesce(jsonb_agg(to_jsonb(m) order by m.object_type,m.legacy_id),'[]') from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1')));
  return plan||jsonb_build_object('plan_checksum',atlas_legacy.master_snapshot_hash(plan));
@@ -182,7 +223,7 @@ begin
   end loop;
   if protected is distinct from pg_temp.planning_catchup_protected(plan->'actions') then raise exception 'UNRELATED_FACTS_CHANGED'; end if;
   set constraints all immediate;
-  result:=jsonb_build_object('success',true,'status','APPLIED','import_batch_id',batch,'snapshot_checksum',snapshot->>'snapshot_checksum','plan_checksum',expected_plan_checksum,'operational_data_unchanged',true,'unrelated_master_facts_unchanged',true,'report',plan->'report','summary',plan->'summary');
+  result:=jsonb_build_object('success',true,'status','APPLIED','import_batch_id',batch,'snapshot_checksum',snapshot->>'snapshot_checksum','plan_checksum',expected_plan_checksum,'operational_data_unchanged',true,'unrelated_master_facts_unchanged',true,'report',plan->'report','summary',plan->'summary','issues',plan->'issues');
   update atlas_legacy.import_batches set reconciliation=jsonb_build_object('actions',plan->'actions','catchup_dish_ids',plan->'catchup_dish_ids','target_fingerprints',pg_temp.planning_catchup_fingerprints(plan->'actions'),'protected',protected),result_payload=result,completed_at=clock_timestamp() where import_batch_id=batch;
   return result;
  exception when others then

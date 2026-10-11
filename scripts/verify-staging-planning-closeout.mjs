@@ -28,6 +28,7 @@ const APPROVED_COUNT_POLICIES = new Map([
   ["v1-unit-2d183c73d76a", "Bó"],
   ["v1-unit-469606e98b7e", "Gói"],
   ["v1-unit-46bab433cc1a", "Cốc"],
+  ["v1-unit-67df33ade68a", "Túi"],
   ["v1-unit-83bea5cf6378", "Miếng"],
   ["v1-unit-91a0b1c14124", "Cái"],
   ["v1-unit-9837090d3b3f", "Hũ"],
@@ -96,7 +97,8 @@ export function retainedAdoptionLineageSide(evidence, theoretical) {
 }
 
 export function planningCloseoutPoliciesAccepted(rows) {
-  if (!Array.isArray(rows) || rows.length !== 15) return false;
+  if (!Array.isArray(rows) || rows.length !== APPROVED_COUNT_POLICIES.size + 1)
+    return false;
   const seen = new Set();
   for (const row of rows) {
     if (seen.has(row.unit_code)) return false;
@@ -126,7 +128,7 @@ export function planningCloseoutPoliciesAccepted(rows) {
       return false;
   }
   return (
-    seen.size === 15 &&
+    seen.size === APPROVED_COUNT_POLICIES.size + 1 &&
     [...APPROVED_COUNT_POLICIES.keys()].every((code) => seen.has(code)) &&
     seen.has("kg")
   );

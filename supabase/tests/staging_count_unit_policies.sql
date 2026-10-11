@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path=pg_catalog,public,extensions;
-select plan(8);
+select plan(9);
 insert into atlas_core.actors(actor_id,actor_type,display_name)
 values('a1010000-0000-4000-8000-000000000001','HUMAN','Staging policy test');
 insert into atlas_core.actor_auth_subjects(actor_id,auth_subject_id)
@@ -23,6 +23,8 @@ insert into atlas_admin.units(unit_code,unit_name,dimension_code) values
 ('v1-unit-dafac3b7da11','Bịch','COUNT'),
 ('v1-unit-ea9046ea54e4','Hộp','COUNT'),
 ('v1-unit-eb0ce03e77fa','Trái','COUNT');
+insert into atlas_admin.units(unit_code,unit_name,dimension_code,decimal_scale,unit_status)
+values('v1-unit-67df33ade68a','Túi','COUNT',0,'ACTIVE');
 -- The package may not guess a policy for this unapproved COUNT unit.
 insert into atlas_admin.units(unit_code,unit_name,dimension_code)
 values('unapproved-count','Unapproved count','COUNT'),('policy-test-kg','Policy test kilogram','MASS');
@@ -37,8 +39,9 @@ update atlas_planning.planning_quantity_policy_revisions set policy_revision_sta
  activated_by_actor_id='a1010000-0000-4000-8000-000000000001',activated_at=now();
 create temp table before_kg as select md5(to_jsonb(r)::text) fingerprint from atlas_planning.planning_quantity_policy_revisions r;
 -- PACKAGE_INSTALL
-select is((select count(*) from atlas_planning.planning_quantity_policies),15::bigint,'14 exact policy roots plus the unchanged kg root');
-select is((select count(*) from atlas_planning.planning_quantity_policy_revisions where planning_step=1 and effective_from='2026-09-14' and effective_to is null and policy_revision_status='ACTIVE'),14::bigint,'14 approved count policies active on the rehearsal boundary');
+select is((select count(*) from atlas_planning.planning_quantity_policy_revisions r join atlas_admin.units u using(unit_id) where u.unit_code='v1-unit-67df33ade68a' and u.unit_name='Túi' and u.dimension_code='COUNT' and u.decimal_scale=0 and u.unit_status='ACTIVE' and r.planning_step=1 and r.policy_revision_status='ACTIVE'),1::bigint,'distinct Túi Unit receives exactly one approved count policy');
+select is((select count(*) from atlas_planning.planning_quantity_policies),16::bigint,'15 exact policy roots plus the unchanged kg root');
+select is((select count(*) from atlas_planning.planning_quantity_policy_revisions where planning_step=1 and effective_from='2026-09-14' and effective_to is null and policy_revision_status='ACTIVE'),15::bigint,'15 approved count policies active on the rehearsal boundary');
 select is((select count(*) from atlas_planning.planning_quantity_policies p join atlas_admin.units u using(unit_id) where u.unit_code='unapproved-count'),0::bigint,'COUNT dimension is not a fallback');
 select is((select md5(to_jsonb(r)::text) from atlas_planning.planning_quantity_policy_revisions r where planning_step=0.01),(select fingerprint from before_kg),'kg policy fingerprint unchanged');
 create temp table policy_first as select md5(jsonb_agg(to_jsonb(r) order by planning_quantity_policy_revision_id)::text) fingerprint from atlas_planning.planning_quantity_policy_revisions r;
@@ -53,6 +56,6 @@ update atlas_planning.planning_quantity_policy_revisions set policy_revision_sta
  retired_by_actor_id='a1010000-0000-4000-8000-000000000001',retired_at=now()
 where unit_id=(select unit_id from atlas_admin.units where unit_code='v1-unit-034ce34d3ff3');
 select throws_ok('select pg_temp.run_policy_package()','P0001','STAGING_COUNT_POLICY_CONFLICT','existing conflicting effectivity is not overwritten');
-select is((select count(*) from atlas_planning.planning_quantity_policy_revisions),15::bigint,'failure does not create replacement policies');
+select is((select count(*) from atlas_planning.planning_quantity_policy_revisions),16::bigint,'failure does not create replacement policies');
 select * from finish();
 rollback;
