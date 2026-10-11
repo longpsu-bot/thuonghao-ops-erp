@@ -78,8 +78,9 @@ begin
  select * into prior from atlas_legacy.import_batches where source_system='OPS_V1' and snapshot_id=snapshot->>'snapshot_id';
  if found and (prior.snapshot_contract_version<>'ATLAS-PLANNING-CATCHUP.v1' or prior.snapshot_checksum<>snapshot->>'snapshot_checksum') then raise exception 'SNAPSHOT_ID_CONFLICT'; end if;
  scoped:=pg_temp.planning_catchup_scope(snapshot,prior.reconciliation->'catchup_dish_ids');
- if exists(select 1 from jsonb_array_elements(snapshot->'source_diagnostics') i where i.value->>'severity'='BLOCKER' and
- (i.value->>'entity'='schools' or exists(select 1 from jsonb_array_elements(scoped#>array['records',i.value->>'entity']) r where i.value->>'legacy_id' is null or r.value->>'legacy_id'=i.value->>'legacy_id'))) then raise exception 'SOURCE_DEPENDENCY_BLOCKED'; end if;
+ select coalesce(jsonb_agg(i.value),'[]') into issues from jsonb_array_elements(snapshot->'source_diagnostics') i where i.value->>'severity'='BLOCKER' and
+ (i.value->>'entity'='schools' or exists(select 1 from jsonb_array_elements(scoped#>array['records',i.value->>'entity']) r where i.value->>'legacy_id' is null or r.value->>'legacy_id'=i.value->>'legacy_id'));
+ if jsonb_array_length(issues)>0 then raise exception using message='SOURCE_DEPENDENCY_BLOCKED',detail=issues::text; end if;
  -- Exact closure completeness, including references excluded from the source normalizer.
  if exists(select 1 from jsonb_array_elements(scoped#>'{records,dishes}') d where not exists(select 1 from jsonb_array_elements(scoped#>'{records,recipes}') r where r.value->>'dish_legacy_id'=d.value->>'legacy_id')) then raise exception 'MISSING_RECIPE_SCOPE'; end if;
  if exists(select 1 from jsonb_array_elements(scoped#>'{records,recipes}') r where not exists(select 1 from jsonb_array_elements(scoped#>'{records,recipe_lines}') l where l.value->>'recipe_legacy_id'=r.value->>'legacy_id')) then raise exception 'RECIPE_EMPTY'; end if;
@@ -151,7 +152,7 @@ $$;
 
 create or replace function pg_temp.run_planning_master_catchup(snapshot jsonb, apply_requested boolean, expected_plan_checksum text, actor uuid)
 returns jsonb language plpgsql volatile set search_path='' as $$
-declare plan jsonb; prior atlas_legacy.import_batches%rowtype; batch uuid; a jsonb; scoped jsonb; result jsonb; protected jsonb; current_values jsonb;
+declare plan jsonb; prior atlas_legacy.import_batches%rowtype; batch uuid; a jsonb; scoped jsonb; result jsonb; protected jsonb; current_values jsonb; error_detail text;
 begin
  begin
   if apply_requested then
@@ -185,6 +186,8 @@ begin
   update atlas_legacy.import_batches set reconciliation=jsonb_build_object('actions',plan->'actions','catchup_dish_ids',plan->'catchup_dish_ids','target_fingerprints',pg_temp.planning_catchup_fingerprints(plan->'actions'),'protected',protected),result_payload=result,completed_at=clock_timestamp() where import_batch_id=batch;
   return result;
  exception when others then
-  return jsonb_build_object('success',false,'status','BLOCKED','error_code',case when sqlerrm ~ '^[A-Z_]+$' then sqlerrm else 'CATCHUP_DATABASE_INVARIANT_FAILURE' end,'sqlstate',sqlstate);
+  get stacked diagnostics error_detail=PG_EXCEPTION_DETAIL;
+  return jsonb_build_object('success',false,'status','BLOCKED','error_code',case when sqlerrm ~ '^[A-Z_]+$' then sqlerrm else 'CATCHUP_DATABASE_INVARIANT_FAILURE' end,'sqlstate',sqlstate)
+   ||case when sqlerrm='SOURCE_DEPENDENCY_BLOCKED' then jsonb_build_object('issues',error_detail::jsonb) else '{}'::jsonb end;
  end;
 end $$;
