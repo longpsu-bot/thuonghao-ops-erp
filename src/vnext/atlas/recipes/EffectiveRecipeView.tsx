@@ -1,5 +1,6 @@
 import { Box, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import type { DishRecipeOperatorWorkbench } from "../bridges/dishRecipe";
+import { recipeIssueCopy } from "./recipeIssueCopy";
 export function EffectiveRecipeView({
   effective,
 }: {
@@ -111,14 +112,14 @@ export function EffectiveRecipeView({
           </Text>
           {effective.effective_readiness.blockers.map((b, i) => (
             <Text textStyle="helper" key={i}>
-              {b.message}
+              {recipeIssueCopy(b)}
             </Text>
           ))}
         </Box>
       )}
       {effective?.effective_readiness.warnings.map((warning, i) => (
         <Text mt="xs" textStyle="helper" key={i}>
-          {warning.message}
+          {recipeIssueCopy(warning)}
         </Text>
       ))}
     </Box>

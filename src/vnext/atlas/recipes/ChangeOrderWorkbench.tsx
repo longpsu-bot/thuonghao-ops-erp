@@ -22,6 +22,8 @@ import {
   type AtlasModuleExitProps,
 } from "../AtlasModuleExit";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 import { RecipeDirtyExitDialog } from "./RecipeDialogs";
 import { ChangeOrderEditor, ChangeSelect } from "./ChangeOrderEditor";
 import { ChangeOrderReview, ChangeOrderCancel } from "./ChangeOrderDialogs";
@@ -83,7 +85,12 @@ export function ChangeOrderWorkbench(
           Lệnh điều chỉnh
         </Heading>
       )}
-      <Flex bg="bg.toolbar" px="md" py="sm" gap="sm" wrap="wrap" align="end">
+      <AtlasWorkbar
+        bg="bg.toolbar"
+        px="md"
+        py="sm"
+        aria-label="Bộ lọc lệnh điều chỉnh"
+      >
         <Field.Root flex="var(--atlas-layout-search-grow, 1 1 180px)">
           <Field.Label>Tìm lệnh</Field.Label>
           <Input
@@ -116,22 +123,26 @@ export function ChangeOrderWorkbench(
             ))}
           </ChangeSelect>
         </Box>
-        <AtlasRefreshButton
-          loading={c.loading}
-          disabled={c.refreshDisabled}
-          onClick={c.refresh}
-        />
-        <Button
-          variant={open ? "secondary" : "businessPrimary"}
-          disabled={!c.canAct || Boolean(c.preview) || Boolean(c.cancelTarget)}
-          onClick={(e) => {
-            origin.current = e.currentTarget;
-            c.openCreate();
-          }}
-        >
-          Tạo lệnh điều chỉnh
-        </Button>
-      </Flex>
+        <AtlasWorkbarActions>
+          <AtlasRefreshButton
+            loading={c.loading}
+            disabled={c.refreshDisabled}
+            onClick={c.refresh}
+          />
+          <Button
+            variant={open ? "secondary" : "businessPrimary"}
+            disabled={
+              !c.canAct || Boolean(c.preview) || Boolean(c.cancelTarget)
+            }
+            onClick={(e) => {
+              origin.current = e.currentTarget;
+              c.openCreate();
+            }}
+          >
+            Tạo lệnh điều chỉnh
+          </Button>
+        </AtlasWorkbarActions>
+      </AtlasWorkbar>
       {c.message && (
         <Box px="md" py="sm" role={c.lock || !c.ready ? "alert" : "status"}>
           <Text color={c.lock ? "status.warning" : "fg.default"}>
@@ -158,9 +169,8 @@ export function ChangeOrderWorkbench(
         }}
         minW="var(--atlas-layout-zero, 0)"
       >
-        <Box
-          minW="var(--atlas-layout-zero, 0)"
-          overflowX="auto"
+        <AtlasTableViewport
+          label="Bảng lệnh điều chỉnh"
           maxH={open ? "var(--atlas-layout-ledger-height, 65dvh)" : undefined}
         >
           <Table.Root
@@ -255,7 +265,7 @@ export function ChangeOrderWorkbench(
                 : "Chưa có lệnh điều chỉnh."}
             </Text>
           )}
-        </Box>
+        </AtlasTableViewport>
         {open && (
           <Box
             ref={detail}

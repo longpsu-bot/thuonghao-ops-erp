@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  operatorDateRangeError,
+  type AtlasOperatorDateRange,
+} from "../atlasOperatorDateRange";
+import {
   confirmedAllocationFromResult,
   confirmedAllocationReadRequest,
   confirmedAllocationRequest,
@@ -107,6 +111,12 @@ export function useProcurementWorkbench({
 }: ProcurementControllerProps) {
   const fixedStage = useRef(ownerStage).current;
   const [date, setDate] = useState(initialServiceDate);
+  const [dateEnd, setDateEnd] = useState(initialServiceDate);
+  const [range, setRange] = useState<AtlasOperatorDateRange>({
+    start: initialServiceDate,
+    end: initialServiceDate,
+  });
+  const rangeError = operatorDateRangeError(range);
   useEffect(() => {
     onServiceDateChange?.(date);
   }, [date, onServiceDateChange]);
@@ -164,7 +174,7 @@ export function useProcurementWorkbench({
               : await procurementApi.getPurchaseOrders(
                   purchaseOrdersReadRequest(authSubject, correlation.current, {
                     date_start: date,
-                    date_end: date,
+                    date_end: dateEnd,
                     supplier_ids: [],
                     statuses: [],
                     search: null,
@@ -206,7 +216,7 @@ export function useProcurementWorkbench({
       }
       return ok;
     },
-    [authSubject, purchaseReviewApi, procurementApi, date, schoolIds],
+    [authSubject, purchaseReviewApi, procurementApi, date, dateEnd, schoolIds],
   );
 
   useEffect(() => {
@@ -235,9 +245,21 @@ export function useProcurementWorkbench({
     setMutationLocked(true);
   };
   const changeDate = (value: string) => {
+    setRange({ start: value, end: value });
+    setDateEnd(value);
     if (value !== date) {
       invalidate();
       setDate(value);
+    }
+  };
+  const changeRange = (value: AtlasOperatorDateRange) => {
+    if (stage !== "orders" || active.current) return;
+    setRange(value);
+    if (operatorDateRangeError(value)) return;
+    if (value.start !== date || value.end !== dateEnd) {
+      invalidate();
+      setDate(value.start);
+      setDateEnd(value.end);
     }
   };
   const changeSchools = (ids: string[]) => {
@@ -268,7 +290,7 @@ export function useProcurementWorkbench({
     }
   };
   const reload = async () => {
-    if (active.current) return;
+    if (active.current || (stage === "orders" && rangeError)) return;
     clearRetry();
     const target = recoveryStage.current ?? stage;
     const ok = await read(target);
@@ -462,8 +484,8 @@ export function useProcurementWorkbench({
       const request = createPurchaseOrderDraftsRequest(
         authSubject!,
         correlation.current,
-        date,
-        date,
+        order.service_date,
+        order.service_date,
       );
       await runCommand(
         () => procurementApi.createPurchaseOrderDrafts(request),
@@ -492,6 +514,10 @@ export function useProcurementWorkbench({
   };
   return {
     date,
+    dateEnd,
+    range,
+    rangeError,
+    changeRange,
     schoolIds,
     stage,
     allocation,

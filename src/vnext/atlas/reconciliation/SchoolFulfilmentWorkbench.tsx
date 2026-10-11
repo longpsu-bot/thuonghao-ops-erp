@@ -11,6 +11,7 @@ import { useEffect, useRef } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import { SCHOOL_FULFILMENT_STATUS_LABELS } from "../bridges/schoolFulfilment";
 import {
   useSchoolFulfilmentWorkbench,
@@ -60,11 +61,12 @@ export function SchoolFulfilmentWorkbench(
       <Heading as="h1" textStyle="workbenchTitle" p="md">
         Đối chiếu PO / Phiếu xuất kho
       </Heading>
-      <Grid
+      <AtlasWorkbar
+        display="grid"
+        aria-label="Phạm vi đối chiếu"
         bg="bg.toolbar"
         p="md"
         gap="sm"
-        alignItems="start"
         templateColumns={{
           base: "minmax(0, 1fr)",
           md: "repeat(2, minmax(0, 1fr))",
@@ -123,19 +125,14 @@ export function SchoolFulfilmentWorkbench(
             <NativeSelect.Indicator />
           </NativeSelect.Root>
         </Field.Root>
-        <Box
-          pt={{
-            base: "var(--atlas-layout-zero, 0)",
-            xl: "var(--atlas-layout-refresh-offset, 26px)",
-          }}
-        >
+        <AtlasWorkbarActions>
           <AtlasRefreshButton
             loading={c.loading}
             disabled={!!c.rangeError || !props.authSubject}
             onClick={c.refresh}
           />
-        </Box>
-      </Grid>
+        </AtlasWorkbarActions>
+      </AtlasWorkbar>
       {c.rangeError && (
         <Text role="alert" color="status.danger" px="md" py="sm">
           {c.rangeError}

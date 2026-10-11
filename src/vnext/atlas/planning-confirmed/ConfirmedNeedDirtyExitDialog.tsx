@@ -4,10 +4,12 @@ export function ConfirmedNeedDirtyExitDialog({
   open,
   onCancel,
   onDiscard,
+  finalFocusEl,
 }: {
   open: boolean;
   onCancel: () => void;
   onDiscard: () => void;
+  finalFocusEl?: () => HTMLElement | null;
 }) {
   const cancel = useRef<HTMLButtonElement>(null);
   return (
@@ -17,6 +19,7 @@ export function ConfirmedNeedDirtyExitDialog({
         if (!d.open) onCancel();
       }}
       initialFocusEl={() => cancel.current}
+      finalFocusEl={finalFocusEl}
       placement="center"
       lazyMount
       unmountOnExit

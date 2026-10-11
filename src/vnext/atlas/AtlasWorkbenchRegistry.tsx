@@ -1,12 +1,18 @@
 import type { ReactNode, RefObject } from "react";
 import {
+  Basket,
   Buildings,
-  ClipboardText,
+  CalendarDots,
+  CheckSquareOffset,
   CookingPot,
+  FlowArrow,
+  NotePencil,
   Package,
   Scales,
   ShoppingCart,
+  Storefront,
   Truck,
+  UsersThree,
   type Icon,
 } from "@phosphor-icons/react";
 import type { AtlasVNextAppProps } from "./AtlasVNextApp";
@@ -80,7 +86,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
   {
     id: "planning",
     label: "Thực đơn",
-    icon: ClipboardText,
+    icon: CalendarDots,
     group: "CÔNG VIỆC HẰNG NGÀY",
     render: (c) => (
       <PlanningSourcesWorkbench
@@ -94,7 +100,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
   {
     id: "attendance",
     label: "Sĩ số",
-    icon: ClipboardText,
+    icon: UsersThree,
     group: "CÔNG VIỆC HẰNG NGÀY",
     render: (c) => (
       <PlanningSourcesWorkbench
@@ -123,7 +129,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
   {
     id: "confirmed-need",
     label: "Xác nhận nhu cầu",
-    icon: ClipboardText,
+    icon: CheckSquareOffset,
     group: "CÔNG VIỆC HẰNG NGÀY",
     render: (c) => (
       <ConfirmedNeedWorkbench
@@ -140,7 +146,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
   {
     id: "procurement",
     label: "Phân bổ NCC",
-    icon: ShoppingCart,
+    icon: FlowArrow,
     group: "CÔNG VIỆC HẰNG NGÀY",
     render: (c) => (
       <ProcurementWorkbench
@@ -216,7 +222,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
   {
     id: "ingredients",
     label: "Nguyên liệu",
-    icon: Package,
+    icon: Basket,
     group: "DỮ LIỆU & CẤU HÌNH",
     render: (c) => (
       <IngredientSupplierWorkbench
@@ -229,7 +235,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
   {
     id: "suppliers",
     label: "Nhà cung ứng",
-    icon: Truck,
+    icon: Storefront,
     group: "DỮ LIỆU & CẤU HÌNH",
     render: (c) => (
       <IngredientSupplierWorkbench
@@ -256,7 +262,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
   {
     id: "change-orders",
     label: "Lệnh điều chỉnh",
-    icon: ClipboardText,
+    icon: NotePencil,
     group: "DỮ LIỆU & CẤU HÌNH",
     render: (c) => (
       <ChangeOrderWorkbench

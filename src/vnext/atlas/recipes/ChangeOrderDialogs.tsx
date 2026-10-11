@@ -18,6 +18,7 @@ import type {
 import type { ChangeOrderController } from "./useChangeOrderWorkbench";
 import { ChangeSelect } from "./ChangeOrderEditor";
 import { periodLabel, validDate, vietnamLocalDate } from "./changeOrderModel";
+import { recipeIssueCopy } from "./recipeIssueCopy";
 export function ChangeComposition({
   title,
   value,
@@ -76,7 +77,7 @@ export function ChangeComposition({
       </Table.Root>
       {value.blockers.map((b, i) => (
         <Text key={i} role="alert">
-          {b.message}
+          {recipeIssueCopy(b)}
         </Text>
       ))}
     </Box>
@@ -143,12 +144,12 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
                 </Grid>
                 {p.warnings.map((w, i) => (
                   <Text mt="sm" key={i} role="status" color="status.warning">
-                    {w.message}
+                    {recipeIssueCopy(w)}
                   </Text>
                 ))}
                 {p.blockers.map((b, i) => (
                   <Text mt="sm" key={i} role="alert" color="status.danger">
-                    {b.message}
+                    {recipeIssueCopy(b)}
                   </Text>
                 ))}
                 {p.school_id === null && (

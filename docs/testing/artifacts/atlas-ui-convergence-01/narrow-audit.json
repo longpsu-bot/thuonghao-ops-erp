@@ -1,0 +1,200 @@
+[
+  {
+    "owner": "Thực đơn",
+    "layout": {
+      "heading": [
+        "Thực đơn"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 339.26505279541016,
+          "x": 295.26910400390625
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Sĩ số",
+    "layout": {
+      "heading": [
+        "Sĩ số"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 339.26505279541016,
+          "x": 295.26910400390625
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Hàng đặt riêng",
+    "layout": {
+      "heading": [
+        "Hàng đặt riêng"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 339.26505279541016,
+          "x": 295.26910400390625
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Xác nhận nhu cầu",
+    "layout": {
+      "heading": [
+        "Xác nhận nhu cầu"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 324.45023345947266,
+          "x": 280.45428466796875
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Phân bổ NCC",
+    "layout": {
+      "heading": [
+        "Phân bổ NCC"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 339.26505279541016,
+          "x": 295.26910400390625
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Đơn mua",
+    "layout": {
+      "heading": [
+        "Đơn mua"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 324.45023345947266,
+          "x": 280.45428466796875
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Phiếu xuất kho",
+    "layout": {
+      "heading": [
+        "Phiếu xuất kho"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 339.26505279541016,
+          "x": 295.26910400390625
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Nguyên liệu",
+    "layout": {
+      "heading": [
+        "Nguyên liệu"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 179.2100601196289,
+          "x": 135.214111328125
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Nhà cung ứng",
+    "layout": {
+      "heading": [
+        "Nhà cung ứng"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 64.91608810424805,
+          "x": 20.92013931274414
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Công thức",
+    "layout": {
+      "heading": [
+        "Công thức"
+      ],
+      "refresh": [],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Lệnh điều chỉnh",
+    "layout": {
+      "heading": [
+        "Lệnh điều chỉnh"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 69.97974395751953,
+          "x": 25.983795166015625
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  },
+  {
+    "owner": "Đối chiếu PO / Phiếu xuất kho",
+    "layout": {
+      "heading": [
+        "Đối chiếu PO / Phiếu xuất kho"
+      ],
+      "refresh": [
+        {
+          "height": 43.995948791503906,
+          "right": 70.90567016601562,
+          "x": 26.90972137451172
+        }
+      ],
+      "scroll": 360,
+      "width": 360
+    }
+  }
+]

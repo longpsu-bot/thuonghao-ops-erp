@@ -19,6 +19,8 @@ import {
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import type { CSSProperties } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
+import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import {
   procurementOperatorMessages,
@@ -175,7 +177,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     "Có điều kiện cần kiểm tra trước khi tiếp tục.",
   );
   const [year, month, day] = controller.date.split("-");
-  const dateSummary = [day, month, year].filter(Boolean).join("/");
+  const dateSummary =
+    [day, month, year].filter(Boolean).join("/") +
+    (controller.stage === "orders" && controller.dateEnd !== controller.date
+      ? ` — ${controller.dateEnd.split("-").reverse().join("/")}`
+      : "");
   const scopeSummary = controller.schoolIds.length
     ? controller.schoolIds.length === 1
       ? (catalogue.find(
@@ -221,7 +227,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
           }
           headingRef={heading}
           details={[
-            { label: "Ngày phục vụ", value: dateSummary },
+            {
+              label:
+                controller.stage === "orders" ? "Ngày dùng" : "Ngày phục vụ",
+              value: dateSummary,
+            },
             ...(controller.stage === "allocation"
               ? [{ label: "Trường / điểm giao", value: scopeSummary }]
               : []),
@@ -267,7 +277,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 </Tabs.List>
               </Box>
             )}
-            <Grid
+            <AtlasWorkbar
+              display="grid"
               role="group"
               aria-label="Phạm vi mua hàng"
               bg="bg.toolbar"
@@ -277,13 +288,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               borderBottomWidth="var(--atlas-layout-edge, 1px)"
               borderColor="border.default"
               alignItems="end"
-              templateColumns={{
+              gridTemplateColumns={{
                 base: "minmax(0, 1fr) auto auto",
                 md: "repeat(2, minmax(0, 1fr))",
                 xl:
                   controller.stage === "allocation"
                     ? "minmax(145px, 0.8fr) minmax(160px, 1.1fr) minmax(150px, 1fr) minmax(135px, 0.8fr) auto"
-                    : "minmax(155px, 0.8fr) minmax(200px, 2fr) auto",
+                    : "minmax(310px, 1.3fr) minmax(200px, 2fr) auto",
               }}
             >
               <Box
@@ -308,16 +319,27 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   order={{ base: 4, md: 1 }}
                   gridColumn={{ base: "1 / -1", md: "auto" }}
                 >
-                  <AtlasDateInput
-                    disabled={Boolean(selected)}
-                    label="Ngày phục vụ"
-                    value={controller.date}
-                    onValueChange={(value) => {
-                      if (selected) return;
-                      setSelectedKey(null);
-                      controller.changeDate(value);
-                    }}
-                  />
+                  {controller.stage === "orders" ? (
+                    <AtlasDateRangeInput
+                      label="Khoảng ngày dùng"
+                      value={controller.range}
+                      error={controller.rangeError}
+                      errorMessageId={`${ownerId}-range-error`}
+                      disabled={controller.loading || controller.busy}
+                      onValueChange={controller.changeRange}
+                    />
+                  ) : (
+                    <AtlasDateInput
+                      disabled={Boolean(selected)}
+                      label="Ngày phục vụ"
+                      value={controller.date}
+                      onValueChange={(value) => {
+                        if (selected) return;
+                        setSelectedKey(null);
+                        controller.changeDate(value);
+                      }}
+                    />
+                  )}
                 </Box>
                 {controller.stage === "allocation" && (
                   <Box
@@ -416,24 +438,38 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   ? ` · ${scopeSummary} · Ngoại lệ: ${exceptionSummary}`
                   : ""}
               </Text>
-              <Box
+              <AtlasWorkbarActions
                 ref={compactFilterOnward}
                 order={{
                   base: 2,
                   md: controller.stage === "allocation" ? 5 : 3,
                 }}
                 gridColumn={{ base: "3", md: "auto" }}
-                alignSelf="center"
               >
                 <AtlasRefreshButton
                   loading={controller.loading}
                   disabled={
-                    controller.busy || controller.locked || Boolean(selected)
+                    controller.busy ||
+                    controller.locked ||
+                    Boolean(selected) ||
+                    Boolean(controller.rangeError)
                   }
                   onClick={() => void controller.reload()}
                 />
-              </Box>
-            </Grid>
+              </AtlasWorkbarActions>
+            </AtlasWorkbar>
+            {controller.rangeError && (
+              <Text
+                id={`${ownerId}-range-error`}
+                role="alert"
+                textStyle="helper"
+                color="status.danger"
+                px="md"
+                py="xs"
+              >
+                {controller.rangeError}
+              </Text>
+            )}
             {controller.feedback && (
               <ProcurementCommandFeedback
                 feedback={controller.feedback}

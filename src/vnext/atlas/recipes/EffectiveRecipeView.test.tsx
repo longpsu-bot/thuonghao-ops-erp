@@ -124,4 +124,22 @@ describe("authoritative effective presentation", () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
+  it("explains recipe readiness in Vietnamese without exposing internal version terminology", async () => {
+    const e = await facts();
+    e.effective_readiness.status = "BLOCKED";
+    e.effective_readiness.blockers = [
+      {
+        code: "RECIPE_SELECTION_BLOCKED",
+        message:
+          "The typed Recipe has no released version available for Planning.",
+      },
+    ];
+    show(e);
+    expect(
+      screen.getByText("Chưa có công thức sẵn sàng cho loại trường này."),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/typed Recipe|released version/),
+    ).not.toBeInTheDocument();
+  });
 });

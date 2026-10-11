@@ -12,6 +12,7 @@ import {
 import { Fragment, useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { pantryIssueCopy } from "./pantryIssueCopy";
 
 function PantryFeedback({
   error,
@@ -106,19 +107,23 @@ export function PlanningPantryStage({
       </Flex>
       {c.pantryData?.catalog_issues.blockers.map((i, n) => (
         <Text key={n} role="alert" p="sm" color="status.danger">
-          {i.message}
+          {pantryIssueCopy(i)}
         </Text>
       ))}
       {c.pantryData?.catalog_issues.warnings.map((i, n) => (
         <Text key={n} p="sm" textStyle="helper" color="status.warning">
-          {i.message}
+          {pantryIssueCopy(i)}
         </Text>
       ))}
       {!rows.length && (
         <Text p="md" color="fg.muted">
-          {c.noAdditions
-            ? "Đã chọn xác nhận toàn tuần không có bổ sung."
-            : "Chưa có dòng bổ sung trong ngày. Chưa xác nhận toàn tuần không có bổ sung."}
+          {!visibleSchoolIds.length
+            ? "Không có trường phù hợp bộ lọc."
+            : c.pantryRows.some((row) => row.service_date === c.date)
+              ? "Không có dòng bổ sung phù hợp bộ lọc trong ngày."
+              : c.noAdditions
+                ? "Đã chọn xác nhận toàn tuần không có bổ sung."
+                : "Chưa có dòng bổ sung trong ngày. Chưa xác nhận toàn tuần không có bổ sung."}
         </Text>
       )}
       <AtlasTableViewport

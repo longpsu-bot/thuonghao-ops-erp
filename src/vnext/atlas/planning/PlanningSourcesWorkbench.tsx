@@ -18,6 +18,7 @@ import {
   atlasSecondaryTabTrigger,
 } from "../AtlasTaskTabs";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
 import { viDate } from "../bridges/planning";
@@ -209,7 +210,8 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 </Tabs.List>
               </Box>
             )}
-            <Grid
+            <AtlasWorkbar
+              display="grid"
               role="group"
               aria-label="Phạm vi nguồn lập nhu cầu"
               bg="bg.toolbar"
@@ -218,7 +220,6 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               gap="sm"
               borderBottomWidth="var(--atlas-layout-edge, 1px)"
               borderColor="border.default"
-              alignItems="start"
               templateColumns={{
                 base: "minmax(0, 1fr) auto auto",
                 md: "repeat(2, minmax(0, 1fr))",
@@ -336,18 +337,17 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               >
                 Bộ lọc
               </Button>
-              <Box
+              <AtlasWorkbarActions
                 ref={compactFilterOnward}
                 order={{ base: 3, md: 5 }}
                 gridColumn={{ base: "3", md: "auto" }}
-                pt={{ xl: "lg" }}
               >
                 <AtlasRefreshButton
                   loading={c.loading}
                   disabled={c.busy || c.locked || reviewOpen}
                   onClick={() => c.transition({ refresh: true })}
                 />
-              </Box>
+              </AtlasWorkbarActions>
               <Text
                 display={{ base: filtersOpen ? "none" : "block", md: "none" }}
                 order="4"
@@ -357,7 +357,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               >
                 Tuần {viDate(c.week)} · Ngày {dateSummary} · {scopeSummary}
               </Text>
-            </Grid>
+            </AtlasWorkbar>
             {c.outcome &&
               !(c.job === "menu" && c.impact && !c.impact.save_allowed) && (
                 <Text

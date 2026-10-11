@@ -60,6 +60,73 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("explains missing Pantry purposes in Vietnamese", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.pantry.catalog_issues.blockers = [
+      {
+        code: "PURPOSE_CATALOG_EMPTY",
+        message: "No active Pantry Purpose is configured.",
+        field: "pantry_need_purpose_id",
+        source_row_reference: null,
+      },
+    ];
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          ownerJob="pantry"
+        />
+      </AtlasVNextProvider>,
+    );
+    expect(
+      await screen.findByText(
+        "Chưa có mục đích đặt hàng đang dùng. Liên hệ người quản lý danh mục.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("No active Pantry Purpose is configured."),
+    ).not.toBeInTheDocument();
+  });
+  it("distinguishes filtered-out planning rows from explicit zero attendance or no additions", async () => {
+    await show();
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Tìm trong công việc" }),
+      {
+        target: { value: "Không có trường phù hợp" },
+      },
+    );
+    expect(screen.getByText("Không có trường phù hợp bộ lọc.")).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    await screen.findByRole("table", { name: "Sĩ số theo trường" });
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Tìm trong công việc" }),
+      {
+        target: { value: "Không có trường phù hợp" },
+      },
+    );
+    expect(
+      screen.getByText("Không có sĩ số phù hợp bộ lọc trong ngày."),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("Học sinh 0 · Giáo viên 0 · Tổng 0"),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
+    await screen.findByRole("table", { name: "Nguyên liệu bổ sung" });
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Tìm trong công việc" }),
+      {
+        target: { value: "Không có trường phù hợp" },
+      },
+    );
+    expect(screen.getByText("Không có trường phù hợp bộ lọc.")).toBeVisible();
+    expect(
+      screen.queryByText(
+        "Chưa có dòng bổ sung trong ngày. Chưa xác nhận toàn tuần không có bổ sung.",
+      ),
+    ).not.toBeInTheDocument();
+  });
   it("downloads the scoped blank attendance template without previewing or saving attendance", async () => {
     const fixture = createPlanningReviewFixture();
     const preview = vi.spyOn(fixture.api, "previewAttendance");

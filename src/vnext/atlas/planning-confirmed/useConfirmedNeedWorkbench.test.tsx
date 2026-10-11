@@ -33,6 +33,19 @@ async function ready(scenario: ConfirmedReviewScenario = "normal") {
   return h;
 }
 describe("Confirmed Need date authority and generation", () => {
+  it("derives the new Monday while keeping preflight on one exact service day", async () => {
+    const h = await ready();
+    act(() => h.result.current.transition({ date: "2026-09-14" }));
+    await waitFor(() => expect(h.result.current.busy).toBe(false));
+    expect(h.result.current.date).toBe("2026-09-14");
+    expect(h.result.current.week).toBe("2026-09-14");
+    expect(h.preflightRead).toHaveBeenLastCalledWith(
+      "operator",
+      expect.any(String),
+      "2026-09-14",
+      "2026-09-14",
+    );
+  });
   it("applies quantity proposals only locally, ignores note-only proposals and discards delayed imports", async () => {
     const h = await ready();
     const before = h.result.current.drafts;

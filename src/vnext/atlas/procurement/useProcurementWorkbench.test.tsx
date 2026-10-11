@@ -47,6 +47,93 @@ const splits = [
 ];
 
 describe("Procurement authoritative scope", () => {
+  it.each([
+    ["po_draft", "releasePurchaseOrder"],
+    ["po_stale", "createPurchaseOrderDrafts"],
+    ["replacement_required", "createPurchaseOrderReplacement"],
+  ] as const)(
+    "keeps %s actions on the selected order inside a multi-day read",
+    async (scenario, method) => {
+      const h = setup(scenario, { ownerStage: "orders" });
+      await ready(h.result);
+      const selected = {
+        ...h.fixture.orders.purchase_orders[0]!,
+        service_date: "2026-09-12",
+        purchase_order_id: "selected-order",
+      };
+      h.poRead.mockResolvedValue(
+        reviewSuccess({
+          ...h.fixture.orders,
+          date_start: "2026-09-08",
+          date_end: "2026-09-14",
+          purchase_orders: [h.fixture.orders.purchase_orders[0]!, selected],
+        }),
+      );
+      act(() =>
+        h.result.current.changeRange({
+          start: "2026-09-08",
+          end: "2026-09-14",
+        }),
+      );
+      await ready(h.result);
+      const command = vi
+        .spyOn(h.fixture.procurementApi, method)
+        .mockResolvedValue(reviewSuccess({}));
+      await act(async () => h.result.current.orderAction(selected));
+      expect(command).toHaveBeenCalledTimes(1);
+      expect(command.mock.lastCall![0].payload).toEqual(
+        scenario === "po_stale"
+          ? { date_start: "2026-09-12", date_end: "2026-09-12" }
+          : scenario === "po_draft"
+            ? {
+                purchase_order_id: "selected-order",
+                expected_purchase_order_revision_id:
+                  selected.current_revision.purchase_order_revision_id,
+              }
+            : {
+                replaced_purchase_order_id: "selected-order",
+                expected_purchase_order_revision_id:
+                  selected.current_revision.purchase_order_revision_id,
+              },
+      );
+      expect(h.poRead.mock.lastCall![0].payload).toMatchObject({
+        date_start: "2026-09-08",
+        date_end: "2026-09-14",
+      });
+    },
+  );
+  it.each([
+    ["2026-10-10", "2026-10-10"],
+    ["2026-10-10", "2026-10-11"],
+    ["2026-10-10", "2026-10-16"],
+    ["2026-09-29", "2026-10-05"],
+  ])("reads exact PO range %s to %s", async (start, end) => {
+    const h = setup("normal", { ownerStage: "orders" });
+    await ready(h.result);
+    act(() => h.result.current.changeRange({ start, end }));
+    await ready(h.result);
+    expect(h.poRead.mock.lastCall![0].payload).toMatchObject({
+      date_start: start,
+      date_end: end,
+    });
+  });
+  it.each([
+    ["2026-10-10", "2026-10-17"],
+    ["2026-10-10", "2026-10-09"],
+  ])(
+    "preserves loaded PO authority and blocks invalid range %s to %s before reads",
+    async (start, end) => {
+      const h = setup("normal", { ownerStage: "orders" });
+      await ready(h.result);
+      const loaded = h.result.current.orders;
+      act(() => h.result.current.changeRange({ start, end }));
+      await act(async () => h.result.current.reload());
+      expect(h.poRead).toHaveBeenCalledTimes(1);
+      expect(h.result.current.orders).toBe(loaded);
+      expect(h.result.current.current).toBe(true);
+      expect(h.result.current.rangeError).toBeTruthy();
+    },
+  );
   it("loads the confirmed single-date path with an all-school scope", async () => {
     const { result, read } = setup();
     await ready(result);

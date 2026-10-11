@@ -7,6 +7,7 @@ import {
 import { SCHOOL_DISPATCH_STATE_LABELS } from "../bridges/schoolDispatch";
 import { formatExactQuantity, formatExactDelta } from "../formatExactQuantity";
 import { fulfilmentRowKey } from "./useSchoolFulfilmentWorkbench";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 export const fulfilmentDate = (value: string) =>
   value.split("-").reverse().join("/");
 export function ComparisonResult({
@@ -39,9 +40,8 @@ export function SchoolFulfilmentTable({
   onSelect: (row: SchoolFulfilmentRow, trigger: HTMLButtonElement) => void;
 }) {
   return (
-    <Table.ScrollArea
-      overflow="auto"
-      minW="var(--atlas-layout-zero, 0)"
+    <AtlasTableViewport
+      label="Bảng đối chiếu theo trường"
       maxH={{
         base: "var(--atlas-layout-mobile-table, 50dvh)",
         lg: "var(--atlas-layout-reconciliation-table, calc(100dvh - 300px))",
@@ -153,6 +153,6 @@ export function SchoolFulfilmentTable({
           ))}
         </Table.Body>
       </Table.Root>
-    </Table.ScrollArea>
+    </AtlasTableViewport>
   );
 }

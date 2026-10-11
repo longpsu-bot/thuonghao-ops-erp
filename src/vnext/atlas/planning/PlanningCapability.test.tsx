@@ -70,8 +70,17 @@ it("retains its local date across external seed changes and forwards both owners
     name: "Số lượng xác nhận Gạo thơm",
   });
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-  expect(screen.getByRole("combobox", { name: "Ngày phục vụ" })).toHaveValue(
-    reviewWeek,
+  expect(screen.getByRole("spinbutton", { name: "Day" })).toHaveAttribute(
+    "aria-valuenow",
+    "7",
+  );
+  expect(screen.getByRole("spinbutton", { name: "Month" })).toHaveAttribute(
+    "aria-valuenow",
+    "9",
+  );
+  expect(screen.getByRole("spinbutton", { name: "Year" })).toHaveAttribute(
+    "aria-valuenow",
+    "2026",
   );
   expect(notify).toHaveBeenLastCalledWith(reviewWeek);
   fireEvent.change(quantity, { target: { value: "12,5" } });

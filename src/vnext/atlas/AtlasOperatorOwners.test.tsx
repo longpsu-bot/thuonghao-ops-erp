@@ -73,6 +73,17 @@ const owner = (name: string) =>
   document.querySelector<HTMLElement>(
     `[role="tabpanel"][aria-label="${name}"]`,
   )!;
+async function selectOrdersDay(date: string) {
+  fireEvent.click(
+    screen.getByRole("button", { name: "Mở lịch — Khoảng ngày dùng" }),
+  );
+  const grid = await screen.findByRole("grid");
+  const day = grid.querySelector<HTMLElement>(
+    `[data-part="table-cell-trigger"][data-value="${date}"]`,
+  )!;
+  fireEvent.click(day);
+  fireEvent.click(day);
+}
 function retained(panel: HTMLElement, input: HTMLElement, value: string) {
   expect(panel).toHaveAttribute("hidden");
   expect(panel).toHaveAttribute("inert");
@@ -339,9 +350,7 @@ it("retains Allocation's dirty supplier detail and Orders search with independen
   const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
   fireEvent.change(search, { target: { value: "An Phú" } });
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-  const day = screen.getByRole("spinbutton", { name: "Day" });
-  fireEvent.focus(day);
-  fireEvent.keyDown(day, { key: "ArrowUp" });
+  await selectOrdersDay("2026-09-08");
   await waitFor(() => expect(orders).toHaveBeenCalledTimes(2));
   const ordersOwner = owner("Đơn mua");
   retained(allocationOwner, note, "Giao sớm");
@@ -352,10 +361,9 @@ it("retains Allocation's dirty supplier detail and Orders search with independen
   );
   await open("Đơn mua");
   expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
-  expect(screen.getByRole("spinbutton", { name: "Day" })).toHaveAttribute(
-    "aria-valuenow",
-    "8",
-  );
+  expect(
+    screen.getByRole("button", { name: "Mở lịch — Khoảng ngày dùng" }),
+  ).toHaveTextContent("08/09/2026 — 08/09/2026");
   expect(allocations).toHaveBeenCalledOnce();
   expect(orders).toHaveBeenCalledTimes(2);
   const filterIds = [allocationOwner, ordersOwner].map((panel) =>
@@ -389,9 +397,7 @@ it.each([false, true])(
     fireEvent.change(search, { target: { value: "Giữ bộ lọc" } });
     if (differentDate) {
       fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-      const day = screen.getByRole("spinbutton", { name: "Day" });
-      fireEvent.focus(day);
-      fireEvent.keyDown(day, { key: "ArrowUp" });
+      await selectOrdersDay("2026-09-11");
       await waitFor(() => expect(orders).toHaveBeenCalledTimes(2));
     }
     await open("Phân bổ NCC");

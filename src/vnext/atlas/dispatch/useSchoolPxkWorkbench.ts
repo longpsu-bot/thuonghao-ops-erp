@@ -11,6 +11,10 @@ import {
   type SchoolDispatchWorkbenchRow,
 } from "../bridges/schoolDispatch";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
+import {
+  operatorDateRangeError,
+  type AtlasOperatorDateRange,
+} from "../atlasOperatorDateRange";
 export type SchoolPxkWorkbenchProps = AtlasModuleExitProps & {
   api: SchoolDispatchReleaseApi;
   authSubject: string | null;
@@ -30,6 +34,7 @@ export type SchoolPxkWorkbenchProps = AtlasModuleExitProps & {
 type Transition = {
   exit?: () => void;
   date?: string;
+  range?: AtlasOperatorDateRange;
   schoolIds?: string[];
   selectedKey?: string | null;
   refresh?: boolean;
@@ -79,6 +84,12 @@ export function useSchoolPxkWorkbench({
   schools: externalSchools,
 }: SchoolPxkWorkbenchProps) {
   const [date, setDate] = useState(initialServiceDate);
+  const [dateEnd, setDateEnd] = useState(initialServiceDate);
+  const [range, setRange] = useState<AtlasOperatorDateRange>({
+    start: initialServiceDate,
+    end: initialServiceDate,
+  });
+  const rangeError = operatorDateRangeError(range);
   useEffect(() => {
     onServiceDateChange?.(date);
   }, [date, onServiceDateChange]);
@@ -105,7 +116,7 @@ export function useSchoolPxkWorkbench({
   const [lock, setLock] = useState<"unknown" | "stale" | null>(null);
   const [loadedScope, setLoadedScope] = useState<string | null>(null);
   const [correlationId] = useState(() => crypto.randomUUID());
-  const scope = JSON.stringify([authSubject, date, schoolIds]);
+  const scope = JSON.stringify([authSubject, date, dateEnd, schoolIds]);
   const live = useRef({ scope, api });
   live.current = { scope, api };
   const generation = useRef(0);
@@ -144,7 +155,7 @@ export function useSchoolPxkWorkbench({
         const result = await api.getWorkbench(
           schoolDispatchReleaseReadRequest(authSubject, correlationId, {
             date_start: date,
-            date_end: date,
+            date_end: dateEnd,
             school_ids: schoolIds,
             search: null,
           }),
@@ -161,11 +172,12 @@ export function useSchoolPxkWorkbench({
           next.contract_version !== "SCHOOL-DISPATCH-RELEASE.v1" ||
           success !== true ||
           next.date_start !== date ||
-          next.date_end !== date ||
+          next.date_end !== dateEnd ||
           !Array.isArray(next.rows) ||
           next.rows.some(
             (r) =>
-              r.service_date !== date ||
+              r.service_date < date ||
+              r.service_date > dateEnd ||
               (schoolIds.length && !schoolIds.includes(r.school_id)) ||
               schoolPxkRowKey(r.preview) !== schoolPxkRowKey(r),
           )
@@ -210,7 +222,7 @@ export function useSchoolPxkWorkbench({
       } finally {
         if (active()) setLoading(false);
       }
-    }, [api, authSubject, correlationId, date, schoolIds, scope]);
+    }, [api, authSubject, correlationId, date, dateEnd, schoolIds, scope]);
   useEffect(() => {
     setData(null);
     setSelectedKey(null);
@@ -258,9 +270,17 @@ export function useSchoolPxkWorkbench({
       next.exit();
       return;
     }
-    if (next.date || next.schoolIds || next.refresh) invalidate();
+    if (next.date || next.range || next.schoolIds || next.refresh) invalidate();
     if (next.date) {
       setDate(next.date);
+      setDateEnd(next.date);
+      setRange({ start: next.date, end: next.date });
+      setSelectedKey(null);
+    }
+    if (next.range) {
+      setRange(next.range);
+      setDate(next.range.start);
+      setDateEnd(next.range.end);
       setSelectedKey(null);
     }
     if (next.schoolIds) {
@@ -278,6 +298,17 @@ export function useSchoolPxkWorkbench({
   };
   const transition = (next: Transition) => {
     if (writing.current || locked.current) return;
+    if (next.range) {
+      if (operatorDateRangeError(next.range)) {
+        setRange(next.range);
+        return;
+      }
+      if (next.range.start === date && next.range.end === dateEnd) {
+        setRange(next.range);
+        return;
+      }
+    }
+    if (rangeError && (next.refresh || next.schoolIds)) return;
     if (Object.keys(next).length === 1 && next.date === date) return;
     if (
       Object.keys(next).length === 1 &&
@@ -395,6 +426,9 @@ export function useSchoolPxkWorkbench({
   };
   return {
     date,
+    dateEnd,
+    range,
+    rangeError,
     schoolIds,
     schools,
     search,

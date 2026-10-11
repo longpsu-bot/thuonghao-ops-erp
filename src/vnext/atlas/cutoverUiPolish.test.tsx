@@ -82,7 +82,7 @@ async function nav(label: string) {
 }
 
 describe("Atlas pre-cutover UI polish", () => {
-  it("simplifies the connected header and uses a shopping cart for procurement", async () => {
+  it("simplifies the connected header and distinguishes allocation from purchase orders", async () => {
     show();
     expect(screen.queryByText("Vận hành trường học")).not.toBeInTheDocument();
     expect(screen.getByText("Hôm nay: 07/09/2026")).toBeVisible();
@@ -91,9 +91,11 @@ describe("Atlas pre-cutover UI polish", () => {
     const procurement = await screen.findByRole("button", {
       name: "Phân bổ NCC",
     });
-    expect(
-      within(procurement).getByTestId("procurement-nav-icon"),
-    ).toHaveAttribute("data-icon", "shopping-cart");
+    const orders = screen.getByRole("button", { name: "Đơn mua" });
+    expect(procurement.querySelector("svg")).not.toBeNull();
+    expect(procurement.querySelector("svg")?.innerHTML).not.toBe(
+      orders.querySelector("svg")?.innerHTML,
+    );
   });
 
   it("uses a standalone Menu owner and retains its Monday-Sunday week range field", async () => {
@@ -160,9 +162,21 @@ describe("Atlas pre-cutover UI polish", () => {
       screen.getByLabelText("Nhập Phiếu đi chợ .xlsx"),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-    expect(screen.getByRole("textbox", { name: "Tuần phục vụ" })).toHaveValue(
-      "07/09/2026 – 13/09/2026",
-    );
+    const workbar = screen.getByRole("group", {
+      name: "Phạm vi xác nhận nhu cầu",
+    });
+    expect(
+      within(workbar).queryByRole("textbox", { name: "Tuần phục vụ" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(workbar).getByRole("spinbutton", { name: "Day" }),
+    ).toHaveTextContent("07");
+    expect(
+      within(workbar).getByRole("spinbutton", { name: "Month" }),
+    ).toHaveTextContent("09");
+    expect(
+      within(workbar).getByRole("spinbutton", { name: "Year" }),
+    ).toHaveTextContent("2026");
   });
 
   it("gives Allocation one heading without duplicate primary navigation", async () => {

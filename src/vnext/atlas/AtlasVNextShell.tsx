@@ -8,7 +8,15 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { CaretDown, Circle, List, UserCircle, X } from "@phosphor-icons/react";
+import {
+  CaretDown,
+  Circle,
+  List,
+  Prohibit,
+  UserCircle,
+  Warning,
+  X,
+} from "@phosphor-icons/react";
 import {
   useEffect,
   useId,
@@ -88,6 +96,18 @@ export function AtlasVNextShell({
       ? "Chưa lưu"
       : (statuses[id]?.attention ??
         (statuses[id]?.blocked ? "Cần giải quyết" : ""));
+  const workbenchIcon = (id: AtlasWorkbenchId) => {
+    const WorkbenchIcon = destinations.find((item) => item.id === id)?.icon;
+    return WorkbenchIcon ? (
+      <Icon
+        asChild
+        flexShrink="0"
+        boxSize="var(--atlas-workspace-icon-size, 18px)"
+      >
+        <WorkbenchIcon aria-hidden="true" />
+      </Icon>
+    ) : null;
+  };
   const closeMenu = (restore = true) => {
     setMenu(null);
     if (restore) trigger.current?.focus();
@@ -330,46 +350,58 @@ export function AtlasVNextShell({
                         {group}
                       </Text>
                       <Stack gap="xs">
-                        {items.map(
-                          ({ id, label: name, icon: WorkbenchIcon }) => (
-                            <Button
-                              key={id}
-                              data-destination=""
-                              variant="utility"
-                              justifyContent="flex-start"
-                              textAlign="left"
-                              h="var(--atlas-layout-auto, auto)"
-                              minH="var(--atlas-layout-mobile-target, 44px)"
-                              whiteSpace="normal"
-                              aria-label={name}
-                              aria-current={
-                                id === activeModule ? "page" : undefined
-                              }
-                              onClick={() => select(id)}
-                            >
-                              <Icon asChild flexShrink="0" boxSize="20px">
-                                <WorkbenchIcon
-                                  data-testid={
-                                    id === "procurement"
-                                      ? "procurement-nav-icon"
-                                      : undefined
-                                  }
-                                  data-icon={
-                                    id === "procurement"
-                                      ? "shopping-cart"
-                                      : undefined
-                                  }
-                                />
-                              </Icon>
-                              <Text flex="1">{name}</Text>
-                              {ids.includes(id) && (
-                                <Text textStyle="helper" color="fg.muted">
-                                  Đang mở
-                                </Text>
-                              )}
-                            </Button>
-                          ),
-                        )}
+                        {items.map(({ id, label: name }) => (
+                          <Button
+                            key={id}
+                            data-destination=""
+                            variant="utility"
+                            justifyContent="flex-start"
+                            textAlign="left"
+                            h="var(--atlas-layout-auto, auto)"
+                            minH="var(--atlas-layout-mobile-target, 44px)"
+                            whiteSpace="normal"
+                            bg={
+                              id === activeModule
+                                ? "bg.selected"
+                                : "transparent"
+                            }
+                            borderLeftWidth="var(--atlas-workspace-selected-edge, 3px)"
+                            borderLeftColor={
+                              id === activeModule
+                                ? "border.accent"
+                                : "transparent"
+                            }
+                            color={
+                              id === activeModule
+                                ? "fg.primary"
+                                : "fg.secondary"
+                            }
+                            _hover={{
+                              bg:
+                                id === activeModule
+                                  ? "bg.selected"
+                                  : "bg.context",
+                            }}
+                            aria-label={name}
+                            aria-current={
+                              id === activeModule ? "page" : undefined
+                            }
+                            onClick={() => select(id)}
+                          >
+                            {workbenchIcon(id)}
+                            <Text flex="1">{name}</Text>
+                            {ids.includes(id) && (
+                              <Text
+                                textStyle="helper"
+                                color="fg.muted"
+                                fontWeight="normal"
+                                flexShrink="0"
+                              >
+                                Đang mở
+                              </Text>
+                            )}
+                          </Button>
+                        ))}
                       </Stack>
                     </Box>
                   )
@@ -434,7 +466,7 @@ export function AtlasVNextShell({
           position="relative"
           bg="bg.toolbar"
           px="sm"
-          pt="xs"
+          py="xs"
         >
           <Flex
             w="var(--atlas-workspace-tab-content-width, max-content)"
@@ -449,12 +481,19 @@ export function AtlasVNextShell({
                   else tabBoxes.current.delete(id);
                 }}
                 align="center"
-                bg={id === activeModule ? "bg.workbench" : "transparent"}
-                borderBottomWidth="var(--atlas-workspace-selected-edge, 3px)"
-                borderBottomColor={
-                  id === activeModule ? "border.accent" : "transparent"
+                bg={id === activeModule ? "bg.workbench" : "bg.context"}
+                borderLeftWidth="var(--atlas-layout-edge, 1px)"
+                borderRightWidth="var(--atlas-layout-edge, 1px)"
+                borderBottomWidth="var(--atlas-layout-edge, 1px)"
+                borderTopWidth="var(--atlas-workspace-selected-edge, 3px)"
+                borderColor={
+                  id === activeModule ? "border.accent" : "border.default"
                 }
-                _hover={{ bg: "bg.context" }}
+                borderRadius="control"
+                pr="xs"
+                _hover={{
+                  bg: id === activeModule ? "bg.workbench" : "bg.subtle",
+                }}
               >
                 <Button
                   id={`${prefix}-tab-${id}`}
@@ -469,10 +508,14 @@ export function AtlasVNextShell({
                   variant="utility"
                   color={id === activeModule ? "fg.default" : "fg.secondary"}
                   fontWeight={id === activeModule ? "semibold" : "normal"}
-                  borderRadius="var(--atlas-layout-zero, 0)"
+                  h="compact"
+                  px="sm"
+                  gap="sm"
+                  _hover={{ bg: "transparent" }}
                   onClick={() => select(id)}
                   onKeyDown={(event) => tabKeys(event, id)}
                 >
+                  {workbenchIcon(id)}
                   {label(id)}
                   {marker(id) && (
                     <Box
@@ -487,9 +530,19 @@ export function AtlasVNextShell({
                     >
                       <Icon
                         asChild
-                        boxSize="var(--atlas-workspace-marker-size, 6px)"
+                        boxSize={
+                          statuses[id]?.unsaved
+                            ? "var(--atlas-workspace-marker-size, 7px)"
+                            : "var(--atlas-workspace-status-icon-size, 14px)"
+                        }
                       >
-                        <Circle weight="fill" aria-hidden="true" />
+                        {statuses[id]?.unsaved ? (
+                          <Circle weight="fill" aria-hidden="true" />
+                        ) : statuses[id]?.attention ? (
+                          <Warning weight="bold" aria-hidden="true" />
+                        ) : (
+                          <Prohibit weight="bold" aria-hidden="true" />
+                        )}
                       </Icon>
                     </Box>
                   )}
@@ -502,6 +555,7 @@ export function AtlasVNextShell({
                   minW="compact"
                   h="compact"
                   p="xs"
+                  _hover={{ bg: "bg.context", color: "fg.primary" }}
                   onClick={() => onClose?.(id)}
                 >
                   <X size={16} aria-hidden="true" />
@@ -532,6 +586,7 @@ export function AtlasVNextShell({
             aria-expanded={menu === "open"}
             onClick={(event) => toggle("open", event.currentTarget)}
           >
+            {activeModule && workbenchIcon(activeModule)}
             <Text flex="1">
               Đang mở: {activeLabel}
               {activeModule && marker(activeModule)
@@ -562,8 +617,16 @@ export function AtlasVNextShell({
                       textAlign="left"
                       justifyContent="flex-start"
                       aria-current={id === activeModule ? "page" : undefined}
+                      bg={id === activeModule ? "bg.selected" : "transparent"}
+                      borderColor={
+                        id === activeModule ? "border.accent" : "transparent"
+                      }
+                      _hover={{
+                        bg: id === activeModule ? "bg.selected" : "bg.context",
+                      }}
                       onClick={() => select(id)}
                     >
+                      {workbenchIcon(id)}
                       {label(id)}
                       {marker(id) ? ` — ${marker(id)}` : ""}
                     </Button>

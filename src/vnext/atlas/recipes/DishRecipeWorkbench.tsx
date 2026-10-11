@@ -17,6 +17,7 @@ import {
 } from "../AtlasModuleExit";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import type { DishRecipeApi } from "../bridges/dishRecipe";
 import { BaseRecipeEditor } from "./BaseRecipeEditor";
 import { DishCatalogue, dishStatusLabel } from "./DishCatalogue";
@@ -91,7 +92,7 @@ export function DishRecipeWorkbench(
     props.onOpenChangeOrders,
   );
   const catalogueToolbar = (
-    <Flex px="md" py="sm" bg="bg.toolbar" gap="sm" align="flex-end" wrap="wrap">
+    <AtlasWorkbar px="md" py="sm" bg="bg.toolbar" aria-label="Bộ lọc công thức">
       <Field.Root flex="var(--atlas-layout-search-grow, 1 1 200px)">
         <Field.Label>Tìm món</Field.Label>
         <Input
@@ -146,19 +147,21 @@ export function DishRecipeWorkbench(
           <NativeSelect.Indicator />
         </NativeSelect.Root>
       </Field.Root>
-      <AtlasRefreshButton
-        loading={c.loading}
-        disabled={c.refreshDisabled}
-        onClick={() => c.transition({ kind: "refresh" })}
-      />
-      <Button
-        variant={open ? "secondary" : "businessPrimary"}
-        disabled={!c.canCommand}
-        onClick={() => c.transition({ kind: "create" })}
-      >
-        Tạo món mới
-      </Button>
-    </Flex>
+      <AtlasWorkbarActions>
+        <AtlasRefreshButton
+          loading={c.loading}
+          disabled={c.refreshDisabled}
+          onClick={() => c.transition({ kind: "refresh" })}
+        />
+        <Button
+          variant={open ? "secondary" : "businessPrimary"}
+          disabled={!c.canCommand}
+          onClick={() => c.transition({ kind: "create" })}
+        >
+          Tạo món mới
+        </Button>
+      </AtlasWorkbarActions>
+    </AtlasWorkbar>
   );
   const feedback = !modal && (c.notice || c.error) && (
     <Box py="sm" role={c.lock || c.error ? "alert" : "status"}>
