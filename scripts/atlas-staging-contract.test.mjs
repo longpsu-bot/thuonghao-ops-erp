@@ -755,6 +755,16 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(result.status).toBe(0);
     expect(result.stdout.length).toBe(2 * 1024 * 1024);
   });
+  it("retains the subprocess default capture bound for other commands", () => {
+    const result = defaultCommandRunner(
+      process.execPath,
+      ["-e", "process.stdout.write('x'.repeat(2 * 1024 * 1024))"],
+      { shell: false },
+    );
+    expect(result.status).not.toBe(0);
+    expect(result.errorCode).toBe("ENOBUFS");
+    expect(result.stdout.length).toBeLessThan(2 * 1024 * 1024);
+  });
   it("reports subprocess capture failures explicitly", () => {
     const runCommand = vi.fn(() => ({
       status: 1,
