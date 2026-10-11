@@ -21,13 +21,23 @@ export function certifyFrontend({
 } = {}) {
   for (const args of FRONTEND_CERTIFICATION_COMMANDS) {
     console.log(`Frontend certification: pnpm ${args.join(" ")}`);
-    const result = runCommand("pnpm", args, { cwd, env: environment });
+    const result = runCommand("pnpm", args, {
+      cwd,
+      env: environment,
+      maxBuffer: 32 * 1024 * 1024,
+    });
     if (result.status !== 0) {
-      const diagnostic = redactAtlasStagingDiagnostic(
-        `${result.stdout ?? ""}\n${result.stderr ?? ""}`,
+      const lines = redactAtlasStagingDiagnostic(
+        `${result.errorCode || result.signal ? `Subprocess: ${result.errorCode ?? "no error code"}; signal: ${result.signal ?? "none"}\n` : ""}${result.stdout ?? ""}\n${result.stderr ?? ""}`,
       )
-        .split(/\r?\n/)
-        .slice(-120)
+        .replace(/\u001b\[[0-9;]*m/g, "")
+        .split(/\r?\n/);
+      const failureSummary = lines.filter((line) =>
+        /\bFAIL\s|\bTest Files\b|\bTests\s+\d|\bErrors\s+\d|^Subprocess:/.test(
+          line,
+        ),
+      );
+      const diagnostic = [...failureSummary, ...lines.slice(-120)]
         .join("\n")
         .trim();
       throw new Error(

@@ -746,6 +746,60 @@ describe("Atlas staging safety contract", () => {
 });
 
 describe("Atlas staging dry-run and workflow", () => {
+  it("captures frontend output above the subprocess default without terminating it", () => {
+    const result = defaultCommandRunner(
+      process.execPath,
+      ["-e", "process.stdout.write('x'.repeat(2 * 1024 * 1024))"],
+      { shell: false, maxBuffer: 32 * 1024 * 1024 },
+    );
+    expect(result.status).toBe(0);
+    expect(result.stdout.length).toBe(2 * 1024 * 1024);
+  });
+  it("reports subprocess capture failures explicitly", () => {
+    const runCommand = vi.fn(() => ({
+      status: 1,
+      errorCode: "ENOBUFS",
+      signal: "SIGTERM",
+      stdout: "",
+      stderr: "",
+    }));
+    expect(() => certifyFrontend({ runCommand })).toThrow(/ENOBUFS.*SIGTERM/);
+  });
+  it("retains all failing test names before bounded DOM diagnostic tails", () => {
+    const runCommand = vi.fn((_command, args) => ({
+      status: args[0] === "test" ? 1 : 0,
+      stdout:
+        args[0] === "test"
+          ? [
+              "\u001b[31mFAIL first.test.ts > preserves a draft\u001b[0m",
+              ...Array.from(
+                { length: 180 },
+                () => "<div>large diagnostic</div>",
+              ),
+              "Tests 2 failed | 100 passed",
+            ].join("\n")
+          : "",
+      stderr:
+        args[0] === "test"
+          ? "FAIL second.test.ts > rejects stale authority"
+          : "",
+    }));
+    let diagnostic = "";
+    try {
+      certifyFrontend({ runCommand });
+    } catch (error) {
+      diagnostic = error.message;
+    }
+    expect(diagnostic).toContain("FAIL first.test.ts > preserves a draft");
+    expect(diagnostic).toContain(
+      "FAIL second.test.ts > rejects stale authority",
+    );
+    expect(diagnostic).toContain("Tests 2 failed | 100 passed");
+    expect(diagnostic.split("\n").length).toBeLessThanOrEqual(205);
+    expect(runCommand.mock.calls.some(([, args]) => args[0] === "build")).toBe(
+      false,
+    );
+  });
   it("shares the substantive frontend authority in repository order", () => {
     expect(FRONTEND_CERTIFICATION_COMMANDS).toEqual([
       ["install", "--frozen-lockfile"],
