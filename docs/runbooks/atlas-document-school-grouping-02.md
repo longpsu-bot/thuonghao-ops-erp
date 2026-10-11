@@ -16,6 +16,8 @@ The builder returns `CONFIGURATION_PLAN_ONLY`; it performs no mutation. Its exac
 
 The subsequent Owner-authorized [School reconciliation runbook](atlas-staging-school-reconciliation.md) supplies the bounded controlled import and authenticated configuration path. It supersedes the earlier task's no-deployment scope after its explicit merge/reconciliation gates.
 
+The completed reconciliation established the canonical identities but also produced an unapproved dense 0–49 ordering. The Owner requires [reviewed forward correction 04](../implementation-tasks/TASK-ATLAS-SCHOOL-ORDER-FORWARD-CORRECTION-04.md) before migration 98 or relationship configuration. Its immutable original receipt supplies the old numeric baseline; valid ties and unrelated values are preserved. Do not treat the dense result as an ordering amendment or rerun the historical importer to correct it.
+
 After reconciliation and required migration/test gates pass, review that plan and use the authorized Admin commands with current versions/readback. Do not configure hosted data from fixtures. Verify no additional School is included in those Dispatch groups; all other Schools retain separate output.
 
 The ordering plan makes only the Bình Quới pair and five Hùng Vương Schools adjacent in the specified order. Stable sorting preserves canonical readback order for tied existing display orders and all unrelated relative order. It does not change database display-order values. Review available positions before applying targeted updates through the existing School master command. If the existing positions cannot express the approved adjacency without changing unrelated order, stop for an explicit ordering change; do not densely renumber or name-sort the master.
