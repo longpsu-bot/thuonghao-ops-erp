@@ -14,6 +14,16 @@ The scoped receipt does not certify unrelated full snapshot masters. Existing op
 
 ## Post-reconciliation configuration gate
 
+### Owner-reviewed forward ordering correction
+
+The completed reconciliation snapshot `ops-v1-school-reconciliation-38071834975-1` recorded `OWNER_ORDER_UPDATE = 49` and a dense global 0–49 result. The Owner rejected treating that result as an ordering amendment. Its receipt remains immutable historical evidence. Follow [forward correction task 04](../implementation-tasks/TASK-ATLAS-SCHOOL-ORDER-FORWARD-CORRECTION-04.md) and its [complete before/after report](../testing/atlas-school-order-forward-correction-04.md) before migration 98.
+
+Use the protected workflow's separate `correct-order` operation at migration 97. Default preview performs no business writes. The package reads old numeric values only from the original receipt's `result_payload.current_schools`; newly created block members use the smallest sort-feasible positions, without a source numeric floor. PostgreSQL secondary ordering permits existing and new valid ties. Only Hùng Vương requires consecutive numeric positions. The expected correction preserves 39 existing numeric values, changes five existing values relative to that baseline, and assigns six new canonical values. Actual forward writes restore 49 current dense rows. These counts measure different baselines.
+
+Before apply, verify exact project, 97/tip, original immutable receipt hash/checksums, canonical typed mappings, all School fingerprints and the known current dense outcome. Review every report row. Bind apply to the preview checksum. Any unexpected drift stops with `SCHOOL_ORDER_FORWARD_CORRECTION_REQUIRED_REVIEW`. An uncertain transport outcome requires inspection of the separate correction receipt; do not retry blindly or create a new receipt identity. Replay verifies the exact corrected state. The original reconciliation receipt, mappings, non-order School facts and operational data must stay unchanged.
+
+Require independent review and exact-head validation before merge/apply, then authenticated `get_school_master_data` verification of the complete fifty-School sequence, including ties and both blocks. Only `ORDER_FORWARD_CORRECTION = PASS` permits the existing migration-98 deployment and independent relationship configuration below. UI PR #364 remains a separate lane.
+
 After the reconciliation branch is reviewed, all three exact-head checks pass and it is merged, verify hosted canonical identities at97. Only then dispatch the existing **Atlas Staging Deploy** for the certified current-main SHA. It must append exactly20261010102603_atlas_document_school_grouping_02 and verify98 repository/hosted migration parity.
 
 Operation configure defaults to preview and requires exact98 parity. Resolve School identity only through typed mappings plus authoritative get_school_master_data, with actual Auth credentials. Review all existing-group conflicts before any command. Apply creates/reuses only the three approved Cooking Locations and three Dispatch Groups through shaped Admin commands with current expected versions and unique idempotency identities. No private-table configuration insert is allowed. On uncertain command transport, keep emitted command identities and inspect the existing receipt; do not retry with a new key.

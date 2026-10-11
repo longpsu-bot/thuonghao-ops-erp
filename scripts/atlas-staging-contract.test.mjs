@@ -968,7 +968,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(107);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(108);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS[0]).toEqual({
       command: "pnpm",
       args: [
@@ -1016,6 +1016,10 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: ["scripts/test-local-school-reconciliation.mjs"],
+    });
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "node",
+      args: ["scripts/test-local-school-order-forward-correction.mjs"],
     });
     const legacyAdoptionIndex = SUPABASE_FULL_INTEGRATION_COMMANDS.findIndex(
       (entry) =>

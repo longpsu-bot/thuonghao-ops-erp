@@ -8,14 +8,15 @@ on:
         required: true
         type: string
       operation:
-        description: Reconcile canonical School masters at migration 97, or configure relationships after migration 98
+        description: Reconcile or correct School order at migration 97, or configure relationships after migration 98
         required: true
         type: choice
         options:
           - reconcile
+          - correct-order
           - configure
       apply:
-        description: Apply the reviewed fifteen-School reconciliation or approved configuration
+        description: Apply the reviewed School reconciliation, forward order correction, or approved configuration
         required: true
         type: boolean
         default: false
@@ -108,6 +109,7 @@ jobs:
           fi
           case "$OPERATION" in
             reconcile) node scripts/reconcile-atlas-staging-schools.mjs "${args[@]}" ;;
+            correct-order) node scripts/correct-atlas-staging-school-order.mjs "${args[@]}" ;;
             configure) node scripts/configure-atlas-staging-schools.mjs "${args[@]}" ;;
             *) exit 1 ;;
           esac
