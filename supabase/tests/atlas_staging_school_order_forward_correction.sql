@@ -121,4 +121,3 @@ select ok(not exists(select 1 from atlas_admin.schools where school_status='ACTI
 release savepoint scoped_write;
 select * from finish();
 rollback;
-
