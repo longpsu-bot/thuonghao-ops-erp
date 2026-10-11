@@ -136,6 +136,56 @@ function fixture() {
   };
 }
 describe("Planning catch-up runner safety", () => {
+  it("emits fixed phase markers in order and bounds only migration preflight", async () => {
+    const f = fixture();
+    const phases = [];
+    await runPlanningMasterCatchup({
+      ...f.options,
+      onPhase: (phase) => phases.push(phase),
+    });
+    expect(phases).toEqual([
+      "PLANNING_CATCHUP_CHECKOUT_START",
+      "PLANNING_CATCHUP_CHECKOUT_DONE",
+      "PLANNING_CATCHUP_SOURCE_SNAPSHOT_START",
+      "PLANNING_CATCHUP_SOURCE_SNAPSHOT_DONE",
+      "PLANNING_CATCHUP_SOURCE_VALIDATION_START",
+      "PLANNING_CATCHUP_SOURCE_VALIDATION_DONE",
+      "PLANNING_CATCHUP_TARGET_MIGRATION_PREFLIGHT_START",
+      "PLANNING_CATCHUP_TARGET_MIGRATION_PREFLIGHT_DONE",
+      "PLANNING_CATCHUP_PLAN_BUILD_START",
+      "PLANNING_CATCHUP_PLAN_BUILD_DONE",
+      "PLANNING_CATCHUP_PLAN_EXECUTION_START",
+      "PLANNING_CATCHUP_PLAN_EXECUTION_DONE",
+    ]);
+    expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
+    const [migration, plan] = f.options.executeTarget.mock.calls;
+    expect(migration[2].timeoutMs).toBe(45000);
+    expect(plan[2]).not.toHaveProperty("timeoutMs");
+    expect(plan[1]).toContain("set statement_timeout='15min'");
+    expect(phases.join(" ")).not.toMatch(
+      /fixture-only-token|select|runner-test|snapshot_checksum/,
+    );
+  });
+  it("leaves the failed preflight phase visible without retrying or exposing error data", async () => {
+    const f = fixture();
+    const phases = [];
+    f.options.executeTarget
+      .mockReset()
+      .mockRejectedValue(new Error("private SQL fixture-only-token"));
+    await expect(
+      runPlanningMasterCatchup({
+        ...f.options,
+        onPhase: (phase) => phases.push(phase),
+      }),
+    ).rejects.toThrow("private SQL fixture-only-token");
+    expect(phases.at(-1)).toBe(
+      "PLANNING_CATCHUP_TARGET_MIGRATION_PREFLIGHT_START",
+    );
+    expect(phases.join(" ")).not.toMatch(
+      /private|fixture-only-token|PLAN_EXECUTION/,
+    );
+    expect(f.options.executeTarget).toHaveBeenCalledTimes(1);
+  });
   it("reports exact source blockers without inventing target identities or applying", async () => {
     const f = fixture();
     f.options.executeTarget

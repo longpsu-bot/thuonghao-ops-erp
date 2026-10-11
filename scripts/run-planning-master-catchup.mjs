@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, writeSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateV1ReferenceImportRequest } from "./atlas-staging-v1-reference-target.mjs";
@@ -51,7 +51,14 @@ export async function runPlanningMasterCatchup({
   verifyApply = verifyExactMainCheckout,
   extractSnapshot = extractOpsV1MasterSnapshot,
   executeTarget = executeAtlasStagingPostgres,
+  onPhase = () => {},
 } = {}) {
+  const phase = async (name, action) => {
+    onPhase(`PLANNING_CATCHUP_${name}_START`);
+    const value = await action();
+    onPhase(`PLANNING_CATCHUP_${name}_DONE`);
+    return value;
+  };
   const authority = validateV1ReferenceImportRequest({
     environment,
     applyRequested: apply,
@@ -66,33 +73,41 @@ export async function runPlanningMasterCatchup({
       !/^[a-f0-9-]{36}$/.test(actorId)
     )
       throw new Error("REVIEWED_PLAN_AND_ACTOR_REQUIRED");
-    await verifyApply({ commitSha, cwd });
-  } else await verifyPreview(commitSha, cwd);
-  const snapshot = snapshotFile
-    ? JSON.parse(readFileSync(resolve(snapshotFile), "utf8"))
-    : await extractSnapshot({
-        accessToken: authority.targetAccessToken,
-        snapshotId: `ops-v1-planning-catchup-${environment.GITHUB_RUN_ID ?? Date.now()}-${environment.GITHUB_RUN_ATTEMPT ?? 1}`,
-        extractorVersion: commitSha,
+    await phase("CHECKOUT", () => verifyApply({ commitSha, cwd }));
+  } else await phase("CHECKOUT", () => verifyPreview(commitSha, cwd));
+  const snapshot = await phase("SOURCE_SNAPSHOT", () =>
+    snapshotFile
+      ? JSON.parse(readFileSync(resolve(snapshotFile), "utf8"))
+      : extractSnapshot({
+          accessToken: authority.targetAccessToken,
+          snapshotId: `ops-v1-planning-catchup-${environment.GITHUB_RUN_ID ?? Date.now()}-${environment.GITHUB_RUN_ATTEMPT ?? 1}`,
+          extractorVersion: commitSha,
+        }),
+  );
+  await phase("SOURCE_VALIDATION", () => {
+    assertPlanningSource(snapshot);
+    if (snapshotOutput) {
+      if (snapshotFile || apply)
+        throw new Error("SNAPSHOT_OUTPUT_PREVIEW_ONLY");
+      writeFileSync(resolve(snapshotOutput), JSON.stringify(snapshot) + "\n", {
+        mode: 0o600,
+        flag: "wx",
       });
-  assertPlanningSource(snapshot);
-  if (snapshotOutput) {
-    if (snapshotFile || apply) throw new Error("SNAPSHOT_OUTPUT_PREVIEW_ONLY");
-    writeFileSync(resolve(snapshotOutput), JSON.stringify(snapshot) + "\n", {
-      mode: 0o600,
-      flag: "wx",
-    });
-  }
+    }
+  });
   const target = {
     projectRef: authority.targetProjectRef,
     supabaseUrl: authority.targetSupabaseUrl,
   };
-  const execute = async (sql) =>
+  const execute = async (sql, options = {}) =>
     parseStagingMasterResult(
-      await executeTarget(target, sql, { environment, cwd }),
+      await executeTarget(target, sql, { environment, cwd, ...options }),
     );
-  const migrationState = await execute(
-    "select jsonb_build_object('migrations',coalesce(jsonb_agg(version order by version),'[]'::jsonb)) as result from supabase_migrations.schema_migrations;",
+  const migrationState = await phase("TARGET_MIGRATION_PREFLIGHT", () =>
+    execute(
+      "select jsonb_build_object('migrations',coalesce(jsonb_agg(version order by version),'[]'::jsonb)) as result from supabase_migrations.schema_migrations;",
+      { timeoutMs: 45000 },
+    ),
   );
   const expected = readdirSync(resolve(cwd, "supabase/migrations"))
     .filter((n) => /^\d{14}_.+\.sql$/.test(n))
@@ -107,7 +122,7 @@ export async function runPlanningMasterCatchup({
     throw new Error("STAGING_MIGRATION_PREFIX_MISMATCH");
   if (apply && installed.length !== expected.length)
     throw new Error("STAGING_FULL_MIGRATION_PARITY_REQUIRED");
-  const result = await execute(
+  const planSql = await phase("PLAN_BUILD", () =>
     buildPlanningCatchupSql(snapshot, {
       targetProjectRef: target.projectRef,
       apply,
@@ -115,19 +130,22 @@ export async function runPlanningMasterCatchup({
       actorId,
     }),
   );
+  const result = await phase("PLAN_EXECUTION", () => execute(planSql));
   if (
     result.snapshot_checksum &&
     result.snapshot_checksum !== snapshot.snapshot_checksum
   )
     throw new Error("SOURCE_READBACK_MISMATCH");
   if (apply && result.success === true) {
-    const replay = await execute(
-      buildPlanningCatchupSql(snapshot, {
-        targetProjectRef: target.projectRef,
-        apply: true,
-        planChecksum,
-        actorId,
-      }),
+    const replay = await phase("APPLY_REPLAY", () =>
+      execute(
+        buildPlanningCatchupSql(snapshot, {
+          targetProjectRef: target.projectRef,
+          apply: true,
+          planChecksum,
+          actorId,
+        }),
+      ),
     );
     if (
       replay.success !== true ||
@@ -244,6 +262,8 @@ async function main() {
     snapshotOutput: flags.get("--snapshot-output"),
     planChecksum: flags.get("--plan-checksum"),
     actorId: flags.get("--actor-id"),
+    // Flush fixed markers before spawnSync can block; never print phase data.
+    onPhase: (marker) => writeSync(2, `${marker}\n`),
   });
   if (flags.has("--report-dir")) {
     const dir = resolve(flags.get("--report-dir"));
