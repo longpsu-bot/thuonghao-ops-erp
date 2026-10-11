@@ -258,6 +258,5 @@ select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),tr
 select is(pg_temp.planning_catchup_fingerprints((select value->'actions' from evidence where label='owner-preview')),(select value from owner_after_apply),'replay changes no empty roots, versions, lines, mappings or Unit evidence');
 select is((select count(*) from atlas_legacy.import_batches where snapshot_id='synthetic-owner-zero-bom-tui'),1::bigint,'empty-root replay creates no duplicate receipt');
 select is((select count(*) from atlas_legacy.import_batches b cross join lateral jsonb_array_elements(b.reconciliation->'actions') a where b.snapshot_id='synthetic-owner-zero-bom-tui' and a#>>'{source_evidence,diagnostic}'='SOURCE_RECIPE_EMPTY' and a#>>'{source_evidence,source_record_id}' in ('3456','3457','3468','3469')),4::bigint,'receipt permanently retains source Recipe IDs without an invented Recipe Version');
-rollback to savepoint owner_policy;
 select * from finish();
 rollback;
