@@ -16,6 +16,14 @@ import {
 } from "./atlasApplicationReviewFixtures";
 beforeEach(() => {
   vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  vi.stubGlobal(
     "matchMedia",
     vi.fn().mockReturnValue({
       matches: true,
@@ -77,6 +85,136 @@ async function clickSignOut() {
   });
   fireEvent.click(within(account).getByRole("button", { name: "Đăng xuất" }));
 }
+async function selectRange(start: string, end: string, label = "Khoảng ngày") {
+  const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+  if (disclosure.getAttribute("aria-expanded") === "false")
+    fireEvent.click(disclosure);
+  fireEvent.click(screen.getByRole("button", { name: `Mở lịch — ${label}` }));
+  const calendar = await screen.findByRole("grid");
+  for (const date of [start, end])
+    fireEvent.click(
+      calendar.querySelector<HTMLElement>(
+        `[data-part="table-cell-trigger"][data-value="${date}"]`,
+      )!,
+    );
+}
+
+it("carries the selected seven-day range from new Confirmed Need to Allocation and Orders without preparation", async () => {
+  const { apis } = show();
+  const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
+  const orders = vi.spyOn(apis.procurement, "getPurchaseOrders");
+  const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
+  const save = vi.spyOn(apis.confirmedNeed, "save");
+  await nav("Xác nhận nhu cầu");
+  const proceed = await screen.findByRole("button", {
+    name: "Tiếp tục phân bổ NCC",
+  });
+  await waitFor(() => expect(proceed).toBeEnabled());
+  await selectRange("2026-09-07", "2026-09-13");
+  await waitFor(() => expect(proceed).toBeEnabled());
+  fireEvent.click(proceed);
+  await waitFor(() =>
+    expect(allocation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          date_start: "2026-09-07",
+          date_end: "2026-09-13",
+        }),
+      }),
+    ),
+  );
+  expect(
+    await screen.findByText("Chọn 1 ngày để chuẩn bị đơn mua."),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
+  await waitFor(() =>
+    expect(orders).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          date_start: "2026-09-07",
+          date_end: "2026-09-13",
+        }),
+      }),
+    ),
+  );
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Đơn mua" }),
+  ).toBeVisible();
+  expect(prepare).not.toHaveBeenCalled();
+  expect(save).not.toHaveBeenCalled();
+}, 60000);
+
+it("preserves an existing Allocation range and unsaved split note when Confirmed Need requests another range", async () => {
+  const { apis } = show();
+  const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
+  const save = vi.spyOn(apis.purchaseReview, "saveConfirmedAllocation");
+  await nav("Phân bổ NCC");
+  await screen.findByRole("button", { name: /Xem phân bổ Gạo thơm/ });
+  await selectRange("2026-09-07", "2026-09-09");
+  fireEvent.click(
+    await screen.findByRole("button", { name: /Xem phân bổ Gạo thơm/ }),
+  );
+  const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
+  fireEvent.change(note, {
+    target: { value: "Giữ ghi chú của phạm vi đang mở" },
+  });
+  const readsBeforeNavigation = allocation.mock.calls.length;
+  await nav("Xác nhận nhu cầu");
+  const proceed = await screen.findByRole("button", {
+    name: "Tiếp tục phân bổ NCC",
+  });
+  await waitFor(() => expect(proceed).toBeEnabled());
+  await selectRange("2026-09-10", "2026-09-16");
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }));
+  expect(
+    await screen.findByText(
+      /Phân bổ NCC đang mở giữ khoảng 2026-09-07 → 2026-09-09/,
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+  ).toHaveValue("Giữ ghi chú của phạm vi đang mở");
+  expect(
+    screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+  ).toHaveTextContent("07/09/2026 — 09/09/2026");
+  expect(allocation).toHaveBeenCalledTimes(readsBeforeNavigation);
+  expect(save).not.toHaveBeenCalled();
+}, 60000);
+
+it("preserves an existing Orders range and selected order when Allocation requests another range", async () => {
+  const { apis } = show();
+  const orders = vi.spyOn(apis.procurement, "getPurchaseOrders");
+  const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
+  await nav("Đơn mua");
+  await screen.findByRole("button", { name: "Xem đơn NCC An Phú" });
+  await selectRange("2026-09-07", "2026-09-09", "Khoảng ngày dùng");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Xem đơn NCC An Phú" }),
+  );
+  const readsBeforeNavigation = orders.mock.calls.length;
+  await nav("Phân bổ NCC");
+  await screen.findByRole("button", { name: /Xem phân bổ Gạo thơm/ });
+  await selectRange("2026-09-10", "2026-09-16");
+  fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
+  expect(
+    await screen.findByText(
+      /Đơn mua đang mở giữ khoảng 2026-09-07 → 2026-09-09/,
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Mở lịch — Khoảng ngày dùng" }),
+  ).toHaveTextContent("07/09/2026 — 09/09/2026");
+  expect(
+    screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
+  ).toBeVisible();
+  expect(orders).toHaveBeenCalledTimes(readsBeforeNavigation);
+  expect(prepare).not.toHaveBeenCalled();
+}, 60000);
 it("downloads the attendance template from its persistent owner without saving attendance", async () => {
   const apis = createAtlasApplicationFixture();
   const preview = vi.spyOn(apis.planning, "previewAttendance");

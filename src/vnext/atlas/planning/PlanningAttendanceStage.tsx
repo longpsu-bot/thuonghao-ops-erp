@@ -27,11 +27,19 @@ export function PlanningAttendanceStage({
     [paste, setPaste] = useState("");
   const [templatePending, setTemplatePending] = useState(false);
   const [templateNotice, setTemplateNotice] = useState("");
+  const schoolOrder = new Map(
+    c.schools.map((school, index) => [school.school_id, index]),
+  );
   const visible = c.attendanceRows
     .map((r, index) => ({ r, index }))
     .filter(
       ({ r }) =>
         r.service_date === c.date && visibleSchoolIds.includes(r.school_id),
+    )
+    .sort(
+      (a, b) =>
+        (schoolOrder.get(a.r.school_id) ?? Infinity) -
+        (schoolOrder.get(b.r.school_id) ?? Infinity),
     );
   const valid = visible.every(
     ({ r }) => validCount(r.student_portions) && validCount(r.teacher_portions),

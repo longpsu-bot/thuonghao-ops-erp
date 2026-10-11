@@ -19,7 +19,14 @@ describe("protected hosted master load workflow", () => {
     );
     expect(s).toContain("--target-project-ref");
     expect(s).toContain("ATLAS_STAGING_SUPABASE_ACCESS_TOKEN");
-    expect(s).not.toContain("upload-artifact");
+    const [fullLoad, planningPreview] = s.split("  planning-preview:");
+    expect(fullLoad).not.toContain("upload-artifact");
+    expect(planningPreview).toContain('test "$APPLY_REQUESTED" = "false"');
+    expect(planningPreview).toContain('test "$GITHUB_SHA" = "$REQUESTED_SHA"');
+    expect(planningPreview).toContain("planning-master-report.tsv");
+    expect(planningPreview).not.toContain("--apply");
+    expect(planningPreview).not.toContain("snapshot.json");
+    expect(planningPreview).not.toContain("planning-preview/\n");
     expect(s).not.toContain("db reset");
     expect(s).not.toContain("qnthofvccilhnefdcxnz");
   });

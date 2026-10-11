@@ -31,7 +31,7 @@ export function ConfirmedNeedReview({
           {...fixture}
           authSubject="fixture-operator"
           initialServiceDate={reviewDate}
-          onContinueAllocation={setAllocationDate}
+          onContinueAllocation={(range) => setAllocationDate(range.start)}
         />
         {allocationDate && (
           <Text role="status">

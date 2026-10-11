@@ -15,7 +15,9 @@ export function PlanningCapability(
     apis: AtlasVNextApis;
     serviceDate: string;
     onServiceDateChange: (date: string) => void;
-    onContinueAllocation: (date: string) => void;
+    onContinueAllocation: (
+      range: import("../atlasOperatorDateRange").AtlasOperatorDateRange,
+    ) => void;
     onExportShoppingList?: ConfirmedNeedWorkbenchProps["onExportShoppingList"];
     onImportShoppingList?: ConfirmedNeedWorkbenchProps["onImportShoppingList"];
   },

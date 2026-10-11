@@ -33,6 +33,7 @@ import {
 import { atlasWorkspaceReducer } from "./atlasWorkspace";
 import { AtlasWorkbenchScope } from "./AtlasVNextProvider";
 import { atlasVisuallyHidden } from "./AtlasTaskTabs";
+import type { AtlasOperatorDateRange } from "./atlasOperatorDateRange";
 
 export type AtlasVNextAppProps = {
   authSubject: string;
@@ -61,6 +62,7 @@ export function AtlasVNextApp(props: AtlasVNextAppProps) {
 }
 type WorkbenchEntry = {
   seed: string;
+  seedRange?: AtlasOperatorDateRange;
   exitRef: RefObject<AtlasModuleExitHandle | null>;
   panelRef: RefObject<HTMLDivElement | null>;
   report: (status: AtlasWorkbenchStatus) => void;
@@ -93,8 +95,13 @@ function ApplicationSession(props: AtlasVNextAppProps) {
   const [signOutBlocked, setSignOutBlocked] = useState(false);
   const entries = useRef<Map<AtlasWorkbenchId, WorkbenchEntry> | null>(null);
   const createEntry = useCallback(
-    (id: AtlasWorkbenchId, seed: string): WorkbenchEntry => ({
+    (
+      id: AtlasWorkbenchId,
+      seed: string,
+      seedRange?: AtlasOperatorDateRange,
+    ): WorkbenchEntry => ({
       seed,
+      seedRange,
       exitRef: createRef(),
       panelRef: createRef(),
       report: (status) =>
@@ -161,10 +168,13 @@ function ApplicationSession(props: AtlasVNextAppProps) {
     return true;
   }, []);
   const open = useCallback(
-    (id: AtlasWorkbenchId, seed?: string) => {
+    (id: AtlasWorkbenchId, seed?: string, range?: AtlasOperatorDateRange) => {
       if (!canDeactivate(id)) return false;
       if (!entries.current!.has(id))
-        entries.current!.set(id, createEntry(id, seed ?? mountDate.current));
+        entries.current!.set(
+          id,
+          createEntry(id, seed ?? mountDate.current, range),
+        );
       setNotice(null);
       dispatch({ type: "OPEN", id });
       return true;
@@ -172,26 +182,32 @@ function ApplicationSession(props: AtlasVNextAppProps) {
     [canDeactivate, createEntry],
   );
   const continueAllocation = useCallback(
-    (date: string) => {
+    (range: AtlasOperatorDateRange) => {
       const retained = entries.current!.has("procurement");
-      if (!open("procurement", date)) return;
+      if (!open("procurement", range.start, range)) return;
       const context = procurementContext.current;
-      if (retained && context && context.date !== date) {
+      if (
+        retained &&
+        context &&
+        (context.range.start !== range.start || context.range.end !== range.end)
+      ) {
         setNotice(
-          `Nhu cầu ngày ${date} yêu cầu Phân bổ NCC. Phân bổ NCC đang mở giữ ngày ${context.date} và các thay đổi tại chỗ. Đổi ngày tại bàn làm việc này khi đã sẵn sàng.`,
+          `Nhu cầu ${range.start} → ${range.end} yêu cầu Phân bổ NCC. Phân bổ NCC đang mở giữ khoảng ${context.range.start} → ${context.range.end} và các thay đổi tại chỗ. Đổi khoảng ngày tại bàn làm việc này khi đã sẵn sàng.`,
         );
       }
     },
     [open],
   );
   const openOrders = useCallback(
-    (date: string) => {
+    (scope: string | AtlasOperatorDateRange) => {
+      const range =
+        typeof scope === "string" ? { start: scope, end: scope } : scope;
       const retained = entries.current!.has("purchase-orders");
-      if (!open("purchase-orders", date)) return;
+      if (!open("purchase-orders", range.start, range)) return;
       if (retained) {
-        const retainedDate = ordersContext.current?.date ?? date;
+        const retainedRange = ordersContext.current?.range ?? range;
         setNotice(
-          `Chuyển sang Đơn mua từ Phân bổ NCC ngày ${date}. Đơn mua đang mở giữ ngày ${retainedDate} và ngữ cảnh tại chỗ. Tải lại dữ liệu tại Đơn mua để xem kết quả mới; đổi ngày khi đã sẵn sàng nếu cần.`,
+          `Chuyển sang Đơn mua từ Phân bổ NCC ${range.start} → ${range.end}. Đơn mua đang mở giữ khoảng ${retainedRange.start} → ${retainedRange.end} và ngữ cảnh tại chỗ. Tải lại dữ liệu tại Đơn mua để xem kết quả mới; đổi khoảng ngày khi đã sẵn sàng nếu cần.`,
         );
       }
     },
@@ -323,6 +339,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
                 definition={definition}
                 app={props}
                 seed={entry.seed}
+                seedRange={entry.seedRange}
                 exitRef={entry.exitRef}
                 onWorkspaceStatus={entry.report}
                 onServiceDateChange={reportDate}

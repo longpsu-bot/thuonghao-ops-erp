@@ -58,3 +58,9 @@ export type {
   AtlasSuccessEnvelope,
   JsonValue,
 } from "../../../modules/atlas/connection/atlasRpc";
+
+export {
+  loadCompleteConfirmedNeedReview,
+  shoppingListRangeDates,
+} from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";
+export type { ShoppingListRangeContext } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";

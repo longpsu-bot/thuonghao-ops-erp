@@ -94,7 +94,9 @@ it("Need activates same-context Procurement without a discrepancy, remount or re
     "aria-selected",
     "true",
   );
-  expect(screen.queryByText(/^Nhu cầu ngày/)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/^Nhu cầu .* yêu cầu Phân bổ NCC/),
+  ).not.toBeInTheDocument();
   expect(h.allocationRead).toHaveBeenCalledTimes(allocationReads);
   expect(h.ordersRead).toHaveBeenCalledTimes(ordersReads);
 }, 15000);
@@ -105,9 +107,15 @@ it("Need discloses the intended context while retaining Allocation's different l
   await open("Phân bổ NCC");
   await allocationAction();
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-  const day = screen.getByRole("spinbutton", { name: "Day" });
-  fireEvent.focus(day);
-  fireEvent.keyDown(day, { key: "ArrowUp" });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+  );
+  const calendar = await screen.findByRole("grid");
+  const day = calendar.querySelector<HTMLElement>(
+    '[data-part="table-cell-trigger"][data-value="2026-09-08"]',
+  )!;
+  fireEvent.click(day);
+  fireEvent.click(day);
   await waitFor(() => expect(h.allocationRead).toHaveBeenCalledTimes(2));
   await allocationAction();
   await waitFor(() =>
@@ -119,22 +127,21 @@ it("Need discloses the intended context while retaining Allocation's different l
   const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
   fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
   continueAllocation();
-  const notice = screen.getByText(/^Nhu cầu ngày/);
+  const notice = screen.getByText(/^Nhu cầu .* yêu cầu Phân bổ NCC/);
   expect(notice.closest('[role="status"]')).toBeVisible();
   expect(notice).toHaveTextContent(
-    `Nhu cầu ngày ${applicationReviewDate} yêu cầu Phân bổ NCC`,
+    `Nhu cầu ${applicationReviewDate} → ${applicationReviewDate} yêu cầu Phân bổ NCC`,
   );
-  expect(notice).toHaveTextContent("giữ ngày 2026-09-08");
+  expect(notice).toHaveTextContent("giữ khoảng 2026-09-08 → 2026-09-08");
   expect(screen.getByRole("tabpanel", { name: "Phân bổ NCC" })).toBe(panel);
   expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
   expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(
     "aria-selected",
     "true",
   );
-  expect(screen.getByRole("spinbutton", { name: "Day" })).toHaveAttribute(
-    "aria-valuenow",
-    "8",
-  );
+  expect(
+    screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+  ).toHaveTextContent("08/09/2026 — 08/09/2026");
   expect(h.allocationRead).toHaveBeenCalledTimes(2);
   expect(h.ordersRead).not.toHaveBeenCalled();
 }, 15000);

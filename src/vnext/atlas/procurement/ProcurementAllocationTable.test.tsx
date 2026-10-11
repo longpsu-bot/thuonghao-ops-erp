@@ -6,7 +6,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import type { AllocationFamilyRow } from "../bridges/procurement";
 import { ProcurementAllocationTable } from "./ProcurementAllocationTable";
@@ -58,6 +58,49 @@ function visibleIssues() {
 }
 
 describe("Procurement allocation issue sorting", () => {
+  it("keeps daily families separate and dates primary when sorting ingredients", () => {
+    const first = {
+      ...row("first", "Gạo", "UNALLOCATED", "1"),
+      service_date: "2026-10-12",
+    };
+    const second = {
+      ...row("second", "Gạo", "UNALLOCATED", "2"),
+      ingredient_id: first.ingredient_id,
+      service_date: "2026-10-13",
+    };
+    const sameDay = {
+      ...row("same-day", "Bí đỏ", "UNALLOCATED", "3"),
+      service_date: "2026-10-12",
+    };
+    const select = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementAllocationTable
+          rows={[second, first, sameDay]}
+          selectedKey={null}
+          disabled={false}
+          onSelect={select}
+        />
+      </AtlasVNextProvider>,
+    );
+    expect(
+      screen.getByRole("columnheader", { name: "Ngày dùng" }),
+    ).toBeInTheDocument();
+    const dates = () =>
+      within(screen.getByRole("table"))
+        .getAllByRole("row")
+        .slice(1)
+        .map((item) => within(item).getAllByRole("cell")[1]!.textContent);
+    expect(dates()).toEqual(["12/10/2026", "12/10/2026", "13/10/2026"]);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sắp xếp theo Nguyên liệu" }),
+    );
+    expect(dates()).toEqual(["12/10/2026", "12/10/2026", "13/10/2026"]);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Phân bổ NCC Gạo.*13\/10\/2026/ }),
+    );
+    expect(select.mock.lastCall![0]).toBe(second);
+  });
   it("sorts by the visible exact-remainder issue label in both directions", () => {
     render(
       <AtlasVNextProvider>

@@ -168,6 +168,8 @@ export async function verifyWeeklyMenuShadow({
         .filter((id) => !id.startsWith("unresolved:")),
     ).size,
     source_signature: preview.preview?.source_signature ?? null,
+    google_fetch_http_status: 200,
+    parser_diagnostics: parsed.diagnostics,
     parser_errors: parsed.errors,
     parser_warnings: parsed.warnings,
     preview_blockers: issues.blockers,

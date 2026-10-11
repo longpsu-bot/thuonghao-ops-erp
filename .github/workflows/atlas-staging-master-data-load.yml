@@ -16,6 +16,11 @@ on:
         description: Exact Atlas Staging project confirmation for apply
         required: false
         type: string
+      planning_preview:
+        description: Preview only the bounded Planning master catch-up at this exact review head
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -26,6 +31,7 @@ concurrency:
 
 jobs:
   load:
+    if: ${{ !inputs.planning_preview }}
     name: Guarded master snapshot load and authenticated readback
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -102,6 +108,99 @@ jobs:
       - name: Remove transient linked metadata and public CA bundle
         if: always()
         shell: bash
+        run: |
+          rm -f supabase/.temp/pooler-url supabase/.temp/project-ref
+          rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
+
+  planning-preview:
+    if: ${{ inputs.planning_preview }}
+    name: Read-only bounded Planning catch-up preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: atlas-staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Verify exact review head and preview-only request
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+        run: |
+          set -euo pipefail
+          test "$APPLY_REQUESTED" = "false"
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$GITHUB_SHA" = "$REQUESTED_SHA"
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor origin/main HEAD
+          test -z "$(git status --porcelain)"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare verified exact Staging transport
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+          EXPECTED_PROJECT: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          test "$EXPECTED_PROJECT" = "rnzxmxiiqgtdevzregff"
+          command -v psql >/dev/null
+          ca="$RUNNER_TEMP/supabase-root-ca.crt"
+          curl --fail --silent --show-error --proto '=https' \
+            'https://supabase-downloads.s3.ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt' --output "$ca"
+          echo "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  $ca" | sha256sum --check --status
+          bundle="$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
+          cat /etc/ssl/certs/ca-certificates.crt "$ca" > "$bundle"
+          echo "ATLAS_STAGING_CA_BUNDLE=$bundle" >> "$GITHUB_ENV"
+          pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
+      - name: Fresh read-only V1 snapshot and deterministic dependency-closed preview
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$RUNNER_TEMP/planning-preview"
+          node scripts/run-planning-master-catchup.mjs --commit-sha "$REQUESTED_SHA" --report-dir "$RUNNER_TEMP/planning-preview"
+      - name: Read-only real Google fetch, strict parse and Preview
+        if: always()
+        env:
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -d "$RUNNER_TEMP/planning-preview"
+          export PLANNING_PREVIEW_REPORT_DIR="$RUNNER_TEMP/planning-preview"
+          node scripts/verify-planning-weekly-menu.mjs
+      - name: Save review report without raw source snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: planning-master-preview-${{ inputs.commit_sha }}
+          path: |
+            ${{ runner.temp }}/planning-preview/planning-master-plan.json
+            ${{ runner.temp }}/planning-preview/planning-master-report.tsv
+            ${{ runner.temp }}/planning-preview/weekly-menu-read-only.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Remove transient linked transport metadata
+        if: always()
         run: |
           rm -f supabase/.temp/pooler-url supabase/.temp/project-ref
           rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"

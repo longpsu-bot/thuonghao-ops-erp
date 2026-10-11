@@ -17,6 +17,7 @@ import {
   reviewFailure,
   reviewSuccess,
   reviewSchools,
+  reviewFamily,
 } from "./procurementReviewFixtures";
 beforeEach(() => {
   vi.stubGlobal(
@@ -60,6 +61,85 @@ const openFilters = () => {
     fireEvent.click(disclosure);
 };
 describe("Procurement vNext operator workbench", () => {
+  it("uses one Allocation range picker, retains rows on invalid scope, and keeps multi-day search local", async () => {
+    const fixture = createProcurementReviewFixture("normal");
+    fixture.allocation.preparation = null;
+    fixture.allocation.rows = [
+      {
+        ...reviewFamily(),
+        service_date: "2026-09-12",
+        family: { ...reviewFamily().family, source_fingerprint: "second-day" },
+      },
+      reviewFamily(),
+    ];
+    const read = vi.spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations");
+    const prepare = vi.spyOn(
+      fixture.purchaseReviewApi,
+      "preparePurchaseOrders",
+    );
+    const openOrders = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          ownerStage="allocation"
+          onOpenOrders={openOrders}
+          initialRange={{ start: reviewDate, end: "2026-09-16" }}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("button", {
+      name: /Phân bổ NCC Gạo.*12\/09\/2026/,
+    });
+    expect(screen.getByText("Chọn 1 ngày để chuẩn bị đơn mua.")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
+    expect(openOrders).toHaveBeenCalledExactlyOnceWith({
+      start: reviewDate,
+      end: "2026-09-16",
+    });
+    expect(prepare).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "gao" },
+    });
+    expect(
+      screen.getAllByRole("button", { name: /Phân bổ NCC Gạo/ }),
+    ).toHaveLength(2);
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "không có" },
+    });
+    expect(
+      screen.queryByRole("button", { name: /Phân bổ NCC Gạo/ }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "" },
+    });
+    openFilters();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+    );
+    const calendar = await screen.findByRole("grid");
+    for (const date of [reviewDate, "2026-09-17"])
+      fireEvent.click(
+        calendar.querySelector<HTMLElement>(
+          `[data-part="table-cell-trigger"][data-value="${date}"]`,
+        )!,
+      );
+    expect(await screen.findByText("Chọn tối đa 7 ngày.")).toBeVisible();
+    expect(read).toHaveBeenCalledOnce();
+    const retainedRows = screen.getAllByRole("button", {
+      name: /Phân bổ NCC Gạo/,
+    });
+    expect(retainedRows).toHaveLength(2);
+    retainedRows.forEach((button) => expect(button).toBeDisabled());
+    expect(
+      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+    ).toBeEnabled();
+  });
   it("preserves selected PO and immutable export scope after an invalid range edit", async () => {
     const fixture = createProcurementReviewFixture("po_released");
     const read = vi.spyOn(fixture.procurementApi, "getPurchaseOrders");
@@ -119,6 +199,7 @@ describe("Procurement vNext operator workbench", () => {
     );
     expect(context).toHaveBeenLastCalledWith({
       date: reviewDate,
+      range: { start: reviewDate, end: reviewDate },
       stage: "allocation",
     });
     const note = screen.getByRole("textbox", {
@@ -137,6 +218,7 @@ describe("Procurement vNext operator workbench", () => {
     await waitFor(() =>
       expect(context).toHaveBeenLastCalledWith({
         date: reviewDate,
+        range: { start: reviewDate, end: reviewDate },
         stage: "orders",
       }),
     );
@@ -294,7 +376,7 @@ describe("Procurement vNext operator workbench", () => {
     const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
     fireEvent.click(disclosure);
     const filters = document.getElementById("procurement-filters")!;
-    filters.querySelector<HTMLElement>("[tabindex='0']")!.focus();
+    screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }).focus();
     for (
       let step = 0;
       step < 20 && filters.contains(document.activeElement);
@@ -397,10 +479,9 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(await action());
     const input = screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" });
     fireEvent.change(input, { target: { value: "48,500001" } });
-    for (const segment of screen.getAllByRole("spinbutton")) {
-      expect(segment).toHaveAttribute("aria-disabled", "true");
-      fireEvent.keyDown(segment, { key: "ArrowUp" });
-    }
+    expect(
+      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+    ).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Tất cả trường" }),
     ).toBeDisabled();
@@ -442,10 +523,15 @@ describe("Procurement vNext operator workbench", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tất cả trường" })).toBeEnabled();
     expect(orders).toBeEnabled();
-    const day = screen.getAllByRole("spinbutton")[0]!;
-    expect(day).not.toHaveAttribute("aria-disabled", "true");
-    fireEvent.focus(day);
-    fireEvent.keyDown(day, { key: "ArrowUp" });
+    const range = screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" });
+    expect(range).toBeEnabled();
+    fireEvent.click(range);
+    const calendar = await screen.findByRole("grid");
+    const nextDay = calendar.querySelector<HTMLElement>(
+      '[data-part="table-cell-trigger"][data-value="2026-09-11"]',
+    )!;
+    fireEvent.click(nextDay);
+    fireEvent.click(nextDay);
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
     expect(read.mock.lastCall![0].payload).toMatchObject({
       date_start: "2026-09-11",
@@ -465,10 +551,9 @@ describe("Procurement vNext operator workbench", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Đơn mua" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Tất cả trường" })).toBeEnabled();
-    expect(screen.getAllByRole("spinbutton")[0]).not.toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+    ).toBeEnabled();
   });
   it("canonicalizes comma quantities before Save and clears dirty state after readback", async () => {
     const { save, read, fixture } = show("manual_split");

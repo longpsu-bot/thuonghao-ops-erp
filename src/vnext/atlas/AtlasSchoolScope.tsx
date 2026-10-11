@@ -1,5 +1,9 @@
 import { foldVietnameseSearch } from "./foldVietnameseSearch";
 import {
+  compareCanonicalSchools,
+  type CanonicalSchoolOrder,
+} from "./canonicalSchoolOrder";
+import {
   Box,
   Button,
   Checkbox,
@@ -11,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useAtlasWorkbenchActive } from "./AtlasVNextProvider";
-type AtlasSchoolOption = { school_id: string; school_name: string };
+type AtlasSchoolOption = CanonicalSchoolOrder;
 
 export function AtlasSchoolScope({
   schools,
@@ -140,6 +144,7 @@ export function AtlasSchoolScope({
                       foldVietnameseSearch(search),
                     ),
                   )
+                  .sort(compareCanonicalSchools)
                   .map((school) => (
                     <Checkbox.Root
                       key={school.school_id}

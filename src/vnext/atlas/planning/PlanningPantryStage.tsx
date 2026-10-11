@@ -13,6 +13,7 @@ import { Fragment, useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { pantryIssueCopy } from "./pantryIssueCopy";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 
 function PantryFeedback({
   error,
@@ -45,16 +46,25 @@ export function PlanningPantryStage({
   visibleSchoolIds: string[];
 }) {
   const [addSchool, setAddSchool] = useState("");
-  const schools =
-    c.pantryData?.schools.filter(
+  const schoolOrder = new Map(
+    c.schools.map((school, index) => [school.school_id, index]),
+  );
+  const schools = (c.pantryData?.schools ?? [])
+    .filter(
       (s) =>
         s.school_status === "ACTIVE" && visibleSchoolIds.includes(s.school_id),
-    ) ?? [];
+    )
+    .sort(compareCanonicalSchools);
   const rows = c.pantryRows
     .map((r, index) => ({ r, index }))
     .filter(
       ({ r }) =>
         r.service_date === c.date && visibleSchoolIds.includes(r.school_id),
+    )
+    .sort(
+      (a, b) =>
+        (schoolOrder.get(a.r.school_id) ?? Infinity) -
+        (schoolOrder.get(b.r.school_id) ?? Infinity),
     );
   return (
     <>
@@ -241,7 +251,7 @@ export function PlanningPantryStage({
                                   })
                                 }
                               >
-                                {c.pantryData?.schools
+                                {c.schools
                                   .filter(
                                     (school) =>
                                       school.school_status === "ACTIVE",

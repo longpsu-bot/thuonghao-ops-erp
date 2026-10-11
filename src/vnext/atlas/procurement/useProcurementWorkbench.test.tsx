@@ -23,7 +23,10 @@ function deferred() {
 }
 function setup(
   scenario: Parameters<typeof createProcurementReviewFixture>[0] = "normal",
-  owner: Pick<ProcurementControllerProps, "ownerStage" | "onOpenOrders"> = {},
+  owner: Pick<
+    ProcurementControllerProps,
+    "ownerStage" | "onOpenOrders" | "initialRange"
+  > = {},
 ) {
   const fixture = createProcurementReviewFixture(scenario);
   const read = vi.spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations");
@@ -47,6 +50,97 @@ const splits = [
 ];
 
 describe("Procurement authoritative scope", () => {
+  it.each([
+    ["2026-10-12", "2026-10-12"],
+    ["2026-10-12", "2026-10-18"],
+    ["2026-09-29", "2026-10-05"],
+  ])("reads the exact Allocation range %s to %s", async (start, end) => {
+    const h = setup("normal", {
+      ownerStage: "allocation",
+      initialRange: { start, end },
+    });
+    await ready(h.result);
+    expect(h.read.mock.lastCall![0].payload).toMatchObject({
+      date_start: start,
+      date_end: end,
+    });
+  });
+  it("retains last valid Allocation authority without reads or writes for eight days", async () => {
+    const h = setup("ready");
+    await ready(h.result);
+    const loaded = h.result.current.allocation;
+    act(() =>
+      h.result.current.changeRange({ start: "2026-10-12", end: "2026-10-19" }),
+    );
+    await act(async () => {
+      await h.result.current.reload();
+      await h.result.current.prepare(false);
+      await h.result.current.save(reviewFamily(), splits);
+    });
+    expect(h.result.current.rangeError).toBe("Chọn tối đa 7 ngày.");
+    expect(h.result.current.allocation).toBe(loaded);
+    expect(h.read).toHaveBeenCalledOnce();
+    expect(h.save).not.toHaveBeenCalled();
+    expect(h.prepare).not.toHaveBeenCalled();
+  });
+  it("saves only the selected daily family and never prepares a multi-day range", async () => {
+    const h = setup("ready");
+    await ready(h.result);
+    const second = {
+      ...reviewFamily(),
+      service_date: "2026-09-12",
+      family: { ...reviewFamily().family, source_fingerprint: "second-date" },
+    };
+    h.read.mockResolvedValue(
+      reviewSuccess({
+        ...h.fixture.allocation,
+        preparation: null,
+        rows: [reviewFamily(), second],
+      }),
+    );
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: "2026-09-16" }),
+    );
+    await ready(h.result);
+    expect(h.read.mock.lastCall![0].payload).toMatchObject({
+      date_start: reviewDate,
+      date_end: "2026-09-16",
+    });
+    expect(h.result.current.allocation?.rows).toHaveLength(2);
+    await act(async () => h.result.current.save(second, splits));
+    expect(h.save).toHaveBeenCalledOnce();
+    expect(h.save.mock.lastCall![0].payload).toMatchObject({
+      family: {
+        service_date: "2026-09-12",
+        expected_source_fingerprint: "second-date",
+      },
+    });
+    await act(async () => h.result.current.prepare(false));
+    expect(h.prepare).not.toHaveBeenCalled();
+  });
+  it("rejects an older range response when the next range finishes first", async () => {
+    const h = setup();
+    await ready(h.result);
+    const old = deferred();
+    const latest = deferred();
+    h.read.mockReturnValueOnce(old.promise).mockReturnValueOnce(latest.promise);
+    act(() =>
+      h.result.current.changeRange({ start: "2026-10-12", end: "2026-10-18" }),
+    );
+    act(() =>
+      h.result.current.changeRange({ start: "2026-10-19", end: "2026-10-25" }),
+    );
+    await act(async () =>
+      latest.resolve(reviewSuccess({ ...h.fixture.allocation, rows: [] })),
+    );
+    await ready(h.result);
+    await act(async () => old.resolve(reviewSuccess(h.fixture.allocation)));
+    expect(h.result.current.range).toEqual({
+      start: "2026-10-19",
+      end: "2026-10-25",
+    });
+    expect(h.result.current.allocation?.rows).toEqual([]);
+  });
   it.each([
     ["po_draft", "releasePurchaseOrder"],
     ["po_stale", "createPurchaseOrderDrafts"],
@@ -355,6 +449,17 @@ describe("Procurement command safety", () => {
 });
 
 describe("Preparation and PO actions", () => {
+  it("does not reuse single-day preparation authority in a multi-day scope", async () => {
+    const h = setup("ready", {
+      initialRange: { start: reviewDate, end: "2026-09-16" },
+    });
+    await ready(h.result);
+    // Even a stale/malformed read must not turn a date range into preparation authority.
+    expect(h.result.current.allocation?.preparation?.ready).toBe(true);
+    await act(async () => h.result.current.prepare(false));
+    expect(h.prepare).not.toHaveBeenCalled();
+    expect(h.poRead).not.toHaveBeenCalled();
+  });
   it("keeps Allocation identity and opens Orders only after both authoritative readbacks", async () => {
     const onOpenOrders = vi.fn();
     const { result, prepare, poRead, read, fixture } = setup("ready", {
