@@ -61,10 +61,13 @@ jobs:
           import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
           import { tmpdir } from "node:os";
           import { join } from "node:path";
-          import {
+          import { pathToFileURL } from "node:url";
+          const {
             cdp,
             waitForAuthenticatedDesktopShell,
-          } from "./scripts/staging-planning-browser.mjs";
+          } = await import(
+            pathToFileURL(join(process.cwd(), "scripts/staging-planning-browser.mjs")).href
+          );
 
           const target = process.env.EXACT_URL;
           const sha = process.env.EXACT_SHA;
