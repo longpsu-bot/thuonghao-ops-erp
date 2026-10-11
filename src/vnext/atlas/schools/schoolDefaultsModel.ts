@@ -1,4 +1,5 @@
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import type { SchoolMasterData } from "../bridges/schoolMasterData";
 
 export const MAX_PORTION_COUNT = 2_147_483_647;
@@ -113,11 +114,7 @@ export function filterAndOrderSchools(
         foldVietnameseSearch(value ?? "").includes(foldedQuery),
       );
     })
-    .sort(
-      (left, right) =>
-        left.display_order - right.display_order ||
-        left.school_name.localeCompare(right.school_name, "vi"),
-    );
+    .sort(compareCanonicalSchools);
 }
 
 export function createSchoolDefaultsReview(

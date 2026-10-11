@@ -6,6 +6,8 @@ Use the approved `MASTER-DATA-REHEARSAL-IMPORT-01` specification and execution-A
 
 `Kg`/`kg` resolve to one `kg` Unit; `Hủ`/`Hũ` resolve to one `Hũ`. Unknown Units remain blockers. No fuzzy spelling or identity matching is allowed.
 
+The [Owner-approved Túi amendment](../implementation-tasks/TASK-ATLAS-PLANNING-TUI-UNIT.md) adds exact `Túi` as a distinct active COUNT Unit with decimal scale `0`, using the existing SHA256 code `v1-unit-67df33ade68a`. It does not introduce an alias or conversion.
+
 Recipe source identity is Dish + School Type; line identity is Recipe + Ingredient. Physical Recipe/BOM source IDs remain evidence only. Missing root rows are not deleted; complete-set child removal is represented explicitly. Source-only contact details are retained in snapshot evidence, not guessed into structured contact fields.
 
 ## 1. Verify the implementation checkout

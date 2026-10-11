@@ -8,7 +8,6 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { userEvent } from "storybook/test";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
 import {
@@ -31,7 +30,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("offers one editable service-day calendar and no editable week or day select", async () => {
+it("offers one shared range calendar and a derived day navigator", async () => {
   const fixture = createConfirmedNeedReviewFixture("normal");
   const { container } = render(
     <AtlasVNextProvider>
@@ -43,16 +42,19 @@ it("offers one editable service-day calendar and no editable week or day select"
     </AtlasVNextProvider>,
   );
   expect(screen.queryByText("Tuần phục vụ")).not.toBeInTheDocument();
-  await screen.findByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" });
-  fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-  expect(
-    screen.getByRole("button", { name: "Mở lịch — Ngày phục vụ" }),
-  ).toBeEnabled();
+  await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+  fireEvent.click(
+    within(screen.getByLabelText("Phạm vi xác nhận nhu cầu")).getByRole(
+      "button",
+      { name: "Bộ lọc" },
+    ),
+  );
+  expect(screen.getByLabelText("Mở lịch — Khoảng ngày")).toBeEnabled();
   expect(
     screen.queryByRole("combobox", { name: "Ngày phục vụ" }),
   ).not.toBeInTheDocument();
   expect(
-    container.querySelectorAll('[data-scope="date-input"][data-part="root"]'),
+    container.querySelectorAll('[data-scope="date-picker"][data-part="root"]'),
   ).toHaveLength(1);
 });
 
@@ -67,8 +69,8 @@ it("places Refresh in the shared control row without a vertical offset", async (
       />
     </AtlasVNextProvider>,
   );
-  await screen.findByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" });
-  const refresh = screen.getByRole("button", { name: "Làm mới dữ liệu" });
+  await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+  const refresh = screen.getByLabelText("Làm mới dữ liệu");
   expect(refresh.closest("[data-atlas-workbar-actions]")).not.toBeNull();
   expect(refresh.closest("[data-atlas-workbar]")).toHaveAttribute(
     "aria-label",
@@ -76,46 +78,102 @@ it("places Refresh in the shared control row without a vertical offset", async (
   );
 });
 
-it.each(["quick", "pointer"])(
-  "restores the displayed day and focus after %s cancellation of a dirty keyboard date edit",
-  async (timing) => {
-    const fixture = createConfirmedNeedReviewFixture("normal");
-    render(
-      <AtlasVNextProvider>
-        <ConfirmedNeedWorkbench
-          {...fixture}
-          authSubject="operator"
-          initialServiceDate={reviewDate}
-        />
-      </AtlasVNextProvider>,
-    );
-    const quantity = await screen.findByRole("textbox", {
-      name: "Số lượng xác nhận Gạo thơm",
-    });
-    const workbar = screen.getByRole("group", {
-      name: "Phạm vi xác nhận nhu cầu",
-    });
-    fireEvent.click(within(workbar).getByRole("button", { name: "Bộ lọc" }));
-    fireEvent.change(quantity, { target: { value: "12" } });
-    const day = within(workbar).getByRole("spinbutton", { name: "Day" });
-    day.focus();
-    fireEvent.keyDown(day, { key: "ArrowUp" });
-    const dialog = await screen.findByRole("dialog");
-    const cancel = within(dialog).getByRole("button", {
-      name: "Tiếp tục chỉnh sửa",
-    });
-    if (timing === "pointer") await userEvent.click(cancel);
-    else fireEvent.click(cancel);
-    await waitFor(() =>
-      expect(
-        within(workbar).getByRole("spinbutton", { name: "Day" }),
-      ).toHaveTextContent("07"),
-    );
-    await waitFor(() =>
-      expect(
-        within(workbar).getByRole("spinbutton", { name: "Day" }),
-      ).toHaveFocus(),
-    );
-    expect(quantity).toHaveValue("12");
-  },
-);
+it("keeps the original range and draft after cancelling a dirty range departure", async () => {
+  const fixture = createConfirmedNeedReviewFixture("normal");
+  render(
+    <AtlasVNextProvider>
+      <ConfirmedNeedWorkbench
+        {...fixture}
+        authSubject="operator"
+        initialServiceDate={reviewDate}
+      />
+    </AtlasVNextProvider>,
+  );
+  const quantity = await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+  fireEvent.click(
+    within(screen.getByLabelText("Phạm vi xác nhận nhu cầu")).getByRole(
+      "button",
+      { name: "Bộ lọc" },
+    ),
+  );
+  fireEvent.change(quantity, { target: { value: "12" } });
+  const trigger = screen.getByLabelText("Mở lịch — Khoảng ngày");
+  fireEvent.click(trigger);
+  const calendar = await screen.findByRole("grid");
+  const day = calendar.querySelector<HTMLElement>(
+    '[data-part="table-cell-trigger"][data-value="2026-09-08"]',
+  )!;
+  fireEvent.click(day);
+  fireEvent.click(day);
+  const dialog = await screen.findByRole("dialog");
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+  );
+  await waitFor(() =>
+    expect(screen.getByLabelText("Mở lịch — Khoảng ngày")).toHaveTextContent(
+      "07/09/2026 — 07/09/2026",
+    ),
+  );
+  await waitFor(() =>
+    expect(screen.getByLabelText("Mở lịch — Khoảng ngày")).toHaveFocus(),
+  );
+  expect(quantity).toHaveValue("12");
+});
+
+it("blocks shopping callbacks and refresh on the retained authority until the range is corrected", async () => {
+  const fixture = createConfirmedNeedReviewFixture("normal");
+  const exportBook = vi.fn().mockResolvedValue(undefined),
+    importBook = vi.fn();
+  const preflight = vi.spyOn(fixture.preflightApi, "preflight");
+  render(
+    <AtlasVNextProvider>
+      <ConfirmedNeedWorkbench
+        {...fixture}
+        authSubject="operator"
+        initialServiceDate={reviewDate}
+        onExportShoppingList={exportBook}
+        onImportShoppingList={importBook}
+      />
+    </AtlasVNextProvider>,
+  );
+  await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+  const calls = preflight.mock.calls.length;
+  fireEvent.click(
+    within(screen.getByLabelText("Phạm vi xác nhận nhu cầu")).getByRole(
+      "button",
+      { name: "Bộ lọc" },
+    ),
+  );
+  fireEvent.click(screen.getByLabelText("Mở lịch — Khoảng ngày"));
+  const calendar = await screen.findByRole("grid");
+  fireEvent.click(
+    calendar.querySelector<HTMLElement>(
+      '[data-part="table-cell-trigger"][data-value="2026-09-07"]',
+    )!,
+  );
+  fireEvent.click(
+    calendar.querySelector<HTMLElement>(
+      '[data-part="table-cell-trigger"][data-value="2026-09-14"]',
+    )!,
+  );
+  expect(await screen.findByText("Chọn tối đa 7 ngày.")).toBeInTheDocument();
+  for (const name of [
+    "Xuất Phiếu đi chợ",
+    "Nhập Phiếu đi chợ",
+    "Làm mới dữ liệu",
+  ]) {
+    const button =
+      name === "Làm mới dữ liệu"
+        ? screen.getByLabelText(name)
+        : within(screen.getByLabelText("Tiện ích nhu cầu xác nhận")).getByRole(
+            "button",
+            { name },
+          );
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+  }
+  expect(exportBook).not.toHaveBeenCalled();
+  expect(importBook).not.toHaveBeenCalled();
+  expect(preflight).toHaveBeenCalledTimes(calls);
+  expect(screen.getByLabelText("Mở lịch — Khoảng ngày")).toBeEnabled();
+});

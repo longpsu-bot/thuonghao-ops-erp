@@ -1,0 +1,299 @@
+{
+  "evidence": "Read-only Live OPS observation 2026-10-11; immutable protected snapshot revalidates before apply",
+  "schools": [
+    {
+      "legacy_id": "24",
+      "school_name": "TÂN THÀNH",
+      "source_display_order": 1,
+      "display_order": 1
+    },
+    {
+      "legacy_id": "39",
+      "school_name": "TÂN THÀNH - PHÂN HIỆU 1",
+      "source_display_order": 2,
+      "display_order": 2
+    },
+    {
+      "legacy_id": "37",
+      "school_name": "TÂN THÀNH - PHÂN HIỆU 2",
+      "source_display_order": 3,
+      "display_order": 3
+    },
+    {
+      "legacy_id": "40",
+      "school_name": "VĨNH TÂN",
+      "source_display_order": 4,
+      "display_order": 4
+    },
+    {
+      "legacy_id": "38",
+      "school_name": "VĨNH TÂN - PHÂN HIỆU",
+      "source_display_order": 5,
+      "display_order": 5
+    },
+    {
+      "legacy_id": "8",
+      "school_name": "BÌNH MỸ - BÌNH DƯƠNG",
+      "source_display_order": 6,
+      "display_order": 6
+    },
+    {
+      "legacy_id": "22",
+      "school_name": "TÂN LẬP",
+      "source_display_order": 7,
+      "display_order": 7
+    },
+    {
+      "legacy_id": "31",
+      "school_name": "THÁI HOÀ B - PHÂN HIỆU 1",
+      "source_display_order": 8,
+      "display_order": 8
+    },
+    {
+      "legacy_id": "30",
+      "school_name": "THÁI HOÀ B - PHÂN HIỆU 2",
+      "source_display_order": 9,
+      "display_order": 9
+    },
+    {
+      "legacy_id": "29",
+      "school_name": "TÂN PHƯỚC KHÁNH B",
+      "source_display_order": 10,
+      "display_order": 10
+    },
+    {
+      "legacy_id": "12",
+      "school_name": "HỒ HẢO HỚN",
+      "source_display_order": 11,
+      "display_order": 11
+    },
+    {
+      "legacy_id": "34",
+      "school_name": "TRỊNH HOÀI ĐỨC",
+      "source_display_order": 12,
+      "display_order": 12
+    },
+    {
+      "legacy_id": "32",
+      "school_name": "THUẬN GIAO",
+      "source_display_order": 13,
+      "display_order": 13
+    },
+    {
+      "legacy_id": "52",
+      "school_name": "BÌNH QUỚI",
+      "source_display_order": 14,
+      "display_order": 14
+    },
+    {
+      "legacy_id": "10",
+      "school_name": "BÌNH QUỚI - PHÂN HIỆU",
+      "source_display_order": 15,
+      "display_order": 15
+    },
+    {
+      "legacy_id": "33",
+      "school_name": "THUẬN AN - PHÂN HIỆU",
+      "source_display_order": 16,
+      "display_order": 16
+    },
+    {
+      "legacy_id": "15",
+      "school_name": "LÝ THÁI TỔ",
+      "source_display_order": 17,
+      "display_order": 17
+    },
+    {
+      "legacy_id": "7",
+      "school_name": "AN PHÚ (BD)",
+      "source_display_order": 18,
+      "display_order": 18
+    },
+    {
+      "legacy_id": "47",
+      "school_name": "CHUYÊN HÙNG VƯƠNG (Sáng)",
+      "source_display_order": 19,
+      "display_order": 19
+    },
+    {
+      "legacy_id": "48",
+      "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa)",
+      "source_display_order": 20,
+      "display_order": 20
+    },
+    {
+      "legacy_id": "49",
+      "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+      "source_display_order": 21,
+      "display_order": 21
+    },
+    {
+      "legacy_id": "50",
+      "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều)",
+      "source_display_order": 22,
+      "display_order": 22
+    },
+    {
+      "legacy_id": "53",
+      "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+      "source_display_order": 23,
+      "display_order": 23
+    },
+    {
+      "legacy_id": "41",
+      "school_name": "PHÚ LỢI",
+      "source_display_order": 24,
+      "display_order": 24
+    },
+    {
+      "legacy_id": "43",
+      "school_name": "MN VĨNH TÂN",
+      "source_display_order": 25,
+      "display_order": 25
+    },
+    {
+      "legacy_id": "42",
+      "school_name": "MN VĨNH TÂN - PHÂN HIỆU",
+      "source_display_order": 26,
+      "display_order": 26
+    },
+    {
+      "legacy_id": "9",
+      "school_name": "BÌNH MỸ - CỦ CHI",
+      "source_display_order": 27,
+      "display_order": 27
+    },
+    {
+      "legacy_id": "13",
+      "school_name": "HOÀ PHÚ",
+      "source_display_order": 28,
+      "display_order": 28
+    },
+    {
+      "legacy_id": "17",
+      "school_name": "PHẠM VĂN CỘI",
+      "source_display_order": 29,
+      "display_order": 29
+    },
+    {
+      "legacy_id": "14",
+      "school_name": "LÊ VĂN THẾ",
+      "source_display_order": 30,
+      "display_order": 30
+    },
+    {
+      "legacy_id": "5",
+      "school_name": "AN NHƠN TÂY",
+      "source_display_order": 31,
+      "display_order": 31
+    },
+    {
+      "legacy_id": "23",
+      "school_name": "NGUYỄN THỊ LẮNG",
+      "source_display_order": 32,
+      "display_order": 32
+    },
+    {
+      "legacy_id": "16",
+      "school_name": "NGUYỄN THỊ LẮNG - PHÂN HIỆU",
+      "source_display_order": 33,
+      "display_order": 33
+    },
+    {
+      "legacy_id": "25",
+      "school_name": "TÂN AN HỘI",
+      "source_display_order": 34,
+      "display_order": 34
+    },
+    {
+      "legacy_id": "19",
+      "school_name": "PHÚ HOÀ ĐÔNG 1",
+      "source_display_order": 35,
+      "display_order": 35
+    },
+    {
+      "legacy_id": "46",
+      "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+      "source_display_order": 36,
+      "display_order": 36
+    },
+    {
+      "legacy_id": "27",
+      "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+      "source_display_order": 37,
+      "display_order": 37
+    },
+    {
+      "legacy_id": "28",
+      "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+      "source_display_order": 38,
+      "display_order": 38
+    },
+    {
+      "legacy_id": "26",
+      "school_name": "TÂN THẠNH ĐÔNG 3",
+      "source_display_order": 39,
+      "display_order": 39
+    },
+    {
+      "legacy_id": "18",
+      "school_name": "PHAN VĂN KHẢI",
+      "source_display_order": 40,
+      "display_order": 40
+    },
+    {
+      "legacy_id": "6",
+      "school_name": "AN PHÚ - CỦ CHI",
+      "source_display_order": 41,
+      "display_order": 41
+    },
+    {
+      "legacy_id": "36",
+      "school_name": "TRUNG LẬP THƯỢNG",
+      "source_display_order": 42,
+      "display_order": 42
+    },
+    {
+      "legacy_id": "4",
+      "school_name": "AN NHƠN ĐÔNG",
+      "source_display_order": 43,
+      "display_order": 43
+    },
+    {
+      "legacy_id": "35",
+      "school_name": "TRUNG LẬP HẠ",
+      "source_display_order": 44,
+      "display_order": 44
+    },
+    {
+      "legacy_id": "44",
+      "school_name": "MN HOA MAI VÀNG 2",
+      "source_display_order": 47,
+      "display_order": 47
+    },
+    {
+      "legacy_id": "45",
+      "school_name": "MN HOA QUỲNH",
+      "source_display_order": 48,
+      "display_order": 48
+    },
+    {
+      "legacy_id": "11",
+      "school_name": "ĐẤT CUỐC",
+      "source_display_order": null,
+      "display_order": 49
+    },
+    {
+      "legacy_id": "20",
+      "school_name": "TÂN BÌNH",
+      "source_display_order": null,
+      "display_order": 50
+    },
+    {
+      "legacy_id": "21",
+      "school_name": "TÂN ĐỊNH",
+      "source_display_order": null,
+      "display_order": 51
+    }
+  ]
+}

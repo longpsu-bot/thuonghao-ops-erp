@@ -19,6 +19,7 @@ import {
 import { Info } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import type { CSSProperties } from "react";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import {
   procurementOperatorMessages,
   type AllocationFamilyRow,
@@ -234,8 +235,11 @@ export function ProcurementSupplierDetail({
           {row.ingredient_name}
         </Heading>
         <Text color="fg.muted" textStyle="helper" mt="xs">
-          {row.schools?.map((school) => school.school_name).join(", ") ||
-            row.school_name}{" "}
+          {row.schools
+            ?.slice()
+            .sort(compareCanonicalSchools)
+            .map((school) => school.school_name)
+            .join(", ") || row.school_name}{" "}
           · {row.location_name}
         </Text>
       </Box>

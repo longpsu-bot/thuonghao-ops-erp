@@ -413,12 +413,12 @@ it.each([false, true])(
     expect(orders).toHaveBeenCalledTimes(differentDate ? 3 : 2); // Mount/date reads plus command proof; activation adds no read.
     expect(search).toHaveValue("Giữ bộ lọc");
     expect(
-      screen.getByText(/^Chuyển sang Đơn mua từ Phân bổ NCC ngày/),
+      screen.getByText(/^Chuyển sang Đơn mua từ Phân bổ NCC /),
     ).toHaveTextContent("Tải lại dữ liệu tại Đơn mua");
     expect(
-      screen.getByText(/^Chuyển sang Đơn mua từ Phân bổ NCC ngày/),
+      screen.getByText(/^Chuyển sang Đơn mua từ Phân bổ NCC /),
     ).toHaveTextContent(
-      `giữ ngày ${differentDate ? "2026-09-11" : reviewDate}`,
+      `giữ khoảng ${differentDate ? "2026-09-11" : reviewDate} → ${differentDate ? "2026-09-11" : reviewDate}`,
     );
     expect(allocationOwner).toHaveAttribute("hidden");
     await open("Phân bổ NCC");

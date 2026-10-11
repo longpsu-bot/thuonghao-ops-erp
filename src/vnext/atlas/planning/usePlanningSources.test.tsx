@@ -23,6 +23,22 @@ async function setup() {
   return { ...hook, fixture };
 }
 describe("Planning source safety", () => {
+  it("orders the School catalogue independently of incoming payload order", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.planning.schools.reverse();
+    const { result } = renderHook(() =>
+      usePlanningSources({
+        ...fixture,
+        authSubject: "operator",
+        initialWeek: reviewWeek,
+      }),
+    );
+    await waitFor(() => expect(result.current.data).not.toBeNull());
+    expect(result.current.schools.map((s) => s.school_id)).toEqual(
+      Array.from({ length: 33 }, (_, i) => `school-${i}`),
+    );
+    expect(fixture.planning.schools[0].school_id).toBe("school-32");
+  });
   it("keeps a fixed source owner on its own job without discarding its draft", async () => {
     const fixture = createPlanningReviewFixture();
     const { result, rerender } = renderHook(

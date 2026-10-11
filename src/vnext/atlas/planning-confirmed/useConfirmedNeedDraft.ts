@@ -5,6 +5,7 @@ import {
   type ConfirmedNeedWorkbenchData,
 } from "../bridges/confirmedNeed";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { draftChanged, draftError } from "./confirmedNeedDraft";
 // Local presentation and drafts issue no reads and never replace authority.
 export function useConfirmedNeedDraft(
@@ -52,7 +53,7 @@ export function useConfirmedNeedDraft(
         { school_id: l.school.id, school_name: l.school.name },
       ]) ?? [],
     ).values(),
-  );
+  ).sort(compareCanonicalSchools);
   const changedIds = new Set(changedLines.map((l) => l.confirmed_need_line_id));
   const query = foldVietnameseSearch(search.trim());
   const visibleLines =

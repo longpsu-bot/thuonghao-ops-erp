@@ -371,7 +371,7 @@ export function PlanningMenuStage({
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {c.data?.schools
+            {c.schools
               .filter((s) => visibleSchoolIds.includes(s.school_id))
               .map((s) => (
                 <Table.Row key={s.school_id}>

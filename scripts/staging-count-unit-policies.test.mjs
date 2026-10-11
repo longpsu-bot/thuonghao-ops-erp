@@ -11,7 +11,8 @@ test("dry-run executes the same exact package but rolls back", () => {
   assert.match(query, /rollback;$/);
   assert.doesNotMatch(query, /commit;/);
   assert.match(query, /2026-09-14/);
-  assert.equal((query.match(/\('v1-unit-/g) ?? []).length, 14);
+  assert.equal((query.match(/\('v1-unit-/g) ?? []).length, 15);
+  assert.match(query, /\('v1-unit-67df33ade68a','Túi'\)/);
 });
 test("installation commits only the approved package, never a dimension fallback", () => {
   const query = buildCountPolicySql();

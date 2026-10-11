@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
@@ -58,30 +59,32 @@ it("retains its local date across external seed changes and forwards both owners
     </AtlasVNextProvider>
   );
   const { rerender } = render(view(reviewWeek));
-  await screen.findByRole("table", { name: "Thực đơn theo trường" });
+  expect(await screen.findByLabelText("Thực đơn theo trường")).toHaveRole(
+    "table",
+  );
   await waitFor(() =>
     expect(report).toHaveBeenLastCalledWith(
       expect.objectContaining({ unsaved: false, blocked: false }),
     ),
   );
   rerender(view("2026-09-14"));
-  fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-  const quantity = await screen.findByRole("textbox", {
-    name: "Số lượng xác nhận Gạo thơm",
-  });
-  fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-  expect(screen.getByRole("spinbutton", { name: "Day" })).toHaveAttribute(
-    "aria-valuenow",
-    "7",
+  fireEvent.click(
+    within(screen.getByLabelText("Giai đoạn lập nhu cầu")).getByRole("tab", {
+      name: "Xác nhận nhu cầu",
+    }),
   );
-  expect(screen.getByRole("spinbutton", { name: "Month" })).toHaveAttribute(
-    "aria-valuenow",
-    "9",
+  const quantity = await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+  expect(quantity).toHaveRole("textbox");
+  fireEvent.click(
+    within(screen.getByLabelText("Phạm vi xác nhận nhu cầu")).getByRole(
+      "button",
+      { name: "Bộ lọc" },
+    ),
   );
-  expect(screen.getByRole("spinbutton", { name: "Year" })).toHaveAttribute(
-    "aria-valuenow",
-    "2026",
-  );
+  const range = screen.getByLabelText("Mở lịch — Khoảng ngày");
+  expect(range).toBeEnabled();
+  expect(range).toHaveTextContent(/^07\/09\/2026 — 07\/09\/2026$/);
+  expect(range).toHaveAttribute("aria-invalid", "false");
   expect(notify).toHaveBeenLastCalledWith(reviewWeek);
   fireEvent.change(quantity, { target: { value: "12,5" } });
   expect(report).toHaveBeenLastCalledWith(

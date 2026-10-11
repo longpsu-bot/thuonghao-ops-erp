@@ -12,7 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
-import { AtlasDateInput } from "../AtlasDateInput";
+import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
 import {
   AtlasWorkbar,
   AtlasWorkbarActions,
@@ -52,7 +52,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
     // Restore after the replacement field commits and the dialog trap closes.
     const frame = requestAnimationFrame(() => {
       dateField.current
-        ?.querySelector<HTMLElement>('[data-type="day"]')
+        ?.querySelector<HTMLElement>('[data-part="trigger"]')
         ?.focus({ preventScroll: true });
       cancelledDate.current = false;
     });
@@ -61,7 +61,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const [workbookBusy, setWorkbookBusy] = useState(false);
   const [workbookError, setWorkbookError] = useState<string | null>(null);
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
-    unsaved: c.dirty,
+    unsaved: c.allDirty,
     blocked: c.busy || Boolean(c.lock) || workbookBusy,
     attention: c.lock
       ? "Cần xác nhận dữ liệu hiện tại"
@@ -78,7 +78,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   }, [filtersOpen]);
   const contextKey = `${c.date}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;
   const detailOpen = detailKey === contextKey;
-  const contextDisabled = c.busy || Boolean(c.lock);
+  const contextDisabled = c.busy || Boolean(c.lock) || workbookBusy;
   const dateSummary = viDate(c.date);
   const scopeSummary =
     c.readError && !c.workbench
@@ -126,7 +126,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             borderColor="border.default"
             templateColumns={{
               base: "minmax(0, 1fr) auto auto",
-              lg: "minmax(150px, 0.9fr) minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(130px, 0.8fr) auto",
+              lg: "minmax(270px, 1.3fr) minmax(180px, 1.2fr) minmax(180px, 1.2fr) minmax(130px, 0.8fr) auto",
             }}
           >
             <Box
@@ -149,12 +149,13 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 order={{ base: 4, lg: 1 }}
                 gridColumn={{ base: "1 / -1", lg: "auto" }}
               >
-                <AtlasDateInput
+                <AtlasDateRangeInput
                   key={dateReset}
-                  label="Ngày phục vụ"
-                  value={c.date}
+                  label="Khoảng ngày"
+                  value={c.range}
+                  error={c.rangeError}
                   disabled={contextDisabled}
-                  onValueChange={(date) => c.transition({ date })}
+                  onValueChange={c.changeRange}
                 />
               </AtlasWorkbarField>
               <Box
@@ -241,17 +242,63 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             >
               <AtlasRefreshButton
                 loading={c.busy}
-                disabled={Boolean(c.lock)}
+                disabled={Boolean(c.lock) || Boolean(c.rangeError)}
                 onClick={() => c.transition({ refresh: true })}
               />
             </AtlasWorkbarActions>
           </AtlasWorkbar>
+          <Flex
+            role="group"
+            aria-label="Ngày trong khoảng"
+            gap="xs"
+            wrap="wrap"
+            px="md"
+            py="sm"
+          >
+            {c.days.map((day) => (
+              <Button
+                key={day.date}
+                size="sm"
+                variant={day.date === c.date ? "secondary" : "tertiary"}
+                aria-pressed={day.date === c.date}
+                disabled={
+                  contextDisabled ||
+                  Boolean(c.rangeError) ||
+                  c.rangeBusy ||
+                  (!day.preflight && !day.readError)
+                }
+                onClick={() => c.selectDay(day.date)}
+              >
+                {viDate(day.date).slice(0, 5)} ·{" "}
+                {day.dirty
+                  ? "Chưa lưu"
+                  : day.readError
+                    ? "Lỗi tải"
+                    : !day.preflight
+                      ? "Đang tải"
+                      : day.preflight?.issues.some(
+                            (i) =>
+                              i.issue_code ===
+                              "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+                          )
+                        ? "Không có nhu cầu"
+                        : day.preflight?.readiness_state === "BLOCKED"
+                          ? "Cần kiểm tra"
+                          : day.preflight?.downstream_currentness === "CURRENT"
+                            ? "Đã lập"
+                            : day.preflight?.downstream_currentness ===
+                                "OUTDATED"
+                              ? "Cần cập nhật"
+                              : "Chưa lập"}
+              </Button>
+            ))}
+          </Flex>
           <AtlasOperationStatus operation={c.operation} />
           <ConfirmedNeedCommandFeedback
             lock={c.lock}
             notice={c.operation.status === "IDLE" ? c.notice : null}
             readError={c.readError}
-            busy={c.busy}
+            busy={c.busy || Boolean(c.rangeError)}
             onRecover={() => void c.recover()}
           />
           {c.busy && !c.workbench && c.operation.status !== "RUNNING" ? (
@@ -330,7 +377,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       disabled={
                         workbookBusy ||
                         c.released ||
-                        c.dirty ||
+                        c.allDirty ||
+                        c.rangeBusy ||
                         c.busy ||
                         Boolean(c.lock) ||
                         !c.editable
@@ -338,7 +386,10 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       onClick={() => {
                         setWorkbookError(null);
                         setWorkbookBusy(true);
-                        void props.onExportShoppingList!(c.workbench!)
+                        void props.onExportShoppingList!(
+                          c.workbench!,
+                          c.shoppingRangeContext,
+                        )
                           .catch((error: unknown) =>
                             setWorkbookError(
                               error instanceof Error
@@ -357,7 +408,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       disabled={
                         workbookBusy ||
                         c.released ||
-                        c.dirty ||
+                        c.allDirty ||
+                        c.rangeBusy ||
                         c.busy ||
                         Boolean(c.lock) ||
                         !c.editable
@@ -387,7 +439,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                         event.target.value = "";
                         if (
                           !file ||
-                          c.dirty ||
+                          c.allDirty ||
+                          c.rangeBusy ||
                           c.released ||
                           c.busy ||
                           c.lock ||
@@ -402,6 +455,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                           file,
                           c.workbench!,
                           c.drafts,
+                          c.shoppingRangeContext,
                         )
                           .then(apply)
                           .catch((error: unknown) =>
@@ -416,7 +470,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     />
                   </Flex>
                 )}
-                {c.dirty && props.onExportShoppingList && (
+                {c.allDirty && props.onExportShoppingList && (
                   <Text fontSize="sm">
                     Lưu hoặc tải lại để bỏ thay đổi trước khi xuất/nhập Phiếu đi
                     chợ.
@@ -514,7 +568,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
           <ConfirmedNeedDirtyExitDialog
             open={Boolean(c.pendingTransition)}
             onCancel={() => {
-              if (c.pendingTransition?.date) {
+              if (c.pendingTransition?.date || c.pendingTransition?.range) {
                 cancelledDate.current = true;
                 setDateReset((value) => value + 1);
               }
@@ -524,7 +578,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             finalFocusEl={() =>
               cancelledDate.current
                 ? (dateField.current?.querySelector<HTMLElement>(
-                    '[data-type="day"]',
+                    '[data-part="trigger"]',
                   ) ?? null)
                 : null
             }

@@ -140,6 +140,10 @@ The task-approved [design](../superpowers/specs/2026-09-03-purchase-review-confi
 
 ## Change procedure
 
+### Approved Atlas Planning catch-up source policy
+
+The Owner-approved [incomplete Recipe and Túi Unit decision](decision-atlas-planning-empty-recipe-tui-unit.md) permits active zero-BoM V1 Recipe identities to migrate as typed roots without versions or lines, retaining source evidence and backend-derived operational unreadiness. It also admits the exact distinct COUNT Unit `Túi` through the established hash algorithm. Invalid references and unknown future Units still fail closed. Live OPS, Retool, hosted apply and fabricated composition remain unauthorized.
+
 A decision may be amended or superseded only when:
 
 1. the new decision is explicitly approved;

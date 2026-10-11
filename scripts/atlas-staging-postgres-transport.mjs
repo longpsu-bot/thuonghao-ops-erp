@@ -4,6 +4,72 @@ import { join } from "node:path";
 import { validateApprovedAtlasStagingTarget } from "./atlas-staging-contract.mjs";
 
 const STAGING = "rnzxmxiiqgtdevzregff";
+const CLIENT_PHASES = new Set([
+  "CATCHUP_CLIENT_SCRIPT_BEGIN",
+  "CATCHUP_CLIENT_SETTINGS_DONE",
+  "CATCHUP_CLIENT_HELPERS_DONE",
+  "CATCHUP_CLIENT_QUERY_BEGIN",
+  "CATCHUP_CLIENT_QUERY_DONE",
+]);
+const SERVER_PHASES = new Map([
+  ["PZ001", "CATCHUP_SERVER_ENTRY"],
+  ["PZ002", "CATCHUP_SERVER_SOURCE_CHECKED"],
+  ["PZ003", "CATCHUP_SERVER_RECIPE_PLAN_DONE"],
+  ["PZ004", "CATCHUP_SERVER_PROTECTED_DONE"],
+  ["PZ005", "CATCHUP_SERVER_MAPPING_HASH_DONE"],
+  ["PZ006", "CATCHUP_SERVER_PLAN_HASH_DONE"],
+  ["PZ007", "CATCHUP_SERVER_SCOPE_DONE"],
+  ["PZ008", "CATCHUP_SERVER_DEPENDENCIES_DONE"],
+  ["PZ009", "CATCHUP_SERVER_EMPTY_ROOTS_DONE"],
+  ["PZ010", "CATCHUP_SERVER_RECIPE_INPUT_READY"],
+]);
+function emitSafePostgresPhases(stderr, onPhase) {
+  if (typeof stderr !== "string") return;
+  const emitted = new Set();
+  for (const line of stderr.split(/\r?\n/)) {
+    const notice = line.match(
+      /^(?:psql:<stdin>:\d+:[ \t]*)?NOTICE:[ \t]+(PZ00[1-9]|PZ010)[ \t]*$/,
+    );
+    const phase = CLIENT_PHASES.has(line)
+      ? line
+      : SERVER_PHASES.get(notice?.[1]);
+    // No prefixes, message text or unknown codes escape. Repetition is bounded
+    // to the fixed marker count while retaining first-observed wire order.
+    if (phase && !emitted.has(phase)) {
+      emitted.add(phase);
+      onPhase(phase);
+    }
+  }
+}
+function safePostgresFailureCode(stderr) {
+  const diagnostic = typeof stderr === "string" ? stderr : "";
+  // psql's SQLSTATE verbosity omits server messages. Accept only a bounded
+  // uppercase state at the start of a server diagnostic, never arbitrary text.
+  const state = diagnostic.match(
+    /^(?:psql:<stdin>:\d+:[ \t]*)?(?:ERROR|FATAL):[ \t]+([0-9A-Z]{5})(?=[: \t\r]|$)/m,
+  )?.[1];
+  if (state) return `STAGING_POSTGRES_SQLSTATE_${state}`;
+  // libpq connection failures may have no SQLSTATE. Return fixed categories
+  // only; addresses, server prose, SQL and credentials never leave this helper.
+  const connectionLines = diagnostic
+    .split(/\r?\n/)
+    .filter((line) =>
+      /^(?:psql: error: |FATAL:[ \t]+|server closed the connection unexpectedly)/.test(
+        line,
+      ),
+    );
+  if (connectionLines.some((line) => line.includes("too many clients already")))
+    return "STAGING_POSTGRES_TOO_MANY_CLIENTS";
+  if (connectionLines.some((line) => line.includes("timeout expired")))
+    return "STAGING_POSTGRES_CONNECTION_TIMED_OUT";
+  if (
+    connectionLines.some((line) =>
+      line.includes("server closed the connection unexpectedly"),
+    )
+  )
+    return "STAGING_POSTGRES_CONNECTION_CLOSED";
+  return "STAGING_POSTGRES_EXECUTION_FAILED";
+}
 export function validatedStagingPoolerUrl(value, projectRef) {
   if (projectRef !== STAGING) throw new Error("EXACT_STAGING_TARGET_REQUIRED");
   let url;
@@ -33,6 +99,7 @@ export async function executeAtlasStagingPostgres(
     cwd = process.cwd(),
     run = spawnSync,
     timeoutMs = 20 * 60 * 1000,
+    onPhase = () => {},
     readLinkedFile = (path) => readFileSync(path, "utf8"),
   } = {},
 ) {
@@ -87,6 +154,8 @@ export async function executeAtlasStagingPostgres(
         "--no-password",
         "--set",
         "ON_ERROR_STOP=1",
+        "--set",
+        "VERBOSITY=sqlstate",
         "--dbname",
         url,
       ],
@@ -103,10 +172,11 @@ export async function executeAtlasStagingPostgres(
   } catch {
     throw new Error("STAGING_POSTGRES_EXECUTION_FAILED");
   }
+  emitSafePostgresPhases(result.stderr, onPhase);
   if (result.error?.code === "ETIMEDOUT")
     throw new Error("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
   if (result.status !== 0 || result.error)
-    throw new Error("STAGING_POSTGRES_EXECUTION_FAILED");
+    throw new Error(safePostgresFailureCode(result.stderr));
   let value;
   try {
     value = JSON.parse(String(result.stdout ?? "").trim());

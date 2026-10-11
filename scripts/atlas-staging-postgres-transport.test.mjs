@@ -49,9 +49,13 @@ describe("large snapshot Postgres transport", () => {
     expect(call.opts.env.PGSSLROOTCERT).toBe("/tmp/ca.pem");
     expect(call.opts.env.PGPASSWORD).toBe("synthetic-db-secret");
     expect(call.args).toContain("ON_ERROR_STOP=1");
+    expect(call.args).toContain("VERBOSITY=sqlstate");
     expect(call.args).toContain("--no-password");
     expect(JSON.stringify(call.args)).not.toContain("synthetic-db-secret");
     expect(JSON.stringify(call.args)).not.toContain(sql);
+    expect(call.opts.env.PGCONNECT_TIMEOUT).toBe("20");
+    expect(call.opts.timeout).toBe(20 * 60 * 1000);
+    expect(call.opts.maxBuffer).toBe(32 * 1024 * 1024);
   });
   it("refuses missing credentials, mismatched links and live OPS before executing psql", async () => {
     let calls = 0;
@@ -102,6 +106,174 @@ describe("large snapshot Postgres transport", () => {
       }),
     ).rejects.toThrow("STAGING_POSTGRES_EXECUTION_FAILED");
     expect(calls).toBe(1);
+  });
+});
+
+describe("safe PostgreSQL failure classification", () => {
+  it.each([
+    ["ERROR:  57014\n", "STAGING_POSTGRES_SQLSTATE_57014"],
+    ["FATAL:  53300\n", "STAGING_POSTGRES_SQLSTATE_53300"],
+    ["psql:<stdin>:12: ERROR:  42P01\n", "STAGING_POSTGRES_SQLSTATE_42P01"],
+    [
+      "ERROR:  23505: synthetic-db-secret raw source\nDETAIL: private SQL",
+      "STAGING_POSTGRES_SQLSTATE_23505",
+    ],
+    [
+      "psql: error: connection to server failed: timeout expired",
+      "STAGING_POSTGRES_CONNECTION_TIMED_OUT",
+    ],
+    [
+      "psql: error: server closed the connection unexpectedly",
+      "STAGING_POSTGRES_CONNECTION_CLOSED",
+    ],
+    [
+      "psql: error: connection failed: FATAL: sorry, too many clients already",
+      "STAGING_POSTGRES_TOO_MANY_CLIENTS",
+    ],
+    ["ERROR:  abcde\n", "STAGING_POSTGRES_EXECUTION_FAILED"],
+    ["ERROR:  123456\n", "STAGING_POSTGRES_EXECUTION_FAILED"],
+    ["DETAIL: source value ERROR:  57014", "STAGING_POSTGRES_EXECUTION_FAILED"],
+    ["synthetic-db-secret raw source", "STAGING_POSTGRES_EXECUTION_FAILED"],
+  ])("returns only the safe code for %s", async (stderr, code) => {
+    let calls = 0;
+    const outcome = await executeAtlasStagingPostgres(
+      target,
+      "select 'private SQL'",
+      {
+        environment,
+        readLinkedFile,
+        run: () => {
+          calls++;
+          return { status: 1, stderr, stdout: "private source payload" };
+        },
+      },
+    ).catch((error) => error);
+    expect(outcome).toBeInstanceOf(Error);
+    expect(outcome.message).toBe(code);
+    expect(outcome.cause).toBeUndefined();
+    expect(outcome.message).not.toMatch(
+      /synthetic-db-secret|private|raw source/,
+    );
+    expect(calls).toBe(1);
+  });
+
+  it("keeps process timeout precedence over a server SQLSTATE", async () => {
+    await expect(
+      executeAtlasStagingPostgres(target, "select 1", {
+        environment,
+        readLinkedFile,
+        run: () => ({
+          status: null,
+          error: { code: "ETIMEDOUT" },
+          stderr: "ERROR:  57014",
+        }),
+      }),
+    ).rejects.toThrow("STAGING_POSTGRES_EXECUTION_TIMED_OUT");
+  });
+});
+
+describe("allowlisted PostgreSQL phase diagnostics", () => {
+  const stderr = [
+    "CATCHUP_CLIENT_SCRIPT_BEGIN",
+    "CATCHUP_CLIENT_SETTINGS_DONE",
+    "CATCHUP_CLIENT_HELPERS_DONE",
+    "CATCHUP_CLIENT_QUERY_BEGIN",
+    "NOTICE:  PZ001",
+    "psql:<stdin>:123: NOTICE:  PZ002",
+    "NOTICE:  PZ007",
+    "psql:<stdin>:130: NOTICE:  PZ008",
+    "NOTICE:  PZ009",
+    "NOTICE:  PZ010",
+    "NOTICE:  PZ003",
+    "NOTICE:  PZ004",
+    "NOTICE:  PZ005",
+    "NOTICE:  PZ006",
+    "CATCHUP_CLIENT_QUERY_DONE",
+  ].join("\r\n");
+  const expected = [
+    "CATCHUP_CLIENT_SCRIPT_BEGIN",
+    "CATCHUP_CLIENT_SETTINGS_DONE",
+    "CATCHUP_CLIENT_HELPERS_DONE",
+    "CATCHUP_CLIENT_QUERY_BEGIN",
+    "CATCHUP_SERVER_ENTRY",
+    "CATCHUP_SERVER_SOURCE_CHECKED",
+    "CATCHUP_SERVER_SCOPE_DONE",
+    "CATCHUP_SERVER_DEPENDENCIES_DONE",
+    "CATCHUP_SERVER_EMPTY_ROOTS_DONE",
+    "CATCHUP_SERVER_RECIPE_INPUT_READY",
+    "CATCHUP_SERVER_RECIPE_PLAN_DONE",
+    "CATCHUP_SERVER_PROTECTED_DONE",
+    "CATCHUP_SERVER_MAPPING_HASH_DONE",
+    "CATCHUP_SERVER_PLAN_HASH_DONE",
+    "CATCHUP_CLIENT_QUERY_DONE",
+  ];
+  it.each([
+    [{ status: 0, stdout: '{"success":true}' }, null],
+    [{ status: 1 }, "STAGING_POSTGRES_EXECUTION_FAILED"],
+    [
+      { status: null, error: { code: "ETIMEDOUT" } },
+      "STAGING_POSTGRES_EXECUTION_TIMED_OUT",
+    ],
+  ])(
+    "retains fixed phases before success or failure %j",
+    async (result, errorCode) => {
+      const phases = [];
+      const outcome = await executeAtlasStagingPostgres(
+        target,
+        "select 'private SQL'",
+        {
+          environment,
+          readLinkedFile,
+          onPhase: (phase) => phases.push(phase),
+          run: () => ({ ...result, stderr: `${stderr}\n${stderr}` }),
+        },
+      ).catch((error) => error);
+      expect(phases).toEqual(expected);
+      expect(phases).toHaveLength(15);
+      if (errorCode) expect(outcome.message).toBe(errorCode);
+      else expect(JSON.parse(outcome)[0].result.success).toBe(true);
+    },
+  );
+  it("excludes malformed and forged markers and bounds repeated diagnostics", async () => {
+    const phases = [];
+    const malicious = [
+      "CATCHUP_CLIENT_SCRIPT_BEGIN",
+      "CATCHUP_CLIENT_SCRIPT_BEGIN",
+      "NOTICE: PZ001",
+      "NOTICE: PZ001",
+      "CATCHUP_CLIENT_UNKNOWN",
+      " CATCHUP_CLIENT_HELPERS_DONE",
+      "DETAIL: CATCHUP_CLIENT_QUERY_DONE",
+      "CATCHUP_CLIENT_QUERY_DONE secret",
+      "NOTICE: PZ001 private source",
+      "NOTICE: PZ0010",
+      "NOTICE: pz002",
+      "NOTICE: PZ999",
+      "NOTICE: PZ011",
+      "NOTICE: PZ0100",
+      "NOTICE: pz010",
+      "NOTICE: PZ007 private source",
+      "NOTICE: PZ010: synthetic-db-secret",
+      "DETAIL: NOTICE: PZ008",
+      "psql:private-source:123: NOTICE: PZ009",
+      "ERROR: PZ002",
+      "DETAIL: NOTICE: PZ003",
+      "psql:private-source:123: NOTICE: PZ004",
+      "synthetic-db-secret",
+    ].join("\n");
+    await expect(
+      executeAtlasStagingPostgres(target, "select 'private SQL'", {
+        environment,
+        readLinkedFile,
+        onPhase: (phase) => phases.push(phase),
+        run: () => ({ status: 1, stderr: malicious, stdout: "private source" }),
+      }),
+    ).rejects.toThrow("STAGING_POSTGRES_SQLSTATE_PZ002");
+    expect(phases).toEqual([
+      "CATCHUP_CLIENT_SCRIPT_BEGIN",
+      "CATCHUP_SERVER_ENTRY",
+    ]);
+    expect(phases.join(" ")).not.toMatch(/private|secret|DETAIL|NOTICE/);
   });
 });
 

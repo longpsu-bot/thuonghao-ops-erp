@@ -19,7 +19,34 @@ describe("protected hosted master load workflow", () => {
     );
     expect(s).toContain("--target-project-ref");
     expect(s).toContain("ATLAS_STAGING_SUPABASE_ACCESS_TOKEN");
-    expect(s).not.toContain("upload-artifact");
+    const [fullLoad, planningPreview] = s.split("  planning-preview:");
+    expect(s).toMatch(
+      /diagnostic_boundary:\s+description:[^\n]+\s+required: false\s+type: boolean\s+default: false/,
+    );
+    expect(fullLoad).toContain('test "$DIAGNOSTIC_BOUNDARY" = "false"');
+    expect(
+      fullLoad.indexOf('test "$DIAGNOSTIC_BOUNDARY" = "false"'),
+    ).toBeLessThan(fullLoad.indexOf("Install frozen dependencies"));
+    expect(planningPreview).toContain(
+      'if [ "$DIAGNOSTIC_BOUNDARY" = "true" ]; then',
+    );
+    expect(planningPreview).toContain("args+=(--diagnostic-boundary)");
+    expect(planningPreview).toContain(
+      'node scripts/run-planning-master-catchup.mjs "${args[@]}"',
+    );
+    expect(fullLoad).not.toContain("upload-artifact");
+    expect(planningPreview).toContain('test "$APPLY_REQUESTED" = "false"');
+    expect(planningPreview).toContain('test "$GITHUB_SHA" = "$REQUESTED_SHA"');
+    expect(planningPreview).toContain("planning-master-report.tsv");
+    expect(planningPreview).toContain(
+      "name: ${{ inputs.diagnostic_boundary && 'planning-master-diagnostic-preview' || 'planning-master-preview' }}-${{ inputs.commit_sha }}",
+    );
+    expect(planningPreview).toContain(
+      "${{ inputs.diagnostic_boundary && 'planning-master-diagnostic-report.tsv' || 'planning-master-report.tsv' }}",
+    );
+    expect(planningPreview).not.toContain("--apply");
+    expect(planningPreview).not.toContain("snapshot.json");
+    expect(planningPreview).not.toContain("planning-preview/\n");
     expect(s).not.toContain("db reset");
     expect(s).not.toContain("qnthofvccilhnefdcxnz");
   });

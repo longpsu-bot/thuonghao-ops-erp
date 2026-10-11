@@ -1,5 +1,18 @@
 # RMVP-03A Planning Inputs API Contract
 
+## Operational School ordering amendment — 11/10/2026
+
+Owner-authorized Planning presentation uses `display_order ASC, school_name,
+school_id` in workbench Schools, Weekly Menu lines, Attendance lines and default
+Attendance. Frontend collections defensively reuse the Vietnamese-name/stable-ID
+comparator. Current V1 `public.schools.display_order` is the cutover evidence for
+mapped V1 Schools. Source NULL ranks receive deterministic tail positions after
+the maximum explicit order; no schema change or NULL-to-zero conversion is used.
+This replaces the earlier temporary preservation of stale Atlas numeric ranks.
+The protected catch-up preserves every School UUID and all other School facts;
+only School 33's name and source-backed ranks are corrected after approval.
+Cooking Location and Dispatch Group remain independent facts.
+
 ## Resilient local Menu candidate — 06/10/2026
 
 ATLAS-PRODUCT-CORRECTIONS-01 retains parsed Menu rows locally when individual

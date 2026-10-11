@@ -24,6 +24,7 @@ const COUNT_UNIT_LABELS = new Set([
   "Ổ",
   "Quả",
   "Trái",
+  "Túi",
 ]);
 
 const INGREDIENT_TYPES = new Map([

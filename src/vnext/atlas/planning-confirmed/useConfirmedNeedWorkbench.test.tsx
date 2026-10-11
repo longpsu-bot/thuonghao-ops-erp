@@ -217,7 +217,7 @@ describe("Confirmed Need date authority and generation", () => {
       "batch-current",
       expect.objectContaining({ service_date: reviewDate }),
       0,
-      10000,
+      1000,
     );
     expect(h.result.current.workbench?.confirmed_need_batch_id).toBe(
       "batch-current",
@@ -316,7 +316,10 @@ describe("Confirmed Need local draft and safety", () => {
     act(() => h.result.current.transition({ date: "2026-09-08" }));
     await waitFor(() => expect(h.result.current.canContinue).toBe(true));
     act(() => h.result.current.continueAllocation());
-    expect(h.navigate).toHaveBeenCalledWith("2026-09-08");
+    expect(h.navigate).toHaveBeenCalledWith({
+      start: "2026-09-08",
+      end: "2026-09-08",
+    });
     expect(h.navigate).not.toHaveBeenCalledWith(reviewDate);
   });
   it("blocks duplicate Save clicks while the first command is pending", async () => {
@@ -577,7 +580,10 @@ describe("Confirmed Need local draft and safety", () => {
       const h = await ready(scenario);
       expect(h.result.current.canContinue).toBe(true);
       act(() => h.result.current.continueAllocation());
-      expect(h.navigate).toHaveBeenCalledWith(reviewDate);
+      expect(h.navigate).toHaveBeenCalledWith({
+        start: reviewDate,
+        end: reviewDate,
+      });
       expect(h.save).not.toHaveBeenCalled();
       expect(h.execute).not.toHaveBeenCalled();
     },
@@ -677,3 +683,344 @@ describe("long-running generation interaction", () => {
     expect(h.execute).toHaveBeenCalledTimes(1);
   });
 });
+
+it("blocks eight dates without reads and preserves daily drafts when selecting a loaded day", async () => {
+  const h = await ready();
+  h.preflightRead.mockImplementation(async (_a, _c, day) => {
+    const p = structuredClone(h.fixture.preflight);
+    p.period_start = day;
+    p.period_end = day;
+    p.current_need!.confirmed_need_batch_id = `batch-${day}`;
+    return reviewSuccess({ preflight: p });
+  });
+  h.read.mockImplementation(async (_a, _c, batch, filters) => {
+    const b = structuredClone(h.fixture.batch);
+    b.confirmed_need_batch_id = batch;
+    b.service_period = {
+      period_start: filters.service_date!,
+      period_end: filters.service_date!,
+    };
+    b.lines.forEach((l) => {
+      l.service_date = filters.service_date!;
+      l.confirmed_need_line_id += filters.service_date;
+    });
+    return reviewSuccess({ workbench: b });
+  });
+  const calls = h.preflightRead.mock.calls.length;
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: "2026-09-14" }),
+  );
+  expect(h.result.current.rangeError).toBe("Chọn tối đa 7 ngày.");
+  expect(h.preflightRead).toHaveBeenCalledTimes(calls);
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: "2026-09-08" }),
+  );
+  await waitFor(() => expect(h.result.current.rangeBusy).toBe(false));
+  act(() =>
+    h.result.current.edit("line-0", {
+      exact_quantity: "12,5",
+      quantity_entered: true,
+    }),
+  );
+  const drafts = h.result.current.drafts;
+  act(() => h.result.current.selectDay("2026-09-08"));
+  act(() => h.result.current.selectDay(reviewDate));
+  expect(h.result.current.drafts).toEqual(drafts);
+  expect(h.result.current.dirty).toBe(true);
+  expect(h.save).not.toHaveBeenCalled();
+});
+
+function multiDayHook(start = "2026-09-07", ungenerated?: string) {
+  const fixture = createConfirmedNeedReviewFixture();
+  const dayData = (date: string) => {
+    const replace = <T,>(value: T): T =>
+      JSON.parse(
+        JSON.stringify(value)
+          .replaceAll(reviewDate, date)
+          .replaceAll("batch-current", `batch-${date}`)
+          .replaceAll('"line-', `"${date}-line-`),
+      );
+    return {
+      batch: replace(fixture.batch),
+      preflight: replace(fixture.preflight),
+      need: replace(fixture.need),
+    };
+  };
+  const generated = new Set<string>();
+  const preflightRead = vi
+    .spyOn(fixture.preflightApi, "preflight")
+    .mockImplementation(async (_a, _c, date) => {
+      const { preflight } = dayData(date);
+      if (date === ungenerated && !generated.has(date)) {
+        preflight.current_need = null;
+        preflight.downstream_currentness = "NOT_GENERATED";
+      }
+      return reviewSuccess({ preflight });
+    });
+  const read = vi
+    .spyOn(fixture.confirmedNeedApi, "getReview")
+    .mockImplementation(async (_a, _c, _b, filters) =>
+      reviewSuccess({ workbench: dayData(filters.service_date!).batch }),
+    );
+  const save = vi
+    .spyOn(fixture.confirmedNeedApi, "save")
+    .mockImplementation(async (request) => {
+      const date = request.payload.confirmed_need_batch_id.slice(6);
+      const b = dayData(date).batch;
+      b.batch_version++;
+      return reviewSuccess({ authoritative_readback: b });
+    });
+  const execute = vi
+    .spyOn(fixture.needGenerationApi, "execute")
+    .mockImplementation(async (request) => {
+      const date = request.payload.service_date;
+      generated.add(date);
+      const data = dayData(date);
+      return reviewSuccess({
+        authoritative_readback: {
+          preflight: data.preflight,
+          need_generation: data.need,
+        },
+      });
+    });
+  const hook = renderHook(() =>
+    useConfirmedNeedWorkbench({
+      ...fixture,
+      authSubject: "operator",
+      initialServiceDate: start,
+    }),
+  );
+  return { ...hook, fixture, preflightRead, read, save, execute, dayData };
+}
+it.each([1, 2, 7])(
+  "loads %i exact daily authorities across a week boundary",
+  async (count) => {
+    const h = multiDayHook("2026-09-12");
+    await waitFor(() => expect(h.result.current.busy).toBe(false));
+    const end = `2026-09-${11 + count}`;
+    act(() => h.result.current.changeRange({ start: "2026-09-12", end }));
+    await waitFor(() => expect(h.result.current.rangeBusy).toBe(false));
+    expect(h.result.current.days).toHaveLength(count);
+    expect(
+      h.result.current.days.every(
+        (d) =>
+          d.workbench && d.workbench.service_period.period_start === d.date,
+      ),
+    ).toBe(true);
+    expect(h.preflightRead.mock.calls.every((c) => c[2] === c[3])).toBe(true);
+    expect(h.save).not.toHaveBeenCalled();
+    expect(h.execute).not.toHaveBeenCalled();
+  },
+);
+it("partitions one atomic local import across dates and saves only the active batch", async () => {
+  const h = multiDayHook();
+  await waitFor(() => expect(h.result.current.busy).toBe(false));
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: "2026-09-08" }),
+  );
+  await waitFor(() => expect(h.result.current.rangeBusy).toBe(false));
+  const drafts = structuredClone(h.result.current.shoppingRangeContext.drafts);
+  const changed = [`${reviewDate}-line-0`, "2026-09-08-line-0"];
+  for (const id of changed)
+    Object.assign(drafts[id]!, {
+      exact_quantity: "12,5",
+      quantity_entered: true,
+      reason_code: "OTHER",
+      reason_note: "Bếp yêu cầu",
+    });
+  act(() =>
+    h.result.current.captureShoppingListImport()({
+      drafts,
+      changedLineIds: changed,
+    }),
+  );
+  expect(h.result.current.days.filter((d) => d.dirty)).toHaveLength(2);
+  expect(h.save).not.toHaveBeenCalled();
+  expect(h.execute).not.toHaveBeenCalled();
+  act(() => h.result.current.selectDay("2026-09-08"));
+  expect(
+    h.result.current.changedLines.map((l) => l.confirmed_need_line_id),
+  ).toEqual([changed[1]]);
+  await act(() => h.result.current.save());
+  expect(h.save).toHaveBeenCalledTimes(1);
+  expect(h.save.mock.calls[0]![0].payload.confirmed_need_batch_id).toBe(
+    "batch-2026-09-08",
+  );
+  expect(
+    h.save.mock.calls[0]![0].payload.lines.map((l) => l.confirmed_need_line_id),
+  ).toEqual([changed[1]]);
+  act(() => h.result.current.selectDay(reviewDate));
+  expect(h.result.current.dirty).toBe(true);
+  expect(h.result.current.drafts[changed[0]!]!.exact_quantity).toBe("12,5");
+});
+it("generates only the active date within a multi-day range", async () => {
+  const h = multiDayHook(reviewDate, "2026-09-08");
+  await waitFor(() => expect(h.result.current.busy).toBe(false));
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: "2026-09-08" }),
+  );
+  await waitFor(() => expect(h.result.current.rangeBusy).toBe(false));
+  act(() => h.result.current.selectDay("2026-09-08"));
+  expect(h.result.current.canGenerate).toBe(true);
+  await act(() => h.result.current.generate());
+  expect(h.execute).toHaveBeenCalledTimes(1);
+  expect(h.execute.mock.calls[0]![0].payload.service_date).toBe("2026-09-08");
+  expect(h.result.current.workbench?.service_period.period_start).toBe(
+    "2026-09-08",
+  );
+  expect(h.save).not.toHaveBeenCalled();
+});
+it("ignores an obsolete background day read after changing range", async () => {
+  const h = multiDayHook();
+  await waitFor(() => expect(h.result.current.busy).toBe(false));
+  let finish!: (r: ReturnType<typeof reviewSuccess>) => void;
+  h.preflightRead.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: "2026-09-08" }),
+  );
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: reviewDate }),
+  );
+  await act(async () =>
+    finish(reviewSuccess({ preflight: h.dayData("2026-09-08").preflight })),
+  );
+  expect(h.result.current.days.map((d) => d.date)).toEqual([reviewDate]);
+  expect(h.result.current.rangeBusy).toBe(false);
+  expect(h.result.current.workbench?.service_period.period_start).toBe(
+    reviewDate,
+  );
+});
+it("guards leaving a dirty inactive date and preserves it when the operator cancels", async () => {
+  const h = multiDayHook();
+  await waitFor(() => expect(h.result.current.busy).toBe(false));
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: "2026-09-08" }),
+  );
+  await waitFor(() => expect(h.result.current.rangeBusy).toBe(false));
+  act(() =>
+    h.result.current.edit(`${reviewDate}-line-0`, {
+      exact_quantity: "12,5",
+      quantity_entered: true,
+    }),
+  );
+  act(() => h.result.current.selectDay("2026-09-08"));
+  const exit = vi.fn();
+  act(() => h.result.current.requestExit(exit));
+  expect(exit).not.toHaveBeenCalled();
+  expect(h.result.current.pendingTransition).not.toBeNull();
+  act(() => h.result.current.cancelTransition());
+  act(() =>
+    h.result.current.changeRange({ start: "2026-09-08", end: "2026-09-08" }),
+  );
+  expect(h.result.current.range.start).toBe(reviewDate);
+  act(() => h.result.current.cancelTransition());
+  act(() => h.result.current.selectDay(reviewDate));
+  expect(h.result.current.dirty).toBe(true);
+});
+
+it("discards only dirty dates leaving the range and retains drafts inside it", async () => {
+  const h = multiDayHook();
+  await waitFor(() => expect(h.result.current.busy).toBe(false));
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: "2026-09-08" }),
+  );
+  await waitFor(() => expect(h.result.current.rangeBusy).toBe(false));
+  act(() =>
+    h.result.current.edit(`${reviewDate}-line-0`, {
+      exact_quantity: "12,5",
+      quantity_entered: true,
+    }),
+  );
+  act(() => h.result.current.selectDay("2026-09-08"));
+  act(() =>
+    h.result.current.edit("2026-09-08-line-0", {
+      exact_quantity: "13",
+      quantity_entered: true,
+    }),
+  );
+  act(() =>
+    h.result.current.changeRange({ start: "2026-09-08", end: "2026-09-08" }),
+  );
+  expect(h.result.current.pendingTransition).not.toBeNull();
+  act(() => h.result.current.discardTransition());
+  expect(h.result.current.range).toEqual({
+    start: "2026-09-08",
+    end: "2026-09-08",
+  });
+  expect(h.result.current.drafts["2026-09-08-line-0"]!.exact_quantity).toBe(
+    "13",
+  );
+  expect(h.result.current.dirty).toBe(true);
+});
+
+it("loads a shifted seven-day range and enables navigation from its first day", async () => {
+  const h = multiDayHook();
+  await waitFor(() => expect(h.result.current.busy).toBe(false));
+  act(() =>
+    h.result.current.changeRange({ start: "2026-09-10", end: "2026-09-16" }),
+  );
+  await waitFor(() =>
+    expect(h.result.current.busy || h.result.current.rangeBusy).toBe(false),
+  );
+  expect(h.result.current.date).toBe("2026-09-10");
+  expect(h.result.current.workbench?.service_period.period_start).toBe(
+    "2026-09-10",
+  );
+  expect(h.result.current.editable).toBe(true);
+  expect(h.result.current.days).toHaveLength(7);
+});
+
+it.each(["normal", "not_generated"] as const)(
+  "blocks all old-scope commands and reads after an invalid range in %s",
+  async (scenario) => {
+    const h = await ready(scenario);
+    if (scenario === "normal")
+      act(() =>
+        h.result.current.edit("line-0", {
+          exact_quantity: "12,5",
+          quantity_entered: true,
+          reason_code: "OTHER",
+          reason_note: "Bếp yêu cầu",
+        }),
+      );
+    const before = h.result.current.workbench;
+    const readCalls = h.read.mock.calls.length,
+      preflightCalls = h.preflightRead.mock.calls.length;
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: "2026-09-14" }),
+    );
+    expect(h.result.current.rangeError).toBe("Chọn tối đa 7 ngày.");
+    expect(h.result.current.editable).toBe(false);
+    expect(h.result.current.canSave).toBe(false);
+    expect(h.result.current.canGenerate).toBe(false);
+    expect(h.result.current.canContinue).toBe(false);
+    expect(h.result.current.shoppingRangeContext.isCurrent()).toBe(false);
+    await act(async () => {
+      await h.result.current.save();
+      await h.result.current.generate();
+      await h.result.current.recover();
+      h.result.current.transition({ refresh: true });
+      h.result.current.continueAllocation();
+    });
+    expect(h.read).toHaveBeenCalledTimes(readCalls);
+    expect(h.preflightRead).toHaveBeenCalledTimes(preflightCalls);
+    expect(h.save).not.toHaveBeenCalled();
+    expect(h.execute).not.toHaveBeenCalled();
+    expect(h.navigate).not.toHaveBeenCalled();
+    expect(h.result.current.workbench).toBe(before);
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: reviewDate }),
+    );
+    expect(h.result.current.rangeError).toBeNull();
+    expect(
+      scenario === "normal"
+        ? h.result.current.canSave
+        : h.result.current.canGenerate,
+    ).toBe(true);
+  },
+);

@@ -16,6 +16,7 @@ import {
   type Icon,
 } from "@phosphor-icons/react";
 import type { AtlasVNextAppProps } from "./AtlasVNextApp";
+import type { AtlasOperatorDateRange } from "./atlasOperatorDateRange";
 import type {
   AtlasModuleExitHandle,
   AtlasWorkbenchStatus,
@@ -46,16 +47,18 @@ export type AtlasWorkbenchId =
   | "reconciliation";
 export type AtlasProcurementContext = {
   date: string;
+  range: AtlasOperatorDateRange;
   stage: "allocation" | "orders";
 };
 export type RenderContext = {
   app: AtlasVNextAppProps;
   seed: string;
+  seedRange?: AtlasOperatorDateRange;
   exitRef: RefObject<AtlasModuleExitHandle | null>;
   onWorkspaceStatus: (status: AtlasWorkbenchStatus) => void;
   onServiceDateChange: (date: string) => void;
-  onContinueAllocation: (date: string) => void;
-  onOpenOrders: (date: string) => void;
+  onContinueAllocation: (range: AtlasOperatorDateRange) => void;
+  onOpenOrders: (scope: string | AtlasOperatorDateRange) => void;
   onOpenChangeOrders: () => void;
   onProcurementContextChange: (context: AtlasProcurementContext) => void;
   onOrdersContextChange: (context: AtlasProcurementContext) => void;
@@ -152,6 +155,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
       <ProcurementWorkbench
         {...dateOwner(c)}
         ownerStage="allocation"
+        initialRange={c.seedRange}
         onOpenOrders={c.onOpenOrders}
         onContextChange={c.onProcurementContextChange}
         purchaseReviewApi={c.app.apis.purchaseReview}
@@ -171,6 +175,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
       <ProcurementWorkbench
         {...dateOwner(c)}
         ownerStage="orders"
+        initialRange={c.seedRange}
         onContextChange={c.onOrdersContextChange}
         purchaseReviewApi={c.app.apis.purchaseReview}
         procurementApi={c.app.apis.procurement}

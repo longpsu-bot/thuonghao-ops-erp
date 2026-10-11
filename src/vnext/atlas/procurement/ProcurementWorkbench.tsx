@@ -18,8 +18,9 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import type { CSSProperties } from "react";
-import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
+import type { AtlasOperatorDateRange } from "../atlasOperatorDateRange";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import {
@@ -54,6 +55,7 @@ export type ProcurementWorkbenchProps = ProcurementControllerProps &
     onExportZip?: ProcurementZipExport;
     onContextChange?: (context: {
       date: string;
+      range: AtlasOperatorDateRange;
       stage: "allocation" | "orders";
     }) => void;
   };
@@ -77,8 +79,17 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     blocked: false,
   });
   useEffect(() => {
-    props.onContextChange?.({ date: controller.date, stage: controller.stage });
-  }, [props.onContextChange, controller.date, controller.stage]);
+    props.onContextChange?.({
+      date: controller.date,
+      range: { start: controller.date, end: controller.dateEnd },
+      stage: controller.stage,
+    });
+  }, [
+    props.onContextChange,
+    controller.date,
+    controller.dateEnd,
+    controller.stage,
+  ]);
   const [catalogue, setCatalogue] = useState<ProcurementSchoolOption[]>(
     props.schools ?? [],
   );
@@ -116,7 +127,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               ).map((school) => [school.school_id, school]),
             ),
           ).values(),
-        ).sort((a, b) => a.school_name.localeCompare(b.school_name, "vi")),
+        ).sort(compareCanonicalSchools),
       );
   }, [props.schools, controller.allocation, controller.schoolIds]);
   const selected = controller.allocation?.rows.find(
@@ -165,10 +176,18 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     rowTrigger.current?.focus();
   };
   const preparation = controller.allocation?.preparation;
+  const multiDay = controller.date !== controller.dateEnd;
   const commandDisabled =
-    controller.locked || controller.busy || controller.loading;
+    controller.locked ||
+    controller.busy ||
+    controller.loading ||
+    (controller.stage === "allocation" && Boolean(controller.rangeError));
   const canPrepare =
-    preparation?.ready && preparation.allowed && !selected && !commandDisabled;
+    !multiDay &&
+    preparation?.ready &&
+    preparation.allowed &&
+    !selected &&
+    !commandDisabled;
   const sourceMessages = procurementOperatorMessages(
     [
       ...(controller.allocation?.warnings ?? []),
@@ -179,9 +198,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const [year, month, day] = controller.date.split("-");
   const dateSummary =
     [day, month, year].filter(Boolean).join("/") +
-    (controller.stage === "orders" && controller.dateEnd !== controller.date
-      ? ` — ${controller.dateEnd.split("-").reverse().join("/")}`
-      : "");
+    (multiDay ? ` — ${controller.dateEnd.split("-").reverse().join("/")}` : "");
   const scopeSummary = controller.schoolIds.length
     ? controller.schoolIds.length === 1
       ? (catalogue.find(
@@ -293,7 +310,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 md: "repeat(2, minmax(0, 1fr))",
                 xl:
                   controller.stage === "allocation"
-                    ? "minmax(145px, 0.8fr) minmax(160px, 1.1fr) minmax(150px, 1fr) minmax(135px, 0.8fr) auto"
+                    ? "minmax(280px, 1.3fr) minmax(160px, 1.1fr) minmax(150px, 1fr) minmax(135px, 0.8fr) auto"
                     : "minmax(310px, 1.3fr) minmax(200px, 2fr) auto",
               }}
             >
@@ -319,27 +336,18 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   order={{ base: 4, md: 1 }}
                   gridColumn={{ base: "1 / -1", md: "auto" }}
                 >
-                  {controller.stage === "orders" ? (
-                    <AtlasDateRangeInput
-                      label="Khoảng ngày dùng"
-                      value={controller.range}
-                      error={controller.rangeError}
-                      errorMessageId={`${ownerId}-range-error`}
-                      disabled={controller.loading || controller.busy}
-                      onValueChange={controller.changeRange}
-                    />
-                  ) : (
-                    <AtlasDateInput
-                      disabled={Boolean(selected)}
-                      label="Ngày phục vụ"
-                      value={controller.date}
-                      onValueChange={(value) => {
-                        if (selected) return;
-                        setSelectedKey(null);
-                        controller.changeDate(value);
-                      }}
-                    />
-                  )}
+                  <AtlasDateRangeInput
+                    label={
+                      controller.stage === "orders"
+                        ? "Khoảng ngày dùng"
+                        : "Khoảng ngày"
+                    }
+                    value={controller.range}
+                    error={controller.rangeError}
+                    errorMessageId={`${ownerId}-range-error`}
+                    disabled={Boolean(selected) || controller.busy}
+                    onValueChange={controller.changeRange}
+                  />
                 </Box>
                 {controller.stage === "allocation" && (
                   <Box
@@ -532,7 +540,27 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                         Tiếp tục lên đơn
                       </Button>
                     )}
+                    {multiDay && (
+                      <Text textStyle="helper" color="fg.muted">
+                        Chọn 1 ngày để chuẩn bị đơn mua.
+                      </Text>
+                    )}
+                    {props.ownerStage === "allocation" &&
+                      props.onOpenOrders && (
+                        <Button
+                          variant="secondary"
+                          disabled={
+                            Boolean(selected) ||
+                            controller.busy ||
+                            Boolean(controller.rangeError)
+                          }
+                          onClick={controller.openOrders}
+                        >
+                          Xem đơn mua
+                        </Button>
+                      )}
                     {!selected &&
+                      !multiDay &&
                       !(preparation?.ready && preparation.allowed) &&
                       preparation && (
                         <Text textStyle="helper" color="status.warning">
@@ -567,8 +595,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   >
                     <ProcurementAllocationTable
                       rows={visible}
+                      showServiceDate={multiDay}
                       selectedKey={selected ? selectedKey : null}
-                      disabled={controller.loading || controller.busy}
+                      disabled={
+                        controller.loading ||
+                        controller.busy ||
+                        Boolean(controller.rangeError)
+                      }
                       onSelect={(row, trigger) => {
                         rowTrigger.current = trigger;
                         setSelectedKey(row.family.source_fingerprint);

@@ -746,6 +746,76 @@ describe("Atlas staging safety contract", () => {
 });
 
 describe("Atlas staging dry-run and workflow", () => {
+  it("captures frontend output above the subprocess default without terminating it", () => {
+    const result = defaultCommandRunner(
+      process.execPath,
+      ["-e", "process.stdout.write('x'.repeat(2 * 1024 * 1024))"],
+      { shell: false, maxBuffer: 32 * 1024 * 1024 },
+    );
+    expect(result.status).toBe(0);
+    expect(result.stdout.length).toBe(2 * 1024 * 1024);
+  });
+  it("retains the subprocess default capture bound for other commands", () => {
+    const result = defaultCommandRunner(
+      process.execPath,
+      ["-e", "process.stdout.write('x'.repeat(2 * 1024 * 1024))"],
+      { shell: false },
+    );
+    expect(result.status).not.toBe(0);
+    expect(result.errorCode).toBe("ENOBUFS");
+    expect(result.stdout.length).toBeLessThan(2 * 1024 * 1024);
+  });
+  it("reports subprocess capture failures explicitly", () => {
+    const runCommand = vi.fn(() => ({
+      status: 1,
+      errorCode: "ENOBUFS",
+      signal: "SIGTERM",
+      stdout: "",
+      stderr: "",
+    }));
+    expect(() => certifyFrontend({ runCommand })).toThrow(/ENOBUFS.*SIGTERM/);
+  });
+  it("retains all failing test names before bounded DOM diagnostic tails", () => {
+    const runCommand = vi.fn((_command, args) => ({
+      status: args[0] === "test" ? 1 : 0,
+      stdout:
+        args[0] === "test"
+          ? [
+              "\u001b[31mFAIL first.test.ts > preserves a draft\u001b[0m",
+              "Error: expect(element).toHaveFocus()",
+              "Expected element with focus: <button>range</button>",
+              "Received element with focus: <body />",
+              ...Array.from(
+                { length: 180 },
+                () => "<div>large diagnostic</div>",
+              ),
+              "Tests 2 failed | 100 passed",
+            ].join("\n")
+          : "",
+      stderr:
+        args[0] === "test"
+          ? "FAIL second.test.ts > rejects stale authority"
+          : "",
+    }));
+    let diagnostic = "";
+    try {
+      certifyFrontend({ runCommand });
+    } catch (error) {
+      diagnostic = error.message;
+    }
+    expect(diagnostic).toContain("FAIL first.test.ts > preserves a draft");
+    expect(diagnostic).toContain(
+      "FAIL second.test.ts > rejects stale authority",
+    );
+    expect(diagnostic).toContain("Tests 2 failed | 100 passed");
+    expect(diagnostic).toContain("Error: expect(element).toHaveFocus()");
+    expect(diagnostic).toContain("Expected element with focus:");
+    expect(diagnostic).toContain("Received element with focus:");
+    expect(diagnostic.split("\n").length).toBeLessThanOrEqual(205);
+    expect(runCommand.mock.calls.some(([, args]) => args[0] === "build")).toBe(
+      false,
+    );
+  });
   it("shares the substantive frontend authority in repository order", () => {
     expect(FRONTEND_CERTIFICATION_COMMANDS).toEqual([
       ["install", "--frozen-lockfile"],
@@ -968,7 +1038,33 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(108);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(111);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "node",
+      args: ["scripts/test-local-planning-master-catchup.mjs"],
+    });
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "pnpm",
+      args: [
+        "exec",
+        "supabase",
+        "test",
+        "db",
+        "supabase/tests/atlas_planning_school_order.sql",
+        "--local",
+      ],
+    });
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "pnpm",
+      args: [
+        "exec",
+        "supabase",
+        "test",
+        "db",
+        "supabase/tests/atlas_planning_tui_count_unit.sql",
+        "--local",
+      ],
+    });
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS[0]).toEqual({
       command: "pnpm",
       args: [

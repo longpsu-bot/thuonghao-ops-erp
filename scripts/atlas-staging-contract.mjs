@@ -370,11 +370,16 @@ export function defaultCommandRunner(command, args, options = {}) {
     encoding: "utf8",
     shell: options.shell ?? process.platform === "win32",
     timeout: options.timeout,
+    ...(options.maxBuffer !== undefined
+      ? { maxBuffer: options.maxBuffer }
+      : {}),
   });
   return {
     status: result.status ?? 1,
     stdout: result.stdout ?? "",
     stderr: result.stderr ?? "",
+    errorCode: result.error?.code ?? null,
+    signal: result.signal,
   };
 }
 

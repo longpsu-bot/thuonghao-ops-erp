@@ -11,6 +11,7 @@ import {
 import {
   createProcurementReviewFixture,
   reviewOrder,
+  reviewFamily,
   reviewSuccess,
 } from "./procurement/procurementReviewFixtures";
 import { Capacity } from "./AtlasWorkspaceCapacity.stories";
@@ -22,7 +23,8 @@ import {
   pxkRow,
   pxkSuccess,
 } from "./dispatch/schoolPxkReviewFixtures";
-import { success } from "./planning/planningReviewFixtures";
+import { planningSnapshot, success } from "./planning/planningReviewFixtures";
+import planningSchoolEvidence from "../../../scripts/fixtures/atlas-planning-school-order-2026-10-11.json";
 import { ProcurementWorkbench } from "./procurement/ProcurementWorkbench";
 function Review() {
   const params = new URLSearchParams(window.location.search);
@@ -121,8 +123,142 @@ function Review() {
       // Review-only pending Preview snapshot; normal valid sync still saves immediately.
       fixture.planning.previewMenu = async () => new Promise(() => {});
     }
+    if (scenario === "planningMaster") {
+      // LOCAL_FIXTURE: observed names/ranks, stable local identities and synthetic
+      // attendance. This is parser/UI evidence, not a hosted master-data readback.
+      const planning = planningSnapshot();
+      const week = "2026-10-12";
+      const weekEnd = "2026-10-18";
+      planning.week_start = week;
+      planning.week_end = weekEnd;
+      planning.schools = planningSchoolEvidence.schools.map((school) => ({
+        ...planning.schools[0],
+        school_id: `stable-school-${school.legacy_id}`,
+        school_code: `v1-school-${school.legacy_id}`,
+        school_name: school.school_name,
+        display_order: school.display_order,
+      }));
+      planning.dish_types = [
+        {
+          dish_type_id: "stable-type-1",
+          dish_type_code: "canh",
+          dish_type_name: "Canh",
+          source_header_aliases: ["Canh"],
+          display_order: 1,
+          dish_type_status: "ACTIVE",
+          version: 1,
+        },
+      ];
+      planning.dishes = [
+        {
+          dish_id: "deterministic-import-dish-2010",
+          dish_code: "v1-dish-2010",
+          dish_name: "Canh đu đủ nấu tôm khô",
+          dish_type_id: "stable-type-1",
+          dish_type_code: "canh",
+          dish_type_name: "Canh",
+          dish_status: "ACTIVE",
+          display_order: 1,
+          requires_need_generation: true,
+        },
+      ];
+      const menu = planning.schools.map((school) => ({
+        school_id: school.school_id,
+        service_date: week,
+        menu_slot_code: "canh",
+        dish_id: planning.dishes[0].dish_id,
+        source_row_reference: null,
+      }));
+      const attendance = planning.schools.map((school) => ({
+        school_id: school.school_id,
+        service_date: week,
+        student_portions: school.default_student_portions,
+        teacher_portions: school.default_teacher_portions,
+        source_row_reference: null,
+      }));
+      planning.weekly_menu = {
+        ...planning.weekly_menu!,
+        week_start: week,
+        week_end: weekEnd,
+        lines: menu,
+        row_count: menu.length,
+      };
+      planning.attendance = {
+        ...planning.attendance!,
+        period_start: week,
+        period_end: weekEnd,
+        lines: attendance,
+        row_count: attendance.length,
+      };
+      planning.default_attendance_preview = attendance;
+      fixture.planning.getWorkbench = async () =>
+        success({ workbench: planning });
+      fixture.planning.syncMenuFromGoogle = async () =>
+        success({
+          source: {
+            source_name: "Thực đơn chính thức",
+            sheet_name: "Tuần 12-10-2026",
+          },
+          fetched_at: "2026-10-12T01:00:00Z",
+          rows: [
+            ["Tên trường", "Ngày", "Canh"],
+            ...planning.schools.map((school) => [
+              school.school_name,
+              "12/10/2026",
+              planning.dishes[0].dish_name,
+            ]),
+          ],
+        });
+      // The real strict parser runs first. Hold Preview so its resolved candidate
+      // remains inspectable without entering the normal automatic save path.
+      fixture.planning.previewMenu = async () => new Promise(() => {});
+    }
     if (rangeReview) {
       // Explicit dated review snapshots only; no production adapter or hosted writes.
+      const dailyNeed = new Map<
+        string,
+        ReturnType<typeof createConfirmedNeedReviewFixture>
+      >();
+      const needFor = (date: string) => {
+        if (!dailyNeed.has(date))
+          dailyNeed.set(date, createConfirmedNeedReviewFixture());
+        return dailyNeed.get(date)!;
+      };
+      const datedNeed = <T,>(value: T, date: string): T =>
+        JSON.parse(
+          JSON.stringify(value)
+            .replaceAll("2026-09-07", date)
+            .replaceAll('"batch-current"', `"batch-current-${date}"`)
+            .replaceAll('"run-current"', `"run-current-${date}"`)
+            .replace(
+              /"((?:line|revision|decision)-(?:\d+|saved))"/g,
+              `"$1-${date}"`,
+            ),
+        ) as T;
+      fixture.planningReadiness.preflight = async (...args) =>
+        datedNeed(
+          await needFor(args[2]).preflightApi.preflight(...args),
+          args[2],
+        );
+      fixture.confirmedNeed.getReview = async (...args) => {
+        const date = args[3].service_date ?? "2026-09-07";
+        return datedNeed(
+          await needFor(date).confirmedNeedApi.getReview(...args),
+          date,
+        );
+      };
+      fixture.confirmedNeed.save = async (request) => {
+        const date = request.payload.confirmed_need_batch_id.slice(-10);
+        return datedNeed(
+          await needFor(date).confirmedNeedApi.save(request),
+          date,
+        );
+      };
+      fixture.needGeneration.getWorkbench = async (...args) =>
+        datedNeed(
+          await needFor(args[2]).needGenerationApi.getWorkbench(...args),
+          args[2],
+        );
       const datesIn = (start: string, end: string) => {
         const dates: string[] = [];
         for (
@@ -133,6 +269,51 @@ function Review() {
           dates.push(date.toISOString().slice(0, 10));
         }
         return dates;
+      };
+      fixture.purchaseReview.getConfirmedAllocations = async (request) => {
+        const payload = request.payload as {
+          date_start: string;
+          date_end: string;
+          school_ids: string[];
+        };
+        const rows = datesIn(payload.date_start, payload.date_end)
+          .map((date) => {
+            const row = reviewFamily("manual_split");
+            return {
+              ...row,
+              service_date: date,
+              family: {
+                ...row.family,
+                service_date: date,
+                family_id: `review-family-${date}`,
+                source_fingerprint: `review-family-fingerprint-${date}`,
+                source_confirmed_need_batch_id: `batch-current-${date}`,
+                source_confirmed_need_batch_version: 4,
+              },
+            };
+          })
+          .filter(
+            (row) =>
+              !payload.school_ids.length ||
+              payload.school_ids.includes(row.school_id ?? ""),
+          );
+        return reviewSuccess({
+          ...createProcurementReviewFixture("ready").allocation,
+          date_start: payload.date_start,
+          date_end: payload.date_end,
+          rows,
+          preparation:
+            payload.date_start === payload.date_end
+              ? {
+                  service_date: payload.date_start,
+                  confirmed_need_batch_id: `batch-current-${payload.date_start}`,
+                  expected_version: 4,
+                  ready: true,
+                  allowed: true,
+                  blockers: [],
+                }
+              : null,
+        });
       };
       fixture.procurement.getPurchaseOrders = async (request) => {
         const payload = request.payload as {
@@ -233,8 +414,16 @@ function Review() {
           apis={apis}
           authSubject="fixture-operator"
           userLabel="vanhanh@example.test"
-          environmentLabel="Local"
-          now={applicationReviewNow}
+          environmentLabel={
+            params.get("scenario") === "planningMaster"
+              ? "LOCAL_FIXTURE"
+              : "Local"
+          }
+          now={
+            params.get("scenario") === "planningMaster"
+              ? new Date("2026-10-12T03:00:00Z")
+              : applicationReviewNow
+          }
           onSignOut={() => setSignedIn(false)}
           exporters={{
             procurementXlsx: () => {},
@@ -245,10 +434,27 @@ function Review() {
             procurementZip: async () => {},
             pxkZip: async () => {},
             shoppingListXlsx: async () => {},
-            shoppingListImport: async (_file, _workbench, drafts) => ({
-              drafts,
-              changedLineIds: [],
-            }),
+            shoppingListImport: async (_file, workbench, drafts, context) => {
+              if (params.get("scenario") !== "range")
+                return { drafts, changedLineIds: [] };
+              // Review-only import proposal: one visibly changed row per selected day.
+              // The supplied file is intentionally not parsed by this explicit fixture.
+              const proposed = { ...(context?.drafts ?? drafts) };
+              const changedLineIds: string[] = [];
+              for (const batch of context?.workbenches ?? [workbench]) {
+                const id = batch.lines[0]?.confirmed_need_line_id;
+                if (!id || !proposed[id]) continue;
+                proposed[id] = {
+                  ...proposed[id],
+                  exact_quantity: "12.5",
+                  quantity_entered: true,
+                  reason_code: "OTHER",
+                  reason_note: "Đề xuất nhập thử theo ngày",
+                };
+                changedLineIds.push(id);
+              }
+              return { drafts: proposed, changedLineIds };
+            },
           }}
         />
       </AtlasSessionGate>

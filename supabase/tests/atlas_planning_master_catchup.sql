@@ -1,0 +1,357 @@
+begin;
+create schema if not exists extensions;
+create extension if not exists pgtap with schema extensions;
+select no_plan();
+\ir ../packages/atlas-planning-master-catchup.sql
+
+-- Entire fixture is synthetic. The source contract matches the retained recipe-import fixture.
+create function pg_temp.catchup_signed(value jsonb) returns jsonb language sql as $$
+ select (value-'snapshot_checksum')||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(value-'snapshot_checksum'))
+$$;
+create function pg_temp.catchup_fixture() returns jsonb language sql as $fixture$
+ select pg_temp.catchup_signed($json${"contract_version":"OPS-V1-MASTER-SNAPSHOT.v1","source_system":"OPS_V1","source_project_ref":"qnthofvccilhnefdcxnz","snapshot_id":"synthetic-planning-catchup","exported_at":"2026-09-15T08:00:00.000Z","extractor_version":"synthetic-v1","complete_entities":["customers","delivery_locations","dish_types","dishes","ingredient_order_groups","ingredient_types","ingredients","recipe_lines","recipes","school_types","schools","supplier_eligibilities","suppliers","units"],"records":{"school_types":[{"legacy_id":"1","school_type_code":"v1-school-type-1","school_type_name":"TIỂU HỌC","school_type_status":"ACTIVE"},{"legacy_id":"2","school_type_code":"v1-school-type-2","school_type_name":"TRUNG HỌC","school_type_status":"ACTIVE"},{"legacy_id":"99","school_type_code":"unrelated-school-type","school_type_name":"Unrelated School type","school_type_status":"ACTIVE"}],"customers":[{"legacy_id":"school:40:customer","customer_code":"v1-customer-40","customer_name":"Customer 40","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:38:customer","customer_code":"v1-customer-38","customer_name":"Customer 38","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:52:customer","customer_code":"v1-customer-52","customer_name":"Customer 52","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:10:customer","customer_code":"v1-customer-10","customer_name":"Customer 10","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:47:customer","customer_code":"v1-customer-47","customer_name":"Customer 47","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:48:customer","customer_code":"v1-customer-48","customer_name":"Customer 48","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:49:customer","customer_code":"v1-customer-49","customer_name":"Customer 49","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:50:customer","customer_code":"v1-customer-50","customer_name":"Customer 50","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:53:customer","customer_code":"v1-customer-53","customer_name":"Customer 53","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:33:customer","customer_code":"v1-customer-33","customer_name":"Customer 33","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:21:customer","customer_code":"v1-customer-21","customer_name":"Customer 21","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:90:customer","customer_code":"v1-customer-90","customer_name":"Customer 90","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:91:customer","customer_code":"v1-customer-91","customer_name":"Customer 91","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"},{"legacy_id":"school:92:customer","customer_code":"v1-customer-92","customer_name":"Customer 92","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"}],"delivery_locations":[{"legacy_id":"school:40:delivery-location","customer_legacy_id":"school:40:customer","location_code":"v1-location-40","location_name":"VĨNH TÂN","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:38:delivery-location","customer_legacy_id":"school:38:customer","location_code":"v1-location-38","location_name":"VĨNH TÂN - PHÂN HIỆU","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:52:delivery-location","customer_legacy_id":"school:52:customer","location_code":"v1-location-52","location_name":"BÌNH QUỚI","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:10:delivery-location","customer_legacy_id":"school:10:customer","location_code":"v1-location-10","location_name":"BÌNH QUỚI - PHÂN HIỆU","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:47:delivery-location","customer_legacy_id":"school:47:customer","location_code":"v1-location-47","location_name":"CHUYÊN HÙNG VƯƠNG (Sáng)","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:48:delivery-location","customer_legacy_id":"school:48:customer","location_code":"v1-location-48","location_name":"CHUYÊN HÙNG VƯƠNG (Trưa)","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:49:delivery-location","customer_legacy_id":"school:49:customer","location_code":"v1-location-49","location_name":"CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:50:delivery-location","customer_legacy_id":"school:50:customer","location_code":"v1-location-50","location_name":"CHUYÊN HÙNG VƯƠNG (Chiều)","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:53:delivery-location","customer_legacy_id":"school:53:customer","location_code":"v1-location-53","location_name":"CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:33:delivery-location","customer_legacy_id":"school:33:customer","location_code":"v1-location-33","location_name":"THUẬN AN - PHÂN HIỆU","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:21:delivery-location","customer_legacy_id":"school:21:customer","location_code":"v1-location-21","location_name":"Unrelated ordinary School","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:90:delivery-location","customer_legacy_id":"school:90:customer","location_code":"v1-location-90","location_name":"ĐẤT CUỐC","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:91:delivery-location","customer_legacy_id":"school:91:customer","location_code":"v1-location-91","location_name":"TÂN BÌNH","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"},{"legacy_id":"school:92:delivery-location","customer_legacy_id":"school:92:customer","location_code":"v1-location-92","location_name":"TÂN ĐỊNH","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"}],"schools":[{"legacy_id":"40","customer_legacy_id":"school:40:customer","delivery_location_legacy_id":"school:40:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-40","school_name":"VĨNH TÂN","school_status":"ACTIVE","display_order":1,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"38","customer_legacy_id":"school:38:customer","delivery_location_legacy_id":"school:38:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-38","school_name":"VĨNH TÂN - PHÂN HIỆU","school_status":"ACTIVE","display_order":2,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"52","customer_legacy_id":"school:52:customer","delivery_location_legacy_id":"school:52:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-52","school_name":"BÌNH QUỚI","school_status":"ACTIVE","display_order":3,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"10","customer_legacy_id":"school:10:customer","delivery_location_legacy_id":"school:10:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-10","school_name":"BÌNH QUỚI - PHÂN HIỆU","school_status":"ACTIVE","display_order":4,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"47","customer_legacy_id":"school:47:customer","delivery_location_legacy_id":"school:47:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-47","school_name":"CHUYÊN HÙNG VƯƠNG (Sáng)","school_status":"ACTIVE","display_order":5,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"48","customer_legacy_id":"school:48:customer","delivery_location_legacy_id":"school:48:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-48","school_name":"CHUYÊN HÙNG VƯƠNG (Trưa)","school_status":"ACTIVE","display_order":6,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"49","customer_legacy_id":"school:49:customer","delivery_location_legacy_id":"school:49:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-49","school_name":"CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)","school_status":"ACTIVE","display_order":7,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"50","customer_legacy_id":"school:50:customer","delivery_location_legacy_id":"school:50:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-50","school_name":"CHUYÊN HÙNG VƯƠNG (Chiều)","school_status":"ACTIVE","display_order":8,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"53","customer_legacy_id":"school:53:customer","delivery_location_legacy_id":"school:53:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-53","school_name":"CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)","school_status":"ACTIVE","display_order":9,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"33","customer_legacy_id":"school:33:customer","delivery_location_legacy_id":"school:33:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-33","school_name":"THUẬN AN - PHÂN HIỆU","school_status":"ACTIVE","display_order":10,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"21","customer_legacy_id":"school:21:customer","delivery_location_legacy_id":"school:21:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-21","school_name":"Unrelated ordinary School","school_status":"ACTIVE","display_order":11,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"90","customer_legacy_id":"school:90:customer","delivery_location_legacy_id":"school:90:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-90","school_name":"ĐẤT CUỐC","school_status":"INACTIVE","display_order":0,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"91","customer_legacy_id":"school:91:customer","delivery_location_legacy_id":"school:91:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-91","school_name":"TÂN BÌNH","school_status":"INACTIVE","display_order":0,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"},{"legacy_id":"92","customer_legacy_id":"school:92:customer","delivery_location_legacy_id":"school:92:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-92","school_name":"TÂN ĐỊNH","school_status":"INACTIVE","display_order":0,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"}],"units":[{"legacy_id":"kg","unit_code":"kg","unit_name":"Kilogram","dimension_code":"MASS","decimal_scale":6,"unit_status":"ACTIVE"},{"legacy_id":"Hũ","unit_code":"v1-unit-9837090d3b3f","unit_name":"Hũ","dimension_code":"COUNT","decimal_scale":0,"unit_status":"ACTIVE"}],"ingredient_types":[{"legacy_id":"37","ingredient_type_name":"Khác"},{"legacy_id":"99","ingredient_type_name":"Unrelated unmapped catalogue"}],"ingredient_order_groups":[{"legacy_id":"2","ingredient_order_group_name":"Còn lại"}],"ingredients":[{"legacy_id":"1","ingredient_code":"v1-ingredient-1","ingredient_name":"Nguyên liệu 1","ingredient_type_legacy_id":"37","ingredient_order_group_legacy_id":"2","purchase_unit_legacy_id":"kg","order_step":"1","ingredient_status":"ACTIVE"},{"legacy_id":"2","ingredient_code":"v1-ingredient-2","ingredient_name":"Nguyên liệu 2","ingredient_type_legacy_id":"37","ingredient_order_group_legacy_id":"2","purchase_unit_legacy_id":"kg","order_step":"1","ingredient_status":"ACTIVE"}],"suppliers":[],"supplier_eligibilities":[],"dish_types":[{"legacy_id":"1","dish_type_code":"soup","source_name":"Canh"}],"dishes":[{"legacy_id":"100","dish_code":"v1-dish-100","dish_name":"Canh mẫu","dish_type_legacy_id":"1","dish_status":"ACTIVE"}],"recipes":[{"legacy_id":"dish:100:school-type:1","source_record_id":"200","dish_legacy_id":"100","school_type_legacy_id":"1","recipe_status":"ACTIVE","basis_portions":100},{"legacy_id":"dish:100:school-type:2","source_record_id":"201","dish_legacy_id":"100","school_type_legacy_id":"2","recipe_status":"ACTIVE","basis_portions":100}],"recipe_lines":[{"legacy_id":"recipe:dish:100:school-type:1:ingredient:1","source_record_id":"300","recipe_legacy_id":"dish:100:school-type:1","ingredient_legacy_id":"1","unit_legacy_id":"Hũ","quantity_per_basis":"1.5","operational_note":null},{"legacy_id":"recipe:dish:100:school-type:1:ingredient:2","source_record_id":"400","recipe_legacy_id":"dish:100:school-type:1","ingredient_legacy_id":"2","unit_legacy_id":"kg","quantity_per_basis":"0.5","operational_note":"Second fixture line"},{"legacy_id":"recipe:dish:100:school-type:2:ingredient:1","source_record_id":"301","recipe_legacy_id":"dish:100:school-type:2","ingredient_legacy_id":"1","unit_legacy_id":"kg","quantity_per_basis":"1.5","operational_note":null}]},"source_counts":{"schools":14,"ingredients":2,"dishes":1,"recipes":2,"bill_of_materials":3},"source_diagnostics":[{"entity":"schools","legacy_id":"90","code":"INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED","severity":"INFO"},{"entity":"schools","legacy_id":"91","code":"INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED","severity":"INFO"},{"entity":"schools","legacy_id":"92","code":"INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED","severity":"INFO"}],"unit_alias_evidence":[{"source_label":"Hũ","canonical_label":"Hũ"},{"source_label":"Hủ","canonical_label":"Hũ"},{"source_label":"Kg","canonical_label":"kg"},{"source_label":"kg","canonical_label":"kg"}],"source_access":{"role_name":"supabase_read_only_user","bypass_rls":true,"superuser":false,"create_role":false,"create_db":false,"has_required_select":true,"has_non_select_privilege":false}}$json$::jsonb)
+$fixture$;
+
+insert into atlas_core.actors(actor_id,actor_type,display_name)
+values ('ee120000-0000-4000-8000-000000000001','HUMAN','Synthetic catch-up operator');
+insert into atlas_legacy.import_batches(
+ import_batch_id,source_system,snapshot_id,snapshot_checksum,exported_at,import_status,completed_at,
+ operator_actor_id,execution_database_principal,plan_checksum,snapshot_contract_version,source_counts
+) values (
+ 'ee120000-0000-4000-8000-000000000002','OPS_V1','synthetic-catchup-prior',repeat('a',64),'2026-09-16','COMPLETED','2026-09-16',
+ 'ee120000-0000-4000-8000-000000000001','postgres',repeat('b',64),'OPS-V1-MASTER-SNAPSHOT.v1','{}'
+);
+-- Prior typed mappings retain non-derived UUIDs for School 33 and Ingredient 1.
+-- Ingredient 2 and the entire Dish/Recipe/BoM closure are absent.
+do $$
+declare snapshot jsonb:=pg_temp.catchup_fixture(); kind text; r jsonb; target uuid; vals jsonb; action jsonb; observed jsonb;
+begin
+ foreach kind in array array['SCHOOL_TYPE','CUSTOMER','DELIVERY_LOCATION','SCHOOL','UNIT','INGREDIENT_TYPE','INGREDIENT_ORDER_GROUP','DISH_TYPE','INGREDIENT'] loop
+  for r in select value from jsonb_array_elements(snapshot#>array['records',atlas_legacy.master_import_entity(kind)]) loop
+   if r->>'legacy_id'='99' or (kind='INGREDIENT' and r->>'legacy_id'<>'1') then continue; end if;
+   target:=case when kind='SCHOOL' and r->>'legacy_id'='33' then 'ee120000-0000-4000-8000-000000000033'::uuid
+    when kind='INGREDIENT' then 'ee120000-0000-4000-8000-000000000101'::uuid
+    else atlas_legacy.master_import_target_id(snapshot,kind,r->>'legacy_id') end;
+   observed:=atlas_legacy.master_import_read(kind,target);
+   vals:=atlas_legacy.master_import_values(snapshot,kind,r,target);
+   if kind='SCHOOL' then vals:=vals||jsonb_build_object('display_order',100+(r->>'legacy_id')::integer); end if;
+   if kind='SCHOOL' and r->>'legacy_id'='33' then vals:=vals||jsonb_build_object('school_name','TRẦN ĐẠI NGHĨA'); end if;
+   action:=atlas_legacy.master_recipe_action(kind,r->>'legacy_id',case when observed is null then 'CREATE' else 'NO_CHANGE' end,target,vals,atlas_legacy.master_snapshot_hash(r));
+   perform atlas_legacy.master_import_write_core(action);
+   perform atlas_legacy.master_import_record_mapping(action,'ee120000-0000-4000-8000-000000000002');
+  end loop;
+ end loop;
+end $$;
+-- A separate adopted Recipe predates this catch-up. Its complete immutable
+-- evidence must survive creation of a new adoption with the same raw Unit.
+do $$
+declare snapshot jsonb:=pg_temp.catchup_fixture(); records jsonb; plan jsonb; action jsonb;
+begin
+ records:=snapshot->'records';
+ records:=records||jsonb_build_object(
+  'dishes',jsonb_build_array((records#>'{dishes,0}')||jsonb_build_object('legacy_id','900','dish_code','v1-dish-900','dish_name','Prior adopted Dish')),
+  'recipes',jsonb_build_array((records#>'{recipes,0}')||jsonb_build_object('legacy_id','dish:900:school-type:1','dish_legacy_id','900')),
+  'recipe_lines',jsonb_build_array((records#>'{recipe_lines,0}')||jsonb_build_object('legacy_id','recipe:dish:900:school-type:1:ingredient:1','recipe_legacy_id','dish:900:school-type:1'))
+ );
+ snapshot:=pg_temp.catchup_signed(snapshot||jsonb_build_object('snapshot_id','synthetic-catchup-prior','records',records));
+ update atlas_legacy.import_batches set snapshot_checksum=snapshot->>'snapshot_checksum'
+ where import_batch_id='ee120000-0000-4000-8000-000000000002';
+ plan:=atlas_legacy.master_import_recipe_plan(snapshot);
+ if plan->>'issues'<>'[]' then raise exception 'PRIOR_ADOPTION_FIXTURE_INVALID: %',plan; end if;
+ perform atlas_legacy.master_import_apply_recipes(snapshot,plan,'ee120000-0000-4000-8000-000000000001');
+ for action in select value from jsonb_array_elements(plan->'actions') loop
+  perform atlas_legacy.master_import_record_mapping(action,'ee120000-0000-4000-8000-000000000002');
+ end loop;
+ perform atlas_legacy.record_master_recipe_unit_adoption_evidence(snapshot,plan,'ee120000-0000-4000-8000-000000000002','ee120000-0000-4000-8000-000000000001');
+end $$;
+create temp table unrelated_adoption_before as
+select to_jsonb(e) value from atlas_legacy.recipe_unit_adoption_evidence e where snapshot_id='synthetic-catchup-prior';
+select is((select count(*) from unrelated_adoption_before),1::bigint,'fixture contains one real unrelated immutable Unit adoption');
+insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status)
+values ('ee120000-0000-4000-8000-000000000999','native-unrelated','Later operator-owned Supplier','ACTIVE');
+create temp table unrelated_before as select to_jsonb(s) value from atlas_admin.suppliers s where supplier_code='native-unrelated';
+create temp table stable_before as select to_jsonb(i) value from atlas_admin.ingredients i where ingredient_id='ee120000-0000-4000-8000-000000000101';
+create temp table school_before as select school_id,to_jsonb(s)-'school_name'-'display_order'-'version'-'updated_at' value from atlas_admin.schools s;
+insert into atlas_planning.attendance_batches (
+ attendance_batch_id,period_start,period_end,source_type,source_name,source_signature,row_count,imported_by_actor_id
+) values (
+ 'ee120000-0000-4000-8000-000000000201','2026-09-14','2026-09-20','SCHOOL_DEFAULTS','Prior Attendance','prior-attendance',1,'ee120000-0000-4000-8000-000000000001'
+);
+insert into atlas_planning.attendance_lines (
+ attendance_line_id,attendance_batch_id,school_id,service_date,student_portions,teacher_portions,created_by_actor_id,updated_by_actor_id
+) select 'ee120000-0000-4000-8000-000000000202','ee120000-0000-4000-8000-000000000201',school_id,'2026-09-14',420,32,
+ 'ee120000-0000-4000-8000-000000000001','ee120000-0000-4000-8000-000000000001'
+from atlas_admin.schools where school_code='v1-school-21';
+create temp table operational_before as select to_jsonb(l) value from atlas_planning.attendance_lines l;
+create temp table evidence(label text primary key,value jsonb);
+-- One unchanged complete source and unchanged target under both planner modes.
+-- SET LOCAL is confined to this rolled-back fixture transaction.
+create temp table plan_mode_source as select pg_temp.catchup_fixture() snapshot,
+ pg_temp.planning_catchup_protected('[]') protected_before;
+create temp table plan_mode_evidence(mode text primary key,value jsonb);
+set local plan_cache_mode='auto';
+insert into plan_mode_evidence select 'auto',pg_temp.run_planning_master_catchup(snapshot,false,null,null) from plan_mode_source;
+set local plan_cache_mode='force_generic_plan';
+insert into plan_mode_evidence select 'generic',pg_temp.run_planning_master_catchup(snapshot,false,null,null) from plan_mode_source;
+select is(current_setting('plan_cache_mode'),'force_generic_plan','catchup parity fixture executes with the candidate generic-plan setting');
+select ok((select count(*)=2 and bool_and(value->>'success'='true') from plan_mode_evidence),'both planner modes complete the same dependency-closed preview');
+select is((select value->>'plan_checksum' from plan_mode_evidence where mode='generic'),(select value->>'plan_checksum' from plan_mode_evidence where mode='auto'),'generic planning preserves the complete plan checksum');
+select is((select value->'actions' from plan_mode_evidence where mode='generic'),(select value->'actions' from plan_mode_evidence where mode='auto'),'generic planning preserves every action and its order');
+select is((select value->'issues' from plan_mode_evidence where mode='generic'),(select value->'issues' from plan_mode_evidence where mode='auto'),'generic planning preserves all issues and guards');
+select is((select snapshot from plan_mode_source),pg_temp.catchup_fixture(),'planner comparison keeps the complete signed source unchanged');
+select is(pg_temp.planning_catchup_protected('[]'),(select protected_before from plan_mode_source),'neither planner-mode preview changes target facts or mappings');
+select lives_ok($$select pg_temp.planning_catchup_plan(pg_temp.catchup_fixture())$$,'bounded planner executes directly without hidden SQL exceptions');
+insert into evidence values ('preview',pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),false,null,null));
+select diag(value::text) from evidence where label='preview' and value->>'success' is distinct from 'true';
+select is((select value->>'success' from evidence where label='preview'),'true','dependency-closed source previews successfully');
+select is((select value->>'business_writes' from evidence where label='preview'),'0','preview reports zero business writes');
+select is((select count(*) from atlas_admin.dishes),1::bigint,'preview creates no Dish beyond the prior adoption fixture');
+select is((select count(*) from atlas_legacy.import_batches),1::bigint,'preview creates no receipt');
+select is((select value#>>'{summary,RECIPE}' from evidence where label='preview'),'2','closure contains both source Recipe scopes');
+select is((select value#>>'{summary,RECIPE_LINE}' from evidence where label='preview'),'3','closure contains every source BoM line');
+select is((select count(*) from evidence e cross join lateral jsonb_array_elements(e.value->'actions') a where e.label='preview' and a->>'object_type'='INGREDIENT' and a->>'action'='CREATE'),1::bigint,'only missing Ingredient dependency is created');
+select ok(not exists(select 1 from evidence e cross join lateral jsonb_array_elements(e.value->'actions') a where e.label='preview' and a->>'legacy_id'='99'),'unreferenced School and Ingredient catalogues stay outside catch-up scope');
+select is(pg_temp.run_planning_master_catchup(jsonb_set(pg_temp.catchup_fixture(),'{snapshot_checksum}','"corrupt"'),false,null,null)->>'error_code','SNAPSHOT_CHECKSUM_MISMATCH','source checksum drift blocks before planning');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{source_access,has_non_select_privilege}','true')),false,null,null)->>'error_code','SOURCE_NOT_PROVEN_READ_ONLY','source privilege drift fails closed');
+-- Preserve the normalized diagnostic rather than reducing it to a generic error.
+-- An unrelated blocker must not enter this missing-Dish closure's issue list.
+create temp table source_blocker_fixture as select
+ '[{"entity":"dishes","legacy_id":"100","code":"FIXTURE_SOURCE_DISH_BLOCKER","field":"dish_type_legacy_id","detail":"Dish 100 has an unresolved source type.","severity":"BLOCKER"}]'::jsonb expected_issues,
+ pg_temp.planning_catchup_protected('[]') target_before;
+insert into evidence values ('source-blocked',pg_temp.run_planning_master_catchup(
+ pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{source_diagnostics}',
+  (pg_temp.catchup_fixture()->'source_diagnostics')
+  || (select expected_issues from source_blocker_fixture)
+  || '[{"entity":"ingredients","legacy_id":"999","code":"UNRELATED_SOURCE_BLOCKER","detail":"Outside the missing Dish closure.","severity":"BLOCKER"}]'::jsonb
+ )),false,null,null
+));
+select is((select value->>'success' from evidence where label='source-blocked'),'false','scoped source blocker fails preview closed');
+select is((select value->>'status' from evidence where label='source-blocked'),'BLOCKED','scoped source blocker has explicit BLOCKED status');
+select is((select value->>'error_code' from evidence where label='source-blocked'),'SOURCE_DEPENDENCY_BLOCKED','scoped source blocker retains its dependency error classification');
+select is((select value->'issues' from evidence where label='source-blocked'),(select expected_issues from source_blocker_fixture),'blocked preview retains exact scoped entity, legacy identity, code, field, detail and severity');
+select is(pg_temp.planning_catchup_protected('[]'),(select target_before from source_blocker_fixture),'blocked preview changes no target facts, typed mappings or Unit-adoption evidence');
+select is((select count(*) from atlas_legacy.import_batches),1::bigint,'blocked preview creates no import receipt');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,ingredients}',(pg_temp.catchup_fixture()#>'{records,ingredients}')-1)),false,null,null)->>'error_code','MISSING_RECIPE_DEPENDENCY','missing BoM Ingredient stops the complete closure');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,units}','[]')),false,null,null)->>'error_code','MISSING_RECIPE_DEPENDENCY','missing BoM Unit stops the complete closure');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,recipes}','[]')),false,null,null)->>'error_code','MISSING_RECIPE_SCOPE','missing Dish cannot be imported without Recipe scope');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,recipe_lines}','[]')),false,null,null)->>'success','true','active empty Recipes may preview root-only under the Owner-approved policy');
+select ok(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,school_types}','[]')),false,null,null)->>'success'='false','missing typed School scope cannot become a general Recipe');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,schools,9,school_name}','"Unreviewed School 33 identity"')),false,null,null)->>'error_code','SCHOOL_33_SOURCE_DRIFT','School 33 source identity drift cannot be guessed');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,schools,0,display_order}','3')),false,null,null)->>'error_code','OWNER_SCHOOL_SEQUENCE_DRIFT','Vinh Tan branch cannot precede main');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,schools,10,display_order}','3')),false,null,null)->>'error_code','OWNER_SCHOOL_SEQUENCE_DRIFT','another School cannot split Binh Quoi main and branch');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,schools,10,display_order}','6')),false,null,null)->>'error_code','OWNER_SCHOOL_SEQUENCE_DRIFT','another School cannot split the five Hung Vuong sessions');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,repeat('f',64),'ee120000-0000-4000-8000-000000000001')->>'error_code','SOURCE_OR_TARGET_PLAN_DRIFT','unreviewed plan checksum cannot apply');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,dishes,0,dish_name}','"Changed source Dish"')),true,(select value->>'plan_checksum' from evidence where label='preview'),'ee120000-0000-4000-8000-000000000001')->>'error_code','SOURCE_OR_TARGET_PLAN_DRIFT','re-signed source content still requires a newly reviewed plan');
+
+savepoint target_change;
+update atlas_admin.schools set default_student_portions=777,version=version+1 where school_id='ee120000-0000-4000-8000-000000000033';
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,(select value->>'plan_checksum' from evidence where label='preview'),'ee120000-0000-4000-8000-000000000001')->>'error_code','SOURCE_OR_TARGET_PLAN_DRIFT','target version and facts changing after preview blocks apply');
+select is((select default_student_portions from atlas_admin.schools where school_id='ee120000-0000-4000-8000-000000000033'),777,'target drift is preserved after blocked apply');
+rollback to savepoint target_change;
+
+savepoint missing_mapping;
+delete from atlas_legacy.master_data_mappings where source_system='OPS_V1' and object_type='SCHOOL' and legacy_id='33';
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),false,null,null)->>'error_code','SCHOOL_TYPED_MAPPING_REQUIRED','School resolution requires exact typed mapping instead of UUID/name fallback');
+rollback to savepoint missing_mapping;
+
+savepoint wrong_type;
+update atlas_legacy.master_data_mappings set source_system='OTHER_SOURCE' where source_system='OPS_V1' and object_type='INGREDIENT' and legacy_id='1';
+select ok(pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),false,null,null)->>'success'='false','same legacy key from another source does not stand in for an OPS_V1 mapping');
+rollback to savepoint wrong_type;
+
+insert into evidence values ('apply',pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,(select value->>'plan_checksum' from evidence where label='preview'),'ee120000-0000-4000-8000-000000000001'));
+select diag(value::text) from evidence where label='apply' and value->>'success' is distinct from 'true';
+select is((select value->>'status' from evidence where label='apply'),'APPLIED','the reviewed bounded plan applies atomically');
+select is((select value->>'operational_data_unchanged' from evidence where label='apply'),'true','operational fingerprint preservation gate passes');
+select is((select value->>'unrelated_master_facts_unchanged' from evidence where label='apply'),'true','unrelated master fingerprint preservation gate passes');
+select is((select school_id from atlas_admin.schools where school_code='v1-school-33'),'ee120000-0000-4000-8000-000000000033'::uuid,'School 33 retains existing non-derived UUID');
+select is((select school_name from atlas_admin.schools where school_code='v1-school-33'),'THUẬN AN - PHÂN HIỆU','School 33 name converges to the exact source identity');
+select is((select to_jsonb(i) from atlas_admin.ingredients i where ingredient_id='ee120000-0000-4000-8000-000000000101'),(select value from stable_before),'existing Ingredient UUID and complete facts remain unchanged');
+select is((select to_jsonb(s) from atlas_admin.suppliers s where supplier_code='native-unrelated'),(select value from unrelated_before),'unrelated operator-owned Supplier remains byte-identical');
+select is((select to_jsonb(l) from atlas_planning.attendance_lines l where attendance_line_id='ee120000-0000-4000-8000-000000000202'),(select value from operational_before),'pre-existing Attendance quantities, line identity and evidence remain byte-identical');
+select ok(not exists(select 1 from school_before b join atlas_admin.schools s using(school_id) where b.value is distinct from to_jsonb(s)-'school_name'-'display_order'-'version'-'updated_at'),'all School facts other than allowed name/order/version stamps are retained');
+select is((select count(*) from atlas_admin.dishes),2::bigint,'one missing Dish materialized alongside the prior adopted Dish');
+select is((select count(*) from atlas_admin.recipes),3::bigint,'both typed Recipe roots materialized alongside the prior Recipe');
+select is((select count(*) from atlas_admin.recipe_versions where recipe_version_status='RELEASED_FOR_PLANNING'),3::bigint,'both new Recipe versions and the prior version remain Planning eligible');
+select is((select count(*) from atlas_admin.recipe_line_revisions),4::bigint,'all three exact BoM lines materialized alongside the prior line');
+select is((select count(*) from atlas_legacy.master_data_mappings where source_system='OPS_V1' and object_type='RECIPE_LINE'),4::bigint,'every BoM stable line and the prior line retain typed source mapping');
+select ok((select bool_and(r.ingredient_id=m.ingredient_id) from atlas_admin.recipe_line_revisions r join atlas_legacy.master_data_mappings m on m.source_system='OPS_V1' and m.object_type='INGREDIENT' and m.legacy_id='1' where r.ingredient_id='ee120000-0000-4000-8000-000000000101'),'new BoM lines retain existing typed Ingredient identity');
+select is((select array_agg(m.legacy_id order by s.display_order,s.school_name,s.school_id) from atlas_admin.schools s join atlas_legacy.master_data_mappings m on m.school_id=s.school_id and m.object_type='SCHOOL' and m.source_system='OPS_V1' where m.legacy_id in ('40','38','52','10','47','48','49','50','53')),array['40','38','52','10','47','48','49','50','53'],'exact Owner School blocks remain ordered');
+select ok((select min(s.display_order) from atlas_admin.schools s join atlas_legacy.master_data_mappings m on m.school_id=s.school_id where m.object_type='SCHOOL' and m.legacy_id in ('90','91','92')) > (select max(s.display_order) from atlas_admin.schools s join atlas_legacy.master_data_mappings m on m.school_id=s.school_id where m.object_type='SCHOOL' and m.legacy_id not in ('90','91','92')),'source NULL-order Schools occupy deterministic positive tail positions');
+select ok(not exists(select 1 from atlas_admin.school_types where school_type_code='unrelated-school-type'),'unrelated source catalogue was not created');
+select is((select count(*) from atlas_legacy.recipe_unit_adoption_evidence where snapshot_id='synthetic-planning-catchup'),1::bigint,'catch-up records one adoption only for its mismatched raw BoM Unit');
+select ok((select bool_and(
+ e.evidence_kind='OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION'
+ and e.legacy_recipe_line_id='recipe:dish:100:school-type:1:ingredient:1'
+ and e.source_unit_id=atlas_legacy.master_import_target_id(pg_temp.catchup_fixture(),'UNIT','Hũ')
+ and e.corrected_unit_id=i.purchase_unit_id and r.unit_id=i.purchase_unit_id
+ and e.quantity_per_basis=1.5 and r.quantity_per_basis=1.5
+ and e.snapshot_checksum=pg_temp.catchup_fixture()->>'snapshot_checksum'
+ and e.recorded_by_actor_id='ee120000-0000-4000-8000-000000000001'::uuid
+ and e.predecessor_recipe_version_id is null and e.predecessor_recipe_line_revision_id is null
+ ) from atlas_legacy.recipe_unit_adoption_evidence e
+ join atlas_admin.recipe_line_revisions r on r.recipe_line_revision_id=e.target_recipe_line_revision_id
+ join atlas_admin.ingredients i on i.ingredient_id=e.ingredient_id
+ where e.snapshot_id='synthetic-planning-catchup'),'D-047 binds raw Unit evidence, Ingredient purchase Unit, exact unchanged quantity and approved source lineage');
+select is((select to_jsonb(e) from atlas_legacy.recipe_unit_adoption_evidence e where snapshot_id='synthetic-catchup-prior'),(select value from unrelated_adoption_before),'catch-up preserves unrelated immutable adoption evidence byte-for-byte');
+select throws_ok($q$update atlas_legacy.recipe_unit_adoption_evidence set quantity_per_basis=99 where snapshot_id='synthetic-planning-catchup'$q$,'23514','recipe Unit adoption evidence is immutable','new adoption evidence cannot be edited');
+
+create temp table after_apply as select pg_temp.planning_catchup_fingerprints((select value->'actions' from evidence where label='preview')) value;
+create temp table adoption_after_apply as select jsonb_agg(to_jsonb(e) order by e.recipe_unit_adoption_evidence_id) value from atlas_legacy.recipe_unit_adoption_evidence e;
+insert into evidence values ('replay',pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,(select value->>'plan_checksum' from evidence where label='preview'),'ee120000-0000-4000-8000-000000000001'));
+select is((select value->>'status' from evidence where label='replay'),'REPLAYED','same source and approved plan replay without writes');
+select is(pg_temp.planning_catchup_fingerprints((select value->'actions' from evidence where label='preview')),(select value from after_apply),'replay preserves all scoped target and mapping fingerprints');
+select is((select count(*) from atlas_legacy.import_batches),2::bigint,'replay creates no duplicate receipt');
+select is((select count(*) from atlas_legacy.recipe_unit_adoption_evidence),2::bigint,'replay does not duplicate new or unrelated Unit adoption evidence');
+select is((select jsonb_agg(to_jsonb(e) order by e.recipe_unit_adoption_evidence_id) from atlas_legacy.recipe_unit_adoption_evidence e),(select value from adoption_after_apply),'replay preserves adoption identities, timestamps, source lineage and exact facts');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_fixture(),'{records,dishes,0,dish_name}','"Reused snapshot changed"')),false,null,null)->>'error_code','SNAPSHOT_ID_CONFLICT','same snapshot identity cannot be reused with changed source');
+update atlas_admin.schools set default_teacher_portions=888,version=version+1 where school_id='ee120000-0000-4000-8000-000000000033';
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,(select value->>'plan_checksum' from evidence where label='preview'),'ee120000-0000-4000-8000-000000000001')->>'error_code','TARGET_DRIFT','same-snapshot replay fails after target facts drift');
+select is((select default_teacher_portions from atlas_admin.schools where school_id='ee120000-0000-4000-8000-000000000033'),888,'replay leaves later operator facts intact');
+-- Exact Owner cases. Dish 2036 has independent composition; Ingredient 1204 has
+-- the same name as Dish 2041. Neither is authority to fill the four empty roots.
+create function pg_temp.catchup_owner_fixture() returns jsonb language plpgsql as $$
+declare snapshot jsonb:=pg_temp.catchup_fixture(); records jsonb:=snapshot->'records'; dishes jsonb:='[]'; recipes jsonb:='[]'; lines jsonb:='[]'; row record;
+begin
+ for row in select * from (values
+  ('2034','Cá basa phi lê sốt me + thịt heo kho tiêu'),
+  ('2036','Cá basa phi lê sốt me + thịt heo kho tiêu (THĐ)'),
+  ('2041','Bánh bông lan kem Thiên Ân 40g'),
+  ('2062','Thạch rau câu Zòn Zòn')
+ ) d(id,name) loop
+  dishes:=dishes||jsonb_build_array((records#>'{dishes,0}')||jsonb_build_object('legacy_id',row.id,'dish_code','v1-dish-'||row.id,'dish_name',row.name));
+ end loop;
+ for row in select * from (values
+  ('2034','1','3456'),('2034','2','3457'),('2041','1','3468'),('2041','2','3469'),
+  ('2036','1','synthetic-comparison-2036'),('2062','1','3510'),('2062','2','3511')
+ ) r(dish,type,source) loop
+  recipes:=recipes||jsonb_build_array((records#>'{recipes,0}')||jsonb_build_object('legacy_id','dish:'||row.dish||':school-type:'||row.type,'dish_legacy_id',row.dish,'school_type_legacy_id',row.type,'source_record_id',row.source));
+  if row.dish='2062' then
+   lines:=lines||jsonb_build_array((records#>'{recipe_lines,0}')||jsonb_build_object('legacy_id','recipe:dish:2062:school-type:'||row.type||':ingredient:1215','recipe_legacy_id','dish:2062:school-type:'||row.type,'ingredient_legacy_id','1215','unit_legacy_id','Túi','quantity_per_basis','100','source_record_id','synthetic-bom-'||row.source));
+  elsif row.dish='2036' then
+   lines:=lines||jsonb_build_array((records#>'{recipe_lines,0}')||jsonb_build_object('legacy_id','recipe:dish:2036:school-type:1:ingredient:1','recipe_legacy_id','dish:2036:school-type:1','unit_legacy_id','kg','source_record_id','synthetic-comparison-bom'));
+  end if;
+ end loop;
+ records:=records||jsonb_build_object('dishes',dishes,'recipes',recipes,'recipe_lines',lines,
+  'ingredients',(records->'ingredients')||jsonb_build_array(
+   (records#>'{ingredients,0}')||jsonb_build_object('legacy_id','1215','ingredient_code','v1-ingredient-1215','ingredient_name','Thạch rau câu Zòn Zòn','purchase_unit_legacy_id','Túi'),
+   (records#>'{ingredients,0}')||jsonb_build_object('legacy_id','1204','ingredient_code','v1-ingredient-1204','ingredient_name','Bánh bông lan kem Thiên Ân 40g','purchase_unit_legacy_id','Cái')),
+  'units',(records->'units')||jsonb_build_array(jsonb_build_object('legacy_id','Túi','unit_code','v1-unit-67df33ade68a','unit_name','Túi','dimension_code','COUNT','decimal_scale',0,'unit_status','ACTIVE')));
+ return pg_temp.catchup_signed(snapshot||jsonb_build_object('snapshot_id','synthetic-owner-zero-bom-tui','records',records,'source_counts',jsonb_build_object('schools',14,'ingredients',4,'dishes',4,'recipes',7,'bill_of_materials',3)));
+end $$;
+
+-- Same signed source through the minimal working envelope and the previous
+-- full-envelope behavior. All helper replacement is pg_temp-only and restored.
+create temp table envelope_source as
+select pg_temp.catchup_signed(jsonb_set(jsonb_set(pg_temp.catchup_owner_fixture(),
+ '{records,suppliers}','[{"legacy_id":"envelope-supplier","supplier_code":"v1-envelope-supplier","supplier_name":"Envelope fixture","supplier_status":"ACTIVE"}]'),
+ '{records,supplier_eligibilities}','[{"legacy_id":"envelope-membership","supplier_legacy_id":"envelope-supplier","ingredient_legacy_id":"1215","priority":1}]')
+ ||jsonb_build_object('snapshot_id','synthetic-large-envelope','source_counts',(pg_temp.catchup_owner_fixture()->'source_counts')||'{"suppliers":1,"supplier_eligibilities":1}'::jsonb,'unused_metadata',jsonb_build_object('padding',repeat('x',1048576)),
+ 'source_fingerprints',jsonb_build_array(jsonb_build_object('legacy_id','unused-fingerprint','fingerprint',repeat('a',64))))) snapshot;
+create temp table envelope_evidence(label text primary key,value jsonb);
+insert into envelope_evidence select 'original',snapshot from envelope_source;
+insert into envelope_evidence select 'protected',pg_temp.planning_catchup_protected('[]');
+insert into envelope_evidence select 'minimal-scope',pg_temp.planning_catchup_scope(snapshot) from envelope_source;
+select is((select array_agg(key order by key) from envelope_evidence e cross join lateral jsonb_object_keys(e.value) key where label='minimal-scope'),
+ array['catchup_dish_ids','exported_at','records','snapshot_checksum','snapshot_id'],'working scope exposes only the five required fields');
+select ok((select octet_length(s.snapshot::text)-octet_length(e.value::text)>1048576 from envelope_source s cross join envelope_evidence e where e.label='minimal-scope'),'unused signed metadata is absent from the working Recipe input');
+select is((select value->>'snapshot_checksum' from envelope_evidence where label='minimal-scope'),(select snapshot->>'snapshot_checksum' from envelope_source),'working envelope retains the original complete-source checksum');
+insert into envelope_evidence select 'minimal-plan',pg_temp.run_planning_master_catchup(snapshot,false,null,null) from envelope_source;
+create temp table envelope_scope_definition as select pg_get_functiondef('pg_temp.planning_catchup_scope(jsonb,jsonb)'::regprocedure) definition;
+do $$
+declare definition text; copy_definition text;
+begin
+ select d.definition into definition from envelope_scope_definition d;
+ copy_definition:=replace(definition,'planning_catchup_scope(','planning_catchup_scope_minimal_baseline(');
+ if copy_definition=definition then raise exception 'ENVELOPE_FIXTURE_FUNCTION_COPY_FAILED'; end if;
+ execute copy_definition;
+end $$;
+create or replace function pg_temp.planning_catchup_scope(snapshot jsonb, prior_scope jsonb default null)
+returns jsonb language sql stable set search_path='' as $$
+ select snapshot||pg_temp.planning_catchup_scope_minimal_baseline(snapshot,prior_scope)
+$$;
+insert into envelope_evidence select 'full-plan',pg_temp.run_planning_master_catchup(snapshot,false,null,null) from envelope_source;
+do $$ begin execute (select definition from envelope_scope_definition); end $$;
+select is(pg_get_functiondef('pg_temp.planning_catchup_scope(jsonb,jsonb)'::regprocedure),(select definition from envelope_scope_definition),'full-envelope parity wrapper restores the exact candidate helper before remaining regressions');
+select ok((select count(*)=2 and bool_and(value->>'success'='true') from envelope_evidence where label in ('minimal-plan','full-plan')),'minimal and previous full envelopes both complete the signed-source preview');
+select is((select value->'actions' from envelope_evidence where label='minimal-plan'),(select value->'actions' from envelope_evidence where label='full-plan'),'minimal envelope preserves every action and its order');
+select is((select value->'issues' from envelope_evidence where label='minimal-plan'),(select value->'issues' from envelope_evidence where label='full-plan'),'minimal envelope preserves every issue');
+select is((select value->>'plan_checksum' from envelope_evidence where label='minimal-plan'),(select value->>'plan_checksum' from envelope_evidence where label='full-plan'),'minimal envelope preserves the complete plan checksum');
+select is((select value from envelope_evidence where label='minimal-plan'),(select value from envelope_evidence where label='full-plan'),'minimal envelope preserves the complete preview response');
+select is((select snapshot from envelope_source),(select value from envelope_evidence where label='original'),'both previews leave the complete signed source unchanged');
+select is(pg_temp.planning_catchup_protected('[]'),(select value from envelope_evidence where label='protected'),'envelope parity previews change no protected target facts or mappings');
+select is((select pg_temp.run_planning_master_catchup(jsonb_set(snapshot,'{unused_metadata,padding}','"tampered"'),false,null,null)->>'error_code' from envelope_source),'SNAPSHOT_CHECKSUM_MISMATCH','excluded working metadata is still covered by original-source checksum validation');
+select is((select array_agg(i->>'source_record_id' order by i->>'source_record_id') from envelope_evidence e cross join lateral jsonb_array_elements(e.value->'issues') i where e.label='minimal-plan' and i->>'code'='SOURCE_RECIPE_EMPTY'),array['3456','3457','3468','3469'],'minimal envelope retains all four physical empty-root source IDs');
+select is((select a#>>'{values,effective_from}' from envelope_evidence e cross join lateral jsonb_array_elements(e.value->'actions') a where e.label='minimal-plan' and a->>'object_type'='SUPPLIER_ELIGIBILITY' and a->>'legacy_id'='envelope-membership'),'2026-09-15','supplier membership keeps effective dating from the original exported_at');
+
+savepoint owner_policy;
+insert into evidence values ('owner-preview',pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),false,null,null));
+select diag(value::text) from evidence where label='owner-preview' and value->>'success' is distinct from 'true';
+select is((select value->>'success' from evidence where label='owner-preview'),'true','zero-BoM roots and exact Túi positive BoM coexist in one accepted plan');
+select is((select count(*) from evidence e cross join lateral jsonb_array_elements(e.value->'issues') i where e.label='owner-preview' and i->>'code'='SOURCE_RECIPE_EMPTY' and i->>'severity'='INFO'),4::bigint,'four empty source Recipes retain INFO evidence instead of blockers');
+select is((select array_agg(i->>'source_record_id' order by i->>'source_record_id') from evidence e cross join lateral jsonb_array_elements(e.value->'issues') i where e.label='owner-preview' and i->>'code'='SOURCE_RECIPE_EMPTY'),array['3456','3457','3468','3469'],'empty-root diagnostics retain exact physical V1 Recipe IDs');
+select is((select array_agg(a->>'SOURCE_RECIPE_ID' order by a->>'SOURCE_RECIPE_ID') from evidence e cross join lateral jsonb_array_elements(e.value->'report') a where e.label='owner-preview' and a->>'DEPENDENCY_REASON' like 'SOURCE_RECIPE_EMPTY:%'),array['3456','3457','3468','3469'],'review report preserves all four physical source IDs without changing stable identity');
+select ok(not exists(select 1 from evidence e cross join lateral jsonb_array_elements(e.value->'actions') a where e.label='owner-preview' and a->>'object_type' in ('RECIPE_VERSION','RECIPE_LINE','RECIPE_LINE_REVISION') and (a->>'legacy_id' like '%dish:2034:%' or a->>'legacy_id' like '%dish:2041:%')),'empty-root plan never fabricates child actions');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,school_types}','[]')),false,null,null)->>'error_code','INVALID_RECIPE_SCOPE','empty root does not excuse missing School Type');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,recipes,0,basis_portions}','0')),false,null,null)->>'error_code','INVALID_RECIPE_BASIS','empty root does not excuse invalid basis');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,recipes,0,recipe_status}','"INACTIVE"')),false,null,null)->>'error_code','INVALID_RECIPE_LIFECYCLE','empty-root approval does not silently activate an inactive source Recipe');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,recipes,0,source_record_id}','null')),false,null,null)->>'error_code','RECIPE_SOURCE_EVIDENCE_REQUIRED','empty root requires source Recipe evidence');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_signed(jsonb_set(pg_temp.catchup_owner_fixture(),'{records,recipe_lines,1,ingredient_legacy_id}','"missing"')),false,null,null)->>'error_code','MISSING_RECIPE_DEPENDENCY','invalid positive BoM reference stays BLOCKED rather than becoming an empty root');
+insert into evidence values ('owner-apply',pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),true,(select value->>'plan_checksum' from evidence where label='owner-preview'),'ee120000-0000-4000-8000-000000000001'));
+select diag(value::text) from evidence where label='owner-apply' and value->>'success' is distinct from 'true';
+select is((select value->>'status' from evidence where label='owner-apply'),'APPLIED','approved empty roots and positive Túi Recipes apply atomically');
+select is((select count(*) from atlas_admin.recipes r join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2034','v1-dish-2041') and r.recipe_status='ACTIVE'),4::bigint,'all four typed empty Recipe roots exist as valid editable masters');
+select is((select count(*) from atlas_admin.recipe_versions v join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2034','v1-dish-2041')),0::bigint,'no Recipe Version is fabricated for either empty Dish');
+select is((select count(*) from atlas_admin.recipe_lines l join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2034','v1-dish-2041')),0::bigint,'neither independent Dish2036 composition nor same-name Ingredient1204 is copied');
+select is((select count(*) from atlas_admin.recipe_line_revisions l join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2034','v1-dish-2041')),0::bigint,'no empty Recipe line revision is fabricated');
+select is((select count(*) from atlas_admin.ingredients where ingredient_code='v1-ingredient-1204'),0::bigint,'same-name Ingredient1204 remains outside the dependency closure');
+select ok((select bool_and(m.recipe_id=atlas_legacy.master_import_target_id(pg_temp.catchup_owner_fixture(),'RECIPE',m.legacy_id)) from atlas_legacy.master_data_mappings m where m.object_type='RECIPE' and m.source_system='OPS_V1' and m.legacy_id in ('dish:2034:school-type:1','dish:2034:school-type:2','dish:2041:school-type:1','dish:2041:school-type:2')),'empty Recipe roots preserve the stable Dish plus School Type mapping');
+select is(atlas_core.rmvp_03a_menu_issues('2026-10-12',jsonb_build_array(jsonb_build_object('school_id',(select school_id from atlas_admin.schools where school_code='v1-school-21'),'service_date','2026-10-12','menu_slot_code','soup','dish_id',(select dish_id from atlas_admin.dishes where dish_code=code))))->'blockers','[]'::jsonb,'canonical empty '||code||' resolves as a valid Menu Dish') from unnest(array['v1-dish-2034','v1-dish-2041']) code;
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-10-12',jsonb_build_array(jsonb_build_object('school_id',(select school_id from atlas_admin.schools where school_code='v1-school-21'),'service_date','2026-10-12','menu_slot_code','soup','dish_id',(select dish_id from atlas_admin.dishes where dish_code=code)))), '$.warnings[*] ? (@.code == "RECIPE_NOT_READY")'),'empty '||code||' remains derived RECIPE_NOT_READY') from unnest(array['v1-dish-2034','v1-dish-2041']) code;
+select ok(jsonb_path_exists(atlas_core.rmvp_03a_menu_issues('2026-10-12',jsonb_build_array(jsonb_build_object('school_id',(select school_id from atlas_admin.schools where school_code='v1-school-21'),'service_date','2026-10-12','menu_slot_code','soup','dish_id',(select dish_id from atlas_admin.dishes where dish_code=code)))), '$.warnings[*] ? (@.code == "EFFECTIVE_BOM_BLOCKED")'),'empty '||code||' effective composition fails closed') from unnest(array['v1-dish-2034','v1-dish-2041']) code;
+select is((select count(*) from atlas_admin.recipe_versions v join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code in ('v1-dish-2036','v1-dish-2062') and v.recipe_version_status='RELEASED_FOR_PLANNING'),3::bigint,'positive compositions retain normal released version materialization');
+select is((select count(*) from atlas_admin.recipe_line_revisions l join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) join atlas_admin.ingredients i using(ingredient_id) join atlas_admin.units u on u.unit_id=i.purchase_unit_id where d.dish_code='v1-dish-2062' and i.ingredient_code='v1-ingredient-1215' and l.unit_id=i.purchase_unit_id and u.unit_code='v1-unit-67df33ade68a' and u.unit_name='Túi' and u.dimension_code='COUNT' and u.decimal_scale=0 and u.unit_status='ACTIVE' and l.quantity_per_basis=100),2::bigint,'Recipes3510/3511 use Ingredient1215 identical canonical Túi Unit and exact quantity100');
+select is((select count(*) from atlas_legacy.recipe_unit_adoption_evidence where snapshot_id='synthetic-owner-zero-bom-tui'),0::bigint,'matching canonical Túi facts create no Unit adoption mismatch or conversion');
+select is((select array_agg(v.source_evidence->>'source_record_id' order by v.source_evidence->>'source_record_id') from atlas_admin.recipe_versions v join atlas_admin.recipes r using(recipe_id) join atlas_admin.dishes d using(dish_id) where d.dish_code='v1-dish-2062'),array['3510','3511'],'positive Recipe versions retain exact source Recipe evidence');
+create temp table owner_after_apply as select pg_temp.planning_catchup_fingerprints((select value->'actions' from evidence where label='owner-preview')) value;
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),true,(select value->>'plan_checksum' from evidence where label='owner-preview'),'ee120000-0000-4000-8000-000000000001')->>'status','REPLAYED','root-only and positive Recipes replay idempotently');
+select is(pg_temp.planning_catchup_fingerprints((select value->'actions' from evidence where label='owner-preview')),(select value from owner_after_apply),'replay changes no empty roots, versions, lines, mappings or Unit evidence');
+select is((select count(*) from atlas_legacy.import_batches where snapshot_id='synthetic-owner-zero-bom-tui'),1::bigint,'empty-root replay creates no duplicate receipt');
+select is((select count(*) from atlas_legacy.import_batches b cross join lateral jsonb_array_elements(b.reconciliation->'actions') a where b.snapshot_id='synthetic-owner-zero-bom-tui' and a#>>'{source_evidence,diagnostic}'='SOURCE_RECIPE_EMPTY' and a#>>'{source_evidence,source_record_id}' in ('3456','3457','3468','3469')),4::bigint,'receipt permanently retains source Recipe IDs without an invented Recipe Version');
+-- Native protection fingerprints cover all facts, independent of row order.
+-- This synthetic table lives only inside the final rolled-back transaction.
+-- Do not roll back a savepoint after pgTAP assertions: its test counter is data.
+create table atlas_admin.catchup_fingerprint_probe(payload jsonb);
+create temp table fingerprint_evidence(label text primary key, value jsonb);
+insert into fingerprint_evidence values ('empty',pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe');
+select is((select value->>'rows' from fingerprint_evidence where label='empty'),'0','empty protected table retains explicit zero count');
+select is((select value->>'sha256' from fingerprint_evidence where label='empty'),encode(extensions.digest(convert_to('','UTF8'),'sha256'),'hex'),'empty protected table has deterministic SHA256 of the empty digest stream');
+insert into atlas_admin.catchup_fingerprint_probe values ('{"nested":{"a":null,"b":[1,2]}}'),(null),('{"nested":{"a":null,"b":[1,2]}}');
+insert into fingerprint_evidence values ('three',pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe');
+delete from atlas_admin.catchup_fingerprint_probe;
+insert into atlas_admin.catchup_fingerprint_probe values (null),('{"nested":{"b":[1,2],"a":null}}'),('{"nested":{"a":null,"b":[1,2]}}');
+select is(pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe',(select value from fingerprint_evidence where label='three'),'physical row order and JSON object key order do not change the protection fingerprint');
+delete from atlas_admin.catchup_fingerprint_probe where ctid in (select ctid from atlas_admin.catchup_fingerprint_probe where payload is not null limit 1);
+select isnt(pg_temp.planning_catchup_protected('[]')#>>'{atlas_admin.catchup_fingerprint_probe,sha256}',(select value->>'sha256' from fingerprint_evidence where label='three'),'removing one duplicate changes the digest, not merely the count');
+select is(pg_temp.planning_catchup_protected('[]')#>>'{atlas_admin.catchup_fingerprint_probe,rows}','2','duplicate multiplicity remains explicit');
+insert into atlas_admin.catchup_fingerprint_probe values ('{"nested":{"a":null,"b":[1,2]}}');
+select is(pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe',(select value from fingerprint_evidence where label='three'),'restoring the duplicate restores the complete fingerprint');
+update atlas_admin.catchup_fingerprint_probe set payload=jsonb_set(payload,'{nested,a}','"changed"') where payload is not null;
+select isnt(pg_temp.planning_catchup_protected('[]')#>>'{atlas_admin.catchup_fingerprint_probe,sha256}',(select value->>'sha256' from fingerprint_evidence where label='three'),'nested null-to-value changes remain protected');
+update atlas_admin.catchup_fingerprint_probe set payload='{"nested":{"a":null,"b":[2,1]}}' where payload is not null;
+select isnt(pg_temp.planning_catchup_protected('[]')#>>'{atlas_admin.catchup_fingerprint_probe,sha256}',(select value->>'sha256' from fingerprint_evidence where label='three'),'nested array order remains a protected fact');
+insert into fingerprint_evidence values ('sql-null',pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe');
+update atlas_admin.catchup_fingerprint_probe set payload='null'::jsonb where payload is null;
+select is(pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe',(select value from fingerprint_evidence where label='sql-null'),'SQL null and JSON null retain the existing to_jsonb row representation');
+delete from atlas_admin.catchup_fingerprint_probe;
+select is(pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe',(select value from fingerprint_evidence where label='empty'),'removing all rows restores the empty-table fingerprint');
+insert into fingerprint_evidence values ('protected-before',pg_temp.planning_catchup_protected('[]'));
+insert into fingerprint_evidence values ('allowed-before',pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"UPDATE","target_id":"ee120000-0000-4000-8000-000000000033"}]'));
+update atlas_admin.schools set default_teacher_portions=889,version=version+1 where school_id='ee120000-0000-4000-8000-000000000033';
+select is(pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"UPDATE","target_id":"ee120000-0000-4000-8000-000000000033"}]'),(select value from fingerprint_evidence where label='allowed-before'),'exact allowed UPDATE target retains the original exclusion behavior');
+select isnt(pg_temp.planning_catchup_protected('[]'),(select value from fingerprint_evidence where label='protected-before'),'the same mutation is detected when its target is protected');
+select isnt(pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"NO_CHANGE","target_id":"ee120000-0000-4000-8000-000000000033"}]'),(select value from fingerprint_evidence where label='protected-before'),'NO_CHANGE actions never exclude a protected target');
+update atlas_admin.schools set default_teacher_portions=433,version=version+1 where school_code='v1-school-21';
+select isnt(pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"UPDATE","target_id":"ee120000-0000-4000-8000-000000000033"}]'),(select value from fingerprint_evidence where label='allowed-before'),'an allowed target never hides mutation of another School');
+select * from finish();
+rollback;

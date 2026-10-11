@@ -23,6 +23,7 @@ const COUNT_UNITS = new Set([
   "Ổ",
   "Quả",
   "Trái",
+  "Túi",
 ]);
 const SCHOOL_TYPES = new Map([
   ["1", "TIỂU HỌC"],
@@ -688,7 +689,14 @@ export function normalizeOpsV1MasterSnapshot(
     if (
       !s.bill_of_materials.some((r) => String(r.recipe_id) === String(row.id))
     )
-      diag("RECIPE_EMPTY", "recipes", key, "composition", id(row.id));
+      diag(
+        "SOURCE_RECIPE_EMPTY",
+        "recipes",
+        key,
+        "composition",
+        id(row.id),
+        "INFO",
+      );
     for (const f of ["recipe_name", "is_general", "is_locked"])
       sourceOnly("recipes", key, f, row[f]);
   }

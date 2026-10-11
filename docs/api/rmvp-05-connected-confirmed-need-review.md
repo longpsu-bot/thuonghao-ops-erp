@@ -267,6 +267,13 @@ decision, receipt or other business fact is written.
 
 The connected exporter loads complete coherent pages and fresh exact-day
 preflight before/after the read. Import uses the existing review RPC without
-Supplier advice; Supplier drift cannot stale quantities. The current UI accepts
-only its exact service date; the codec supports 1–7 independent daily batches.
+Supplier advice; Supplier drift cannot stale quantities. The connected UI composes
+1–7 consecutive exact-day authorities using one shared range picker and a derived
+active-day navigator. Save and Need Generation target only the active day. Drafts
+remain partitioned by service date. Range export checks every selected day's
+complete saved/current authority; only no-demand days may be omitted with an
+explicit summary. Import validates every represented date inside the selected
+range and all fresh daily authorities before applying any local draft. One
+failed/stale date rejects the entire workbook. Import makes zero business writes;
+each dirty day still requires explicit Save.
 See the [connected task and certification](../implementation-tasks/TASK-ATLAS-SHOPPING-LIST-XLSX-V1-CONNECTED-01.md).

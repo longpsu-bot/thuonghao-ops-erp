@@ -60,6 +60,45 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("reuses canonical School order across Menu and Attendance without changing row edit identity", async () => {
+    const fixture = createPlanningReviewFixture();
+    const schools = fixture.planning.schools.slice(0, 3);
+    schools[0] = { ...schools[0], school_name: "Vĩnh Tân", display_order: 0 };
+    schools[1] = { ...schools[1], school_name: "Bình Quới", display_order: 1 };
+    schools[2] = { ...schools[2], school_name: "An Bình", display_order: 1 };
+    fixture.planning.schools = [schools[1], schools[0], schools[2]];
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+        />
+      </AtlasVNextProvider>,
+    );
+    const table = await screen.findByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    const schoolCells = () =>
+      within(table)
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => within(row).getAllByRole("cell")[0].textContent);
+    expect(schoolCells()).toEqual(["Vĩnh Tân", "An Bình", "Bình Quới"]);
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    const attendance = await screen.findByRole("table", {
+      name: "Sĩ số theo trường",
+    });
+    const rows = within(attendance).getAllByRole("row").slice(1);
+    expect(
+      rows.map((row) => within(row).getAllByRole("cell")[0].textContent),
+    ).toEqual(["Vĩnh Tân", "An Bình", "Bình Quới"]);
+    fireEvent.change(within(rows[1]).getAllByRole("textbox")[0], {
+      target: { value: "321" },
+    });
+    expect(within(rows[1]).getAllByRole("textbox")[0]).toHaveValue("321");
+    expect(within(rows[2]).getAllByRole("textbox")[0]).toHaveValue("100");
+  });
   it("explains missing Pantry purposes in Vietnamese", async () => {
     const fixture = createPlanningReviewFixture();
     fixture.pantry.catalog_issues.blockers = [

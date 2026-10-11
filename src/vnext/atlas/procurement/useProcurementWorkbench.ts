@@ -42,10 +42,11 @@ export type ProcurementControllerProps = {
   purchaseReviewApi: PurchaseReviewApi;
   procurementApi: SchoolCateringProcurementApi;
   initialServiceDate: string;
+  initialRange?: AtlasOperatorDateRange;
   onServiceDateChange?: (date: string) => void;
   initialStage?: ProcurementStage;
   ownerStage?: ProcurementStage;
-  onOpenOrders?: (date: string) => void;
+  onOpenOrders?: (scope: string | AtlasOperatorDateRange) => void;
 };
 const uncertain = (): ProcurementFeedback => ({
   kind: "unknown",
@@ -104,18 +105,20 @@ export function useProcurementWorkbench({
   purchaseReviewApi,
   procurementApi,
   initialServiceDate,
+  initialRange,
   onServiceDateChange,
   initialStage = "allocation",
   ownerStage,
   onOpenOrders,
 }: ProcurementControllerProps) {
   const fixedStage = useRef(ownerStage).current;
-  const [date, setDate] = useState(initialServiceDate);
-  const [dateEnd, setDateEnd] = useState(initialServiceDate);
-  const [range, setRange] = useState<AtlasOperatorDateRange>({
+  const initialScope = initialRange ?? {
     start: initialServiceDate,
     end: initialServiceDate,
-  });
+  };
+  const [date, setDate] = useState(initialScope.start);
+  const [dateEnd, setDateEnd] = useState(initialScope.end);
+  const [range, setRange] = useState<AtlasOperatorDateRange>(initialScope);
   const rangeError = operatorDateRangeError(range);
   useEffect(() => {
     onServiceDateChange?.(date);
@@ -148,6 +151,7 @@ export function useProcurementWorkbench({
   };
   const read = useCallback(
     async (target: ProcurementStage): Promise<boolean | null> => {
+      if (operatorDateRangeError({ start: date, end: dateEnd })) return false;
       const ticket = ++generation.current;
       active.current = true;
       setCurrent(false);
@@ -164,7 +168,7 @@ export function useProcurementWorkbench({
                     correlation.current,
                     {
                       date_start: date,
-                      date_end: date,
+                      date_end: dateEnd,
                       school_ids: schoolIds,
                       states: [],
                       search: null,
@@ -244,16 +248,8 @@ export function useProcurementWorkbench({
     setBusy(false);
     setMutationLocked(true);
   };
-  const changeDate = (value: string) => {
-    setRange({ start: value, end: value });
-    setDateEnd(value);
-    if (value !== date) {
-      invalidate();
-      setDate(value);
-    }
-  };
   const changeRange = (value: AtlasOperatorDateRange) => {
-    if (stage !== "orders" || active.current) return;
+    if (busy) return;
     setRange(value);
     if (operatorDateRangeError(value)) return;
     if (value.start !== date || value.end !== dateEnd) {
@@ -262,7 +258,10 @@ export function useProcurementWorkbench({
       setDateEnd(value.end);
     }
   };
+  const changeDate = (value: string) =>
+    changeRange({ start: value, end: value });
   const changeSchools = (ids: string[]) => {
+    if (rangeError || busy) return;
     if (ids.join("|") !== schoolIds.join("|")) {
       invalidate();
       setSchoolIds(ids);
@@ -290,7 +289,7 @@ export function useProcurementWorkbench({
     }
   };
   const reload = async () => {
-    if (active.current || (stage === "orders" && rangeError)) return;
+    if (active.current || rangeError) return;
     clearRetry();
     const target = recoveryStage.current ?? stage;
     const ok = await read(target);
@@ -302,7 +301,9 @@ export function useProcurementWorkbench({
 
   const locked = !current || mutationLocked || hasRetry;
   const canStart = () =>
-    Boolean(authSubject && current && !locked && !active.current);
+    Boolean(
+      authSubject && current && !locked && !active.current && !rangeError,
+    );
   const runCommand = async (
     invoke: () => Promise<AtlasRpcResult>,
     target: ProcurementStage,
@@ -360,6 +361,10 @@ export function useProcurementWorkbench({
     if (!canStart() || stage !== "allocation") return;
     const row = allocation?.rows.find(
       (item) =>
+        item.service_date === candidate.service_date &&
+        item.delivery_location_id === candidate.delivery_location_id &&
+        item.ingredient_id === candidate.ingredient_id &&
+        item.unit_id === candidate.unit_id &&
         item.family.source_fingerprint ===
           candidate.family.source_fingerprint &&
         item.family.version === candidate.family.version,
@@ -433,6 +438,7 @@ export function useProcurementWorkbench({
     if (
       !canStart() ||
       stage !== "allocation" ||
+      date !== dateEnd ||
       editing ||
       !source?.ready ||
       !source.allowed
@@ -510,7 +516,14 @@ export function useProcurementWorkbench({
     }
   };
   const retry = async () => {
+    if (rangeError) return;
     await retryCommand.current?.();
+  };
+  const openOrders = () => {
+    if (busy || rangeError) return;
+    if (fixedStage === "allocation")
+      onOpenOrders?.({ start: date, end: dateEnd });
+    else changeStage("orders");
   };
   return {
     date,
@@ -533,6 +546,7 @@ export function useProcurementWorkbench({
     changeDate,
     changeSchools,
     changeStage,
+    openOrders,
     reload,
     save,
     prepare,

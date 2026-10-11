@@ -1,4 +1,5 @@
 import type { AtlasModuleExitProps } from "../AtlasModuleExit";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   activeMenuRows,
@@ -340,7 +341,7 @@ export function usePlanningSources({
     };
   }, [week, load, resetPlanning, resetPantry]);
   const authority = source === "planning" ? data : pantryData;
-  const schools = authority?.schools ?? [];
+  const schools = [...(authority?.schools ?? [])].sort(compareCanonicalSchools);
   useEffect(() => {
     if (authority && !loading && !readError)
       setSchoolIds((ids) =>
