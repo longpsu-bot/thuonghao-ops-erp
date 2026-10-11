@@ -62,10 +62,7 @@ jobs:
           import { tmpdir } from "node:os";
           import { join } from "node:path";
           import { pathToFileURL } from "node:url";
-          const {
-            cdp,
-            waitForAuthenticatedDesktopShell,
-          } = await import(
+          const { cdp } = await import(
             pathToFileURL(join(process.cwd(), "scripts/staging-planning-browser.mjs")).href
           );
 
@@ -194,7 +191,13 @@ jobs:
             await input("#atlas-signin-email", email);
             await input("#atlas-signin-password", password);
             await clickText("body", "Đăng nhập", "SIGNIN");
-            await waitForAuthenticatedDesktopShell({ evaluate, timeout: 60000, interval: 250 });
+            await until(
+              () =>
+                evaluate(
+                  `Boolean(document.querySelector('button[aria-label="Bàn làm việc"]') && document.querySelector('button[aria-label="Tài khoản và môi trường"]') && !document.querySelector('#atlas-signin-email'))`,
+                ),
+              "AUTHENTICATED_CURRENT_SHELL",
+            );
 
             await openWorkbench("Xác nhận nhu cầu");
             const confirmedSection = 'section[aria-label="Xác nhận nhu cầu"]';
