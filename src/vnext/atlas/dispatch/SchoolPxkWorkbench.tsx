@@ -446,8 +446,8 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
             c.pendingTransition?.date || c.pendingTransition?.range
               ? "date"
               : null;
-          // DateInput retains an edited segment internally when its controlled
-          // ISO value is unchanged. Remount only a cancelled date edit.
+          // Reset a cancelled calendar selection even when its controlled
+          // range is unchanged.
           if (c.pendingTransition?.date || c.pendingTransition?.range)
             setDateReset((value) => value + 1);
           c.cancelTransition();
@@ -467,27 +467,9 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
             : dialogDestination.current === "detail"
               ? detail.current
               : dialogDestination.current === "date"
-                ? (Array.from(
-                    dateControl.current?.querySelectorAll<HTMLElement>(
-                      '[role="spinbutton"]',
-                    ) ?? [],
-                  ).find(
-                    (element) =>
-                      element.dataset.type ===
-                        dialogTrigger.current?.dataset.type &&
-                      element
-                        .closest('[data-part="segment-group"]')
-                        ?.id.split(":")
-                        .at(-1) ===
-                        dialogTrigger.current
-                          ?.closest('[data-part="segment-group"]')
-                          ?.id.split(":")
-                          .at(-1),
-                  ) ??
-                  dateControl.current?.querySelector<HTMLElement>(
-                    '[role="spinbutton"]',
-                  ) ??
-                  null)
+                ? (dateControl.current?.querySelector<HTMLElement>(
+                    '[data-scope="date-picker"][data-part="trigger"]',
+                  ) ?? null)
                 : dialogTrigger.current
         }
       />

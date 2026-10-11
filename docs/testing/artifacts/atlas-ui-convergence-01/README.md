@@ -3,6 +3,13 @@
 10 October 2026; `fix/atlas-ui-convergence-01`; reviewed against integrated main
 `40bfda08439e61cbcac82e5416dc3442f75aa951` after PR #363 merged.
 
+11 October correction: PO/PXK lists, detail, invalid/empty PO and range-width
+samples were recaptured with the single interval control on integrated main
+`6bf31593276f73aab5ddc9fa27785e8167291024`. The two contact sheets were regenerated
+with these corrected views. Unaffected workbench views retain their original
+10 October provenance; original geometry JSON is archival. The new
+[range-control audit](range-control-audit.json) records the correction's geometry.
+
 [Owner contact sheet — 18 views](owner-contact-sheet.jpg) includes the required
 launcher, 4+ workspaces, clean day workbar and populated Need, seven-day PO/PXK,
 selected PO, PXK export utilities, two Master Data toolbars, internal tabs and
@@ -39,6 +46,7 @@ views were recaptured after #363 integration and review fixes.
 | Confirmed Need comparison    | [Before date surface](confirmed-need-before.jpg), [After / populated](confirmed-need-after.jpg)                                                                                         |
 | Need states                  | [Blocked](need-blocked.jpg), [Narrow](narrow-need.jpg)                                                                                                                                  |
 | Purchase Orders              | [Seven-day list](po-seven-days.jpg), [Detail](po-detail.jpg), [Invalid eighth day](po-invalid-range.jpg), [Empty](po-empty.jpg)                                                         |
+| Single range calendar        | [Desktop with connected interval highlight](po-range-calendar.png), [360px calendar](narrow-range-calendar.png)                                                                         |
 | PXK / Dispatch               | [Seven-day list / utilities](pxk-seven-days.jpg), [Detail / collapsed-history context](pxk-detail.jpg), [Narrow](narrow-pxk.jpg)                                                        |
 | Master Data                  | [Schools](schools.jpg), [Ingredients](ingredients.jpg), [Suppliers](suppliers.jpg)                                                                                                      |
 | Planning sources             | [Menu](menu.jpg), [Attendance](attendance.jpg), [Pantry](pantry.jpg)                                                                                                                    |

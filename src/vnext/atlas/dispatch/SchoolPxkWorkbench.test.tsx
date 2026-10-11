@@ -8,6 +8,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "storybook/test";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { SchoolPxkWorkbench } from "./SchoolPxkWorkbench";
 import {
@@ -68,9 +69,16 @@ describe("School PXK operator table and attached detail", () => {
   it("retains the selected loaded document and export after an invalid range edit", async () => {
     const h = show("CURRENT");
     await open("Xem phiếu");
-    const endMonth = screen.getAllByRole("spinbutton")[4]!;
-    fireEvent.focus(endMonth);
-    fireEvent.keyDown(endMonth, { key: "ArrowUp" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+    );
+    const rangeGrid = await screen.findByRole("grid");
+    for (const date of ["2026-09-17", "2026-09-24"])
+      fireEvent.click(
+        rangeGrid.querySelector<HTMLElement>(
+          `[data-part="table-cell-trigger"][data-value="${date}"]`,
+        )!,
+      );
     expect(await screen.findByText("Chọn tối đa 7 ngày.")).toBeVisible();
     expect(h.read).toHaveBeenCalledTimes(1);
     expect(
@@ -212,31 +220,64 @@ describe("School PXK operator table and attached detail", () => {
       expect.objectContaining({ unsaved: false }),
     );
   });
-  it("Cancel restores the displayed date segments as well as the dirty note context", async () => {
-    const h = show();
-    await open();
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
-      { target: { value: "Giữ ngày" } },
-    );
-    fireEvent.focus(screen.getAllByRole("spinbutton", { name: "Day" })[1]!);
-    fireEvent.keyDown(screen.getAllByRole("spinbutton", { name: "Day" })[1]!, {
-      key: "ArrowUp",
-    });
-    const dialog = await screen.findByRole("dialog");
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
-    );
-    await waitFor(() =>
+  it.each([false, true])(
+    "Cancel restores the displayed range as well as the dirty note context (quick: %s)",
+    async (quick) => {
+      const h = show();
+      await open();
+      fireEvent.change(
+        screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
+        { target: { value: "Giữ ngày" } },
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+      );
+      const rangeGrid = await screen.findByRole("grid");
+      for (const date of ["2026-09-24", "2026-09-25"])
+        fireEvent.click(
+          rangeGrid.querySelector<HTMLElement>(
+            `[data-part="table-cell-trigger"][data-value="${date}"]`,
+          )!,
+        );
+      const dialog = await screen.findByRole("dialog", {
+        name: "Có ghi chú chưa phát hành. Bỏ ghi chú và tiếp tục?",
+      });
+      const cancel = within(dialog).getByRole("button", {
+        name: "Tiếp tục chỉnh sửa",
+      });
+      if (quick) fireEvent.click(cancel);
+      else {
+        await waitFor(() =>
+          expect(dialog.contains(document.activeElement)).toBe(true),
+        );
+        await userEvent.click(cancel);
+      }
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+        ).toHaveTextContent("24/09/2026 — 24/09/2026"),
+      );
       expect(
-        screen.getAllByRole("spinbutton", { name: "Day" })[1]!,
-      ).toHaveAttribute("aria-valuenow", "24"),
-    );
-    expect(
-      screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
-    ).toHaveValue("Giữ ngày");
-    expect(h.read).toHaveBeenCalledTimes(1);
-  });
+        screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
+      ).toHaveValue("Giữ ngày");
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+        ).toHaveFocus(),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+      );
+      const restoredGrid = await screen.findByRole("grid");
+      for (const edge of ["start", "end"])
+        expect(
+          restoredGrid.querySelector(
+            `[data-part="table-cell-trigger"][data-range-${edge}]`,
+          ),
+        ).toHaveAttribute("data-value", "2026-09-24");
+      expect(h.read).toHaveBeenCalledTimes(1);
+    },
+  );
   it("presents filters in operational order", async () => {
     show();
     await open();

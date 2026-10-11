@@ -79,9 +79,16 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "Xem đơn NCC An Phú" }),
     );
-    const endMonth = screen.getAllByRole("spinbutton")[4]!;
-    fireEvent.focus(endMonth);
-    fireEvent.keyDown(endMonth, { key: "ArrowUp" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày dùng" }),
+    );
+    const rangeGrid = await screen.findByRole("grid");
+    for (const date of ["2026-09-10", "2026-09-17"])
+      fireEvent.click(
+        rangeGrid.querySelector<HTMLElement>(
+          `[data-part="table-cell-trigger"][data-value="${date}"]`,
+        )!,
+      );
     expect(await screen.findByText("Chọn tối đa 7 ngày.")).toBeVisible();
     expect(read).toHaveBeenCalledTimes(1);
     expect(

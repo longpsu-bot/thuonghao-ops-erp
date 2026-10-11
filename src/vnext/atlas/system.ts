@@ -598,6 +598,16 @@ export const atlasSystem = createSystem(
                 color: "fg.inverse",
                 _hover: { bg: "action.primary.hover" },
               },
+              "&[data-in-range]": {
+                bg: "bg.selected",
+                color: "fg.default",
+                _hover: { bg: "bg.selected" },
+              },
+              "&[data-in-range][data-selected]": {
+                bg: "action.primary.default",
+                color: "fg.inverse",
+                _hover: { bg: "action.primary.hover" },
+              },
               _disabled: disabledControl,
             },
           },

@@ -20,28 +20,29 @@ bounded tabs. It introduces no domain concept, dependency, RPC change or migrati
 
 Confirmed Need has one editable service day; its Monday/week context is derived.
 PO and PXK expose 1–7 consecutive calendar days inclusive, including cross-week
-ranges. Contextual opening defaults to one day. Invalid drafts issue no scope read
+ranges through one combined interval control and one range calendar. Contextual
+opening defaults to one day. Invalid drafts issue no scope read
 and retain the last valid loaded authority and export scope. Allocation stays daily.
 Release and replacement stay per individual document.
 
 ## Discovery and decisions
 
-| Observed issue                                                            | Severity | Affected workbenches                  | Decision                                                                             | Outcome / reason                     |
-| ------------------------------------------------------------------------- | -------- | ------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------ |
-| Editable week plus day obscures exact-day operation                       | P0       | Confirmed Need                        | One Atlas day picker, derive week                                                    | Implemented                          |
-| Document read UI restricts existing range contracts to one day            | P0       | PO, PXK                               | Shared range picker and local seven-day bound                                        | Implemented                          |
-| Empty filtered Attendance reads like confirmed zero                       | P0       | Attendance                            | Distinguish no matches from explicit zero                                            | Implemented                          |
-| Workspace active/inactive boundaries and reused icons are weak            | P1       | All 13                                | Compact bounded tabs; registry owns 13 distinct icons                                | Implemented                          |
-| Refresh offsets and unrelated control heights                             | P1       | All 13                                | Small shared workbar/actions, 40px desktop and 44px narrow targets                   | Implemented                          |
-| Internal tabs compete with workspace level                                | P1       | Internal workbench views              | Flat section navigation below bounded workspaces                                     | Implemented                          |
-| Raw backend English in source/readiness feedback                          | P1       | Confirmed Need, Pantry, Recipes       | Frontend code-to-Vietnamese mapping; preserve codes                                  | Implemented                          |
-| Empty source and empty filtered scope conflated                           | P1       | Menu, Attendance, Pantry              | Concise scope-aware copy near content                                                | Implemented                          |
-| Fragmented export utilities and abbreviation-only actions                 | P1       | PO, PXK                               | Coherent secondary utility groups and explicit wording                               | Implemented                          |
-| Cancelled keyboard date change leaves the date field ahead of loaded data | P1       | Confirmed Need                        | Reset cancelled picker draft; restore focus after quick and pointer cancellation     | Implemented; red/green regression    |
-| Long School name overlaps the PXK date cell                               | P1       | PXK                                   | Wrap school identity within its existing column                                      | Implemented                          |
-| Range endpoints lack distinct accessible names and shared error context   | P2       | PO, PXK                               | Name both endpoints; one workbar error with invalid segments and linked descriptions | Implemented                          |
-| Empty/unknown blockers expose implementation text                         | P2       | Confirmed Need, Pantry, Change Orders | Known code translations plus concise Vietnamese fallback                             | Implemented                          |
-| School refresh differs from shared grammar                                | P2       | Schools                               | Apply presentation wrapper after #363 integration                                    | Implemented; #363 behavior preserved |
+| Observed issue                                                                  | Severity | Affected workbenches                  | Decision                                                                         | Outcome / reason                     |
+| ------------------------------------------------------------------------------- | -------- | ------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------ |
+| Editable week plus day obscures exact-day operation                             | P0       | Confirmed Need                        | One Atlas day picker, derive week                                                | Implemented                          |
+| Document read UI restricts existing range contracts to one day                  | P0       | PO, PXK                               | Shared range picker and local seven-day bound                                    | Implemented                          |
+| Empty filtered Attendance reads like confirmed zero                             | P0       | Attendance                            | Distinguish no matches from explicit zero                                        | Implemented                          |
+| Workspace active/inactive boundaries and reused icons are weak                  | P1       | All 13                                | Compact bounded tabs; registry owns 13 distinct icons                            | Implemented                          |
+| Refresh offsets and unrelated control heights                                   | P1       | All 13                                | Small shared workbar/actions, 40px desktop and 44px narrow targets               | Implemented                          |
+| Internal tabs compete with workspace level                                      | P1       | Internal workbench views              | Flat section navigation below bounded workspaces                                 | Implemented                          |
+| Raw backend English in source/readiness feedback                                | P1       | Confirmed Need, Pantry, Recipes       | Frontend code-to-Vietnamese mapping; preserve codes                              | Implemented                          |
+| Empty source and empty filtered scope conflated                                 | P1       | Menu, Attendance, Pantry              | Concise scope-aware copy near content                                            | Implemented                          |
+| Fragmented export utilities and abbreviation-only actions                       | P1       | PO, PXK                               | Coherent secondary utility groups and explicit wording                           | Implemented                          |
+| Cancelled keyboard date change leaves the date field ahead of loaded data       | P1       | Confirmed Need                        | Reset cancelled picker draft; restore focus after quick and pointer cancellation | Implemented; red/green regression    |
+| Long School name overlaps the PXK date cell                                     | P1       | PXK                                   | Wrap school identity within its existing column                                  | Implemented                          |
+| Range endpoints look like independent date fields and lack shared error context | P2       | PO, PXK                               | One labelled interval control and range calendar; one linked workbar error       | Implemented                          |
+| Empty/unknown blockers expose implementation text                               | P2       | Confirmed Need, Pantry, Change Orders | Known code translations plus concise Vietnamese fallback                         | Implemented                          |
+| School refresh differs from shared grammar                                      | P2       | Schools                               | Apply presentation wrapper after #363 integration                                | Implemented; #363 behavior preserved |
 
 ## Workbench coverage
 
@@ -106,7 +107,17 @@ Tables retain local scrolling. Browser measurements confirmed approximately 40px
 desktop and 44px mobile workbar controls with a common bottom edge. The seven-day
 cross-week range loaded; an eighth day displayed `Chọn tối đa 7 ngày.` while
 retaining the last valid list/export scope and disabling invalid-scope refresh.
-The narrow calendar trigger has its own space after the date segments.
+The narrow range control displays the entire interval and calendar icon together.
+
+Owner correction, 11 October: PO and PXK now present a single
+`dd/mm/yyyy — dd/mm/yyyy` control. It opens one Monday-first range calendar,
+highlights the entire selected interval, and commits the scope after the second
+date. Keyboard selection and Escape cancellation retain the same scope rules.
+PXK dirty-note cancellation restores focus to the combined range control.
+The seven-day limit, loaded export scope and backend contracts are unchanged.
+The range control fills its labelled field at every reviewed breakpoint; the
+single-day calendar recipe remains unchanged. PO/PXK and responsive evidence was
+recaptured after this correction, and both contact sheets were regenerated.
 
 The real connected entry was inspected but showed its connection gate: this
 isolated checkout has no configured authenticated connection. Operational browser
@@ -136,6 +147,14 @@ assertion and remaining Planning timeout both passed in the final two-case retry
 After integrating PR #365, the overlapping Recipe capability suite passed all
 28 tests, retaining the upstream recovery/animation checks and this task's copy check.
 No timeout, assertion, accessibility check, test scope or CI setting was weakened.
+
+The Owner's single-control correction passed all 72 focused tests across the
+shared range picker, independent workspace owners, PO and PXK suites. Those
+checks cover one control with no endpoint spinbuttons, complete-only selection,
+Monday-first calendar highlights, cross-month keyboard selection, Escape,
+eight-day rejection, loaded export scope, and quick/pointer dirty cancellation
+with restored interval, note and focus. Browser checks at 360, 650, 1366, 1440 and
+1920px confirmed full field width, 40/44px height and no document overflow.
 
 Date/range hook tests, seven-day boundary tests, retained export scope tests,
 workspace/icon and workbar contracts, Vietnamese copy tests and dirty-date
