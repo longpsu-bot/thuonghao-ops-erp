@@ -156,6 +156,15 @@ eight-day rejection, loaded export scope, and quick/pointer dirty cancellation
 with restored interval, note and focus. Browser checks at 360, 650, 1366, 1440 and
 1920px confirmed full field width, 40/44px height and no document overflow.
 
+The first correction CI run exposed a jsdom exit-animation race in the new
+same-day/cross-week selection test: the picker was closed, while Presence was
+waiting for an animation event that jsdom cannot generate. The test now uses
+pointer/focus transitions, asserts the closed state, and simulates animation
+cancellation only after Presence installs its exit listener. It retains the
+calendar-removal, focus, reopening and exact highlighted-range checks, matching
+the repository's existing animation-test approach. All nine shared-picker cases
+passed again after this test-only correction; production behavior is unchanged.
+
 Date/range hook tests, seven-day boundary tests, retained export scope tests,
 workspace/icon and workbar contracts, Vietnamese copy tests and dirty-date
 cancellation regressions also passed during development. Quick and pointer

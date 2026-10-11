@@ -259,15 +259,29 @@ describe("shared PO/PXK calendar range", () => {
       const trigger = screen.getByRole("button", {
         name: "Mở lịch — Khoảng ngày",
       });
-      fireEvent.click(trigger);
+      await userEvent.click(trigger);
       const grid = await screen.findByRole("grid");
-      fireEvent.click(
+      const popup = grid.closest<HTMLElement>('[data-part="content"]')!;
+      await waitFor(() =>
+        expect(document.activeElement).toHaveAttribute(
+          "data-value",
+          "2026-09-29",
+        ),
+      );
+      await userEvent.click(
         grid.querySelector<HTMLElement>(
           '[data-part="table-cell-trigger"][data-value="2026-09-26"]',
         )!,
       );
       expect(changed).not.toHaveBeenCalled();
-      fireEvent.click(
+      // Pointer selection keeps focus on the selected starting date.
+      await waitFor(() =>
+        expect(document.activeElement).toHaveAttribute(
+          "data-value",
+          "2026-09-26",
+        ),
+      );
+      await userEvent.click(
         grid.querySelector<HTMLElement>(
           `[data-part="table-cell-trigger"][data-value="${end}"]`,
         )!,
@@ -278,6 +292,18 @@ describe("shared PO/PXK calendar range", () => {
           end,
         }),
       );
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      // jsdom cannot finish a CSS exit animation. Wait until Presence has
+      // removed the popup or installed its exit listener before simulating it.
+      await waitFor(() => {
+        if (popup.isConnected)
+          expect(popup).toHaveAttribute("data-state", "closed");
+        expect(
+          !popup.isConnected || popup.style.animationFillMode === "forwards",
+        ).toBe(true);
+      });
+      if (popup.isConnected)
+        fireEvent(popup, new Event("animationcancel", { bubbles: true }));
       await waitFor(() =>
         expect(screen.queryByRole("grid")).not.toBeInTheDocument(),
       );
@@ -286,7 +312,8 @@ describe("shared PO/PXK calendar range", () => {
           ? "26/09/2026 — 26/09/2026"
           : "26/09/2026 — 30/09/2026",
       );
-      fireEvent.click(trigger);
+      await waitFor(() => expect(trigger).toHaveFocus());
+      await userEvent.click(trigger);
       const selectedGrid = await screen.findByRole("grid");
       expect(
         [
