@@ -191,7 +191,7 @@ begin
    scoped:=pg_temp.planning_catchup_scope(snapshot);
    select jsonb_object_agg(e.key,jsonb_array_length(e.value)) into result from jsonb_each(scoped->'records') e;
   end if;
-  return jsonb_build_object('success',false,'status','BLOCKED','error_code',case when sqlerrm ~ '^[A-Z_]+$' then sqlerrm else 'CATCHUP_DATABASE_INVARIANT_FAILURE' end,'sqlstate',sqlstate)
+  return jsonb_build_object('success',false,'status','BLOCKED','error_code',case when sqlerrm ~ '^[A-Z][A-Z0-9_]+$' then sqlerrm else 'CATCHUP_DATABASE_INVARIANT_FAILURE' end,'sqlstate',sqlstate)
    ||case when sqlerrm='SOURCE_DEPENDENCY_BLOCKED' then jsonb_build_object('issues',error_detail::jsonb,'scope_counts',result) else '{}'::jsonb end;
  end;
 end $$;
