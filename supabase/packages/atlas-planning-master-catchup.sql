@@ -54,7 +54,18 @@ begin
    col:=atlas_legacy.master_import_mapping_column(kind);
    predicate:=format('not exists(select 1 from jsonb_array_elements($1) a where a.value->>''object_type''=%L and a.value->>''action'' in (''CREATE'',''UPDATE'') and a.value->>''target_id''=t.%I::text)',kind,col);
   end if;
-  execute format('select jsonb_build_object(''rows'',count(*),''sha256'',atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(to_jsonb(t) order by to_jsonb(t)::text),''[]''::jsonb))) from %I.%I t where %s',t.nspname,t.relname,predicate) into v using actions;
+  -- Internal protection fingerprint: retain every included row/column and
+  -- duplicate, but sort fixed-width digests instead of complete history JSON.
+  -- Source canonical hashes and mapping fingerprints remain unchanged.
+  execute format($fingerprint$
+   with row_fingerprints as materialized (
+    select encode(extensions.digest(convert_to(to_jsonb(t)::text,'UTF8'),'sha256'),'hex') as row_sha
+    from %I.%I t where %s
+   )
+   select jsonb_build_object('rows',count(*),'sha256',
+    encode(extensions.digest(convert_to(coalesce(string_agg(row_sha,'' order by row_sha collate "C"),''),'UTF8'),'sha256'),'hex'))
+   from row_fingerprints
+  $fingerprint$,t.nspname,t.relname,predicate) into v using actions;
   result:=result||jsonb_build_object(t.nspname||'.'||t.relname,v);
  end loop;
  select atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(to_jsonb(m) order by m.object_type,m.legacy_id),'[]')) into fp from atlas_legacy.master_data_mappings m where not exists

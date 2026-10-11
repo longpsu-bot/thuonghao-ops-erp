@@ -258,5 +258,40 @@ select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),tr
 select is(pg_temp.planning_catchup_fingerprints((select value->'actions' from evidence where label='owner-preview')),(select value from owner_after_apply),'replay changes no empty roots, versions, lines, mappings or Unit evidence');
 select is((select count(*) from atlas_legacy.import_batches where snapshot_id='synthetic-owner-zero-bom-tui'),1::bigint,'empty-root replay creates no duplicate receipt');
 select is((select count(*) from atlas_legacy.import_batches b cross join lateral jsonb_array_elements(b.reconciliation->'actions') a where b.snapshot_id='synthetic-owner-zero-bom-tui' and a#>>'{source_evidence,diagnostic}'='SOURCE_RECIPE_EMPTY' and a#>>'{source_evidence,source_record_id}' in ('3456','3457','3468','3469')),4::bigint,'receipt permanently retains source Recipe IDs without an invented Recipe Version');
+-- Native protection fingerprints cover all facts, independent of row order.
+-- This synthetic table lives only inside the final rolled-back transaction.
+-- Do not roll back a savepoint after pgTAP assertions: its test counter is data.
+create table atlas_admin.catchup_fingerprint_probe(payload jsonb);
+create temp table fingerprint_evidence(label text primary key, value jsonb);
+insert into fingerprint_evidence values ('empty',pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe');
+select is((select value->>'rows' from fingerprint_evidence where label='empty'),'0','empty protected table retains explicit zero count');
+select is((select value->>'sha256' from fingerprint_evidence where label='empty'),encode(extensions.digest(convert_to('','UTF8'),'sha256'),'hex'),'empty protected table has deterministic SHA256 of the empty digest stream');
+insert into atlas_admin.catchup_fingerprint_probe values ('{"nested":{"a":null,"b":[1,2]}}'),(null),('{"nested":{"a":null,"b":[1,2]}}');
+insert into fingerprint_evidence values ('three',pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe');
+delete from atlas_admin.catchup_fingerprint_probe;
+insert into atlas_admin.catchup_fingerprint_probe values (null),('{"nested":{"b":[1,2],"a":null}}'),('{"nested":{"a":null,"b":[1,2]}}');
+select is(pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe',(select value from fingerprint_evidence where label='three'),'physical row order and JSON object key order do not change the protection fingerprint');
+delete from atlas_admin.catchup_fingerprint_probe where ctid in (select ctid from atlas_admin.catchup_fingerprint_probe where payload is not null limit 1);
+select isnt(pg_temp.planning_catchup_protected('[]')#>>'{atlas_admin.catchup_fingerprint_probe,sha256}',(select value->>'sha256' from fingerprint_evidence where label='three'),'removing one duplicate changes the digest, not merely the count');
+select is(pg_temp.planning_catchup_protected('[]')#>>'{atlas_admin.catchup_fingerprint_probe,rows}','2','duplicate multiplicity remains explicit');
+insert into atlas_admin.catchup_fingerprint_probe values ('{"nested":{"a":null,"b":[1,2]}}');
+select is(pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe',(select value from fingerprint_evidence where label='three'),'restoring the duplicate restores the complete fingerprint');
+update atlas_admin.catchup_fingerprint_probe set payload=jsonb_set(payload,'{nested,a}','"changed"') where payload is not null;
+select isnt(pg_temp.planning_catchup_protected('[]')#>>'{atlas_admin.catchup_fingerprint_probe,sha256}',(select value->>'sha256' from fingerprint_evidence where label='three'),'nested null-to-value changes remain protected');
+update atlas_admin.catchup_fingerprint_probe set payload='{"nested":{"a":null,"b":[2,1]}}' where payload is not null;
+select isnt(pg_temp.planning_catchup_protected('[]')#>>'{atlas_admin.catchup_fingerprint_probe,sha256}',(select value->>'sha256' from fingerprint_evidence where label='three'),'nested array order remains a protected fact');
+insert into fingerprint_evidence values ('sql-null',pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe');
+update atlas_admin.catchup_fingerprint_probe set payload='null'::jsonb where payload is null;
+select is(pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe',(select value from fingerprint_evidence where label='sql-null'),'SQL null and JSON null retain the existing to_jsonb row representation');
+delete from atlas_admin.catchup_fingerprint_probe;
+select is(pg_temp.planning_catchup_protected('[]')->'atlas_admin.catchup_fingerprint_probe',(select value from fingerprint_evidence where label='empty'),'removing all rows restores the empty-table fingerprint');
+insert into fingerprint_evidence values ('protected-before',pg_temp.planning_catchup_protected('[]'));
+insert into fingerprint_evidence values ('allowed-before',pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"UPDATE","target_id":"ee120000-0000-4000-8000-000000000033"}]'));
+update atlas_admin.schools set default_teacher_portions=889,version=version+1 where school_id='ee120000-0000-4000-8000-000000000033';
+select is(pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"UPDATE","target_id":"ee120000-0000-4000-8000-000000000033"}]'),(select value from fingerprint_evidence where label='allowed-before'),'exact allowed UPDATE target retains the original exclusion behavior');
+select isnt(pg_temp.planning_catchup_protected('[]'),(select value from fingerprint_evidence where label='protected-before'),'the same mutation is detected when its target is protected');
+select isnt(pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"NO_CHANGE","target_id":"ee120000-0000-4000-8000-000000000033"}]'),(select value from fingerprint_evidence where label='protected-before'),'NO_CHANGE actions never exclude a protected target');
+update atlas_admin.schools set default_teacher_portions=433,version=version+1 where school_code='v1-school-21';
+select isnt(pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"UPDATE","target_id":"ee120000-0000-4000-8000-000000000033"}]'),(select value from fingerprint_evidence where label='allowed-before'),'an allowed target never hides mutation of another School');
 select * from finish();
 rollback;
