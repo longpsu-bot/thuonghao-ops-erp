@@ -180,6 +180,10 @@ describe("allowlisted PostgreSQL phase diagnostics", () => {
     "CATCHUP_CLIENT_QUERY_BEGIN",
     "NOTICE:  PZ001",
     "psql:<stdin>:123: NOTICE:  PZ002",
+    "NOTICE:  PZ007",
+    "psql:<stdin>:130: NOTICE:  PZ008",
+    "NOTICE:  PZ009",
+    "NOTICE:  PZ010",
     "NOTICE:  PZ003",
     "NOTICE:  PZ004",
     "NOTICE:  PZ005",
@@ -193,6 +197,10 @@ describe("allowlisted PostgreSQL phase diagnostics", () => {
     "CATCHUP_CLIENT_QUERY_BEGIN",
     "CATCHUP_SERVER_ENTRY",
     "CATCHUP_SERVER_SOURCE_CHECKED",
+    "CATCHUP_SERVER_SCOPE_DONE",
+    "CATCHUP_SERVER_DEPENDENCIES_DONE",
+    "CATCHUP_SERVER_EMPTY_ROOTS_DONE",
+    "CATCHUP_SERVER_RECIPE_INPUT_READY",
     "CATCHUP_SERVER_RECIPE_PLAN_DONE",
     "CATCHUP_SERVER_PROTECTED_DONE",
     "CATCHUP_SERVER_MAPPING_HASH_DONE",
@@ -217,10 +225,11 @@ describe("allowlisted PostgreSQL phase diagnostics", () => {
           environment,
           readLinkedFile,
           onPhase: (phase) => phases.push(phase),
-          run: () => ({ ...result, stderr }),
+          run: () => ({ ...result, stderr: `${stderr}\n${stderr}` }),
         },
       ).catch((error) => error);
       expect(phases).toEqual(expected);
+      expect(phases).toHaveLength(15);
       if (errorCode) expect(outcome.message).toBe(errorCode);
       else expect(JSON.parse(outcome)[0].result.success).toBe(true);
     },
@@ -240,6 +249,13 @@ describe("allowlisted PostgreSQL phase diagnostics", () => {
       "NOTICE: PZ0010",
       "NOTICE: pz002",
       "NOTICE: PZ999",
+      "NOTICE: PZ011",
+      "NOTICE: PZ0100",
+      "NOTICE: pz010",
+      "NOTICE: PZ007 private source",
+      "NOTICE: PZ010: synthetic-db-secret",
+      "DETAIL: NOTICE: PZ008",
+      "psql:private-source:123: NOTICE: PZ009",
       "ERROR: PZ002",
       "DETAIL: NOTICE: PZ003",
       "psql:private-source:123: NOTICE: PZ004",

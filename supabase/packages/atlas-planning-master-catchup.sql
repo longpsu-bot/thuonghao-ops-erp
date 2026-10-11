@@ -124,6 +124,7 @@ begin
  select * into prior from atlas_legacy.import_batches where source_system='OPS_V1' and snapshot_id=snapshot->>'snapshot_id';
  if found and (prior.snapshot_contract_version<>'ATLAS-PLANNING-CATCHUP.v1' or prior.snapshot_checksum<>snapshot->>'snapshot_checksum') then raise exception 'SNAPSHOT_ID_CONFLICT'; end if;
  scoped:=pg_temp.planning_catchup_scope(snapshot,prior.reconciliation->'catchup_dish_ids');
+ raise notice using errcode='PZ007',message='CATCHUP_SERVER_SCOPE_DONE';
  select coalesce(jsonb_agg(i.value),'[]') into issues from jsonb_array_elements(snapshot->'source_diagnostics') i where i.value->>'severity'='BLOCKER' and
  (i.value->>'entity'='schools' or exists(select 1 from jsonb_array_elements(scoped#>array['records',i.value->>'entity']) r where i.value->>'legacy_id' is null or r.value->>'legacy_id'=i.value->>'legacy_id'));
  if jsonb_array_length(issues)>0 then raise exception using message='SOURCE_DEPENDENCY_BLOCKED',detail=issues::text; end if;
@@ -147,12 +148,15 @@ begin
    actions:=actions||jsonb_build_array(atlas_legacy.master_recipe_action(kind,key,action,target,vals,atlas_legacy.master_snapshot_hash(r))||jsonb_build_object('before_values',observed,'dependency_reason','Missing Dish dependency closure'));
   end loop;
  end loop;
+ raise notice using errcode='PZ008',message='CATCHUP_SERVER_DEPENDENCIES_DONE';
  empty_roots:=pg_temp.planning_catchup_empty_roots(scoped);
+ raise notice using errcode='PZ009',message='CATCHUP_SERVER_EMPTY_ROOTS_DONE';
  -- Only the old Recipe composition planner receives this projection. The
  -- immutable scoped snapshot and source evidence retain every Recipe root.
  select jsonb_set(scoped,'{records,recipes}',coalesce(jsonb_agg(r.value),'[]')) into composed
  from jsonb_array_elements(scoped#>'{records,recipes}') r where exists
  (select 1 from jsonb_array_elements(scoped#>'{records,recipe_lines}') l where l.value->>'recipe_legacy_id'=r.value->>'legacy_id');
+ raise notice using errcode='PZ010',message='CATCHUP_SERVER_RECIPE_INPUT_READY';
  extension:=atlas_legacy.master_import_recipe_plan(composed);
  raise notice using errcode='PZ003',message='CATCHUP_SERVER_RECIPE_PLAN_DONE';
  issues:=coalesce(extension->'issues','[]')||(empty_roots->'issues');

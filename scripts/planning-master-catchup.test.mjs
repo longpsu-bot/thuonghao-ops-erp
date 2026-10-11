@@ -409,6 +409,31 @@ describe("bounded Planning master closure", () => {
     );
     expect(sql.trim()).toMatch(/\\warn CATCHUP_CLIENT_QUERY_DONE$/);
   });
+  it.each([false, true])(
+    "pins generic plans only in the catchup session for apply=%s",
+    (apply) => {
+      const sql = buildPlanningCatchupSql(fixture(), {
+        targetProjectRef: "rnzxmxiiqgtdevzregff",
+        apply,
+        planChecksum: "a".repeat(64),
+        actorId: "ee120000-0000-4000-8000-000000000001",
+      });
+      expect(
+        sql.match(/set plan_cache_mode='force_generic_plan';/g),
+      ).toHaveLength(1);
+      expect(
+        sql.indexOf("set plan_cache_mode='force_generic_plan';"),
+      ).toBeLessThan(sql.indexOf("CATCHUP_CLIENT_SETTINGS_DONE"));
+      expect(sql.indexOf("CATCHUP_CLIENT_SETTINGS_DONE")).toBeLessThan(
+        sql.indexOf(
+          "create or replace function pg_temp.planning_catchup_scope",
+        ),
+      );
+      expect(sql).not.toMatch(
+        /alter\s+(?:role|database|function)[\s\S]*plan_cache_mode/i,
+      );
+    },
+  );
   it("uses only literal SQLSTATE notices after critical planner and hash boundaries", () => {
     const sql = readFileSync(
       new URL(
@@ -432,6 +457,10 @@ describe("bounded Planning master closure", () => {
       ["PZ004", "CATCHUP_SERVER_PROTECTED_DONE"],
       ["PZ005", "CATCHUP_SERVER_MAPPING_HASH_DONE"],
       ["PZ006", "CATCHUP_SERVER_PLAN_HASH_DONE"],
+      ["PZ007", "CATCHUP_SERVER_SCOPE_DONE"],
+      ["PZ008", "CATCHUP_SERVER_DEPENDENCIES_DONE"],
+      ["PZ009", "CATCHUP_SERVER_EMPTY_ROOTS_DONE"],
+      ["PZ010", "CATCHUP_SERVER_RECIPE_INPUT_READY"],
     ]);
     for (const [marker, predecessor] of [
       ["SOURCE_CHECKED", "DUPLICATE_SOURCE_IDENTITY"],
@@ -445,9 +474,36 @@ describe("bounded Planning master closure", () => {
       ],
       ["MAPPING_HASH_DONE", "mapping_fp:=atlas_legacy.master_snapshot_hash("],
       ["PLAN_HASH_DONE", "plan_fp:=atlas_legacy.master_snapshot_hash(plan);"],
+      [
+        "SCOPE_DONE",
+        "scoped:=pg_temp.planning_catchup_scope(snapshot,prior.reconciliation->'catchup_dish_ids');",
+      ],
+      [
+        "DEPENDENCIES_DONE",
+        "'dependency_reason','Missing Dish dependency closure'",
+      ],
+      [
+        "EMPTY_ROOTS_DONE",
+        "empty_roots:=pg_temp.planning_catchup_empty_roots(scoped);",
+      ],
+      ["RECIPE_INPUT_READY", "select jsonb_set(scoped,'{records,recipes}'"],
     ])
       expect(sql.indexOf(`CATCHUP_SERVER_${marker}`)).toBeGreaterThan(
         sql.indexOf(predecessor),
       );
+    expect(sql.indexOf("CATCHUP_SERVER_SCOPE_DONE")).toBeLessThan(
+      sql.indexOf("CATCHUP_SERVER_DEPENDENCIES_DONE"),
+    );
+    expect(sql.indexOf("CATCHUP_SERVER_DEPENDENCIES_DONE")).toBeLessThan(
+      sql.indexOf("empty_roots:=pg_temp.planning_catchup_empty_roots(scoped);"),
+    );
+    expect(sql.indexOf("CATCHUP_SERVER_EMPTY_ROOTS_DONE")).toBeLessThan(
+      sql.indexOf("CATCHUP_SERVER_RECIPE_INPUT_READY"),
+    );
+    expect(sql.indexOf("CATCHUP_SERVER_RECIPE_INPUT_READY")).toBeLessThan(
+      sql.indexOf(
+        "extension:=atlas_legacy.master_import_recipe_plan(composed);",
+      ),
+    );
   });
 });

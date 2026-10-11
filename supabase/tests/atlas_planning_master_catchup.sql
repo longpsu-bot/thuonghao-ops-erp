@@ -84,6 +84,22 @@ insert into atlas_planning.attendance_lines (
 from atlas_admin.schools where school_code='v1-school-21';
 create temp table operational_before as select to_jsonb(l) value from atlas_planning.attendance_lines l;
 create temp table evidence(label text primary key,value jsonb);
+-- One unchanged complete source and unchanged target under both planner modes.
+-- SET LOCAL is confined to this rolled-back fixture transaction.
+create temp table plan_mode_source as select pg_temp.catchup_fixture() snapshot,
+ pg_temp.planning_catchup_protected('[]') protected_before;
+create temp table plan_mode_evidence(mode text primary key,value jsonb);
+set local plan_cache_mode='auto';
+insert into plan_mode_evidence select 'auto',pg_temp.run_planning_master_catchup(snapshot,false,null,null) from plan_mode_source;
+set local plan_cache_mode='force_generic_plan';
+insert into plan_mode_evidence select 'generic',pg_temp.run_planning_master_catchup(snapshot,false,null,null) from plan_mode_source;
+select is(current_setting('plan_cache_mode'),'force_generic_plan','catchup parity fixture executes with the candidate generic-plan setting');
+select ok((select count(*)=2 and bool_and(value->>'success'='true') from plan_mode_evidence),'both planner modes complete the same dependency-closed preview');
+select is((select value->>'plan_checksum' from plan_mode_evidence where mode='generic'),(select value->>'plan_checksum' from plan_mode_evidence where mode='auto'),'generic planning preserves the complete plan checksum');
+select is((select value->'actions' from plan_mode_evidence where mode='generic'),(select value->'actions' from plan_mode_evidence where mode='auto'),'generic planning preserves every action and its order');
+select is((select value->'issues' from plan_mode_evidence where mode='generic'),(select value->'issues' from plan_mode_evidence where mode='auto'),'generic planning preserves all issues and guards');
+select is((select snapshot from plan_mode_source),pg_temp.catchup_fixture(),'planner comparison keeps the complete signed source unchanged');
+select is(pg_temp.planning_catchup_protected('[]'),(select protected_before from plan_mode_source),'neither planner-mode preview changes target facts or mappings');
 select lives_ok($$select pg_temp.planning_catchup_plan(pg_temp.catchup_fixture())$$,'bounded planner executes directly without hidden SQL exceptions');
 insert into evidence values ('preview',pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),false,null,null));
 select diag(value::text) from evidence where label='preview' and value->>'success' is distinct from 'true';

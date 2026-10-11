@@ -192,6 +192,7 @@ export function buildPlanningCatchupSql(
 set statement_timeout='15min';
 set lock_timeout='30s';
 set client_min_messages='notice';
+set plan_cache_mode='force_generic_plan';
 \\warn CATCHUP_CLIENT_SETTINGS_DONE
 ${sql}
 \\warn CATCHUP_CLIENT_HELPERS_DONE

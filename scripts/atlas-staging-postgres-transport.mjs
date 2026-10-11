@@ -18,13 +18,17 @@ const SERVER_PHASES = new Map([
   ["PZ004", "CATCHUP_SERVER_PROTECTED_DONE"],
   ["PZ005", "CATCHUP_SERVER_MAPPING_HASH_DONE"],
   ["PZ006", "CATCHUP_SERVER_PLAN_HASH_DONE"],
+  ["PZ007", "CATCHUP_SERVER_SCOPE_DONE"],
+  ["PZ008", "CATCHUP_SERVER_DEPENDENCIES_DONE"],
+  ["PZ009", "CATCHUP_SERVER_EMPTY_ROOTS_DONE"],
+  ["PZ010", "CATCHUP_SERVER_RECIPE_INPUT_READY"],
 ]);
 function emitSafePostgresPhases(stderr, onPhase) {
   if (typeof stderr !== "string") return;
   const emitted = new Set();
   for (const line of stderr.split(/\r?\n/)) {
     const notice = line.match(
-      /^(?:psql:<stdin>:\d+:[ \t]*)?NOTICE:[ \t]+(PZ00[1-6])[ \t]*$/,
+      /^(?:psql:<stdin>:\d+:[ \t]*)?NOTICE:[ \t]+(PZ00[1-9]|PZ010)[ \t]*$/,
     );
     const phase = CLIENT_PHASES.has(line)
       ? line
