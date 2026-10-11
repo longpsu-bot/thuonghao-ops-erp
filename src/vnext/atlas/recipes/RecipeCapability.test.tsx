@@ -13,6 +13,8 @@ import type { AtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasVNextProvider, AtlasWorkbenchScope } from "../AtlasVNextProvider";
 import { RecipeCapability } from "./RecipeCapability";
 import { createRecipeReviewFixture } from "./recipeReviewFixtures";
+import { fixtureSuccess } from "./recipeReviewFixtures";
+import { adjustmentPreviewFromResult } from "../bridges/recipeAdjustment";
 import {
   createChangeOrderFixture,
   type ChangeOrderScenario,
@@ -110,6 +112,37 @@ async function retainedWorkspace(initialJob: "recipes" | "changes") {
 }
 
 describe("Unified Recipe capability and Change Order operator job", () => {
+  it("translates a known inactive substitute blocker without exposing backend English", async () => {
+    await setup("PREVIEW_BLOCKED", "changes", undefined, (fixture) => {
+      const original = fixture.api.preview;
+      fixture.api.preview = async (...args) => {
+        const preview = adjustmentPreviewFromResult(await original(...args))!;
+        return fixtureSuccess({
+          preview: {
+            ...preview,
+            blockers: [
+              {
+                code: "SUBSTITUTE_INGREDIENT_INACTIVE",
+                message: "The substitute Ingredient must be active.",
+              },
+            ],
+          },
+        });
+      };
+    });
+    await editor();
+    fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText("Nguyên liệu thay thế đang ngừng sử dụng."),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("The substitute Ingredient must be active."),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("button", { name: "Lưu lệnh điều chỉnh" }),
+    ).not.toBeInTheDocument();
+  });
   it("retains a delayed Change Order Preview without opening a hidden modal, then shows it on activation", async () => {
     const f = await retainedWorkspace("changes");
     await editor();

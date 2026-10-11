@@ -15,6 +15,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import type { IngredientSupplierMasterDataApi } from "../bridges/ingredientSupplierMasterData";
 import { IngredientCatalogue } from "./IngredientCatalogue";
 import { IngredientDetail } from "./IngredientDetail";
@@ -306,7 +307,9 @@ function IngredientToolbar({
     ARCHIVED: "Lưu trữ",
   }[c.ingredientStatus];
   return (
-    <Grid
+    <AtlasWorkbar
+      display="grid"
+      aria-label="Bộ lọc nguyên liệu"
       bg="bg.toolbar"
       px={{ base: "sm", md: "md" }}
       py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
@@ -316,7 +319,7 @@ function IngredientToolbar({
       alignItems="end"
       templateColumns={{
         base: "minmax(0, 1fr) auto auto",
-        md: "minmax(220px, 1fr) minmax(150px, 220px) auto auto",
+        md: "minmax(180px, 1fr) minmax(140px, 220px) auto",
       }}
     >
       <Field.Root
@@ -389,28 +392,27 @@ function IngredientToolbar({
       >
         Trạng thái: {statusLabel}
       </Text>
-      <Box
+      <AtlasWorkbarActions
         ref={compactFilterOnward}
-        gridColumn={{ base: "2", md: "auto" }}
+        gridColumn={{ base: "2 / -1", md: "auto" }}
         gridRow={{ base: "2", md: "auto" }}
-        alignSelf="center"
       >
         <AtlasRefreshButton
           loading={c.loading}
           disabled={!c.canRefresh}
           onClick={() => void c.refresh()}
         />
-      </Box>
-      <Button
-        gridColumn={{ base: "3", md: "auto" }}
-        gridRow={{ base: "2", md: "auto" }}
-        variant={c.activeSurface || c.review ? "secondary" : "businessPrimary"}
-        disabled={Boolean(c.lock)}
-        onClick={onCreate}
-      >
-        Tạo nguyên liệu
-      </Button>
-    </Grid>
+        <Button
+          variant={
+            c.activeSurface || c.review ? "secondary" : "businessPrimary"
+          }
+          disabled={Boolean(c.lock)}
+          onClick={onCreate}
+        >
+          Tạo nguyên liệu
+        </Button>
+      </AtlasWorkbarActions>
+    </AtlasWorkbar>
   );
 }
 function SupplierToolbar({
@@ -419,7 +421,9 @@ function SupplierToolbar({
   c: ReturnType<typeof useIngredientSupplierWorkbench>;
 }) {
   return (
-    <Grid
+    <AtlasWorkbar
+      display="grid"
+      aria-label="Bộ lọc nhà cung ứng"
       bg="bg.toolbar"
       px={{ base: "sm", md: "md" }}
       py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
@@ -429,7 +433,7 @@ function SupplierToolbar({
       alignItems="end"
       templateColumns={{
         base: "minmax(0, 1fr)",
-        md: "minmax(240px, 1fr) auto auto",
+        md: "minmax(240px, 1fr) auto",
       }}
     >
       <Field.Root>
@@ -441,18 +445,22 @@ function SupplierToolbar({
           onChange={(e) => c.setSupplierQuery(e.target.value)}
         />
       </Field.Root>
-      <AtlasRefreshButton
-        loading={c.loading}
-        disabled={!c.canRefresh}
-        onClick={() => void c.refresh()}
-      />
-      <Button
-        variant={c.activeSurface || c.review ? "secondary" : "businessPrimary"}
-        disabled={Boolean(c.lock)}
-        onClick={() => c.requestSupplier("NEW")}
-      >
-        Tạo nhà cung ứng
-      </Button>
-    </Grid>
+      <AtlasWorkbarActions>
+        <AtlasRefreshButton
+          loading={c.loading}
+          disabled={!c.canRefresh}
+          onClick={() => void c.refresh()}
+        />
+        <Button
+          variant={
+            c.activeSurface || c.review ? "secondary" : "businessPrimary"
+          }
+          disabled={Boolean(c.lock)}
+          onClick={() => c.requestSupplier("NEW")}
+        >
+          Tạo nhà cung ứng
+        </Button>
+      </AtlasWorkbarActions>
+    </AtlasWorkbar>
   );
 }

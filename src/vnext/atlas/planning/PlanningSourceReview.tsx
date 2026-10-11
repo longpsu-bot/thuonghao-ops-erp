@@ -10,6 +10,7 @@ import {
 } from "../bridges/planning";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { planningPantryReviewRows } from "./planningPantryReviewRows";
+import { pantryIssueCopy } from "./pantryIssueCopy";
 export function PlanningSourceReview({
   c,
   reviewRef,
@@ -147,12 +148,12 @@ export function PlanningSourceReview({
         )}
         {c.preview.issues.blockers.map((i, n) => (
           <Text role="alert" key={n} py="xs" color="status.danger">
-            {i.message}
+            {c.job === "pantry" ? pantryIssueCopy(i) : i.message}
           </Text>
         ))}
         {c.preview.issues.warnings.map((i, n) => (
           <Text key={n} py="xs" textStyle="helper" color="status.warning">
-            {i.message}
+            {c.job === "pantry" ? pantryIssueCopy(i) : i.message}
           </Text>
         ))}
         {c.impact?.date_impacts.map((d) => (

@@ -44,6 +44,78 @@ async function mount(scenario: SchoolPxkScenario = "READY") {
   return { ...h, api, read, write, originalRead };
 }
 describe("School PXK authoritative daily scope", () => {
+  it.each(["READY", "REPLACEMENT_REQUIRED"] as const)(
+    "keeps %s release on the selected School/date inside a multi-day scope",
+    async (state) => {
+      const h = await mount(state);
+      const row = pxkRow(state);
+      row.service_date = "2026-09-29";
+      row.preview = { ...row.preview, service_date: row.service_date };
+      if (row.current_release)
+        row.current_release = {
+          ...row.current_release,
+          service_date: row.service_date,
+        };
+      h.read.mockResolvedValue(
+        pxkSuccess({ ...pxkData([row], "2026-09-26"), date_end: "2026-10-02" }),
+      );
+      act(() =>
+        h.result.current.transition({
+          range: { start: "2026-09-26", end: "2026-10-02" },
+        }),
+      );
+      await waitFor(() => expect(h.result.current.loading).toBe(false));
+      act(() =>
+        h.result.current.transition({ selectedKey: h.result.current.key(row) }),
+      );
+      await act(async () => h.result.current.release());
+      expect(h.write).toHaveBeenCalledTimes(1);
+      expect(h.write.mock.lastCall![0].payload).toEqual({
+        service_date: row.service_date,
+        school_id: row.school_id,
+        delivery_location_id: row.delivery_location_id,
+        expected_source_fingerprint: row.preview.source_fingerprint,
+        predecessor_release_id:
+          row.current_release?.school_dispatch_release_id ?? null,
+      });
+    },
+  );
+  it.each([
+    ["2026-10-10", "2026-10-10"],
+    ["2026-10-10", "2026-10-11"],
+    ["2026-10-10", "2026-10-16"],
+    ["2026-09-29", "2026-10-05"],
+  ])("reads exact PXK range %s to %s", async (start, end) => {
+    const h = await mount("CURRENT");
+    h.read.mockResolvedValueOnce(
+      pxkSuccess({ ...pxkData([], start), date_end: end }),
+    );
+    act(() => h.result.current.transition({ range: { start, end } }));
+    await waitFor(() => expect(h.result.current.loading).toBe(false));
+    expect(h.read.mock.lastCall![0].payload).toMatchObject({
+      date_start: start,
+      date_end: end,
+    });
+    expect(h.result.current.canExportLoaded).toBe(true);
+  });
+  it.each([
+    ["2026-10-10", "2026-10-17"],
+    ["2026-10-10", "2026-10-09"],
+  ])(
+    "retains selected loaded export scope for invalid range %s to %s",
+    async (start, end) => {
+      const h = await mount("CURRENT");
+      const rows = h.result.current.rows;
+      const selected = h.result.current.selected;
+      act(() => h.result.current.transition({ range: { start, end } }));
+      act(() => h.result.current.transition({ refresh: true }));
+      expect(h.read).toHaveBeenCalledTimes(1);
+      expect(h.result.current.rows).toBe(rows);
+      expect(h.result.current.selected).toBe(selected);
+      expect(h.result.current.canExportLoaded).toBe(true);
+      expect(h.result.current.rangeError).toBeTruthy();
+    },
+  );
   it("reselecting the same date keeps its proven authority", async () => {
     const h = await mount();
     act(() => h.result.current.transition({ date: reviewDate }));

@@ -35,9 +35,9 @@ export function AtlasRefreshButton({
       disabled={disabled || loading}
       onClick={onClick}
       variant="utility"
-      w={{ base: "var(--atlas-layout-mobile-target, 44px)", lg: "compact" }}
-      h={{ base: "var(--atlas-layout-mobile-target, 44px)", lg: "compact" }}
-      minW={{ base: "var(--atlas-layout-mobile-target, 44px)", lg: "compact" }}
+      w={{ base: "var(--atlas-layout-mobile-target, 44px)", lg: "control" }}
+      h={{ base: "var(--atlas-layout-mobile-target, 44px)", lg: "control" }}
+      minW={{ base: "var(--atlas-layout-mobile-target, 44px)", lg: "control" }}
       flexShrink="0"
       p="var(--atlas-layout-zero, 0)"
       rounded="full"

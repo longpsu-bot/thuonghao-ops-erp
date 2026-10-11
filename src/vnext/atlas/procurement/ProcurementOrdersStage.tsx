@@ -17,6 +17,7 @@ import {
   type SchoolCateringPurchaseOrder,
 } from "../bridges/procurement";
 import { formatExactQuantityForOperator as quantity } from "./procurementExactQuantity";
+import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 
 export type ProcurementExportMode =
   "all" | "details_ing" | "details_school" | "sum";
@@ -172,10 +173,14 @@ export function ProcurementOrdersStage({
       <Text px="md" py="sm" textStyle="helper" color="fg.muted">
         {visible.length} đơn mua theo nhà cung cấp
       </Text>
-      <Flex px="md" pb="sm" gap="sm" align="end" wrap="wrap">
+      <AtlasWorkbar
+        px="md"
+        pb="sm"
+        aria-label="Xuất đơn mua trong phạm vi đã tải"
+      >
         <Field.Root w="var(--atlas-export-mode-width, 230px)">
           <Field.Label>Nội dung xuất PO</Field.Label>
-          <NativeSelect.Root size="sm" disabled={disabled || exporting}>
+          <NativeSelect.Root disabled={disabled || exporting}>
             <NativeSelect.Field
               value={exportMode}
               onChange={(event) =>
@@ -191,17 +196,18 @@ export function ProcurementOrdersStage({
           </NativeSelect.Root>
         </Field.Root>
         {onExportZip && (
-          <Button
-            size="sm"
-            variant="tertiary"
-            loading={exporting}
-            disabled={disabled || !exportOrders.length}
-            onClick={() => void exportZip()}
-          >
-            Xuất ZIP PO · phạm vi đã tải
-          </Button>
+          <AtlasWorkbarActions>
+            <Button
+              variant="secondary"
+              loading={exporting}
+              disabled={disabled || !exportOrders.length}
+              onClick={() => void exportZip()}
+            >
+              Xuất ZIP PO · phạm vi đã tải
+            </Button>
+          </AtlasWorkbarActions>
         )}
-      </Flex>
+      </AtlasWorkbar>
       {exportError && (
         <Text px="md" pb="sm" role="alert" color="status.danger">
           {exportError}
@@ -545,7 +551,7 @@ export function ProcurementOrdersStage({
                       disabled={disabled || exporting}
                       onClick={() => void exportOrder(onExportXlsx)}
                     >
-                      XLSX
+                      Xuất Excel
                     </Button>
                   )}
                   {onExportPdf && (
@@ -554,7 +560,7 @@ export function ProcurementOrdersStage({
                       disabled={disabled || exporting}
                       onClick={() => void exportOrder(onExportPdf)}
                     >
-                      PDF
+                      Xuất PDF
                     </Button>
                   )}
                 </Flex>

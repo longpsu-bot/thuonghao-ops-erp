@@ -223,18 +223,22 @@ describe("Supplier purchase orders", () => {
       expect(
         within(detail).queryByRole("button", { name: "Phát hành cho NCC" }),
       ).not.toBeInTheDocument();
-      fireEvent.click(within(detail).getByRole("button", { name: "XLSX" }));
+      fireEvent.click(
+        within(detail).getByRole("button", { name: "Xuất Excel" }),
+      );
       expect(onExportXlsx).toHaveBeenCalledWith(
         fixture.orders.purchase_orders[0],
         "all",
       );
-      expect(within(detail).getByRole("button", { name: "PDF" })).toBeVisible();
+      expect(
+        within(detail).getByRole("button", { name: "Xuất PDF" }),
+      ).toBeVisible();
     },
   );
   it("does not expose exports for drafts", () => {
     const { detail } = show();
     expect(
-      within(detail).queryByRole("button", { name: "XLSX" }),
+      within(detail).queryByRole("button", { name: "Xuất Excel" }),
     ).not.toBeInTheDocument();
   });
   it.each(["po_draft", "po_stale", "replacement_required"] as const)(

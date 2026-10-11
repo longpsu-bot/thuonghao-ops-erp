@@ -100,7 +100,7 @@ function OfficialDocument({
                 disabled={exporting}
                 onClick={() => void run(exports.onExportXlsx!)}
               >
-                XLSX
+                Xuất Excel
               </Button>
             )}
             {exports.onExportPdf && (
@@ -110,7 +110,7 @@ function OfficialDocument({
                 disabled={exporting}
                 onClick={() => void run(exports.onExportPdf!)}
               >
-                PDF
+                Xuất PDF
               </Button>
             )}
           </Flex>

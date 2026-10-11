@@ -48,7 +48,7 @@ export function SchoolPxkTable({
           size="sm"
           stickyHeader
           tableLayout="fixed"
-          w="var(--atlas-pxk-table-width, 810px)"
+          w="full"
           minW="var(--atlas-pxk-table-width, 810px)"
         >
           <Table.ColumnGroup>
@@ -80,14 +80,18 @@ export function SchoolPxkTable({
                 <Table.Cell
                   id={`${identityPrefix}-${schoolPxkRowKey(row)}`}
                   position="relative"
+                  whiteSpace="normal"
                   minW="var(--atlas-layout-pxk-school-min, 170px)"
                 >
                   {selectedKey === schoolPxkRowKey(row) && (
                     <Box data-selection-indicator="" aria-hidden="true" />
                   )}
-                  <Text fontWeight="semibold">{row.preview.school_name}</Text>
+                  <Text fontWeight="semibold" overflowWrap="anywhere">
+                    {row.preview.school_name}
+                  </Text>
                   <Text data-row-secondary textStyle="helper" color="fg.muted">
-                    {row.preview.delivery_location_name}
+                    {row.preview.delivery_location_name} ·{" "}
+                    {row.service_date.split("-").reverse().join("/")}
                   </Text>
                 </Table.Cell>
                 <Table.Cell>
@@ -98,7 +102,7 @@ export function SchoolPxkTable({
                   nguyên liệu
                 </Table.Cell>
                 <Table.Cell>
-                  <Text textStyle="helper">
+                  <Text textStyle="body" overflowWrap="anywhere">
                     {row.current_release?.document_number ?? "Chưa phát hành"}
                   </Text>
                 </Table.Cell>
@@ -108,7 +112,7 @@ export function SchoolPxkTable({
                       ? "status.danger"
                       : row.state === "REPLACEMENT_REQUIRED"
                         ? "status.warning"
-                        : "fg.primary"
+                        : "fg.muted"
                   }
                 >
                   {pxkLabels[row.state]}

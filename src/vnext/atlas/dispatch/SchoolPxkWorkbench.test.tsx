@@ -8,6 +8,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "storybook/test";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { SchoolPxkWorkbench } from "./SchoolPxkWorkbench";
 import {
@@ -65,14 +66,44 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("retains the selected loaded document and export after an invalid range edit", async () => {
+    const h = show("CURRENT");
+    await open("Xem phiếu");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+    );
+    const rangeGrid = await screen.findByRole("grid");
+    for (const date of ["2026-09-17", "2026-09-24"])
+      fireEvent.click(
+        rangeGrid.querySelector<HTMLElement>(
+          `[data-part="table-cell-trigger"][data-value="${date}"]`,
+        )!,
+      );
+    expect(await screen.findByText("Chọn tối đa 7 ngày.")).toBeVisible();
+    expect(h.read).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("region", { name: "Nội dung phiếu" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
+    expect(h.xlsx.mock.lastCall![0].service_date).toBe(reviewDate);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xuất ZIP · phạm vi đã tải" }),
+    );
+    expect(
+      h.zip.mock.lastCall![0].every(
+        (document: { service_date: string }) =>
+          document.service_date === reviewDate,
+      ),
+    ).toBe(true);
+  });
   it("packages unique loaded history with the selected date/entity mode", async () => {
     const h = show("HISTORY_WITH_SUPERSEDED");
     const button = screen.getByRole("button", {
-      name: "Xuất ZIP Dispatch · phạm vi đã tải",
+      name: "Xuất ZIP · phạm vi đã tải",
     });
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.change(
-      screen.getByRole("combobox", { name: "Nhóm file Dispatch" }),
+      screen.getByRole("combobox", { name: "Nhóm file xuất kho" }),
       { target: { value: "entity" } },
     );
     fireEvent.click(button);
@@ -108,14 +139,14 @@ describe("School PXK operator table and attached detail", () => {
     );
     await open("Tạo phiếu thay thế");
     const button = screen.getByRole("button", {
-      name: "Xuất ZIP Dispatch · phạm vi đã tải",
+      name: "Xuất ZIP · phạm vi đã tải",
     });
     expect(button).toBeDisabled();
     cleanup();
     const h = show("REPLACEMENT_REQUIRED");
     await open("Tạo phiếu thay thế");
     const dirtyButton = screen.getByRole("button", {
-      name: "Xuất ZIP Dispatch · phạm vi đã tải",
+      name: "Xuất ZIP · phạm vi đã tải",
     });
     expect(dirtyButton).toBeEnabled();
     fireEvent.change(screen.getByRole("textbox", { name: /Ghi chú/ }), {
@@ -189,32 +220,64 @@ describe("School PXK operator table and attached detail", () => {
       expect.objectContaining({ unsaved: false }),
     );
   });
-  it("Cancel restores the displayed date segments as well as the dirty note context", async () => {
-    const h = show();
-    await open();
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
-      { target: { value: "Giữ ngày" } },
-    );
-    fireEvent.focus(screen.getByRole("spinbutton", { name: "Day" }));
-    fireEvent.keyDown(screen.getByRole("spinbutton", { name: "Day" }), {
-      key: "ArrowUp",
-    });
-    const dialog = await screen.findByRole("dialog");
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
-    );
-    await waitFor(() =>
-      expect(screen.getByRole("spinbutton", { name: "Day" })).toHaveAttribute(
-        "aria-valuenow",
-        "24",
-      ),
-    );
-    expect(
-      screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
-    ).toHaveValue("Giữ ngày");
-    expect(h.read).toHaveBeenCalledTimes(1);
-  });
+  it.each([false, true])(
+    "Cancel restores the displayed range as well as the dirty note context (quick: %s)",
+    async (quick) => {
+      const h = show();
+      await open();
+      fireEvent.change(
+        screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
+        { target: { value: "Giữ ngày" } },
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+      );
+      const rangeGrid = await screen.findByRole("grid");
+      for (const date of ["2026-09-24", "2026-09-25"])
+        fireEvent.click(
+          rangeGrid.querySelector<HTMLElement>(
+            `[data-part="table-cell-trigger"][data-value="${date}"]`,
+          )!,
+        );
+      const dialog = await screen.findByRole("dialog", {
+        name: "Có ghi chú chưa phát hành. Bỏ ghi chú và tiếp tục?",
+      });
+      const cancel = within(dialog).getByRole("button", {
+        name: "Tiếp tục chỉnh sửa",
+      });
+      if (quick) fireEvent.click(cancel);
+      else {
+        await waitFor(() =>
+          expect(dialog.contains(document.activeElement)).toBe(true),
+        );
+        await userEvent.click(cancel);
+      }
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+        ).toHaveTextContent("24/09/2026 — 24/09/2026"),
+      );
+      expect(
+        screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
+      ).toHaveValue("Giữ ngày");
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+        ).toHaveFocus(),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+      );
+      const restoredGrid = await screen.findByRole("grid");
+      for (const edge of ["start", "end"])
+        expect(
+          restoredGrid.querySelector(
+            `[data-part="table-cell-trigger"][data-range-${edge}]`,
+          ),
+        ).toHaveAttribute("data-value", "2026-09-24");
+      expect(h.read).toHaveBeenCalledTimes(1);
+    },
+  );
   it("presents filters in operational order", async () => {
     show();
     await open();
@@ -239,11 +302,11 @@ describe("School PXK operator table and attached detail", () => {
     fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
     await waitFor(() =>
       expect(
-        screen.queryByRole("button", { name: "XLSX" }),
+        screen.queryByRole("button", { name: "Xuất Excel" }),
       ).not.toBeInTheDocument(),
     );
     expect(
-      screen.queryByRole("button", { name: "PDF" }),
+      screen.queryByRole("button", { name: "Xuất PDF" }),
     ).not.toBeInTheDocument();
   });
   it("has one h1, quiet summary, explicit actions, readable quantities before release and selected rail", async () => {
@@ -366,7 +429,7 @@ describe("School PXK operator table and attached detail", () => {
     const h = show();
     await open();
     expect(
-      screen.queryByRole("button", { name: "XLSX" }),
+      screen.queryByRole("button", { name: "Xuất Excel" }),
     ).not.toBeInTheDocument();
     fireEvent.change(
       screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
@@ -376,11 +439,11 @@ describe("School PXK operator table and attached detail", () => {
       screen.getByRole("button", { name: "Phát hành phiếu xuất kho" }),
     );
     await screen.findByText("Đã xác nhận phiếu xuất kho chính thức.");
-    fireEvent.click(screen.getByRole("button", { name: "XLSX" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "PDF" })).toBeEnabled(),
+      expect(screen.getByRole("button", { name: "Xuất PDF" })).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "PDF" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất PDF" }));
     const readback = await h.read.mock.results[1]!.value;
     const document = (
       readback as ReturnType<typeof pxkSuccess> & {
@@ -416,7 +479,7 @@ describe("School PXK operator table and attached detail", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("90")).toBeInTheDocument();
     expect(screen.getByText("100")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "XLSX" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
     expect(h.xlsx.mock.calls[0]![0]).toMatchObject({
       school_dispatch_release_id: "release-1",
       source_fingerprint: "source-old-1",
@@ -489,7 +552,9 @@ describe("School PXK operator table and attached detail", () => {
     const disclosure = screen.getByText("Lịch sử phiếu").closest("details")!;
     expect(disclosure.open).toBe(false);
     fireEvent.click(screen.getByText("Lịch sử phiếu"));
-    fireEvent.click(within(disclosure).getByRole("button", { name: "PDF" }));
+    fireEvent.click(
+      within(disclosure).getByRole("button", { name: "Xuất PDF" }),
+    );
     expect(h.pdf.mock.calls[0]![0]).toMatchObject({
       status: "SUPERSEDED",
       document_number: "PXK-20260924-0000",
@@ -499,7 +564,9 @@ describe("School PXK operator table and attached detail", () => {
   it("groups every unique export-ready released snapshot in operational order", async () => {
     const h = show("HISTORY_WITH_SUPERSEDED");
     fireEvent.click(
-      await screen.findByRole("button", { name: "Xuất PXK đã phát hành" }),
+      await screen.findByRole("button", {
+        name: "Xuất Excel · phạm vi đã tải",
+      }),
     );
     await waitFor(() => expect(h.groupedXlsx).toHaveBeenCalledOnce());
     expect(h.groupedXlsx.mock.calls[0]![0]).toEqual(
