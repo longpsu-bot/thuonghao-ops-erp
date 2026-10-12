@@ -280,11 +280,24 @@ begin
   v_result:=atlas_api.execute_need_generation(v_request);
   v_replay:=atlas_api.execute_need_generation(v_request);
   if v_result is distinct from v_replay then raise exception 'Staged command replay drifted'; end if;
+  if v_result->>'success'='true' and v_result-array['success','contract_version','command_id','correlation_id',
+    'idempotency_status','affected_aggregate_ids','new_versions','result_counts','emitted_event_ids','audit_event_ids',
+    'authoritative_readback','downstream_currentness','safe_operator_message','warnings','blockers']<>'{}'::jsonb then
+    raise exception 'Atomic success exposed internal orchestration evidence';
+  end if;
   if p_drift and not p_fail and v_result->>'success'='true' then
     if (select version from atlas_planning.confirmed_need_batches where confirmed_need_batch_id=v_old_batch)<>v_batch_version+2
        or (select count(*) from atlas_audit.domain_events where command_id in ((v_request->>'command_id')::uuid,v_child_id) and event_type='ConfirmedNeedsRematerialized')<>2
        or (select count(*) from atlas_audit.audit_events where command_id in ((v_request->>'command_id')::uuid,v_child_id) and event_type='ConfirmedNeedsRematerialized')<>2
-       or v_result#>>'{zero_bridge,command_receipt_id}' is null then
+       or (select count(*) from atlas_core.command_receipts receipt
+           join atlas_audit.domain_events event using(command_receipt_id,command_id,correlation_id)
+           join atlas_audit.audit_events audit using(command_receipt_id,command_id,correlation_id)
+           where receipt.command_id=v_child_id and receipt.outcome='COMPLETED'
+             and receipt.correlation_id=(v_request->>'correlation_id')::uuid
+             and receipt.response_payload->>'success'='true'
+             and (receipt.response_payload#>>'{new_versions,confirmed_need_batch_version}')::bigint=v_batch_version+1
+             and event.event_type='ConfirmedNeedsRematerialized'
+             and audit.event_type='ConfirmedNeedsRematerialized')<>1 then
       raise exception 'Staged source drift did not preserve both receipt/event/version transitions';
     end if;
   end if;
@@ -495,4 +508,3 @@ select is((select jsonb_agg(to_jsonb(line) order by purchase_order_line_revision
  (select jsonb_agg(fact order by fact->>'purchase_order_line_revision_id') from released_po_line_before),'released purchase quantities remain byte-for-byte unchanged');
 select * from finish();
 rollback;
-

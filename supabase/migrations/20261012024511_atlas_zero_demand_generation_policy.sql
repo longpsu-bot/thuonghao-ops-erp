@@ -3308,7 +3308,6 @@ begin
     if v_bridge_receipt_id is not null then
       perform atlas_core.planning_contract_01_finish_receipt(v_bridge_receipt_id,v_result,true);
       perform pg_catalog.set_config('atlas.planning_contract_01_receipt_id',v_receipt_id::text,true);
-      v_bridge_result := v_result;
     end if;
 
     -- Flush the private materializer's deferred cross-aggregate guards while
@@ -3657,12 +3656,6 @@ begin
         'confirmed_need_batch_version', v_batch.version
       ),
       'result_counts', v_result -> 'result_counts',
-      'zero_bridge', case when v_bridge_receipt_id is null then null else
-        pg_catalog.jsonb_build_object('command_receipt_id',v_bridge_receipt_id,
-          'confirmed_need_batch_version',v_bridge_result#>'{new_versions,confirmed_need_batch_version}',
-          'result_counts',v_bridge_result->'result_counts',
-          'emitted_event_ids',v_bridge_result->'emitted_event_ids',
-          'audit_event_ids',v_bridge_result->'audit_event_ids') end,
       'emitted_event_ids', pg_catalog.jsonb_build_array(
         v_recorded -> 'domain_event_id'
       ),

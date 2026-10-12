@@ -421,8 +421,10 @@ zero-only result, otherwise `POSITIVE_DEMAND` for a current positive result.
 its Confirmed Need ID/status/version are all null for an initial zero-only result.
 An existing batch awaiting staged correction sets `current_need.requires_materialization`
 and remains `OUTDATED`. `pending_materialization` indicates that the staged run's
-source evidence is still current. In the source-drift recovery case only, atomic
-success exposes additive `zero_bridge` with the child command receipt ID,
-intermediate batch version, result counts, and emitted/audit event ID arrays;
-ordinary success returns it as null. Final `new_versions`, result counts and
-authoritative readback always describe the final committed result.
+source evidence is still current. Supporting child-command receipts, intermediate
+batch versions, result counts, and event/audit evidence remain internal and are
+not part of the public `execute_need_generation` success response. Final
+`new_versions`, result counts and authoritative readback always describe the final
+committed result. The focused SQL fixture verifies the completed child receipt and
+its linked domain/audit evidence directly in the authoritative private tables,
+alongside exact replay and atomic rollback.
