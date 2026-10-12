@@ -68,6 +68,38 @@ do $deterministic$ declare definition text; response jsonb; request jsonb; id uu
 end $deterministic$;
 select pass('deterministic nested failure remains a legitimate immutable failed receipt');
 do $$ begin execute (select definition from closeout_original_function); end $$;
+-- Positive immediate lineage must never enter zero-gap resolution, including
+-- deferred integrity guards and authoritative readback. ROLLBACK restores it.
+create temp table closeout_helper_access as
+select membership.admin_option,membership.inherit_option,membership.set_option,
+ pg_catalog.has_schema_privilege('atlas_planning_materialization_runtime','atlas_core','CREATE') had_create
+from (select 1) seed left join pg_catalog.pg_auth_members membership
+ on membership.roleid='atlas_planning_materialization_runtime'::regrole
+ and membership.member='postgres'::regrole and membership.grantor='postgres'::regrole;
+grant atlas_planning_materialization_runtime to postgres with set true;
+set local role atlas_owner;
+grant create on schema atlas_core to atlas_planning_materialization_runtime;
+reset role;
+set local role atlas_planning_materialization_runtime;
+create or replace function atlas_core.zero_demand_predecessor_contribution(predecessor_line_id uuid,batch_id uuid)
+returns uuid language plpgsql stable strict security definer set search_path = '' as $$
+begin raise exception 'Positive correction invoked zero ancestry'; end;
+$$;
+reset role;
+do $restore_helper_access$ declare access record; begin
+ select * into strict access from closeout_helper_access;
+ if not access.had_create then
+  set local role atlas_owner;
+  revoke create on schema atlas_core from atlas_planning_materialization_runtime;
+  reset role;
+ end if;
+ if access.admin_option is null then
+  revoke atlas_planning_materialization_runtime from postgres;
+ else
+  execute format('grant atlas_planning_materialization_runtime to postgres with admin %s, inherit %s, set %s',
+   access.admin_option,access.inherit_option,access.set_option);
+ end if;
+end $restore_helper_access$;
 -- The same frozen request can now execute once; a duplicate replays it.
 set local statement_timeout='8s';
 set local role authenticated;
