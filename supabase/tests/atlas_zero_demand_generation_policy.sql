@@ -6,7 +6,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(71);
+select plan(72);
 select function_owner_is('atlas_core','zero_demand_predecessor_contribution',array['uuid','uuid'],'atlas_planning_materialization_runtime','zero ancestry helper keeps the bounded materialization runtime');
 select ok(not has_function_privilege('anon','atlas_core.zero_demand_predecessor_contribution(uuid,uuid)','EXECUTE') and not has_function_privilege('authenticated','atlas_core.zero_demand_predecessor_contribution(uuid,uuid)','EXECUTE') and not has_function_privilege('service_role','atlas_core.zero_demand_predecessor_contribution(uuid,uuid)','EXECUTE'),'zero ancestry helper is not a public API');
 select ok((select prosecdef and proisstrict and proconfig @> array['search_path=""'] from pg_proc where oid='atlas_core.zero_demand_predecessor_contribution(uuid,uuid)'::regprocedure),'private ancestry helper has fixed path and skips null predecessor work');
@@ -350,6 +350,54 @@ select is((select response->>'success' from ng_results where name='prepare-zero'
 reset role;
 select is((select count(*) from atlas_planning.purchase_handoff_batches),0::bigint,'rejected zero preparation creates no Purchase Handoff');
 select is((select count(*) from atlas_procurement.purchase_orders),0::bigint,'rejected zero preparation creates no PO');
+-- Append a second genuine zero run through the retained commands, then prove
+-- reactivation and exact replay. Roll back this subcase to retain the R2 fixture.
+create function pg_temp.ng_repeated_zero_ancestry() returns jsonb language plpgsql as $$
+declare v_result jsonb; v_request jsonb; v_replay jsonb; v_batch uuid; v_run uuid;
+ v_snapshot jsonb; v_rows jsonb; v_menu atlas_planning.weekly_menus%rowtype;
+begin
+ begin
+  select confirmed_need_batch_id into strict v_batch
+  from atlas_planning.confirmed_need_batches where period_start='2026-10-12';
+  -- A changed zero-School Menu is a real upstream change while the four
+  -- historically positive School contributions remain zero and unchanged.
+  select * into strict v_menu from atlas_planning.weekly_menus where week_start='2026-10-12';
+  select atlas_core.rmvp_03a_canonical_menu_rows(jsonb_agg(row)||jsonb_build_array(jsonb_build_object(
+   'school_id',pg_temp.ng_id(5002),'service_date','2026-10-12','menu_slot_code','savory',
+   'dish_id',pg_temp.ng_id(1002),'source_row_reference','multi-zero-added-menu'))) into v_rows
+  from ng_requests,jsonb_array_elements(request#>'{payload,rows}') row where name='menu';
+  v_result:=atlas_api.save_weekly_menu(pg_temp.ng_request('RMVP-03A.v2','WEEKLY_MENU_SAVED',jsonb_build_object(
+   'week_start','2026-10-12','source_type','GOOGLE_SHEET','source_name','Multi-zero Menu correction',
+   'source_signature',atlas_core.rmvp_03a_menu_signature(v_rows),'expected_source_signature',v_menu.source_signature,'rows',v_rows))
+   ||jsonb_build_object('expected_version',v_menu.version));
+  if v_result->>'success' is distinct from 'true' then raise exception 'Second zero source correction failed: %',v_result; end if;
+  perform pg_temp.ng_generate_request('multi-zero-generate','2026-10-12');
+  v_result:=atlas_api.execute_need_generation((select request from ng_requests where name='multi-zero-generate'));
+  if v_result->>'success' is distinct from 'true' then raise exception 'Second zero generation failed: %',v_result; end if;
+  v_run:=(v_result#>>'{affected_aggregate_ids,need_generation_run_id}')::uuid;
+  set constraints all immediate;
+  set constraints all deferred;
+  v_snapshot:=jsonb_build_object('second_zero_observations',(select count(*) from atlas_planning.theoretical_need_lines where need_generation_run_id=v_run and line_disposition='ACTIVE' and theoretical_quantity=0),
+   'no_current_need',not exists(select 1 from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=v_batch and is_current));
+  perform pg_temp.ng_change_attendance('multi-zero-attendance','2026-10-12',100);
+  v_result:=atlas_api.save_attendance((select request from ng_requests where name='multi-zero-attendance'));
+  if v_result->>'success' is distinct from 'true' then raise exception 'Multi-zero source save failed: %',v_result; end if;
+  perform pg_temp.ng_generate_request('multi-zero-reactivate','2026-10-12');
+  select request into v_request from ng_requests where name='multi-zero-reactivate';
+  v_result:=atlas_api.execute_need_generation(v_request);
+  v_replay:=atlas_api.execute_need_generation(v_request);
+  if v_result->>'success' is distinct from 'true' then raise exception 'Multi-zero reactivation failed: %',v_result; end if;
+  set constraints all immediate;
+  set constraints all deferred;
+  v_snapshot:=v_snapshot||jsonb_build_object('exact_replay',v_result=v_replay,
+   'restored_original_identities',(select count(*) from atlas_planning.confirmed_need_line_revisions current_revision join original_revisions original using(confirmed_need_line_id)
+    where current_revision.is_current and current_revision.predecessor_revision_id=original.confirmed_need_line_revision_id
+     and current_revision.delivery_location_id=original.delivery_location_id),
+   'retained_run_count',(select count(*) from atlas_planning.need_generation_runs where period_start='2026-10-12'));
+  raise sqlstate 'ZD002' using message='Rollback multi-zero ancestry subcase';
+ exception when sqlstate 'ZD002' then return v_snapshot; end;
+end; $$;
+select is(pg_temp.ng_repeated_zero_ancestry(),jsonb_build_object('second_zero_observations',14,'no_current_need',true,'exact_replay',true,'restored_original_identities',4,'retained_run_count',4),'positive-zero-zero-positive retains stable identity, destination, immutable history and exact replay');
 -- A zero-only predecessor never had a materialized contribution.
 select pg_temp.ng_change_attendance('attendance-reactivate','2026-10-12',100);
 set local role authenticated;

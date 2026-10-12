@@ -332,3 +332,20 @@ facts. Both H0C corrections, their batch versions, receipts, events and audit ro
 commit or roll back together with the outer command. Each H0C command emits one
 event/audit pair; ordinary atomic execution still increments the batch once.
 Released Planning authority and downstream commitments remain correction blockers.
+
+### Positive predecessor performance clarification — 2026-10-12
+
+Ordinary positive immediate predecessor contributions use the existing indexed
+theoretical-line and batch identity, preserving current-revision filters and
+singleton historical read selection. They must not invoke recursive zero-ancestry resolution. Only an active
+zero immediate predecessor without direct materialized contribution evidence uses
+the private ancestry helper to recover historical identity and destination across
+one or more zero observations. This supporting mechanism does not change demand,
+rounding, decision authority, source fingerprints, correction guards or replay.
+
+The forward correction is
+`20261012064517_atlas_positive_correction_fast_path.sql`; migration
+`20261012024511_atlas_zero_demand_generation_policy.sql` remains unchanged. Atlas
+Staging has not applied migration 101. Any later authorized Staging deployment must
+apply both together after Full Integration is green. This hotfix authorizes no
+deployment. See the [implementation and validation record](../implementation-tasks/TASK-ATLAS-POSITIVE-CORRECTION-FAST-PATH.md).
