@@ -156,13 +156,15 @@ export type PlanningInputPreflightData = {
       confirmed_need_batch_version: number | null;
     }>;
   };
+  demand_state?: "POSITIVE_DEMAND" | "NO_DEMAND";
   current_need: {
-    confirmed_need_batch_id: string;
-    confirmed_need_batch_status: string;
-    confirmed_need_batch_version: number;
+    confirmed_need_batch_id: string | null;
+    confirmed_need_batch_status: string | null;
+    confirmed_need_batch_version: number | null;
     need_generation_run_id: string;
     need_generation_run_version: number;
     need_generation_run_status: string;
+    need_generation_release_snapshot_id?: string;
   } | null;
 };
 
@@ -399,4 +401,35 @@ export function readinessDecisionLabel(decision: ReadinessDecision) {
     INVALIDATED: "ĐÃ VÔ HIỆU",
   };
   return labels[decision];
+}
+
+export function generatedNoDemand(p: PlanningInputPreflightData | null) {
+  const need = p?.current_need;
+  return Boolean(
+    p?.downstream_currentness === "CURRENT" &&
+    p.demand_state === "NO_DEMAND" &&
+    p.readiness_state === "READY" &&
+    p.blocking_issue_count === 0 &&
+    !p.issues.some(
+      (issue) => issue.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+    ) &&
+    !p.issues.some((issue) => issue.severity === "BLOCKING") &&
+    typeof need?.need_generation_run_id === "string" &&
+    need.need_generation_run_id.length > 0 &&
+    Number.isInteger(need.need_generation_run_version) &&
+    need.need_generation_run_version > 0 &&
+    need.need_generation_run_status === "RELEASED_FOR_CONFIRMATION" &&
+    typeof need.need_generation_release_snapshot_id === "string" &&
+    need.need_generation_release_snapshot_id.length > 0 &&
+    ((need.confirmed_need_batch_id === null &&
+      need.confirmed_need_batch_status === null &&
+      need.confirmed_need_batch_version === null) ||
+      (typeof need.confirmed_need_batch_id === "string" &&
+        need.confirmed_need_batch_id.length > 0 &&
+        Number.isInteger(need.confirmed_need_batch_version) &&
+        need.confirmed_need_batch_version! > 0 &&
+        ["DRAFT_REVIEW", "REOPENED"].includes(
+          need.confirmed_need_batch_status ?? "",
+        ))),
+  );
 }

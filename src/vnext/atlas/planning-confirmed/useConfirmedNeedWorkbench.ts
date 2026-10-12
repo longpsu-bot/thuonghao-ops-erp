@@ -35,6 +35,7 @@ import {
   correctionBlocked,
   mondayOf,
   noDemand,
+  generatedNoDemand,
   validBatch,
   validPreflight,
 } from "./confirmedNeedAuthority";
@@ -196,7 +197,7 @@ export function useConfirmedNeedWorkbench({
   );
   const loadBatch = useCallback(
     async (p: PlanningInputPreflightData) => {
-      if (!authSubject || !p.current_need) return null;
+      if (!authSubject || !p.current_need?.confirmed_need_batch_id) return null;
       const b = await loadCompleteConfirmedNeedReview(
         confirmedNeedApi,
         authSubject,
@@ -238,7 +239,8 @@ export function useConfirmedNeedWorkbench({
         return;
       }
       const requiresBatch =
-        p.downstream_currentness === "CURRENT" || saveNeedsReadback.current;
+        (p.downstream_currentness === "CURRENT" && !generatedNoDemand(p)) ||
+        saveNeedsReadback.current;
       const b = requiresBatch ? await loadBatch(p) : null;
       if (epoch.current !== requestEpoch) return;
       if (requiresBatch && !b) {
@@ -326,7 +328,9 @@ export function useConfirmedNeedWorkbench({
           if (token !== rangeEpoch.current) return;
           if (!validPreflight(p, day)) throw new Error(readFailure);
           const b =
-            p.downstream_currentness === "CURRENT" && p.current_need
+            p.downstream_currentness === "CURRENT" &&
+            !generatedNoDemand(p) &&
+            p.current_need?.confirmed_need_batch_id
               ? await loadCompleteConfirmedNeedReview(
                   confirmedNeedApi,
                   authSubject,
@@ -336,6 +340,7 @@ export function useConfirmedNeedWorkbench({
               : null;
           if (
             p.downstream_currentness === "CURRENT" &&
+            !generatedNoDemand(p) &&
             (!b || !validBatch(b, p, day))
           )
             throw new Error(readFailure);
@@ -570,6 +575,29 @@ export function useConfirmedNeedWorkbench({
           p.current_need.confirmed_need_batch_id
       ) {
         classifyFailure(r, true);
+        return;
+      }
+      if (generatedNoDemand(p)) {
+        if (
+          need.selected_run?.status !== "RELEASED_FOR_CONFIRMATION" ||
+          need.selected_run.version !==
+            p.current_need.need_generation_run_version ||
+          !need.selected_run.release_snapshot_id ||
+          need.selected_run.release_snapshot_id !==
+            p.current_need.need_generation_release_snapshot_id ||
+          need.grouped_requirements.some(
+            (group) => group.total_theoretical_quantity !== 0,
+          )
+        ) {
+          classifyFailure(r, true);
+          return;
+        }
+        setPreflight(p);
+        setWorkbench(null);
+        setDrafts({});
+        setLock(null);
+        setOperation({ status: "SUCCEEDED", message: "Không có nhu cầu." });
+        setNotice("Không có nhu cầu.");
         return;
       }
       const b = await loadBatch(p);

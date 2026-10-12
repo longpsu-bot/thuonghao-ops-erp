@@ -20,6 +20,14 @@
 
 **Required pre-H1A maintenance:** [TASK-PLATFORM-PRE-H1A - Current Test-Catalog Consolidation](../implementation-tasks/TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md)
 
+Product-approved zero-demand policy (2026-10-12): `ACTIVE` theoretical lines with
+quantity zero remain immutable source and release audit evidence. They are excluded
+before actionable grouping, revision membership, and the current partition proof.
+An initial zero-only release succeeds with derived `NO_DEMAND` and no Confirmed Need
+batch. Positive-to-zero correction supersedes actionable revisions without zero
+successors, preserving stable identity, history, scope checks and downstream guards.
+Each materialized revision still has nonempty positive membership and exact totals.
+
 ## 1. Executive decision
 
 Atlas will reuse the existing Planning-owned Confirmed Need **business aggregate**: `ConfirmedNeedBatch`, stable `ConfirmedNeedLine`, versioned `ConfirmedNeedLineRevision`, logical `ConfirmedNeedSourceReference`, logical `ConfirmedNeedAdjustment`, and approval snapshots.
@@ -45,7 +53,7 @@ The retained logical model supplies or requires:
 - one stable line identity across revisions;
 - exact theoretical and confirmed quantity fields on each line revision;
 - governed source-reference and predecessor identity;
-- one current revision and retained superseded revisions;
+- at most one current revision, exactly one for each current positive identity, and retained superseded revisions;
 - batch version and lifecycle;
 - line-level adjustment/decision evidence;
 - immutable approval snapshots and snapshot lines;
@@ -81,7 +89,7 @@ This distinction reconciles the governing sources:
 
 [Decision PA-06E-H0B1](../decisions/decision-pa-06e-h0b1-confirmed-need-identity-membership.md) closes the H0B1 source-reference alternatives. Atlas reuses the existing batch/stable-line/immutable-revision aggregate with exact `WHOLESALE` or `NEED_GENERATION` source families and adds one revision-owned contribution relation only.
 
-School-catering stable identity is exactly `batch + service date + customer + School + delivery location + Ingredient + controlled Unit`. Calculation-source IDs and authorization scope are excluded. Every immutable school-catering revision binds one exact released Need Generation source and a nonempty every-and-only membership of `ACTIVE` atomic Theoretical Need lines. Source Unit equals controlled Unit, controlled contribution quantity equals source theoretical quantity, and revision theoretical quantity is their exact PostgreSQL numeric sum. Existing `confirmed_quantity` remains a non-authoritative Draft proposal until later decision evidence.
+School-catering stable identity is exactly `batch + service date + customer + School + delivery location + Ingredient + controlled Unit`. Calculation-source IDs and authorization scope are excluded. Every immutable school-catering revision binds one exact released Need Generation source and a nonempty every-and-only membership of positive `ACTIVE` atomic Theoretical Need lines. Source Unit equals controlled Unit, controlled contribution quantity equals source theoretical quantity, and revision theoretical quantity is their exact PostgreSQL numeric sum. Existing `confirmed_quantity` remains a non-authoritative Draft proposal until later decision evidence.
 
 H0B1b must implement this private typed model, the exact deferred guards `confirmed_need_current_source_consistency` and `confirmed_need_revision_membership_total`, and unchanged PA-05D compatibility. It must not use polymorphic free-text IDs, caller-authored table names, generic unvalidated JSON lineage, fake Wholesale records, a second aggregate, conversion, a decision/policy structure, or a compatibility view.
 
@@ -282,7 +290,7 @@ The minimum invariants are:
 
 1. Stable Confirmed Need line identity survives revisions of the same source contribution.
 2. Every line revision has a positive revision number unique within its stable line.
-3. Only one current revision exists per stable line.
+3. At most one current revision exists per stable line; identities in the current positive partition have exactly one.
 4. Every noninitial revision references its direct predecessor.
 5. Creating a successor may atomically change only the prior current revision's controlled lifecycle metadata: `is_current` from true to false and `revision_status` to `SUPERSEDED`.
 6. Revision payload is immutable after creation: theoretical quantity, confirmed quantity, ingredient, unit, source/calculation reference, predecessor, created actor/time, and originating command never change.
@@ -819,7 +827,7 @@ After H1, separate approved tasks may implement complete-batch validation, appro
 - a school-catering source cannot be persisted with a fake wholesale order/line/revision;
 - batch/revision source rows and immutable contribution memberships bind exact released generation evidence; upstream Recipe/Menu/Attendance facts remain reachable through typed Theoretical Need anchors;
 - no caller-authored table name, polymorphic free-text ID, or generic unvalidated JSON lineage is accepted;
-- H0B1b proves exact operational identity, current-source consistency, `ACTIVE` every-and-only membership, source-Unit-equals-controlled-Unit behavior, and exact numeric membership totals before H0C;
+- H0B1b proves exact operational identity, current-source consistency, positive `ACTIVE` every-and-only membership, source-Unit-equals-controlled-Unit behavior, and exact numeric membership totals before H0C;
 - `create_confirmed_needs_from_generation` later materializes exact theoretical and proposed values but creates no Planning-confirmed authority;
 - a corrected released generation result produces predecessor-linked Draft successors or explicit new stable lines without changing prior payloads;
 - H1 line decision evidence later records actor/time, reason, before/after, rule/source set, revision, batch version, command, and unchanged acceptance; and
@@ -838,7 +846,7 @@ After H1, separate approved tasks may implement complete-batch validation, appro
 
 ### 19.3 Revision history
 
-- one current revision per stable line;
+- at most one current revision per stable line, exactly one for identities in the current positive partition;
 - every noninitial predecessor chain is valid;
 - prior current may become `is_current = false` / `SUPERSEDED` atomically;
 - no previous revision receives new quantity, item, unit, source, predecessor, creation, or command payload values;

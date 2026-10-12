@@ -613,10 +613,10 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **IDs and versions returned:** `affected_aggregate_ids.need_generation_run_id`, `affected_aggregate_ids.confirmed_need_batch_id`, `new_versions.need_generation_run_version`, and `new_versions.confirmed_need_batch_version`.
 - **Result counts:** exactly created/reused/retired Confirmed Need lines, created line revisions, created revision contributions, current line revisions, and superseded line revisions.
 - **Lifecycle transition:** initial creation writes one `NEED_GENERATION` batch in `DRAFT_REVIEW`, version 1; correction preserves `DRAFT_REVIEW` or `REOPENED` and increments the batch once. It never reopens, validates, approves, or releases automatically.
-- **Materialization rule:** group the complete active immutable release by service date, Customer, School, captured destination, Ingredient, and no-conversion Unit; preserve that exact PostgreSQL numeric total as `theoretical_quantity`, then derive the Draft proposal once from the exact effective Unit/service-date Planning policy as `ceil(theoretical_quantity / planning_step) * planning_step` under D-046. Missing, ineffective, or ambiguous policy blocks the complete command; no fallback is permitted.
+- **Materialization rule:** group the complete positive actionable immutable release by service date, Customer, School, captured destination, Ingredient, and no-conversion Unit; preserve that exact PostgreSQL numeric total as `theoretical_quantity`, then derive the Draft proposal once from the exact effective Unit/service-date Planning policy as `ceil(theoretical_quantity / planning_step) * planning_step` under D-046. Missing, ineffective, or ambiguous policy blocks the complete command; no fallback is permitted.
 - **Correction history:** require the exact direct released successor; create a successor Draft revision for every retained group; preserve prior revisions/memberships; allow historical-line retirement only for an accepted exact one-to-one Ingredient move that empties the old group.
 - **Warnings and blockers:** successful v1 response returns empty arrays and no generated line, revision, contribution, or source-ID arrays.
-- **Safe errors:** common command errors plus `GENERATION_NOT_RELEASED`, `SOURCE_LINEAGE_INCOMPLETE`, `SOURCE_REVISION_STALE`, `SOURCE_MAPPING_INCOMPLETE`, `SOURCE_SUCCESSOR_AMBIGUOUS`, `OPERATIONAL_IDENTITY_UNAPPROVED`, `CONTRIBUTION_MEMBERSHIP_INVALID`, `CONTRIBUTION_TOTAL_MISMATCH`, `EMPTY_ACTIVE_RELEASE`, `ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED`, `SOURCE_REMOVAL_POLICY_REQUIRED`, `SOURCE_SPLIT_MERGE_POLICY_REQUIRED`, `REOPEN_REQUIRED`, `DOWNSTREAM_CORRECTION_REQUIRED`, and `MATERIALIZATION_LIMIT_EXCEEDED`.
+- **Safe errors:** common command errors plus `GENERATION_NOT_RELEASED`, `SOURCE_LINEAGE_INCOMPLETE`, `SOURCE_REVISION_STALE`, `SOURCE_MAPPING_INCOMPLETE`, `SOURCE_SUCCESSOR_AMBIGUOUS`, `OPERATIONAL_IDENTITY_UNAPPROVED`, `CONTRIBUTION_MEMBERSHIP_INVALID`, `CONTRIBUTION_TOTAL_MISMATCH`, `EMPTY_ACTIVE_RELEASE`, `SOURCE_REMOVAL_POLICY_REQUIRED`, `SOURCE_SPLIT_MERGE_POLICY_REQUIRED`, `REOPEN_REQUIRED`, `DOWNSTREAM_CORRECTION_REQUIRED`, and `MATERIALIZATION_LIMIT_EXCEEDED`.
 - **Limits and concurrency:** 14 inclusive days, 500 Schools, 25,000 active release members, 15,000 operational groups, five-second lock timeout, 120-second statement timeout, deterministic locks, and no internal retry.
 - **Exact replay:** returns the original bounded response; changed command/idempotency reuse returns `IDEMPOTENCY_CONFLICT`.
 - **Audit and trace visibility:** emits `ConfirmedNeedsCreated` or `ConfirmedNeedsRematerialized` plus one matching bounded audit event. No H0C read model is added.
@@ -828,3 +828,25 @@ execute_need_generation
 They use `RMVP-03A.v2`, `PANTRY-02.v2`, `RMVP-03B.v2`, and `RMVP-04.v2`. The first three each require their existing source-specific write capability; preflight uses `planning.inputs.read`; atomic execution uses `planning.need_generation.write`. No shared source-completion capability or browser service-role authority exists.
 
 During coexistence, all v1 RPC identities remain registered because the current connected UI still uses them. Typed adapters expose each new operation as one RPC invocation with write retry disabled. No current component calls the new functions; UI-QUALITY-02AB-UX owns the later reviewed cutover from public lifecycle chains. The exact cross-family boundary is [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md), and the executable allowlist remains `src/modules/atlas/connection/atlasRpc.ts`.
+
+### Product-approved zero-demand execution clarification (2026-10-12)
+
+Zero derived demand is valid and non-actionable. The [CMD-15 clarification](../decisions/decision-pa-06e-h0c-materialization-command-contract.md#product-approved-zero-derived-demand-clarification--2026-10-12) excludes zero observations before actionable materialization while retaining exact theoretical/release audit evidence. Current all-zero execution is a derived `NO_DEMAND` result, with no initial Confirmed Need batch, operator override, or purchase continuation. Positive demand continues unchanged; corrections preserve lineage and downstream safety.
+
+Atomic rolled-back Need Generation business failures return the existing `NO_COMMITTED_CHANGE` certainty. The React connection retains transport/unexpected and malformed-success readback protection; a deterministic certified failure uses Vietnamese business copy instead of the unknown-outcome banner. Historical `ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED` receipts remain immutable and the UI retains explicit error copy for that legacy/defensive code.
+
+Retained CMD-15 initial zero-only materialization returns the complete success
+envelope with all materialization result counts zero, null Confirmed Need batch ID
+and version, and empty domain/audit event arrays. Its completed command receipt is
+replayable; no Confirmed Need event is fabricated for an absent aggregate.
+
+A retained v1 zero successor that has not yet corrected an editable Draft/Reopened
+batch remains `OUTDATED`; its cursor identifies the exact zero run and release,
+while retaining the existing batch identity. Atomic execution adopts that direct
+successor. If source facts changed again, it first completes the existing H0C zero
+correction using a deterministic child command/receipt identity and the same
+correlation, then performs ordinary generation/materialization against current
+facts. Both H0C corrections, their batch versions, receipts, events and audit rows
+commit or roll back together with the outer command. Each H0C command emits one
+event/audit pair; ordinary atomic execution still increments the batch once.
+Released Planning authority and downstream commitments remain correction blockers.

@@ -310,7 +310,7 @@ select is((select response_payload->>'error_code' from h0cb_error_results where 
 select is((select response_payload->>'error_code' from h0cb_error_results where result_name='missing_run'),'GENERATION_NOT_RELEASED','missing source is safely not released');
 select is((select response_payload->>'error_code' from h0cb_error_results where result_name='stale_source'),'SOURCE_REVISION_STALE','stale released version is denied');
 select is((select response_payload->>'error_code' from h0cb_error_results where result_name='empty'),'EMPTY_ACTIVE_RELEASE','empty active release is denied');
-select is((select response_payload->>'error_code' from h0cb_error_results where result_name='zero'),'ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED','zero active contribution is denied');
+select is((select response_payload->>'success' from h0cb_error_results where result_name='zero'),'true','zero observations complete without actionable demand');
 select is((select response_payload->>'error_code' from h0cb_error_results where result_name='limit'),'MATERIALIZATION_LIMIT_EXCEEDED','fifteen-day inclusive period exceeds limit');
 select is((select response_payload->>'error_code' from h0cb_error_results where result_name='duplicate_initial'),'INVARIANT_VIOLATION','second initial materialization is denied');
 select is((select response_payload->>'error_code' from h0cb_error_results where result_name='stale_batch'),'STALE_VERSION','stale batch version is denied');
@@ -326,11 +326,11 @@ select is((select response_payload->>'retryable' from h0cb_error_results where r
 select is((select count(*)::integer from atlas_planning.confirmed_need_batches where source_kind='NEED_GENERATION'),4,'all deterministic failures create no batch');
 select is((select count(*)::integer from atlas_audit.domain_events where event_type like 'ConfirmedNeeds%'),4,'deterministic failures emit no event');
 select is((select count(*)::integer from atlas_audit.audit_events where event_type like 'ConfirmedNeeds%'),4,'deterministic failures emit no audit');
-select is((select count(*)::integer from atlas_core.command_receipts where outcome='FAILED_NON_RETRYABLE'),10,'ten post-receipt deterministic failures are stored');
-select is((select count(*)::integer from atlas_core.command_receipts where outcome='COMPLETED'),4,'only four authorized successes complete');
+select is((select count(*)::integer from atlas_core.command_receipts where outcome='FAILED_NON_RETRYABLE'),9,'nine post-receipt deterministic failures are stored');
+select is((select count(*)::integer from atlas_core.command_receipts where outcome='COMPLETED'),5,'four materializations and one no-demand success complete');
 select is((select count(*)::integer from atlas_core.command_receipts where outcome='IN_PROGRESS'),0,'no receipt remains in progress');
 select is((select count(*)::integer from atlas_core.command_receipts where error_code='EMPTY_ACTIVE_RELEASE'),1,'empty failure receipt stores exact code');
-select is((select count(*)::integer from atlas_core.command_receipts where error_code='ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED'),1,'zero failure receipt stores exact code');
+select is((select count(*)::integer from atlas_core.command_receipts where error_code='ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED'),0,'valid zero observations never create a policy failure receipt');
 select is((select count(*)::integer from atlas_core.command_receipts where error_code='MATERIALIZATION_LIMIT_EXCEEDED'),1,'limit failure receipt stores exact code');
 select is((select count(*)::integer from atlas_core.command_receipts where error_code='STALE_VERSION'),1,'stale failure receipt stores exact code');
 select is((select count(*)::integer from atlas_core.command_receipts where error_code='OPERATIONAL_IDENTITY_UNAPPROVED'),1,'destination failure receipt stores exact code');
@@ -351,11 +351,11 @@ select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materializ
 select is((select count(*)::integer from (values
  ('GENERATION_NOT_RELEASED'),('SOURCE_LINEAGE_INCOMPLETE'),('SOURCE_REVISION_STALE'),('SOURCE_MAPPING_INCOMPLETE'),
  ('SOURCE_SUCCESSOR_AMBIGUOUS'),('OPERATIONAL_IDENTITY_UNAPPROVED'),('CONTRIBUTION_MEMBERSHIP_INVALID'),
- ('CONTRIBUTION_TOTAL_MISMATCH'),('EMPTY_ACTIVE_RELEASE'),('ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED'),
+ ('CONTRIBUTION_TOTAL_MISMATCH'),('EMPTY_ACTIVE_RELEASE'),
  ('SOURCE_REMOVAL_POLICY_REQUIRED'),('SOURCE_SPLIT_MERGE_POLICY_REQUIRED'),('REOPEN_REQUIRED'),
  ('DOWNSTREAM_CORRECTION_REQUIRED'),('MATERIALIZATION_LIMIT_EXCEEDED'),
  ('MISSING_PLANNING_QUANTITY_POLICY'),('AMBIGUOUS_PLANNING_QUANTITY_POLICY')) required(code)
- where pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%'||code||'%'),17,'all seventeen H0C-specific safe codes are reachable');
+ where pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%'||code||'%'),16,'all sixteen remaining H0C-specific safe codes are reachable');
 select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like all(array['%unit_id <> old_contribution.source_unit_id%','%PANTRY_DIRECT%','%theoretical.delivery_location_id%'])),'Unit conversion remains rejected while Pantry uses its immutable theoretical destination');
 select ok(exists(select 1 from pg_constraint where conrelid='atlas_planning.confirmed_need_line_revision_contributions'::regclass and conname='confirmed_need_line_revision_contributions_unit_check'),'membership enforces source Unit equals controlled Unit');
 select isnt(has_column_privilege('atlas_planning_materialization_runtime','atlas_planning.confirmed_need_line_revision_contributions','controlled_unit_id','UPDATE'),true,'runtime cannot rewrite controlled contribution Unit');

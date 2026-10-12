@@ -15,7 +15,10 @@ import {
   type ConfirmedNeedWorkbenchData,
 } from "./confirmedNeedModel";
 import type { createPlanningInputReadinessApi } from "../readiness/planningInputReadinessApi";
-import { planningInputPreflightFromResult } from "../readiness/planningInputReadinessModel";
+import {
+  generatedNoDemand,
+  planningInputPreflightFromResult,
+} from "../readiness/planningInputReadinessModel";
 import type { ShoppingListDailyBatch } from "./confirmedNeedShoppingList";
 import { shoppingAssert } from "./shoppingListContract";
 
@@ -133,16 +136,17 @@ export function createConnectedShoppingListService(
           "STALE_AUTHORITY",
         );
         if (
-          !p.current_need &&
-          p.downstream_currentness === "NOT_GENERATED" &&
-          p.issues.some(
-            (i) => i.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE",
-          ) &&
-          p.issues.every(
-            (i) =>
-              i.severity !== "BLOCKING" ||
-              i.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE",
-          )
+          generatedNoDemand(p) ||
+          (!p.current_need &&
+            p.downstream_currentness === "NOT_GENERATED" &&
+            p.issues.some(
+              (i) => i.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+            ) &&
+            p.issues.every(
+              (i) =>
+                i.severity !== "BLOCKING" ||
+                i.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+            ))
         ) {
           skipped.push(date);
           continue;

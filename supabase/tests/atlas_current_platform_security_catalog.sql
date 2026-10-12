@@ -1756,15 +1756,15 @@ select is(
     'policy_count', 672,
     'policy_catalog_md5', '38ba098e23069ce416ed1cd60551a497',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 336,
-    -- Cooking guards plus four bounded document-code/capture/immutability helpers.
-    'private_function_catalog_md5', '2078d89b532ec475e251b4517ec06cd0',
+    'private_function_count', 337,
+    -- Cooking/document helpers plus one private zero-demand ancestry helper.
+    'private_function_catalog_md5', 'b73b2351989b3f3fcb99c6f1b0fef925',
     'trigger_count', 124,
     'trigger_catalog_md5', '24157de1722f445b7e98adfde302a2d4',
-    -- Adds four master document-code column privileges, two runtime-owner
-    -- function privileges and the bounded Procurement row-lock helper grant.
-    'positive_target_grant_count', 1825,
-    'positive_target_grant_md5', 'ce71106970624d7cda58c66927799e40',
+    -- Retains prior privileges and adds five private-runtime execution grants
+    -- for the zero-demand ancestry helper; no browser-role grant.
+    'positive_target_grant_count', 1830,
+    'positive_target_grant_md5', '1c2e1b27acd9041f54539acbe631402d',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

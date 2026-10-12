@@ -2,6 +2,8 @@ import type {
   ConfirmedNeedWorkbenchData,
   PlanningInputPreflightData,
 } from "../bridges/confirmedNeed";
+import { generatedNoDemand } from "../bridges/confirmedNeed";
+export { generatedNoDemand } from "../bridges/confirmedNeed";
 export function validPreflight(
   p: PlanningInputPreflightData | null,
   date: string,
@@ -13,7 +15,18 @@ export function validPreflight(
     ["READY", "BLOCKED"].includes(p.readiness_state) &&
     ["CURRENT", "OUTDATED", "NOT_GENERATED", "LEGACY_OVERLAP"].includes(
       p.downstream_currentness,
-    ),
+    ) &&
+    (p.demand_state !== "NO_DEMAND" ||
+      (generatedNoDemand(p) &&
+        typeof p.current_need?.need_generation_run_id === "string" &&
+        p.current_need.need_generation_run_id.length > 0 &&
+        Number.isInteger(p.current_need.need_generation_run_version) &&
+        p.current_need.need_generation_run_version > 0 &&
+        p.current_need.need_generation_run_status ===
+          "RELEASED_FOR_CONFIRMATION" &&
+        typeof p.current_need.need_generation_release_snapshot_id ===
+          "string" &&
+        p.current_need.need_generation_release_snapshot_id.length > 0)),
   );
 }
 export function validBatch(
@@ -57,8 +70,11 @@ export function correctionBlocked(p: PlanningInputPreflightData | null) {
 }
 export function noDemand(p: PlanningInputPreflightData | null) {
   return (
-    p?.issues.some((i) => i.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE") ??
-    false
+    generatedNoDemand(p) ||
+    (p?.issues.some(
+      (i) => i.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+    ) ??
+      false)
   );
 }
 export function preflightMessage(p: PlanningInputPreflightData | null) {

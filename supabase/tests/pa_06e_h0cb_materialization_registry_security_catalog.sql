@@ -27,7 +27,7 @@ select is((select owning_domain||':'||capability_status from atlas_core.capabili
 select ok(exists(select 1 from pg_roles where rolname='atlas_planning_materialization_runtime'), 'dedicated runtime exists');
 select isnt((select rolcanlogin from pg_roles where rolname='atlas_planning_materialization_runtime'), true, 'runtime is NOLOGIN');
 select isnt((select rolinherit from pg_roles where rolname='atlas_planning_materialization_runtime'), true, 'runtime is NOINHERIT');
-select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_materialization_runtime'), 4, 'runtime owns exactly CMD-15 and the three private Planning materialization helpers');
+select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_materialization_runtime'), 5, 'runtime owns CMD-15, the three materialization helpers and private zero ancestry');
 select is(
   (
     select array_agg(n.nspname||'.'||p.proname order by n.nspname, p.proname)::text[]
@@ -39,9 +39,10 @@ select is(
     'atlas_api.create_confirmed_needs_from_generation',
     'atlas_core.planning_contract_01_materialize_confirmed_needs',
     'atlas_core.planning_contract_02b_apply_decision_continuity',
-    'atlas_core.planning_contract_02b_policy_incompatible_batch'
+    'atlas_core.planning_contract_02b_policy_incompatible_batch',
+    'atlas_core.zero_demand_predecessor_contribution'
   ]::text[],
-  'runtime owns exactly CMD-15 and the private PLANNING-CONTRACT-01/02B materialization helpers'
+  'runtime owns exactly CMD-15 and the private materialization/zero ancestry helpers'
 );
 select is((select count(*)::integer from pg_auth_members m join pg_roles r on r.oid=m.member where r.rolname='atlas_planning_materialization_runtime'), 0, 'runtime is not a member of another role');
 select is((select count(*)::integer from pg_auth_members m join pg_roles r on r.oid=m.roleid join pg_roles member on member.oid=m.member where r.rolname='atlas_planning_materialization_runtime' and member.rolname='postgres' and m.admin_option and not m.inherit_option and not m.set_option), 1, 'only the standard non-inheriting postgres ownership administration link remains');
@@ -56,7 +57,7 @@ select isnt(has_function_privilege('public','atlas_api.create_confirmed_needs_fr
 select isnt(has_function_privilege('public','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), true, 'PUBLIC cannot execute the validator');
 select is((select count(*)::integer from (values('anon'),('authenticated'),('service_role')) roles(role_name) where has_function_privilege(role_name,'atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE')), 0, 'API roles cannot execute the validator');
 select ok(has_function_privilege('atlas_planning_materialization_runtime','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), 'runtime may invoke the validator');
-select is((select count(*)::integer from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'), 20, 'runtime has exactly the twenty practical function executes after the bounded adoption repair');
+select is((select count(*)::integer from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'), 20, 'runtime retains twenty practical granted executes; its owned zero ancestry helper is shared only with bounded private runtimes');
 select is((select count(*)::integer from pg_namespace n where n.nspname in ('atlas_core','atlas_admin','atlas_planning','atlas_audit','atlas_api') and has_schema_privilege('atlas_planning_materialization_runtime',n.oid,'USAGE')), 5, 'runtime has usage on exactly five Atlas schemas');
 
 -- Practical minimum relation privileges.

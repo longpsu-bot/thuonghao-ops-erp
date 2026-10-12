@@ -1182,9 +1182,9 @@ select is(
     'warnings', 1,
     'warning_code', 'ZERO_ACTIVE_THEORETICAL_QUANTITY',
     'can_materialize', false,
-    'materialize_reason', 'CMD-15 requires corrected source evidence before materializing an active zero-quantity contribution.'
+    'materialize_reason', 'Không có nhu cầu.'
   ),
-  'RMVP04-36 workbench returns the complete warning and the CMD-15 correction boundary'
+  'RMVP04-36 workbench preserves zero audit warning and normal no-demand copy'
 );
 
 -- Two isolated runs prove that the chosen Recipe tier must contain exactly

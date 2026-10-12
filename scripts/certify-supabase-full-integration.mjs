@@ -92,6 +92,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "direct_ingredient_need_convergence.sql",
   "rmvp_04_connected_need_generation.sql",
   "planning_contract_01_atomic_planning_boundaries.sql",
+  "atlas_zero_demand_generation_policy.sql",
   "planning_contract_02b_selective_confirmation_continuity.sql",
   "planning_legacy_adoption_unit_transition.sql",
   "planning_operational_proposal.sql",

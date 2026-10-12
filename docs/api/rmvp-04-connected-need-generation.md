@@ -184,7 +184,7 @@ Payload is `{ "need_generation_run_id": "uuid" }`; reason is `NEED_GENERATION_RE
 
 Only the exact terminal `VALIDATED` run at the expected version and with zero blockers can release. The command creates one existing immutable release snapshot with every-and-only theoretical-line membership and complete issue membership, changes the run to `RELEASED_FOR_CONFIRMATION`, increments its version once, and records Actor/time. Event: `NeedGenerationReleased`.
 
-The sole warning, `ZERO_ACTIVE_THEORETICAL_QUANTITY`, does not block validation or release. Existing CMD-15 still rejects an active zero-quantity contribution under its approved v1 contract, so the workbench returns `allowed_actions.materialize = false` with a correction reason for such a released run. The operator must correct approved source evidence, invalidate the run, and generate a successor before materialization.
+The warning `ZERO_ACTIVE_THEORETICAL_QUANTITY` does not block validation, release, or positive actionable materialization. **Zero derived demand is valid and non-actionable.** Active theoretical zero observations retain exact audit/release membership and are excluded before actionable grouping. An initially all-zero run completes without a Confirmed Need batch; no operator override or purchase handoff is required. See the [product clarification](../decisions/decision-pa-06e-h0c-materialization-command-contract.md#product-approved-zero-derived-demand-clarification--2026-10-12).
 
 ## 9. Invalidate run
 
@@ -388,3 +388,43 @@ execution again returns `NO_CHANGE`. No force flag, public RPC, lifecycle,
 fingerprint change or source-currentness reinterpretation is introduced. Public
 roles cannot execute the predicate or read adoption evidence; only the existing
 Need Generation runtime receives the private read privileges required by it.
+
+## Zero-demand and rollback readback clarification — 2026-10-12
+
+Daily execution retains `RMVP-04.v3` and exact-day `RMVP-04.v2` compatibility. Current preflight adds optional derived `demand_state = POSITIVE_DEMAND | NO_DEMAND` only when `downstream_currentness = CURRENT`. An all-zero run may have `current_need.confirmed_need_batch_id`, status, and version all null. Its run/version/release and exact source fingerprints still prove currentness. A corrected existing batch can remain as history with no current actionable revision. Source absence remains `NO_NEED_SOURCE_FOR_SERVICE_DATE`, distinct from generated zero demand.
+
+The command succeeds for mixed positive/zero, all-zero, and positive Pantry/zero Recipe cases. Positive-only quantities remain unchanged. All-zero returns normal operator copy “Không có nhu cầu”; the UI skips batch loading and disables purchase continuation. Safely correctable positive-to-zero updates supersede actionable revisions without fabricating a zero successor and retain immutable history; downstream commitment still requires the established correction workflow.
+
+Deterministic business failures after atomic rollback include `write_certainty = NO_COMMITTED_CHANGE` in the stored failure response. Pre-execution payload rejections and outer transaction exceptions also report that certainty. Exact replay preserves the stored response, including certainty. An unclassified response, transport loss, or nominal success with invalid authoritative readback remains conservative and requires reload before further writes. No certainty is inferred merely from `retryable = false`.
+
+The focused rolled-back SQL fixture `supabase/tests/atlas_zero_demand_generation_policy.sql` uses service date `2026-10-12`, the three Hùng Vương School names with 4/1/4 zero-attendance menu lines, and one positive School. It exercises real approved source Saves and authenticated execution without hosted UUIDs or hosted writes.
+
+Retained CMD-15 initial zero-only materialization returns the complete success
+envelope with all materialization result counts zero, null Confirmed Need batch ID
+and version, and empty domain/audit event arrays. Its completed command receipt is
+replayable; no Confirmed Need event is fabricated for an absent aggregate.
+
+A retained v1 zero successor that has not yet corrected an editable Draft/Reopened
+batch remains `OUTDATED`; its cursor identifies the exact zero run and release,
+while retaining the existing batch identity. Atomic execution adopts that direct
+successor. If source facts changed again, it first completes the existing H0C zero
+correction using a deterministic child command/receipt identity and the same
+correlation, then performs ordinary generation/materialization against current
+facts. Both H0C corrections, their batch versions, receipts, events and audit rows
+commit or roll back together with the outer command. Each H0C command emits one
+event/audit pair; ordinary atomic execution still increments the batch once.
+Released Planning authority and downstream commitments remain correction blockers.
+
+The additive preflight `demand_state` is `NO_DEMAND` only for a current released
+zero-only result, otherwise `POSITIVE_DEMAND` for a current positive result.
+`current_need` retains the exact run ID/version/status and release snapshot ID;
+its Confirmed Need ID/status/version are all null for an initial zero-only result.
+An existing batch awaiting staged correction sets `current_need.requires_materialization`
+and remains `OUTDATED`. `pending_materialization` indicates that the staged run's
+source evidence is still current. Supporting child-command receipts, intermediate
+batch versions, result counts, and event/audit evidence remain internal and are
+not part of the public `execute_need_generation` success response. Final
+`new_versions`, result counts and authoritative readback always describe the final
+committed result. The focused SQL fixture verifies the completed child receipt and
+its linked domain/audit evidence directly in the authoritative private tables,
+alongside exact replay and atomic rollback.

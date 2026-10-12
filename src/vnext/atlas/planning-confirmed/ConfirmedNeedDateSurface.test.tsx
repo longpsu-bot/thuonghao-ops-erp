@@ -177,3 +177,30 @@ it("blocks shopping callbacks and refresh on the retained authority until the ra
   expect(preflight).toHaveBeenCalledTimes(calls);
   expect(screen.getByLabelText("Mở lịch — Khoảng ngày")).toBeEnabled();
 });
+
+it("presents generated zero demand as a normal day with no purchase continuation", async () => {
+  const fixture = createConfirmedNeedReviewFixture("normal");
+  fixture.preflight.demand_state = "NO_DEMAND";
+  fixture.preflight.current_need!.confirmed_need_batch_id = null;
+  fixture.preflight.current_need!.confirmed_need_batch_status = null;
+  fixture.preflight.current_need!.confirmed_need_batch_version = null;
+  fixture.preflight.current_need!.need_generation_release_snapshot_id =
+    "snapshot-current";
+  const read = vi.spyOn(fixture.confirmedNeedApi, "getReview");
+  render(
+    <AtlasVNextProvider>
+      <ConfirmedNeedWorkbench
+        {...fixture}
+        authSubject="operator"
+        initialServiceDate={reviewDate}
+      />
+    </AtlasVNextProvider>,
+  );
+  expect(
+    await screen.findByText(/07\/09 · Không có nhu cầu/),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByText(/Chưa xác định được kết quả/),
+  ).not.toBeInTheDocument();
+  expect(read).not.toHaveBeenCalled();
+});
