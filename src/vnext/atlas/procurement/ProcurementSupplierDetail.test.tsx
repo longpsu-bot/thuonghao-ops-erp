@@ -116,6 +116,15 @@ describe("Supplier decisions", () => {
   );
   it("applies recommendation only to local draft then sends exact strings on explicit Save", () => {
     const { onSave } = show();
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("100");
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("100 / 100 kg đã phân bổ · Đã đủ");
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
     click("Dùng đề xuất");
     expect(onSave).not.toHaveBeenCalled();
     click("Lưu phân bổ");
@@ -126,6 +135,33 @@ describe("Supplier decisions", () => {
         supplier_note: null,
       },
     ]);
+  });
+  it("lets an operator split the seeded default and return to it without losing its note", () => {
+    show();
+    const note = screen.getByRole("textbox", {
+      name: "Ghi chú cho NCC An Phú",
+    });
+    fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
+    quantity("NCC An Phú", "40");
+    click("+ Thêm nhà cung ứng");
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
+      { target: { value: "supplier-b" } },
+    );
+    click("Thêm");
+    quantity("NCC Bình Minh", "60");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+
+    click("Dùng đề xuất");
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("100");
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+    ).toHaveValue("Giao trước 05:30");
+    expect(
+      screen.queryByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+    ).not.toBeInTheDocument();
   });
   it("keeps prior splits authoritative while applying a rebalance locally", () => {
     const row = reviewFamily("rebalance");

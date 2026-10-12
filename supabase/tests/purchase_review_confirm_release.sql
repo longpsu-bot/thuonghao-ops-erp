@@ -14,6 +14,28 @@ select function_privs_are('atlas_core','purchase_review_preparation_po_frontier'
   'authenticated',array[]::text[]);
 select function_privs_are('atlas_core','purchase_review_preparation_po_frontier',array['date'],
   'atlas_confirmed_need_review_runtime',array['EXECUTE']);
+select has_function('atlas_core','purchase_review_preparation_allocation_ready',array['uuid'],
+  'derived preferred-Supplier preparation coverage is private backend logic');
+select function_owner_is('atlas_core','purchase_review_preparation_allocation_ready',array['uuid'],
+  'atlas_procurement_command_runtime');
+select function_privs_are('atlas_core','purchase_review_preparation_allocation_ready',array['uuid'],
+  'authenticated',array[]::text[]);
+select has_function('atlas_core','purchase_review_lock_default_supplier_evidence',array['jsonb'],
+  'default materialization uses a private master-data lock boundary');
+select function_owner_is('atlas_core','purchase_review_lock_default_supplier_evidence',array['jsonb'],
+  'atlas_master_data_command_runtime');
+select function_privs_are('atlas_core','purchase_review_lock_default_supplier_evidence',array['jsonb'],
+  'authenticated',array[]::text[]);
+select function_privs_are('atlas_core','purchase_review_lock_default_supplier_evidence',array['jsonb'],
+  'atlas_procurement_command_runtime',array['EXECUTE']);
+select has_function('atlas_core','purchase_review_materialize_default_allocations',array['uuid','uuid','uuid'],
+  'purchase preparation owns default-allocation materialization');
+select function_owner_is('atlas_core','purchase_review_materialize_default_allocations',array['uuid','uuid','uuid'],
+  'atlas_procurement_command_runtime');
+select function_privs_are('atlas_core','purchase_review_materialize_default_allocations',array['uuid','uuid','uuid'],
+  'authenticated',array[]::text[]);
+select function_privs_are('atlas_core','purchase_review_materialize_default_allocations',array['uuid','uuid','uuid'],
+  'atlas_confirmed_need_review_runtime',array['EXECUTE']);
 create temporary table review_results(name text primary key,response jsonb);
 grant all on review_results to authenticated;
 -- Dynamic invocation keeps missing APIs as observable assertion failures during RED.
@@ -226,6 +248,8 @@ set local role authenticated;
 insert into review_results values('save120',atlas_api.save_confirmed_needs((select request from command_requests where name='save120')));
 insert into review_results values('confirmed120',pg_temp.review_read('get_confirmed_supplier_allocation_workbench',
   'CONFIRMED-SUPPLIER-ALLOCATION.v1','{"date_start":"2026-11-02","date_end":"2026-11-02"}'));
+insert into review_results values('confirmed120_range',pg_temp.review_read('get_confirmed_supplier_allocation_workbench',
+  'CONFIRMED-SUPPLIER-ALLOCATION.v1','{"date_start":"2026-11-02","date_end":"2026-11-08"}'));
 insert into command_requests select 'allocate120',pg_temp.allocation_request(line,'72.00','48.00') from review_results,
   lateral jsonb_array_elements(response->'rows') line where name='confirmed120'
   and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006';
@@ -249,6 +273,8 @@ begin
     -- The local subtransaction rolls back both DDL and seed changes before Save.
     drop index atlas_admin.supplier_eligibilities_active_priority_key;
     update atlas_admin.supplier_eligibilities set priority=1;
+  elsif variant='no_priority' then
+    update atlas_admin.supplier_eligibilities set priority=null;
   elsif variant='scope' then
     update atlas_core.actor_scopes set scope_status='REVOKED'
       where actor_id='b6000000-0000-0000-0000-000000000001';
@@ -265,13 +291,21 @@ exception when sqlstate 'PPR99' then return answer;
 end;
 $$;
 insert into review_results values('context_ineligible',pg_temp.review_negative_context('ineligible')),
-  ('context_tie',pg_temp.review_negative_context('tie')),('context_scope',pg_temp.review_negative_context('scope'));
+  ('context_tie',pg_temp.review_negative_context('tie')),
+  ('context_no_priority',pg_temp.review_negative_context('no_priority')),
+  ('context_scope',pg_temp.review_negative_context('scope'));
 select ok((select bool_and(line->'recommendation'='null'::jsonb and line->'warnings' ? 'NO_ELIGIBLE_SUPPLIER')
   from review_results,lateral jsonb_array_elements(response#>'{generated,rows}') line where name='context_ineligible'),
   'no eligible supplier remains unresolved in generated review');
 select ok((select bool_and(line->'recommendation'='null'::jsonb and line->'warnings' ? 'AMBIGUOUS_SUPPLIER_PRIORITY')
   from review_results,lateral jsonb_array_elements(response#>'{generated,rows}') line where name='context_tie'),
   'tied supplier priority remains unresolved rather than choosing arbitrarily');
+select ok((select bool_and(line->'recommendation'='null'::jsonb and line->'warnings' ? 'NO_PRIORITIZED_SUPPLIER')
+  from review_results,lateral jsonb_array_elements(response#>'{generated,rows}') line where name='context_no_priority'),
+  'eligible Suppliers without priority remain unresolved');
+select ok((select bool_and(line->>'state'='BLOCKED' and line->'blockers' <> '[]'::jsonb)
+  from review_results,lateral jsonb_array_elements(response#>'{confirmed,rows}') line where name='context_ineligible'),
+  'no eligible Supplier is an explicit confirmed-allocation blocker');
 select is((select response#>>'{saved,error_code}' from review_results where name='context_ineligible'),'SUPPLIER_INELIGIBLE',
   'confirmed Save rechecks effective supplier eligibility');
 select is((select jsonb_array_length(response#>'{generated,rows}') from review_results where name='context_scope'),0,
@@ -280,6 +314,252 @@ select is((select jsonb_array_length(response#>'{confirmed,rows}') from review_r
   'confirmed allocation read leaks no out-of-scope rows');
 select is((select response#>>'{saved,error_code}' from review_results where name='context_scope'),'SCOPE_DENIED',
   'confirmed allocation Save independently denies out-of-scope source');
+
+select is((select response#>>'{preparation,ready}' from review_results where name='confirmed120'),'true',
+  'unique preferred Suppliers make one-day purchase preparation ready without persisted splits');
+select is((select response#>>'{preparation,allowed}' from review_results where name='confirmed120'),'true',
+  'derived readiness preserves the separate capability-based preparation permission');
+select is((select response->'preparation' from review_results where name='confirmed120_range'),'null'::jsonb,
+  'seven-day allocation review exposes no purchase-preparation authority');
+select is((select jsonb_array_length(response->'rows') from review_results where name='confirmed120_range'),
+  (select jsonb_array_length(response->'rows') from review_results where name='confirmed120'),
+  'one-day and seven-day reads retain the same represented-date allocation rows');
+select ok((select bool_and(line->>'state'='UNALLOCATED'
+    and line#>>'{recommendation,supplier_id}'='c7100000-0000-4000-8000-000000000001')
+  from review_results,lateral jsonb_array_elements(response->'rows') line where name='confirmed120'),
+  'read model keeps derived defaults separate from persisted allocation state');
+
+create function pg_temp.complete_positive_read_is_write_free() returns boolean
+language plpgsql as $$
+declare before_counts jsonb;after_counts jsonb;
+begin
+  select jsonb_build_object(
+    'families',(select count(*) from atlas_procurement.school_catering_allocation_families),
+    'revisions',(select count(*) from atlas_procurement.school_catering_allocation_family_revisions),
+    'receipts',(select count(*) from atlas_core.command_receipts),
+    'handoffs',(select count(*) from atlas_planning.purchase_handoff_batches),
+    'orders',(select count(*) from atlas_procurement.purchase_orders))
+    into before_counts;
+  perform pg_temp.review_read('get_confirmed_supplier_allocation_workbench',
+    'CONFIRMED-SUPPLIER-ALLOCATION.v1',
+    '{"date_start":"2026-11-02","date_end":"2026-11-02"}');
+  select jsonb_build_object(
+    'families',(select count(*) from atlas_procurement.school_catering_allocation_families),
+    'revisions',(select count(*) from atlas_procurement.school_catering_allocation_family_revisions),
+    'receipts',(select count(*) from atlas_core.command_receipts),
+    'handoffs',(select count(*) from atlas_planning.purchase_handoff_batches),
+    'orders',(select count(*) from atlas_procurement.purchase_orders))
+    into after_counts;
+  return before_counts=after_counts;
+end;
+$$;
+select ok(pg_temp.complete_positive_read_is_write_free(),
+  'complete positive allocation reads write no family, revision, receipt, Handoff or PO facts');
+
+create function pg_temp.derived_preparation_case(variant text) returns jsonb language plpgsql as $$
+declare
+  browser jsonb;
+  prepared jsonb;
+  answer jsonb;
+  request jsonb;
+  continuation jsonb;
+  before_allocations bigint;
+  before_handoffs bigint;
+  before_orders bigint;
+  current_families jsonb;
+  default_history jsonb;
+begin
+  browser:=pg_temp.review_read('get_confirmed_supplier_allocation_workbench',
+    'CONFIRMED-SUPPLIER-ALLOCATION.v1','{"date_start":"2026-11-02","date_end":"2026-11-02"}');
+  if variant='priority_change' then
+    update atlas_admin.supplier_eligibilities set priority=3
+      where supplier_id='c7100000-0000-4000-8000-000000000001';
+    update atlas_admin.supplier_eligibilities set priority=1
+      where supplier_id='c7100000-0000-4000-8000-000000000002';
+  elsif variant='inactive' then
+    update atlas_admin.suppliers set supplier_status='INACTIVE'
+      where supplier_id='c7100000-0000-4000-8000-000000000001';
+  elsif variant='tie' then
+    drop index atlas_admin.supplier_eligibilities_active_priority_key;
+    update atlas_admin.supplier_eligibilities set priority=1
+      where supplier_id='c7100000-0000-4000-8000-000000000002';
+  elsif variant='no_priority' then
+    update atlas_admin.supplier_eligibilities set priority=null;
+  elsif variant='no_eligible' then
+    update atlas_admin.supplier_eligibilities set eligibility_status='INACTIVE';
+  elsif variant='manual_mixed' then
+    perform atlas_api.save_confirmed_supplier_allocation(
+      (select allocation.request from command_requests allocation where allocation.name='allocate120'));
+  end if;
+  select count(*) into before_allocations
+    from atlas_procurement.school_catering_allocation_family_revisions;
+  select count(*) into before_handoffs from atlas_planning.purchase_handoff_batches;
+  select count(*) into before_orders from atlas_procurement.purchase_orders;
+  request:=pg_temp.review_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+    (select version from atlas_planning.confirmed_need_batches
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+    '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}');
+  prepared:=atlas_api.prepare_school_catering_purchase_orders(request);
+  if variant='default' and prepared->>'success'='true' then
+    update atlas_admin.supplier_eligibilities set priority=3
+      where supplier_id='c7100000-0000-4000-8000-000000000001';
+    update atlas_admin.supplier_eligibilities set priority=1
+      where supplier_id='c7100000-0000-4000-8000-000000000002';
+    continuation:=atlas_api.prepare_school_catering_purchase_orders(
+      pg_temp.review_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+        (select version from atlas_planning.confirmed_need_batches
+          where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+        '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+      'ingredient_id',family.ingredient_id,
+      'source_kind',revision.source_kind,
+      'decision_origin',revision.decision_origin,
+      'family_quantity',revision.family_quantity::numeric(20,6)::text,
+      'splits',coalesce((select jsonb_agg(jsonb_build_object(
+        'supplier_id',split.supplier_id,
+        'allocated_quantity',split.allocated_quantity::numeric(20,6)::text)
+        order by split.supplier_id)
+        from atlas_procurement.school_catering_allocation_supplier_splits split
+        where split.family_revision_id=revision.family_revision_id),'[]'::jsonb))
+      order by family.ingredient_id),'[]'::jsonb)
+    into current_families
+  from atlas_procurement.school_catering_allocation_families family
+  join atlas_procurement.school_catering_allocation_family_revisions revision
+    using(family_id)
+  where revision.is_current and family.service_date='2026-11-02';
+  select coalesce(jsonb_agg(jsonb_build_object(
+      'ingredient_id',family.ingredient_id,
+      'family_quantity',revision.family_quantity::numeric(20,6)::text,
+      'command_id',revision.command_id)
+      order by family.ingredient_id),'[]'::jsonb)
+    into default_history
+  from atlas_procurement.school_catering_allocation_families family
+  join atlas_procurement.school_catering_allocation_family_revisions revision
+    using(family_id)
+  where family.service_date='2026-11-02'
+    and revision.source_kind='CONFIRMED_NEED'
+    and revision.decision_origin='PRIORITY_RECOMMENDATION';
+  answer:=jsonb_build_object(
+    'browser',browser,
+    'prepared',prepared,
+    'continuation',continuation,
+    'request_command_id',request->'command_id',
+    'current_families',current_families,
+    'default_history',default_history,
+    'allocation_delta',(select count(*) from atlas_procurement.school_catering_allocation_family_revisions)-before_allocations,
+    'handoff_delta',(select count(*) from atlas_planning.purchase_handoff_batches)-before_handoffs,
+    'order_delta',(select count(*) from atlas_procurement.purchase_orders)-before_orders,
+    'po_suppliers',(select coalesce(jsonb_agg(distinct purchase_order.supplier_id),'[]'::jsonb)
+      from atlas_procurement.purchase_orders purchase_order
+      where purchase_order.school_catering_service_date='2026-11-02'),
+    'batch_status',(select batch_status from atlas_planning.confirmed_need_batches
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
+  raise exception using errcode='PPR99';
+exception when sqlstate 'PPR99' then return answer;
+end;
+$$;
+insert into review_results values
+  ('derived_default_prepare',pg_temp.derived_preparation_case('default')),
+  ('derived_priority_change',pg_temp.derived_preparation_case('priority_change')),
+  ('derived_inactive',pg_temp.derived_preparation_case('inactive')),
+  ('derived_tie',pg_temp.derived_preparation_case('tie')),
+  ('derived_no_priority',pg_temp.derived_preparation_case('no_priority')),
+  ('derived_no_eligible',pg_temp.derived_preparation_case('no_eligible')),
+  ('derived_manual_mixed',pg_temp.derived_preparation_case('manual_mixed'));
+create temporary sequence derived_preparation_po_attempt minvalue 0 start 0;
+create function pg_temp.reject_derived_preparation_po() returns trigger
+language plpgsql security definer set search_path='' as $$
+begin
+  perform nextval('pg_temp.derived_preparation_po_attempt'::regclass);
+  raise exception using errcode='PPR98',message='Synthetic derived-default PO failure';
+end;
+$$;
+create trigger reject_derived_preparation_po
+  before insert on atlas_procurement.purchase_orders
+  for each row execute function pg_temp.reject_derived_preparation_po();
+insert into review_results values
+  ('derived_po_failure',pg_temp.derived_preparation_case('po_failure'));
+drop trigger reject_derived_preparation_po on atlas_procurement.purchase_orders;
+select diag(name||' failure: '||response::text)
+from review_results
+where name like 'derived_%'
+  and response#>>'{prepared,success}' is distinct from 'true'
+  and name not in ('derived_tie','derived_no_priority','derived_no_eligible','derived_po_failure');
+select is((select response#>>'{prepared,success}' from review_results where name='derived_default_prepare'),'true',
+  'purchase preparation materializes safe defaults and continues atomically');
+select is((select jsonb_array_length(response->'default_history') from review_results where name='derived_default_prepare'),2,
+  'preparation creates one confirmed-source default revision per missing positive family');
+select ok((select bool_and(default_revision->>'command_id'=response->>'request_command_id')
+  from review_results,lateral jsonb_array_elements(response->'default_history') default_revision
+  where name='derived_default_prepare'),
+  'materialized defaults are supporting facts of the one outer preparation action');
+select ok((select bool_and(family->>'source_kind'='PURCHASE_HANDOFF'
+    and family#>>'{splits,0,supplier_id}'='c7100000-0000-4000-8000-000000000001'
+    and jsonb_array_length(family->'splits')=1)
+  from review_results,lateral jsonb_array_elements(response->'current_families') family
+  where name='derived_default_prepare'),
+  'derived defaults promote the current preferred Supplier exactly once per family');
+select is((select sum((family#>>'{splits,0,allocated_quantity}')::numeric)
+  from review_results,lateral jsonb_array_elements(response->'current_families') family
+  where name='derived_default_prepare'),123::numeric,
+  'derived defaults preserve the exact confirmed quantities through Handoff and PO preparation');
+select ok((select response#>>'{continuation,success}'='true'
+    and (response->>'allocation_delta')::bigint=4
+    and (response->>'handoff_delta')::bigint=1
+    and (response->>'order_delta')::bigint=1
+  from review_results where name='derived_default_prepare'),
+  'a fresh preparation command continues from released Handoff without rematerializing defaults');
+select ok((select bool_and(family->>'decision_origin'='PRIORITY_RECOMMENDATION'
+    and family#>>'{splits,0,supplier_id}'='c7100000-0000-4000-8000-000000000001')
+  from review_results,lateral jsonb_array_elements(response->'current_families') family
+  where name='derived_default_prepare'),
+  'later priority changes do not rewrite the persisted default during Handoff continuation');
+select is((select response#>>'{po_suppliers,0}' from review_results
+    where name='derived_default_prepare'),'c7100000-0000-4000-8000-000000000001',
+  'later priority changes leave the prepared Supplier PO immutable');
+select ok((select is_called from derived_preparation_po_attempt),
+  'derived-default failure reaches the final PO write after materialization');
+select ok((select response#>>'{prepared,success}'='false'
+    and (response->>'allocation_delta')::bigint=0
+    and (response->>'handoff_delta')::bigint=0
+    and (response->>'order_delta')::bigint=0
+    and response->>'batch_status'='DRAFT_REVIEW'
+  from review_results where name='derived_po_failure'),
+  'final PO failure rolls back materialized defaults, release, Handoff and drafts atomically');
+select is((select response#>>'{browser,rows,0,recommendation,supplier_id}' from review_results
+    where name='derived_priority_change'),'c7100000-0000-4000-8000-000000000001',
+  'priority-change fixture begins from the previously read Supplier recommendation');
+select ok((select bool_and(family#>>'{splits,0,supplier_id}'='c7100000-0000-4000-8000-000000000002')
+  from review_results,lateral jsonb_array_elements(response->'current_families') family
+  where name='derived_priority_change'),
+  'preparation re-reads current priority instead of committing stale browser advice');
+select ok((select bool_and(family#>>'{splits,0,supplier_id}'='c7100000-0000-4000-8000-000000000002')
+  from review_results,lateral jsonb_array_elements(response->'current_families') family
+  where name='derived_inactive'),
+  'preparation revalidates Supplier activity and follows the remaining safe preference');
+select ok((select bool_and(response#>>'{prepared,success}'='false'
+    and (response->>'allocation_delta')::bigint=0
+    and (response->>'handoff_delta')::bigint=0
+    and (response->>'order_delta')::bigint=0
+    and response->>'batch_status'='DRAFT_REVIEW')
+  from review_results where name in ('derived_tie','derived_no_priority','derived_no_eligible')),
+  'tie, missing priority and no eligible Supplier block without partial business writes');
+select ok((select bool_and(family->>'decision_origin'='MANUAL'
+    and jsonb_array_length(family->'splits')=2
+    and family#>>'{splits,0,allocated_quantity}'='72.000000'
+    and family#>>'{splits,1,allocated_quantity}'='48.000000')
+  from review_results,lateral jsonb_array_elements(response->'current_families') family
+  where name='derived_manual_mixed'
+    and family->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),
+  'persisted multi-Supplier manual split wins and is preserved exactly');
+select ok((select bool_and(family->>'decision_origin'='PRIORITY_RECOMMENDATION'
+    and jsonb_array_length(family->'splits')=1
+    and family#>>'{splits,0,supplier_id}'='c7100000-0000-4000-8000-000000000001')
+  from review_results,lateral jsonb_array_elements(response->'current_families') family
+  where name='derived_manual_mixed'
+    and family->>'ingredient_id'='b6500000-0000-0000-0000-000000000007'),
+  'mixed preparation materializes only the family without an explicit allocation');
 set local role authenticated;
 insert into review_results values('allocate120',pg_temp.review_invoke('save_confirmed_supplier_allocation',
   (select request from command_requests where name='allocate120')));
@@ -660,6 +940,80 @@ create temporary table replacement_frontier_snapshot as select
     from atlas_procurement.purchase_orders po
     where po.school_catering_service_date='2026-11-02'
       and po.purchase_order_status='RELEASED_TO_SUPPLIER') released_roots;
+create temporary table released_supplier_quantity_snapshot as
+select jsonb_agg(jsonb_build_object(
+    'supplier_id',supplier_id,
+    'ordered_quantity',ordered_quantity::numeric(20,6)::text)
+    order by supplier_id) supplier_quantities
+from (
+  select po.supplier_id,sum(line.ordered_quantity) ordered_quantity
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions revision using(purchase_order_id)
+  join atlas_procurement.purchase_order_line_revisions line using(purchase_order_revision_id)
+  where po.school_catering_service_date='2026-11-02'
+    and po.purchase_order_status='RELEASED_TO_SUPPLIER'
+    and revision.is_current
+  group by po.supplier_id
+) quantities;
+
+-- Released supplier commitments are historical facts. A later preferred-Supplier
+-- change may alter current advice, but a fresh read and preparation continuation
+-- must preserve every released document and committed quantity.
+update atlas_admin.supplier_eligibilities set priority=3
+  where supplier_id='c7100000-0000-4000-8000-000000000001';
+update atlas_admin.supplier_eligibilities set priority=1
+  where supplier_id='c7100000-0000-4000-8000-000000000002';
+insert into command_requests values('released-priority-reprepare',pg_temp.review_command(
+  'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+  (select version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+  '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+set local role authenticated;
+insert into review_results values('released-priority-read',pg_temp.review_read(
+  'get_confirmed_supplier_allocation_workbench','CONFIRMED-SUPPLIER-ALLOCATION.v1',
+  '{"date_start":"2026-11-02","date_end":"2026-11-02"}'));
+insert into review_results values('released-priority-reprepare',
+  pg_temp.review_invoke('prepare_school_catering_purchase_orders',
+    (select request from command_requests where name='released-priority-reprepare')));
+reset role;
+select is((select response->>'success' from review_results where name='released-priority-read'),'true',
+  'released allocation remains readable after preferred-Supplier priorities change');
+select is((select response->>'success' from review_results where name='released-priority-reprepare'),'true',
+  'fresh preparation continuation succeeds after preferred-Supplier priorities change');
+select is((select jsonb_agg(to_jsonb(po) order by po.purchase_order_id)
+    from atlas_procurement.purchase_orders po
+    where po.school_catering_service_date='2026-11-02'
+      and po.purchase_order_status='RELEASED_TO_SUPPLIER'),
+  (select released_roots from replacement_frontier_snapshot),
+  'priority changes and preparation leave released PO roots byte-for-byte unchanged');
+select is((select jsonb_agg(jsonb_build_array(to_jsonb(revision),to_jsonb(line))
+      order by line.purchase_order_line_revision_id::text)
+    from atlas_procurement.purchase_order_revisions revision
+    join atlas_procurement.purchase_order_line_revisions line using(purchase_order_revision_id)
+    where revision.is_current and revision.revision_status='RELEASED_TO_SUPPLIER'),
+  (select jsonb_agg(jsonb_build_array(revision,line)
+      order by line->>'purchase_order_line_revision_id') from released_snapshot),
+  'priority changes and preparation leave released PO revisions and lines unchanged');
+select is((select jsonb_agg(jsonb_build_object(
+      'supplier_id',supplier_id,
+      'ordered_quantity',ordered_quantity::numeric(20,6)::text)
+      order by supplier_id)
+    from (
+      select po.supplier_id,sum(line.ordered_quantity) ordered_quantity
+      from atlas_procurement.purchase_orders po
+      join atlas_procurement.purchase_order_revisions revision using(purchase_order_id)
+      join atlas_procurement.purchase_order_line_revisions line using(purchase_order_revision_id)
+      where po.school_catering_service_date='2026-11-02'
+        and po.purchase_order_status='RELEASED_TO_SUPPLIER'
+        and revision.is_current
+      group by po.supplier_id
+    ) quantities),
+  (select supplier_quantities from released_supplier_quantity_snapshot),
+  'priority changes and preparation preserve released Supplier quantities exactly');
+update atlas_admin.supplier_eligibilities set priority=2
+  where supplier_id='c7100000-0000-4000-8000-000000000002';
+update atlas_admin.supplier_eligibilities set priority=1
+  where supplier_id='c7100000-0000-4000-8000-000000000001';
 
 -- Scenario C regression: after released 125 kg supplier commitments, a governed
 -- correction to 130 kg and exact same-supplier reallocation must be able to

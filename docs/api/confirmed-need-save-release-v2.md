@@ -70,6 +70,22 @@ For NEED_GENERATION batches, both release versions and the defensive release tra
 
 The normal operator path invokes one backend `prepare_school_catering_purchase_orders` command from Procurement. That command composes the existing release/Handoff/draft boundaries transactionally; React does not orchestrate internal lifecycle calls. The standalone Planning release command still creates zero Handoff, Procurement or PO facts. See the [amended Procurement contract](school-catering-procurement.md#purchase-review-confirm-release-01-amendment).
 
+## School-first identity presentation — 2026-10-12
+
+The vNext Confirmed Need table separates sticky sortable `Trường / nơi nhận`
+from `Nguyên liệu`, followed by `Đề xuất vận hành`, `Số lượng xác nhận`,
+`Thay đổi`, and `Lý do / ghi chú`. Default order is School → Ingredient.
+Identical School/delivery-location names appear once; distinct destinations use
+secondary typography. This is presentation-only: exact quantities, rounding,
+line decisions, Save/reload, reason requirements, Shopping List, currentness,
+1–7 day context and unknown-outcome protection retain their existing contracts.
+
+Procurement's approved derived preferred-Supplier default can cover a positive
+family for preparation without a per-row allocation Save. Only the consequential
+preparation transaction materializes required support before strict release;
+standalone Planning release still creates zero Procurement facts and requires
+persisted balanced allocations. See the [preferred-Supplier amendment](school-catering-procurement.md#product-approved-preferred-supplier-default--2026-10-12).
+
 ## Selective-continuity compatibility (unchanged)
 
 PLANNING-CONTRACT-02B changes neither v2 envelope. `save_confirmed_needs` receives only rows actually changed by the operator; untouched `CARRIED_FORWARD` rows retain the original human decision and create no decision/event side effect. Reconfirmation after system invalidation continues the latest historical human chain, while a truly new line starts at decision `1`. `release_confirmed_needs` accepts carried authority only through exact private continuity evidence and snapshots the current successor revision/quantity. Any current `CHANGED`, `NEW`, or `UNREVIEWED` line without valid authority blocks release.

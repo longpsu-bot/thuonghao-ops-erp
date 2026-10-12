@@ -46,6 +46,7 @@ import {
   focusFirstCompactFilter,
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
+import { derivedDefaultAllocation } from "./procurementAllocationPresentation";
 
 export type ProcurementWorkbenchProps = ProcurementControllerProps &
   AtlasModuleExitProps & {
@@ -144,7 +145,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
         : undefined,
   });
   const visible = rows.filter((row) => {
-    if (exception === "unallocated" && row.state !== "UNALLOCATED")
+    const derived = derivedDefaultAllocation(row);
+    if (exception === "unallocated" && (row.state !== "UNALLOCATED" || derived))
       return false;
     if (
       exception === "needs_update" &&
@@ -160,6 +162,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
         row.location_name,
         ...row.splits.map((split) => split.supplier_name),
         ...row.eligible_suppliers.map((supplier) => supplier.supplier_name),
+        derived?.supplier.supplier_name,
       ].join(" "),
     ).includes(fold(search.trim()));
   });
@@ -526,9 +529,21 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   >
                     <Text textStyle="helper" color="fg.muted">
                       Cần xử lý{" "}
-                      {rows.filter((row) => row.state !== "BALANCED").length} ·
-                      Đã đủ{" "}
-                      {rows.filter((row) => row.state === "BALANCED").length}
+                      {
+                        rows.filter(
+                          (row) =>
+                            row.state !== "BALANCED" &&
+                            !derivedDefaultAllocation(row),
+                        ).length
+                      }{" "}
+                      · Đã đủ{" "}
+                      {
+                        rows.filter(
+                          (row) =>
+                            row.state === "BALANCED" ||
+                            Boolean(derivedDefaultAllocation(row)),
+                        ).length
+                      }
                     </Text>
                     {canPrepare && (
                       <Button

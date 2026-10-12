@@ -7,6 +7,7 @@ import { AtlasVNextShell } from "../AtlasVNextShell";
 import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
 import {
   createConfirmedNeedReviewFixture,
+  oct12ReviewDate,
   reviewDate,
   type ConfirmedReviewScenario,
 } from "./confirmedNeedReviewFixtures";
@@ -30,7 +31,9 @@ export function ConfirmedNeedReview({
           key={scenario}
           {...fixture}
           authSubject="fixture-operator"
-          initialServiceDate={reviewDate}
+          initialServiceDate={
+            scenario === "oct12_school_first" ? oct12ReviewDate : reviewDate
+          }
           onContinueAllocation={(range) => setAllocationDate(range.start)}
         />
         {allocationDate && (
@@ -139,6 +142,7 @@ export const LegacyOverlap = story("legacy_overlap");
 export const ReleasedCorrectionBlocked = story("correction_blocked");
 export const GeneratedIntoConfirmedNeed = story("not_generated", "generate");
 export const CurrentConfirmedNeed = story("normal");
+export const ActualOct12SchoolFirst = story("oct12_school_first");
 export const CertifiedShape248CurrentLines = story("certified_shape");
 export const NeedsReview = story("needs_review");
 export const CarriedForward = story("carried");

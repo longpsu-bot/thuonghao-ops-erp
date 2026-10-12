@@ -75,9 +75,10 @@ This compact register preserves the audit's four classifications. “Generate”
 | Planning | Carried confirmation continuity evidence | GENERATE | Not a newly authored human decision. |
 | Procurement | Purchase Handoff release meaning | KEEP EXPLICIT | Stable transfer evidence across owners. |
 | Procurement | Handoff provisioning | GENERATE | No separate normal operator setup job. |
-| Procurement | Supplier recommendation | GENERATE | Advisory until accepted. |
+| Procurement | Preferred Supplier default | DERIVE | Unique ACTIVE/effective lowest non-null priority covers a complete positive family with no persisted allocation; read remains write-free. |
 | Procurement | Allocation Family identity | GENERATE | Backend grouping by date/location/Ingredient/Unit. |
 | Procurement | Confirmed supplier splits | KEEP EXPLICIT | Human acceptance of exact quantities/suppliers. |
+| Procurement | Materialized preferred default | GENERATE | Current backend default persisted atomically inside one-day preparation before strict release/Handoff/PO boundaries; explicit overrides win. |
 | Procurement | Supplier-facing split note | KEEP EXPLICIT | Optional human instruction on each immutable supplier-specific split; note-only Save appends a revision. |
 | Procurement | Allocation balance/currentness | DERIVE | Compare saved decisions with authoritative sources. |
 | Procurement | Rebalance proposal | GENERATE | Apply and Save explicitly; never auto-accept. |
@@ -115,9 +116,9 @@ These are current normal identities in the merged repository. Verify signatures 
 | Generate/update one service day | `execute_need_generation` — RMVP-04.v3 | Atomic daily generation/materialization; no browser lifecycle chain. |
 | Read/save Confirmed Need | `get_confirmed_need_review`; `save_confirmed_needs` — RMVP-05.v2 | Exact changed human decisions only. |
 | Read preliminary purchase review | `get_generated_purchase_review` — PURCHASE-REVIEW.v1 | Not accepted allocation or official PO evidence. |
-| Read/save pre-Handoff allocations | `get_confirmed_supplier_allocation_workbench`; `save_confirmed_supplier_allocation` | Accepted exact splits against saved Confirmed Need. |
+| Read/save pre-Handoff allocations | `get_confirmed_supplier_allocation_workbench`; `save_confirmed_supplier_allocation` | Read derived preferred defaults; Save explicit exact overrides against saved Confirmed Need. |
 | Maintain existing Handoff-source allocation | Existing school-catering workbench / `save_school_catering_supplier_allocation` | Preserve source-kind writer routing; not a second authority for the same current source. |
-| Prepare orders | `prepare_school_catering_purchase_orders` — PURCHASE-COMMITMENT.v1 | Atomic Need release, real Handoff, promotion and drafts. |
+| Prepare orders | `prepare_school_catering_purchase_orders` — PURCHASE-COMMITMENT.v1 | Recheck/materialize missing safe defaults, then atomic Need release, real Handoff, promotion and drafts. |
 | Read/refresh generated PO drafts | `get_school_catering_purchase_orders`; existing draft generation command where already authorized | No independent lifecycle invention or released-content mutation. |
 | Issue official PO | `release_school_catering_purchase_order` | Independent final commitment; backend-only numbering. |
 
@@ -142,7 +143,7 @@ Exceptions that remain valid: controlled historical/support callers; internal co
 
 ## 5. Regression boundaries through Procurement
 
-Attendance defaults remain proposals; persisted explicit zero wins. Menu/Attendance/Pantry Save remains authoritative. Daily generation retains day-specific source currentness and existing formula/rounding. Unchanged confirmation carry creates no new human decision. Changed facts retain review obligations. Recommendations remain advisory. Preparation preserves exact saved splits and is atomic. Draft staleness never rewrites issued POs. Downstream commitment rejection retains its existing correction meaning.
+Attendance defaults remain proposals; persisted explicit zero wins. Menu/Attendance/Pantry Save remains authoritative. Daily generation retains day-specific source currentness and existing formula/rounding. Unchanged confirmation carry creates no new human decision. Changed facts retain review obligations. The product-approved 2026-10-12 unique preferred-Supplier default needs no separate operator confirmation, remains write-free on read, and is rechecked and materialized only during atomic preparation. Explicit saved splits win; rebalance proposals remain advisory. Draft staleness and later priority changes never rewrite issued POs. Downstream commitment rejection retains its existing correction meaning.
 
 These are acceptance obligations, not new implementation work where existing behavior already satisfies them.
 

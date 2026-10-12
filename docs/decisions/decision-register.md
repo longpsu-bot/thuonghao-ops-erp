@@ -140,6 +140,18 @@ RMVP-07A accepts D-031 as documentation authority. The decisions are recorded in
 
 The task-approved [design](../superpowers/specs/2026-09-03-purchase-review-confirm-release-design.md) and [API amendment](../api/school-catering-procurement.md#purchase-review-confirm-release-01-amendment) extend the existing school-catering allocation aggregate, not the module map or lifecycle vocabulary. Generated purchase review is read-only and exports the Retool v1-derived preliminary XLSX. Saved Confirmed Need owns pre-Handoff quantities; explicit exact supplier decisions use typed `CONFIRMED_NEED` lineage before commitment. One backend preparation command guards Planning release, creates real Handoff evidence, promotes saved splits to a `PURCHASE_HANDOFF` successor, and prepares official drafts atomically. Independent PO release remains the supplier commitment boundary. D-037 Save semantics and D-042 released-PO/correction constraints remain intact. No Warehouse, released-PO amendment, hosted rollout, new role/capability or new Allocation Family table is authorized.
 
+### Product-approved preferred-Supplier default — 2026-10-12
+
+PA06D-11 is resolved by the approved [Procurement amendment](../api/school-catering-procurement.md#product-approved-preferred-supplier-default--2026-10-12)
+under ATLAS-MODEL-PRINCIPLE-01: a unique ACTIVE/effective lowest-priority Supplier
+is a derived 100% default for complete positive current Need with no persisted
+allocation. It needs no separate confirmation. Reads create no writes; single-day
+preparation rechecks current authority and atomically materializes required
+support. Explicit overrides and exact splits take precedence, ambiguous priority
+remains unresolved, and released Supplier commitments remain immutable.
+School-first tables in Procurement and Confirmed Need change presentation only;
+Planning quantity/Save contracts and multi-day preparation restrictions remain.
+
 ## Change procedure
 
 ### Approved Atlas Planning catch-up source policy

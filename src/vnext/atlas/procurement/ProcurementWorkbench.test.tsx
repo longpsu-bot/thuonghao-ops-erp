@@ -13,6 +13,8 @@ import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ProcurementWorkbench } from "./ProcurementWorkbench";
 import {
   createProcurementReviewFixture,
+  oct12ReviewDate,
+  oct12ReviewSchools,
   reviewDate,
   reviewFailure,
   reviewSuccess,
@@ -53,7 +55,7 @@ function show(
 }
 const action = () =>
   screen.findByRole("button", {
-    name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm · Trường Tiểu học Nguyễn Du · Bếp chính Nguyễn Du$/,
+    name: /^(Thay đổi|Phân bổ NCC|Xem phân bổ) Gạo thơm · Trường Tiểu học Nguyễn Du · Bếp chính Nguyễn Du$/,
   });
 const openFilters = () => {
   const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
@@ -91,7 +93,7 @@ describe("Procurement vNext operator workbench", () => {
       </AtlasVNextProvider>,
     );
     await screen.findByRole("button", {
-      name: /Phân bổ NCC Gạo.*12\/09\/2026/,
+      name: /Thay đổi Gạo.*12\/09\/2026/,
     });
     expect(screen.getByText("Chọn 1 ngày để chuẩn bị đơn mua.")).toBeVisible();
     expect(
@@ -107,13 +109,13 @@ describe("Procurement vNext operator workbench", () => {
       target: { value: "gao" },
     });
     expect(
-      screen.getAllByRole("button", { name: /Phân bổ NCC Gạo/ }),
+      screen.getAllByRole("button", { name: /Thay đổi Gạo/ }),
     ).toHaveLength(2);
     fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
       target: { value: "không có" },
     });
     expect(
-      screen.queryByRole("button", { name: /Phân bổ NCC Gạo/ }),
+      screen.queryByRole("button", { name: /Thay đổi Gạo/ }),
     ).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
       target: { value: "" },
@@ -132,7 +134,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(await screen.findByText("Chọn tối đa 7 ngày.")).toBeVisible();
     expect(read).toHaveBeenCalledOnce();
     const retainedRows = screen.getAllByRole("button", {
-      name: /Phân bổ NCC Gạo/,
+      name: /Thay đổi Gạo/,
     });
     expect(retainedRows).toHaveLength(2);
     retainedRows.forEach((button) => expect(button).toBeDisabled());
@@ -696,8 +698,8 @@ describe("Procurement vNext operator workbench", () => {
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual([
-      "Nguyên liệu",
       "Trường / điểm giao",
+      "Nguyên liệu",
       "Nhu cầu",
       "Nhà cung ứng",
       "Tình trạng / vấn đề",
@@ -706,10 +708,11 @@ describe("Procurement vNext operator workbench", () => {
     expect(document.body).not.toHaveTextContent(
       /private-|fingerprint|UUID|phiên bản/i,
     );
-    const unallocated = within(table).getByText("Chưa phân bổ");
-    expect(unallocated).toBeVisible();
-    expect(unallocated).toHaveTextContent("⚠ Chưa phân bổ");
-    expect(unallocated.closest("tr")).toHaveAttribute("data-attention", "true");
+    const resolved = within(table).getByText("Đủ");
+    expect(resolved).toBeVisible();
+    expect(resolved.closest("tr")).not.toHaveAttribute("data-attention");
+    expect(within(table).getByText("NCC An Phú")).toBeVisible();
+    expect(within(table).getByText("Mặc định #1")).toBeVisible();
   });
   it("keeps search and exception filtering local", async () => {
     const { read } = show();
@@ -719,16 +722,77 @@ describe("Procurement vNext operator workbench", () => {
       target: { value: "gao" },
     });
     expect(await action()).toBeVisible();
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "NCC Thành Công" },
+    });
+    expect(await action()).toBeVisible();
     fireEvent.change(screen.getByRole("combobox", { name: "Ngoại lệ" }), {
       target: { value: "blocked" },
     });
     expect(
       screen.queryByRole("button", {
-        name: "Phân bổ NCC Gạo thơm · Trường Tiểu học Nguyễn Du · Bếp chính Nguyễn Du",
+        name: "Thay đổi Gạo thơm · Trường Tiểu học Nguyễn Du · Bếp chính Nguyễn Du",
       }),
     ).not.toBeInTheDocument();
     expect(read).toHaveBeenCalledTimes(1);
   });
+  it("treats 236 safe backend recommendations as normal resolved rows", async () => {
+    const fixture = createProcurementReviewFixture("oct12_recommendations");
+    fixture.allocation.rows = Array.from({ length: 236 }, (_, index) => {
+      const value = reviewFamily("oct12_recommendations");
+      const school = oct12ReviewSchools[index % oct12ReviewSchools.length]!;
+      return {
+        ...value,
+        family: {
+          ...value.family,
+          ingredient_id: `ingredient-${index}`,
+          source_fingerprint: `recommendation-${index}`,
+        },
+        ingredient_id: `ingredient-${index}`,
+        ingredient_name: `Nguyên liệu ${String(index + 1).padStart(3, "0")}`,
+        school_id: school.school_id,
+        school_name: school.school_name,
+        schools: [school],
+      };
+    });
+    fixture.allocation.preparation = {
+      ...fixture.allocation.preparation!,
+      ready: true,
+      allowed: true,
+      blockers: [],
+    };
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={oct12ReviewDate}
+          schools={oct12ReviewSchools}
+        />
+      </AtlasVNextProvider>,
+    );
+
+    expect(await screen.findByText(/Cần xử lý 0 ·\s*Đã đủ 236/)).toBeVisible();
+    expect(screen.getAllByRole("button", { name: /^Thay đổi / })).toHaveLength(
+      236,
+    );
+    openFilters();
+    fireEvent.change(screen.getByRole("combobox", { name: "Ngoại lệ" }), {
+      target: { value: "unallocated" },
+    });
+    expect(
+      screen.getByText("Không có nguyên liệu phù hợp trong phạm vi này."),
+    ).toBeVisible();
+    fireEvent.change(screen.getByRole("combobox", { name: "Ngoại lệ" }), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "AN THÀNH ĐÔ" },
+    });
+    expect(screen.getAllByRole("button", { name: /^Thay đổi / })).toHaveLength(
+      236,
+    );
+  }, 20_000);
   it("opens detail, marks selection geometrically and returns focus to the row", async () => {
     show();
     const trigger = await action();

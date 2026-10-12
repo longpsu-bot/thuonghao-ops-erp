@@ -102,7 +102,7 @@ not a valid rollback because it would destroy released-document reproducibility.
 
 ## PURCHASE-REVIEW-CONFIRM-RELEASE-01 amendment
 
-Authority: the explicitly approved [bounded design](../superpowers/specs/2026-09-03-purchase-review-confirm-release-design.md). The normal operator path is generated paper review → saved Confirmed Need → saved supplier allocation → atomic commitment preparation → independent PO release. This changes no module boundary, lifecycle vocabulary, Warehouse behavior or released-PO amendment policy.
+Authority: the explicitly approved [bounded design](../superpowers/specs/2026-09-03-purchase-review-confirm-release-design.md), amended by the product-approved preferred-Supplier default correction on 2026-10-12. The normal operator path is generated paper review → saved Confirmed Need → derived preferred allocation or explicit allocation override → atomic commitment preparation → independent PO release. This changes no module boundary, lifecycle vocabulary, Warehouse behavior or released-PO amendment policy.
 
 ### Generated review — `PURCHASE-REVIEW.v1`
 
@@ -118,7 +118,38 @@ The separate preliminary XLSX uses the inspected Retool v1 `lib/js_exportPOZip.j
 
 Rows extend the existing allocation shape with `complete`, typed `family.source_kind`, source Confirmed Need batch/version, exact revision/decision contribution references and plural `schools`. Families shared by Schools remain searchable/filterable by any contributing School. Complete quantities derive solely from current saved Confirmed Need decisions that pass the canonical evaluator. Incomplete or ambiguous source returns `family_quantity: null` and `Hoàn tất xác nhận nhu cầu trước khi phân bổ NCC.`; generated quantities and zero are never fallback authority. Retired generation sources are excluded without deleting history. Current legacy Handoff rows remain available when no active Confirmed Need family supplies the same key.
 
-The response also includes nullable `preparation: { service_date, confirmed_need_batch_id, expected_version, ready, allowed, blockers }`. Backend readiness requires complete current exact saved splits and eligibility. The normal preparation action additionally requires both existing release/write capabilities and active GLOBAL scope, consistent with the existing v2 Planning release command. Frontend dirty, busy and unknown-outcome conditions may only make this stricter.
+The response also includes nullable `preparation: { service_date, confirmed_need_batch_id, expected_version, ready, allowed, blockers }`. Backend preparation readiness requires every positive authoritative family to have current exact eligible saved splits or a safe deterministic preferred-Supplier default. The normal preparation action additionally requires both existing release/write capabilities and active GLOBAL scope, consistent with the existing v2 Planning release command. Frontend dirty, busy and unknown-outcome conditions may only make this stricter.
+
+#### Product-approved preferred-Supplier default — 2026-10-12
+
+Supplier priority is an explicit Master Data fact. A complete, current positive
+Confirmed Need family with no persisted allocation revision and no blocker uses
+100% of its exact quantity as a derived default only when exactly one ACTIVE
+Supplier has the unique lowest non-null priority among ACTIVE eligibilities
+effective on that service date. No eligible Supplier blocks; no effective
+priority or a best-priority tie remains unresolved. UUID, name and row order are
+never business tie-breaks. Defaults follow current master data until materialized.
+
+`splits` remains persisted allocation evidence; `recommendation` remains separate
+derived evidence. Effective presentation uses persisted splits first, otherwise
+the safe recommendation, otherwise unresolved. No new persisted lifecycle state
+is introduced. The workbench read creates zero allocation, Handoff, PO, receipt
+or acceptance-event facts. Reading never confirms recommendations.
+
+Normal default rows show the preferred Supplier directly, a default-priority
+label, `Đủ`, and an exception action (`Thay đổi`). They require no separate
+confirmation or per-row Save. Authorized operators can choose another eligible
+Supplier or an exact multi-Supplier split through the existing Save command.
+Persisted allocations, including supplier notes and manual splits, remain
+authoritative and obey the existing stale/reallocation rules; later priority
+changes never silently replace them or rewrite released PO commitments.
+
+The 1–7 day operator range presents defaults independently for every represented
+date and retains no multi-day preparation authority. The allocation table starts
+with sticky sortable `Trường / điểm giao`, then `Nguyên liệu`, and defaults to
+School → Ingredient order. Identical School/location names appear once; a distinct
+destination is secondary text. Search, exact quantities, selection and keyboard
+focus retain their existing behavior.
 
 `atlas_api.save_confirmed_supplier_allocation(request jsonb)` uses the normal closed command envelope, reason `CONFIRMED_SUPPLIER_ALLOCATION_SAVED`, expected Allocation Family version (`0` for a new family), and:
 
@@ -151,6 +182,25 @@ Changing saved Need retains old splits as stale. A prior-ratio exact-residual pr
 One transactional backend command coordinates the existing authorized Planning release, real school-catering Handoff, allocation promotion and PO draft commands. Every child retains its own authorization and receipt checks. It can continue from already completed release/Handoff stages. Preparation evaluates each current supplier independently: exact current Draft/released coverage for one supplier may coexist with another supplier at the D-044 replacement frontier, where an active stale released PO derives `REPLACEMENT_REQUIRED`. At that frontier the corrected Planning release, Handoff successor and Handoff-source allocation promotion commit, while the old PO remains released and unchanged; creating or regenerating the complete replacement Draft remains the existing separate explicit operator command. A current or stale replacement Draft may coexist only when it links directly to that active same-supplier/date released predecessor. Ordinary preparation never regenerates such a replacement Draft, while a stale or unrelated ordinary Draft remains blocking. `CANCELLATION_REQUIRED`, missing coverage, a failed child, skipped date, other invalid PO state or stale allocation aborts all newly performed child work. Retryable failures also roll back the outer receipt; unknown transport outcomes require authoritative refresh, not automatic replay. Explicit retry retains the complete original request and is discarded when date/stage intent changes.
 
 Success returns `contract_version`, command/correlation IDs, date/batch/version, `planning_release`, `handoff`, `purchase_order_drafts`, empty blockers and warnings. It never issues official PO numbers: each supplier PO still requires its independent existing release command. PO readback failure after successful preparation locks further mutations until refresh succeeds.
+
+Preparation rechecks current Confirmed Need authority and Supplier eligibility
+and priority under backend locks. Inside its protected transaction, it
+materializes only missing safe defaults through the existing allocation writer,
+then continues through strict Planning release, Handoff promotion and PO draft
+boundaries. A failed child or stale source rolls back newly generated supporting
+allocations together with the rest of the preparation. Browser recommendations
+are never accepted as command authority. Materialization creates no separate
+operator action or confirmation step. The standalone Planning release remains
+write-free for Procurement and retains its persisted-allocation prerequisite.
+
+Migration `20261012101517_atlas_preferred_supplier_default_preparation.sql` adds
+three private coverage/materialization/locking helpers and updates the existing
+preparation status, allocation persistence, allocation read and preparation
+command functions. It adds no table, enum, public API, capability or browser
+table privilege, and retains existing owners, RLS and hardened search paths.
+A forward rollback restores those four prior function definitions before removing
+the three private helpers. Accepted allocation/Handoff/PO history must be retained;
+rollback must never delete materialized facts or rewrite a released commitment.
 
 ### Typed lineage and compatibility
 

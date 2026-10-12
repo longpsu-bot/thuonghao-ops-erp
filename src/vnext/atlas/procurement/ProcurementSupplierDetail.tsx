@@ -19,7 +19,6 @@ import {
 import { Info } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import type { CSSProperties } from "react";
-import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import {
   procurementOperatorMessages,
   type AllocationFamilyRow,
@@ -32,6 +31,10 @@ import {
   sumExactQuantities,
   serializeExactQuantity,
 } from "./procurementExactQuantity";
+import {
+  allocationRecipient,
+  derivedDefaultAllocation,
+} from "./procurementAllocationPresentation";
 
 export function ProcurementSupplierDetail({
   row,
@@ -49,13 +52,26 @@ export function ProcurementSupplierDetail({
   const eligible = (id: string) =>
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
   const saved = row.splits.filter((split) => eligible(split.supplier_id));
-  const [draft, setDraft] = useState<SupplierSplitInput[]>(() =>
-    saved.map(({ supplier_id, allocated_quantity, supplier_note }) => ({
-      supplier_id,
-      allocated_quantity: quantity(allocated_quantity),
-      supplier_note: supplier_note ?? null,
-    })),
-  );
+  const derived = derivedDefaultAllocation(row);
+  const baseline: SupplierSplitInput[] = saved.length
+    ? saved.map(({ supplier_id, allocated_quantity, supplier_note }) => ({
+        supplier_id,
+        allocated_quantity: quantity(allocated_quantity),
+        supplier_note: supplier_note ?? null,
+      }))
+    : derived
+      ? [
+          {
+            supplier_id: derived.recommendation.supplier_id,
+            allocated_quantity: quantity(
+              derived.recommendation.allocated_quantity,
+            ),
+            supplier_note: null,
+          },
+        ]
+      : [];
+  const [draft, setDraft] = useState<SupplierSplitInput[]>(() => baseline);
+  const recipient = allocationRecipient(row);
   const [added, setAdded] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
   const [supplierId, setSupplierId] = useState("");
@@ -107,9 +123,9 @@ export function ProcurementSupplierDetail({
     ) &&
     draft.every((split) => (split.supplier_note ?? "").length <= 500);
   const dirty =
-    draft.length !== saved.length ||
+    draft.length !== baseline.length ||
     draft.some((split) => {
-      const original = saved.find(
+      const original = baseline.find(
         (value) => value.supplier_id === split.supplier_id,
       );
       const parsed = parseExactQuantity(split.allocated_quantity);
@@ -146,7 +162,7 @@ export function ProcurementSupplierDetail({
         supplier_note:
           draft.find((split) => split.supplier_id === supplier_id)
             ?.supplier_note ??
-          saved.find((split) => split.supplier_id === supplier_id)
+          baseline.find((split) => split.supplier_id === supplier_id)
             ?.supplier_note ??
           null,
       })),
@@ -154,7 +170,7 @@ export function ProcurementSupplierDetail({
     setAdded(
       proposal
         .map((split) => split.supplier_id)
-        .filter((id) => !saved.some((split) => split.supplier_id === id)),
+        .filter((id) => !baseline.some((split) => split.supplier_id === id)),
     );
   };
   const proposal = (
@@ -235,12 +251,8 @@ export function ProcurementSupplierDetail({
           {row.ingredient_name}
         </Heading>
         <Text color="fg.muted" textStyle="helper" mt="xs">
-          {row.schools
-            ?.slice()
-            .sort(compareCanonicalSchools)
-            .map((school) => school.school_name)
-            .join(", ") || row.school_name}{" "}
-          · {row.location_name}
+          {recipient.primary}
+          {recipient.secondary ? ` · ${recipient.secondary}` : ""}
         </Text>
       </Box>
       <Box

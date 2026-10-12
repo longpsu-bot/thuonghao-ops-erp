@@ -55,6 +55,8 @@ This register records approved business rules. Module specifications may refine 
 
 | BR-048 | Zero derived demand is valid and non-actionable: retain `ACTIVE` zero theoretical/release audit facts, exclude them before actionable grouping and Confirmed Need membership, and create no initial zero-demand batch or procurement authority. Positive-to-zero correction supersedes actionable revisions without zero successors, preserves immutable history, and respects existing released/downstream correction guards. | Product-approved hotfix, 2026-10-12; [H0C contract](../decisions/decision-pa-06e-h0c-materialization-command-contract.md) |
 
+| BR-049 | For a complete current positive Confirmed Need family with no persisted allocation, one ACTIVE Supplier at the unique lowest non-null ACTIVE/effective eligibility priority is the derived 100% default. Reads create no allocation or receipt; one-day preparation rechecks authority and atomically materializes support. Explicit saved splits win, missing priority/ties remain unresolved, no eligibility blocks, and later priority changes never rewrite released commitments. | Product-approved correction, 2026-10-12; [Procurement contract](../api/school-catering-procurement.md#product-approved-preferred-supplier-default--2026-10-12) |
+
 Detailed legacy evidence, approved directions, recommendations, and still-pending quantity decisions are separated in the [PA-06D Rounding and Rebalancing Rule Register](pa-06d-rounding-rebalancing-rule-register.md). A PA-06D row is not approved unless its status explicitly says so.
 
 ## Planned rule domains

@@ -2,14 +2,12 @@ import { Box, Button, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
 import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
-import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { useState, type CSSProperties } from "react";
 import {
   atlasDefaultSort,
   compareAtlasBigInt,
   compareAtlasText,
   nextAtlasSort,
-  sortAtlasRows,
   type AtlasSortState,
 } from "../atlasTableSort";
 import {
@@ -17,10 +15,16 @@ import {
   parseExactQuantity,
   sumExactQuantities,
 } from "./procurementExactQuantity";
+import {
+  allocationRecipient,
+  compareAllocationRecipients,
+  derivedDefaultAllocation,
+} from "./procurementAllocationPresentation";
 
 function allocationIssue(row: AllocationFamilyRow, remainder: bigint | null) {
   if (row.state === "BLOCKED") return "Bị chặn";
   if (row.state === "STALE_REBALANCE_AVAILABLE") return "Cần cập nhật";
+  if (derivedDefaultAllocation(row)) return "Đủ";
   if (row.state === "UNALLOCATED") return "Chưa phân bổ";
   if (row.state === "BALANCED") return "Đủ";
   if (remainder === null) return "Cần phân bổ lại";
@@ -30,8 +34,13 @@ function allocationIssue(row: AllocationFamilyRow, remainder: bigint | null) {
 }
 
 function allocationRemainder(row: AllocationFamilyRow) {
+  const derived = derivedDefaultAllocation(row);
   const total = sumExactQuantities(
-    row.splits.map((split) => split.allocated_quantity),
+    row.splits.length
+      ? row.splits.map((split) => split.allocated_quantity)
+      : derived
+        ? [derived.recommendation.allocated_quantity]
+        : [],
   );
   const need =
     row.complete === false || row.family_quantity === null
@@ -54,19 +63,16 @@ export function ProcurementAllocationTable({
 }) {
   type SortKey = "ingredient" | "school" | "need" | "supplier" | "issue";
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
-  const schoolNames = (row: AllocationFamilyRow) =>
-    row.schools
-      ?.slice()
-      .sort(compareCanonicalSchools)
-      .map((school) => school.school_name)
-      .join(", ") ||
-    row.school_name ||
-    row.location_name;
-  const sortedRows = sortAtlasRows(rows, sort, {
+  const suppliers = (row: AllocationFamilyRow) => {
+    const derived = derivedDefaultAllocation(row);
+    return row.splits.length
+      ? row.splits.map((split) => split.supplier_name).join(", ")
+      : (derived?.supplier.supplier_name ?? "");
+  };
+  const comparators = {
     ingredient: (left, right) =>
       compareAtlasText(left.ingredient_name, right.ingredient_name),
-    school: (left, right) =>
-      compareAtlasText(schoolNames(left), schoolNames(right)),
+    school: compareAllocationRecipients,
     need: (left, right) =>
       compareAtlasBigInt(
         left.complete === false || left.family_quantity === null
@@ -77,16 +83,31 @@ export function ProcurementAllocationTable({
           : parseExactQuantity(right.family_quantity),
       ),
     supplier: (left, right) =>
-      compareAtlasText(
-        left.splits.map((split) => split.supplier_name).join(", "),
-        right.splits.map((split) => split.supplier_name).join(", "),
-      ),
+      compareAtlasText(suppliers(left), suppliers(right)),
     issue: (left, right) =>
       compareAtlasText(
         allocationIssue(left, allocationRemainder(left)),
         allocationIssue(right, allocationRemainder(right)),
       ),
-  }).sort((left, right) => left.service_date.localeCompare(right.service_date));
+  } satisfies Record<
+    SortKey,
+    (left: AllocationFamilyRow, right: AllocationFamilyRow) => number
+  >;
+  const byDate = (left: AllocationFamilyRow, right: AllocationFamilyRow) =>
+    left.service_date.localeCompare(right.service_date);
+  const sortedRows =
+    sort.direction === "default" || sort.key === null
+      ? [...rows].sort(
+          (left, right) =>
+            compareAllocationRecipients(left, right) ||
+            compareAtlasText(left.ingredient_name, right.ingredient_name) ||
+            byDate(left, right),
+        )
+      : [...rows].sort(
+          (left, right) =>
+            comparators[sort.key!](left, right) *
+              (sort.direction === "ascending" ? 1 : -1) || byDate(left, right),
+        );
   const onSort = (key: SortKey) =>
     setSort((current) => nextAtlasSort(current, key));
   return (
@@ -122,11 +143,11 @@ export function ProcurementAllocationTable({
           stickyHeader
         >
           <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-allocation-school-width, 230px)" />
             <Table.Column w="var(--atlas-allocation-identity-width, 200px)" />
             {showServiceDate && (
               <Table.Column w="var(--atlas-allocation-date-width, 120px)" />
             )}
-            <Table.Column w="var(--atlas-allocation-school-width, 230px)" />
             <Table.Column w="var(--atlas-allocation-quantity-width, 130px)" />
             <Table.Column w="var(--atlas-allocation-supplier-width, 190px)" />
             <Table.Column w="var(--atlas-allocation-state-width, 170px)" />
@@ -138,8 +159,8 @@ export function ProcurementAllocationTable({
               zIndex="var(--atlas-layout-sticky-header-z, 3)"
             >
               <AtlasSortableColumnHeader
-                label="Nguyên liệu"
-                columnKey="ingredient"
+                label="Trường / điểm giao"
+                columnKey="school"
                 sort={sort}
                 onSort={onSort}
                 position="sticky"
@@ -148,17 +169,17 @@ export function ProcurementAllocationTable({
                 h="var(--atlas-table-header-height)"
                 py="var(--atlas-layout-zero, 0)"
               />
-              {showServiceDate && (
-                <Table.ColumnHeader>Ngày dùng</Table.ColumnHeader>
-              )}
               <AtlasSortableColumnHeader
-                label="Trường / điểm giao"
-                columnKey="school"
+                label="Nguyên liệu"
+                columnKey="ingredient"
                 sort={sort}
                 onSort={onSort}
                 h="var(--atlas-table-header-height)"
                 py="var(--atlas-layout-zero, 0)"
               />
+              {showServiceDate && (
+                <Table.ColumnHeader>Ngày dùng</Table.ColumnHeader>
+              )}
               <AtlasSortableColumnHeader
                 label="Nhu cầu"
                 columnKey="need"
@@ -200,10 +221,15 @@ export function ProcurementAllocationTable({
                   ? null
                   : parseExactQuantity(row.family_quantity);
               const rest = allocationRemainder(row);
-              const attention = row.state !== "BALANCED";
+              const derived = derivedDefaultAllocation(row);
+              const recipient = allocationRecipient(row);
+              const attention = row.state !== "BALANCED" && !derived;
               const issue = allocationIssue(row, rest);
-              const action =
-                row.state === "BALANCED" ? "Xem phân bổ" : "Phân bổ NCC";
+              const action = derived
+                ? "Thay đổi"
+                : row.state === "BALANCED"
+                  ? "Xem phân bổ"
+                  : "Phân bổ NCC";
               return (
                 <Table.Row
                   key={key}
@@ -223,23 +249,25 @@ export function ProcurementAllocationTable({
                     {selectedKey === key && (
                       <Box data-selection-indicator="" aria-hidden="true" />
                     )}
-                    <Text fontWeight="semibold">{row.ingredient_name}</Text>
+                    <Text fontWeight="semibold">{recipient.primary}</Text>
+                    {recipient.secondary && (
+                      <Text
+                        data-row-secondary=""
+                        textStyle="helper"
+                        color="fg.muted"
+                      >
+                        {recipient.secondary}
+                      </Text>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text fontWeight="medium">{row.ingredient_name}</Text>
                   </Table.Cell>
                   {showServiceDate && (
                     <Table.Cell whiteSpace="nowrap">
                       {row.service_date.split("-").reverse().join("/")}
                     </Table.Cell>
                   )}
-                  <Table.Cell minW="var(--atlas-layout-school-cell-width, 150px)">
-                    <Text fontWeight="medium">{schoolNames(row)}</Text>
-                    <Text
-                      data-row-secondary=""
-                      textStyle="helper"
-                      color="fg.muted"
-                    >
-                      {row.location_name}
-                    </Text>
-                  </Table.Cell>
                   <Table.Cell textAlign="end" whiteSpace="nowrap">
                     <Text textStyle="quantityInline">
                       {quantity(need)}{" "}
@@ -255,11 +283,24 @@ export function ProcurementAllocationTable({
                     </Text>
                   </Table.Cell>
                   <Table.Cell minW="var(--atlas-layout-supplier-cell-width, 125px)">
-                    {row.splits.length
-                      ? row.splits
-                          .map((split) => split.supplier_name)
-                          .join(", ")
-                      : "—"}
+                    {row.splits.length ? (
+                      row.splits.map((split) => split.supplier_name).join(", ")
+                    ) : derived ? (
+                      <>
+                        <Text fontWeight="medium">
+                          {derived.supplier.supplier_name}
+                        </Text>
+                        <Text
+                          data-row-secondary=""
+                          textStyle="helper"
+                          color="fg.muted"
+                        >
+                          Mặc định #{derived.supplier.priority}
+                        </Text>
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </Table.Cell>
                   <Table.Cell minW="var(--atlas-layout-state-cell-width, 110px)">
                     <Text
@@ -288,7 +329,7 @@ export function ProcurementAllocationTable({
                       w="full"
                       minW="var(--atlas-layout-zero, 0)"
                       px="xs"
-                      aria-label={`${action} ${row.ingredient_name} · ${schoolNames(row)} · ${row.location_name}${showServiceDate ? ` · ${row.service_date.split("-").reverse().join("/")}` : ""}`}
+                      aria-label={`${action} ${row.ingredient_name} · ${recipient.primary}${recipient.secondary ? ` · ${recipient.secondary}` : ""}${showServiceDate ? ` · ${row.service_date.split("-").reverse().join("/")}` : ""}`}
                       aria-expanded={selectedKey === key}
                       disabled={
                         disabled || Boolean(selectedKey && selectedKey !== key)
