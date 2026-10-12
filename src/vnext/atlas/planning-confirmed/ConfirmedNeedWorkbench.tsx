@@ -25,7 +25,7 @@ import {
   useConfirmedNeedWorkbench,
   type ConfirmedNeedWorkbenchProps,
 } from "./useConfirmedNeedWorkbench";
-import { preflightMessage } from "./confirmedNeedAuthority";
+import { noDemand, preflightMessage } from "./confirmedNeedAuthority";
 import { ConfirmedNeedTable } from "./ConfirmedNeedTable";
 import { ConfirmedNeedDirtyExitDialog } from "./ConfirmedNeedDirtyExitDialog";
 import { ConfirmedNeedCommandFeedback } from "./ConfirmedNeedCommandFeedback";
@@ -276,11 +276,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     ? "Lỗi tải"
                     : !day.preflight
                       ? "Đang tải"
-                      : day.preflight?.issues.some(
-                            (i) =>
-                              i.issue_code ===
-                              "NO_NEED_SOURCE_FOR_SERVICE_DATE",
-                          )
+                      : noDemand(day.preflight ?? null)
                         ? "Không có nhu cầu"
                         : day.preflight?.readiness_state === "BLOCKED"
                           ? "Cần kiểm tra"

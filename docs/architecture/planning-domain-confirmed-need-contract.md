@@ -5,6 +5,14 @@
 **Business owner:** Tổ Kế hoạch  
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture
 
+Product-approved zero-demand policy (2026-10-12): `ACTIVE` theoretical lines with
+quantity zero remain immutable source and release audit evidence. They are excluded
+before actionable grouping, revision membership, and the current partition proof.
+An initial zero-only release succeeds with derived `NO_DEMAND` and no Confirmed Need
+batch. Positive-to-zero correction supersedes actionable revisions without zero
+successors, preserving stable identity, history, scope checks and downstream guards.
+Each materialized revision still has nonempty positive membership and exact totals.
+
 ## 1. Purpose
 
 Confirmed Need is the Planning-owned approval gate that converts generated theoretical needs into approved, traceable demand.
@@ -75,7 +83,7 @@ Required attributes:
 
 - Wholesale uses the existing singular Wholesale Order/batch, line, and line-revision chain.
 - School catering uses batch origin/current Need Generation release triples, an immutable release triple on every line revision, and plural `confirmed_need_line_revision_contributions` rows.
-- Each school-catering contribution binds one exact release-snapshot line and one exact `ACTIVE` Theoretical Need line with the same service date, School, Ingredient, and Unit.
+- Each school-catering contribution binds one exact release-snapshot line and one exact `ACTIVE` Theoretical Need line with `theoretical_quantity > 0` with the same service date, School, Ingredient, and Unit.
 - Customer and delivery location are captured operational identity and repeat through restrictive revision/membership ownership; upstream Menu/Attendance/Recipe facts remain reachable from the Theoretical Need line.
 
 This typed source family enables an operator to explain why the demand exists and how the exact theoretical total was derived without copying upstream payloads.
@@ -168,7 +176,7 @@ Commands are the only approved way to change Confirmed Need state.
 ### CreateConfirmedNeedsFromGeneration
 
 Creates a Draft Review batch from one exact Need Generation run/released
-version/release snapshot. It groups every `ACTIVE` release member by the exact
+version/release snapshot. It groups every positive (`theoretical_quantity > 0`) `ACTIVE` release member by the exact
 school-catering operational tuple, creates one stable line and immutable Draft
 revision per group, and records complete revision-owned contribution
 membership. The exact membership total is retained as `theoretical_quantity`.
@@ -249,7 +257,7 @@ Manager-facing summary showing source generation version, line counts, adjustmen
 The following are blocking unless a later approved rule explicitly changes their classification:
 
 - Source Need Generation run is missing or not Released for Confirmation.
-- Confirmed revision lacks its exact typed source trace; a school-catering revision lacks nonempty every-and-only released contribution membership or exact membership total.
+- Confirmed revision lacks its exact typed source trace; a school-catering revision lacks nonempty every-and-only positive released contribution membership or exact membership total.
 - Confirmed quantity is negative.
 - Manual adjustment lacks reason code or note.
 - Manual adjustment lacks before/after quantity evidence.

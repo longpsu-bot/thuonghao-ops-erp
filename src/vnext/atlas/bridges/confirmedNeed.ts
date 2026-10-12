@@ -15,7 +15,10 @@ export type {
 } from "../../../modules/atlas/planning-inputs/need-generation/needGenerationApi";
 export { confirmedNeedSaveV2Request } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";
 export type { ConfirmedNeedLineRequest } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";
-export { planningInputPreflightFromResult } from "../../../modules/atlas/planning-inputs/readiness/planningInputReadinessModel";
+export {
+  generatedNoDemand,
+  planningInputPreflightFromResult,
+} from "../../../modules/atlas/planning-inputs/readiness/planningInputReadinessModel";
 export type { PlanningInputPreflightData } from "../../../modules/atlas/planning-inputs/readiness/planningInputReadinessModel";
 export {
   needGenerationWorkbenchFromResult,

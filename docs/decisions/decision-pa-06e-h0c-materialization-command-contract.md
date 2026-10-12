@@ -165,15 +165,15 @@ Corrected materialization may reuse a stable line only when all seven stable ide
 For one exact `RELEASED_FOR_CONFIRMATION` run/version with no prior batch, the command:
 
 1. resolves and locks the run, release snapshot, complete release membership, active Theoretical Need lines, direct typed sources, Admin references, and calculation lineage;
-2. rejects an empty active release and any zero-quantity active contribution in v1;
-3. groups the complete active set by the accepted seven-part operational identity;
-4. creates one `NEED_GENERATION` Confirmed Need Batch in `DRAFT_REVIEW`, version 1, with origin equal to controlled current source;
+2. rejects a structurally empty release; retains legitimate active zero observations as immutable audit evidence;
+3. selects only active contributions with `theoretical_quantity > 0` and groups that actionable set by the accepted seven-part operational identity;
+4. when actionable groups exist, creates one `NEED_GENERATION` Confirmed Need Batch in `DRAFT_REVIEW`, version 1, with origin equal to controlled current source;
 5. creates one stable line per group;
 6. creates one current revision 1 in `DRAFT` per line;
 7. copies the exact PostgreSQL numeric membership sum into `theoretical_quantity` and the stored non-authoritative proposal field;
 8. creates complete immutable revision-owned contribution membership;
 9. relies on merged H0B1 guards for totals, membership completeness, and current-release partition integrity; and
-10. completes one receipt, one `ConfirmedNeedsCreated` event, and one audit event.
+10. completes one receipt and, when a batch is created, one `ConfirmedNeedsCreated` event and one audit event. A zero-only release takes the no-aggregate success branch described below.
 
 The stored proposal is not a Planning-authorized quantity.
 
@@ -208,7 +208,7 @@ H0C never reopens a batch automatically.
 
 ## 10. Closed first-slice blockers and safe errors
 
-The command rejects the complete transaction for empty/zero source, incomplete or stale lineage, unsupported removal, unresolved empty old group, split/merge, ambiguous predecessor, conversion, changed operational identity, partial scope, approved/released state, downstream commitment, stale version, or accepted limits.
+The command rejects the complete transaction for structurally empty source, incomplete or stale lineage, unsupported removal, unresolved empty old group, split/merge, ambiguous predecessor, conversion, changed operational identity, partial scope, approved/released state, downstream commitment, stale version, or accepted limits.
 
 H0C-specific safe codes are exactly:
 
@@ -222,7 +222,6 @@ OPERATIONAL_IDENTITY_UNAPPROVED
 CONTRIBUTION_MEMBERSHIP_INVALID
 CONTRIBUTION_TOTAL_MISMATCH
 EMPTY_ACTIVE_RELEASE
-ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED
 SOURCE_REMOVAL_POLICY_REQUIRED
 SOURCE_SPLIT_MERGE_POLICY_REQUIRED
 REOPEN_REQUIRED
@@ -242,7 +241,7 @@ atlas_planning_materialization_runtime
 
 It is `NOLOGIN`, `NOINHERIT`, owns only the future CMD-15 function, has no schema `CREATE`, no sequence mutation, and no membership in another runtime.
 
-Its practical privileges are restricted to receipt/auth/capability/scope helpers; read-only H0A source access; required Confirmed Need reads/writes; controlled current/status/version changes; and one Planning domain event and audit event per success.
+Its practical privileges are restricted to receipt/auth/capability/scope helpers; read-only H0A source access; required Confirmed Need reads/writes; controlled current/status/version changes; and one Planning domain event and audit event per materialized-aggregate success.
 
 It receives no Purchase Handoff, Procurement, Evidence, Warehouse, Dispatch, Storage, reporting-write, `public`, `ops_v2`, Retool, or legacy privilege.
 
@@ -272,7 +271,7 @@ Lock order is: receipt; Admin references; Recipe/source snapshots; Planning Inpu
 - Malformed envelope, unresolved subject, or inactive actor fails before accepted command identity and creates no receipt.
 - Deterministic nonretryable failure after receipt acquisition stores one `FAILED_NON_RETRYABLE` receipt and creates no event or audit event.
 - Retryable transaction failure leaves no completed failure receipt.
-- Success stores one completed receipt, one domain event, and one audit event.
+- Materialized-aggregate success stores one completed receipt, one domain event, and one audit event. Initial zero-only success stores its receipt with empty event/audit arrays.
 - Exact replay returns the original bounded response and IDs.
 - Changed command/key reuse returns `IDEMPOTENCY_CONFLICT`.
 
@@ -303,3 +302,33 @@ H0Ca closed the business and command decisions without misrepresenting an unimpl
 H1 policy, decision evidence, authorized review/preview/confirmation, validation, approval, release, Purchase Handoff, Procurement, Warehouse, Dispatch, application connection, hosted deployment, and production rollout remain separate.
 
 Documentation rollback is a normal Git revert. The H0Cb migration is additive and has not been applied to hosted or production systems in this task. Before any future deployment/use, rollback may remove CMD-15, its capability, policies/grants, and dedicated runtime together; after operational receipts or Confirmed Need rows exist, rollback requires a separately approved data-preserving procedure rather than silent deletion.
+
+## Product-approved zero derived demand clarification — 2026-10-12
+
+**Zero derived demand is valid and non-actionable.** Menu, Attendance, Recipe composition, and Pantry remain authoritative facts. Attendance zero times an effective Recipe quantity yields a valid active theoretical observation; `REMOVED` continues to mean source removal. The immutable run, typed ancestry, zero warning, and every-and-only release membership retain that observation.
+
+Actionable membership is exactly `ACTIVE` with `theoretical_quantity > 0`. Grouping, proposal-policy resolution, Confirmed Need revisions, and deferred partition proofs use that selection. Positive quantities and rounding in the same date remain unchanged. Zero observations never become Shopping List requirements, Supplier Allocation requirements, or purchase demand. A defensive membership invariant rejects nonpositive materialized contributions.
+
+An initially all-zero released run completes without a Confirmed Need batch. Current source/readback derives `NO_DEMAND` from the released run and its immutable source evidence; this is neither a persisted lifecycle nor an operator exception. The connected UI presents “Không có nhu cầu” and offers no purchase handoff. `NO_NEED_SOURCE_FOR_SERVICE_DATE` retains its distinct absent-source meaning.
+
+A safely correctable positive-to-zero successor supersedes the old actionable revisions and retains stable lines, exact quantities, decisions, contributions, and release history without a zero successor revision. An existing batch may have no current revisions. If positive demand returns, immutable theoretical ancestry through active zero observations recovers the last materialized identity and predecessor revision. School-default changes remain guarded by `OPERATIONAL_IDENTITY_UNAPPROVED`. Released downstream authority retains `DOWNSTREAM_CORRECTION_REQUIRED` and the established correction boundary; no released purchase fact is rewritten.
+
+The atomic execution failure handler attaches `write_certainty = NO_COMMITTED_CHANGE` after PostgreSQL rolls back its business subtransaction, before storing the failure receipt. Outer transaction exceptions prove the same certainty and do not finalize a receipt already rolled back. Transport loss and unvalidated nominal-success readback retain the unknown-outcome write lock. Historical receipts are not rewritten.
+
+Deployment uses the single forward migration `20261012024511_atlas_zero_demand_generation_policy.sql`, with complete effective function bodies and unchanged existing owners, grants, fixed search paths, forced RLS assumptions, atomicity, and replay semantics. The only new function is a private read helper for immutable ancestry. The existing source-impact classifier recognizes a current released no-batch `NO_DEMAND` run as safely regenerable; source Save implementations remain unchanged and every real downstream/Planning release guard stays in force. No schema/lifecycle or Procurement/Dispatch rule changes occur. Rollback requires a reviewed forward restoration of the prior function bodies; never delete committed run/lineage facts or edit applied migrations. Hosted deployment remains separate.
+
+Retained CMD-15 initial zero-only materialization returns the complete success
+envelope with all materialization result counts zero, null Confirmed Need batch ID
+and version, and empty domain/audit event arrays. Its completed command receipt is
+replayable; no Confirmed Need event is fabricated for an absent aggregate.
+
+A retained v1 zero successor that has not yet corrected an editable Draft/Reopened
+batch remains `OUTDATED`; its cursor identifies the exact zero run and release,
+while retaining the existing batch identity. Atomic execution adopts that direct
+successor. If source facts changed again, it first completes the existing H0C zero
+correction using a deterministic child command/receipt identity and the same
+correlation, then performs ordinary generation/materialization against current
+facts. Both H0C corrections, their batch versions, receipts, events and audit rows
+commit or roll back together with the outer command. Each H0C command emits one
+event/audit pair; ordinary atomic execution still increments the batch once.
+Released Planning authority and downstream commitments remain correction blockers.

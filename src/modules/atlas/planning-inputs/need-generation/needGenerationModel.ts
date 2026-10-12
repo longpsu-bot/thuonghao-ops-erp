@@ -201,6 +201,8 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
   const clockSkewMessage = planningClockSkewMessage(result);
   if (clockSkewMessage) return clockSkewMessage;
   const messages: Record<string, string> = {
+    ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED:
+      "Dữ liệu nhu cầu không hợp lệ: đóng góp bằng 0 không được đưa vào nhu cầu mua hàng.",
     CAPABILITY_DENIED: "Bạn không có quyền tạo hoặc cập nhật nhu cầu.",
     AUTH_SUBJECT_MISMATCH:
       "Phiên người dùng không khớp yêu cầu. Hãy đăng nhập lại.",

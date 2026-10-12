@@ -10,6 +10,14 @@
 
 **Implementation task:** [TASK-PA-06E-H0B1a](../implementation-tasks/TASK-PA-06E-H0B1a-confirmed-need-identity-decision.md)
 
+Product-approved zero-demand policy (2026-10-12): `ACTIVE` theoretical lines with
+quantity zero remain immutable source and release audit evidence. They are excluded
+before actionable grouping, revision membership, and the current partition proof.
+An initial zero-only release succeeds with derived `NO_DEMAND` and no Confirmed Need
+batch. Positive-to-zero correction supersedes actionable revisions without zero
+successors, preserving stable identity, history, scope checks and downstream guards.
+Each materialized revision still has nonempty positive membership and exact totals.
+
 ## 1. Decision outcome
 
 Atlas will reuse and generalize exactly the existing private Planning aggregate:
@@ -218,9 +226,9 @@ At transaction end:
 2. Every school-catering revision has a nonempty membership set.
 3. `(confirmed_need_line_revision_id, theoretical_need_line_id)` is unique.
 4. Every member is an exact row of the revision's release snapshot and exact released run/version.
-5. Every referenced Theoretical Need line is `ACTIVE`, not `REMOVED`.
+5. Every referenced Theoretical Need line is `ACTIVE` with `theoretical_quantity > 0`, not `REMOVED`.
 6. Every member matches the revision/stable line's service date, School, captured customer/destination, Ingredient, and Unit identity.
-7. The membership is complete within its revision: it contains every-and-only `ACTIVE` release member in the revision source snapshot that belongs to that service-date/School/Ingredient/source-Unit operational group. The captured customer/destination is common to the group and is proven by revision ownership.
+7. The membership is complete within its revision: it contains every-and-only positive (`theoretical_quantity > 0`) `ACTIVE` release member in the revision source snapshot that belongs to that service-date/School/Ingredient/source-Unit operational group. The captured customer/destination is common to the group and is proven by revision ownership.
 8. `source_theoretical_quantity` equals the exact Theoretical Need quantity.
 9. `source_unit_id` equals the exact Theoretical Need Unit.
 10. `controlled_contribution_quantity = source_theoretical_quantity`.
@@ -228,7 +236,7 @@ At transaction end:
 12. `revision.theoretical_quantity` equals the exact PostgreSQL `numeric` sum of all controlled contribution quantities.
 13. There is no epsilon, rounding, clamp, residual, supplier allocation, rebalance, or hidden adjustment.
 14. Membership rows are immutable and nondeletable. Display or insertion order is non-authoritative.
-15. For each `NEED_GENERATION` batch at its controlled-current run/version/release snapshot, the memberships of all current line revisions form one exact disjoint partition of the release snapshot's complete `ACTIVE` Theoretical Need membership: every active release line appears in exactly one current revision, none is omitted, and none is duplicated across stable lines, operational groups, or captured destinations.
+15. For each `NEED_GENERATION` batch at its controlled-current run/version/release snapshot, the memberships of all current line revisions form one exact disjoint partition of the release snapshot's complete positive `ACTIVE` Theoretical Need membership: every positive active release line appears in exactly one current revision, none is omitted, and none is duplicated across stable lines, operational groups, or captured destinations.
 16. Historical, noncurrent, and superseded revisions retain immutable memberships but are excluded from current-partition counting.
 
 The revision-complete rule prevents a caller from manufacturing a matching total by omitting or substituting released atomic lines inside a group. The batch-current partition rule prevents one authoritative release line from being claimed by two current operational lines or from disappearing between current operational groups.
@@ -258,7 +266,7 @@ H0B1b owns exactly these cross-row guards as PostgreSQL `DEFERRABLE INITIALLY DE
 
 **Installed on:** `confirmed_need_line_revisions` and `confirmed_need_line_revision_contributions` for relevant insert/update/delete events. It reads immutable H0A5b release-snapshot lines and Theoretical Need lines but installs no upstream trigger.
 
-**Proves at transaction end:** every invariant in section 5.3, including source-kind eligibility, nonempty every-and-only released membership within each revision, the exact disjoint current-batch partition of all active release members, exact active source facts, exact operational identity, no-conversion equality, uniqueness, exact numeric total, Wholesale zero-membership, and immutable history.
+**Proves at transaction end:** every invariant in section 5.3, including source-kind eligibility, nonempty every-and-only released membership within each revision, the exact disjoint current-batch partition of all positive active release members, exact active source facts, exact operational identity, no-conversion equality, uniqueness, exact numeric total, Wholesale zero-membership, and immutable history.
 
 Both guards are database integrity boundaries. Later command checks repeat them only for safe domain errors. Deferral permits one transaction to insert or advance the batch, create successor revisions, and create complete memberships in dependency order; it does not permit a partially valid commit.
 

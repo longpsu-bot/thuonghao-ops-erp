@@ -591,6 +591,160 @@ describe("Confirmed Need local draft and safety", () => {
 });
 
 describe("long-running generation interaction", () => {
+  it("shows a rolled-back zero invariant as a deterministic business error", async () => {
+    const h = await ready("not_generated");
+    const failure = reviewFailure(
+      "ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED",
+      "NO_COMMITTED_CHANGE",
+    );
+    if (failure.kind === "backend_error") failure.error.retryable = false;
+    h.execute.mockResolvedValue(failure);
+    await act(() => h.result.current.generate());
+    expect(h.result.current.operation.status).toBe("FAILED");
+    expect(h.result.current.notice).toBe(
+      "Dữ liệu nhu cầu không hợp lệ: đóng góp bằng 0 không được đưa vào nhu cầu mua hàng.",
+    );
+    expect(h.result.current.lock).toBeNull();
+    expect(JSON.stringify(h.result.current.operation)).not.toContain(
+      "Chưa xác định được kết quả",
+    );
+    expect(h.result.current.canGenerate).toBe(true);
+  });
+  it("adopts authoritative no-demand generation without a Confirmed Need batch", async () => {
+    const h = await ready("not_generated");
+    const p = {
+      ...reviewPreflight(),
+      demand_state: "NO_DEMAND",
+      current_need: {
+        ...reviewPreflight().current_need!,
+        need_generation_release_snapshot_id: "snapshot-current",
+      },
+    };
+    p.current_need = {
+      ...p.current_need!,
+      confirmed_need_batch_id: null,
+      confirmed_need_batch_status: null,
+      confirmed_need_batch_version: null,
+    } as unknown as typeof p.current_need;
+    const need = structuredClone(h.fixture.need);
+    need.materialization.confirmed_need_batch_id = null;
+    need.selected_run!.release_snapshot_id = "snapshot-current";
+    need.grouped_requirements = [];
+    h.execute.mockResolvedValue(
+      reviewSuccess({
+        authoritative_readback: { preflight: p, need_generation: need },
+      }),
+    );
+    await act(() => h.result.current.generate());
+    expect(h.result.current.operation.status).toBe("SUCCEEDED");
+    expect(h.result.current.notice).toContain("Không có nhu cầu");
+    expect(h.result.current.lock).toBeNull();
+    expect(h.result.current.workbench).toBeNull();
+    expect(h.result.current.canContinue).toBe(false);
+    expect(h.result.current.canGenerate).toBe(false);
+    expect(h.read).not.toHaveBeenCalled();
+    h.preflightRead.mockResolvedValue(reviewSuccess({ preflight: p }));
+    await act(() => h.result.current.recover());
+    expect(h.result.current.lock).toBeNull();
+    expect(h.result.current.readError).toBeNull();
+  });
+  it.each([
+    "null-run",
+    "missing-release",
+    "wrong-release",
+    "wrong-version",
+    "positive-group",
+    "missing-source",
+    "contradictory-source",
+    "blocking-count",
+    "released-batch",
+    "partial-batch",
+  ])("locks malformed no-demand success: %s", async (invalid) => {
+    const h = await ready("not_generated");
+    const p = {
+      ...reviewPreflight(),
+      demand_state: "NO_DEMAND",
+      current_need: {
+        ...reviewPreflight().current_need!,
+        confirmed_need_batch_id: null as string | null,
+        confirmed_need_batch_status: null as string | null,
+        confirmed_need_batch_version: null as number | null,
+        need_generation_release_snapshot_id: "snapshot-current",
+      },
+    };
+    const need = structuredClone(h.fixture.need);
+    need.materialization.confirmed_need_batch_id = null;
+    need.selected_run!.release_snapshot_id = "snapshot-current";
+    if (invalid !== "positive-group") need.grouped_requirements = [];
+    if (invalid === "null-run") {
+      p.current_need.need_generation_run_id = null as unknown as string;
+      need.selected_run!.need_generation_run_id = null as unknown as string;
+    }
+    if (invalid === "missing-release")
+      delete need.selected_run!.release_snapshot_id;
+    if (invalid === "wrong-release")
+      need.selected_run!.release_snapshot_id = "other-snapshot";
+    if (invalid === "wrong-version") need.selected_run!.version++;
+    if (invalid === "blocking-count") p.blocking_issue_count = 1;
+    if (invalid === "partial-batch")
+      p.current_need.confirmed_need_batch_id = "batch-current";
+    if (invalid === "released-batch") {
+      p.current_need.confirmed_need_batch_id = "batch-current";
+      p.current_need.confirmed_need_batch_status =
+        "RELEASED_FOR_PURCHASE_HANDOFF";
+      p.current_need.confirmed_need_batch_version = 5;
+    }
+    if (invalid === "contradictory-source") {
+      p.issues = [
+        {
+          issue_code: "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+          severity: "BLOCKING",
+          message: "Không có nhu cầu",
+          input_type: "NEED_GENERATION",
+          school_id: null,
+          service_date: reviewDate,
+        },
+      ];
+    }
+    if (invalid === "missing-source") {
+      Reflect.deleteProperty(p, "demand_state");
+      p.issues = [
+        {
+          issue_code: "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+          severity: "BLOCKING",
+          message: "Không có nhu cầu",
+          input_type: "NEED_GENERATION",
+          school_id: null,
+          service_date: reviewDate,
+        },
+      ];
+      p.current_need.confirmed_need_batch_id = "batch-current";
+      need.materialization.confirmed_need_batch_id = "batch-current";
+      h.read.mockResolvedValue(reviewSuccess({}));
+    }
+
+    h.execute.mockResolvedValue(
+      reviewSuccess({
+        authoritative_readback: { preflight: p, need_generation: need },
+      }),
+    );
+    await act(() => h.result.current.generate());
+    expect(h.result.current.operation.status).toBe("UNKNOWN_OUTCOME");
+    expect(h.result.current.lock).toBe("unknown");
+    expect(h.result.current.canGenerate).toBe(false);
+  });
+  it("keeps an unclassified backend response locked until reload", async () => {
+    const h = await ready("not_generated");
+    h.execute.mockResolvedValue(
+      reviewFailure("UNEXPECTED_RESPONSE", "UNKNOWN"),
+    );
+    await act(() => h.result.current.generate());
+    expect(h.result.current.operation.status).toBe("UNKNOWN_OUTCOME");
+    expect(h.result.current.lock).toBe("unknown");
+    await act(() => h.result.current.generate());
+    expect(h.execute).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the operation running through readback, blocks duplicates and then shows authoritative success", async () => {
     const h = await ready("not_generated");
     let finish!: () => void;

@@ -8,6 +8,14 @@
 
 **Authority:** Issue #135, [Decision PA-06E-H0B1](decision-pa-06e-h0b1-confirmed-need-identity-membership.md), merged H0A1/H0A5b persistence, the [PA-06E-H0 contract](../architecture/pa-06e-h0-school-catering-persistence-and-materialization-contract.md), PA-01 through PA-03, and the merged PA-04/PA-05D database contract.
 
+Product-approved zero-demand policy (2026-10-12): `ACTIVE` theoretical lines with
+quantity zero remain immutable source and release audit evidence. They are excluded
+before actionable grouping, revision membership, and the current partition proof.
+An initial zero-only release succeeds with derived `NO_DEMAND` and no Confirmed Need
+batch. Positive-to-zero correction supersedes actionable revisions without zero
+successors, preserving stable identity, history, scope checks and downstream guards.
+Each materialized revision still has nonempty positive membership and exact totals.
+
 ## Outcome
 
 The private Planning aggregate now supports exactly two source kinds:
@@ -133,13 +141,13 @@ The implementation adds only the keys needed to bind typed facts:
 
 - (customer_id, school_id) on Schools;
 - exact release-snapshot-line ownership on H0A5b release snapshot lines;
-- exact Theoretical Need source-fact ownership, with ACTIVE disposition enforced by the deferred guard;
+- exact Theoretical Need source-fact ownership, with ACTIVE disposition and positive quantity enforced by the deferred guard;
 - batch ID plus source kind;
 - stable-line exact owner and operational identity;
 - revision exact owner/source/operational identity; and
 - revision plus Theoretical Need line membership uniqueness.
 
-The contribution's exact child-carried fields omit source_kind and line_disposition by design. Separate supporting parent keys make its restrictive composite foreign keys possible, while the ordinary and deferred guards require NEED_GENERATION ownership and ACTIVE source disposition.
+The contribution's exact child-carried fields omit source_kind and line_disposition by design. Separate supporting parent keys make its restrictive composite foreign keys possible, while the ordinary and deferred guards require NEED_GENERATION ownership and ACTIVE source disposition with positive quantity.
 
 ## No-conversion and membership invariants
 
@@ -152,9 +160,9 @@ controlled_contribution_quantity = source_theoretical_quantity
 
 The source Unit and quantity equal the exact immutable Theoretical Need facts. The controlled Unit also equals the stable-line Unit and revision Unit. Different Units therefore create different operational lines.
 
-Every Need Generation revision has nonempty, immutable, nondeletable membership. It contains every and only ACTIVE release member in its service-date/School/Ingredient/source-Unit group. Its theoretical_quantity equals the exact PostgreSQL numeric sum of controlled contributions. REMOVED members, substitutions, omissions, duplicates, conversion, rounding, clamps, residuals, and hidden allocations are rejected.
+Every Need Generation revision has nonempty, immutable, nondeletable membership. It contains every and only positive ACTIVE release member in its service-date/School/Ingredient/source-Unit group. Its theoretical_quantity equals the exact PostgreSQL numeric sum of controlled contributions. REMOVED members, substitutions, omissions, duplicates, conversion, rounding, clamps, residuals, and hidden allocations are rejected.
 
-For the batch's controlled-current release, all current revision memberships form one exact disjoint partition: every active release line appears once, with no omission or duplication across lines, groups, or destinations. The invariant is enforced from the existing deferred batch/line current-source boundary and from revision/contribution membership changes. A released source with active members cannot own an empty Confirmed Need batch, and a stable line without a current revision cannot commit. An empty active-release set may have an empty partition. Historical, noncurrent, and superseded memberships remain immutable but do not participate in current-partition counting.
+For the batch's controlled-current release, all current revision memberships form one exact disjoint partition: every positive active release line appears once, with no omission or duplication across lines, groups, or destinations. The invariant is enforced from the existing deferred batch/line current-source boundary and from revision/contribution membership changes. A released source with positive ACTIVE members cannot own an empty current partition. A zero-only successor may retire current revisions while retaining stable lines and immutable history. An initial zero-only release creates no Confirmed Need batch; its actionable partition is empty. Historical, noncurrent, and superseded memberships remain immutable but do not participate in current-partition counting.
 
 ## Function and trigger catalog
 

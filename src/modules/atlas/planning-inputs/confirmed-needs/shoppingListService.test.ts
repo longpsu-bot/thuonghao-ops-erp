@@ -305,6 +305,88 @@ it("exports complete daily authorities into one workbook and explicitly reports 
     expect(f.events[position + 1]).toBe(`preflight:${date}`);
   }
 });
+it.each([null, "historical-batch"])(
+  "skips a proven generated zero date with batch %s in a mixed export",
+  async (batchId) => {
+    const f = rangeFixture();
+    const normal = f.preflight.getMockImplementation()!;
+    f.context.range.end = "2026-09-09";
+    f.preflight.mockImplementation(async (...args) => {
+      if (args[2] !== "2026-09-09") return normal(...args);
+      return reviewSuccess({
+        preflight: {
+          period_start: args[2],
+          period_end: args[2],
+          readiness_state: "READY",
+          downstream_currentness: "CURRENT",
+          demand_state: "NO_DEMAND",
+          blocking_issue_count: 0,
+          issues: [],
+          source_evidence: {},
+          current_need: {
+            confirmed_need_batch_id: batchId,
+            confirmed_need_batch_status: batchId ? "DRAFT_REVIEW" : null,
+            confirmed_need_batch_version: batchId ? 5 : null,
+            need_generation_run_id: "zero-run",
+            need_generation_run_version: 3,
+            need_generation_run_status: "RELEASED_FOR_CONFIRMATION",
+            need_generation_release_snapshot_id: "zero-release",
+          },
+        },
+      });
+    });
+    await f.service.export(f.batches[0]!.workbench, f.context);
+    expect(
+      vi.mocked(downloadConfirmedNeedShoppingList).mock.lastCall![0],
+    ).toHaveLength(2);
+    expect(f.context.onSkippedDates).toHaveBeenCalledWith(["2026-09-09"]);
+  },
+);
+it.each(["null-run", "blocking-count", "released-batch", "partial-batch"])(
+  "rejects malformed generated zero evidence: %s",
+  async (invalid) => {
+    const f = rangeFixture();
+    const normal = f.preflight.getMockImplementation()!;
+    f.context.range.end = "2026-09-09";
+    f.preflight.mockImplementation(async (...args) =>
+      args[2] !== "2026-09-09"
+        ? normal(...args)
+        : reviewSuccess({
+            preflight: {
+              period_start: args[2],
+              period_end: args[2],
+              readiness_state: "READY",
+              downstream_currentness: "CURRENT",
+              demand_state: "NO_DEMAND",
+              blocking_issue_count: invalid === "blocking-count" ? 1 : 0,
+              issues: [],
+              source_evidence: {},
+              current_need:
+                invalid === "null-run"
+                  ? null
+                  : {
+                      confirmed_need_batch_id: invalid.includes("batch")
+                        ? "batch-current"
+                        : null,
+                      confirmed_need_batch_status:
+                        invalid === "released-batch"
+                          ? "RELEASED_FOR_PURCHASE_HANDOFF"
+                          : null,
+                      confirmed_need_batch_version:
+                        invalid === "released-batch" ? 5 : null,
+                      need_generation_run_id: "zero-run",
+                      need_generation_run_version: 3,
+                      need_generation_run_status: "RELEASED_FOR_CONFIRMATION",
+                      need_generation_release_snapshot_id: "zero-release",
+                    },
+            },
+          }),
+    );
+    await expect(
+      f.service.export(f.batches[0]!.workbench, f.context),
+    ).rejects.toMatchObject({ code: "STALE_AUTHORITY" });
+  },
+);
 it("blocks the entire export on dirty, released, read-failed or changed authority", async () => {
   const f = rangeFixture();
   const download = vi.mocked(downloadConfirmedNeedShoppingList);
