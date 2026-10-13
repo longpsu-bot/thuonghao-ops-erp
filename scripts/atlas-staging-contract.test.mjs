@@ -2434,6 +2434,20 @@ describe("Atlas staging hosted evidence", () => {
     );
   });
 
+  it("accepts only the approved exact Purchase Preparation timeout configuration", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain(
+      "p.proname = 'prepare_school_catering_purchase_orders'",
+    );
+    expect(sql).toContain(
+      "p.proconfig @> array['search_path=\"\"', 'statement_timeout=20s']::text[]",
+    );
+    expect(sql).toContain(
+      "p.proconfig <@ array['search_path=\"\"', 'statement_timeout=20s']::text[]",
+    );
+    expect(sql).toContain("cardinality(p.proconfig) = 2");
+  });
+
   it("rejects Need Generation with only the default search path", () => {
     const sql = catalogVerificationSql(readCatalogAuthority());
     expect(sql).toContain("cardinality(p.proconfig) = 2");

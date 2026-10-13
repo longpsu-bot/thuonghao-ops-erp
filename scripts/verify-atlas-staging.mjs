@@ -152,6 +152,10 @@ export function catalogVerificationSql(
     'search_path=""',
     "plan_cache_mode=force_generic_plan",
   ]);
+  const purchasePreparationApiProconfig = sqlArray([
+    'search_path=""',
+    "statement_timeout=20s",
+  ]);
   const managedRoleId = String(managedApplicationRole?.role_id ?? "");
   const managedRoleCode = String(managedApplicationRole?.role_code ?? "");
   if (
@@ -209,6 +213,13 @@ begin
             cardinality(p.proconfig) = 2
             and p.proconfig @> ${needGenerationApiProconfig}
             and p.proconfig <@ ${needGenerationApiProconfig}
+          ) is not true
+          when p.proname = 'prepare_school_catering_purchase_orders'
+            and pg_get_function_identity_arguments(p.oid) = 'request jsonb'
+          then (
+            cardinality(p.proconfig) = 2
+            and p.proconfig @> ${purchasePreparationApiProconfig}
+            and p.proconfig <@ ${purchasePreparationApiProconfig}
           ) is not true
           else p.proconfig is distinct from ${defaultApiProconfig}
         end
