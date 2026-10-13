@@ -118,7 +118,7 @@ export function useSchoolDefaultsWorkbench({
         if (purpose === "readback") {
           setLock("readback");
           setNotice(
-            "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
+            "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
           );
         }
         return false;
@@ -142,7 +142,7 @@ export function useSchoolDefaultsWorkbench({
           if (purpose === "readback") {
             setLock("readback");
             setNotice(
-              "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
+              "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
             );
           }
           return false;
@@ -193,7 +193,7 @@ export function useSchoolDefaultsWorkbench({
           if (purpose === "readback") {
             setLock("readback");
             setNotice(
-              "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
+              "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
             );
           }
           return false;
@@ -237,7 +237,7 @@ export function useSchoolDefaultsWorkbench({
         setLock(pendingGroup.current.groupId ? "readback" : "unknown");
         setNotice(
           pendingGroup.current.groupId
-            ? "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả."
+            ? "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra."
             : "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
         );
         return false;
@@ -246,7 +246,7 @@ export function useSchoolDefaultsWorkbench({
         setLock(pendingDispatchGroup.current.groupId ? "readback" : "unknown");
         setNotice(
           pendingDispatchGroup.current.groupId
-            ? "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả."
+            ? "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra."
             : "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
         );
         return false;

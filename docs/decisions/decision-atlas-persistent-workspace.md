@@ -8,6 +8,12 @@
 
 **Scope:** Application navigation/lifetime and presentation.
 
+**Owner copy amendment — 13 October 2026:** The owner requests natural Vietnamese
+instead of the literal Workbench translation. The launcher label/title/heading is
+now **Chức năng**; its search is **Tìm chức năng**; the open-workbench list is
+**Màn hình đang mở**. Notices name the job directly or refer to its màn hình.
+This label amendment changes no navigation, ownership or business contract.
+
 **Owner amendment — 6 October 2026 (ATLAS-PRODUCT-CORRECTIONS-01):** The owner explicitly replaces grouped destinations with eleven operator-job owners and moves the icon-only launcher to the far left. This bounded implementation and amendment await PR review/merge. The original seven-destination evidence remains historical; business domains, APIs and operating stages are unchanged.
 
 **Composition supersession — 8 October 2026 (Draft PR #358):** The Owner replaces the grouped Planning source destination with three independent persistent owners: **Thực đơn**, **Sĩ số**, and **Hàng đặt riêng** (previous UI label: Bổ sung). **Xác nhận nhu cầu** remains separate. Current production composition has **13 workbenches**, eight daily jobs and five configuration jobs. This is application composition only: local UI state and guarded close remain with each owner; switching performs no business write. Backend facts, calculations, API/RPC, Save/release, currentness, permissions and RLS remain unchanged. Earlier eleven-owner acceptance and capacity measurements remain historical; this amendment does not claim hosted rollout.
@@ -50,11 +56,11 @@ Activation never refreshes. Existing command/readback, currentness/version/concu
 
 ## Visual decision and alternatives
 
-Select **Atlas Modern Operational Workspace**: full-width dense plane and compact shell from C, eucalyptus/slate identity, typography, refined surfaces and restrained elevation from B, with Atlas-integrated workbench tabs. Desktop is **☰ + ATLAS + compact utilities**, then open tabs, then active workbench. The far-left Phosphor List control has `aria-label="Bàn làm việc"` and `title="Bàn làm việc"`; the opened launcher retains the visible **Bàn làm việc** heading; the permanent icon rail is not primary v2 navigation.
+Select **Atlas Modern Operational Workspace**: full-width dense plane and compact shell from C, eucalyptus/slate identity, typography, refined surfaces and restrained elevation from B, with Atlas-integrated workbench tabs. Desktop is **☰ + ATLAS + compact utilities**, then open tabs, then active workbench. The far-left Phosphor List control has `aria-label="Chức năng"` and `title="Chức năng"`; the opened launcher retains the visible **Chức năng** heading; the permanent icon rail is not primary v2 navigation.
 
-The registry-generated **Bàn làm việc** launcher lists all available destinations with simple local search. Groups are **CÔNG VIỆC HẰNG NGÀY** (Thực đơn, Sĩ số, Hàng đặt riêng, Xác nhận nhu cầu, Phân bổ NCC, Đơn mua, Phiếu xuất kho, Đối chiếu PO / Phiếu xuất kho) and **DỮ LIỆU & CẤU HÌNH** (Trường học, Nguyên liệu, Nhà cung ứng, Công thức, Lệnh điều chỉnh), with no empty future groups. It shows only quiet open status and contains no business drafts/state. Successful selection opens/activates or activates-existing without duplication, closes the launcher and restores trigger focus; keyboard traversal/activation and Escape are required. Dirty/attention remains primarily on open tabs.
+The registry-generated **Chức năng** launcher lists all available destinations with simple local search. Groups are **CÔNG VIỆC HẰNG NGÀY** (Thực đơn, Sĩ số, Hàng đặt riêng, Xác nhận nhu cầu, Phân bổ NCC, Đơn mua, Phiếu xuất kho, Đối chiếu PO / Phiếu xuất kho) and **DỮ LIỆU & CẤU HÌNH** (Trường học, Nguyên liệu, Nhà cung ứng, Công thức, Lệnh điều chỉnh), with no empty future groups. It shows only quiet open status and contains no business drafts/state. Successful selection opens/activates or activates-existing without duplication, closes the launcher and restores trigger focus; keyboard traversal/activation and Escape are required. Dirty/attention remains primarily on open tabs.
 
-One compact shell utility contains user/environment/sign-out; the launcher does not repeat them. Mobile separates **Bàn làm việc** (launcher) from **Đang mở** (open-workbench selector); do not squeeze the full desktop strip/rail onto mobile. Touch targets remain 44px. Command-palette dependencies, nested navigation frameworks, recently used, favorites, pins and customizable groups are deferred until demonstrated need.
+One compact shell utility contains user/environment/sign-out; the launcher does not repeat them. Mobile separates **Chức năng** (launcher) from **Đang mở** (open-workbench selector); do not squeeze the full desktop strip/rail onto mobile. Touch targets remain 44px. Command-palette dependencies, nested navigation frameworks, recently used, favorites, pins and customizable groups are deferred until demonstrated need.
 
 - Retain v1's switch/unmount model: rejected for this selected direction; operators would still reconstruct open local work.
 - Adopt A, B or C alone: rejected as the v2 direction; the owner selected D's combined density/finish and persistence.

@@ -675,7 +675,7 @@ describe("Chakra School default portions workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(
       await screen.findByText(
-        "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
+        "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
       ),
     ).toBeInTheDocument();
     expect(

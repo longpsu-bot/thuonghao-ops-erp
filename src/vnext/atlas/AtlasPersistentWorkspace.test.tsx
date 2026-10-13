@@ -47,7 +47,7 @@ function show() {
 }
 
 async function open(label: string) {
-  fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+  fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
   fireEvent.click(await screen.findByRole("button", { name: label }));
 }
 

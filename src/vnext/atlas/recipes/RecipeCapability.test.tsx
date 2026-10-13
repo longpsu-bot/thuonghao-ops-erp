@@ -628,7 +628,7 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     ).toEqual(["Chọn hành động", "Thay nguyên liệu"]);
     expect(
       screen.getByRole("group", {
-        name: "Chọn món và trường để kiểm tra tác động",
+        name: "Kiểm tra tác động",
       }),
     ).toBeInTheDocument();
     choose("Áp dụng cho", "one");

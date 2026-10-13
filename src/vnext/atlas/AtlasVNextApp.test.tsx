@@ -68,7 +68,7 @@ function show() {
   return { apis, signOut, ...result };
 }
 async function nav(label: string) {
-  fireEvent.click(await screen.findByRole("button", { name: "Bàn làm việc" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Chức năng" }));
   fireEvent.click(await screen.findByRole("button", { name: label }));
   await waitFor(() =>
     expect(
@@ -173,7 +173,7 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
   fireEvent.click(screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }));
   expect(
     await screen.findByText(
-      /Bàn Phân bổ NCC vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,
+      /Phân bổ NCC vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,
     ),
   ).toBeVisible();
   expect(
@@ -203,7 +203,7 @@ it("preserves an existing Orders range and selected order when Allocation reques
   fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
   expect(
     await screen.findByText(
-      /Bàn Đơn mua vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,
+      /Đơn mua vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,
     ),
   ).toBeVisible();
   expect(
@@ -258,12 +258,12 @@ it.each(modules)(
     await waitFor(() =>
       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+    fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
     expect(await screen.findByRole("button", { name: label! })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+    fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
     await waitFor(() =>
       expect(
         document.querySelector('[role="dialog"][data-state="open"]'),

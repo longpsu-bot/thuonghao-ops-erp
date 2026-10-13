@@ -87,12 +87,12 @@ def matrix(browser, url, sizes, results):
         print(f"matrix {size}", flush=True)
         page, failures = new_page(browser, url, width, height)
         snapshot(page, f"launcher-collapsed-{size}", results)
-        trigger = page.get_by_role("button", name="Bàn làm việc", exact=True)
+        trigger = page.get_by_role("button", name="Chức năng", exact=True)
         trigger.click()
-        launcher = page.get_by_role("dialog", name="Bàn làm việc", exact=True)
+        launcher = page.get_by_role("dialog", name="Chức năng", exact=True)
         expect(launcher.locator("button[data-destination]")).to_have_count(len(OWNERS))
         snapshot(page, f"launcher-open-{size}", results)
-        page.get_by_role("textbox", name="Tìm bàn làm việc", exact=True).fill("cong thuc")
+        page.get_by_role("textbox", name="Tìm chức năng", exact=True).fill("cong thuc")
         page.keyboard.press("ArrowDown")
         expect(launcher.get_by_role("button", name="Công thức", exact=True)).to_be_focused()
         page.keyboard.press("Escape")
@@ -108,7 +108,7 @@ def matrix(browser, url, sizes, results):
             expect(page.locator('main>[role="tabpanel"]')).to_have_count(len(OWNERS))
             snapshot(page, f"owner-{index:02}-{size}", results)
         if width >= 1024:
-            tabs = page.get_by_role("tablist", name="Bàn làm việc đang mở").get_by_role("tab")
+            tabs = page.get_by_role("tablist", name="Màn hình đang mở").get_by_role("tab")
             tabs.first.focus()
             page.keyboard.press("Home")
             for index in range(len(OWNERS)):
@@ -119,7 +119,7 @@ def matrix(browser, url, sizes, results):
         else:
             for label in OWNERS:
                 page.get_by_role("button", name=re.compile("^Đang mở:")).click()
-                popup = page.get_by_role("dialog", name="Bàn làm việc đang mở", exact=True)
+                popup = page.get_by_role("dialog", name="Màn hình đang mở", exact=True)
                 target = popup.get_by_role("button", name=label, exact=True)
                 target.scroll_into_view_if_needed()
                 assert target.bounding_box()["height"] >= 44

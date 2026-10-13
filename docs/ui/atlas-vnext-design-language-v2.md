@@ -10,6 +10,11 @@
 
 **Decision:** [D-048 — Persistent Workspace](../decisions/decision-atlas-persistent-workspace.md).
 
+**Owner copy amendment — 13 October 2026:** Use **Chức năng** for the launcher,
+**Tìm chức năng** for its search and **Màn hình đang mở** for the open-tab list.
+This owner-requested wording change supersedes the literal Workbench translation;
+the workspace architecture is unchanged.
+
 **Composition supersession — 8 October 2026 (Draft PR #358):** [D-048](../decisions/decision-atlas-persistent-workspace.md) now defines **13 persistent owners**: separate Thực đơn, Sĩ số and Hàng đặt riêng (formerly Bổ sung), plus the existing jobs. Local-state/guard ownership and business/backend contracts are unchanged. Earlier eleven-owner hosted acceptance remains historical; this amendment claims no hosted rollout.
 
 ## Authority and effective scope
@@ -28,7 +33,7 @@ Atlas is operational software for school catering and ingredient distribution. C
 
 ## 2. Application shell
 
-Use a compact slate/eucalyptus utility bar with a far-left Phosphor List icon launcher, followed by Atlas identity and one compact account/environment utility control containing user, environment and sign-out. Do not repeat user/environment in the launcher. The icon trigger keeps `aria-label="Bàn làm việc"` and `title="Bàn làm việc"`; the opened menu displays **Bàn làm việc** as its heading. Below the bar, open-workbench navigation attaches to a full-width active work plane. The current permanent icon rail is not primary v2 navigation; no permanent wide sidebar. Do not repeat the module label, workbench title, scope and counts in multiple shell bands. The workbench's current operator job is the strongest heading. Business dates belong to workbench context; a shell clock must not masquerade as a shared editable service date.
+Use a compact slate/eucalyptus utility bar with a far-left Phosphor List icon launcher, followed by Atlas identity and one compact account/environment utility control containing user, environment and sign-out. Do not repeat user/environment in the launcher. The icon trigger keeps `aria-label="Chức năng"` and `title="Chức năng"`; the opened menu displays **Chức năng** as its heading. Below the bar, open-workbench navigation attaches to a full-width active work plane. The current permanent icon rail is not primary v2 navigation; no permanent wide sidebar. Do not repeat the module label, workbench title, scope and counts in multiple shell bands. The workbench's current operator job is the strongest heading. Business dates belong to workbench context; a shell clock must not masquerade as a shared editable service date.
 
 ```text
 [☰] | ATLAS | ...compact account utility...
@@ -204,7 +209,7 @@ Unknown write completion claims neither success nor failure, remains inline and 
 
 ## 23. Responsive / mobile
 
-Do not squeeze the desktop tab strip or permanent rail onto phone width. Keep two separate controls: **Bàn làm việc** opens the registry launcher; **Đang mở** is the compact selector for open workbenches. The latter names the active workbench and unsaved/attention state, exposes all open workbenches, and provides a reachable close action. The compact account/environment utility remains reachable without repeating its content in the launcher. The existing desktop breakpoint (64rem) is the initial switcher boundary; certify content at intermediate widths as well as phone width.
+Do not squeeze the desktop tab strip or permanent rail onto phone width. Keep two separate controls: **Chức năng** opens the registry launcher; **Đang mở** is the compact selector for open workbenches. The latter names the active workbench and unsaved/attention state, exposes all open workbenches, and provides a reachable close action. The compact account/environment utility remains reachable without repeating its content in the launcher. The existing desktop breakpoint (64rem) is the initial switcher boundary; certify content at intermediate widths as well as phone width.
 
 Preserve 44px touch targets, long Vietnamese labels, local table overflow and focused-field reveal. No document-wide horizontal overflow, clipped Save/release footers or mobile card conversion that drops identity/quantity/Unit. Verify 1920×1080, 1440×900, 1366×768, 650×900 and 360×800, including selected/dirty/error states and 12 open tabs.
 

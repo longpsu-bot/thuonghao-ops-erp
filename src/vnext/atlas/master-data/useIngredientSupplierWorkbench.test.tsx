@@ -703,7 +703,7 @@ describe("useIngredientSupplierWorkbench", () => {
     await act(async () => void (await result.current.saveReview()));
     expect(result.current.lock).toBe("readback");
     expect(result.current.notice).toBe(
-      "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
+      "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
     );
     expect(api.updateIngredient).toHaveBeenCalledTimes(1);
   });

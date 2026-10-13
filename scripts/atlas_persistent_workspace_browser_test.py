@@ -13,9 +13,9 @@ LABELS = {"need": "Lập nhu cầu", "procurement": "Kế hoạch mua hàng", "r
 
 
 def launch(page, label):
-    page.get_by_role("button", name="Bàn làm việc", exact=True).click()
-    page.get_by_role("dialog", name="Bàn làm việc", exact=True).get_by_role("button", name=label, exact=True).click()
-    expect(page.get_by_role("dialog", name="Bàn làm việc", exact=True)).to_have_count(0)
+    page.get_by_role("button", name="Chức năng", exact=True).click()
+    page.get_by_role("dialog", name="Chức năng", exact=True).get_by_role("button", name=label, exact=True).click()
+    expect(page.get_by_role("dialog", name="Chức năng", exact=True)).to_have_count(0)
 
 
 def select(page, kind):
@@ -80,7 +80,7 @@ def capacity(browser, url, root, results, full_page=True, save_image=True):
         if width > 1024:
             tabs = page.get_by_role("tab")
             expect(tabs).to_have_count(12)
-            strip = page.get_by_role("tablist", name="Bàn làm việc đang mở")
+            strip = page.get_by_role("tablist", name="Màn hình đang mở")
             assert strip.evaluate("e=>e.scrollWidth>e.clientWidth")
             tabs.first.focus()
             for index in range(12):
@@ -95,7 +95,7 @@ def capacity(browser, url, root, results, full_page=True, save_image=True):
             expect(tabs.first).to_be_focused()
         else:
             page.get_by_role("button", name=re.compile("^Đang mở:")).click()
-            popup = page.get_by_role("dialog", name="Bàn làm việc đang mở", exact=True)
+            popup = page.get_by_role("dialog", name="Màn hình đang mở", exact=True)
             expect(popup.get_by_role("button")).to_have_count(24)
             for index in range(12):
                 button = popup.locator("button[data-destination]").nth(index)
@@ -134,13 +134,13 @@ def workspace(browser, url, root, results):
         expect(dish).to_have_value("Món giữ trong bàn làm việc")
         expect(note).to_have_value("Giao cổng phụ")
         capture(page, root, f"multiple-dirty-signout-{width}x{height}", results)
-        page.get_by_role("button", name="Bàn làm việc", exact=True).click()
+        page.get_by_role("button", name="Chức năng", exact=True).click()
         capture(page, root, f"launcher-{width}x{height}", results)
-        page.get_by_role("textbox", name="Tìm bàn làm việc", exact=True).fill("cong thuc")
+        page.get_by_role("textbox", name="Tìm chức năng", exact=True).fill("cong thuc")
         page.keyboard.press("ArrowDown")
         expect(page.get_by_role("button", name="Công thức", exact=True)).to_be_focused()
         page.keyboard.press("Escape")
-        expect(page.get_by_role("button", name="Bàn làm việc", exact=True)).to_be_focused()
+        expect(page.get_by_role("button", name="Chức năng", exact=True)).to_be_focused()
         if width < 1024:
             page.get_by_role("button", name=re.compile("^Đang mở:")).click()
             capture(page, root, f"open-selector-{width}x{height}", results)
@@ -155,7 +155,7 @@ def workspace(browser, url, root, results):
         page.get_by_role("button", name="Bỏ thay đổi", exact=True).click()
         expect(school).to_have_count(0)
         if width >= 1024:
-            expect(page.get_by_role("tablist", name="Bàn làm việc đang mở").get_by_role("tab", name=re.compile("^Công thức"))).to_be_focused()
+            expect(page.get_by_role("tablist", name="Màn hình đang mở").get_by_role("tab", name=re.compile("^Công thức"))).to_be_focused()
         else:
             expect(page.get_by_role("button", name=re.compile("^Đang mở:"))).to_be_focused()
         expect(dish).to_have_value("Món giữ trong bàn làm việc")

@@ -72,11 +72,11 @@ function show() {
 }
 
 async function nav(label: string) {
-  fireEvent.click(await screen.findByRole("button", { name: "Bàn làm việc" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Chức năng" }));
   fireEvent.click(await screen.findByRole("button", { name: label }));
   await waitFor(() =>
     expect(
-      screen.queryByRole("dialog", { name: "Bàn làm việc" }),
+      screen.queryByRole("dialog", { name: "Chức năng" }),
     ).not.toBeInTheDocument(),
   );
 }
@@ -87,7 +87,7 @@ describe("Atlas pre-cutover UI polish", () => {
     expect(screen.queryByText("Vận hành trường học")).not.toBeInTheDocument();
     expect(screen.getByText("Hôm nay: 07/09/2026")).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+    fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
     const procurement = await screen.findByRole("button", {
       name: "Phân bổ NCC",
     });

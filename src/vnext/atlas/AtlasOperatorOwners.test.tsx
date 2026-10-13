@@ -60,9 +60,9 @@ function show(
   return { apis, signOut };
 }
 async function open(name: string) {
-  fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+  fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
   fireEvent.click(
-    within(screen.getByRole("dialog", { name: "Bàn làm việc" })).getByRole(
+    within(screen.getByRole("dialog", { name: "Chức năng" })).getByRole(
       "button",
       { name },
     ),
@@ -413,10 +413,10 @@ it.each([false, true])(
     expect(orders).toHaveBeenCalledTimes(differentDate ? 3 : 2); // Mount/date reads plus command proof; activation adds no read.
     expect(search).toHaveValue("Giữ bộ lọc");
     expect(
-      screen.getByText(/^Đã mở bàn Đơn mua từ Phân bổ NCC /),
+      screen.getByText(/^Đã mở Đơn mua từ Phân bổ NCC /),
     ).toHaveTextContent("Hãy tải lại dữ liệu để xem kết quả mới");
     expect(
-      screen.getByText(/^Đã mở bàn Đơn mua từ Phân bổ NCC /),
+      screen.getByText(/^Đã mở Đơn mua từ Phân bổ NCC /),
     ).toHaveTextContent(
       `giữ khoảng ngày ${differentDate ? "2026-09-11" : reviewDate} → ${differentDate ? "2026-09-11" : reviewDate}`,
     );

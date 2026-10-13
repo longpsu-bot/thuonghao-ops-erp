@@ -337,7 +337,7 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
             p="sm"
           >
             <Text as="legend" textStyle="helper">
-              Chọn món và trường để kiểm tra tác động
+              Kiểm tra tác động
             </Text>
             <Grid templateColumns="repeat(2, minmax(0, 1fr))" gap="sm">
               {d.audience === "all" && (
