@@ -7,6 +7,15 @@ on:
         description: Exact full commit SHA already certified on main
         required: true
         type: string
+      purchase_acceptance:
+        description: One hosted migration-105 Purchase Preparation and exact replay
+        required: true
+        type: boolean
+        default: false
+      replay_evidence_run_id:
+        description: Replay only the confirmed successful request in this original run artifact
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -60,4 +69,40 @@ jobs:
         run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}" --certification github --preflight
 
       - name: Verify rollback-only Planning performance
+        if: ${{ inputs.purchase_acceptance == false }}
         run: node scripts/verify-staging-planning-performance.mjs --commit-sha "${{ inputs.commit_sha }}"
+
+      - name: Load bounded acceptance harness from workflow revision
+        if: ${{ inputs.purchase_acceptance == true }}
+        env:
+          HARNESS_SHA: ${{ github.workflow_sha }}
+        run: |
+          git fetch origin "$HARNESS_SHA"
+          git show "$HARNESS_SHA:scripts/hosted-purchase-acceptance.mjs" > scripts/hosted-purchase-acceptance.mjs
+          git show "$HARNESS_SHA:scripts/hosted-purchase-acceptance.test.mjs" > scripts/hosted-purchase-acceptance.test.mjs
+          pnpm exec vitest run scripts/hosted-purchase-acceptance.test.mjs --environment node
+
+      - name: Load original command identity for exact replay only
+        if: ${{ inputs.purchase_acceptance == true && inputs.replay_evidence_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: hosted-purchase-acceptance-${{ inputs.replay_evidence_run_id }}
+          path: artifacts/hosted-purchase-original
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.replay_evidence_run_id }}
+
+      - name: Execute hosted Purchase Preparation acceptance
+        if: ${{ inputs.purchase_acceptance == true }}
+        env:
+          ATLAS_ACCEPTANCE_MAIN_SHA: ${{ inputs.commit_sha }}
+          ATLAS_ACCEPTANCE_REPLAY_RUN_ID: ${{ inputs.replay_evidence_run_id }}
+        run: node scripts/hosted-purchase-acceptance.mjs
+
+      - name: Preserve acceptance and recovery evidence
+        if: ${{ always() && inputs.purchase_acceptance == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-purchase-acceptance-${{ github.run_id }}
+          path: artifacts/hosted-purchase-acceptance
+          if-no-files-found: warn
+          retention-days: 14
