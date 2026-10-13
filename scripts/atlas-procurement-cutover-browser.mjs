@@ -469,6 +469,13 @@ async function main() {
       "authenticated_shell",
     );
     stage = "allocation";
+    await until(
+      () =>
+        evaluate(
+          "Boolean([...document.querySelectorAll('button[aria-label=\"Làm mới dữ liệu\"]')].find(e=>e.getClientRects().length&&!e.disabled))",
+        ),
+      "initial_school_read_ready",
+    );
     await click("Kế hoạch mua hàng");
     await until(
       () =>
@@ -493,6 +500,20 @@ async function main() {
     b.refresh = "PASS";
     stage = "leave_return";
     await click("Trường học");
+    await until(
+      () =>
+        evaluate(
+          "Boolean(document.querySelector('section[aria-label=\"Sĩ số mặc định\"]') || document.body.innerText.includes('Sĩ số mặc định'))",
+        ),
+      "left_procurement",
+    );
+    await until(
+      () =>
+        evaluate(
+          "Boolean([...document.querySelectorAll('button[aria-label=\"Làm mới dữ liệu\"]')].find(e=>e.getClientRects().length&&!e.disabled))",
+        ),
+      "school_read_ready",
+    );
     await click("Kế hoạch mua hàng");
     await allocationReady();
     b.leave_return = "PASS";
@@ -640,6 +661,13 @@ async function main() {
           "Boolean(!document.querySelector('#atlas-signin-email') && document.querySelector('aside'))",
         ),
       "session_after_reload",
+    );
+    await until(
+      () =>
+        evaluate(
+          "Boolean([...document.querySelectorAll('button[aria-label=\"Làm mới dữ liệu\"]')].find(e=>e.getClientRects().length&&!e.disabled))",
+        ),
+      "reloaded_school_read_ready",
     );
     await click("Kế hoạch mua hàng");
     await setRange(allocationPanel, "Ngày phục vụ");
