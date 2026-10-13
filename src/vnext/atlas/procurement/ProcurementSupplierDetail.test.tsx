@@ -34,6 +34,37 @@ const quantity = (name: string, value: string) =>
     target: { value },
   });
 describe("Supplier decisions", () => {
+  it.each(["\u00a0", "\u2003", "\u000b"])(
+    "preserves backend-significant note suffix %j",
+    (suffix) => {
+      const row = reviewFamily("manual_split");
+      row.splits[0]!.supplier_note = `Giao sớm${suffix}`;
+      const { onSave } = show(row);
+      const note = screen.getByRole("textbox", {
+        name: "Ghi chú cho NCC An Phú",
+      });
+      expect(
+        screen.getByRole("button", { name: "Lưu phân bổ" }),
+      ).toBeDisabled();
+      fireEvent.change(note, { target: { value: "Giao sớm" } });
+      expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+      fireEvent.change(note, { target: { value: `Giao sớm${suffix}` } });
+      expect(
+        screen.getByRole("button", { name: "Lưu phân bổ" }),
+      ).toBeDisabled();
+      quantity("NCC An Phú", "50");
+      quantity("NCC Bình Minh", "50");
+      click("Lưu phân bổ");
+      expect(onSave).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            supplier_id: "supplier-a",
+            supplier_note: `Giao sớm${suffix}`,
+          }),
+        ]),
+      );
+    },
+  );
   it("treats a supplier note as part of the saved allocation decision", async () => {
     const row = reviewFamily("manual_split");
     row.splits[0]!.supplier_note = "Loại 500g/gói";
@@ -78,7 +109,7 @@ describe("Supplier decisions", () => {
         minHeight: "var(--atlas-layout-mobile-target, 44px)",
       });
     }
-    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
     expect(
       screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
     ).not.toBeInTheDocument();
@@ -99,7 +130,7 @@ describe("Supplier decisions", () => {
     expect(
       screen.getByRole("status", { name: "Cân đối phân bổ" }),
     ).toHaveTextContent("100 / 100 kg đã phân bổ · Đã đủ");
-    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
   });
   it.each(["bad", "", "-1", "60.0000001", "1e2"])(
     "rejects invalid quantity %s",
@@ -114,18 +145,140 @@ describe("Supplier decisions", () => {
       ).toHaveAttribute("aria-invalid", "true");
     },
   );
-  it("applies recommendation only to local draft then sends exact strings on explicit Save", () => {
-    const { onSave } = show();
-    click("Dùng đề xuất");
+  it("opens the exact derived baseline and closes without Save or dirty protection", () => {
+    const { onSave, onClose } = show();
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("100");
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("100 / 100 kg đã phân bổ · Đã đủ");
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Mặc định #1")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Dùng đề xuất" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    click("Lưu phân bổ");
     expect(onSave).not.toHaveBeenCalled();
+    click("Đóng");
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+  it("saves a real note override with exact quantities and restores semantic baseline", () => {
+    const { onSave } = show();
+    const note = screen.getByRole("textbox", {
+      name: "Ghi chú cho NCC An Phú",
+    });
+    fireEvent.change(note, { target: { value: "Giao sớm" } });
+    expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    // Applying the proposal retains this note, so it would be a no-op.
+    expect(
+      screen.queryByRole("button", { name: "Dùng đề xuất" }),
+    ).not.toBeInTheDocument();
     click("Lưu phân bổ");
     expect(onSave).toHaveBeenCalledWith([
       {
         supplier_id: "supplier-a",
         allocated_quantity: "100.000000",
-        supplier_note: null,
+        supplier_note: "Giao sớm",
       },
     ]);
+    fireEvent.change(note, { target: { value: "   " } });
+    quantity("NCC An Phú", "100.000000");
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+  });
+  it("changes Supplier, adds a split, and removes it back to the exact derived baseline", () => {
+    show();
+    click("+ Thêm nhà cung ứng");
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
+      {
+        target: { value: "supplier-b" },
+      },
+    );
+    click("Thêm");
+    quantity("NCC An Phú", "0");
+    quantity("NCC Bình Minh", "100");
+    expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    quantity("NCC An Phú", "40");
+    quantity("NCC Bình Minh", "60");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    click("Xóa NCC Bình Minh");
+    quantity("NCC An Phú", "100");
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Dùng đề xuất" }),
+    ).not.toBeInTheDocument();
+  });
+  it("retains a persisted manual baseline over preference and disables exact restoration", () => {
+    const row = reviewFamily("manual_split");
+    row.recommendation = reviewFamily().recommendation;
+    const { onSave } = show(row);
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Dùng đề xuất" })).toBeEnabled();
+    quantity("NCC An Phú", "50");
+    quantity("NCC Bình Minh", "50");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    quantity("NCC An Phú", "60.000000");
+    quantity("NCC Bình Minh", "40");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+  it("does not create manual authority for an added zero split omitted by Save", () => {
+    const { onSave } = show();
+    click("+ Thêm nhà cung ứng");
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
+      {
+        target: { value: "supplier-b" },
+      },
+    );
+    click("Thêm");
+    quantity("NCC Bình Minh", "0");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    click("Lưu phân bổ");
+    expect(onSave).not.toHaveBeenCalled();
+  });
+  it("lets an operator split the seeded default and return to it without losing its note", () => {
+    show();
+    const note = screen.getByRole("textbox", {
+      name: "Ghi chú cho NCC An Phú",
+    });
+    fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
+    quantity("NCC An Phú", "40");
+    click("+ Thêm nhà cung ứng");
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
+      { target: { value: "supplier-b" } },
+    );
+    click("Thêm");
+    quantity("NCC Bình Minh", "60");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+
+    click("Dùng đề xuất");
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("100");
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+    ).toHaveValue("Giao trước 05:30");
+    expect(
+      screen.queryByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+    ).not.toBeInTheDocument();
   });
   it("keeps prior splits authoritative while applying a rebalance locally", () => {
     const row = reviewFamily("rebalance");

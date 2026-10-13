@@ -12,6 +12,7 @@ import type {
 
 export type ProcurementReviewScenario =
   | "normal"
+  | "oct12_recommendations"
   | "manual_split"
   | "rebalance"
   | "needs_reallocation"
@@ -29,6 +30,7 @@ export type ProcurementReviewScenario =
   | "cancellation_required"
   | "superseded";
 export const reviewDate = "2026-09-10";
+export const oct12ReviewDate = "2026-10-12";
 export const reviewSchools: ProcurementSchoolOption[] = Array.from(
   { length: 33 },
   (_, index) => ({
@@ -41,6 +43,15 @@ export const reviewSchools: ProcurementSchoolOption[] = Array.from(
           : `Trường học ${String(index + 1).padStart(2, "0")}`,
   }),
 );
+export const oct12ReviewSchools: ProcurementSchoolOption[] = [
+  { school_id: "school-an-phu", school_name: "AN PHÚ (BD)" },
+  {
+    school_id: "school-binh-my",
+    school_name: "BÌNH MỸ - BÌNH DƯƠNG",
+  },
+  { school_id: "school-phu-cuong", school_name: "PHÚ CƯỜNG" },
+  { school_id: "school-tan-dinh", school_name: "TÂN ĐỊNH" },
+];
 export function reviewSuccess(value: object = {}): AtlasRpcResult {
   return {
     kind: "success",
@@ -74,6 +85,9 @@ export const reviewUnknown: AtlasRpcResult = {
 export function reviewFamily(
   scenario: ProcurementReviewScenario = "normal",
 ): AllocationFamilyRow {
+  const isOct12Review = scenario === "oct12_recommendations";
+  const serviceDate = isOct12Review ? oct12ReviewDate : reviewDate;
+  const school = isOct12Review ? oct12ReviewSchools[0]! : reviewSchools[0]!;
   const saved = [
     "manual_split",
     "rebalance",
@@ -85,7 +99,7 @@ export function reviewFamily(
       source_kind: "CONFIRMED_NEED",
       source_confirmed_need_batch_id: "private-batch",
       source_confirmed_need_batch_version: 3,
-      service_date: reviewDate,
+      service_date: serviceDate,
       delivery_location_id: "location-0",
       ingredient_id: "ingredient-0",
       unit_id: "unit-kg",
@@ -93,14 +107,14 @@ export function reviewFamily(
       version: saved ? 2 : 0,
       source_fingerprint: "private-fingerprint",
     },
-    service_date: reviewDate,
+    service_date: serviceDate,
     delivery_location_id: "location-0",
-    location_name: "Bếp chính Nguyễn Du",
-    school_id: "school-0",
-    school_name: reviewSchools[0]!.school_name,
-    schools: [reviewSchools[0]!],
+    location_name: isOct12Review ? school.school_name : "Bếp chính Nguyễn Du",
+    school_id: school.school_id,
+    school_name: school.school_name,
+    schools: [school],
     ingredient_id: "ingredient-0",
-    ingredient_name: "Gạo thơm",
+    ingredient_name: isOct12Review ? "Cà rốt" : "Gạo thơm",
     unit_id: "unit-kg",
     unit_code: "kg",
     family_quantity:
@@ -108,7 +122,9 @@ export function reviewFamily(
         ? null
         : scenario === "rebalance"
           ? "120.000000"
-          : "100.000000",
+          : isOct12Review
+            ? "12.000000"
+            : "100.000000",
     complete: scenario !== "blocked",
     contributions: [],
     contribution_count: 2,
@@ -133,13 +149,17 @@ export function reviewFamily(
         ]
       : [],
     eligible_suppliers: [
-      { supplier_id: "supplier-a", supplier_name: "NCC An Phú", priority: 1 },
+      {
+        supplier_id: "supplier-a",
+        supplier_name: isOct12Review ? "AN THÀNH ĐÔ" : "NCC An Phú",
+        priority: 1,
+      },
       ...(scenario === "needs_reallocation"
         ? []
         : [
             {
               supplier_id: "supplier-b",
-              supplier_name: "NCC Bình Minh",
+              supplier_name: isOct12Review ? "MM MEGA MARKET" : "NCC Bình Minh",
               priority: 2,
             },
           ]),
@@ -164,7 +184,7 @@ export function reviewFamily(
         ? null
         : {
             supplier_id: "supplier-a",
-            allocated_quantity: "100.000000",
+            allocated_quantity: isOct12Review ? "12.000000" : "100.000000",
             split_ratio: "1.000000000000",
           },
     rebalance_proposal:
@@ -197,6 +217,8 @@ export function reviewFamily(
 export function reviewOrder(
   scenario: ProcurementReviewScenario = "po_draft",
 ): SchoolCateringPurchaseOrder {
+  const serviceDate =
+    scenario === "oct12_recommendations" ? oct12ReviewDate : reviewDate;
   const released = [
     "po_released",
     "replacement_required",
@@ -210,7 +232,7 @@ export function reviewOrder(
       supplier_name: "NCC An Phú",
       supplier_status: "ACTIVE",
     },
-    service_date: reviewDate,
+    service_date: serviceDate,
     status:
       scenario === "superseded"
         ? "SUPERSEDED"
@@ -265,7 +287,7 @@ export function reviewOrder(
           delivery_location_id: "location-0",
           location_name: "Bếp chính Nguyễn Du",
         },
-        service_date: reviewDate,
+        service_date: serviceDate,
         school_breakdown: released
           ? [
               {
@@ -314,29 +336,34 @@ export function reviewOrder(
 export function createProcurementReviewFixture(
   scenario: ProcurementReviewScenario = "normal",
 ) {
+  const serviceDate =
+    scenario === "oct12_recommendations" ? oct12ReviewDate : reviewDate;
+  const preparationReady = ["ready", "oct12_recommendations"].includes(
+    scenario,
+  );
   const fixture = {
     allocation: {
       success: true,
       contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
-      date_start: reviewDate,
-      date_end: reviewDate,
+      date_start: serviceDate,
+      date_end: serviceDate,
       rows: scenario === "empty" ? [] : [reviewFamily(scenario)],
       warnings: [],
       blockers: [],
       preparation: {
-        service_date: reviewDate,
+        service_date: serviceDate,
         confirmed_need_batch_id: "private-batch",
         expected_version: 3,
-        ready: scenario === "ready",
-        allowed: scenario === "ready",
-        blockers: scenario === "ready" ? [] : ["ALLOCATION_IMBALANCED"],
+        ready: preparationReady,
+        allowed: preparationReady,
+        blockers: preparationReady ? [] : ["ALLOCATION_IMBALANCED"],
       },
     } as ConfirmedAllocationWorkbench,
     orders: {
       success: true,
       contract_version: "SCHOOL-CATERING-PROCUREMENT.v1",
-      date_start: reviewDate,
-      date_end: reviewDate,
+      date_start: serviceDate,
+      date_end: serviceDate,
       purchase_orders: scenario === "empty" ? [] : [reviewOrder(scenario)],
       procurement_current: true,
       blockers: [],

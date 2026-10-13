@@ -127,9 +127,23 @@ describe("Confirmed Need Chakra operator surface", () => {
     } as DOMRect);
     fireEvent.focus(reason);
     expect(viewport.scrollLeft).toBe(138);
+    const stickyIdentity = reason
+      .closest("tr")!
+      .querySelector<HTMLElement>('[data-field="identity"]')!;
+    vi.spyOn(stickyIdentity, "getBoundingClientRect").mockReturnValue({
+      left: 19,
+      right: 239,
+    } as DOMRect);
+    vi.spyOn(reason, "getBoundingClientRect").mockReturnValue({
+      left: 132,
+      right: 258,
+    } as DOMRect);
+    viewport.scrollLeft = 238;
+    fireEvent.focus(reason);
+    expect(viewport.scrollLeft).toBe(131);
     expect(await quantity()).toHaveValue("12,5");
   });
-  it("composes a local table with unpinned narrow identity and a vertical sticky header", async () => {
+  it("composes a School-first table with a sticky recipient identity and separate Ingredient", async () => {
     show();
     await quantity();
 
@@ -152,36 +166,92 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(
       within(viewport).getByRole("table", { name: "Nhu cầu xác nhận" }),
     ).toHaveStyle({
-      minWidth: "var(--atlas-layout-confirmed-need-table-min, 1040px)",
+      minWidth: "var(--atlas-layout-confirmed-need-table-min, 1120px)",
       width: "100%",
       tableLayout: "fixed",
     });
-    expect(within(viewport).getAllByRole("columnheader")).toHaveLength(5);
+    expect(within(viewport).getAllByRole("columnheader")).toHaveLength(6);
+    expect(
+      within(viewport)
+        .getAllByRole("columnheader")
+        .slice(0, 2)
+        .map((header) => header.textContent),
+    ).toEqual(["Trường / nơi nhận", "Nguyên liệu"]);
     expect(
       within(viewport).getByRole("columnheader", {
-        name: "Nguyên liệu / nơi nhận",
+        name: "Trường / nơi nhận",
       }),
     ).toHaveStyle({
-      position: "static",
-      left: "var(--atlas-layout-auto, auto)",
+      position: "sticky",
+      left: "var(--atlas-layout-zero, 0)",
       background: "var(--atlas-colors-bg-table-header)",
       zIndex: "var(--atlas-layout-sticky-identity-header-z, 5)",
     });
-    expect(
-      within(viewport).getByText("Gạo thơm").closest('[data-field="identity"]'),
-    ).toHaveStyle({
-      position: "static",
-      left: "var(--atlas-layout-auto, auto)",
+    const firstRow = (await quantity()).closest("tr")!;
+    expect(firstRow.querySelector('[data-field="identity"]')).toHaveStyle({
+      position: "sticky",
+      left: "var(--atlas-layout-zero, 0)",
       background: "var(--atlas-colors-bg-workbench)",
       zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
     });
     expect(
-      within(
-        within(viewport)
-          .getByText("Gạo thơm")
-          .closest('[data-field="identity"]')!,
-      ).queryByText("Đã lưu"),
+      firstRow.querySelector('[data-field="ingredient"]'),
+    ).toHaveTextContent("Gạo thơm");
+    expect(
+      within(firstRow.querySelector('[data-field="identity"]')!).queryByText(
+        "Đã lưu",
+      ),
     ).not.toBeInTheDocument();
+  });
+
+  it("deduplicates exact destinations and defaults to School then Ingredient order", async () => {
+    show("normal", {}, (fixture) => {
+      const [first, second, third] = fixture.batch.lines;
+      Object.assign(first!, {
+        school: { id: "school-b", name: "BÌNH MỸ - BÌNH DƯƠNG" },
+        delivery_location: {
+          id: "location-b",
+          name: "BINH MY - BINH DUONG",
+        },
+        ingredient: { id: "ingredient-c", name: "Cà rốt" },
+      });
+      Object.assign(second!, {
+        school: { id: "school-a", name: "AN PHÚ (BD)" },
+        delivery_location: { id: "location-a2", name: "PHÂN HIỆU 2" },
+        ingredient: { id: "ingredient-g", name: "Gạo thơm" },
+      });
+      Object.assign(third!, {
+        school: { id: "school-a", name: "AN PHÚ (BD)" },
+        delivery_location: { id: "location-a", name: "AN PHÚ (BD)" },
+        ingredient: { id: "ingredient-b", name: "Bí đỏ" },
+      });
+      fixture.batch.lines = [first!, second!, third!];
+      fixture.batch.line_counts.total = 3;
+      fixture.batch.line_counts.confirmed = 3;
+      fixture.batch.pagination.total_lines = 3;
+    });
+    await screen.findByRole("table", { name: "Nhu cầu xác nhận" });
+
+    const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    expect(
+      rows.map((row) => {
+        const cells = within(row).getAllByRole("cell");
+        return `${cells[0]!.textContent}|${cells[1]!.textContent}`;
+      }),
+    ).toEqual([
+      "AN PHÚ (BD)|Bí đỏ",
+      "AN PHÚ (BD)PHÂN HIỆU 2|Gạo thơm",
+      "BÌNH MỸ - BÌNH DƯƠNGBINH MY - BINH DUONG|Cà rốt",
+    ]);
+    expect(within(rows[0]!).getAllByText("AN PHÚ (BD)")).toHaveLength(1);
+    expect(within(rows[1]!).getByText("PHÂN HIỆU 2")).toHaveAttribute(
+      "data-row-secondary",
+      "",
+    );
+    expect(within(rows[2]!).getByText("BINH MY - BINH DUONG")).toHaveAttribute(
+      "data-row-secondary",
+      "",
+    );
   });
 
   it("keeps search and refresh immediate while compact filters disclose a truthful scope summary", async () => {
@@ -622,7 +692,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Xác nhận nhu cầu",
     );
-    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(6);
     expect(document.body.textContent).not.toMatch(
       /batch-current|line-0|revision-0|decision-0|DRAFT_REVIEW/,
     );
@@ -839,8 +909,11 @@ describe("Confirmed Need Chakra operator surface", () => {
     fireEvent.scroll(viewport);
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Sắp xếp theo Nguyên liệu / nơi nhận",
+        name: "Sắp xếp theo Trường / nơi nhận",
       }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sắp xếp theo Nguyên liệu" }),
     );
     fireEvent.click(
       screen.getByRole("button", { name: "Sắp xếp theo Đề xuất vận hành" }),

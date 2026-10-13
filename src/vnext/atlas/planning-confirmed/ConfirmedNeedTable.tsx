@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import type { CSSProperties } from "react";
 import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import {
   atlasDefaultSort,
   compareAtlasBigInt,
@@ -40,29 +41,37 @@ export function ConfirmedNeedTable({
   compactEditing?: boolean;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
-  type SortKey = "identity" | "proposal";
+  type SortKey = "school" | "ingredient" | "proposal";
   const id = useId();
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
-  const sortedLines = sortAtlasRows(lines, sort, {
-    identity: (left, right) => {
-      const ingredient = compareAtlasText(
-        left.ingredient.name,
-        right.ingredient.name,
-      );
-      return (
-        ingredient ||
-        compareAtlasText(
-          `${left.school.name} ${left.delivery_location.name}`,
-          `${right.school.name} ${right.delivery_location.name}`,
-        )
-      );
-    },
+  const compareSchool = (left: ConfirmedNeedLine, right: ConfirmedNeedLine) =>
+    compareCanonicalSchools(
+      { school_id: left.school.id, school_name: left.school.name },
+      { school_id: right.school.id, school_name: right.school.name },
+    ) ||
+    compareAtlasText(left.delivery_location.name, right.delivery_location.name);
+  const comparators = {
+    school: compareSchool,
+    ingredient: (left, right) =>
+      compareAtlasText(left.ingredient.name, right.ingredient.name),
     proposal: (left, right) =>
       compareAtlasBigInt(
         parseExactQuantity(left.proposed_confirmed_quantity),
         parseExactQuantity(right.proposed_confirmed_quantity),
       ),
-  });
+  } satisfies Record<
+    SortKey,
+    (left: ConfirmedNeedLine, right: ConfirmedNeedLine) => number
+  >;
+  const sortedLines =
+    sort.direction === "default" || sort.key === null
+      ? [...lines].sort(
+          (left, right) =>
+            compareSchool(left, right) ||
+            compareAtlasText(left.ingredient.name, right.ingredient.name) ||
+            left.service_date.localeCompare(right.service_date),
+        )
+      : sortAtlasRows(lines, sort, comparators);
   const onSort = (key: SortKey) =>
     setSort((current) => nextAtlasSort(current, key));
   return (
@@ -78,10 +87,20 @@ export function ConfirmedNeedTable({
         const viewport = event.currentTarget;
         const visible = viewport.getBoundingClientRect();
         const bounds = control.getBoundingClientRect();
+        const stickyIdentity = control
+          .closest("[data-confirmed-need-line]")
+          ?.querySelector<HTMLElement>('[data-field="identity"]');
+        const usableLeft = control.closest('[data-field="identity"]')
+          ? visible.left
+          : Math.max(
+              visible.left,
+              stickyIdentity?.getBoundingClientRect().right ?? visible.left,
+            );
         // Native focus can leave a partially visible field clipped. Reveal only
-        // its nearest horizontal edge within this table, without moving the page.
-        if (bounds.left < visible.left)
-          viewport.scrollLeft += bounds.left - visible.left;
+        // its nearest horizontal edge within this table, including space covered
+        // by the frozen recipient cell, without moving the page.
+        if (bounds.left < usableLeft)
+          viewport.scrollLeft += bounds.left - usableLeft;
         else if (bounds.right > visible.right)
           viewport.scrollLeft += bounds.right - visible.right;
       }}
@@ -107,30 +126,36 @@ export function ConfirmedNeedTable({
             "--atlas-confirmed-need-row-min-height": "46px",
           } as CSSProperties
         }
-        minW="var(--atlas-layout-confirmed-need-table-min, 1040px)"
-        w="var(--atlas-layout-confirmed-need-table-width, 1040px)"
+        minW="var(--atlas-layout-confirmed-need-table-min, 1120px)"
+        w="var(--atlas-layout-confirmed-need-table-width, 1120px)"
         tableLayout="fixed"
       >
         <Table.ColumnGroup>
-          <Table.Column w="var(--atlas-confirmed-identity-width, 260px)" />
-          <Table.Column w="var(--atlas-confirmed-proposal-width, 150px)" />
-          <Table.Column w="var(--atlas-confirmed-quantity-width, 180px)" />
-          <Table.Column w="var(--atlas-confirmed-delta-width, 130px)" />
-          <Table.Column w="var(--atlas-confirmed-reason-width, 320px)" />
+          <Table.Column w="var(--atlas-confirmed-school-width, 220px)" />
+          <Table.Column w="var(--atlas-confirmed-ingredient-width, 180px)" />
+          <Table.Column w="var(--atlas-confirmed-proposal-width, 140px)" />
+          <Table.Column w="var(--atlas-confirmed-quantity-width, 170px)" />
+          <Table.Column w="var(--atlas-confirmed-delta-width, 110px)" />
+          <Table.Column w="var(--atlas-confirmed-reason-width, 300px)" />
         </Table.ColumnGroup>
         <Table.Header>
           <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
             <AtlasSortableColumnHeader
-              label="Nguyên liệu / nơi nhận"
-              columnKey="identity"
+              label="Trường / nơi nhận"
+              columnKey="school"
               sort={sort}
               onSort={onSort}
-              position={{ base: "static", xl: "sticky" }}
-              left={{
-                base: "var(--atlas-layout-auto, auto)",
-                xl: "var(--atlas-layout-zero, 0)",
-              }}
+              position="sticky"
+              left="var(--atlas-layout-zero, 0)"
               zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
+              h="var(--atlas-confirmed-need-header-height)"
+              py="var(--atlas-layout-zero, 0)"
+            />
+            <AtlasSortableColumnHeader
+              label="Nguyên liệu"
+              columnKey="ingredient"
+              sort={sort}
+              onSort={onSort}
               h="var(--atlas-confirmed-need-header-height)"
               py="var(--atlas-layout-zero, 0)"
             />
@@ -194,6 +219,8 @@ export function ConfirmedNeedTable({
             const attention = ["NEW", "CHANGED", "UNREVIEWED"].includes(
               line.confirmation_state,
             );
+            const duplicateRecipient =
+              line.school.name.trim() === line.delivery_location.name.trim();
             const showReasonChrome = Boolean(
               adjusted ||
               draft.reason_note ||
@@ -209,27 +236,26 @@ export function ConfirmedNeedTable({
               >
                 <Table.Cell
                   data-field="identity"
-                  minW="var(--atlas-layout-identity-width, 210px)"
-                  position={{ base: "static", xl: "sticky" }}
-                  left={{
-                    base: "var(--atlas-layout-auto, auto)",
-                    xl: "var(--atlas-layout-zero, 0)",
-                  }}
+                  minW="var(--atlas-layout-identity-width, 230px)"
+                  position="sticky"
+                  left="var(--atlas-layout-zero, 0)"
                   style={{
                     zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
                     background: "var(--atlas-colors-bg-workbench)",
                   }}
                 >
-                  <Text data-role="ingredient-name" fontWeight="semibold">
-                    {line.ingredient.name}
+                  <Text data-role="recipient" fontWeight="semibold">
+                    {line.school.name}
                   </Text>
-                  <Text
-                    data-role="recipient"
-                    textStyle="helper"
-                    color="fg.muted"
-                  >
-                    {line.school.name} · {line.delivery_location.name}
-                  </Text>
+                  {!duplicateRecipient && (
+                    <Text
+                      data-row-secondary=""
+                      textStyle="helper"
+                      color="fg.muted"
+                    >
+                      {line.delivery_location.name}
+                    </Text>
+                  )}
                   {attention && (
                     <Text textStyle="helper" color="status.warning">
                       ⚠{" "}
@@ -238,6 +264,11 @@ export function ConfirmedNeedTable({
                       )}
                     </Text>
                   )}
+                </Table.Cell>
+                <Table.Cell data-field="ingredient">
+                  <Text data-role="ingredient-name" fontWeight="medium">
+                    {line.ingredient.name}
+                  </Text>
                 </Table.Cell>
                 <Table.Cell
                   data-field="operational-proposal"

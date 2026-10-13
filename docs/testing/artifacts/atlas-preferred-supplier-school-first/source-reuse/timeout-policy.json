@@ -1,0 +1,14 @@
+[
+  {
+    "case": "approved_prepare_20s",
+    "passed": true
+  },
+  {
+    "case": "prepare_21s_rejected",
+    "passed": true
+  },
+  {
+    "case": "other_function_20s_rejected",
+    "passed": true
+  }
+]

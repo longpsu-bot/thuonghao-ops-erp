@@ -68,7 +68,9 @@ order by (config.setrole<>0) desc,(config.setdatabase<>0) desc limit 1;
 do $policy$ begin
  if not exists(select 1 from correction_timeout_policy) then raise exception 'CORRECTION_TIMEOUT_POLICY_MISSING'; end if;
  if exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace,
-   lateral unnest(p.proconfig) c where n.nspname in ('atlas_api','atlas_core','atlas_planning') and c like 'statement_timeout=%') then
+   lateral unnest(p.proconfig) c where n.nspname in ('atlas_api','atlas_core','atlas_planning') and c like 'statement_timeout=%'
+   and (p.oid is distinct from to_regprocedure('atlas_api.prepare_school_catering_purchase_orders(jsonb)')
+     or c<>'statement_timeout=20s')) then
    raise exception 'CORRECTION_FUNCTION_TIMEOUT_POLICY_REJECTED'; end if;
  perform set_config('statement_timeout',(select setting from correction_timeout_policy),true);
  if (select setting::numeric from pg_settings where name='statement_timeout')<>8000 then raise exception 'CORRECTION_NORMAL_TIMEOUT_POLICY_REJECTED'; end if;

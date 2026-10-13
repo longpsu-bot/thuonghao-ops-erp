@@ -6,6 +6,8 @@ import { AtlasVNextShell } from "../AtlasVNextShell";
 import { ProcurementWorkbench } from "./ProcurementWorkbench";
 import {
   createProcurementReviewFixture,
+  oct12ReviewDate,
+  oct12ReviewSchools,
   reviewDate,
   reviewFamily,
   reviewSchools,
@@ -48,13 +50,19 @@ export function ProcurementReview({
       value.allocation.rows.push(
         ...names.map((name, index) => {
           const row = reviewFamily(
-            scenario === "ready"
-              ? "ready"
-              : index % 4 === 0
-                ? "normal"
-                : "manual_split",
+            scenario === "oct12_recommendations"
+              ? "oct12_recommendations"
+              : scenario === "ready"
+                ? "ready"
+                : index % 4 === 0
+                  ? "normal"
+                  : "manual_split",
           );
-          const school = reviewSchools[index % 4]!;
+          const schools =
+            scenario === "oct12_recommendations"
+              ? oct12ReviewSchools
+              : reviewSchools;
+          const school = schools[index % 4]!;
           return {
             ...row,
             family: {
@@ -67,7 +75,14 @@ export function ProcurementReview({
             school_id: school.school_id,
             school_name: school.school_name,
             schools: [school],
-            location_name: index % 2 === 0 ? "Bếp bán trú" : "Điểm giao khu A",
+            location_name:
+              scenario === "oct12_recommendations"
+                ? index % 3 === 0
+                  ? school.school_name
+                  : `Điểm giao ${index % 2 ? "khu A" : "bếp chính"}`
+                : index % 2 === 0
+                  ? "Bếp bán trú"
+                  : "Điểm giao khu A",
           };
         }),
       );
@@ -125,9 +140,15 @@ export function ProcurementReview({
           authSubject="review-operator"
           purchaseReviewApi={fixture.purchaseReviewApi}
           procurementApi={fixture.procurementApi}
-          initialServiceDate={reviewDate}
           initialStage={orderScenario ? "orders" : "allocation"}
-          schools={reviewSchools}
+          initialServiceDate={
+            scenario === "oct12_recommendations" ? oct12ReviewDate : reviewDate
+          }
+          schools={
+            scenario === "oct12_recommendations"
+              ? oct12ReviewSchools
+              : reviewSchools
+          }
           onExportXlsx={() =>
             setExportMessage("Xem thử: đã chọn XLSX. Không tạo chứng từ thật.")
           }
@@ -157,6 +178,9 @@ export const ShortAllocation: Story = {
 };
 export const LongAllocation: Story = {
   args: { scenario: "normal", allocationRowCount: 248 },
+};
+export const ActualOct12SafeRecommendations236: Story = {
+  args: { scenario: "oct12_recommendations", allocationRowCount: 236 },
 };
 export const SavedManualSplit: Story = { args: { scenario: "manual_split" } };
 export const CompositionOneRow: Story = {

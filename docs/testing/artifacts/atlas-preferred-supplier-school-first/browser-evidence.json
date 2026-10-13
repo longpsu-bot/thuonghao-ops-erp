@@ -1,0 +1,251 @@
+[
+  {
+    "name": "procurement",
+    "story": "atlas-vnext-procurement--actual-oct-12-safe-recommendations-236",
+    "harness": "vite",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "headers": [
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+      "Thao tác"
+    ],
+    "count": 236,
+    "firstCells": [
+      "AN PHÚ (BD)",
+      "Cà rốt",
+      "12 kg",
+      "AN THÀNH ĐÔMặc định #1",
+      "Đủ",
+      "Thay đổi"
+    ],
+    "schoolStyle": {
+      "position": "sticky",
+      "left": "0px"
+    },
+    "rowHeights": [
+      52.09375, 52.09375, 52.09375, 52.09375, 52.09375, 52.09375, 52.09375,
+      52.09375, 52.09375, 52.09375
+    ],
+    "scroll": {
+      "left": 0,
+      "width": 1402,
+      "contentWidth": 1402
+    },
+    "errors": [],
+    "hostedRpcRequests": 0
+  },
+  {
+    "name": "procurement",
+    "story": "atlas-vnext-procurement--actual-oct-12-safe-recommendations-236",
+    "harness": "vite",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "headers": [
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+      "Thao tác"
+    ],
+    "count": 236,
+    "firstCells": [
+      "AN PHÚ (BD)",
+      "Cà rốt",
+      "12 kg",
+      "AN THÀNH ĐÔMặc định #1",
+      "Đủ",
+      "Thay đổi"
+    ],
+    "schoolStyle": {
+      "position": "sticky",
+      "left": "0px"
+    },
+    "rowHeights": [
+      52.09375, 52.09375, 52.09375, 52.09375, 52.09375, 52.09375, 52.09375,
+      52.09375, 52.09375, 52.09375
+    ],
+    "scroll": {
+      "left": 0,
+      "width": 1328,
+      "contentWidth": 1328
+    },
+    "errors": [],
+    "hostedRpcRequests": 0
+  },
+  {
+    "name": "procurement",
+    "story": "atlas-vnext-procurement--actual-oct-12-safe-recommendations-236",
+    "harness": "vite",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "headers": [
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+      "Thao tác"
+    ],
+    "count": 236,
+    "firstCells": [
+      "AN PHÚ (BD)",
+      "Cà rốt",
+      "12 kg",
+      "AN THÀNH ĐÔMặc định #1",
+      "Đủ",
+      "Thay đổi"
+    ],
+    "schoolStyle": {
+      "position": "sticky",
+      "left": "0px"
+    },
+    "rowHeights": [57, 57, 57, 57, 57, 57, 57, 57, 57, 57],
+    "scroll": {
+      "left": 400,
+      "width": 352,
+      "contentWidth": 1050
+    },
+    "errors": [],
+    "hostedRpcRequests": 0
+  },
+  {
+    "name": "confirmed-need",
+    "story": "atlas-vnext-confirmed-need--actual-oct-12-school-first",
+    "harness": "vite",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "headers": [
+      "Trường / nơi nhận",
+      "Nguyên liệu",
+      "Đề xuất vận hành",
+      "Số lượng xác nhận",
+      "Thay đổi",
+      "Lý do / ghi chú"
+    ],
+    "count": 6,
+    "firstCells": ["AN PHÚ (BD)", "Cà rốt", "12 kg", "kg", "—", "Theo đề xuất"],
+    "schoolStyle": {
+      "position": "sticky",
+      "left": "0px"
+    },
+    "rowHeights": [53, 53, 53, 53, 53, 53],
+    "scroll": {
+      "left": 0,
+      "width": 1402,
+      "contentWidth": 1402,
+      "focusedQuantity": {
+        "x": 706.953125,
+        "y": 459.59375,
+        "width": 168.671875,
+        "height": 40
+      },
+      "focusedSchool": {
+        "x": 19,
+        "y": 453.09375,
+        "width": 275.390625,
+        "height": 53
+      }
+    },
+    "errors": [],
+    "hostedRpcRequests": 0
+  },
+  {
+    "name": "confirmed-need",
+    "story": "atlas-vnext-confirmed-need--actual-oct-12-school-first",
+    "harness": "vite",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "headers": [
+      "Trường / nơi nhận",
+      "Nguyên liệu",
+      "Đề xuất vận hành",
+      "Số lượng xác nhận",
+      "Thay đổi",
+      "Lý do / ghi chú"
+    ],
+    "count": 6,
+    "firstCells": ["AN PHÚ (BD)", "Cà rốt", "12 kg", "kg", "—", "Theo đề xuất"],
+    "schoolStyle": {
+      "position": "sticky",
+      "left": "0px"
+    },
+    "rowHeights": [53, 53, 53, 53, 53, 53],
+    "scroll": {
+      "left": 0,
+      "width": 1328,
+      "contentWidth": 1328,
+      "focusedQuantity": {
+        "x": 671.265625,
+        "y": 459.59375,
+        "width": 157.4375,
+        "height": 40
+      },
+      "focusedSchool": {
+        "x": 19,
+        "y": 453.09375,
+        "width": 260.84375,
+        "height": 53
+      }
+    },
+    "errors": [],
+    "hostedRpcRequests": 0
+  },
+  {
+    "name": "confirmed-need",
+    "story": "atlas-vnext-confirmed-need--actual-oct-12-school-first",
+    "harness": "vite",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "headers": [
+      "Trường / nơi nhận",
+      "Nguyên liệu",
+      "Đề xuất vận hành",
+      "Số lượng xác nhận",
+      "Thay đổi",
+      "Lý do / ghi chú"
+    ],
+    "count": 6,
+    "firstCells": ["AN PHÚ (BD)", "Cà rốt", "12 kg", "kg", "—", "Theo đề xuất"],
+    "schoolStyle": {
+      "position": "sticky",
+      "left": "0px"
+    },
+    "rowHeights": [57, 57, 57, 57, 57, 57],
+    "scroll": {
+      "left": 400,
+      "width": 352,
+      "contentWidth": 1120,
+      "focusedQuantity": {
+        "x": 239,
+        "y": 601.6875,
+        "width": 125.875,
+        "height": 44
+      },
+      "focusedSchool": {
+        "x": 19,
+        "y": 595.1875,
+        "width": 220,
+        "height": 57
+      }
+    },
+    "errors": [],
+    "hostedRpcRequests": 0
+  }
+]

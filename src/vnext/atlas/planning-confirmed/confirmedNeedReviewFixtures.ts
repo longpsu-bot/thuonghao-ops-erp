@@ -11,6 +11,7 @@ import type {
   PreflightApi,
 } from "../bridges/confirmedNeed";
 export const reviewDate = "2026-09-07";
+export const oct12ReviewDate = "2026-10-12";
 export function reviewSuccess(data: Record<string, unknown>): AtlasRpcResult {
   return {
     kind: "success",
@@ -272,6 +273,7 @@ export function reviewNeed(): NeedGenerationWorkbenchData {
 }
 export type ConfirmedReviewScenario =
   | "normal"
+  | "oct12_school_first"
   | "loading"
   | "read_failure"
   | "no_demand"
@@ -307,6 +309,57 @@ export function createConfirmedNeedReviewFixture(
       exactQuantity: string;
     }>;
   } | null = null;
+  if (scenario === "oct12_school_first") {
+    const identities = [
+      ["AN PHÚ (BD)", "AN PHÚ (BD)", "Cà rốt"],
+      ["AN PHÚ (BD)", "PHÂN HIỆU 2", "Gạo thơm"],
+      ["BÌNH MỸ - BÌNH DƯƠNG", "BÌNH MỸ - BÌNH DƯƠNG", "Bí đỏ"],
+      ["PHÚ CƯỜNG", "Bếp chính", "Thịt heo"],
+      ["TÂN ĐỊNH", "TÂN ĐỊNH", "Cải thìa"],
+      ["TÂN ĐỊNH", "Điểm giao khu A", "Trứng gà"],
+    ] as const;
+    batch.service_period = {
+      period_start: oct12ReviewDate,
+      period_end: oct12ReviewDate,
+    };
+    batch.lines.forEach((line, index) => {
+      const [schoolName, locationName, ingredientName] = identities[index]!;
+      line.service_date = oct12ReviewDate;
+      line.school = { id: `oct12-school-${index}`, name: schoolName };
+      line.delivery_location = {
+        id: `oct12-location-${index}`,
+        name: locationName,
+      };
+      line.ingredient = {
+        id: `oct12-ingredient-${index}`,
+        name: ingredientName,
+      };
+      if (index === 0) {
+        line.theoretical_quantity = "12.000000";
+        line.proposed_confirmed_quantity = "12.000000";
+        line.confirmed_quantity_after = "12.000000";
+      }
+    });
+    preflight.period_start = oct12ReviewDate;
+    preflight.period_end = oct12ReviewDate;
+    need.period = {
+      period_start: oct12ReviewDate,
+      period_end: oct12ReviewDate,
+    };
+    need.grouped_requirements[0] = {
+      ...need.grouped_requirements[0]!,
+      service_date: oct12ReviewDate,
+      school_id: "oct12-school-0",
+      school_name: "AN PHÚ (BD)",
+      delivery_location_id: "oct12-location-0",
+      delivery_location_name: "AN PHÚ (BD)",
+      ingredient_id: "oct12-ingredient-0",
+      ingredient_name: "Cà rốt",
+      total_theoretical_quantity: 12,
+      recipe_derived_quantity: 10,
+      pantry_direct_quantity: 2,
+    };
+  }
   if (scenario === "certified_shape") {
     batch.lines = Array.from({ length: 248 }, (_, index) => reviewLine(index));
     batch.lines[0]!.ingredient.name =
@@ -415,7 +468,8 @@ export function createConfirmedNeedReviewFixture(
       },
     ];
   }
-  const saved = reviewBatch();
+  const saved =
+    scenario === "oct12_school_first" ? structuredClone(batch) : reviewBatch();
   saved.batch_version = 5;
   saved.line_counts.adjusted = 1;
   saved.lines[0] = {

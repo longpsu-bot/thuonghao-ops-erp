@@ -72,10 +72,13 @@ it.each(["unknown", "retryable_failure"] as const)(
     );
     fireEvent.click(
       await screen.findByRole("button", {
-        name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm · /,
+        name: /^(Thay đổi|Phân bổ NCC|Xem phân bổ) Gạo thơm · /,
       }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+      { target: { value: "Giao trước 05:30" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     await waitFor(() =>
       expect(

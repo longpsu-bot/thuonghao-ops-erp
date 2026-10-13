@@ -1,0 +1,53 @@
+[
+  {
+    "sample": 1,
+    "date": "2027-03-01",
+    "http_status": 200,
+    "success": true,
+    "elapsed_ms": 13032.933,
+    "counts": {
+      "defaults": 236,
+      "families": 236,
+      "po_lines": 236,
+      "promoted": 236,
+      "draft_pos": 12,
+      "manual_defaults": 0
+    },
+    "replay_exact": true,
+    "replay_ms": 43.661
+  },
+  {
+    "sample": 2,
+    "date": "2027-03-08",
+    "http_status": 200,
+    "success": true,
+    "elapsed_ms": 13425.855,
+    "counts": {
+      "defaults": 236,
+      "families": 236,
+      "po_lines": 236,
+      "promoted": 236,
+      "draft_pos": 12,
+      "manual_defaults": 0
+    },
+    "replay_exact": true,
+    "replay_ms": 55.47
+  },
+  {
+    "sample": 3,
+    "date": "2027-03-15",
+    "http_status": 200,
+    "success": true,
+    "elapsed_ms": 12467.96,
+    "counts": {
+      "defaults": 236,
+      "families": 236,
+      "po_lines": 236,
+      "promoted": 236,
+      "draft_pos": 12,
+      "manual_defaults": 0
+    },
+    "replay_exact": true,
+    "replay_ms": 50.846
+  }
+]

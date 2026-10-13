@@ -1,0 +1,29 @@
+1..24
+b6000000-0000-0000-0000-000000000101
+ok 1 - one authenticated public Purchase Preparation succeeds for 236 families
+ok 2 - outer Purchase Preparation statement completes within the hoisted 20-second budget
+not ok 3 - complete public Purchase Preparation command satisfies the provisional 15-second performance target
+# Failed test 3: "complete public Purchase Preparation command satisfies the provisional 15-second performance target"
+ok 4 - Purchase Preparation plus all deferred integrity guards completes within 20 seconds
+ok 5 - preparation materializes exactly 236 preferred-Supplier default revisions
+ok 6 - every generated default preserves outer command, Actor, source batch and version lineage
+ok 7 - preparation manufactures no per-row allocation Save or confirmation receipt
+ok 8 - preparation creates exactly 236 allocation families
+ok 9 - scale preparation creates no duplicate family identity
+ok 10 - every scale family has exactly one current revision
+ok 11 - all 236 families are current promoted Handoff defaults
+ok 12 - current Handoff revisions retain their confirmed predecessor and strict source kind
+ok 13 - every current family has one exact positive 100-percent split to its unique preferred Supplier
+ok 14 - all generated default fingerprints and quantities match canonical Confirmed Need authority
+ok 15 - all current Handoff fingerprints and quantities match canonical Handoff authority
+ok 16 - preparation creates one current released Handoff batch
+ok 17 - current Handoff preserves all 236 exact Confirmed Need quantities and identities
+ok 18 - preparation consolidates 236 families into 12 valid Supplier PO Drafts
+ok 19 - the 12 current Draft POs contain exactly 236 stable PO lines in total
+ok 20 - current PO Draft lines map one-to-one to 236 unique Supplier splits and allocation families
+ok 21 - all 236 PO Draft lines preserve exact Supplier, family, quantity and split lineage
+20s
+ok 22 - identical scale replay returns the exact original durable response
+ok 23 - identical scale replay creates no new Need, allocation, Handoff, PO, event or audit fact
+ok 24 - identical scale replay creates no new receipt
+# Looks like you failed 1 test of 24

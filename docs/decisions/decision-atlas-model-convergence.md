@@ -101,7 +101,21 @@ Automatic working defaults, consequential source Save, atomic daily generation, 
 
 ### Procurement
 
-Recommendations and rebalance proposals are advisory. Saved exact supplier splits are explicit decisions. Allocation families, Handoff structures, promotion lineage, and draft POs are supporting work generated beneath accepted commands.
+The product-approved 2026-10-12 correction resolves PA06D-11: a unique ACTIVE,
+effective Supplier at the lowest non-null priority is the derived 100% default
+for a complete current positive family with no persisted allocation. It needs
+no separate operator confirmation. Reads remain write-free; consequential
+single-day purchase preparation rechecks current source and Supplier facts and
+atomically generates required allocation support through the existing writer.
+Absent eligibility blocks, while missing priority and best-priority ties remain
+unresolved without technical tie-breaks. See the [Procurement contract](../api/school-catering-procurement.md#product-approved-preferred-supplier-default--2026-10-12).
+
+Saved exact supplier overrides, including multi-Supplier splits and notes, are
+explicit decisions and take precedence over defaults. Rebalance proposals remain
+advisory. Materialized defaults are supporting evidence, not fabricated human
+overrides. Allocation families, Handoff structures, promotion lineage, and draft
+POs are supporting work generated beneath accepted commands. Later master-data
+priority changes never rewrite persisted allocations or released commitments.
 
 Purchase preparation remains one backend transaction composing existing release/Handoff/draft boundaries. Each official PO release is a distinct external commitment with immutable released content and official numbering.
 

@@ -19,7 +19,6 @@ import {
 import { Info } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import type { CSSProperties } from "react";
-import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import {
   procurementOperatorMessages,
   type AllocationFamilyRow,
@@ -32,6 +31,15 @@ import {
   sumExactQuantities,
   serializeExactQuantity,
 } from "./procurementExactQuantity";
+import {
+  allocationRecipient,
+  derivedDefaultAllocation,
+} from "./procurementAllocationPresentation";
+
+// Match the authoritative writer's btrim(note, E' \t\n\r\f'). Unicode
+// whitespace outside that set remains meaningful supplier-facing content.
+const normalizedSupplierNote = (note: string | null | undefined) =>
+  note?.replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, "") || null;
 
 export function ProcurementSupplierDetail({
   row,
@@ -49,13 +57,26 @@ export function ProcurementSupplierDetail({
   const eligible = (id: string) =>
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
   const saved = row.splits.filter((split) => eligible(split.supplier_id));
-  const [draft, setDraft] = useState<SupplierSplitInput[]>(() =>
-    saved.map(({ supplier_id, allocated_quantity, supplier_note }) => ({
-      supplier_id,
-      allocated_quantity: quantity(allocated_quantity),
-      supplier_note: supplier_note ?? null,
-    })),
-  );
+  const derived = derivedDefaultAllocation(row);
+  const baseline: SupplierSplitInput[] = saved.length
+    ? saved.map(({ supplier_id, allocated_quantity, supplier_note }) => ({
+        supplier_id,
+        allocated_quantity: quantity(allocated_quantity),
+        supplier_note: supplier_note ?? null,
+      }))
+    : derived
+      ? [
+          {
+            supplier_id: derived.recommendation.supplier_id,
+            allocated_quantity: quantity(
+              derived.recommendation.allocated_quantity,
+            ),
+            supplier_note: null,
+          },
+        ]
+      : [];
+  const [draft, setDraft] = useState<SupplierSplitInput[]>(() => baseline);
+  const recipient = allocationRecipient(row);
   const [added, setAdded] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
   const [supplierId, setSupplierId] = useState("");
@@ -98,18 +119,15 @@ export function ProcurementSupplierDetail({
           ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
           : `Vượt ${quantity(-remainder)} ${row.unit_code}`;
   const locked = disabled || row.complete === false;
-  const canSave =
-    !locked &&
-    row.allowed_actions.save_allocation &&
-    remainder === 0n &&
-    draft.some(
-      (split) => (parseExactQuantity(split.allocated_quantity) ?? 0n) > 0n,
-    ) &&
-    draft.every((split) => (split.supplier_note ?? "").length <= 500);
+  // Zero participants are omitted by the command payload, not an override.
+  // Invalid quantities remain in the comparison and keep the draft dirty.
+  const effectiveDraft = draft.filter(
+    (split) => parseExactQuantity(split.allocated_quantity) !== 0n,
+  );
   const dirty =
-    draft.length !== saved.length ||
-    draft.some((split) => {
-      const original = saved.find(
+    effectiveDraft.length !== baseline.length ||
+    effectiveDraft.some((split) => {
+      const original = baseline.find(
         (value) => value.supplier_id === split.supplier_id,
       );
       const parsed = parseExactQuantity(split.allocated_quantity);
@@ -117,9 +135,19 @@ export function ProcurementSupplierDetail({
         !original ||
         parsed === null ||
         parsed !== parseExactQuantity(original.allocated_quantity) ||
-        (split.supplier_note ?? "").trim() !== (original.supplier_note ?? "")
+        normalizedSupplierNote(split.supplier_note) !==
+          normalizedSupplierNote(original.supplier_note)
       );
     });
+  const canSave =
+    dirty &&
+    !locked &&
+    row.allowed_actions.save_allocation &&
+    remainder === 0n &&
+    draft.some(
+      (split) => (parseExactQuantity(split.allocated_quantity) ?? 0n) > 0n,
+    ) &&
+    draft.every((split) => (split.supplier_note ?? "").length <= 500);
   useAtlasWorkbenchStatus(onWorkspaceStatus, {
     unsaved: dirty,
     blocked: disabled,
@@ -136,6 +164,19 @@ export function ProcurementSupplierDetail({
     (supplier) =>
       !draft.some((split) => split.supplier_id === supplier.supplier_id),
   );
+  // Apply retains notes, so only a Supplier/quantity difference makes it useful.
+  const proposalChangesDraft = (values: AllocationProposalSplit[]) =>
+    values.length !== effectiveDraft.length ||
+    values.some((value) => {
+      const current = effectiveDraft.find(
+        (split) => split.supplier_id === value.supplier_id,
+      );
+      return (
+        !current ||
+        parseExactQuantity(current.allocated_quantity) !==
+          parseExactQuantity(value.allocated_quantity)
+      );
+    });
   const apply = (proposal: AllocationProposalSplit[]) => {
     if (locked || proposal.some((split) => !eligible(split.supplier_id)))
       return;
@@ -146,7 +187,7 @@ export function ProcurementSupplierDetail({
         supplier_note:
           draft.find((split) => split.supplier_id === supplier_id)
             ?.supplier_note ??
-          saved.find((split) => split.supplier_id === supplier_id)
+          baseline.find((split) => split.supplier_id === supplier_id)
             ?.supplier_note ??
           null,
       })),
@@ -154,7 +195,7 @@ export function ProcurementSupplierDetail({
     setAdded(
       proposal
         .map((split) => split.supplier_id)
-        .filter((id) => !saved.some((split) => split.supplier_id === id)),
+        .filter((id) => !baseline.some((split) => split.supplier_id === id)),
     );
   };
   const proposal = (
@@ -235,12 +276,8 @@ export function ProcurementSupplierDetail({
           {row.ingredient_name}
         </Heading>
         <Text color="fg.muted" textStyle="helper" mt="xs">
-          {row.schools
-            ?.slice()
-            .sort(compareCanonicalSchools)
-            .map((school) => school.school_name)
-            .join(", ") || row.school_name}{" "}
-          · {row.location_name}
+          {recipient.primary}
+          {recipient.secondary ? ` · ${recipient.secondary}` : ""}
         </Text>
       </Box>
       <Box
@@ -281,6 +318,11 @@ export function ProcurementSupplierDetail({
         flex="0 1 auto"
         minW="var(--atlas-layout-zero, 0)"
       >
+        {derived && !dirty && (
+          <Text color="fg.muted" textStyle="helper">
+            Mặc định #{derived.supplier.priority}
+          </Text>
+        )}
         {row.splits
           .filter((split) => !eligible(split.supplier_id))
           .map((split) => (
@@ -454,8 +496,10 @@ export function ProcurementSupplierDetail({
           )}
         </Box>
         {row.recommendation &&
+          proposalChangesDraft([row.recommendation]) &&
           proposal("Đề xuất của Atlas", [row.recommendation], "Dùng đề xuất")}
         {row.rebalance_proposal &&
+          proposalChangesDraft(row.rebalance_proposal) &&
           proposal(
             "Đề xuất cân bằng lại",
             row.rebalance_proposal,
@@ -523,7 +567,7 @@ export function ProcurementSupplierDetail({
                   allocated_quantity: serializeExactQuantity(
                     split.allocated_quantity,
                   )!,
-                  supplier_note: split.supplier_note?.trim() || null,
+                  supplier_note: normalizedSupplierNote(split.supplier_note),
                 })),
             )
           }

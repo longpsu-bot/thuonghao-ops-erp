@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(28);
+select plan(29);
 
 -- D-047 regeneration adds one invoker helper and three SELECT-only policies.
 -- Five private grants: legacy schema USAGE, three relation SELECTs, helper EXECUTE.
@@ -157,6 +157,28 @@ select is(
     'postgres_set_role_runtime_links', 0
   ),
   'CAT-04 exact Atlas role catalogs and runtime posture are retained'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_auth_members membership
+    join pg_roles granted_role on granted_role.oid = membership.roleid
+    join pg_roles member_role on member_role.oid = membership.member
+    where granted_role.rolname = 'atlas_owner'
+      and member_role.rolname = 'postgres'
+      and membership.set_option
+  )
+  and not exists (
+    select 1
+    from pg_auth_members membership
+    join pg_roles granted_role on granted_role.oid = membership.roleid
+    join pg_roles member_role on member_role.oid = membership.member
+    where granted_role.rolname like 'atlas\_%\_runtime' escape '\'
+      and member_role.rolname = 'postgres'
+      and membership.set_option
+  ),
+  'CAT-04A postgres retains owner SET while runtime SET memberships stay disabled'
 );
 
 select is(
@@ -1756,15 +1778,16 @@ select is(
     'policy_count', 672,
     'policy_catalog_md5', '38ba098e23069ce416ed1cd60551a497',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 337,
-    -- Cooking/document helpers plus one private zero-demand ancestry helper.
-    'private_function_catalog_md5', 'b73b2351989b3f3fcb99c6f1b0fef925',
+    'private_function_count', 342,
+    -- Adds the full-source bridge and the single resolved persistence body.
+    'private_function_catalog_md5', 'b40fa23cb2b4861f253d0a1625edc584',
     'trigger_count', 124,
     'trigger_catalog_md5', '24157de1722f445b7e98adfde302a2d4',
     -- Retains prior privileges and adds five private-runtime execution grants
-    -- for the zero-demand ancestry helper; no browser-role grant.
-    'positive_target_grant_count', 1830,
-    'positive_target_grant_md5', '1c2e1b27acd9041f54539acbe631402d',
+    -- for default coverage/materialization/locking; no browser-role grant.
+    -- Two new owner grants and Procurement EXECUTE on the source bridge only.
+    'positive_target_grant_count', 1838,
+    'positive_target_grant_md5', '42c0c5ea93ea6d025dcdac4a266e88af',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

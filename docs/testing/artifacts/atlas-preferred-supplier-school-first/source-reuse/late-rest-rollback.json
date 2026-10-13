@@ -1,0 +1,11 @@
+{
+  "http_status": 200,
+  "success": false,
+  "error_code": "INTERNAL_COMMAND_FAILURE",
+  "elapsed_ms": 11612.137,
+  "po_attempts": 1,
+  "defaults_seen": 236,
+  "promotions_seen": 236,
+  "business_snapshot_unchanged": true,
+  "receipt_delta": 1
+}
