@@ -171,8 +171,11 @@ stopped at an existing helper's hardcoded standard container; the successful
 rerun used the supported standard stack without modifying that helper.
 Error-level local security advisors report no issues. Focused Prettier and
 `git diff --check` pass; read-only code/benchmark review reports no blockers.
-GitHub owns routine Frontend CI and independently repeats Full Integration on
-the Draft PR. Their final status is reported with delivery.
+GitHub owns routine Frontend CI. Its approved Supabase workflow runs Smoke for
+Draft PRs and reserves Full Integration for ready-for-review, non-Draft updates,
+main pushes or manual dispatch. Local Full Integration already passed; its
+GitHub job is intentionally skipped on this Draft. Final CI status is reported
+with delivery.
 
 The standard integration suites retain coverage of
 Save, validation/approval, source/currentness, correction/continuity, zero demand,
