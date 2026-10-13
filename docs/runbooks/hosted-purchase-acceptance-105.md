@@ -39,3 +39,21 @@ The protected workflow downloads that run's evidence artifact. Recovery requires
 the original HTTP success, exact request/receipt-response identity and unchanged
 fact digest before sending only the recorded exact replay. It never generates a
 new preparation request in this mode.
+
+## Accepted hosted result — 2026-10-13
+
+The first authenticated REST command completed successfully in 18,925.761 ms.
+Exact replay completed in 2,006.145 ms with equal responses and zero fact,
+receipt or event deltas. Final state is `RELEASED_FOR_PURCHASE_HANDOFF / 5`,
+236 allocations, 236 generated priority defaults, no manual defaults, 236 promoted
+families, one released Handoff, 17 Draft POs and 236 PO lines. Exact preflight
+quantities/Suppliers and current lineage checks passed. See the
+[durable acceptance summary](../testing/artifacts/hosted-purchase-acceptance-105/summary.json)
+for command identity, response hashes, fact digests and protected workflow runs.
+
+The result meets the requested 20-second threshold, with approximately one second
+of headroom; it misses the preferred 15–18-second result. No migration 106 or
+performance correction was made. A separate post-release allocation-workbench
+read timed out under its 8-second read budget; that issue remains outside this
+acceptance and was not changed. Recovery used recorded preflight and authoritative
+receipt/readback rather than repeating that unnecessary read.

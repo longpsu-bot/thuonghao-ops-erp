@@ -1,0 +1,66 @@
+{
+  "task_status": "COMPLETE",
+  "hosted_acceptance": "PASS",
+  "main_sha": "a5c96f44f4438056ee143ac58522086ca356f049",
+  "staging_project": "rnzxmxiiqgtdevzregff",
+  "staging_migration_tip": "20261013082420_atlas_purchase_preparation_release_projection",
+  "preflight": {
+    "batch_state": "DRAFT_REVIEW",
+    "batch_version": 2,
+    "positive_families": 236,
+    "preferred_suppliers": 17,
+    "ready": true,
+    "allowed": true,
+    "allocations": 0,
+    "handoffs": 0,
+    "po_roots": 0,
+    "po_lines": 0
+  },
+  "hosted_preparation": {
+    "success": true,
+    "http_status": 200,
+    "full_rest_elapsed_ms": 18925.76075,
+    "command_id": "c51a2f96-54ab-400d-94fb-910544949f37",
+    "correlation_id": "b903e37e-9665-4d97-8efc-d6445bfb3cc5"
+  },
+  "result": {
+    "allocations": 236,
+    "allocation_revisions": 472,
+    "priority_defaults": 236,
+    "manual_defaults": 0,
+    "promoted_families": 236,
+    "released_handoffs": 1,
+    "draft_pos": 17,
+    "po_lines": 236,
+    "invalid_lineage": 0,
+    "invalid_quantities": 0,
+    "invalid_po_lines": 0
+  },
+  "replay": {
+    "exact": true,
+    "elapsed_ms": 2006.1450019999993,
+    "fact_delta": 0,
+    "receipt_delta": 0,
+    "event_delta": 0,
+    "fact_count": 3945,
+    "before_digest": "d55edbee74200aa3e02e8fc94ca8787d",
+    "after_digest": "d55edbee74200aa3e02e8fc94ca8787d",
+    "response_sha256": "234c16fd4e5cf622b7cb2c9960756cba47394f0f11439bec28c376d64ac6d894",
+    "replay_response_sha256": "234c16fd4e5cf622b7cb2c9960756cba47394f0f11439bec28c376d64ac6d894"
+  },
+  "final_state": {
+    "batch_state": "RELEASED_FOR_PURCHASE_HANDOFF",
+    "version": 5
+  },
+  "retool_unchanged": true,
+  "ops_v1_unchanged": true,
+  "migration_106": null,
+  "original_run": "https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38378123601",
+  "replay_run": "https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38379183466",
+  "verification_notes": [
+    "First public preparation succeeded; original verifier incorrectly expected promoted revisions to carry the outer command ID. Existing Handoff child-command lineage was verified and the harness corrected.",
+    "First replay recovery stopped before sending any request because its redundant current allocation workbench read timed out. Recovery then used the saved preflight, exact accepted receipt and unchanged downstream digest, sending only the original request.",
+    "Post-release get_confirmed_supplier_allocation_workbench was separately observed timing out under its 8-second read budget in rollback-only diagnostic SQL. No read-function or timeout change was made.",
+    "18.926 seconds meets the requested 20-second acceptance threshold, but misses the preferred 15–18-second result and is not three-sample performance certification."
+  ]
+}
