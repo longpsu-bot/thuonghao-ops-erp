@@ -78,7 +78,7 @@ async function until(fn, label, timeout = 30000) {
   }
   throw new Error("BROWSER_GATE_" + label);
 }
-async function connect(url, onEvent) {
+async function connect(url, onEvent, onEventError) {
   const socket = new WebSocket(url);
   await new Promise((resolve, reject) => {
     socket.addEventListener("open", resolve, { once: true });
@@ -93,9 +93,19 @@ async function connect(url, onEvent) {
       pending.delete(message.id);
       clearTimeout(task.timer);
       message.error
-        ? task.reject(new Error("BROWSER_PROTOCOL_ERROR"))
+        ? task.reject(
+            new Error(
+              "BROWSER_PROTOCOL_ERROR_" +
+                task.method +
+                ":" +
+                message.error.code +
+                ":" +
+                message.error.message,
+            ),
+          )
         : task.resolve(message.result);
-    } else if (message.method) void onEvent(message);
+    } else if (message.method)
+      void Promise.resolve(onEvent(message)).catch(onEventError);
   });
   return {
     close: () => socket.close(),
@@ -106,7 +116,7 @@ async function connect(url, onEvent) {
             pending.delete(n);
             reject(new Error("BROWSER_PROTOCOL_TIMEOUT_" + method));
           }, 20000);
-        pending.set(n, { resolve, reject, timer });
+        pending.set(n, { resolve, reject, timer, method });
         socket.send(JSON.stringify({ id: n, method, params }));
       });
     },
@@ -190,77 +200,87 @@ async function main() {
       "chrome",
       15000,
     );
-    connection = await connect(page.webSocketDebuggerUrl, async (event) => {
-      const p = event.params;
-      if (event.method === "Fetch.requestPaused") {
-        const name = new URL(p.request.url).pathname.split("/").pop();
-        if (!readRpcAllowed(name)) {
-          b.blocked_commands.push(name);
-          await connection.send("Fetch.failRequest", {
+    connection = await connect(
+      page.webSocketDebuggerUrl,
+      async (event) => {
+        const p = event.params;
+        if (event.method === "Fetch.requestPaused") {
+          const name = new URL(p.request.url).pathname.split("/").pop();
+          if (!readRpcAllowed(name)) {
+            b.blocked_commands.push(name);
+            await connection.send("Fetch.failRequest", {
+              requestId: p.requestId,
+              errorReason: "BlockedByClient",
+            });
+          } else
+            await connection.send("Fetch.continueRequest", {
+              requestId: p.requestId,
+            });
+        }
+        if (
+          event.method === "Network.requestWillBeSent" &&
+          p.request.url.startsWith(target.supabaseUrl + "/rest/v1/rpc/")
+        ) {
+          const name = new URL(p.request.url).pathname.split("/").pop();
+          let payload;
+          try {
+            payload = JSON.parse(p.request.postData).request.payload;
+          } catch {}
+          requests.set(p.requestId, { name, payload, started: p.timestamp });
+        }
+        if (
+          event.method === "Network.responseReceived" &&
+          requests.has(p.requestId)
+        )
+          requests.get(p.requestId).http_status = p.response.status;
+        if (
+          event.method === "Network.loadingFinished" &&
+          requests.has(p.requestId)
+        ) {
+          const r = requests.get(p.requestId);
+          r.elapsed_ms = (p.timestamp - r.started) * 1000;
+          const raw = await connection.send("Network.getResponseBody", {
             requestId: p.requestId,
-            errorReason: "BlockedByClient",
           });
-        } else
-          await connection.send("Fetch.continueRequest", {
-            requestId: p.requestId,
+          let response;
+          try {
+            response = JSON.parse(
+              raw.base64Encoded
+                ? Buffer.from(raw.body, "base64").toString()
+                : raw.body,
+            );
+          } catch {}
+          b.requests.push({
+            name: r.name,
+            payload: r.payload,
+            http_status: r.http_status,
+            elapsed_ms: r.elapsed_ms,
+            success: response?.success,
+            error_code: response?.error_code ?? response?.code,
           });
-      }
-      if (
-        event.method === "Network.requestWillBeSent" &&
-        p.request.url.startsWith(target.supabaseUrl + "/rest/v1/rpc/")
-      ) {
-        const name = new URL(p.request.url).pathname.split("/").pop();
-        let payload;
-        try {
-          payload = JSON.parse(p.request.postData).request.payload;
-        } catch {}
-        requests.set(p.requestId, { name, payload, started: p.timestamp });
-      }
-      if (
-        event.method === "Network.responseReceived" &&
-        requests.has(p.requestId)
-      )
-        requests.get(p.requestId).http_status = p.response.status;
-      if (
-        event.method === "Network.loadingFinished" &&
-        requests.has(p.requestId)
-      ) {
-        const r = requests.get(p.requestId);
-        r.elapsed_ms = (p.timestamp - r.started) * 1000;
-        const raw = await connection.send("Network.getResponseBody", {
-          requestId: p.requestId,
-        });
-        let response;
-        try {
-          response = JSON.parse(
-            raw.base64Encoded
-              ? Buffer.from(raw.body, "base64").toString()
-              : raw.body,
-          );
-        } catch {}
-        b.requests.push({
-          name: r.name,
-          payload: r.payload,
-          http_status: r.http_status,
-          elapsed_ms: r.elapsed_ms,
-          success: response?.success,
-          error_code: response?.error_code ?? response?.code,
-        });
-        reads.push({ ...r, response });
+          reads.push({ ...r, response });
+          saveEvidence(evidence);
+        }
+        if (event.method === "Runtime.exceptionThrown")
+          b.frontend_errors.push({
+            type: "exception",
+            text: p.exceptionDetails.text,
+            description: p.exceptionDetails.exception?.description,
+          });
+        if (event.method === "Runtime.consoleAPICalled" && p.type === "error")
+          b.frontend_errors.push({
+            type: "console",
+            text: p.args.map((a) => a.value ?? a.description).join(" "),
+          });
+      },
+      (error) => {
+        b.recorder_errors ??= [];
+        b.recorder_errors.push(
+          redactAtlasStagingDiagnostic(error.message, Object.values(target)),
+        );
         saveEvidence(evidence);
-      }
-      if (event.method === "Runtime.exceptionThrown")
-        b.frontend_errors.push({
-          type: "exception",
-          text: p.exceptionDetails.text,
-          description: p.exceptionDetails.exception?.description,
-        });
-      if (event.method === "Runtime.consoleAPICalled" && p.type === "error")
-        b.frontend_errors.push({
-          type: "console",
-          text: p.args.map((a) => a.value ?? a.description).join(" "),
-        });
-    });
+      },
+    );
     const send = connection.send;
     evaluate = async (expression) => {
       const r = await send("Runtime.evaluate", {
