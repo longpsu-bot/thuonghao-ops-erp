@@ -3,8 +3,172 @@
 Product-approved correction dated 2026-10-12. Starting main:
 `063b40be86dd00a3a26f1a1a8cc0ef8b32964f83` (PRs #368 and #369).
 Branch: `fix/atlas-preferred-supplier-default-school-first`.
-Delivery status: repository validation complete; Draft PR for Product review,
-with no merge or deployment.
+Delivery status: the local 20-second exception experiment failed its performance
+gate. Product authorized a checkpoint commit/push on 13 October 2026 to continue
+on another computer. PR #370 remains Draft; merge and deployment are not authorized.
+
+## Checkpoint handoff — authorized 2026-10-13
+
+Continue on branch `fix/atlas-preferred-supplier-default-school-first` in existing
+Draft PR #370. Fetch the checkpoint before making changes; do not create a new PR,
+merge, mark Ready, deploy Staging, or modify Retool/OPS v1. The report below records
+the pre-push remote authority and measurements; the new checkpoint publishes the
+retained local revision, not a passing performance certificate.
+
+Retained: semantic no-op Save correction, generated 236-family fixture and full
+correctness/replay/late-failure assertions, the API-only 20s setting and revised
+15s complete-command target. Rejected projection optimization remains reverted.
+All published backend bodies are intact. Preserve the canonical global family
+ambiguity check in any separately approved projection-reuse follow-up.
+
+The performance gate is still blocked; release, Handoff, PO preparation, successful
+replay and controlled late rollback were not reached. Full integration was not
+run for this revision. Resolve the performance decision before completing those
+acceptance gates. Do not substitute the reverted experiment's measurements for
+the published-backend results.
+
+The isolated local stack was stopped and temporary Supabase configuration restored.
+Staging remains at migration 102. For the scale SQL harness, use an isolated migrated
+local database and `ATLAS_LOCAL_DB_CONTAINER`, then run
+`node scripts/test-local-purchase-review.mjs purchase_preparation_scale.sql`.
+It explicitly emulates PostgREST timeout hoisting; actual REST timing includes the
+whole transaction and must also satisfy the approved target.
+
+## Revised Purchase Preparation budget — Product decision 2026-10-13
+
+This decision supersedes the earlier 7-second certification margin and the
+interpretation of the authenticated role's 8-second infrastructure default as a
+Purchase Preparation Product contract. Need Generation retains its separately
+approved performance requirement.
+
+| Layer                                | Current contract                           |
+| ------------------------------------ | ------------------------------------------ |
+| Global authenticated role            | 8s, unchanged                              |
+| Global anonymous role                | 3s, unchanged                              |
+| Purchase Preparation RPC             | Function-specific 20s hard statement limit |
+| Certified 236-family operator target | Complete public command below 15,000ms     |
+| Frontend RPC transport               | 45s, unchanged                             |
+| Lock policy                          | Existing bounded policy, unchanged         |
+
+Only `atlas_api.prepare_school_catering_purchase_orders(jsonb)` receives the
+exception. PostgREST hoists its function setting before executing the statement;
+a direct SQL caller must apply the setting before its top-level statement to
+reproduce that transport behavior. Other reads, Saves and validation commands
+retain their role safeguard. Owners, signatures, capabilities and function bodies
+remain those at published head `2f185644b8b64387294192519d5128ffb744193a`.
+The unmerged/undeployed migration 103 is revised in place with one ALTER FUNCTION;
+no migration 104 or Planning rewrite is introduced.
+
+Execution plan:
+
+- Retain the approved semantic no-op Save correction and deterministic fixture.
+- Configure only the public Purchase Preparation function; verify the role defaults
+  and function setting, and use actual authenticated PostgREST requests locally.
+- Run three independent fresh 236-family samples, each with zero allocations and
+  valid current defaults, without retries or discarded warm-up preparations.
+- All three below 15s permits correctness, replay, controlled late rollback,
+  currentness and required integration validation. A 15–20s result requires Product
+  review; a 20s timeout requires a new bounded performance decision. Neither
+  outcome authorizes restoring the rejected optimization or changing Planning.
+- Preserve Staging migration 102 and the published Draft PR head. Stop for a final
+  local Product review before any commit/push.
+
+References: [Supabase timeouts](https://supabase.com/docs/guides/database/postgres/timeouts),
+[PostgREST hoisted function settings](https://docs.postgrest.org/en/stable/references/transactions.html#hoisted-function-settings).
+
+## Local review — 20-second exception experiment
+
+**TASK_STATUS: BLOCKED — published backend exceeds the provisional 20-second budget.**
+
+**BASE_SHA:** `2f185644b8b64387294192519d5128ffb744193a`.
+Only the API function's setting changed: migration 103 adds six lines (comments,
+one ALTER FUNCTION); existing production function bodies modified: 0; function
+configuration modified: 1; new private helpers: 0. Public signatures/payloads,
+locks, owner/ACL, global role settings and Planning production code are unchanged.
+
+Three independent fresh local databases used published function bodies, 236
+positive current families, zero initial allocations and valid unique defaults.
+The setup's seven checks passed in each (two configuration and five business
+preconditions). Each sample made exactly one authenticated PostgREST HTTP prepare
+request, without a retry or preparation warm-up. Local PostgREST v14.15 applied
+the function's 20s setting while authenticated stayed 8s and anon stayed 3s.
+Sample three used function profiling. Its profiling setup was corrected before
+any preparation request; its business call still used authenticated HTTP.
+
+| 236_PERFORMANCE    | HTTP elapsed ms | Result                            |
+| ------------------ | --------------: | --------------------------------- |
+| Sample 1           |      20,587.010 | SQLSTATE 57014, statement timeout |
+| Sample 2           |      20,282.675 | SQLSTATE 57014, statement timeout |
+| Sample 3, profiled |      20,330.380 | SQLSTATE 57014, statement timeout |
+| Max                |      20,587.010 | No successful completion          |
+| Median             |      20,330.380 | No successful completion          |
+
+HTTP timing includes transport and cancellation response overhead; these are
+20-second database cancellations, not successful 20-second command durations.
+
+**PROJECTION_PROFILE:** the historical published 8s sample recorded 13 completed
+source projections / 7,662.005ms and 10 writer calls / 5,908.132ms. With the 20s
+exception, the published backend recorded 36 / 19,452.791ms and 33 /
+17,624.338ms respectively. Writer self time was 59.236ms. Supplier advice was
+31.357ms; source and default-evidence locks totaled 30.003ms. Nested totals
+overlap. The cancellation stack was materializer → allocation persistence →
+validated facts → canonical evaluation. The larger budget allowed more families
+but retained the repeated whole-source projection hotspot.
+
+| Validation              | Current local result                                                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NO_OP_SAVE              | PASS: 18 selected semantic cases; 38 outside the focused filter                                                                                       |
+| 236_MATERIALIZATION     | FAIL: 0 durable defaults after cancellation; exact quantity/origin success assertions not reached                                                     |
+| HANDOFF / PO            | NOT REACHED; sample three retained 0 Handoffs and 0 POs for the scale batch/date                                                                      |
+| REPLAY                  | NOT REACHED: there is no successful durable preparation response to replay                                                                            |
+| ROLLBACK                | Timeout cleanup observed: 0 allocations and Draft Review in all three samples. Controlled late PO failure NOT REACHED                                 |
+| CURRENTNESS             | Priority change, inactive, tie, no priority, no eligible, manual override and released-PO cases NOT RE-RUN; published baseline evidence is historical |
+| FULL_INTEGRATION        | NOT RUN: complete-path performance gate failed                                                                                                        |
+| Formatting / whitespace | PASS; no tests or timeouts weakened                                                                                                                   |
+
+NARROWED_DIFF before the handoff-note addition: **10 files, +2,037/−26** against BASE_SHA, including new SQL files.
+
+Fixture reduction: 858 → 819 lines, deterministic generation retained; scale test
+838 lines with all prior 40 assertions plus two configuration checks (42 total).
+The follow-up production delta remains six migration lines. No new table/index,
+Planning function, API payload, shared script, workflow, Retool or OPS v1 change.
+
+Staging was checked read-only: **102 migrations**, latest
+`20261012064517_atlas_positive_correction_fast_path`. Draft PR #370 remains open,
+unmerged and at `2f185644b8b64387294192519d5128ffb744193a`. No commit, push,
+Ready transition or deployment occurred.
+
+Next bounded option for Product review: reuse canonical source projections once
+inside Procurement materialization, preserving global family ambiguity rejection
+and one allocation writer. This would affect only materializer/writer definitions
+and at most one private seam in migration 103, plus the focused scale tests.
+The published `purchase_review_persist_allocation` compatibility path must remain
+identical, and Planning release/validation/Handoff/PO bodies remain untouched.
+This proposal is not implemented; the reverted experiment cannot be restored
+without repairing its ambiguity regression and renewed approval.
+
+## Historical performance evidence — superseded gate, reverted experiment
+
+Before the 13 October Product timeout decision, the published backend was measured
+with the authenticated 8-second default: 8,110.892ms, 8,089.833ms and 8,103.219ms,
+all cancellations. Its profile recorded 13 source projections / 7,662.005ms and
+10 allocation-writer calls / 5,908.132ms inclusive. Source/Supplier/master locks
+were approximately 15.450ms. Nested totals overlap.
+
+The subsequently approved projection-reuse experiment was reverted. It completed
+materialization in 1,013.513ms and 236 writer calls in 379.712ms, then timed out at
+8,099.870ms in existing Confirmed Need release integrity work. It also did not
+preserve the canonical global count-one ambiguity check across overlapping
+current batches. Neither its implementation nor its results certify this retained
+revision. No second optimization or Planning rewrite was retained.
+
+The retained frontend correction compares the exact derived or persisted manual
+baseline, including backend-compatible notes. Clean Open/Close performs no Save;
+restoring the baseline disables Save. Previous complete focused runs passed
+62/64 with two unchanged School-picker 5-second timeouts; those tests and workflow
+were not modified. Fresh focused results and the current 20-second experiment are
+reported separately below. The scale fixture uses deterministic generated rows,
+4 Schools × 59 Ingredients and 12 reused Suppliers, with complete guarded lineage.
 
 The change removes ordinary per-row Supplier confirmation when current master
 data already supplies a deterministic default, and makes School identity lead
@@ -72,7 +236,7 @@ There is no parallel architecture or generic workflow.
 | Ordinary 236-row case needs no per-row work          | 12/10 synthetic fixture renders 236 safe defaults, `Cần xử lý 0 · Đã đủ 236`, direct Supplier names, `Mặc định #1`, `Đủ` and `Thay đổi`; search and exception filters retain their behavior.   |
 | Keyboard/focus retained                              | At 390px, focused Confirmed Need quantity starts at x=239, exactly beside the pinned School cell's right edge, and fits the visible viewport.                                                  |
 
-## Validation
+## Validation at the published head
 
 Focused backend checks pass: purchase review 187/187, platform security 29/29,
 Handoff allocation 88/88, purchase orders 135/135, Planning correction 23/23,

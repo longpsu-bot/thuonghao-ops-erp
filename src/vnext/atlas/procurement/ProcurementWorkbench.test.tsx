@@ -63,6 +63,30 @@ const openFilters = () => {
     fireEvent.click(disclosure);
 };
 describe("Procurement vNext operator workbench", () => {
+  it("opens and closes a clean derived default without any business command", async () => {
+    const { fixture, save, read } = show();
+    const prepare = vi.spyOn(
+      fixture.purchaseReviewApi,
+      "preparePurchaseOrders",
+    );
+    fireEvent.click(await action());
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("100");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Dùng đề xuất" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Phân bổ Gạo thơm" }),
+    ).not.toBeInTheDocument();
+    expect(save).not.toHaveBeenCalled();
+    expect(prepare).not.toHaveBeenCalled();
+    expect(read).toHaveBeenCalledOnce();
+  });
   it("uses one Allocation range picker, retains rows on invalid scope, and keeps multi-day search local", async () => {
     const fixture = createProcurementReviewFixture("normal");
     fixture.allocation.preparation = null;
@@ -425,7 +449,10 @@ describe("Procurement vNext operator workbench", () => {
       );
       fireEvent.click(await action());
       if (state !== "selected") {
-        fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+        fireEvent.change(
+          screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+          { target: { value: "Giao trước 05:30" } },
+        );
         fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
       }
       if (state === "locked")
@@ -627,7 +654,10 @@ describe("Procurement vNext operator workbench", () => {
   it("shows a safe failed recovery read alongside UNKNOWN until authority returns", async () => {
     const { read, save } = show("unknown");
     fireEvent.click(await action());
-    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+      { target: { value: "Giao trước 05:30" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     const recovery = await screen.findByRole("button", {
       name: "Tải lại để xác nhận",
@@ -665,7 +695,10 @@ describe("Procurement vNext operator workbench", () => {
       screen.queryByText(/Không tải được dữ liệu hiện tại:/),
     ).not.toBeInTheDocument();
     fireEvent.click(await action());
-    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+      { target: { value: "Giao trước 05:30" } },
+    );
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
     expect(save).toHaveBeenCalledTimes(1);
   });
@@ -935,7 +968,10 @@ describe("Procurement vNext operator workbench", () => {
   it("unknown Save shows labeled recovery and disables routine refresh and mutation", async () => {
     const { save } = show("unknown");
     fireEvent.click(await action());
-    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+      { target: { value: "Giao trước 05:30" } },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     expect(
       await screen.findByRole("button", { name: "Tải lại để xác nhận" }),

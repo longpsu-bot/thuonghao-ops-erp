@@ -193,6 +193,12 @@ are never accepted as command authority. Materialization creates no separate
 operator action or confirmation step. The standalone Planning release remains
 write-free for Procurement and retains its persisted-allocation prerequisite.
 
+Supplier detail Save requires a semantic difference from its derived default or
+persisted manual baseline, alongside existing balance and eligibility checks.
+Unchanged Open/Close writes nothing; restoring exact Supplier, quantities/splits
+and normalized notes disables Save again. Recommendation/rebalance actions are
+shown only when their Supplier/quantity values change the current draft.
+
 Migration `20261012101517_atlas_preferred_supplier_default_preparation.sql` adds
 three private coverage/materialization/locking helpers and updates the existing
 preparation status, allocation persistence, allocation read and preparation
@@ -324,3 +330,20 @@ renaming or moving a current relationship never changes released evidence.
 Historical absent/null fields are retained without backfill. PO School sections
 stay separate; Dispatch packaging uses only captured membership and retains all
 School/source lineage. See [explicit independent facts](school-cooking-groups.md).
+
+### Purchase Preparation execution budget (Product decision 2026-10-13)
+
+The authenticated role retains its 8-second infrastructure default. Only
+`atlas_api.prepare_school_catering_purchase_orders(jsonb)` receives a function
+`statement_timeout = '20s'`, applied by PostgREST before the RPC statement. The
+operator target is a complete preparation below 15 seconds for the certified
+236-family workload. Three independent fresh authenticated public-command samples
+are required: all below 15s permits certification; 15–20s requires UX/performance
+review; 20s or cancellation requires another bounded performance decision.
+The frontend transport remains 45s and the existing lock policy remains unchanged.
+Other Atlas RPCs and Need Generation's separate performance requirement are unchanged.
+This budget does not relax atomicity, current Supplier authority, exact replay or
+source lineage. No production function body or public payload changes.
+
+See [Supabase timeout guidance](https://supabase.com/docs/guides/database/postgres/timeouts)
+and [PostgREST timeout hoisting](https://docs.postgrest.org/en/stable/references/transactions.html#hoisted-function-settings).

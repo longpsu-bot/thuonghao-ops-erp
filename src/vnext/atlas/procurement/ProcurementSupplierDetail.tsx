@@ -36,6 +36,11 @@ import {
   derivedDefaultAllocation,
 } from "./procurementAllocationPresentation";
 
+// Match the authoritative writer's btrim(note, E' \t\n\r\f'). Unicode
+// whitespace outside that set remains meaningful supplier-facing content.
+const normalizedSupplierNote = (note: string | null | undefined) =>
+  note?.replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, "") || null;
+
 export function ProcurementSupplierDetail({
   row,
   disabled,
@@ -114,17 +119,14 @@ export function ProcurementSupplierDetail({
           ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
           : `Vượt ${quantity(-remainder)} ${row.unit_code}`;
   const locked = disabled || row.complete === false;
-  const canSave =
-    !locked &&
-    row.allowed_actions.save_allocation &&
-    remainder === 0n &&
-    draft.some(
-      (split) => (parseExactQuantity(split.allocated_quantity) ?? 0n) > 0n,
-    ) &&
-    draft.every((split) => (split.supplier_note ?? "").length <= 500);
+  // Zero participants are omitted by the command payload, not an override.
+  // Invalid quantities remain in the comparison and keep the draft dirty.
+  const effectiveDraft = draft.filter(
+    (split) => parseExactQuantity(split.allocated_quantity) !== 0n,
+  );
   const dirty =
-    draft.length !== baseline.length ||
-    draft.some((split) => {
+    effectiveDraft.length !== baseline.length ||
+    effectiveDraft.some((split) => {
       const original = baseline.find(
         (value) => value.supplier_id === split.supplier_id,
       );
@@ -133,9 +135,19 @@ export function ProcurementSupplierDetail({
         !original ||
         parsed === null ||
         parsed !== parseExactQuantity(original.allocated_quantity) ||
-        (split.supplier_note ?? "").trim() !== (original.supplier_note ?? "")
+        normalizedSupplierNote(split.supplier_note) !==
+          normalizedSupplierNote(original.supplier_note)
       );
     });
+  const canSave =
+    dirty &&
+    !locked &&
+    row.allowed_actions.save_allocation &&
+    remainder === 0n &&
+    draft.some(
+      (split) => (parseExactQuantity(split.allocated_quantity) ?? 0n) > 0n,
+    ) &&
+    draft.every((split) => (split.supplier_note ?? "").length <= 500);
   useAtlasWorkbenchStatus(onWorkspaceStatus, {
     unsaved: dirty,
     blocked: disabled,
@@ -152,6 +164,19 @@ export function ProcurementSupplierDetail({
     (supplier) =>
       !draft.some((split) => split.supplier_id === supplier.supplier_id),
   );
+  // Apply retains notes, so only a Supplier/quantity difference makes it useful.
+  const proposalChangesDraft = (values: AllocationProposalSplit[]) =>
+    values.length !== effectiveDraft.length ||
+    values.some((value) => {
+      const current = effectiveDraft.find(
+        (split) => split.supplier_id === value.supplier_id,
+      );
+      return (
+        !current ||
+        parseExactQuantity(current.allocated_quantity) !==
+          parseExactQuantity(value.allocated_quantity)
+      );
+    });
   const apply = (proposal: AllocationProposalSplit[]) => {
     if (locked || proposal.some((split) => !eligible(split.supplier_id)))
       return;
@@ -293,6 +318,11 @@ export function ProcurementSupplierDetail({
         flex="0 1 auto"
         minW="var(--atlas-layout-zero, 0)"
       >
+        {derived && !dirty && (
+          <Text color="fg.muted" textStyle="helper">
+            Mặc định #{derived.supplier.priority}
+          </Text>
+        )}
         {row.splits
           .filter((split) => !eligible(split.supplier_id))
           .map((split) => (
@@ -466,8 +496,10 @@ export function ProcurementSupplierDetail({
           )}
         </Box>
         {row.recommendation &&
+          proposalChangesDraft([row.recommendation]) &&
           proposal("Đề xuất của Atlas", [row.recommendation], "Dùng đề xuất")}
         {row.rebalance_proposal &&
+          proposalChangesDraft(row.rebalance_proposal) &&
           proposal(
             "Đề xuất cân bằng lại",
             row.rebalance_proposal,
@@ -535,7 +567,7 @@ export function ProcurementSupplierDetail({
                   allocated_quantity: serializeExactQuantity(
                     split.allocated_quantity,
                   )!,
-                  supplier_note: split.supplier_note?.trim() || null,
+                  supplier_note: normalizedSupplierNote(split.supplier_note),
                 })),
             )
           }

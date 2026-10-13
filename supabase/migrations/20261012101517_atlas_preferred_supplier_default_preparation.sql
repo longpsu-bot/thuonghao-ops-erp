@@ -423,6 +423,12 @@ begin
 end;
 $prepare_with_defaults$;
 
+-- Purchase Preparation is a bounded composite operator command. PostgREST
+-- hoists this setting before executing the RPC; other authenticated commands
+-- retain the role default. No business function body or lock policy changes.
+alter function atlas_api.prepare_school_catering_purchase_orders(jsonb)
+  set statement_timeout = '20s';
+
 reset role;
 set role atlas_owner;
 revoke create on schema atlas_core from atlas_procurement_command_runtime,
