@@ -25,24 +25,27 @@ create function pg_temp.seed_purchase_preparation_scale(
   p_seed text,
   p_code_prefix text,
   p_service_date date,
-  p_master_seed text default null
+  p_master_seed text default null,
+  p_catalog_seed text default null
 ) returns uuid
 language plpgsql
 set search_path=''
 as $purchase_preparation_scale_fixture$
 declare
   v_actor_id constant uuid := 'b6000000-0000-0000-0000-000000000001';
-  v_master_seed constant text := coalesce(p_master_seed,p_seed);
+  v_master_seed constant text := coalesce(p_master_seed,p_catalog_seed,p_seed);
+  v_source_seed constant text := coalesce(p_master_seed,p_seed);
+  v_catalog_code constant text := coalesce(p_catalog_seed,p_code_prefix);
   v_customer_id constant uuid := md5(v_master_seed || ':customer')::uuid;
   v_batch_id constant uuid := md5(p_seed || ':confirmed-need-batch')::uuid;
   v_week_end constant date := p_service_date + 6;
   v_period_end constant date := case when p_master_seed is null then p_service_date else v_week_end end;
-  v_weekly_menu_id constant uuid := md5(v_master_seed || ':weekly-menu')::uuid;
-  v_weekly_menu_snapshot_id constant uuid := md5(v_master_seed || ':weekly-menu-snapshot')::uuid;
-  v_attendance_id constant uuid := md5(v_master_seed || ':attendance')::uuid;
-  v_attendance_snapshot_id constant uuid := md5(v_master_seed || ':attendance-snapshot')::uuid;
-  v_pantry_id constant uuid := md5(v_master_seed || ':pantry')::uuid;
-  v_pantry_snapshot_id constant uuid := md5(v_master_seed || ':pantry-snapshot')::uuid;
+  v_weekly_menu_id constant uuid := md5(v_source_seed || ':weekly-menu')::uuid;
+  v_weekly_menu_snapshot_id constant uuid := md5(v_source_seed || ':weekly-menu-snapshot')::uuid;
+  v_attendance_id constant uuid := md5(v_source_seed || ':attendance')::uuid;
+  v_attendance_snapshot_id constant uuid := md5(v_source_seed || ':attendance-snapshot')::uuid;
+  v_pantry_id constant uuid := md5(v_source_seed || ':pantry')::uuid;
+  v_pantry_snapshot_id constant uuid := md5(v_source_seed || ':pantry-snapshot')::uuid;
   v_input_set_id constant uuid := md5(p_seed || ':input-set')::uuid;
   v_evaluation_id constant uuid := md5(p_seed || ':evaluation')::uuid;
   v_run_id constant uuid := md5(p_seed || ':need-run')::uuid;
@@ -67,13 +70,15 @@ begin
   -- Overlap reuses approved weekly facts in an independent seven-day input
   -- set; the normal scale chain keeps its original one-day input set.
   if p_master_seed is null then
+  -- Retained-history workloads reuse a fixed catalog but own independent sources.
+  if not exists (select 1 from atlas_admin.customers where customer_id=v_customer_id) then
   insert into atlas_admin.customers
   select (pg_catalog.jsonb_populate_record(
     null::atlas_admin.customers,
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
       'customer_id', v_customer_id,
-      'customer_code', p_seed,
-      'customer_name', p_seed || ' customer'
+      'customer_code', coalesce(p_catalog_seed,p_seed),
+      'customer_name', coalesce(p_catalog_seed,p_seed) || ' customer'
     )
   )).*
   from atlas_admin.customers template
@@ -85,9 +90,9 @@ begin
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
       'delivery_location_id', md5(v_master_seed || ':location:' || source.location_number)::uuid,
       'customer_id', v_customer_id,
-      'location_code', p_code_prefix || '-location-' || source.location_number,
-      'location_name', p_code_prefix || ' kitchen ' || source.location_number,
-      'address_text', p_code_prefix || ' synthetic address ' || source.location_number
+      'location_code', v_catalog_code || '-location-' || source.location_number,
+      'location_name', v_catalog_code || ' kitchen ' || source.location_number,
+      'address_text', v_catalog_code || ' synthetic address ' || source.location_number
     )
   )).*
   from pg_catalog.generate_series(1, 4) source(location_number)
@@ -100,8 +105,8 @@ begin
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
       'school_id', md5(v_master_seed || ':school:' || source.school_number)::uuid,
       'customer_id', v_customer_id,
-      'school_code', p_code_prefix || '-school-' || source.school_number,
-      'school_name', p_code_prefix || ' school ' || source.school_number,
+      'school_code', v_catalog_code || '-school-' || source.school_number,
+      'school_name', v_catalog_code || ' school ' || source.school_number,
       'default_delivery_location_id', md5(v_master_seed || ':location:' || source.school_number)::uuid,
       'display_order', 100 + source.school_number
     )
@@ -115,9 +120,9 @@ begin
     null::atlas_admin.ingredients,
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
       'ingredient_id', md5(v_master_seed || ':ingredient:' || source.ingredient_number)::uuid,
-      'ingredient_code', p_code_prefix || '-ingredient-' || source.ingredient_number,
-      'ingredient_name', p_code_prefix || ' ingredient ' || source.ingredient_number,
-      'document_code', pg_catalog.upper(p_code_prefix) || '-I-' || source.ingredient_number,
+      'ingredient_code', v_catalog_code || '-ingredient-' || source.ingredient_number,
+      'ingredient_name', v_catalog_code || ' ingredient ' || source.ingredient_number,
+      'document_code', pg_catalog.upper(v_catalog_code) || '-I-' || source.ingredient_number,
       'order_step', 0.1
     )
   )).*
@@ -130,10 +135,10 @@ begin
     null::atlas_admin.suppliers,
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
       'supplier_id', md5(v_master_seed || ':supplier:' || source.supplier_number)::uuid,
-      'supplier_code', p_code_prefix || '-supplier-' || source.supplier_number,
-      'supplier_name', p_code_prefix || ' supplier ' || source.supplier_number,
+      'supplier_code', v_catalog_code || '-supplier-' || source.supplier_number,
+      'supplier_name', v_catalog_code || ' supplier ' || source.supplier_number,
       'supplier_status', 'ACTIVE',
-      'document_code', pg_catalog.upper(p_code_prefix) || '-S-' || source.supplier_number
+      'document_code', pg_catalog.upper(v_catalog_code) || '-S-' || source.supplier_number
     )
   )).*
   from pg_catalog.generate_series(1, 12) source(supplier_number)
@@ -160,6 +165,7 @@ begin
       (((ingredient.ingredient_number - 1) % 12) + 1, 1),
       ((ingredient.ingredient_number % 12) + 1, 2)
   ) eligibility(supplier_number, priority);
+  end if;
 
   insert into atlas_planning.weekly_menus
   select (pg_catalog.jsonb_populate_record(

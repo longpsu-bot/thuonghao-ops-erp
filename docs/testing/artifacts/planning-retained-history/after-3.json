@@ -1,0 +1,579 @@
+{
+  "phase": "after",
+  "depth": 3,
+  "database": "atlas_history_after_3",
+  "setupCounts": {
+    "batches": 5,
+    "decisions": 944,
+    "catalog_hash": "7290438383af548b7888a60eea6965f6fab5915dc84aceba87b0e67d0959bd02",
+    "prepared_days": 3,
+    "historical_po_lines": 708,
+    "historical_po_drafts": 36,
+    "historical_snapshot_lines": 708,
+    "historical_validation_lines": 708
+  },
+  "authority": {
+    "roles": {
+      "anon": "3s",
+      "authenticated": "8s",
+      "authenticator": "8s"
+    },
+    "preparation_config": ["search_path=\"\"", "statement_timeout=20s"],
+    "function_catalog_hash": "6493a8e4a079ad7836ab4423f980bed424bf90ad318216060869eb024b8125b2"
+  },
+  "prepared": {
+    "elapsed_ms": 12621.401,
+    "http_status": 200,
+    "success": true,
+    "error_code": null,
+    "response_sha256": "c5993624c313c4085d04800dfc633a730f44f3a91d7489f77c90660b49814793"
+  },
+  "counts": {
+    "batches": 5,
+    "schools": 5,
+    "defaults": 236,
+    "po_lines": 236,
+    "promoted": 236,
+    "decisions": 944,
+    "need_runs": 5,
+    "po_drafts": 12,
+    "revisions": 946,
+    "suppliers": 14,
+    "prior_days": 3,
+    "ingredients": 61,
+    "snapshot_lines": 944,
+    "manual_defaults": 0,
+    "validation_lines": 944,
+    "theoretical_lines": 946,
+    "source_memberships": 946
+  },
+  "functions": [
+    {
+      "calls": 1,
+      "funcid": "23791",
+      "funcname": "prepare_school_catering_purchase_orders",
+      "self_time": 7.898,
+      "schemaname": "atlas_api",
+      "total_time": 12245.709
+    },
+    {
+      "calls": 1,
+      "funcid": "23160",
+      "funcname": "release_confirmed_needs",
+      "self_time": 110.825,
+      "schemaname": "atlas_api",
+      "total_time": 6682.022
+    },
+    {
+      "calls": 11,
+      "funcid": "23763",
+      "funcname": "purchase_review_confirmed_sources",
+      "self_time": 1026.53,
+      "schemaname": "atlas_core",
+      "total_time": 4139.539
+    },
+    {
+      "calls": 9,
+      "funcid": "23765",
+      "funcname": "purchase_review_confirmed_batch_sources",
+      "self_time": 4.576,
+      "schemaname": "atlas_core",
+      "total_time": 3363.75
+    },
+    {
+      "calls": 15,
+      "funcid": "23075",
+      "funcname": "rmvp_07_validated_facts_projection",
+      "self_time": 1186.307,
+      "schemaname": "atlas_core",
+      "total_time": 2775.885
+    },
+    {
+      "calls": 27,
+      "funcid": "22950",
+      "funcname": "rmvp_06_canonical_evaluation",
+      "self_time": 2438.496,
+      "schemaname": "atlas_core",
+      "total_time": 2519.573
+    },
+    {
+      "calls": 1,
+      "funcid": "24570",
+      "funcname": "purchase_review_materialize_default_allocations",
+      "self_time": 49.424,
+      "schemaname": "atlas_core",
+      "total_time": 2404.466
+    },
+    {
+      "calls": 1,
+      "funcid": "23653",
+      "funcname": "release_school_catering_purchase_handoff",
+      "self_time": 69.085,
+      "schemaname": "atlas_api",
+      "total_time": 2089.027
+    },
+    {
+      "calls": 472,
+      "funcid": "21264",
+      "funcname": "pa_06e_h0b1b_confirmed_need_revision_membership_total",
+      "self_time": 1622.243,
+      "schemaname": "atlas_planning",
+      "total_time": 1622.243
+    },
+    {
+      "calls": 4,
+      "funcid": "23779",
+      "funcname": "purchase_review_allocation_ready",
+      "self_time": 18.543,
+      "schemaname": "atlas_core",
+      "total_time": 1481.683
+    },
+    {
+      "calls": 240,
+      "funcid": "22935",
+      "funcname": "rmvp_06_validation_integrity",
+      "self_time": 626.631,
+      "schemaname": "atlas_planning",
+      "total_time": 1250.502
+    },
+    {
+      "calls": 1,
+      "funcid": "23786",
+      "funcname": "purchase_review_promote_allocations",
+      "self_time": 114.202,
+      "schemaname": "atlas_core",
+      "total_time": 1209.155
+    },
+    {
+      "calls": 1,
+      "funcid": "23712",
+      "funcname": "create_school_catering_purchase_order_drafts",
+      "self_time": 128.542,
+      "schemaname": "atlas_api",
+      "total_time": 1001.198
+    },
+    {
+      "calls": 64192,
+      "funcid": "23371",
+      "funcname": "planning_contract_02b_decision_authorizes_revision",
+      "self_time": 940.389,
+      "schemaname": "atlas_core",
+      "total_time": 940.389
+    },
+    {
+      "calls": 241,
+      "funcid": "23060",
+      "funcname": "rmvp_07_approval_release_integrity",
+      "self_time": 863.159,
+      "schemaname": "atlas_planning",
+      "total_time": 863.159
+    },
+    {
+      "calls": 2,
+      "funcid": "23780",
+      "funcname": "purchase_review_lock_allocations",
+      "self_time": 24.423,
+      "schemaname": "atlas_core",
+      "total_time": 831.896
+    },
+    {
+      "calls": 1,
+      "funcid": "23781",
+      "funcname": "purchase_review_release_guard",
+      "self_time": 0.129,
+      "schemaname": "atlas_core",
+      "total_time": 783.951
+    },
+    {
+      "calls": 2,
+      "funcid": "24568",
+      "funcname": "purchase_review_confirmed_source_universe",
+      "self_time": 3.231,
+      "schemaname": "atlas_core",
+      "total_time": 783.596
+    },
+    {
+      "calls": 472,
+      "funcid": "24572",
+      "funcname": "purchase_review_persist_resolved_allocation",
+      "self_time": 400.816,
+      "schemaname": "atlas_core",
+      "total_time": 757.167
+    },
+    {
+      "calls": 9912,
+      "funcid": "23627",
+      "funcname": "school_catering_family_projection",
+      "self_time": 697.942,
+      "schemaname": "atlas_core",
+      "total_time": 737.181
+    },
+    {
+      "calls": 1652,
+      "funcid": "23798",
+      "funcname": "purchase_review_allocation_integrity_guard",
+      "self_time": 364.724,
+      "schemaname": "atlas_core",
+      "total_time": 710.202
+    },
+    {
+      "calls": 1,
+      "funcid": "24569",
+      "funcname": "purchase_review_preparation_allocation_ready",
+      "self_time": 5.093,
+      "schemaname": "atlas_core",
+      "total_time": 386.296
+    },
+    {
+      "calls": 236,
+      "funcid": "23772",
+      "funcname": "purchase_review_persist_allocation",
+      "self_time": 2.431,
+      "schemaname": "atlas_core",
+      "total_time": 383.623
+    },
+    {
+      "calls": 475,
+      "funcid": "21262",
+      "funcname": "pa_06e_h0b1b_confirmed_need_current_source_consistency",
+      "self_time": 373.81,
+      "schemaname": "atlas_planning",
+      "total_time": 373.81
+    },
+    {
+      "calls": 944,
+      "funcid": "23797",
+      "funcname": "purchase_review_confirmed_contribution_valid",
+      "self_time": 198.345,
+      "schemaname": "atlas_core",
+      "total_time": 345.477
+    },
+    {
+      "calls": 1,
+      "funcid": "23083",
+      "funcname": "rmvp_07_extend_workbench",
+      "self_time": 7.136,
+      "schemaname": "atlas_core",
+      "total_time": 308.181
+    },
+    {
+      "calls": 472,
+      "funcid": "21516",
+      "funcname": "pa_06e_h1b1_confirmed_need_line_decision_integrity",
+      "self_time": 202.863,
+      "schemaname": "atlas_planning",
+      "total_time": 287.873
+    },
+    {
+      "calls": 472,
+      "funcid": "23498",
+      "funcname": "school_catering_lock_handoff_source",
+      "self_time": 262.243,
+      "schemaname": "atlas_core",
+      "total_time": 262.243
+    },
+    {
+      "calls": 21240,
+      "funcid": "23074",
+      "funcname": "rmvp_07_canonical_decimal",
+      "self_time": 180.53,
+      "schemaname": "atlas_core",
+      "total_time": 180.53
+    },
+    {
+      "calls": 44691,
+      "funcid": "19334",
+      "funcname": "pa_05b_safe_uuid",
+      "self_time": 150.032,
+      "schemaname": "atlas_core",
+      "total_time": 150.032
+    },
+    {
+      "calls": 2,
+      "funcid": "23707",
+      "funcname": "school_catering_po_date_readiness",
+      "self_time": 25.446,
+      "schemaname": "atlas_core",
+      "total_time": 134.213
+    },
+    {
+      "calls": 1180,
+      "funcid": "23497",
+      "funcname": "school_catering_lock_supplier_evidence",
+      "self_time": 109.217,
+      "schemaname": "atlas_core",
+      "total_time": 115.518
+    },
+    {
+      "calls": 237,
+      "funcid": "23771",
+      "funcname": "purchase_review_lock_confirmed_source",
+      "self_time": 107.74,
+      "schemaname": "atlas_core",
+      "total_time": 107.74
+    },
+    {
+      "calls": 1,
+      "funcid": "24155",
+      "funcname": "purchase_review_preparation_po_frontier",
+      "self_time": 0.286,
+      "schemaname": "atlas_core",
+      "total_time": 44.595
+    },
+    {
+      "calls": 1,
+      "funcid": "23807",
+      "funcname": "purchase_review_po_coverage",
+      "self_time": 8.624,
+      "schemaname": "atlas_core",
+      "total_time": 44.308
+    },
+    {
+      "calls": 7080,
+      "funcid": "19336",
+      "funcname": "pa_05b_safe_numeric",
+      "self_time": 39.292,
+      "schemaname": "atlas_core",
+      "total_time": 39.292
+    },
+    {
+      "calls": 9912,
+      "funcid": "16408",
+      "funcname": "digest",
+      "self_time": 39.238,
+      "schemaname": "extensions",
+      "total_time": 39.238
+    },
+    {
+      "calls": 1,
+      "funcid": "22740",
+      "funcname": "rmvp_05_workbench_payload",
+      "self_time": 31.274,
+      "schemaname": "atlas_core",
+      "total_time": 31.274
+    },
+    {
+      "calls": 1,
+      "funcid": "23157",
+      "funcname": "d037_extend_workbench",
+      "self_time": 3.989,
+      "schemaname": "atlas_core",
+      "total_time": 20.581
+    },
+    {
+      "calls": 1,
+      "funcid": "23393",
+      "funcname": "planning_contract_02b_extend_workbench",
+      "self_time": 15.542,
+      "schemaname": "atlas_core",
+      "total_time": 16.579
+    },
+    {
+      "calls": 236,
+      "funcid": "23762",
+      "funcname": "purchase_review_supplier_advice",
+      "self_time": 16.251,
+      "schemaname": "atlas_core",
+      "total_time": 16.251
+    },
+    {
+      "calls": 1,
+      "funcid": "22952",
+      "funcname": "rmvp_06_extend_workbench",
+      "self_time": 14.966,
+      "schemaname": "atlas_core",
+      "total_time": 14.983
+    },
+    {
+      "calls": 4,
+      "funcid": "19345",
+      "funcname": "pa_05b_finish_command",
+      "self_time": 13.635,
+      "schemaname": "atlas_core",
+      "total_time": 13.635
+    },
+    {
+      "calls": 1,
+      "funcid": "23081",
+      "funcname": "rmvp_07_validation_evidence_complete",
+      "self_time": 7.9,
+      "schemaname": "atlas_core",
+      "total_time": 11.2
+    },
+    {
+      "calls": 475,
+      "funcid": "21261",
+      "funcname": "pa_06e_h0b1b_confirmed_need_guard",
+      "self_time": 9.813,
+      "schemaname": "atlas_planning",
+      "total_time": 9.813
+    },
+    {
+      "calls": 472,
+      "funcid": "23496",
+      "funcname": "school_catering_actor_has_scope",
+      "self_time": 8.709,
+      "schemaname": "atlas_core",
+      "total_time": 8.709
+    },
+    {
+      "calls": 236,
+      "funcid": "23623",
+      "funcname": "school_catering_immutable_revision_guard",
+      "self_time": 6.593,
+      "schemaname": "atlas_core",
+      "total_time": 6.593
+    },
+    {
+      "calls": 236,
+      "funcid": "24169",
+      "funcname": "freeze_school_catering_po_line_output",
+      "self_time": 6.526,
+      "schemaname": "atlas_core",
+      "total_time": 6.526
+    },
+    {
+      "calls": 3,
+      "funcid": "23077",
+      "funcname": "rmvp_07_validated_facts_fingerprint",
+      "self_time": 5.251,
+      "schemaname": "atlas_core",
+      "total_time": 5.251
+    },
+    {
+      "calls": 5,
+      "funcid": "19342",
+      "funcname": "pa_05b_authorize_actor",
+      "self_time": 3.912,
+      "schemaname": "atlas_core",
+      "total_time": 3.912
+    },
+    {
+      "calls": 4,
+      "funcid": "19344",
+      "funcname": "pa_05b_begin_command",
+      "self_time": 1.879,
+      "schemaname": "atlas_core",
+      "total_time": 2.377
+    },
+    {
+      "calls": 248,
+      "funcid": "23702",
+      "funcname": "purchase_order_revision_integrity_guard",
+      "self_time": 2.281,
+      "schemaname": "atlas_core",
+      "total_time": 2.281
+    },
+    {
+      "calls": 4,
+      "funcid": "19341",
+      "funcname": "pa_05b_resolve_actor",
+      "self_time": 1.743,
+      "schemaname": "atlas_core",
+      "total_time": 2.027
+    },
+    {
+      "calls": 1,
+      "funcid": "24567",
+      "funcname": "purchase_review_lock_default_supplier_evidence",
+      "self_time": 1.816,
+      "schemaname": "atlas_core",
+      "total_time": 1.816
+    },
+    {
+      "calls": 1,
+      "funcid": "23082",
+      "funcname": "rmvp_07_snapshot_current_complete",
+      "self_time": 1.428,
+      "schemaname": "atlas_core",
+      "total_time": 1.428
+    },
+    {
+      "calls": 1,
+      "funcid": "22953",
+      "funcname": "rmvp_06_record_change",
+      "self_time": 1.195,
+      "schemaname": "atlas_core",
+      "total_time": 1.218
+    },
+    {
+      "calls": 2,
+      "funcid": "23055",
+      "funcname": "rmvp_07_record_change",
+      "self_time": 1.055,
+      "schemaname": "atlas_core",
+      "total_time": 1.109
+    },
+    {
+      "calls": 1,
+      "funcid": "23080",
+      "funcname": "rmvp_07_authorize",
+      "self_time": 0.168,
+      "schemaname": "atlas_core",
+      "total_time": 0.82
+    },
+    {
+      "calls": 12,
+      "funcid": "24460",
+      "funcname": "freeze_school_catering_po_header_document_code",
+      "self_time": 0.492,
+      "schemaname": "atlas_core",
+      "total_time": 0.492
+    },
+    {
+      "calls": 4,
+      "funcid": "19343",
+      "funcname": "pa_05b_request_hash",
+      "self_time": 0.396,
+      "schemaname": "atlas_core",
+      "total_time": 0.396
+    },
+    {
+      "calls": 1,
+      "funcid": "23156",
+      "funcname": "d037_validate_command",
+      "self_time": 0.321,
+      "schemaname": "atlas_core",
+      "total_time": 0.35
+    },
+    {
+      "calls": 4,
+      "funcid": "19338",
+      "funcname": "pa_05b_current_auth_subject",
+      "self_time": 0.248,
+      "schemaname": "atlas_core",
+      "total_time": 0.271
+    },
+    {
+      "calls": 1,
+      "funcid": "19576",
+      "funcname": "pa_05d_safe_date",
+      "self_time": 0.151,
+      "schemaname": "atlas_core",
+      "total_time": 0.151
+    },
+    {
+      "calls": 11,
+      "funcid": "19335",
+      "funcname": "pa_05b_safe_bigint",
+      "self_time": 0.139,
+      "schemaname": "atlas_core",
+      "total_time": 0.139
+    },
+    {
+      "calls": 7,
+      "funcid": "19337",
+      "funcname": "pa_05b_safe_timestamptz",
+      "self_time": 0.125,
+      "schemaname": "atlas_core",
+      "total_time": 0.125
+    }
+  ],
+  "replay": {
+    "elapsed_ms": 33.318,
+    "http_status": 200,
+    "success": true,
+    "error_code": null,
+    "response_sha256": "c5993624c313c4085d04800dfc633a730f44f3a91d7489f77c90660b49814793"
+  }
+}

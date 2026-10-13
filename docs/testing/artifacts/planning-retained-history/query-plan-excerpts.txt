@@ -1,0 +1,90 @@
+Diagnostic EXPLAIN excerpts; exploratory 7-day database, target 2027-01-18.
+These are access-path observations, not the final paired REST cohort.
+Existing deferred membership/partition guards run with auto_explain analyze/buffers.
+
+BEFORE: exact operational-tuple membership lookup
+                              ->  Nested Loop  (cost=12.15..38.84 rows=1 width=62) (actual rows=1 loops=1)
+                                    Buffers: shared hit=15
+                                    ->  Bitmap Heap Scan on theoretical_need_lines theoretical_1  (cost=11.87..30.47 rows=1 width=62) (actual rows=1 loops=1)
+                                          Recheck Cond: ((ingredient_id = revision.ingredient_id) AND (school_id = revision.school_id))
+                                          Filter: ((line_disposition = 'ACTIVE'::text) AND (service_date = revision.service_date) AND (unit_id = revision.unit_id) AND (theoretical_quantity > '0'::numeric))
+                                          Rows Removed by Filter: 7
+                                          Heap Blocks: exact=8
+                                          Buffers: shared hit=12
+                                          ->  BitmapAnd  (cost=11.87..11.87 rows=6 width=0) (actual rows=0 loops=1)
+                                                Buffers: shared hit=4
+                                                ->  Bitmap Index Scan on theoretical_need_lines_ingredient_idx  (cost=0.00..4.51 rows=31 width=0) (actual rows=32 loops=1)
+                                                      Index Cond: (ingredient_id = revision.ingredient_id)
+                                                      Buffers: shared hit=2
+                                                ->  Bitmap Index Scan on theoretical_need_lines_school_idx  (cost=0.00..7.11 rows=378 width=0) (actual rows=472 loops=1)
+                                                      Index Cond: (school_id = revision.school_id)
+                                                      Buffers: shared hit=2
+                                    ->  Index Scan using need_generation_release_snapshot_lines_line_idx on need_generation_release_snapshot_lines snapshot_line_1  (cost=0.28..8.30 rows=1 width=16) (actual rows=1 loops=1)
+                                          Index Cond: (theoretical_need_line_id = theoretical_1.theoretical_need_line_id)
+                                          Filter: (need_generation_release_snapshot_id = revision.need_generation_release_snapshot_id)
+                                          Buffers: shared hit=3
+                              ->  Limit  (cost=24.64..24.64 rows=1 width=40) (actual rows=0 loops=1)
+                                    InitPlan 8
+                                      ->  Index Scan using theoretical_need_lines_confirmed_need_fkey_key on theoretical_need_lines zero_predecessor_1  (cost=0.28..8.30 rows=1 width=0) (never executed)
+                                            Index Cond: ((theoretical_need_line_id = theoretical_1.predecessor_theoretical_need_line_id) AND (theoretical_quantity = '0'::numeric))
+
+AFTER: same membership lookup
+                              Buffers: shared hit=4 read=2
+                              ->  Nested Loop  (cost=0.56..16.68 rows=1 width=62) (actual rows=1 loops=1)
+                                    Buffers: shared hit=4 read=2
+                                    ->  Index Scan using theoretical_need_lines_positive_operational_lookup on theoretical_need_lines theoretical_1  (cost=0.28..8.30 rows=1 width=62) (actual rows=1 loops=1)
+                                          Index Cond: ((service_date = revision.service_date) AND (school_id = revision.school_id) AND (ingredient_id = revision.ingredient_id) AND (unit_id = revision.unit_id))
+                                          Buffers: shared hit=1 read=2
+                                    ->  Index Scan using need_generation_release_snapshot_lines_line_idx on need_generation_release_snapshot_lines snapshot_line_1  (cost=0.28..8.30 rows=1 width=16) (actual rows=1 loops=1)
+                                          Index Cond: (theoretical_need_line_id = theoretical_1.theoretical_need_line_id)
+                                          Filter: (need_generation_release_snapshot_id = revision.need_generation_release_snapshot_id)
+                                          Buffers: shared hit=3
+                              ->  Limit  (cost=24.70..24.70 rows=1 width=40) (actual rows=0 loops=1)
+                                    InitPlan 8
+                                      ->  Index Scan using theoretical_need_lines_confirmed_need_fkey_key on theoretical_need_lines zero_predecessor_1  (cost=0.28..8.30 rows=1 width=0) (never executed)
+                                            Index Cond: ((theoretical_need_line_id = theoretical_1.predecessor_theoretical_need_line_id) AND (theoretical_quantity = '0'::numeric))
+
+BEFORE: release partition membership enumeration
+    ->  GroupAggregate  (cost=1.12..760.60 rows=117 width=16) (actual rows=0 loops=1)
+          Group Key: snapshot_line.need_generation_release_snapshot_line_id
+          Filter: (count(revision.confirmed_need_line_revision_id) <> 1)
+          Rows Removed by Filter: 236
+          Buffers: shared hit=4417
+          ->  Nested Loop Left Join  (cost=1.12..758.54 rows=118 width=32) (actual rows=236 loops=1)
+                Buffers: shared hit=4417
+                ->  Nested Loop Left Join  (cost=0.83..719.32 rows=118 width=32) (actual rows=236 loops=1)
+                      Buffers: shared hit=3235
+                      ->  Nested Loop  (cost=0.56..504.15 rows=118 width=16) (actual rows=236 loops=1)
+                            Buffers: shared hit=2527
+                            ->  Index Scan using need_generation_release_snapshot_lines_pkey on need_generation_release_snapshot_lines snapshot_line  (cost=0.28..173.34 rows=236 width=32) (actual rows=236 loops=1)
+                                  Filter: (need_generation_release_snapshot_id = '34c92219-2816-a4c8-00b2-d3a4697807b5'::uuid)
+                                  Rows Removed by Filter: 1654
+                                  Buffers: shared hit=1818
+                            ->  Index Only Scan using theoretical_need_lines_confirmed_need_owner_key on theoretical_need_lines theoretical  (cost=0.28..1.40 rows=1 width=16) (actual rows=1 loops=236)
+                                  Index Cond: ((theoretical_need_line_id = snapshot_line.theoretical_need_line_id) AND (line_disposition = 'ACTIVE'::text) AND (theoretical_quantity > '0'::numeric))
+                                  Heap Fetches: 236
+                                  Buffers: shared hit=709
+                      ->  Index Scan using confirmed_need_contributions_release_member_lookup on confirmed_need_line_revision_contributions contribution  (cost=0.28..1.81 rows=1 width=32) (actual rows=1 loops=236)
+
+AFTER: same release partition
+          Group Key: snapshot_line.need_generation_release_snapshot_line_id
+          Filter: (count(revision.confirmed_need_line_revision_id) <> 1)
+          Rows Removed by Filter: 236
+          Buffers: shared hit=2068 read=19 written=11
+          ->  Nested Loop Left Join  (cost=1.12..706.73 rows=118 width=32) (actual rows=236 loops=1)
+                Buffers: shared hit=2068 read=19 written=11
+                ->  Nested Loop Left Join  (cost=0.84..682.41 rows=118 width=32) (actual rows=236 loops=1)
+                      Buffers: shared hit=1568 read=19 written=11
+                      ->  Nested Loop  (cost=0.56..444.94 rows=118 width=16) (actual rows=236 loops=1)
+                            Buffers: shared hit=879
+                            ->  Index Only Scan using need_generation_release_lines_partition_lookup on need_generation_release_snapshot_lines snapshot_line  (cost=0.28..66.14 rows=236 width=32) (actual rows=236 loops=1)
+                                  Index Cond: (need_generation_release_snapshot_id = '34c92219-2816-a4c8-00b2-d3a4697807b5'::uuid)
+                                  Heap Fetches: 236
+                                  Buffers: shared hit=170
+                            ->  Index Only Scan using theoretical_need_lines_confirmed_need_owner_key on theoretical_need_lines theoretical  (cost=0.28..1.61 rows=1 width=16) (actual rows=1 loops=236)
+                                  Index Cond: ((theoretical_need_line_id = snapshot_line.theoretical_need_line_id) AND (line_disposition = 'ACTIVE'::text) AND (theoretical_quantity > '0'::numeric))
+                                  Heap Fetches: 236
+                                  Buffers: shared hit=709
+                      ->  Index Scan using confirmed_need_contributions_release_member_lookup on confirmed_need_line_revision_contributions contribution  (cost=0.28..2.00 rows=1 width=32) (actual rows=1 loops=236)
+                            Index Cond: ((need_generation_release_snapshot_line_id = snapshot_line.need_generation_release_snapshot_line_id) AND (confirmed_need_batch_id = '0d0b2a9a-1443-95d6-21ae-f272dc6f0568'::uuid))
+                            Filter: ((need_generation_run_id = '62f142fa-b3ac-56c9-9704-2dfe673357d0'::uuid) AND (need_generation_run_version = '3'::bigint) AND (need_generation_release_snapshot_id = '34c92219-2816-a4c8-00b2-d3a4697807b5'::uuid))
