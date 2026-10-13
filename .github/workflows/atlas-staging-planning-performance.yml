@@ -7,6 +7,11 @@ on:
         description: Exact full commit SHA already certified on main
         required: true
         type: string
+      purchase_acceptance:
+        description: One hosted migration-105 Purchase Preparation and exact replay
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -60,4 +65,30 @@ jobs:
         run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}" --certification github --preflight
 
       - name: Verify rollback-only Planning performance
+        if: ${{ inputs.purchase_acceptance == false }}
         run: node scripts/verify-staging-planning-performance.mjs --commit-sha "${{ inputs.commit_sha }}"
+
+      - name: Load bounded acceptance harness from workflow revision
+        if: ${{ inputs.purchase_acceptance == true }}
+        env:
+          HARNESS_SHA: ${{ github.workflow_sha }}
+        run: |
+          git fetch origin "$HARNESS_SHA"
+          git show "$HARNESS_SHA:scripts/hosted-purchase-acceptance.mjs" > scripts/hosted-purchase-acceptance.mjs
+          git show "$HARNESS_SHA:scripts/hosted-purchase-acceptance.test.mjs" > scripts/hosted-purchase-acceptance.test.mjs
+          pnpm exec vitest run scripts/hosted-purchase-acceptance.test.mjs
+
+      - name: Execute hosted Purchase Preparation acceptance
+        if: ${{ inputs.purchase_acceptance == true }}
+        env:
+          ATLAS_ACCEPTANCE_MAIN_SHA: ${{ inputs.commit_sha }}
+        run: node scripts/hosted-purchase-acceptance.mjs
+
+      - name: Preserve acceptance and recovery evidence
+        if: ${{ always() && inputs.purchase_acceptance == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-purchase-acceptance-${{ github.run_id }}
+          path: artifacts/hosted-purchase-acceptance
+          if-no-files-found: warn
+          retention-days: 14
