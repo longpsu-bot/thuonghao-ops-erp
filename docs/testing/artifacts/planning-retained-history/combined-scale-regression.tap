@@ -1,0 +1,95 @@
+1..31
+ok 1 - Purchase Preparation publishes the provisional 20-second function timeout
+ok 2 - normal authenticated commands retain the global 8-second timeout
+b6000000-0000-0000-0000-000000000101
+ok 3 - scale setup saves all 236 Confirmed Need decisions through one authenticated public command
+ok 4 - scale setup has exactly 236 current positive Confirmed Need decisions
+ok 5 - scale setup begins with zero persisted allocation families
+ok 6 - canonical source projection exposes exactly 236 complete positive families before preparation
+ok 7 - all 236 families have one safe current preferred-Supplier recommendation before preparation
+20s
+purchase_preparation_scale public_prepare statement_timeout=20s families=236
+Time: 11246.511 ms (00:11.247)
+# purchase_preparation_scale success_command_ms=11239.129 success_guard_ms=297.235 success_total_ms=11536.364 families=236 statement_timeout=20s
+ok 8 - one authenticated public Purchase Preparation succeeds for 236 families
+ERROR:  canceling statement due to statement timeout
+CONTEXT:  SQL expression "exists (
+    with recursive source_chain as (
+      select run.need_generation_run_id
+      from atlas_planning.need_generation_runs run
+      where run.need_generation_run_id = v_batch.current_need_generation_run_id
+      union all
+      select predecessor.need_generation_run_id
+      from atlas_planning.need_generation_runs predecessor
+      join atlas_planning.need_generation_runs child
+        on child.predecessor_need_generation_run_id = predecessor.need_generation_run_id
+      join source_chain chain
+        on chain.need_generation_run_id = child.need_generation_run_id
+    )
+    select 1
+    from atlas_planning.confirmed_need_line_revisions revision
+    join atlas_planning.confirmed_need_lines line
+      on line.confirmed_need_line_id = revision.confirmed_need_line_id
+    where revision.confirmed_need_batch_id = v_batch_id
+      and (v_line_id is null or revision.confirmed_need_line_id = v_line_id)
+      and (
+        revision.source_kind <> 'NEED_GENERATION'
+        or revision.service_date is distinct from line.service_date
+        or revision.customer_id is distinct from line.customer_id
+        or revision.school_id is distinct from line.school_id
+        or revision.delivery_location_id is distinct from line.delivery_location_id
+        or revision.ingredient_id is distinct from line.ingredient_id
+        or revision.unit_id is distinct from line.controlled_unit_id
+        or not exists (
+          select 1 from source_chain
+          where source_chain.need_generation_run_id = revision.need_generation_run_id
+        )
+        or (
+          revision.is_current and row(
+            revision.need_generation_run_id,
+            revision.need_generation_run_version,
+            revision.need_generation_release_snapshot_id
+          ) is distinct from row(
+            v_batch.current_need_generation_run_id,
+            v_batch.current_need_generation_run_version,
+            v_batch.current_need_generation_release_snapshot_id
+          )
+        )
+      )
+  )"
+PL/pgSQL function atlas_planning.pa_06e_h0b1b_confirmed_need_current_source_consistency() line 279 at IF
+SQL statement "set constraints all immediate"
+PL/pgSQL function atlas_api.release_confirmed_needs(jsonb) line 378 at SQL statement
+PL/pgSQL function atlas_api.prepare_school_catering_purchase_orders(jsonb) line 79 at assignment
+ok 9 - outer Purchase Preparation statement completes within the hoisted 20-second budget
+ok 10 - complete public Purchase Preparation command satisfies the provisional 15-second performance target
+ok 11 - Purchase Preparation plus all deferred integrity guards completes within 20 seconds
+ok 12 - preparation materializes exactly 236 preferred-Supplier default revisions
+ok 13 - every generated default preserves outer command, Actor, source batch and version lineage
+ok 14 - preparation manufactures no per-row allocation Save or confirmation receipt
+ok 15 - preparation creates exactly 236 allocation families
+ok 16 - scale preparation creates no duplicate family identity
+ok 17 - every scale family has exactly one current revision
+ok 18 - all 236 families are current promoted Handoff defaults
+ok 19 - current Handoff revisions retain their confirmed predecessor and strict source kind
+ok 20 - every current family has one exact positive 100-percent split to its unique preferred Supplier
+ok 21 - all generated default fingerprints and quantities match canonical Confirmed Need authority
+ok 22 - all current Handoff fingerprints and quantities match canonical Handoff authority
+ok 23 - preparation creates one current released Handoff batch
+ok 24 - current Handoff preserves all 236 exact Confirmed Need quantities and identities
+ok 25 - preparation consolidates 236 families into 12 valid Supplier PO Drafts
+ok 26 - the 12 current Draft POs contain exactly 236 stable PO lines in total
+ok 27 - current PO Draft lines map one-to-one to 236 unique Supplier splits and allocation families
+ok 28 - all 236 PO Draft lines preserve exact Supplier, family, quantity and split lineage
+20s
+ok 29 - identical scale replay returns the exact original durable response
+ok 30 - identical scale replay creates no new Need, allocation, Handoff, PO, event or audit fact
+ok 31 - identical scale replay creates no new receipt
+1..11
+b6000000-0000-0000-0000-000000000101
+ok 1 - independent rollback setup saves all 236 Confirmed Need decisions through one authenticated public command
+ok 2 - independent rollback setup has 236 current decisions and zero persisted allocation families
+ok 3 - independent rollback setup has 236 complete sources and 236 safe preferred recommendations
+20s
+purchase_preparation_scale public_prepare statement_timeout=20s families=236
+Time: 20094.883 ms (00:20.095)

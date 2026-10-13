@@ -1,0 +1,12 @@
+{
+  "project_id": "rnzxmxiiqgtdevzregff",
+  "observed_date": "2026-10-13",
+  "count": 102,
+  "latest": {
+    "version": "20261012064517",
+    "name": "atlas_positive_correction_fast_path"
+  },
+  "method": "read-only list_migrations",
+  "migration103Present": false,
+  "deployed": false
+}

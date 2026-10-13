@@ -29,6 +29,7 @@
     "local:connection:verify": "node scripts/verify-local-supabase-connection.mjs",
     "certify:frontend": "node scripts/certify-frontend.mjs",
     "certify:supabase:full-integration": "node scripts/certify-supabase-full-integration.mjs",
+    "benchmark:planning:history": "node scripts/benchmark-planning-retained-history.mjs",
     "atlas:staging:deploy": "node scripts/deploy-atlas-staging.mjs",
     "atlas:staging:verify": "node scripts/verify-atlas-staging.mjs",
     "atlas:staging:school-fulfilment:verify": "node scripts/verify-atlas-staging-school-fulfilment.mjs",
