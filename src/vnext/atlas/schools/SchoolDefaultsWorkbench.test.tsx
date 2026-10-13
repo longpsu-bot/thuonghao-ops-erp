@@ -458,7 +458,7 @@ describe("Chakra School default portions workbench", () => {
 
     expect(
       await screen.findByText(
-        "Đã tải lại dữ liệu chính thức. Kiểm tra các thay đổi chưa lưu trước khi lưu.",
+        "Đã tải lại dữ liệu. Kiểm tra các thay đổi chưa lưu trước khi lưu tiếp.",
       ),
     ).toBeInTheDocument();
     expect(student()).toHaveValue("421");
@@ -647,7 +647,7 @@ describe("Chakra School default portions workbench", () => {
       );
       expect(
         await screen.findByText(
-          "Đã tải lại dữ liệu chính thức. Kiểm tra các thay đổi chưa lưu trước khi lưu.",
+          "Đã tải lại dữ liệu. Kiểm tra các thay đổi chưa lưu trước khi lưu tiếp.",
         ),
       ).toBeInTheDocument();
       expect(screen.queryByText(message)).not.toBeInTheDocument();
@@ -675,7 +675,7 @@ describe("Chakra School default portions workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(
       await screen.findByText(
-        "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
+        "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
       ),
     ).toBeInTheDocument();
     expect(

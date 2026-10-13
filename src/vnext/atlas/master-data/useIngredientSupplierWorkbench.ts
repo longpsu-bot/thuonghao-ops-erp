@@ -248,7 +248,7 @@ export function useIngredientSupplierWorkbench({
         if (purpose === "readback") {
           setLock("readback");
           setNotice(
-            "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
+            "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
           );
         }
         return false;

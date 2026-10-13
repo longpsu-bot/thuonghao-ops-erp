@@ -31,13 +31,13 @@ export function PlanningDirtyExitDialog({
           <Dialog.Header>
             <Dialog.Title>
               {wholeWeek
-                ? "Bỏ các dòng bổ sung của toàn tuần?"
+                ? "Bỏ các dòng hàng đặt riêng của cả tuần?"
                 : "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?"}
             </Dialog.Title>
           </Dialog.Header>
           {wholeWeek && (
             <Dialog.Body>
-              Xác nhận toàn tuần không có bổ sung sẽ bỏ các dòng đang có.
+              Xác nhận cả tuần không có hàng đặt riêng sẽ bỏ các dòng đang có.
             </Dialog.Body>
           )}
           <Dialog.Footer flexWrap="wrap">

@@ -65,11 +65,11 @@ const dishDraftFor = (dish?: DishRecord): DishDraft => ({
   notes: dish?.operational_notes ?? "",
 });
 const readError =
-  "Không tải được dữ liệu công thức chính thức. Hãy tải lại trước khi tiếp tục.";
+  "Không tải được công thức đã lưu. Hãy tải lại trước khi tiếp tục.";
 const unknownMessage =
-  "Atlas chưa thể xác nhận lần lưu công thức đã hoàn tất hay chưa.";
+  "Chưa xác định được công thức đã lưu thành công hay chưa. Hãy tải lại để kiểm tra kết quả.";
 const readbackMessage =
-  "Đã gửi lệnh lưu nhưng chưa tải lại được công thức chính thức.";
+  "Đã gửi yêu cầu lưu công thức nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.";
 function safeError(result: AtlasRpcResult) {
   if (result.kind === "auth_error")
     return "Phiên làm việc không còn hợp lệ. Vui lòng đăng nhập lại.";
@@ -79,7 +79,7 @@ function safeError(result: AtlasRpcResult) {
     CAPABILITY_DENIED: "Bạn không có quyền thực hiện thao tác này.",
     SCOPE_DENIED: "Phạm vi được cấp không cho phép thao tác này.",
     CONFLICT:
-      "Tên món hoặc dữ liệu mục tiêu đã tồn tại. Hãy kiểm tra và đổi tên nếu cần.",
+      "Tên món hoặc dữ liệu cần tạo đã tồn tại. Hãy kiểm tra và đổi tên nếu cần.",
     VALIDATION_FAILED:
       "Dữ liệu chưa hợp lệ. Hãy kiểm tra các trường và thử lại.",
     INVARIANT_VIOLATION: "Dữ liệu hiện tại chưa cho phép thao tác này.",
@@ -460,7 +460,7 @@ export function useDishRecipeWorkbench({
       setNotice(plan.message);
     } else
       setNotice(
-        "Chưa xác nhận được kết quả chính thức. Không gửi lại lệnh; hãy tải lại để xác nhận.",
+        "Chưa xác định được kết quả thao tác. Hãy tải lại để kiểm tra, không gửi lại yêu cầu.",
       );
   }
   function reviewRecipe() {
@@ -749,7 +749,7 @@ export function useDishRecipeWorkbench({
       reason.trim(),
     );
     const message =
-      "Đã nhập workbook và tải lại dữ liệu. Xem lại các công thức đã nhập trước khi dùng cho Lập nhu cầu.";
+      "Đã nhập công thức từ Excel và tải lại dữ liệu. Kiểm tra các công thức đã nhập trước khi dùng để lập nhu cầu.";
     await execute(
       () => api.applyImport(request),
       () => ({

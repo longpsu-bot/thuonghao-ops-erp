@@ -173,7 +173,7 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
   fireEvent.click(screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }));
   expect(
     await screen.findByText(
-      /Phân bổ NCC đang mở giữ khoảng 2026-09-07 → 2026-09-09/,
+      /Bàn Phân bổ NCC vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,
     ),
   ).toBeVisible();
   expect(
@@ -203,7 +203,7 @@ it("preserves an existing Orders range and selected order when Allocation reques
   fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
   expect(
     await screen.findByText(
-      /Đơn mua đang mở giữ khoảng 2026-09-07 → 2026-09-09/,
+      /Bàn Đơn mua vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,
     ),
   ).toBeVisible();
   expect(

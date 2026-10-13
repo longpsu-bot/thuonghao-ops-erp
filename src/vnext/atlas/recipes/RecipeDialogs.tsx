@@ -77,7 +77,7 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
     kind === "copy"
       ? "Sao chép công thức"
       : kind === "import"
-        ? "Nhập workbook"
+        ? "Nhập từ Excel"
         : c.dish?.dish_status === "ACTIVE"
           ? "Ngừng dùng món"
           : "Kích hoạt món";
@@ -160,7 +160,7 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
             {kind === "import" && (
               <>
                 <Field.Root>
-                  <Field.Label>Chọn workbook .xlsx</Field.Label>
+                  <Field.Label>Chọn file Excel .xlsx</Field.Label>
                   <Input
                     type="file"
                     accept=".xlsx"
@@ -184,7 +184,7 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
                     <Text mt="sm">
                       Kết quả kiểm tra:{" "}
                       {c.workbook.errors.length
-                        ? "Cần sửa workbook"
+                        ? "Cần sửa file Excel"
                         : "Hợp lệ để nhập"}
                     </Text>
                     {c.workbook.errors.map((error, i) => (
@@ -192,7 +192,7 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
                         {error.startsWith(
                           "BOM có nhiều dòng cho cùng nguyên liệu trong phạm vi ",
                         )
-                          ? "BOM có nhiều dòng cho cùng nguyên liệu trong một công thức. Hãy gộp hoặc bỏ dòng trùng."
+                          ? "Một nguyên liệu xuất hiện ở nhiều dòng trong cùng công thức. Hãy gộp hoặc bỏ dòng trùng."
                           : error}
                       </Text>
                     ))}
@@ -212,7 +212,7 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
             {(kind === "copy" || kind === "import") && (
               <Field.Root mt="sm">
                 <Field.Label>
-                  {kind === "copy" ? "Lý do sao chép" : "Lý do nhập workbook"}
+                  {kind === "copy" ? "Lý do sao chép" : "Lý do nhập từ Excel"}
                 </Field.Label>
                 <Input
                   value={reason}
@@ -276,7 +276,7 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
                 }
                 onClick={() => void c.applyImport(reason)}
               >
-                Áp dụng workbook
+                Nhập công thức
               </Button>
             )}
           </Dialog.Footer>

@@ -260,7 +260,7 @@ it("never confirms uncertain creation using an existing same-name group and repl
     screen.getByText("Xác nhận lần lưu nơi nấu", { selector: "button" }),
   );
   await screen.findByText(
-    "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
+    "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
   );
   expect(screen.getByLabelText("Tên nơi nấu")).toHaveValue("Bếp X");
   expect(report).toHaveBeenLastCalledWith(
@@ -338,7 +338,7 @@ it("locks a successful command if group authority cannot be read back", async ()
   fireEvent.click(screen.getByLabelText(`Lưu Nấu tại — ${school.school_name}`));
   expect(
     await screen.findByText(
-      "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
+      "Đã gửi yêu cầu lưu nhưng chưa tải được dữ liệu sau khi lưu. Hãy tải lại để kiểm tra kết quả.",
     ),
   ).toBeInTheDocument();
   expect(select).toBeDisabled();

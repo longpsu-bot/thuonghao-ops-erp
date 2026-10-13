@@ -120,21 +120,19 @@ const imported =
   async (context) => {
     const c = within(context.canvasElement);
     await userEvent.click(
-      await c.findByRole("button", { name: "Nhập workbook" }),
+      await c.findByRole("button", { name: "Nhập từ Excel" }),
     );
     await userEvent.upload(
-      c.getByLabelText("Chọn workbook .xlsx"),
+      c.getByLabelText("Chọn file Excel .xlsx"),
       await recipeReviewWorkbook(invalid),
     );
     await c.findByText(/Kết quả kiểm tra:/);
     if (apply) {
       await userEvent.type(
-        c.getByLabelText("Lý do nhập workbook"),
+        c.getByLabelText("Lý do nhập từ Excel"),
         "Nhập dữ liệu đã kiểm tra",
       );
-      await userEvent.click(
-        c.getByRole("button", { name: "Áp dụng workbook" }),
-      );
+      await userEvent.click(c.getByRole("button", { name: "Nhập công thức" }));
     }
   };
 export const Catalogue: Story = {};

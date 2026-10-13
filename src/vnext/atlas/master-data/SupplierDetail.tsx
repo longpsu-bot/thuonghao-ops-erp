@@ -80,7 +80,7 @@ export function SupplierDetail({
           onChange={(value) => c.setSupplierField("documentCode", value)}
           maxLength={200}
           disabled={c.saving || c.loading || Boolean(c.lock)}
-          helperText="Có thể để trống khi tạo dữ liệu gốc. Cần có mã trước khi phát hành đơn mua hàng."
+          helperText="Có thể để trống khi tạo nhà cung ứng. Cần bổ sung mã trước khi phát hành đơn mua hàng."
         />
         <SupplierField
           label="Người liên hệ"

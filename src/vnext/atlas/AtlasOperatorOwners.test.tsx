@@ -170,7 +170,7 @@ it("retains separate Menu, Attendance, direct-order and Need owners without navi
   const attendanceOwner = owner("Sĩ số");
   await open("Hàng đặt riêng");
   const addSchool = await screen.findByRole("combobox", {
-    name: "Trường thêm dòng",
+    name: "Trường cần thêm hàng",
   });
   await waitFor(() => expect(addSchool).toBeEnabled());
   fireEvent.change(addSchool, { target: { value: "school-1" } });
@@ -413,12 +413,12 @@ it.each([false, true])(
     expect(orders).toHaveBeenCalledTimes(differentDate ? 3 : 2); // Mount/date reads plus command proof; activation adds no read.
     expect(search).toHaveValue("Giữ bộ lọc");
     expect(
-      screen.getByText(/^Chuyển sang Đơn mua từ Phân bổ NCC /),
-    ).toHaveTextContent("Tải lại dữ liệu tại Đơn mua");
+      screen.getByText(/^Đã mở bàn Đơn mua từ Phân bổ NCC /),
+    ).toHaveTextContent("Hãy tải lại dữ liệu để xem kết quả mới");
     expect(
-      screen.getByText(/^Chuyển sang Đơn mua từ Phân bổ NCC /),
+      screen.getByText(/^Đã mở bàn Đơn mua từ Phân bổ NCC /),
     ).toHaveTextContent(
-      `giữ khoảng ${differentDate ? "2026-09-11" : reviewDate} → ${differentDate ? "2026-09-11" : reviewDate}`,
+      `giữ khoảng ngày ${differentDate ? "2026-09-11" : reviewDate} → ${differentDate ? "2026-09-11" : reviewDate}`,
     );
     expect(allocationOwner).toHaveAttribute("hidden");
     await open("Phân bổ NCC");
