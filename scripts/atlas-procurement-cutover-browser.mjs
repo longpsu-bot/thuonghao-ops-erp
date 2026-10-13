@@ -23,6 +23,10 @@ import {
   validateAtlasStagingPackageProtectedValues,
   redactAtlasStagingDiagnostic,
 } from "./atlas-staging-contract.mjs";
+import {
+  ensurePlanningServiceDateAvailable,
+  controlledInputExpression,
+} from "./staging-planning-browser.mjs";
 
 const READS = new Set([
   "get_school_master_data",
@@ -35,9 +39,17 @@ const READS = new Set([
   "get_confirmed_need_review",
   "get_confirmed_need_shopping_list_export",
   "get_planning_input_preflight",
+  "get_planning_inputs_workbench",
+  "get_pantry_source_workbench",
 ]);
 export function readRpcAllowed(name) {
   return READS.has(name);
+}
+export function observeRpcRequest(request, origin) {
+  return (
+    request.method === "POST" &&
+    request.url.startsWith(origin + "/rest/v1/rpc/")
+  );
 }
 export function assertOperatorOrders(read) {
   assert.equal(read.success, true, "PO_BUSINESS_SUCCESS");
@@ -122,11 +134,9 @@ async function connect(url, onEvent, onEventError) {
     },
   };
 }
-const allocationPanel =
-  '[role="tabpanel"][aria-label="Phân bổ NCC"]:not([hidden])';
-const ordersPanel = '[role="tabpanel"][aria-label="Đơn mua"]:not([hidden])';
-const confirmedPanel =
-  '[role="tabpanel"][aria-label="Xác nhận nhu cầu"]:not([hidden])';
+const allocationPanel = 'section[aria-label="Kế hoạch mua hàng"]';
+const ordersPanel = allocationPanel;
+const confirmedPanel = 'section[aria-label="Xác nhận nhu cầu"]';
 const quantity = (value) => {
   const [whole, fraction = ""] = value.split(".");
   return (
@@ -219,7 +229,7 @@ async function main() {
         }
         if (
           event.method === "Network.requestWillBeSent" &&
-          p.request.url.startsWith(target.supabaseUrl + "/rest/v1/rpc/")
+          observeRpcRequest(p.request, target.supabaseUrl)
         ) {
           const name = new URL(p.request.url).pathname.split("/").pop();
           let payload;
@@ -341,7 +351,7 @@ async function main() {
           `document.querySelector(${JSON.stringify(calendar + ' [data-part="' + direction + '"]')}).click()`,
         );
       }
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 1; i++) {
         await until(
           () =>
             evaluate(
@@ -397,11 +407,11 @@ async function main() {
       for (const cells of ui) {
         const index = expected.findIndex(
           (e) =>
-            e.ingredient === cells[1] &&
+            e.ingredient === cells[0] &&
             e.suppliers === cells[3] &&
             compact(cells[2]) === compact(e.need + " " + e.unit) &&
-            cells[0].includes(e.location) &&
-            e.schools.every((s) => cells[0].includes(s)),
+            cells[1].includes(e.location) &&
+            e.schools.every((s) => cells[1].includes(s)),
         );
         assert.ok(
           index >= 0,
@@ -423,7 +433,13 @@ async function main() {
         elapsed_ms: r.elapsed_ms,
         row_count: ui.length,
         exact_ui_values: true,
-        school_location_first: true,
+        school_location_first: false,
+        deployed_columns: [
+          "Nguyên liệu",
+          "Trường / điểm giao",
+          "Nhu cầu",
+          "Nhà cung ứng",
+        ],
         state_labels: "Đủ / Xem phân bổ",
         authority: "PURCHASE_HANDOFF",
       };
@@ -448,12 +464,12 @@ async function main() {
     await until(
       () =>
         evaluate(
-          "!document.querySelector('#atlas-signin-email') && document.querySelector('aside')",
+          "Boolean(!document.querySelector('#atlas-signin-email') && document.querySelector('aside'))",
         ),
       "authenticated_shell",
     );
     stage = "allocation";
-    await click("Phân bổ NCC");
+    await click("Kế hoạch mua hàng");
     await until(
       () =>
         evaluate(
@@ -461,7 +477,7 @@ async function main() {
         ),
       "allocation_panel",
     );
-    await setRange(allocationPanel, "Khoảng ngày");
+    await setRange(allocationPanel, "Ngày phục vụ");
     await allocationReady();
     await screenshot("01-supplier-allocation");
     stage = "refresh";
@@ -476,13 +492,13 @@ async function main() {
     await allocationReady();
     b.refresh = "PASS";
     stage = "leave_return";
-    await click("Đơn mua");
-    await click("Phân bổ NCC");
+    await click("Trường học");
+    await click("Kế hoạch mua hàng");
     await allocationReady();
     b.leave_return = "PASS";
     await screenshot("02-allocation-return");
     stage = "open_purchase_orders";
-    await click("Xem đơn mua", allocationPanel);
+    await click("Đơn mua", allocationPanel);
     await until(async () => {
       const r = latestRead("get_school_catering_purchase_orders");
       return r && (await tableRows(ordersPanel)).length === 17;
@@ -606,11 +622,13 @@ async function main() {
     const zip = await evaluate(
       `[...document.querySelector(${JSON.stringify(ordersPanel)}).querySelectorAll('button')].filter(e=>e.textContent.includes('Xuất ZIP PO')).map(e=>({label:e.textContent.trim(),disabled:e.disabled}))`,
     );
-    assert.equal(zip.length, 1);
-    assert.equal(zip[0].disabled, true, "DRAFT_ZIP_EXPORT_MUST_BE_DISABLED");
+    assert.ok(
+      zip.every((control) => control.disabled),
+      "DRAFT_ZIP_EXPORT_MUST_BE_DISABLED",
+    );
     b.po_export = {
       status: "NOT_ENABLED_FOR_DRAFT_STATE",
-      zip_control: zip[0],
+      zip_control: zip[0] ?? "NOT_IMPLEMENTED_IN_PINNED_FRONTEND",
       individual_export_controls: "ABSENT",
       download_count: 0,
     };
@@ -619,15 +637,16 @@ async function main() {
     await until(
       () =>
         evaluate(
-          "!document.querySelector('#atlas-signin-email') && document.querySelector('aside')",
+          "Boolean(!document.querySelector('#atlas-signin-email') && document.querySelector('aside'))",
         ),
       "session_after_reload",
     );
-    await click("Phân bổ NCC");
-    await setRange(allocationPanel, "Khoảng ngày");
+    await click("Kế hoạch mua hàng");
+    await setRange(allocationPanel, "Ngày phục vụ");
     await allocationReady();
     b.browser_reload = "PASS";
     stage = "shopping_list";
+    await click("Lập nhu cầu");
     await click("Xác nhận nhu cầu");
     await until(
       () =>
@@ -636,7 +655,18 @@ async function main() {
         ),
       "confirmed_panel",
     );
-    await setRange(confirmedPanel, "Khoảng ngày");
+    await ensurePlanningServiceDateAvailable({
+      evaluate,
+      serviceDate: DATE,
+      weekStart: DATE,
+    });
+    await evaluate(
+      controlledInputExpression(
+        confirmedPanel + ' select[aria-label="Ngày phục vụ"]',
+        DATE,
+        "select",
+      ),
+    );
     await until(
       () =>
         evaluate(
@@ -669,10 +699,15 @@ async function main() {
     assertSnapshotsEqual(evidence.before_phase_b, evidence.after_phase_b);
     b.fact_delta = 0;
     b.receipt_event_audit_delta = 0;
-    b.status = "PASS";
-    evidence.task_status = "COMPLETE";
+    b.follow_up_debt.push({
+      classification: "D",
+      issue:
+        "Pinned frontend predates the accepted School-first tables; Ingredient is still the first column. No UI rewrite was performed.",
+    });
+    b.status = "FUNCTIONAL_READS_PASS_ACCEPTED_UI_VERSION_GAP";
+    evidence.task_status = "BLOCKED_UI_VERSION";
     evidence.phase = "REHEARSAL_COMPLETE";
-    evidence.atlas_procurement_cutover_rehearsal = "PASS";
+    evidence.atlas_procurement_cutover_rehearsal = "NOT_PASSED";
     saveEvidence(evidence);
     console.log(
       JSON.stringify({

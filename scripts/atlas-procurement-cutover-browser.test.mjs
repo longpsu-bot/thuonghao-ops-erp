@@ -2,7 +2,15 @@ import { expect, it } from "vitest";
 import {
   readRpcAllowed,
   assertOperatorOrders,
+  observeRpcRequest,
 } from "./atlas-procurement-cutover-browser.mjs";
+it("ignores CORS preflights when recording application RPC responses", () => {
+  const origin = "https://rnzxmxiiqgtdevzregff.supabase.co";
+  const url =
+    origin + "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench";
+  expect(observeRpcRequest({ method: "OPTIONS", url }, origin)).toBe(false);
+  expect(observeRpcRequest({ method: "POST", url }, origin)).toBe(true);
+});
 it("permits only the declared read surfaces", () => {
   expect(readRpcAllowed("get_confirmed_supplier_allocation_workbench")).toBe(
     true,
