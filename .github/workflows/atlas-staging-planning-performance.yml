@@ -16,6 +16,11 @@ on:
         description: Replay only the confirmed successful request in this original run artifact
         required: false
         type: string
+      procurement_read_acceptance:
+        description: Read-only migration-106 released Supplier Allocation HTTP acceptance
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,6 +52,17 @@ jobs:
           ref: ${{ inputs.commit_sha }}
           fetch-depth: 0
 
+      - name: Reject mixed acceptance modes
+        env:
+          READ_ACCEPTANCE: ${{ inputs.procurement_read_acceptance }}
+          PURCHASE_ACCEPTANCE: ${{ inputs.purchase_acceptance }}
+          REPLAY_RUN: ${{ inputs.replay_evidence_run_id }}
+        run: |
+          if [[ "$READ_ACCEPTANCE" == "true" && ( "$PURCHASE_ACCEPTANCE" == "true" || -n "$REPLAY_RUN" ) ]]; then
+            echo "::error::Read-only rehearsal cannot execute a preparation or replay command."
+            exit 1
+          fi
+
       - name: Fetch main for ancestry verification
         run: git fetch --no-tags origin main:refs/remotes/origin/main
 
@@ -69,8 +85,33 @@ jobs:
         run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}" --certification github --preflight
 
       - name: Verify rollback-only Planning performance
-        if: ${{ inputs.purchase_acceptance == false }}
+        if: ${{ inputs.purchase_acceptance == false && inputs.procurement_read_acceptance != true }}
         run: node scripts/verify-staging-planning-performance.mjs --commit-sha "${{ inputs.commit_sha }}"
+
+      - name: Load read-only Procurement harness from workflow revision
+        if: ${{ inputs.procurement_read_acceptance == true }}
+        env:
+          HARNESS_SHA: ${{ github.workflow_sha }}
+        run: |
+          git fetch origin "$HARNESS_SHA"
+          git show "$HARNESS_SHA:scripts/atlas-procurement-cutover.mjs" > scripts/atlas-procurement-cutover.mjs
+          git show "$HARNESS_SHA:scripts/atlas-procurement-cutover.test.mjs" > scripts/atlas-procurement-cutover.test.mjs
+          pnpm exec vitest run scripts/atlas-procurement-cutover.test.mjs --environment node
+
+      - name: Read released Supplier Allocation through authenticated hosted HTTP
+        if: ${{ inputs.procurement_read_acceptance == true }}
+        env:
+          ATLAS_ACCEPTANCE_MAIN_SHA: ${{ inputs.commit_sha }}
+        run: node scripts/atlas-procurement-cutover.mjs
+
+      - name: Preserve read-only Procurement acceptance evidence
+        if: ${{ always() && inputs.procurement_read_acceptance == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-procurement-cutover-${{ github.run_id }}
+          path: artifacts/atlas-procurement-cutover
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Load bounded acceptance harness from workflow revision
         if: ${{ inputs.purchase_acceptance == true }}
