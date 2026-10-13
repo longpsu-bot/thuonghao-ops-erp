@@ -127,6 +127,17 @@ corrected and exercised by the concurrent proof; no actionable finding remains.
 
 Final standard backend integration and current-head GitHub Actions results are
 recorded at delivery. Routine full frontend validation remains CI-owned.
+The first full run reached the existing final-closeout timeout audit, which
+rejected the already-approved Purchase Preparation function exception because
+the older audit forbade all function-level timeouts. The audit now permits only
+the exact `prepare_school_catering_purchase_orders(jsonb)` / `20s` pair; other
+functions, overloads and values remain rejected. Actual generated-SQL probes pass
+for accepted 20s, rejected 21s and rejected 20s on another private function:
+[closed-allowlist proof](../testing/artifacts/atlas-preferred-supplier-school-first/source-reuse/timeout-policy.json).
+The unchanged performance unit suite passes 3/3. Frontend certification also caught
+the suite-count expectation (112 → 113); its explicit new-suite assertion and all
+115 shared certification tests pass. These are certification alignment with the
+approved exception/new regression, not changed runtime policy or weakened gates.
 Forward rollback restores the prior seven-argument persistence body and
 materializer before removing the two new seams, or restores the four pre-#370
 functions before removing all five helpers. Accepted facts/commitments remain.
