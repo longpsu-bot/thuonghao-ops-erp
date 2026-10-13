@@ -21,6 +21,10 @@ on:
         required: false
         type: boolean
         default: false
+      phase_b_evidence_run_id:
+        description: Successful Phase A run whose protected artifact authorizes UI rehearsal
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -43,6 +47,8 @@ jobs:
       ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
       ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
       ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+      ATLAS_PLANNING_PREVIEW_URL: ${{ vars.ATLAS_PLANNING_PREVIEW_URL }}
+      ATLAS_PLANNING_PREVIEW_SHA: ${{ vars.ATLAS_PLANNING_PREVIEW_SHA }}
       SUPABASE_TELEMETRY_DISABLED: "1"
 
     steps:
@@ -57,9 +63,14 @@ jobs:
           READ_ACCEPTANCE: ${{ inputs.procurement_read_acceptance }}
           PURCHASE_ACCEPTANCE: ${{ inputs.purchase_acceptance }}
           REPLAY_RUN: ${{ inputs.replay_evidence_run_id }}
+          PHASE_B_RUN: ${{ inputs.phase_b_evidence_run_id }}
         run: |
           if [[ "$READ_ACCEPTANCE" == "true" && ( "$PURCHASE_ACCEPTANCE" == "true" || -n "$REPLAY_RUN" ) ]]; then
             echo "::error::Read-only rehearsal cannot execute a preparation or replay command."
+            exit 1
+          fi
+          if [[ -n "$PHASE_B_RUN" && ( "$READ_ACCEPTANCE" != "true" || ! "$PHASE_B_RUN" =~ ^[0-9]+$ ) ]]; then
+            echo "::error::UI rehearsal requires the read-only mode and a numeric Phase A run."
             exit 1
           fi
 
@@ -96,13 +107,36 @@ jobs:
           git fetch origin "$HARNESS_SHA"
           git show "$HARNESS_SHA:scripts/atlas-procurement-cutover.mjs" > scripts/atlas-procurement-cutover.mjs
           git show "$HARNESS_SHA:scripts/atlas-procurement-cutover.test.mjs" > scripts/atlas-procurement-cutover.test.mjs
-          pnpm exec vitest run scripts/atlas-procurement-cutover.test.mjs --environment node
+          git show "$HARNESS_SHA:scripts/atlas-procurement-cutover-browser.mjs" > scripts/atlas-procurement-cutover-browser.mjs
+          git show "$HARNESS_SHA:scripts/atlas-procurement-cutover-browser.test.mjs" > scripts/atlas-procurement-cutover-browser.test.mjs
+          pnpm exec vitest run scripts/atlas-procurement-cutover.test.mjs scripts/atlas-procurement-cutover-browser.test.mjs --environment node
 
       - name: Read released Supplier Allocation through authenticated hosted HTTP
-        if: ${{ inputs.procurement_read_acceptance == true }}
+        if: ${{ inputs.procurement_read_acceptance == true && inputs.phase_b_evidence_run_id == '' }}
         env:
           ATLAS_ACCEPTANCE_MAIN_SHA: ${{ inputs.commit_sha }}
         run: node scripts/atlas-procurement-cutover.mjs
+
+      - name: Verify successful Phase A workflow identity
+        if: ${{ inputs.procurement_read_acceptance == true && inputs.phase_b_evidence_run_id != '' }}
+        env:
+          PHASE_A_RUN: ${{ inputs.phase_b_evidence_run_id }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PHASE_A_RUN" --jq '{conclusion,event,head_branch,path}' > /tmp/atlas-phase-a-run.json
+          node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; const r=JSON.parse(fs.readFileSync('/tmp/atlas-phase-a-run.json')); assert.equal(r.conclusion,'success'); assert.equal(r.event,'workflow_dispatch'); assert.equal(r.head_branch,'codex/atlas-procurement-cutover-rehearsal'); assert.ok(r.path.startsWith('.github/workflows/atlas-staging-planning-performance.yml'));"
+
+      - name: Load successful Phase A evidence
+        if: ${{ inputs.procurement_read_acceptance == true && inputs.phase_b_evidence_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: atlas-procurement-cutover-${{ inputs.phase_b_evidence_run_id }}
+          path: artifacts/atlas-procurement-cutover
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.phase_b_evidence_run_id }}
+
+      - name: Rehearse connected Procurement UI with business commands blocked
+        if: ${{ inputs.procurement_read_acceptance == true && inputs.phase_b_evidence_run_id != '' }}
+        run: node scripts/atlas-procurement-cutover-browser.mjs
 
       - name: Preserve read-only Procurement acceptance evidence
         if: ${{ always() && inputs.procurement_read_acceptance == true }}
