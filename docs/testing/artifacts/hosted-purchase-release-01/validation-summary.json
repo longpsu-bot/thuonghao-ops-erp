@@ -1,0 +1,91 @@
+{
+  "database": "disposable atlas-purchase-release-01",
+  "suites": [
+    {
+      "suite": "atlas_current_platform_security_catalog.sql",
+      "assertions": 29,
+      "pass": true
+    },
+    {
+      "suite": "atlas_zero_demand_generation_policy.sql",
+      "assertions": 72,
+      "pass": true
+    },
+    {
+      "suite": "d037_confirmed_need_save_release_boundary.sql",
+      "assertions": 37,
+      "pass": true
+    },
+    {
+      "suite": "planning_contract_02b_selective_confirmation_continuity.sql",
+      "assertions": 42,
+      "pass": true
+    },
+    {
+      "suite": "planning_legacy_adoption_unit_transition.sql",
+      "assertions": 20,
+      "pass": true
+    },
+    {
+      "suite": "planning_operational_proposal.sql",
+      "assertions": 62,
+      "pass": true
+    },
+    {
+      "suite": "purchase_preparation_release_projection.sql",
+      "assertions": 7,
+      "pass": true
+    },
+    {
+      "suite": "purchase_preparation_source_ambiguity.sql",
+      "assertions": 9,
+      "pass": true
+    },
+    {
+      "suite": "rmvp_06_connected_confirmed_need_validation.sql",
+      "assertions": 65,
+      "pass": true
+    },
+    {
+      "suite": "rmvp_07_connected_confirmed_need_approval_release.sql",
+      "assertions": 67,
+      "pass": true
+    },
+    {
+      "suite": "school_catering_handoff_allocation.sql",
+      "assertions": 88,
+      "pass": true
+    },
+    {
+      "suite": "school_catering_planning_correction.sql",
+      "assertions": 23,
+      "pass": true
+    },
+    {
+      "suite": "school_catering_purchase_orders.sql",
+      "assertions": 135,
+      "pass": true
+    },
+    {
+      "suite": "purchase_review_confirm_release.sql",
+      "assertions": 187,
+      "pass": true
+    }
+  ],
+  "scale": {
+    "success_assertions": 31,
+    "rollback_assertions": 11,
+    "total_ms": 9589.028,
+    "late_failure_total_ms": 10834.435
+  },
+  "hosted": {
+    "migration_count": 104,
+    "status": "DRAFT_REVIEW",
+    "version": 2,
+    "allocation_families": 0,
+    "handoffs": 0,
+    "pos": 0,
+    "corrected_catalog_verifier": "PASS"
+  },
+  "review": "No actionable regression; currentness safety follows existing writer locks. No new two-session wait test."
+}

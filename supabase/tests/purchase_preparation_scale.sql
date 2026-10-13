@@ -1,4 +1,5 @@
 begin;
+set local track_functions='all';
 create extension if not exists pgtap with schema extensions;
 set search_path=extensions,public,pg_catalog;
 select plan(31);
@@ -207,6 +208,16 @@ select diag(pg_catalog.format(
 from scale_results
 where name = 'prepare'
   and response->>'success' is distinct from 'true';
+
+select diag(jsonb_build_object('preparation_stage_functions',(
+  select jsonb_agg(jsonb_build_object('function',funcname,'calls',calls,
+    'total_ms',total_time,'self_ms',self_time) order by total_time desc)
+  from pg_stat_xact_user_functions
+  where calls>0 and funcname in ('prepare_school_catering_purchase_orders',
+    'purchase_review_materialize_default_allocations','release_confirmed_needs',
+    'release_school_catering_purchase_handoff','purchase_review_promote_allocations',
+    'create_school_catering_purchase_order_drafts'))
+)::text);
 
 select is(
   (select response->>'success' from scale_results where name = 'prepare'),

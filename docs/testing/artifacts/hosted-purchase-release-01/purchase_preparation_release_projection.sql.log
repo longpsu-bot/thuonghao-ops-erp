@@ -1,0 +1,10 @@
+b6000000-0000-0000-0000-000000000101
+ok 1 - real Save establishes complete source authority
+ok 2 - narrow grouping preserves exact source output and fingerprints
+ok 3 - authenticated preparation succeeds with all integrity guards
+ok 4 - preparation reconstructs current sources seven times instead of eleven
+# [{"calls": 3, "function": "purchase_review_allocation_ready"}, {"calls": 1, "function": "purchase_review_allocation_ready"}, {"calls": 7, "function": "purchase_review_confirmed_sources"}, {"calls": 2, "function": "purchase_review_lock_allocations"}, {"calls": 19, "function": "rmvp_06_canonical_evaluation"}, {"calls": 11, "function": "rmvp_07_validated_facts_projection"}]
+ok 5 - Role authenticated should be granted no privileges on function atlas_core.purchase_review_allocation_ready(uuid, jsonb)
+ok 6 - Role authenticated should be granted no privileges on function atlas_core.purchase_review_preparation_allocation_ready(uuid, jsonb)
+ok 7 - resolved predicates retain exact private ownership, path and execution boundary
+1..7

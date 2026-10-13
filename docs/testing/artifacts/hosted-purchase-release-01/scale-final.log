@@ -1,0 +1,56 @@
+1..31
+ok 1 - Purchase Preparation publishes the provisional 20-second function timeout
+ok 2 - normal authenticated commands retain the global 8-second timeout
+b6000000-0000-0000-0000-000000000101
+ok 3 - scale setup saves all 236 Confirmed Need decisions through one authenticated public command
+ok 4 - scale setup has exactly 236 current positive Confirmed Need decisions
+ok 5 - scale setup begins with zero persisted allocation families
+ok 6 - canonical source projection exposes exactly 236 complete positive families before preparation
+ok 7 - all 236 families have one safe current preferred-Supplier recommendation before preparation
+20s
+purchase_preparation_scale public_prepare statement_timeout=20s families=236
+Time: 9321.534 ms (00:09.322)
+# purchase_preparation_scale success_command_ms=9315.370 success_guard_ms=273.658 success_total_ms=9589.028 families=236 statement_timeout=20s
+# {"preparation_stage_functions": [{"calls": 1, "self_ms": 6.728679, "function": "prepare_school_catering_purchase_orders", "total_ms": 9315.285889}, {"calls": 1, "self_ms": 121.155852, "function": "release_confirmed_needs", "total_ms": 5887.131596}, {"calls": 1, "self_ms": 73.709515, "function": "release_school_catering_purchase_handoff", "total_ms": 1534.322937}, {"calls": 1, "self_ms": 63.58223, "function": "purchase_review_materialize_default_allocations", "total_ms": 1337.053949}, {"calls": 1, "self_ms": 111.880057, "function": "purchase_review_promote_allocations", "total_ms": 1093.4213}, {"calls": 1, "self_ms": 85.097347, "function": "create_school_catering_purchase_order_drafts", "total_ms": 509.886592}]}
+ok 8 - one authenticated public Purchase Preparation succeeds for 236 families
+ok 9 - outer Purchase Preparation statement completes within the hoisted 20-second budget
+ok 10 - complete public Purchase Preparation command satisfies the provisional 15-second performance target
+ok 11 - Purchase Preparation plus all deferred integrity guards completes within 20 seconds
+ok 12 - preparation materializes exactly 236 preferred-Supplier default revisions
+ok 13 - every generated default preserves outer command, Actor, source batch and version lineage
+ok 14 - preparation manufactures no per-row allocation Save or confirmation receipt
+ok 15 - preparation creates exactly 236 allocation families
+ok 16 - scale preparation creates no duplicate family identity
+ok 17 - every scale family has exactly one current revision
+ok 18 - all 236 families are current promoted Handoff defaults
+ok 19 - current Handoff revisions retain their confirmed predecessor and strict source kind
+ok 20 - every current family has one exact positive 100-percent split to its unique preferred Supplier
+ok 21 - all generated default fingerprints and quantities match canonical Confirmed Need authority
+ok 22 - all current Handoff fingerprints and quantities match canonical Handoff authority
+ok 23 - preparation creates one current released Handoff batch
+ok 24 - current Handoff preserves all 236 exact Confirmed Need quantities and identities
+ok 25 - preparation consolidates 236 families into 12 valid Supplier PO Drafts
+ok 26 - the 12 current Draft POs contain exactly 236 stable PO lines in total
+ok 27 - current PO Draft lines map one-to-one to 236 unique Supplier splits and allocation families
+ok 28 - all 236 PO Draft lines preserve exact Supplier, family, quantity and split lineage
+20s
+ok 29 - identical scale replay returns the exact original durable response
+ok 30 - identical scale replay creates no new Need, allocation, Handoff, PO, event or audit fact
+ok 31 - identical scale replay creates no new receipt
+1..11
+b6000000-0000-0000-0000-000000000101
+ok 1 - independent rollback setup saves all 236 Confirmed Need decisions through one authenticated public command
+ok 2 - independent rollback setup has 236 current decisions and zero persisted allocation families
+ok 3 - independent rollback setup has 236 complete sources and 236 safe preferred recommendations
+20s
+purchase_preparation_scale public_prepare statement_timeout=20s families=236
+Time: 10833.933 ms (00:10.834)
+# purchase_preparation_scale late_failure_command_ms=10831.974 late_failure_guard_ms=2.461 late_failure_total_ms=10834.435 families=236 statement_timeout=20s
+ok 4 - scale rollback reaches the late PO insert
+ok 5 - late PO failure observes all 236 generated default revisions before rollback
+ok 6 - late PO failure observes all 236 promoted current Handoff families before rollback
+ok 7 - late PO failure returns a safe failed preparation response
+ok 8 - late PO rollback pipeline reaches the controlled rejection within the hoisted 20-second budget
+ok 9 - late PO failure rolls back defaults, release, Handoff, promotion, PO and audit facts exactly
+ok 10 - failed scale preparation leaves no accepted child receipt
+ok 11 - failed scale preparation preserves the saved Confirmed Need authority
