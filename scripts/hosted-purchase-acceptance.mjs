@@ -254,17 +254,20 @@ async function main() {
       [...metadata.proconfig].sort(),
       ['search_path=""', "statement_timeout=20s"].sort(),
     );
-    const { data: publicRead, error: readError } = await client
-      .schema("atlas_api")
-      .rpc("get_confirmed_supplier_allocation_workbench", {
-        request: {
-          contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
-          correlation_id: randomUUID(),
-          requested_by_auth_subject: SUBJECT,
-          payload: { date_start: DATE, date_end: DATE },
-        },
-      })
-      .retry(false);
+    evidence.phase = "PUBLIC_PREFLIGHT_READ";
+    const { data: publicRead, error: readError } = replayOnly
+      ? { data: evidence.preflight_read, error: null }
+      : await client
+          .schema("atlas_api")
+          .rpc("get_confirmed_supplier_allocation_workbench", {
+            request: {
+              contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+              correlation_id: randomUUID(),
+              requested_by_auth_subject: SUBJECT,
+              payload: { date_start: DATE, date_end: DATE },
+            },
+          })
+          .retry(false);
     assert.ok(!readError, "PUBLIC_PREFLIGHT_READ_FAILED");
     const read = replayOnly ? evidence.preflight_read : publicRead;
     const commandId = replayOnly ? evidence.request.command_id : randomUUID();
@@ -298,6 +301,7 @@ async function main() {
       confirmed_need_batch_id: BATCH,
     });
     if (replayOnly) {
+      evidence.phase = "ORIGINAL_RECEIPT_VERIFICATION";
       assert.equal(evidence.first.http_status, 200);
       assert.equal(evidence.first.response.success, true);
       const current = await sql(snapshotSql(commandId));
@@ -342,6 +346,7 @@ async function main() {
         throw new Error("UNKNOWN_HTTP_OUTCOME");
       return { elapsed_ms, http_status: response.status, response: body };
     };
+    evidence.phase = "COMMAND_AND_REPLAY";
     await executeAcceptance({
       request,
       evidence,
@@ -387,7 +392,7 @@ async function main() {
     evidence.status = evidence.status ?? "PREFLIGHT_FAILED";
     save();
     console.error(
-      `Hosted acceptance stopped safely: ${evidence.status}. Inspect protected evidence; do not issue another command.`,
+      `Hosted acceptance stopped safely: ${evidence.status} (${evidence.phase ?? "PREFLIGHT"}). Inspect protected evidence; do not issue another command.`,
     );
     process.exitCode = 1;
   }
