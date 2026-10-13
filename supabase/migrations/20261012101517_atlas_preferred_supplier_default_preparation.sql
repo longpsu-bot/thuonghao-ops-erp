@@ -8,7 +8,7 @@ grant atlas_owner,atlas_procurement_command_runtime,
   atlas_master_data_command_runtime to postgres with set true;
 set role atlas_owner;
 grant create on schema atlas_core to atlas_procurement_command_runtime,
-  atlas_master_data_command_runtime;
+  atlas_master_data_command_runtime,atlas_confirmed_need_review_runtime;
 grant create on schema atlas_api to atlas_read_runtime,
   atlas_confirmed_need_review_runtime;
 
@@ -61,6 +61,29 @@ revoke all on function
 from public,anon,authenticated,service_role;
 grant execute on function
   atlas_core.purchase_review_lock_default_supplier_evidence(jsonb)
+to atlas_procurement_command_runtime;
+
+reset role;
+set role atlas_confirmed_need_review_runtime;
+
+-- Return the whole current universe, including other batches. Filtering by
+-- batch before resolving a family would hide overlapping current sources.
+create function atlas_core.purchase_review_confirmed_source_universe(p_batch uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path=''
+as $$
+  select coalesce(jsonb_agg(source.value),'[]'::jsonb)
+  from atlas_planning.confirmed_need_batches batch
+  cross join lateral atlas_core.purchase_review_confirmed_sources(
+    batch.period_start,batch.period_end) source(value)
+  where batch.confirmed_need_batch_id=p_batch;
+$$;
+revoke all on function atlas_core.purchase_review_confirmed_source_universe(uuid)
+from public,anon,authenticated,service_role;
+grant execute on function atlas_core.purchase_review_confirmed_source_universe(uuid)
 to atlas_procurement_command_runtime;
 
 reset role;
@@ -160,6 +183,8 @@ declare
   saved jsonb;
   materialized jsonb := '[]'::jsonb;
   ingredient_ids jsonb;
+  sources jsonb;
+  current_sources jsonb;
 begin
   if p_batch is null or p_actor is null or p_command is null then
     return jsonb_build_object('success',false,'error_code','VALIDATION_FAILED');
@@ -172,6 +197,7 @@ begin
     from atlas_core.purchase_review_confirmed_batch_sources(p_batch) batch_source(value)
   ) relevant;
   perform atlas_core.purchase_review_lock_default_supplier_evidence(ingredient_ids);
+  sources:=atlas_core.purchase_review_confirmed_source_universe(p_batch);
   if not atlas_core.purchase_review_preparation_allocation_ready(p_batch) then
     return jsonb_build_object(
       'success',false,
@@ -179,8 +205,9 @@ begin
   end if;
   for source in
     select value
-    from atlas_core.purchase_review_confirmed_batch_sources(p_batch) batch_source(value)
-    where value->>'complete'='true'
+    from pg_catalog.jsonb_array_elements(sources) batch_source(value)
+    where value->>'source_confirmed_need_batch_id'=p_batch::text
+      and value->>'complete'='true'
       and (value->>'family_quantity')::numeric>0
     order by value->>'ingredient_id',value->>'service_date',
       value->>'delivery_location_id',value->>'unit_id'
@@ -194,7 +221,7 @@ begin
     if family_id is not null then
       continue;
     end if;
-    saved:=atlas_core.purchase_review_persist_allocation(
+    saved:=atlas_core.purchase_review_persist_resolved_allocation(
       p_actor,
       p_command,
       0,
@@ -208,12 +235,35 @@ begin
         'expected_source_batch_version',source->'source_confirmed_need_batch_version'),
       '[]'::jsonb,
       'PRIORITY_RECOMMENDATION',
-      'CONFIRMED_NEED');
+      'CONFIRMED_NEED',
+      sources);
     if saved->>'success' is distinct from 'true' then
       return saved;
     end if;
     materialized:=materialized||jsonb_build_array(saved);
   end loop;
+  if pg_catalog.jsonb_array_length(materialized)>0 then
+    -- Other batches are not locked by the existing single-family protocol.
+    -- Recheck generated families once after any waits/writes, never per row.
+    current_sources:=atlas_core.purchase_review_confirmed_source_universe(p_batch);
+    if exists(
+      select 1 from pg_catalog.jsonb_array_elements(sources) cached(p)
+      where exists(select 1 from pg_catalog.jsonb_array_elements(materialized) created(default_result)
+        where default_result->>'source_fingerprint'=p->>'source_fingerprint')
+        and (select count(*)<>1 or bool_or(
+          current_source->>'complete' is distinct from 'true'
+          or current_source->>'source_confirmed_need_batch_id' is distinct from p->>'source_confirmed_need_batch_id'
+          or current_source->>'source_confirmed_need_batch_version' is distinct from p->>'source_confirmed_need_batch_version'
+          or current_source->>'source_fingerprint' is distinct from p->>'source_fingerprint'
+          or current_source->>'family_quantity' is distinct from p->>'family_quantity')
+        from pg_catalog.jsonb_array_elements(current_sources) current_source
+        where current_source->>'service_date'=p->>'service_date'
+          and current_source->>'delivery_location_id'=p->>'delivery_location_id'
+          and current_source->>'ingredient_id'=p->>'ingredient_id'
+          and current_source->>'unit_id'=p->>'unit_id')) then
+      return jsonb_build_object('success',false,'error_code','CONFIRMED_NEED_INCOMPLETE');
+    end if;
+  end if;
   if not atlas_core.purchase_review_allocation_ready(p_batch) then
     return jsonb_build_object(
       'success',false,
@@ -267,6 +317,57 @@ begin
   execute definition;
 end;
 $recommendation_handoff_promotion$;
+
+-- Move the existing body, including all note, split, lineage and lock rules,
+-- into one private writer. Ordinary callers still resolve after taking locks;
+-- preparation supplies its transaction-local full source universe instead.
+do $resolved_allocation_writer$
+declare
+  definition text := pg_catalog.pg_get_functiondef(
+    'atlas_core.purchase_review_persist_allocation(uuid,uuid,bigint,jsonb,jsonb,text,text)'::regprocedure);
+  projection text := $old$    v_projection := atlas_core.purchase_review_confirmed_projection(v_service_date,v_location_id,v_ingredient_id,v_unit_id);$old$;
+begin
+  if pg_catalog.strpos(definition,projection)=0
+     or pg_catalog.strpos(definition,'p_source_kind text)')=0 then
+    raise exception 'Expected allocation source resolution seam changed';
+  end if;
+  definition:=pg_catalog.replace(definition,
+    'atlas_core.purchase_review_persist_allocation(',
+    'atlas_core.purchase_review_persist_resolved_allocation(');
+  definition:=pg_catalog.replace(definition,'p_source_kind text)',
+    'p_source_kind text, p_confirmed_sources jsonb)');
+  definition:=pg_catalog.replace(definition,projection,$new$    if p_confirmed_sources is null then
+      v_projection := atlas_core.purchase_review_confirmed_projection(v_service_date,v_location_id,v_ingredient_id,v_unit_id);
+    else
+      select case when count(*)=1 then (jsonb_agg(p))->0 else
+        jsonb_build_object('complete',false,'blocker','CONFIRMED_SOURCE_AMBIGUOUS_OR_MISSING') end
+        into v_projection
+      from pg_catalog.jsonb_array_elements(p_confirmed_sources) source(p)
+      where p->>'service_date'=v_service_date::text
+        and p->>'delivery_location_id'=v_location_id::text
+        and p->>'ingredient_id'=v_ingredient_id::text and p->>'unit_id'=v_unit_id::text;
+    end if;$new$);
+  execute definition;
+end;
+$resolved_allocation_writer$;
+
+revoke all on function atlas_core.purchase_review_persist_resolved_allocation(
+  uuid,uuid,bigint,jsonb,jsonb,text,text,jsonb)
+from public,anon,authenticated,service_role;
+
+create or replace function atlas_core.purchase_review_persist_allocation(
+  p_actor_id uuid,p_command_id uuid,p_expected_version bigint,
+  p_family jsonb,p_splits jsonb,p_decision_origin text,p_source_kind text
+)
+returns jsonb
+language sql
+volatile
+set search_path=''
+as $$
+  select atlas_core.purchase_review_persist_resolved_allocation(
+    p_actor_id,p_command_id,p_expected_version,p_family,p_splits,
+    p_decision_origin,p_source_kind,null);
+$$;
 
 create or replace function atlas_core.purchase_review_preparation_status(
   p_date date,
@@ -432,7 +533,7 @@ alter function atlas_api.prepare_school_catering_purchase_orders(jsonb)
 reset role;
 set role atlas_owner;
 revoke create on schema atlas_core from atlas_procurement_command_runtime,
-  atlas_master_data_command_runtime;
+  atlas_master_data_command_runtime,atlas_confirmed_need_review_runtime;
 revoke create on schema atlas_api from atlas_read_runtime,
   atlas_confirmed_need_review_runtime;
 reset role;

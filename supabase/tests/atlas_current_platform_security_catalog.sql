@@ -1778,15 +1778,16 @@ select is(
     'policy_count', 672,
     'policy_catalog_md5', '38ba098e23069ce416ed1cd60551a497',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 340,
-    -- Prior catalog plus three private preferred-default preparation helpers.
-    'private_function_catalog_md5', 'ef73c63c214a44b7747423670d08eca7',
+    'private_function_count', 342,
+    -- Adds the full-source bridge and the single resolved persistence body.
+    'private_function_catalog_md5', 'b40fa23cb2b4861f253d0a1625edc584',
     'trigger_count', 124,
     'trigger_catalog_md5', '24157de1722f445b7e98adfde302a2d4',
     -- Retains prior privileges and adds five private-runtime execution grants
     -- for default coverage/materialization/locking; no browser-role grant.
-    'positive_target_grant_count', 1835,
-    'positive_target_grant_md5', '7af7bacffd0fa1f59fe1ebbd9731d374',
+    -- Two new owner grants and Procurement EXECUTE on the source bridge only.
+    'positive_target_grant_count', 1838,
+    'positive_target_grant_md5', '42c0c5ea93ea6d025dcdac4a266e88af',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

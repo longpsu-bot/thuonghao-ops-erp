@@ -26,6 +26,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "school_fulfilment_reconciliation.sql",
   "purchase_handoff_clock_skew.sql",
   "purchase_review_confirm_release.sql",
+  "purchase_preparation_source_ambiguity.sql",
   "pa_04_supplier_direct_slice_1_foundation.sql",
   "pa_05b_h1_runtime_role_hardening_test.sql",
   "pa_05b_h2_multiline_dispatch_execution.sql",
@@ -137,6 +138,7 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
               })
             : [
                   "purchase_review_confirm_release.sql",
+                  "purchase_preparation_source_ambiguity.sql",
                   "atlas_backend_convergence_02b_allocation.sql",
                 ].includes(file)
               ? Object.freeze({

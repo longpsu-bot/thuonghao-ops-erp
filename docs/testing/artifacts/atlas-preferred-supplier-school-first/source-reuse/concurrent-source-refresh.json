@@ -1,0 +1,14 @@
+{
+  "waited": true,
+  "http_status": 200,
+  "success": false,
+  "error_code": "CONFIRMED_ALLOCATION_NOT_READY",
+  "counts": {
+    "status": "DRAFT_REVIEW",
+    "sources": 472,
+    "families": 0,
+    "handoffs": 0,
+    "observed_writes": 236
+  },
+  "passed": true
+}

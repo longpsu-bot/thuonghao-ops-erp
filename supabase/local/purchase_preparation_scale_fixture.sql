@@ -24,22 +24,25 @@ grant select, insert, update on scale_results, scale_requests to authenticated;
 create function pg_temp.seed_purchase_preparation_scale(
   p_seed text,
   p_code_prefix text,
-  p_service_date date
+  p_service_date date,
+  p_master_seed text default null
 ) returns uuid
 language plpgsql
 set search_path=''
 as $purchase_preparation_scale_fixture$
 declare
   v_actor_id constant uuid := 'b6000000-0000-0000-0000-000000000001';
-  v_customer_id constant uuid := md5(p_seed || ':customer')::uuid;
+  v_master_seed constant text := coalesce(p_master_seed,p_seed);
+  v_customer_id constant uuid := md5(v_master_seed || ':customer')::uuid;
   v_batch_id constant uuid := md5(p_seed || ':confirmed-need-batch')::uuid;
   v_week_end constant date := p_service_date + 6;
-  v_weekly_menu_id constant uuid := md5(p_seed || ':weekly-menu')::uuid;
-  v_weekly_menu_snapshot_id constant uuid := md5(p_seed || ':weekly-menu-snapshot')::uuid;
-  v_attendance_id constant uuid := md5(p_seed || ':attendance')::uuid;
-  v_attendance_snapshot_id constant uuid := md5(p_seed || ':attendance-snapshot')::uuid;
-  v_pantry_id constant uuid := md5(p_seed || ':pantry')::uuid;
-  v_pantry_snapshot_id constant uuid := md5(p_seed || ':pantry-snapshot')::uuid;
+  v_period_end constant date := case when p_master_seed is null then p_service_date else v_week_end end;
+  v_weekly_menu_id constant uuid := md5(v_master_seed || ':weekly-menu')::uuid;
+  v_weekly_menu_snapshot_id constant uuid := md5(v_master_seed || ':weekly-menu-snapshot')::uuid;
+  v_attendance_id constant uuid := md5(v_master_seed || ':attendance')::uuid;
+  v_attendance_snapshot_id constant uuid := md5(v_master_seed || ':attendance-snapshot')::uuid;
+  v_pantry_id constant uuid := md5(v_master_seed || ':pantry')::uuid;
+  v_pantry_snapshot_id constant uuid := md5(v_master_seed || ':pantry-snapshot')::uuid;
   v_input_set_id constant uuid := md5(p_seed || ':input-set')::uuid;
   v_evaluation_id constant uuid := md5(p_seed || ':evaluation')::uuid;
   v_run_id constant uuid := md5(p_seed || ':need-run')::uuid;
@@ -61,6 +64,9 @@ begin
     raise exception 'Purchase Preparation scale fixture already exists.';
   end if;
 
+  -- Overlap reuses approved weekly facts in an independent seven-day input
+  -- set; the normal scale chain keeps its original one-day input set.
+  if p_master_seed is null then
   insert into atlas_admin.customers
   select (pg_catalog.jsonb_populate_record(
     null::atlas_admin.customers,
@@ -77,7 +83,7 @@ begin
   select (pg_catalog.jsonb_populate_record(
     null::atlas_admin.delivery_locations,
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
-      'delivery_location_id', md5(p_seed || ':location:' || source.location_number)::uuid,
+      'delivery_location_id', md5(v_master_seed || ':location:' || source.location_number)::uuid,
       'customer_id', v_customer_id,
       'location_code', p_code_prefix || '-location-' || source.location_number,
       'location_name', p_code_prefix || ' kitchen ' || source.location_number,
@@ -92,11 +98,11 @@ begin
   select (pg_catalog.jsonb_populate_record(
     null::atlas_admin.schools,
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
-      'school_id', md5(p_seed || ':school:' || source.school_number)::uuid,
+      'school_id', md5(v_master_seed || ':school:' || source.school_number)::uuid,
       'customer_id', v_customer_id,
       'school_code', p_code_prefix || '-school-' || source.school_number,
       'school_name', p_code_prefix || ' school ' || source.school_number,
-      'default_delivery_location_id', md5(p_seed || ':location:' || source.school_number)::uuid,
+      'default_delivery_location_id', md5(v_master_seed || ':location:' || source.school_number)::uuid,
       'display_order', 100 + source.school_number
     )
   )).*
@@ -108,7 +114,7 @@ begin
   select (pg_catalog.jsonb_populate_record(
     null::atlas_admin.ingredients,
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
-      'ingredient_id', md5(p_seed || ':ingredient:' || source.ingredient_number)::uuid,
+      'ingredient_id', md5(v_master_seed || ':ingredient:' || source.ingredient_number)::uuid,
       'ingredient_code', p_code_prefix || '-ingredient-' || source.ingredient_number,
       'ingredient_name', p_code_prefix || ' ingredient ' || source.ingredient_number,
       'document_code', pg_catalog.upper(p_code_prefix) || '-I-' || source.ingredient_number,
@@ -123,7 +129,7 @@ begin
   select (pg_catalog.jsonb_populate_record(
     null::atlas_admin.suppliers,
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
-      'supplier_id', md5(p_seed || ':supplier:' || source.supplier_number)::uuid,
+      'supplier_id', md5(v_master_seed || ':supplier:' || source.supplier_number)::uuid,
       'supplier_code', p_code_prefix || '-supplier-' || source.supplier_number,
       'supplier_name', p_code_prefix || ' supplier ' || source.supplier_number,
       'supplier_status', 'ACTIVE',
@@ -143,8 +149,8 @@ begin
     reason_note
   )
   select
-    md5(p_seed || ':supplier:' || eligibility.supplier_number)::uuid,
-    md5(p_seed || ':ingredient:' || ingredient.ingredient_number)::uuid,
+    md5(v_master_seed || ':supplier:' || eligibility.supplier_number)::uuid,
+    md5(v_master_seed || ':ingredient:' || ingredient.ingredient_number)::uuid,
     date '2020-01-01',
     eligibility.priority,
     'Disposable Purchase Preparation scale fixture'
@@ -308,9 +314,9 @@ begin
       'pantry_need_line_id', md5(p_seed || ':pantry-line:' || source.line_number)::uuid,
       'pantry_need_batch_id', v_pantry_id,
       'service_date', p_service_date,
-      'school_id', md5(p_seed || ':school:' || source.school_number)::uuid,
-      'delivery_location_id', md5(p_seed || ':location:' || source.school_number)::uuid,
-      'ingredient_id', md5(p_seed || ':ingredient:' || source.ingredient_number)::uuid,
+      'school_id', md5(v_master_seed || ':school:' || source.school_number)::uuid,
+      'delivery_location_id', md5(v_master_seed || ':location:' || source.school_number)::uuid,
+      'ingredient_id', md5(v_master_seed || ':ingredient:' || source.ingredient_number)::uuid,
       'requested_quantity', source.family_quantity,
       'note', p_code_prefix || ' family ' || source.line_number,
       'source_request_reference', pg_catalog.upper(p_code_prefix),
@@ -394,13 +400,15 @@ begin
       updated_at = v_now
   where pantry_need_batch_id = v_pantry_id;
 
+  end if;
+
   insert into atlas_planning.planning_input_sets
   select (pg_catalog.jsonb_populate_record(
     null::atlas_planning.planning_input_sets,
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
       'planning_input_set_id', v_input_set_id,
       'period_start', p_service_date,
-      'period_end', p_service_date,
+      'period_end', v_period_end,
       'readiness_status', 'READY',
       'current_evaluation_id', v_evaluation_id,
       'created_at', v_now,
@@ -442,7 +450,7 @@ begin
       'planning_input_set_id', v_input_set_id,
       'planning_input_evaluation_id', v_evaluation_id,
       'period_start', p_service_date,
-      'period_end', p_service_date,
+      'period_end', v_period_end,
       'input_snapshot_id', v_input_snapshot_id,
       'run_status', 'GENERATED',
       'version', 1,
@@ -556,7 +564,7 @@ begin
     pg_catalog.to_jsonb(template) || pg_catalog.jsonb_build_object(
       'confirmed_need_batch_id', v_batch_id,
       'period_start', p_service_date,
-      'period_end', p_service_date,
+      'period_end', v_period_end,
       'batch_status', 'DRAFT_REVIEW',
       'version', 1,
       'created_by_actor_id', v_actor_id,
@@ -671,7 +679,7 @@ begin
 
   if (select count(*) from atlas_admin.suppliers supplier
       where supplier.supplier_id in (
-        select md5(p_seed || ':supplier:' || generated.supplier_number)::uuid
+        select md5(v_master_seed || ':supplier:' || generated.supplier_number)::uuid
         from pg_catalog.generate_series(1, 12) generated(supplier_number)
       )
         and supplier.supplier_status = 'ACTIVE') <> 12
@@ -679,7 +687,7 @@ begin
       select ingredient.ingredient_id
       from atlas_admin.ingredients ingredient
       where ingredient.ingredient_id in (
-        select md5(p_seed || ':ingredient:' || generated.ingredient_number)::uuid
+        select md5(v_master_seed || ':ingredient:' || generated.ingredient_number)::uuid
         from pg_catalog.generate_series(1, 59) generated(ingredient_number)
       )
       group by ingredient.ingredient_id

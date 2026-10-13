@@ -3,9 +3,134 @@
 Product-approved correction dated 2026-10-12. Starting main:
 `063b40be86dd00a3a26f1a1a8cc0ef8b32964f83` (PRs #368 and #369).
 Branch: `fix/atlas-preferred-supplier-default-school-first`.
-Delivery status: the local 20-second exception experiment failed its performance
-gate. Product authorized a checkpoint commit/push on 13 October 2026 to continue
-on another computer. PR #370 remains Draft; merge and deployment are not authorized.
+Delivery status: the source-reuse follow-up removes the repeated projection defect.
+Three independent fresh authenticated REST samples pass the 15-second target;
+warm/cumulative latency variability remains an explicit Product review concern.
+PR #370 remains Draft; merge and deployment are not authorized.
+
+## Source-reuse follow-up — authorized 2026-10-13
+
+Base remote authority: `f475d79c466415f195e4ad88fe2a842bdbb03a93`. Product explicitly
+authorized the bounded internal correction, testing, commit and push on the same
+branch/PR. The prior handoff and measurements below remain historical evidence.
+
+The old individual-Save writer reconstructed the entire date once for every
+missing default. This was the proven scaling defect, not allocation insert cost.
+The retained correction resolves the full current source universe after Supplier
+locks, reuses it for generated defaults, and refreshes it once at the end to
+recheck only generated families. Count-one resolution includes other batches and
+incomplete sources; batch, version, exact quantity and fingerprint must agree.
+It never chooses a batch/UUID/order winner and adds no broader Planning lock policy.
+
+Production functions changed:
+
+- `purchase_review_confirmed_source_universe(uuid)` is a new private Confirmed
+  Need-owned read bridge returning every current source in the batch period.
+- `purchase_review_persist_resolved_allocation(...)` holds the existing writer
+  body, including its validation, locks, Supplier priority, notes, exact splits,
+  revision/contribution history and audit lineage. Its extra input is the private
+  authoritative full source array, not caller-supplied quantity authority.
+- `purchase_review_persist_allocation(...)` retains its seven-argument contract
+  and delegates with a null source array, preserving normal resolution after locks.
+- `purchase_review_materialize_default_allocations(...)` captures after Supplier
+  locks, uses that one persistence body, and rejects changed/overlapping generated
+  sources with one final full-universe check before returning.
+
+The existing unmerged/undeployed migration 103 is amended in place. No Planning
+release, Handoff, promotion, PO body, public payload, table, index, lifecycle,
+dependency or frontend file changes in this follow-up. The 20s function limit,
+8s authenticated default, 45s frontend transport and existing lock budget remain.
+Security catalog: 342 private functions and 1,838 positive grants, exactly two
+new function-owner grants plus Procurement execution on the source bridge.
+The resolved writer is an invoker accessible only to its Procurement owner.
+The bridge has the existing Confirmed Need runtime owner, empty search path and
+Procurement-only external execution. Existing RLS/table policies are unchanged.
+
+### Fresh public-command evidence
+
+Each sample resets and migrates the disposable local database, creates the same
+4-School × 59-Ingredient workload with 12 reused Suppliers, publicly saves all
+236 Confirmed Need decisions, commits setup and refreshes ordinary statistics.
+Measurement is the real `atlas_api.prepare_school_catering_purchase_orders`
+authenticated PostgREST request through the local API gateway, including response
+and transaction completion. There is no internal-helper certification path,
+warm-up preparation, retry or raised limit in these three samples.
+
+| Sample | Complete REST latency | Exact replay | Result                                                          |
+| ------ | --------------------- | ------------ | --------------------------------------------------------------- |
+| 1      | 13,032.933ms          | 43.661ms     | 236 defaults / 236 promoted families / 12 Draft POs / 236 lines |
+| 2      | 13,425.855ms          | 55.470ms     | 236 defaults / 236 promoted families / 12 Draft POs / 236 lines |
+| 3      | 12,467.960ms          | 50.846ms     | 236 defaults / 236 promoted families / 12 Draft POs / 236 lines |
+
+All generated defaults are `PRIORITY_RECOMMENDATION`, with zero MANUAL defaults.
+[Independent REST results](../testing/artifacts/atlas-preferred-supplier-school-first/source-reuse/independent-rest-samples.json)
+retain raw timings/counts. An additional successful REST preparation reused the
+existing scale invariant assertions: all quantity, preferred-Supplier, origin,
+fingerprint, contribution/Handoff/PO lineage, no-partial/no-duplicate and exact
+replay/fact/receipt assertions passed. Its 15-second assertion failed while both
+20-second assertions passed: [full 24-assertion record](../testing/artifacts/atlas-preferred-supplier-school-first/source-reuse/rest-scale-invariants.tap).
+This additional warm-path failure is retained, not a successful certificate.
+
+Controlled late REST rejection took **11,612.137ms**. Nontransactional observation
+recorded one PO insert attempt, all 236 default revisions and all 236 current
+promoted families. The entire business snapshot was unchanged after rejection;
+only the failed outer receipt was added and all accepted child receipts rolled
+back. [Rollback result](../testing/artifacts/atlas-preferred-supplier-school-first/source-reuse/late-rest-rollback.json).
+
+The real overlapping-chain regression passes 9 assertions: independent one-day
+and seven-day input sets share approved sources and expose 472 current families.
+The batch-only view exposes 236; both the canonical projection and resolved writer
+reject the overlaps without an allocation. The fixture adds only optional source
+reuse, with all business triggers active; the existing normal fixture is retained.
+The test is registered in the existing include-aware full-integration runner.
+
+A separate concurrent REST proof pauses allocation insertion with a test-only
+advisory latch, then commits the other overlapping batch after cache capture.
+All 236 writes were observed before the final refreshed check rejects with the
+existing public `CONFIRMED_ALLOCATION_NOT_READY` response. Durable family/Handoff
+counts are zero and Confirmed Need remains `DRAFT_REVIEW`.
+[Concurrent-source result](../testing/artifacts/atlas-preferred-supplier-school-first/source-reuse/concurrent-source-refresh.json).
+Test-only latches/functions/sequences were removed; subsequent local resets retain
+only repository migrations. No production advisory lock was added.
+
+### Remaining performance evidence and validation
+
+The unchanged checkpoint reproduced cancellation at 20,061.120ms in per-family
+`purchase_review_confirmed_projection`. A preliminary source-reuse profile removed
+those calls: materialization 1,958.503ms and 472 persistence calls (including
+promotion) 788.447ms. Its successful body/guard total was 13,639.950ms. This profile
+predates the final after-lock/final-refresh strengthening; final materialization
+was not separately instrumented.
+
+Retaining earlier synthetic operating days in the same database produced complete
+REST latencies **12,897.504 / 16,026.502 / 17,911.614ms**. All three succeeded and
+replayed exactly, but the latter two exceed the 15s target. [Cumulative results](../testing/artifacts/atlas-preferred-supplier-school-first/source-reuse/cumulative-rest-samples.json)
+are additional scaling evidence, not independent fresh-fixture certification.
+The long single-session SQL fixture also had 20s cancellations after reaching
+Handoff or in existing Planning integrity checks. It is not certified as passing.
+No timeout, test or assertion was weakened to hide these results.
+
+The next measured hotspot is existing Confirmed Need release/integrity work:
+the preliminary complete profile attributed 8,091.023ms to release, with repeated
+membership/validation/approval guard work visible. No Planning optimization is
+retained. Reliable latency on warm/cumulative operational history requires Product
+review or a separately bounded investigation; this follow-up stops at the approved
+source-resolution correction.
+
+Procurement currentness/regression: **187/187**, including priority changes,
+inactive Supplier, tie/no priority/no eligibility, manual override, late rollback
+and released-PO immutability. Requested frontend tests: **108/108** across the
+three current files and preserved local baseline copies; semantic no-op Save,
+baseline restore, UNKNOWN handling and exit behavior pass. No frontend file changed.
+Independent source/security/code review found the cache-wait window, which was
+corrected and exercised by the concurrent proof; no actionable finding remains.
+
+Final standard backend integration and current-head GitHub Actions results are
+recorded at delivery. Routine full frontend validation remains CI-owned.
+Forward rollback restores the prior seven-argument persistence body and
+materializer before removing the two new seams, or restores the four pre-#370
+functions before removing all five helpers. Accepted facts/commitments remain.
+Staging, Retool and OPS v1 are untouched; no hosted database command was issued.
 
 ## Checkpoint handoff — authorized 2026-10-13
 

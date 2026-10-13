@@ -200,13 +200,27 @@ and normalized notes disables Save again. Recommendation/rebalance actions are
 shown only when their Supplier/quantity values change the current draft.
 
 Migration `20261012101517_atlas_preferred_supplier_default_preparation.sql` adds
-three private coverage/materialization/locking helpers and updates the existing
+five private coverage/materialization/locking/source-resolution helpers and updates the existing
 preparation status, allocation persistence, allocation read and preparation
 command functions. It adds no table, enum, public API, capability or browser
 table privilege, and retains existing owners, RLS and hardened search paths.
 A forward rollback restores those four prior function definitions before removing
-the three private helpers. Accepted allocation/Handoff/PO history must be retained;
+the five private helpers. Accepted allocation/Handoff/PO history must be retained;
 rollback must never delete materialized facts or rewrite a released commitment.
+
+Preparation resolves the full current Confirmed Need universe after Supplier
+evidence locks and reuses it for missing defaults. Each family must still have
+exactly one matching source across all current batches, including incomplete
+sources; batch filtering never decides a winner. One final full-universe refresh
+rechecks only generated families for unique source identity, batch/version,
+fingerprint and exact quantity after waits and writes. Source changes reject the
+outer transaction. This is fixed work per preparation rather than one whole-date
+reconstruction per family. The compatibility allocation writer delegates to the
+same persistence body with normal source resolution after its existing locks.
+Explicit Saves, notes, Supplier checks, revision/contribution/split lineage,
+promotion and released commitments retain their contracts. The new resolved
+writer is a private Procurement-owned invoker; the full-source bridge is owned
+by the existing Confirmed Need runtime and grants only Procurement execution.
 
 ### Typed lineage and compatibility
 
