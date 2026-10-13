@@ -505,7 +505,7 @@ async function main() {
         );
         assert.equal(line.unit.unit_id, row.unit_id, "PO_EXACT_UNIT");
         assert.equal(
-          line.delivery_location.location_id,
+          line.delivery_location.delivery_location_id,
           row.delivery_location_id,
           "PO_EXACT_LOCATION",
         );
