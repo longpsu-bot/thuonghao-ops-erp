@@ -32,3 +32,10 @@ identity, receipt and final state. A changed preflight fails closed.
 No schema migration or rollback is introduced. A successful run persistently
 releases the Confirmed Need/Handoff and creates Draft POs in Staging; deleting
 those facts is not a rollback. Remove the optional harness mode to retire the tool.
+
+If the first public command succeeded but the verifier stopped before replay,
+set `purchase_acceptance=true` and `replay_evidence_run_id` to the original run.
+The protected workflow downloads that run's evidence artifact. Recovery requires
+the original HTTP success, exact request/receipt-response identity and unchanged
+fact digest before sending only the recorded exact replay. It never generates a
+new preparation request in this mode.

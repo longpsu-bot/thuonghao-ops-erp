@@ -121,3 +121,27 @@ test("successful command and exact replay preserve both response and facts", asy
   assert.equal(calls, 2);
   assert.equal(evidence.status, "HOSTED_ACCEPTANCE_PASS");
 });
+
+test("recovery mode sends only the recorded exact replay after confirmed success", async () => {
+  const request = { command_id: "original" };
+  const evidence = {
+    first: { elapsed_ms: 18925, response: { success: true } },
+    after: { fact_digest: "same" },
+  };
+  let calls = 0;
+  await executeAcceptance({
+    request,
+    evidence,
+    replayOnly: true,
+    save: () => {},
+    rpc: async (r) => {
+      assert.equal(r, request);
+      calls++;
+      return { elapsed_ms: 50, response: { success: true } };
+    },
+    snapshot: async () => ({ fact_digest: "same" }),
+    validate: () => {},
+  });
+  assert.equal(calls, 1);
+  assert.equal(evidence.first.elapsed_ms, 18925);
+});

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { createClient } from "@supabase/supabase-js";
@@ -49,12 +49,19 @@ export async function executeAcceptance({
   rpc,
   snapshot,
   validate,
+  replayOnly = false,
 }) {
   evidence.request = request;
   evidence.status = "COMMAND_INTENT_RECORDED";
   save();
   try {
-    evidence.first = await rpc(request);
+    if (replayOnly)
+      assert.equal(
+        evidence.first?.response?.success,
+        true,
+        "NO_CONFIRMED_ORIGINAL_SUCCESS",
+      );
+    else evidence.first = await rpc(request);
   } catch {
     evidence.status = "UNKNOWN_OUTCOME";
     save();
@@ -66,7 +73,14 @@ export async function executeAcceptance({
     throw new Error("UNKNOWN_OUTCOME_NO_NEW_COMMAND");
   }
   save();
-  evidence.after = await snapshot();
+  const after = await snapshot();
+  if (replayOnly)
+    assert.equal(
+      after.fact_digest,
+      evidence.after.fact_digest,
+      "ORIGINAL_FACTS_CHANGED",
+    );
+  evidence.after = after;
   save();
   if (evidence.first.response.success !== true) {
     evidence.status = "PUBLIC_COMMAND_FAILED";
@@ -145,7 +159,7 @@ select jsonb_build_object(
 'fact_count',(select count(*) from facts),
 'current_allocations',(select coalesce(jsonb_agg(jsonb_build_object('ingredient_id',f.ingredient_id,'unit_id',f.unit_id,'delivery_location_id',f.delivery_location_id,'quantity',r.family_quantity::text,'supplier_id',s.supplier_id) order by f.ingredient_id,f.unit_id,f.delivery_location_id),'[]') from f join r using(family_id) join s using(family_revision_id) where r.is_current),
 'invalid_lineage',(select count(*) from r current_revision left join r predecessor on predecessor.family_revision_id=current_revision.predecessor_revision_id
- where current_revision.is_current and (predecessor.source_kind is distinct from 'CONFIRMED_NEED' or predecessor.source_confirmed_need_batch_id is distinct from '${BATCH}'::uuid or predecessor.source_confirmed_need_batch_version is distinct from 2 or predecessor.command_id is distinct from '${commandId}'::uuid or current_revision.command_id is distinct from '${commandId}'::uuid or predecessor.family_quantity is distinct from current_revision.family_quantity or current_revision.source_purchase_handoff_revision_id is null or current_revision.source_confirmed_need_batch_id is not null)),
+ where current_revision.is_current and (predecessor.source_kind is distinct from 'CONFIRMED_NEED' or predecessor.source_confirmed_need_batch_id is distinct from '${BATCH}'::uuid or predecessor.source_confirmed_need_batch_version is distinct from 2 or predecessor.command_id is distinct from '${commandId}'::uuid or current_revision.command_id is distinct from (select (response_payload->'handoff'->>'command_id')::uuid from atlas_core.command_receipts where command_id='${commandId}') or predecessor.family_quantity is distinct from current_revision.family_quantity or current_revision.source_purchase_handoff_revision_id is null or current_revision.source_confirmed_need_batch_id is not null)),
 'invalid_quantities',(select count(*) from r where is_current and (family_quantity is distinct from (select sum(allocated_quantity) from s where s.family_revision_id=r.family_revision_id) or family_quantity is distinct from (select sum(contribution_quantity) from c where c.family_revision_id=r.family_revision_id) or (select count(*) from s where s.family_revision_id=r.family_revision_id)<>1)),
 'invalid_po_lines',(select count(*) from lr left join s on s.supplier_split_id=lr.school_catering_allocation_supplier_split_id left join r using(family_revision_id) left join f using(family_id) join pr using(purchase_order_revision_id) join p using(purchase_order_id) where s.supplier_split_id is null or r.is_current is distinct from true or lr.ordered_quantity is distinct from s.allocated_quantity or p.supplier_id is distinct from s.supplier_id or lr.ingredient_id is distinct from f.ingredient_id or lr.unit_id is distinct from f.unit_id or lr.delivery_location_id is distinct from f.delivery_location_id or lr.service_date is distinct from f.service_date)
 ) as evidence;
@@ -176,7 +190,16 @@ function validateResult(state) {
 }
 
 async function main() {
-  const evidence = { main_sha: process.env.ATLAS_ACCEPTANCE_MAIN_SHA };
+  const replayOnly = Boolean(process.env.ATLAS_ACCEPTANCE_REPLAY_RUN_ID);
+  const evidence = replayOnly
+    ? JSON.parse(
+        readFileSync(
+          "artifacts/hosted-purchase-original/evidence.json",
+          "utf8",
+        ),
+      )
+    : { main_sha: process.env.ATLAS_ACCEPTANCE_MAIN_SHA };
+  assert.equal(evidence.main_sha, process.env.ATLAS_ACCEPTANCE_MAIN_SHA);
   mkdirSync("artifacts/hosted-purchase-acceptance", { recursive: true });
   const save = () =>
     writeFileSync(
@@ -231,7 +254,7 @@ async function main() {
       [...metadata.proconfig].sort(),
       ['search_path=""', "statement_timeout=20s"].sort(),
     );
-    const { data: read, error: readError } = await client
+    const { data: publicRead, error: readError } = await client
       .schema("atlas_api")
       .rpc("get_confirmed_supplier_allocation_workbench", {
         request: {
@@ -243,23 +266,49 @@ async function main() {
       })
       .retry(false);
     assert.ok(!readError, "PUBLIC_PREFLIGHT_READ_FAILED");
-    const commandId = randomUUID();
-    evidence.preflight_read = read;
-    evidence.before = await sql(snapshotSql(commandId));
-    save();
-    assertPreflight(evidence.before, read);
-    const request = {
-      contract_version: "PURCHASE-COMMITMENT.v1",
-      command_id: commandId,
-      correlation_id: randomUUID(),
-      idempotency_key: `purchase-preparation:${commandId}`,
-      expected_version: 2,
-      requested_by_auth_subject: SUBJECT,
-      requested_at: new Date().toISOString(),
-      reason_code: "PURCHASE_ORDERS_PREPARED",
-      reason_note: null,
-      payload: { service_date: DATE, confirmed_need_batch_id: BATCH },
-    };
+    const read = replayOnly ? evidence.preflight_read : publicRead;
+    const commandId = replayOnly ? evidence.request.command_id : randomUUID();
+    if (!replayOnly) {
+      evidence.preflight_read = read;
+      evidence.before = await sql(snapshotSql(commandId));
+      save();
+      assertPreflight(evidence.before, read);
+    }
+    const request = replayOnly
+      ? evidence.request
+      : {
+          contract_version: "PURCHASE-COMMITMENT.v1",
+          command_id: commandId,
+          correlation_id: randomUUID(),
+          idempotency_key: `purchase-preparation:${commandId}`,
+          expected_version: 2,
+          requested_by_auth_subject: SUBJECT,
+          requested_at: new Date().toISOString(),
+          reason_code: "PURCHASE_ORDERS_PREPARED",
+          reason_note: null,
+          payload: { service_date: DATE, confirmed_need_batch_id: BATCH },
+        };
+    assert.equal(request.contract_version, "PURCHASE-COMMITMENT.v1");
+    assert.equal(request.requested_by_auth_subject, SUBJECT);
+    assert.equal(request.expected_version, 2);
+    assert.equal(request.reason_code, "PURCHASE_ORDERS_PREPARED");
+    assert.equal(request.idempotency_key, `purchase-preparation:${commandId}`);
+    assert.deepEqual(request.payload, {
+      service_date: DATE,
+      confirmed_need_batch_id: BATCH,
+    });
+    if (replayOnly) {
+      assert.equal(evidence.first.http_status, 200);
+      assert.equal(evidence.first.response.success, true);
+      const current = await sql(snapshotSql(commandId));
+      assert.equal(current.receipt.command_id, commandId);
+      assert.deepEqual(
+        current.receipt.response_payload,
+        evidence.first.response,
+        "RECEIPT_ORIGINAL_RESPONSE_MISMATCH",
+      );
+      evidence.original_run_id = process.env.ATLAS_ACCEPTANCE_REPLAY_RUN_ID;
+    }
     const rpc = async (request) => {
       const started = performance.now();
       const response = await fetch(
@@ -296,6 +345,7 @@ async function main() {
     await executeAcceptance({
       request,
       evidence,
+      replayOnly,
       save: saveWithIntent,
       rpc,
       snapshot: () => sql(snapshotSql(commandId)),

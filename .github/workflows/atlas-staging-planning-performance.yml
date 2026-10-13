@@ -12,6 +12,10 @@ on:
         required: true
         type: boolean
         default: false
+      replay_evidence_run_id:
+        description: Replay only the confirmed successful request in this original run artifact
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -76,12 +80,22 @@ jobs:
           git fetch origin "$HARNESS_SHA"
           git show "$HARNESS_SHA:scripts/hosted-purchase-acceptance.mjs" > scripts/hosted-purchase-acceptance.mjs
           git show "$HARNESS_SHA:scripts/hosted-purchase-acceptance.test.mjs" > scripts/hosted-purchase-acceptance.test.mjs
-          pnpm exec vitest run scripts/hosted-purchase-acceptance.test.mjs
+          pnpm exec vitest run scripts/hosted-purchase-acceptance.test.mjs --environment node
+
+      - name: Load original command identity for exact replay only
+        if: ${{ inputs.purchase_acceptance == true && inputs.replay_evidence_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: hosted-purchase-acceptance-${{ inputs.replay_evidence_run_id }}
+          path: artifacts/hosted-purchase-original
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.replay_evidence_run_id }}
 
       - name: Execute hosted Purchase Preparation acceptance
         if: ${{ inputs.purchase_acceptance == true }}
         env:
           ATLAS_ACCEPTANCE_MAIN_SHA: ${{ inputs.commit_sha }}
+          ATLAS_ACCEPTANCE_REPLAY_RUN_ID: ${{ inputs.replay_evidence_run_id }}
         run: node scripts/hosted-purchase-acceptance.mjs
 
       - name: Preserve acceptance and recovery evidence
