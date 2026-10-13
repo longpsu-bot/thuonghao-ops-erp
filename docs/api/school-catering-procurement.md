@@ -380,3 +380,17 @@ source lineage. No production function body or public payload changes.
 
 See [Supabase timeout guidance](https://supabase.com/docs/guides/database/postgres/timeouts)
 and [PostgREST timeout hoisting](https://docs.postgrest.org/en/stable/references/transactions.html#hoisted-function-settings).
+
+### Post-release allocation read performance (migration 106)
+
+The Supplier Allocation workbench retains its normal authenticated 8-second
+budget and the existing `CONFIRMED-SUPPLIER-ALLOCATION.v1` payload. Each read
+resolves its full current Confirmed Need source set once for presentation and
+reuses that set when excluding duplicate historical Handoff families. Released
+rows still project current Handoff facts; source precedence, canonical
+currentness, scope, filters and preparation readiness are unchanged. No source
+cache persists between requests, and reads create no supporting business facts.
+
+The hosted migration-105 baseline and local migration-106 regression are recorded
+in [the bounded read-performance task](../implementation-tasks/TASK-PROCUREMENT-POST-RELEASE-ALLOCATION-READ-01.md).
+Hosted post-fix acceptance remains subject to Product-approved deployment.
