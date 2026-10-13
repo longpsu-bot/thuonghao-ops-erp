@@ -1038,7 +1038,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(113);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(114);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [
@@ -2432,6 +2432,20 @@ describe("Atlas staging hosted evidence", () => {
     expect(sql).toContain(
       "p.proconfig <@ array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
     );
+  });
+
+  it("accepts only the approved exact Purchase Preparation timeout configuration", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain(
+      "p.proname = 'prepare_school_catering_purchase_orders'",
+    );
+    expect(sql).toContain(
+      "p.proconfig @> array['search_path=\"\"', 'statement_timeout=20s']::text[]",
+    );
+    expect(sql).toContain(
+      "p.proconfig <@ array['search_path=\"\"', 'statement_timeout=20s']::text[]",
+    );
+    expect(sql).toContain("cardinality(p.proconfig) = 2");
   });
 
   it("rejects Need Generation with only the default search path", () => {

@@ -42,6 +42,25 @@ Status: Implemented and merged through the connected school-catering Procurement
 
 ## Contract and security boundary
 
+### Purchase Preparation release performance — 2026-10-13
+
+Migration 105 preserves the 20-second Purchase Preparation timeout and the
+existing role and transport budgets. Confirmed-source grouping carries the
+canonical evaluation outcome rather than duplicating the entire evaluation in
+each sort tuple. Allocation locking gathers persisted batch supplier splits in
+one grouped query, retaining supplier-evidence locks before family-root locks
+and the existing deterministic ordering. The following fresh readiness check
+still proves exact current source, quantity, fingerprint, balance and eligibility.
+
+Default materialization shares backend-resolved source evidence with private
+readiness overloads only within that command. Supplier priority evidence remains
+locked before defaults are generated, and the full current source universe is
+refreshed after writes or waits. Cross-batch ambiguity checks and final strict
+persisted readiness remain mandatory. Neither overload is callable by browser
+roles; no browser payload becomes authoritative source evidence. Release,
+validation, approval, membership guards, Handoff promotion, PO immutability,
+replay and atomic rollback retain their contracts.
+
 All requests are one `jsonb` argument and all responses are safe `jsonb` envelopes. Commands require an authenticated Atlas Actor, the stated active capability and an authorized scope; they use receipts, idempotency, optimistic versions, domain events and audit events. Reads are shaped APIs only. Browser roles receive `EXECUTE` on public functions and no direct table privileges. Runtime owners have empty `search_path`; all authoritative tables use forced RLS.
 
 | API                                                | PR          | Kind    | Contract                         | Capability                          | Purpose                                                                                                      |
