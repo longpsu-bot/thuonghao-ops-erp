@@ -452,7 +452,9 @@ describe("read-only reconciliation operator workbench", () => {
   it("distinguishes an empty scope from local filters hiding rows", async () => {
     show("EMPTY");
     expect(
-      await screen.findByText("Không có phạm vi đối chiếu hiện hành phù hợp."),
+      await screen.findByText(
+        "Chưa có dữ liệu đối chiếu cho trường và khoảng ngày đã chọn.",
+      ),
     ).toBeVisible();
   });
 });

@@ -74,11 +74,11 @@ export function PlanningPantryStage({
           w="var(--atlas-layout-add-school-width, 220px)"
         >
           <NativeSelect.Field
-            aria-label="Trường thêm dòng"
+            aria-label="Trường cần thêm hàng"
             value={addSchool}
             onChange={(e) => setAddSchool(e.target.value)}
           >
-            <option value="">Chọn trường thêm dòng</option>
+            <option value="">Chọn trường cần thêm hàng</option>
             {schools.map((s) => (
               <option key={s.school_id} value={s.school_id}>
                 {s.school_name}
@@ -107,11 +107,13 @@ export function PlanningPantryStage({
           <Checkbox.Control>
             <Checkbox.Indicator />
           </Checkbox.Control>
-          <Checkbox.Label>Xác nhận toàn tuần không có bổ sung</Checkbox.Label>
+          <Checkbox.Label>
+            Xác nhận cả tuần không có hàng đặt riêng
+          </Checkbox.Label>
         </Checkbox.Root>
         {c.schoolIds.length > 0 && (
           <Text textStyle="helper" color="fg.muted">
-            Chuyển về Tất cả trường để thay đổi xác nhận toàn tuần.
+            Chọn Tất cả trường để thay đổi xác nhận cho cả tuần.
           </Text>
         )}
       </Flex>
@@ -130,18 +132,18 @@ export function PlanningPantryStage({
           {!visibleSchoolIds.length
             ? "Không có trường phù hợp bộ lọc."
             : c.pantryRows.some((row) => row.service_date === c.date)
-              ? "Không có dòng bổ sung phù hợp bộ lọc trong ngày."
+              ? "Không có hàng đặt riêng khớp bộ lọc trong ngày này."
               : c.noAdditions
-                ? "Đã chọn xác nhận toàn tuần không có bổ sung."
-                : "Chưa có dòng bổ sung trong ngày. Chưa xác nhận toàn tuần không có bổ sung."}
+                ? "Đã chọn xác nhận không có hàng đặt riêng trong cả tuần."
+                : "Chưa có hàng đặt riêng trong ngày này. Chưa xác nhận cả tuần không có hàng đặt riêng."}
         </Text>
       )}
       <AtlasTableViewport
-        label="Bảng nguyên liệu bổ sung"
+        label="Bảng hàng đặt riêng"
         maxH="var(--atlas-layout-planning-table-height, max(240px, calc(100dvh - 480px)))"
       >
         <Table.Root
-          aria-label="Nguyên liệu bổ sung"
+          aria-label="Hàng đặt riêng"
           tableLayout="fixed"
           w="var(--atlas-pantry-table-width, 1156px)"
           minW="var(--atlas-pantry-table-width, 1156px)"

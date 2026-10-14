@@ -144,7 +144,7 @@ export function PlanningSourceReview({
           </Table.Root>
         )}
         {c.job === "pantry" && c.noAdditions && (
-          <Text py="sm">Xác nhận toàn tuần không có bổ sung.</Text>
+          <Text py="sm">Xác nhận cả tuần không có hàng đặt riêng.</Text>
         )}
         {c.preview.issues.blockers.map((i, n) => (
           <Text role="alert" key={n} py="xs" color="status.danger">

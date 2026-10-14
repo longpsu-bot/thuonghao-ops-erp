@@ -152,7 +152,7 @@ describe("Planning sources Chakra workbench", () => {
       screen.queryByText("Học sinh 0 · Giáo viên 0 · Tổng 0"),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
-    await screen.findByRole("table", { name: "Nguyên liệu bổ sung" });
+    await screen.findByRole("table", { name: "Hàng đặt riêng" });
     fireEvent.change(
       screen.getByRole("textbox", { name: "Tìm trong công việc" }),
       {
@@ -162,7 +162,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(screen.getByText("Không có trường phù hợp bộ lọc.")).toBeVisible();
     expect(
       screen.queryByText(
-        "Chưa có dòng bổ sung trong ngày. Chưa xác nhận toàn tuần không có bổ sung.",
+        "Chưa có hàng đặt riêng trong ngày này. Chưa xác nhận cả tuần không có hàng đặt riêng.",
       ),
     ).not.toBeInTheDocument();
   });
@@ -819,13 +819,11 @@ describe("Planning sources Chakra workbench", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     expect(
       await screen.findByRole("checkbox", {
-        name: "Xác nhận toàn tuần không có bổ sung",
+        name: "Xác nhận cả tuần không có hàng đặt riêng",
       }),
     ).toBeDisabled();
     expect(
-      screen.getByText(
-        "Chuyển về Tất cả trường để thay đổi xác nhận toàn tuần.",
-      ),
+      screen.getByText("Chọn Tất cả trường để thay đổi xác nhận cho cả tuần."),
     ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Trường Nguyễn Du" }));
     fireEvent.click(await screen.findByRole("button", { name: "Chọn tất cả" }));
@@ -997,10 +995,10 @@ describe("Planning sources Chakra workbench", () => {
     await show();
     fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     const pantryTable = await screen.findByRole("table", {
-      name: "Nguyên liệu bổ sung",
+      name: "Hàng đặt riêng",
     });
     const pantryViewport = screen.getByRole("region", {
-      name: "Bảng nguyên liệu bổ sung",
+      name: "Bảng hàng đặt riêng",
     });
     expect(pantryViewport).toHaveAttribute("tabindex", "0");
     expect(pantryViewport).toContainElement(pantryTable);
@@ -1010,7 +1008,7 @@ describe("Planning sources Chakra workbench", () => {
       tableLayout: "fixed",
     });
     fireEvent.change(
-      await screen.findByRole("combobox", { name: "Trường thêm dòng" }),
+      await screen.findByRole("combobox", { name: "Trường cần thêm hàng" }),
       { target: { value: "school-0" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
@@ -1028,7 +1026,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(screen.getAllByText("Bếp Trường Nguyễn Du")[0]).toBeVisible();
     fireEvent.click(
       screen.getByRole("checkbox", {
-        name: "Xác nhận toàn tuần không có bổ sung",
+        name: "Xác nhận cả tuần không có hàng đặt riêng",
       }),
     );
     expect(await screen.findByRole("dialog")).toBeVisible();
@@ -1156,7 +1154,7 @@ it.each(["menu", "attendance", "pantry"] as const)(
       ).toBe(true);
     if (job === "pantry")
       expect(
-        screen.getByRole("combobox", { name: "Trường thêm dòng" }),
+        screen.getByRole("combobox", { name: "Trường cần thêm hàng" }),
       ).toHaveTextContent(fixture.pantry.schools[0].school_name);
     fireEvent.click(
       screen.getByRole("tab", {

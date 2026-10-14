@@ -83,7 +83,7 @@ export function AtlasSessionGate({
             message={
               session.status === "session_expired"
                 ? (session.safeMessage ??
-                  "Phiên làm việc đã hết hoặc không còn hợp lệ. Vui lòng đăng nhập lại trước khi tiếp tục.")
+                  "Phiên đăng nhập đã hết hạn hoặc không còn hợp lệ. Vui lòng đăng nhập lại để tiếp tục.")
                 : undefined
             }
             safeAuthError={safeAuthError}

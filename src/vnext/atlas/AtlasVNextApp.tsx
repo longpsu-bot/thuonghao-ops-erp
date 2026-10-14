@@ -161,7 +161,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       )
     ) {
       setNotice(
-        "Hoàn tất hoặc đóng hộp thoại hiện tại trước khi chuyển bàn làm việc.",
+        "Hoàn tất hoặc đóng hộp thoại trước khi chuyển sang màn hình khác.",
       );
       return false;
     }
@@ -192,7 +192,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
         (context.range.start !== range.start || context.range.end !== range.end)
       ) {
         setNotice(
-          `Nhu cầu ${range.start} → ${range.end} yêu cầu Phân bổ NCC. Phân bổ NCC đang mở giữ khoảng ${context.range.start} → ${context.range.end} và các thay đổi tại chỗ. Đổi khoảng ngày tại bàn làm việc này khi đã sẵn sàng.`,
+          `Cần phân bổ NCC cho nhu cầu từ ${range.start} đến ${range.end}. Phân bổ NCC vẫn giữ khoảng ngày ${context.range.start} → ${context.range.end} và các thay đổi đang chỉnh sửa. Khi sẵn sàng, hãy chọn lại khoảng ngày cần phân bổ.`,
         );
       }
     },
@@ -207,7 +207,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       if (retained) {
         const retainedRange = ordersContext.current?.range ?? range;
         setNotice(
-          `Chuyển sang Đơn mua từ Phân bổ NCC ${range.start} → ${range.end}. Đơn mua đang mở giữ khoảng ${retainedRange.start} → ${retainedRange.end} và ngữ cảnh tại chỗ. Tải lại dữ liệu tại Đơn mua để xem kết quả mới; đổi khoảng ngày khi đã sẵn sàng nếu cần.`,
+          `Đã mở Đơn mua từ Phân bổ NCC ${range.start} → ${range.end}. Đơn mua vẫn giữ khoảng ngày ${retainedRange.start} → ${retainedRange.end} và các lựa chọn đang dùng. Hãy tải lại dữ liệu để xem kết quả mới; chọn lại khoảng ngày nếu cần.`,
         );
       }
     },
@@ -293,8 +293,9 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       {signOutBlocked && ownersNeedingResolution.length > 0 && (
         <Box role="alert" bg="bg.warning" p="sm" mb="sm">
           <Text fontWeight="semibold">
-            Chưa thể đăng xuất. Giải quyết từng bàn làm việc dưới đây; thay đổi
-            vẫn được giữ nguyên.
+            Chưa thể đăng xuất. Kiểm tra các thay đổi chưa lưu hoặc thao tác
+            chưa rõ kết quả ở các màn hình dưới đây. Các thay đổi vẫn được giữ
+            nguyên.
           </Text>
           <Flex gap="sm" wrap="wrap" mt="xs">
             {ownersNeedingResolution.map((id) => (
@@ -355,7 +356,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       })}
       {!workspace.openIds.length && (
         <Box p="lg">
-          <Text>Mở Bàn làm việc để bắt đầu công việc.</Text>
+          <Text>Mở menu Chức năng để bắt đầu.</Text>
         </Box>
       )}
     </AtlasVNextShell>

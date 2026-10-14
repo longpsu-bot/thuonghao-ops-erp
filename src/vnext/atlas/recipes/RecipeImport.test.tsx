@@ -67,17 +67,17 @@ describe("existing workbook import utility", () => {
     );
     await waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "Nhập workbook" }),
+        screen.getByRole("button", { name: "Nhập từ Excel" }),
       ).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Nhập workbook" }));
-    fireEvent.change(screen.getByLabelText("Chọn workbook .xlsx"), {
+    fireEvent.click(screen.getByRole("button", { name: "Nhập từ Excel" }));
+    fireEvent.change(screen.getByLabelText("Chọn file Excel .xlsx"), {
       target: { files: [file()] },
     });
     await screen.findByText(/Kết quả kiểm tra:/);
     expect(screen.queryByText(/ops-v1:/)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Áp dụng workbook" }),
+      screen.getByRole("button", { name: "Nhập công thức" }),
     ).toBeDisabled();
   });
   it("recovers an unknown import only when every workbook Recipe is present in authoritative evidence", async () => {
@@ -105,7 +105,7 @@ describe("existing workbook import utility", () => {
     expect(h.result.current.lock).toBe("unknown");
     await act(() => h.result.current.recover());
     expect(h.result.current.lock).toBeNull();
-    expect(h.result.current.notice).toContain("Đã nhập workbook");
+    expect(h.result.current.notice).toContain("Đã nhập công thức từ Excel");
   });
   it.each([false, true])(
     "uses the existing parser and displays validation (invalid=%s) without writing",
@@ -124,23 +124,23 @@ describe("existing workbook import utility", () => {
       );
       await waitFor(() =>
         expect(
-          screen.getByRole("button", { name: "Nhập workbook" }),
+          screen.getByRole("button", { name: "Nhập từ Excel" }),
         ).toBeEnabled(),
       );
-      fireEvent.click(screen.getByRole("button", { name: "Nhập workbook" }));
-      fireEvent.change(screen.getByLabelText("Chọn workbook .xlsx"), {
+      fireEvent.click(screen.getByRole("button", { name: "Nhập từ Excel" }));
+      fireEvent.change(screen.getByLabelText("Chọn file Excel .xlsx"), {
         target: { files: [file()] },
       });
       await screen.findByText(/Kết quả kiểm tra:/);
       expect(readXlsxFile).toHaveBeenCalled();
       expect(apply).not.toHaveBeenCalled();
       expect(screen.queryByText(/[a-f0-9]{64}/)).not.toBeInTheDocument();
-      fireEvent.change(screen.getByLabelText("Lý do nhập workbook"), {
+      fireEvent.change(screen.getByLabelText("Lý do nhập từ Excel"), {
         target: { value: "Đã kiểm tra" },
       });
       if (invalid) {
         expect(
-          screen.getByRole("button", { name: "Áp dụng workbook" }),
+          screen.getByRole("button", { name: "Nhập công thức" }),
         ).toBeDisabled();
         expect(
           screen.getByText(/Trang Định lượng, dòng 2/),
@@ -149,10 +149,8 @@ describe("existing workbook import utility", () => {
         expect(
           screen.getByText("Số món: 1 · Số công thức: 1"),
         ).toBeInTheDocument();
-        fireEvent.click(
-          screen.getByRole("button", { name: "Áp dụng workbook" }),
-        );
-        await screen.findByText(/Đã nhập workbook và tải lại/);
+        fireEvent.click(screen.getByRole("button", { name: "Nhập công thức" }));
+        await screen.findByText(/Đã nhập công thức từ Excel và tải lại/);
         expect(apply).toHaveBeenCalledTimes(1);
         expect(apply.mock.calls[0][0]).toMatchObject({
           expected_version: 1,

@@ -40,9 +40,9 @@ def run(browser, width, legacy_comparison=False):
         for label in targets:
             if width < 1024:
                 page.get_by_role("button", name="Đang mở:", exact=False).click()
-                target = page.get_by_role("dialog", name="Bàn làm việc đang mở", exact=True).get_by_role("button", name=label, exact=True)
+                target = page.get_by_role("dialog", name="Màn hình đang mở", exact=True).get_by_role("button", name=label, exact=True)
             else:
-                target = page.get_by_role("tablist", name="Bàn làm việc đang mở").get_by_role("tab", name=label, exact=True)
+                target = page.get_by_role("tablist", name="Màn hình đang mở").get_by_role("tab", name=label, exact=True)
             target.scroll_into_view_if_needed()
             duration = target.evaluate("""async button => {
               const start = performance.now();
