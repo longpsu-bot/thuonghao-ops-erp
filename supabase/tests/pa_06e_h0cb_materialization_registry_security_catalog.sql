@@ -57,7 +57,8 @@ select isnt(has_function_privilege('public','atlas_api.create_confirmed_needs_fr
 select isnt(has_function_privilege('public','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), true, 'PUBLIC cannot execute the validator');
 select is((select count(*)::integer from (values('anon'),('authenticated'),('service_role')) roles(role_name) where has_function_privilege(role_name,'atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE')), 0, 'API roles cannot execute the validator');
 select ok(has_function_privilege('atlas_planning_materialization_runtime','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), 'runtime may invoke the validator');
-select is((select count(*)::integer from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'), 21, 'runtime retains twenty-one practical granted executes including private effective currentness; owned ancestry helpers stay bounded');
+-- Preserved postgres inheritance exposes both private helper grantors in this view.
+select is((select count(*)::integer from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'), 22, 'runtime retains twenty-two practical granted executes including private effective membership and currentness; owned ancestry helpers stay bounded');
 select is((select count(*)::integer from pg_namespace n where n.nspname in ('atlas_core','atlas_admin','atlas_planning','atlas_audit','atlas_api') and has_schema_privilege('atlas_planning_materialization_runtime',n.oid,'USAGE')), 5, 'runtime has usage on exactly five Atlas schemas');
 
 -- Practical minimum relation privileges.
