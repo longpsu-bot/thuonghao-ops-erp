@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(29);
+select plan(30);
 
 -- D-047 regeneration adds one invoker helper and three SELECT-only policies.
 -- Five private grants: legacy schema USAGE, three relation SELECTs, helper EXECUTE.
@@ -14,7 +14,9 @@ select plan(29);
 -- three guards plus one private lock helper, four triggers and 28 precise grants.
 -- Effective composition generation 107 adds four private functions, two immediate
 -- capture triggers, two SELECT-only policies and twelve private catalog grants.
--- Browser API/capability/role/table catalogs and runtime posture remain unchanged.
+-- Cutover authorization alignment 108 adds one private whole-PO scope helper with
+-- EXECUTE only for read/procurement runtimes; public API/capability/role/table
+-- catalogs and browser privileges remain unchanged.
 -- Exact Atlas schema and relation posture.
 select is(
   (
@@ -1323,6 +1325,27 @@ select ok(
       )
   ),
   'CAT-21 no unreviewed atlas_api function or overload exists'
+);
+
+select ok(
+  (
+    select pg_get_userbyid(p.proowner)='atlas_owner'
+      and p.prosecdef
+      and p.proconfig=array['search_path=""']::text[]
+      and has_function_privilege(
+        'atlas_read_runtime',p.oid,'EXECUTE')
+      and has_function_privilege(
+        'atlas_procurement_command_runtime',p.oid,'EXECUTE')
+      and not has_function_privilege('authenticated',p.oid,'EXECUTE')
+      and not has_function_privilege('anon',p.oid,'EXECUTE')
+      and not has_function_privilege('service_role',p.oid,'EXECUTE')
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='atlas_core'
+      and p.proname='school_catering_purchase_order_actor_has_full_scope'
+      and pg_get_function_identity_arguments(p.oid)='p_actor_id uuid, p_purchase_order_id uuid'
+  ),
+  'CAT-21B whole-PO authorization helper is private and runtime-bounded'
 );
 
 select ok(
