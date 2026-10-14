@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-PXK-EXACT-SCHOOL-SCOPE-01
-Status: APPROVED — bounded implementation in progress
+Status: IMPLEMENTED LOCALLY — independent review and exact-head CI pending
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
 Starting main: fbafca0cb404231e5930df079703f869fb9b29fb
@@ -18,6 +18,7 @@ One Actor may hold the existing task read/release capabilities and explicit scop
 
 - One forward SQL migration after 108: replace the existing private Dispatch scope helper's SCHOOL branch and route PXK base-workbench/reconciliation row filters through it. Release already uses it.
 - `supabase/tests/school_dispatch_release.sql` and `school_fulfilment_reconciliation.sql`: authenticated rollback cases and existing fixture reuse. Relevant PO and security/catalog regression checks may be adjusted only for exact intended catalog fingerprints; counts and grants must stay unchanged.
+- `supabase/local/atlas_auth_scope_alignment_synthetic_acceptance.sql`: extend the existing f108 rollback fixture for migration 109's exact-School, multi-School single-Actor and explicit broad-scope controls. Preserve pinned migration-108 historical reports; no new runner/framework/extension. Its independent 36-relation postflight remains unchanged.
 - This baton, accepted decision/register, affected Dispatch/reconciliation API contracts and migration-108 decision compatibility addendum. Record accurate evidence/readiness without rewriting historical 108 acceptance.
 - No UI, dependency, runtime configuration, general framework, unrelated source or hosted data changes.
 
@@ -42,3 +43,11 @@ Use only a newly created disposable local database for development; preserve pre
 One bounded branch and one Draft PR from latest main. Push a fixed SHA with RED/GREEN logs and focused counts for independent review. No merge/deployment by implementer; protected Staging migration/rollback acceptance requires a later reviewed plan and clearance. OPS v1/Retool, Production, real supplier/PXK commitments and Warehouse remain excluded.
 
 Previous correction ATLAS-AUTH-SCOPE-ALIGNMENT-01 was merged/deployed at `d254c099098a1f004f4eaaf78092f1aab9c32bd3` and passed 43 hosted rollback checks with zero persistent probes. [PR #381](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/381) recorded acceptance and merged at the starting main above after independent review and exact-head Frontend/Full Integration passed. See [migration 108 evidence](../testing/atlas-auth-scope-alignment-staging-108.md). This new task implements the separately approved policy.
+
+## Implementation evidence
+
+Migration `20261014120320_atlas_pxk_exact_school_scope.sql` replaces only the existing Dispatch helper body and two read-filter callers. The release path already uses the helper. Owner `atlas_read_runtime`, SECURITY DEFINER, empty search path, runtime/browser ACL and all exact catalog identities/counts/grants remain unchanged.
+
+The rollback matrix first reproduced exactly three migration-108 failures: cross-School PXK read, reconciliation and release at a shared default. After migration 109, Dispatch 134, reconciliation 16, PO 155 and exact security/catalog 30 assertions pass (335 total). The extended manual synthetic acceptance passes 48 fail-loud cases locally; restoring only the old scope functions inside an isolated local transaction makes its exact-School read assertion fail loudly, with no success report. Independent postflight is clear. See [migration 109 validation and rollout procedure](../testing/atlas-pxk-exact-school-scope-109.md).
+
+Hosted migration 109, hosted acceptance, exact-head CI and independent final review are not yet complete. Do not advance this baton or claim deployment from local evidence. After reviewed Staging acceptance, the next proposed horizon is read-only cutover-evidence refresh before a Warehouse receiving design packet for Product review; no Warehouse implementation is authorized.

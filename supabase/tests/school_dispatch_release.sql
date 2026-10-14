@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(69);
+select plan(134);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -943,6 +943,197 @@ values
     '26020000-0000-4000-8000-000000000041',40,'26020000-0000-4000-8000-000000000031',
     '26020000-0000-4000-8000-000000000012','2026-09-25');
 
+set session_replication_role=origin;
+
+-- ATLAS-PXK-EXACT-SCHOOL-SCOPE-01: A's mutable default now equals B's captured
+-- location. School A must keep captured Location A without acquiring School B.
+update atlas_admin.schools set default_delivery_location_id='26020000-0000-4000-8000-000000000012'
+where school_id='26020000-0000-4000-8000-000000000021';
+create function pg_temp.pxk_exact_read(p_reconciliation boolean,p_date date default '2026-09-25')
+returns jsonb language plpgsql volatile as $read$
+declare request jsonb; response jsonb;
+begin
+ request:=jsonb_build_object('contract_version',case when p_reconciliation
+   then 'SCHOOL-FULFILMENT-RECONCILIATION.v1' else 'SCHOOL-DISPATCH-RELEASE.v1' end,
+   'requested_by_auth_subject','26000000-0000-4000-8000-000000000102',
+   'correlation_id',gen_random_uuid(),'payload',jsonb_build_object(
+    'date_start',p_date,'date_end',p_date,'school_ids','[]'::jsonb,'search',null));
+ perform set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000102',true);
+ set local role authenticated;
+ if p_reconciliation then response:=atlas_api.get_school_fulfilment_reconciliation_workbench(request);
+ else response:=atlas_api.get_school_dispatch_release_workbench(request); end if;
+ reset role;
+ return response;
+end;
+$read$;
+create function pg_temp.pxk_exact_release_request(p_school uuid,p_location uuid)
+returns jsonb language sql volatile as $request$
+ select jsonb_build_object('contract_version','SCHOOL-DISPATCH-RELEASE.v1',
+  'requested_by_auth_subject','26000000-0000-4000-8000-000000000102',
+  'command_id',command,'correlation_id',command,'idempotency_key','exact-school:'||command,
+  'requested_at',transaction_timestamp(),'reason_code','SCHOOL_DISPATCH_DOCUMENT_RELEASED',
+  'reason_note',null,'expected_version',0,'payload',jsonb_build_object(
+   'service_date','2026-09-25','school_id',p_school,'delivery_location_id',p_location,
+   'expected_source_fingerprint',atlas_core.school_dispatch_release_preview(
+     '2026-09-25',p_school,p_location)->>'source_fingerprint','predecessor_release_id',null))
+ from (select gen_random_uuid() command) generated;
+$request$;
+create function pg_temp.pxk_exact_write_counts() returns jsonb language sql stable as $counts$
+ select jsonb_build_array(
+  (select count(*) from atlas_core.command_receipts),
+  (select count(*) from atlas_audit.domain_events),
+  (select count(*) from atlas_audit.audit_events),
+  (select count(*) from atlas_dispatch.school_dispatch_releases),
+  (select count(*) from atlas_dispatch.school_dispatch_release_lines),
+  (select count(*) from atlas_dispatch.school_dispatch_release_line_sources));
+$counts$;
+create function pg_temp.pxk_exact_scope_cases() returns setof text language plpgsql as $cases$
+declare
+ c record; response jsonb; request jsonb; before_counts jsonb; actual text[];
+ school_a uuid:='26020000-0000-4000-8000-000000000021';
+ school_b uuid:='26020000-0000-4000-8000-000000000022';
+ location_a uuid:='26020000-0000-4000-8000-000000000011';
+ location_b uuid:='26020000-0000-4000-8000-000000000012';
+ actor uuid:='26000000-0000-4000-8000-000000000002';
+ frozen text; first_response jsonb; second_response jsonb; replay jsonb; same_actor_audit boolean;
+ missing_capability uuid;
+begin
+ select md5(string_agg(to_jsonb(r)::text,'' order by r.school_dispatch_release_id)) into frozen
+ from atlas_dispatch.school_dispatch_releases r;
+ for c in select * from (values
+  ('School A','SCHOOL',21,null,null,'ACTIVE',false,false,array['A'],false),
+  ('School B','SCHOOL',22,null,null,'ACTIVE',false,false,array['B'],true),
+  ('Location A','DELIVERY_LOCATION',null,11,null,'ACTIVE',false,false,array['A'],false),
+  ('Location B','DELIVERY_LOCATION',null,12,null,'ACTIVE',false,false,array['B'],true),
+  ('Customer','CUSTOMER',null,null,1,'ACTIVE',false,false,array['A','B'],true),
+  ('GLOBAL','GLOBAL',null,null,null,'ACTIVE',false,false,array['A','B'],true),
+  ('other Customer','CUSTOMER',null,null,2,'ACTIVE',false,false,array[]::text[],false),
+  ('other location','DELIVERY_LOCATION',null,13,null,'ACTIVE',false,false,array[]::text[],false),
+  ('revoked','SCHOOL',21,null,null,'REVOKED',false,false,array[]::text[],false),
+  ('inactive expired status','SCHOOL',21,null,null,'EXPIRED',false,false,array[]::text[],false),
+  ('expired time','SCHOOL',21,null,null,'ACTIVE',false,true,array[]::text[],false),
+  ('future time','SCHOOL',21,null,null,'ACTIVE',true,false,array[]::text[],false)
+ ) test(name,kind,school,location,customer,status,future,expired,want,release_b)
+ loop
+  delete from atlas_core.actor_scopes where actor_id=actor;
+  insert into atlas_core.actor_scopes(actor_id,scope_kind,school_id,delivery_location_id,
+   customer_id,scope_status,effective_from,effective_to)
+  values(actor,c.kind,
+   case c.school when 21 then school_a when 22 then school_b end,
+   case c.location when 11 then location_a when 12 then location_b
+    when 13 then '26020000-0000-4000-8000-000000000013'::uuid end,
+   case c.customer when 1 then '26020000-0000-4000-8000-000000000001'::uuid
+    when 2 then '26020000-0000-4000-8000-000000000002'::uuid end,c.status,
+   transaction_timestamp()+case when c.future then interval '1 day' else interval '-2 days' end,
+   case when c.expired then transaction_timestamp()-interval '1 day' end);
+  before_counts:=pg_temp.pxk_exact_write_counts();
+  response:=pg_temp.pxk_exact_read(false);
+  select coalesce(array_agg(case row->>'school_id' when school_a::text then 'A'
+   when school_b::text then 'B' else 'UNEXPECTED' end order by row->>'school_id'),array[]::text[])
+  into actual from jsonb_array_elements(response->'rows') row;
+  return next ok(response->>'success'='true' and actual=c.want,
+   'EXACT-SCHOOL PXK read: '||c.name);
+  response:=pg_temp.pxk_exact_read(true);
+  select coalesce(array_agg(case row->>'school_id' when school_a::text then 'A'
+   when school_b::text then 'B' else 'UNEXPECTED' end order by row->>'school_id'),array[]::text[])
+  into actual from jsonb_array_elements(response->'rows') row;
+  return next ok(response->>'success'='true' and actual=c.want,
+   'EXACT-SCHOOL reconciliation: '||c.name);
+  request:=pg_temp.pxk_exact_release_request(school_b,location_b);
+  set local role authenticated;
+  response:=pg_temp.pxk_release_isolated(request);
+  reset role;
+  return next ok(case when c.release_b then response->>'success'='true'
+   else response->>'error_code'='SCOPE_DENIED' end,
+   'EXACT-SCHOOL release B: '||c.name);
+  return next is(pg_temp.pxk_exact_write_counts(),before_counts,
+   'EXACT-SCHOOL reads and denied/isolated release leave zero writes: '||c.name);
+ end loop;
+ -- One staff member has both task capabilities and two explicit School scopes.
+ delete from atlas_core.actor_scopes where actor_id=actor;
+ insert into atlas_core.actor_scopes(actor_id,scope_kind,school_id)
+ values(actor,'SCHOOL',school_a),(actor,'SCHOOL',school_b);
+ for c in select * from (values
+   ('dispatch.school_release.read'),('dispatch.school_release.release')) missing(code)
+ loop
+  select capability_id into missing_capability from atlas_core.capabilities where capability_code=c.code;
+  delete from atlas_core.role_capabilities
+  where role_id='26010000-0000-4000-8000-000000000001' and capability_id=missing_capability;
+  before_counts:=pg_temp.pxk_exact_write_counts();
+  response:=pg_temp.pxk_exact_read(false);
+  return next ok(case when c.code='dispatch.school_release.read'
+   then response->>'error_code'='CAPABILITY_DENIED' else response->>'success'='true' end,
+   'PXK read independently checks its task capability without '||c.code);
+  response:=pg_temp.pxk_exact_read(true);
+  return next ok(case when c.code='dispatch.school_release.read'
+   then response->>'error_code'='CAPABILITY_DENIED' else response->>'success'='true' end,
+   'reconciliation independently checks its task capability without '||c.code);
+  request:=pg_temp.pxk_exact_release_request(school_a,location_a);
+  set local role authenticated;
+  response:=pg_temp.pxk_release_isolated(request);
+  reset role;
+  return next ok(case when c.code='dispatch.school_release.release'
+   then response->>'error_code'='CAPABILITY_DENIED' else response->>'success'='true' end,
+   'PXK release independently checks its task capability without '||c.code);
+  return next is(pg_temp.pxk_exact_write_counts(),before_counts,
+   'capability denial/isolated control leaves zero writes without '||c.code);
+  insert into atlas_core.role_capabilities(role_id,capability_id)
+  values('26010000-0000-4000-8000-000000000001',missing_capability);
+ end loop;
+ response:=pg_temp.pxk_exact_read(false);
+ second_response:=pg_temp.pxk_exact_read(true);
+ return next ok(jsonb_array_length(response->'rows')=2 and
+  jsonb_array_length(second_response->'rows')=2,'one Actor reads both explicitly authorized Schools');
+ response:=pg_temp.pxk_exact_read(false,'2026-09-24');
+ return next ok(response->>'success'='true' and response#>>'{rows,0,school_id}'=school_a::text
+  and response#>>'{rows,0,delivery_location_id}'=location_a::text,
+  'exact School retains historical captured location after its default changes');
+ begin
+  request:=pg_temp.pxk_exact_release_request(school_a,location_a);
+  set local role authenticated;
+  first_response:=atlas_api.release_school_dispatch_document(request);
+  replay:=atlas_api.release_school_dispatch_document(request);
+  reset role;
+  request:=pg_temp.pxk_exact_release_request(school_b,location_b);
+  set local role authenticated;
+  second_response:=atlas_api.release_school_dispatch_document(request);
+  reset role;
+  select (select count(*)=2 and bool_and(released_by_actor_id=actor)
+    from atlas_dispatch.school_dispatch_releases where service_date='2026-09-25')
+   and (select count(*)=2 and bool_and(actor_id=actor and delegated_actor_id is null)
+    from atlas_audit.audit_events where command_id in (
+     (first_response->>'command_id')::uuid,(second_response->>'command_id')::uuid))
+  into same_actor_audit;
+  raise exception using errcode='XS109',message='Rollback isolated same-Actor releases';
+ exception when sqlstate 'XS109' then null;
+ end;
+ return next is(first_response->>'success','true','same Actor releases School A with captured location');
+ return next ok(replay->>'success'='true' and
+  replay->>'document_number'=first_response->>'document_number' and
+  replay->>'school_dispatch_release_id'=first_response->>'school_dispatch_release_id',
+  'same Actor replay preserves immutable release identity and number');
+ return next is(second_response->>'success','true','same Actor releases School B without another staff member');
+ return next ok(same_actor_audit,'both release snapshots and audit events retain the same initiating Actor');
+ return next is((select md5(string_agg(to_jsonb(r)::text,'' order by r.school_dispatch_release_id))
+   from atlas_dispatch.school_dispatch_releases r where service_date<>'2026-09-25'),frozen,
+   'default changes and scoped commands never rewrite historical frozen PXK');
+ for c in select * from (values(location_b),( '26020000-0000-4000-8000-000000000013'::uuid)) target(location)
+ loop
+  request:=pg_temp.pxk_exact_release_request(school_a,c.location);
+  set local role authenticated;
+  response:=pg_temp.pxk_release_isolated(request);
+  reset role;
+  return next ok(response->>'success'='false','wrong captured/cross-Customer location cannot release a PXK');
+ end loop;
+ delete from atlas_core.actor_scopes where actor_id=actor;
+ insert into atlas_core.actor_scopes(actor_id,scope_kind,school_id) values(actor,'SCHOOL',school_a);
+ perform set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+end;
+$cases$;
+select * from pg_temp.pxk_exact_scope_cases();
+
+set session_replication_role=replica;
+
 -- PXK-SCOPE-02: only B changes, but A still depends on the same complete Supplier 1 PO.
 update atlas_procurement.school_catering_allocation_family_revisions set is_current=false
 where family_revision_id='26140000-0000-4000-8000-000000000012';
@@ -1366,6 +1557,7 @@ select ok((select jsonb_array_length(response->'rows')>0
     )
   from pxk_results where name='scoped-a-reconciliation'),
   'PO/PXK reconciliation returns only relationally authorized School rows');
+
 
 select * from finish();
 rollback;

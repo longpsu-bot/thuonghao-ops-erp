@@ -17,6 +17,8 @@ The authenticated envelope contains `requested_by_auth_subject`, `correlation_id
 
 The inclusive range may not exceed 31 days. An empty School array means every authorized School. Search covers School, captured location, PO number, and PXK number. Unknown fields, invalid UUIDs, and malformed dates fail closed. The Actor requires `dispatch.school_release.read` and the existing customer/School/location scope. Only `authenticated` may execute this API; browser and service roles have no direct private-relation grants.
 
+The Product-approved [exact-School amendment](../decisions/decision-atlas-pxk-exact-school-scope.md) routes reconciliation and PXK reads/releases through the same private Dispatch scope predicate. Active/effective `SCHOOL` scopes match exact School identity; a shared default location conveys no other School's authority. Explicit `DELIVERY_LOCATION`, location-derived `CUSTOMER` and `GLOBAL` semantics remain unchanged. The same staff Actor may operate multiple explicitly scoped Schools with the existing task capabilities; no second-person rule or staff-grant change is added. Captured historical locations and frozen PXK evidence remain authoritative after master-default changes.
+
 ## Response authority
 
 Rows arise only from current Confirmed Need, current allocation contribution lineage, or a current `RELEASED` PXK. Superseded history alone cannot manufacture a row. Captured operational `delivery_location_id` remains authoritative if the School default later changes.

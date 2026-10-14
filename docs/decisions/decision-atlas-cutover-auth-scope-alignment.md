@@ -47,3 +47,7 @@ Existing `GLOBAL` operators preserve behavior. Relational operators gain only th
 Migration 108 is forward-only. Before hosted deployment it can be discarded with its branch. After deployment, any rollback must be a reviewed forward migration that preserves least privilege; do not restore the accidental GLOBAL-only short-circuit or permit partial PO visibility.
 
 OPS v1 and Retool remain unchanged.
+
+## Later Product amendment — 14 October 2026
+
+[ATLAS-PXK-EXACT-SCHOOL-SCOPE-01](decision-atlas-pxk-exact-school-scope.md) subsequently selected exact School identity for PXK/reconciliation `SCHOOL` scopes and authorized the bounded Dispatch-only correction after migration 108. Its explicit location/customer/GLOBAL and mandatory capability controls are preserved; one Actor may operate multiple explicitly authorized Schools. This replaces only the inherited Dispatch compatibility limitation above. Migration 108's implementation and recorded acceptance remain historical evidence of their approved scope; they are not rewritten as proof of the later policy.

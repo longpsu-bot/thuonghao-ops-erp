@@ -1,4 +1,4 @@
--- Migration 108: synthetic commands only; all business writes roll back before reporting.
+-- Migration 109: extends the reviewed 108 fixture; all business writes roll back before reporting.
 -- Seed adapted from school_dispatch_release.sql at d254c09; unique f108 IDs/date.
 begin;
 set local statement_timeout='8s';
@@ -42,6 +42,7 @@ do $acceptance$
 declare
  v_result jsonb; v_response jsonb; v_replay jsonb; v_request jsonb; v_po_payload jsonb;
  v_pxk_payload jsonb; v_read_payload jsonb; v_count integer; v_po_number text;
+ v_frozen_pxk jsonb; v_b_payload jsonb; v_before_counts jsonb; v_control record;
 begin
  perform pg_temp.a108_require('migration_108_present',exists(select 1
   from supabase_migrations.schema_migrations where version='20261014090000'));
@@ -521,6 +522,117 @@ reset role;
 perform pg_temp.a108_require('reconciliation_global_control',v_response->>'success'='true'
   and jsonb_array_length(v_response->'rows')=2);
 
+-- Migration 109 policy extension. Earlier 108 reports remain pinned to their
+-- reviewed source; this current harness additionally proves exact School scope.
+perform pg_temp.a108_require('migration_109_present',exists(select 1
+ from supabase_migrations.schema_migrations where version='20261014120320'));
+perform pg_temp.a108_require('dispatch_helper_security_unchanged',(
+ select pg_get_userbyid(proowner)='atlas_read_runtime' and prosecdef
+  and proconfig=array['search_path=""']::text[]
+  and not exists(select 1 from aclexplode(proacl) acl where acl.grantee<>proowner
+   and (acl.grantee not in ('atlas_read_runtime'::regrole,'atlas_dispatch_command_runtime'::regrole)
+    or acl.privilege_type<>'EXECUTE' or acl.is_grantable))
+  and has_function_privilege('atlas_read_runtime',oid,'EXECUTE')
+  and has_function_privilege('atlas_dispatch_command_runtime',oid,'EXECUTE')
+  and not has_function_privilege('authenticated',oid,'EXECUTE')
+  and not has_function_privilege('anon',oid,'EXECUTE')
+  and not has_function_privilege('service_role',oid,'EXECUTE')
+ from pg_proc where oid='atlas_core.school_dispatch_actor_has_scope(uuid,uuid,uuid)'::regprocedure));
+v_frozen_pxk:=atlas_core.school_dispatch_release_json((select school_dispatch_release_id
+ from atlas_dispatch.school_dispatch_releases where school_id='f1080002-0000-4000-8000-000000000021'));
+update atlas_admin.schools set default_delivery_location_id='f1080002-0000-4000-8000-000000000012'
+where school_id='f1080002-0000-4000-8000-000000000021';
+v_b_payload:=v_pxk_payload||jsonb_build_object('school_id','f1080002-0000-4000-8000-000000000022',
+ 'delivery_location_id','f1080002-0000-4000-8000-000000000012',
+ 'expected_source_fingerprint',atlas_core.school_dispatch_release_preview('2098-10-14',
+  'f1080002-0000-4000-8000-000000000022','f1080002-0000-4000-8000-000000000012')->>'source_fingerprint');
+perform set_config('request.jwt.claim.sub','f1080000-0000-4000-8000-000000000102',true);
+v_before_counts:=jsonb_build_array((select count(*) from atlas_core.command_receipts),
+ (select count(*) from atlas_dispatch.school_dispatch_releases),(select count(*) from atlas_audit.audit_events));
+set local role authenticated;
+v_response:=atlas_api.get_school_dispatch_release_workbench(pg_temp.a108_read('SCHOOL-DISPATCH-RELEASE.v1',v_read_payload));
+reset role;
+perform pg_temp.a108_require('exact_school_shared_default_read',
+ v_response->>'success'='true' and jsonb_array_length(v_response->'rows')=1
+ and v_response#>>'{rows,0,school_id}'='f1080002-0000-4000-8000-000000000021'
+ and v_response#>>'{rows,0,delivery_location_id}'='f1080002-0000-4000-8000-000000000011');
+set local role authenticated;
+v_response:=atlas_api.get_school_fulfilment_reconciliation_workbench(
+ pg_temp.a108_read('SCHOOL-FULFILMENT-RECONCILIATION.v1',v_read_payload));
+reset role;
+perform pg_temp.a108_require('exact_school_shared_default_reconciliation',
+ v_response->>'success'='true' and jsonb_array_length(v_response->'rows')=1
+ and v_response#>>'{rows,0,school_id}'='f1080002-0000-4000-8000-000000000021');
+set local role authenticated;
+v_response:=atlas_api.release_school_dispatch_document(pg_temp.a108_command(
+ 'SCHOOL-DISPATCH-RELEASE.v1','SCHOOL_DISPATCH_DOCUMENT_RELEASED',0,v_b_payload));
+reset role;
+perform pg_temp.a108_require('exact_school_shared_default_release_denied',v_response->>'error_code'='SCOPE_DENIED');
+perform pg_temp.a108_require('exact_school_denial_zero_writes',v_before_counts=jsonb_build_array(
+ (select count(*) from atlas_core.command_receipts),(select count(*) from atlas_dispatch.school_dispatch_releases),
+ (select count(*) from atlas_audit.audit_events)));
+-- Explicit location/customer/global coverage retains its existing meaning.
+for v_control in select * from (values
+ ('DELIVERY_LOCATION',1),('CUSTOMER',2),('GLOBAL',2)) control(kind,want)
+loop
+ update atlas_core.actor_scopes set scope_kind=v_control.kind,school_id=null,
+  customer_id=case when v_control.kind='CUSTOMER' then 'f1080002-0000-4000-8000-000000000001'::uuid end,
+  delivery_location_id=case when v_control.kind='DELIVERY_LOCATION' then 'f1080002-0000-4000-8000-000000000012'::uuid end
+ where actor_id='f1080000-0000-4000-8000-000000000003';
+ perform set_config('request.jwt.claim.sub','f1080000-0000-4000-8000-000000000103',true);
+ set local role authenticated;
+ v_response:=atlas_api.get_school_dispatch_release_workbench(pg_temp.a108_read('SCHOOL-DISPATCH-RELEASE.v1',v_read_payload));
+ reset role;
+ perform pg_temp.a108_require('explicit_'||v_control.kind||'_read',v_response->>'success'='true'
+  and jsonb_array_length(v_response->'rows')=v_control.want);
+ set local role authenticated;
+ v_response:=atlas_api.get_school_fulfilment_reconciliation_workbench(
+  pg_temp.a108_read('SCHOOL-FULFILMENT-RECONCILIATION.v1',v_read_payload));
+ reset role;
+ perform pg_temp.a108_require('explicit_'||v_control.kind||'_reconciliation',v_response->>'success'='true'
+  and jsonb_array_length(v_response->'rows')=v_control.want);
+ set local role authenticated;
+ v_response:=pg_temp.a108_isolated('PXK',pg_temp.a108_command(
+  'SCHOOL-DISPATCH-RELEASE.v1','SCHOOL_DISPATCH_DOCUMENT_RELEASED',0,v_b_payload));
+ reset role;
+ perform pg_temp.a108_require('explicit_'||v_control.kind||'_release',v_response->>'success'='true');
+end loop;
+insert into atlas_core.actor_scopes(actor_id,scope_kind,school_id)
+values('f1080000-0000-4000-8000-000000000002','SCHOOL','f1080002-0000-4000-8000-000000000022');
+perform set_config('request.jwt.claim.sub','f1080000-0000-4000-8000-000000000102',true);
+set local role authenticated;
+v_response:=atlas_api.get_school_dispatch_release_workbench(pg_temp.a108_read('SCHOOL-DISPATCH-RELEASE.v1',v_read_payload));
+reset role;
+perform pg_temp.a108_require('single_actor_multiple_school_read',v_response->>'success'='true'
+ and jsonb_array_length(v_response->'rows')=2);
+set local role authenticated;
+v_response:=atlas_api.get_school_fulfilment_reconciliation_workbench(
+ pg_temp.a108_read('SCHOOL-FULFILMENT-RECONCILIATION.v1',v_read_payload));
+reset role;
+perform pg_temp.a108_require('single_actor_multiple_school_reconciliation',v_response->>'success'='true'
+ and jsonb_array_length(v_response->'rows')=2);
+set local role authenticated;
+v_request:=pg_temp.a108_command('SCHOOL-DISPATCH-RELEASE.v1','SCHOOL_DISPATCH_DOCUMENT_RELEASED',0,v_b_payload);
+v_response:=atlas_api.release_school_dispatch_document(v_request);
+v_replay:=atlas_api.release_school_dispatch_document(v_request);
+reset role;
+perform pg_temp.a108_require('single_actor_multiple_school_release',v_response->>'success'='true');
+perform pg_temp.a108_require('single_actor_release_attribution',(
+ select count(*)=2 and bool_and(released_by_actor_id='f1080000-0000-4000-8000-000000000002')
+ from atlas_dispatch.school_dispatch_releases where school_id::text like 'f108%')
+ and (select count(*)=2 and bool_and(actor_id='f1080000-0000-4000-8000-000000000002'
+  and delegated_actor_id is null) from atlas_audit.audit_events
+  where aggregate_id in (select school_dispatch_release_id from atlas_dispatch.school_dispatch_releases
+   where school_id::text like 'f108%')));
+perform pg_temp.a108_require('single_actor_release_replay',v_replay->>'success'='true'
+ and v_replay->>'document_number'=v_response->>'document_number'
+ and v_replay->>'school_dispatch_release_id'=v_response->>'school_dispatch_release_id');
+perform pg_temp.a108_require('default_change_frozen_pxk_unchanged',v_frozen_pxk=
+ atlas_core.school_dispatch_release_json((select school_dispatch_release_id
+ from atlas_dispatch.school_dispatch_releases where school_id='f1080002-0000-4000-8000-000000000021')));
+delete from atlas_core.actor_scopes where actor_id='f1080000-0000-4000-8000-000000000002'
+ and school_id='f1080002-0000-4000-8000-000000000022';
+
 -- Exercise the existing v2 lifecycle GLOBAL gate with full synthetic Customer scope.
 update atlas_core.actor_scopes set scope_kind='CUSTOMER',school_id=null,
   customer_id='f1080002-0000-4000-8000-000000000001'
@@ -541,7 +653,7 @@ perform pg_temp.a108_require('preparation_did_not_change_commitments',(
   select version=2 and purchase_order_status='RELEASED_TO_SUPPLIER' and document_number=v_po_number
   from atlas_procurement.purchase_orders where purchase_order_id='f1080005-0000-4000-8000-000000000001'));
 
--- Existing PXK location semantics are preserved; only PO matching is tested here.
+-- Whole-PO scope remains unchanged by the later Dispatch-only policy.
 update atlas_admin.schools set default_delivery_location_id='f1080002-0000-4000-8000-000000000012'
 where school_id='f1080002-0000-4000-8000-000000000021';
 perform set_config('request.jwt.claim.sub','f1080000-0000-4000-8000-000000000102',true);
@@ -552,7 +664,7 @@ reset role;
 perform pg_temp.a108_require('po_shared_default_still_denied',v_response->>'error_code'='SCOPE_DENIED');
 
 select count(*),jsonb_agg(label order by label) into v_count,v_result from pg_temp.a108_checks;
-if v_count<>27 then raise exception 'A108 synthetic case count mismatch: %',v_count; end if;
+if v_count<>48 then raise exception 'A109 synthetic case count mismatch: %',v_count; end if;
 v_result:=jsonb_build_object('case_count',v_count,'cases',v_result,
   'synthetic_date','2098-10-14','synthetic_releases_only',true);
 raise exception using errcode='Z1080',message='Successful acceptance rollback';
