@@ -7,6 +7,11 @@ on:
         description: Exact deployed merged-main business SHA being certified
         required: true
         type: string
+      released_allocation_read:
+        description: Certify the released 2026-10-12 allocation HTTP read instead of default A/B/C
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -86,7 +91,23 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate the protected target and read plan
-        run: pnpm atlas:staging:school-fulfilment:verify -- --dry-run
+        shell: bash
+        env:
+          RELEASED_ALLOCATION_READ: ${{ inputs.released_allocation_read }}
+        run: |
+          if [[ "$RELEASED_ALLOCATION_READ" == "true" ]]; then
+            pnpm atlas:staging:school-fulfilment:verify -- --released-allocation-read --dry-run
+          else
+            pnpm atlas:staging:school-fulfilment:verify -- --dry-run
+          fi
 
       - name: Verify School fulfilment scenarios
-        run: pnpm atlas:staging:school-fulfilment:verify
+        shell: bash
+        env:
+          RELEASED_ALLOCATION_READ: ${{ inputs.released_allocation_read }}
+        run: |
+          if [[ "$RELEASED_ALLOCATION_READ" == "true" ]]; then
+            pnpm atlas:staging:school-fulfilment:verify -- --released-allocation-read
+          else
+            pnpm atlas:staging:school-fulfilment:verify
+          fi

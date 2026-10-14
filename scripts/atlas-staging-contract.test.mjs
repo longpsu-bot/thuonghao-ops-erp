@@ -1700,9 +1700,28 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(workflow).toContain("cache: pnpm");
     expect(lines.filter((line) => line.startsWith("run: pnpm"))).toEqual([
       "run: pnpm install --frozen-lockfile",
-      "run: pnpm atlas:staging:school-fulfilment:verify -- --dry-run",
-      "run: pnpm atlas:staging:school-fulfilment:verify",
     ]);
+    expect(workflow).toMatch(
+      /released_allocation_read:\s*\n\s+description:[^\n]+\n\s+required: false\s*\n\s+default: false\s*\n\s+type: boolean/,
+    );
+    expect(lines.filter((line) => line.startsWith("pnpm "))).toEqual([
+      "pnpm atlas:staging:school-fulfilment:verify -- --released-allocation-read --dry-run",
+      "pnpm atlas:staging:school-fulfilment:verify -- --dry-run",
+      "pnpm atlas:staging:school-fulfilment:verify -- --released-allocation-read",
+      "pnpm atlas:staging:school-fulfilment:verify",
+    ]);
+    expect(
+      lines.filter(
+        (line) =>
+          line === 'if [[ "$RELEASED_ALLOCATION_READ" == "true" ]]; then',
+      ),
+    ).toHaveLength(2);
+    expect(workflow).toMatch(
+      /- name: Validate the protected target and read plan\n\s+shell: bash\n\s+env:\n\s+RELEASED_ALLOCATION_READ: \$\{\{ inputs.released_allocation_read \}\}/,
+    );
+    expect(workflow).toMatch(
+      /- name: Verify School fulfilment scenarios\n\s+shell: bash\n\s+env:\n\s+RELEASED_ALLOCATION_READ: \$\{\{ inputs.released_allocation_read \}\}/,
+    );
     expect(workflow).not.toMatch(
       /atlas:staging:deploy|atlas:staging:identity:install|atlas:staging:foundation:install|supabase db push|supabase migration|apply_migration|ensureAtlasApiExposure/i,
     );
