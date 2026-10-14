@@ -1330,7 +1330,7 @@ select ok(
 select ok(
   (
     select pg_get_userbyid(p.proowner)='atlas_owner'
-      and p.prosecdef
+      and not p.prosecdef
       and p.proconfig=array['search_path=""']::text[]
       and has_function_privilege(
         'atlas_read_runtime',p.oid,'EXECUTE')
