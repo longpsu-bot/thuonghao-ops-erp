@@ -315,7 +315,7 @@ export function useChangeOrderWorkbench({
       setTargetLoading(false);
       if (!matches)
         setMessage(
-          "Chưa tải được thành phần hiệu lực đúng bối cảnh. Hãy kiểm tra mục tiêu.",
+          "Chưa tải được thành phần công thức áp dụng cho lựa chọn này. Hãy kiểm tra lại món, trường và ngày áp dụng.",
         );
     });
     return () => {
@@ -439,7 +439,7 @@ export function useChangeOrderWorkbench({
       JSON.stringify(parsed.proposed_adjustment) !== JSON.stringify(proposal)
     ) {
       setMessage(
-        "Kết quả xem tác động không khớp bối cảnh đã gửi. Hãy kiểm tra và xem lại.",
+        "Kết quả kiểm tra tác động không khớp lựa chọn đã gửi. Hãy kiểm tra lại món, trường và ngày áp dụng rồi xem tác động lần nữa.",
       );
       return;
     }
@@ -640,7 +640,10 @@ export function useChangeOrderWorkbench({
       parsed.school_type_id === schoolTypeId
     )
       setEffective(parsed);
-    else setEffectiveMessage("Chưa tải được công thức hiệu lực đúng bối cảnh.");
+    else
+      setEffectiveMessage(
+        "Chưa tải được công thức áp dụng cho món, trường và ngày đã chọn. Hãy thử tải lại.",
+      );
   }
   return {
     data: owner === authSubject ? data : emptyRecipeAdjustmentWorkbench(),

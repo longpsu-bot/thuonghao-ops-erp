@@ -183,7 +183,7 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     const f = await retainedWorkspace("recipes");
     fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
     choose("Tên món", "Bỏ thay đổi này");
-    fireEvent.click(screen.getByRole("button", { name: "Nhập workbook" }));
+    fireEvent.click(screen.getByRole("button", { name: "Nhập từ Excel" }));
     const discard = await screen.findByRole("dialog");
     fireEvent.click(
       within(discard).getByRole("button", { name: "Bỏ thay đổi" }),
@@ -201,18 +201,18 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     ).toBeNull();
     f.setActive(true);
     expect(
-      await screen.findByRole("dialog", { name: "Nhập workbook" }),
+      await screen.findByRole("dialog", { name: "Nhập từ Excel" }),
     ).toBeInTheDocument();
   });
   it("reports actual utility reason edits and their revert before modal dismissal", async () => {
     const status = vi.fn();
     await setup("ACTIVE", "recipes", status);
-    fireEvent.click(screen.getByRole("button", { name: "Nhập workbook" }));
-    const dialog = await screen.findByRole("dialog", { name: "Nhập workbook" });
+    fireEvent.click(screen.getByRole("button", { name: "Nhập từ Excel" }));
+    const dialog = await screen.findByRole("dialog", { name: "Nhập từ Excel" });
     expect(status).toHaveBeenLastCalledWith(
       expect.objectContaining({ unsaved: false, blocked: true }),
     );
-    const reason = within(dialog).getByLabelText("Lý do nhập workbook");
+    const reason = within(dialog).getByLabelText("Lý do nhập từ Excel");
     fireEvent.change(reason, { target: { value: "Nhập thành phần" } });
     expect(status).toHaveBeenLastCalledWith(
       expect.objectContaining({ unsaved: true, blocked: true }),
@@ -627,7 +627,9 @@ describe("Unified Recipe capability and Change Order operator job", () => {
         .map((o) => o.textContent),
     ).toEqual(["Chọn hành động", "Thay nguyên liệu"]);
     expect(
-      screen.getByRole("group", { name: "Ngữ cảnh kiểm tra tác động" }),
+      screen.getByRole("group", {
+        name: "Kiểm tra tác động",
+      }),
     ).toBeInTheDocument();
     choose("Áp dụng cho", "one");
     expect(

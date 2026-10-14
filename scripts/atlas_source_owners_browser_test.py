@@ -12,8 +12,8 @@ JOBS = ['Thực đơn','Sĩ số','Hàng đặt riêng','Xác nhận nhu cầu',
 
 
 def launch(page, label):
-    page.get_by_role('button', name='Bàn làm việc', exact=True).click()
-    page.get_by_role('dialog', name='Bàn làm việc', exact=True).get_by_role('button', name=label, exact=True).click()
+    page.get_by_role('button', name='Chức năng', exact=True).click()
+    page.get_by_role('dialog', name='Chức năng', exact=True).get_by_role('button', name=label, exact=True).click()
     expect(page.locator('main>[role=tabpanel]:not([hidden])')).to_have_attribute('aria-label', label)
 
 
@@ -30,8 +30,8 @@ with sync_playwright() as p:
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto('http://127.0.0.1:5188/atlas-vnext-review.html')
         page.wait_for_load_state('networkidle')
-        page.get_by_role('button',name='Bàn làm việc',exact=True).click()
-        dialog=page.get_by_role('dialog',name='Bàn làm việc',exact=True)
+        page.get_by_role('button',name='Chức năng',exact=True).click()
+        dialog=page.get_by_role('dialog',name='Chức năng',exact=True)
         assert dialog.get_by_role('button').evaluate_all('es=>es.map(e=>e.getAttribute("aria-label"))') == JOBS
         if width==1440: page.screenshot(path=str(OUT/'launcher-1440x900.png'))
         page.keyboard.press('Escape')
@@ -53,7 +53,7 @@ with sync_playwright() as p:
         expect(attendance).to_have_value('123')
         expect(pantry).to_have_value('3,5')
         if width>=1024:
-            strip=page.get_by_role('tablist',name='Bàn làm việc đang mở',exact=True)
+            strip=page.get_by_role('tablist',name='Màn hình đang mở',exact=True)
             tabs=strip.get_by_role('tab')
             expect(tabs).to_have_count(13)
             strip.get_by_role('tab',selected=True).focus()
@@ -66,7 +66,7 @@ with sync_playwright() as p:
             trigger=page.get_by_role('button',name='Đang mở: Thực đơn',exact=True)
             assert trigger.bounding_box()['height']>=44
             trigger.click()
-            selector=page.get_by_role('dialog',name='Bàn làm việc đang mở',exact=True)
+            selector=page.get_by_role('dialog',name='Màn hình đang mở',exact=True)
             expect(selector.get_by_role('button')).to_have_count(26)
             selector.get_by_role('button',name='Thực đơn',exact=True).click()
         launch(page,'Sĩ số')

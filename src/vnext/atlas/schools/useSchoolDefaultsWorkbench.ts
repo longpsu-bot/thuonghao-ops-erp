@@ -118,7 +118,7 @@ export function useSchoolDefaultsWorkbench({
         if (purpose === "readback") {
           setLock("readback");
           setNotice(
-            "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
+            "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
           );
         }
         return false;
@@ -142,7 +142,7 @@ export function useSchoolDefaultsWorkbench({
           if (purpose === "readback") {
             setLock("readback");
             setNotice(
-              "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
+              "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
             );
           }
           return false;
@@ -193,7 +193,7 @@ export function useSchoolDefaultsWorkbench({
           if (purpose === "readback") {
             setLock("readback");
             setNotice(
-              "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
+              "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
             );
           }
           return false;
@@ -237,7 +237,7 @@ export function useSchoolDefaultsWorkbench({
         setLock(pendingGroup.current.groupId ? "readback" : "unknown");
         setNotice(
           pendingGroup.current.groupId
-            ? "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức."
+            ? "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra."
             : "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
         );
         return false;
@@ -246,7 +246,7 @@ export function useSchoolDefaultsWorkbench({
         setLock(pendingDispatchGroup.current.groupId ? "readback" : "unknown");
         setNotice(
           pendingDispatchGroup.current.groupId
-            ? "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức."
+            ? "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra."
             : "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
         );
         return false;
@@ -254,7 +254,7 @@ export function useSchoolDefaultsWorkbench({
       setLock(null);
       if (purpose === "routine" || purpose === "recovery") {
         setNotice(
-          "Đã tải lại dữ liệu chính thức. Kiểm tra các thay đổi chưa lưu trước khi lưu.",
+          "Đã tải lại dữ liệu. Kiểm tra các thay đổi chưa lưu trước khi lưu tiếp.",
         );
       }
       return true;

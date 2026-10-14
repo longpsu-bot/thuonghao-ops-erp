@@ -14,6 +14,11 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 ## Current workspace amendment — 8 October 2026
 
+**Owner copy amendment — 13 October 2026:** The launcher is **Chức năng**, its
+search is **Tìm chức năng**, and the open-tab list is **Màn hình đang mở**.
+This explicitly requested wording refinement replaces the literal Workbench
+translation without changing the thirteen owners or their behavior.
+
 **Composition supersession — 8 October 2026 (Draft PR #358):** [D-048](../decisions/decision-atlas-persistent-workspace.md) now defines **13 persistent owners**: separate Thực đơn, Sĩ số and Hàng đặt riêng (formerly Bổ sung), plus the existing jobs. Local-state/guard ownership and business/backend contracts are unchanged. Earlier eleven-owner hosted acceptance remains historical; this amendment claims no hosted rollout.
 
 Daily jobs: Thực đơn; Sĩ số; Hàng đặt riêng; Xác nhận nhu cầu; Phân bổ NCC; Đơn mua; Phiếu xuất kho; Đối chiếu PO / Phiếu xuất kho.
@@ -35,7 +40,7 @@ their sidebar/grouped-page descriptions do not describe the current vNext naviga
 | DỮ LIỆU & CẤU HÌNH  | Trường học; Nguyên liệu; Nhà cung ứng; Công thức; Lệnh điều chỉnh                               |
 
 The far-left icon launcher precedes ATLAS, retains the accessible name/title
-**Bàn làm việc**, and shows that heading inside the opened menu. There is no
+**Chức năng**, and shows that heading inside the opened menu. There is no
 second primary navigation. Thực đơn retains its three secondary source jobs.
 All split pairs keep independent mounted owners, local drafts/filters/dates and
 existing guarded close; activation neither exits nor reads. Sign-out resolves

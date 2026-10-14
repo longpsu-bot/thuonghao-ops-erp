@@ -90,7 +90,7 @@ export function AtlasVNextShell({
     destinations.find((w) => w.id === id)?.label ?? id;
   const activeLabel = activeModule
     ? label(activeModule)
-    : "Chưa mở bàn làm việc";
+    : "Chưa mở màn hình nào";
   const marker = (id: AtlasWorkbenchId) =>
     statuses[id]?.unsaved
       ? "Chưa lưu"
@@ -273,8 +273,8 @@ export function AtlasVNextShell({
           minH="var(--atlas-layout-mobile-target, 44px)"
           minW="var(--atlas-layout-mobile-target, 44px)"
           p="sm"
-          aria-label="Bàn làm việc"
-          title="Bàn làm việc"
+          aria-label="Chức năng"
+          title="Chức năng"
           aria-haspopup="dialog"
           aria-expanded={menu === "launcher"}
           aria-controls={`${prefix}-launcher-menu`}
@@ -325,14 +325,14 @@ export function AtlasVNextShell({
             left="sm"
             id={`${prefix}-launcher-menu`}
             role="dialog"
-            aria-label="Bàn làm việc"
+            aria-label="Chức năng"
             onKeyDown={menuKeys}
           >
             <Text fontWeight="semibold" px="sm" pb="sm">
-              Bàn làm việc
+              Chức năng
             </Text>
             <Field.Root mb="sm">
-              <Field.Label>Tìm bàn làm việc</Field.Label>
+              <Field.Label>Tìm chức năng</Field.Label>
               <Input
                 ref={searchInput}
                 value={search}
@@ -410,7 +410,7 @@ export function AtlasVNextShell({
             )}
             {!matches.length && (
               <Text role="status" p="sm">
-                Không tìm thấy bàn làm việc. Thử tên công việc khác.
+                Không tìm thấy chức năng phù hợp. Thử tìm bằng tên khác.
               </Text>
             )}
           </Box>
@@ -459,7 +459,7 @@ export function AtlasVNextShell({
         <Box
           ref={strip}
           role="tablist"
-          aria-label="Bàn làm việc đang mở"
+          aria-label="Màn hình đang mở"
           overflowX="auto"
           minW="var(--atlas-layout-zero, 0)"
           maxW="full"
@@ -501,7 +501,7 @@ export function AtlasVNextShell({
                   aria-selected={id === activeModule}
                   aria-controls={`${prefix}-panel-${id}`}
                   aria-description={
-                    marker(id) || "Nhấn Delete để đóng bàn làm việc"
+                    marker(id) || "Nhấn Delete để đóng màn hình"
                   }
                   aria-keyshortcuts="Delete"
                   tabIndex={id === activeModule ? 0 : -1}
@@ -600,7 +600,7 @@ export function AtlasVNextShell({
               {...popup}
               left="sm"
               role="dialog"
-              aria-label="Bàn làm việc đang mở"
+              aria-label="Màn hình đang mở"
               onKeyDown={menuKeys}
             >
               <Stack gap="xs">
@@ -644,7 +644,7 @@ export function AtlasVNextShell({
                     </Button>
                   </Flex>
                 ))}
-                {!ids.length && <Text>Chưa có bàn làm việc đang mở.</Text>}
+                {!ids.length && <Text>Chưa có màn hình nào đang mở.</Text>}
               </Stack>
             </Box>
           )}

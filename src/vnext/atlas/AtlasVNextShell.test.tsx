@@ -44,9 +44,9 @@ describe("Atlas v2 workspace shell", () => {
           </AtlasVNextShell>
         </AtlasVNextProvider>,
       );
-      fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+      fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
       const launcher = await screen.findByRole("dialog", {
-        name: "Bàn làm việc",
+        name: "Chức năng",
       });
       const active = within(launcher).getByRole("button", { current: "page" });
       expect(within(active).getByText("Đang mở")).toBeVisible();
@@ -67,13 +67,13 @@ describe("Atlas v2 workspace shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
-    const trigger = screen.getByRole("button", { name: "Bàn làm việc" });
+    const trigger = screen.getByRole("button", { name: "Chức năng" });
     fireEvent.click(trigger);
-    const input = screen.getByRole("textbox", { name: "Tìm bàn làm việc" });
+    const input = screen.getByRole("textbox", { name: "Tìm chức năng" });
     expect(input).toHaveFocus();
     fireEvent.keyDown(input, { key: "ArrowUp" });
     expect(
-      within(screen.getByRole("dialog", { name: "Bàn làm việc" })).getByRole(
+      within(screen.getByRole("dialog", { name: "Chức năng" })).getByRole(
         "button",
         { name: "Lệnh điều chỉnh" },
       ),
@@ -82,7 +82,7 @@ describe("Atlas v2 workspace shell", () => {
     fireEvent.change(input, { target: { value: "khong tim thay" } });
     expect(screen.getByRole("status")).toHaveTextContent("Không tìm thấy");
     fireEvent.change(input, { target: { value: "cong thuc" } });
-    const dialog = screen.getByRole("dialog", { name: "Bàn làm việc" });
+    const dialog = screen.getByRole("dialog", { name: "Chức năng" });
     expect(within(dialog).getAllByRole("button")).toHaveLength(1);
     fireEvent.keyDown(input, { key: "ArrowDown" });
     expect(
@@ -115,7 +115,7 @@ describe("Atlas v2 workspace shell", () => {
       screen.getByRole("button", { name: "Đang mở: Trường học" }),
     );
     const selector = screen.getByRole("dialog", {
-      name: "Bàn làm việc đang mở",
+      name: "Màn hình đang mở",
     });
     fireEvent.click(
       within(selector).getByRole("button", { name: "Công thức — Chưa lưu" }),
@@ -145,8 +145,8 @@ describe("Atlas v2 workspace shell", () => {
         </AtlasVNextShell>
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
-    const launcher = screen.getByRole("dialog", { name: "Bàn làm việc" });
+    fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
+    const launcher = screen.getByRole("dialog", { name: "Chức năng" });
     expect(
       within(launcher).queryByText("operator@example.test"),
     ).not.toBeInTheDocument();

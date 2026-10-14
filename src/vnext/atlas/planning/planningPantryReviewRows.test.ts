@@ -11,7 +11,7 @@ describe("Pantry fact comparison", () => {
       expect.objectContaining({
         school: "Toàn tuần",
         before: "Chưa xác nhận",
-        after: "Không có bổ sung",
+        after: "Không có hàng đặt riêng",
       }),
     ]);
   });

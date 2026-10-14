@@ -75,9 +75,9 @@ async function show(unknown = false) {
   return { apis, schoolsRead, recipeRead, ...result };
 }
 function open(name: string) {
-  fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+  fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
   fireEvent.click(
-    within(screen.getByRole("dialog", { name: "Bàn làm việc" })).getByRole(
+    within(screen.getByRole("dialog", { name: "Chức năng" })).getByRole(
       "button",
       { name },
     ),
@@ -85,14 +85,15 @@ function open(name: string) {
 }
 function activate(name: string) {
   fireEvent.click(
-    within(
-      screen.getByRole("tablist", { name: "Bàn làm việc đang mở" }),
-    ).getByRole("tab", { name: new RegExp(`^${name}`) }),
+    within(screen.getByRole("tablist", { name: "Màn hình đang mở" })).getByRole(
+      "tab",
+      { name: new RegExp(`^${name}`) },
+    ),
   );
 }
 function panel(name: string) {
   const tab = within(
-    screen.getByRole("tablist", { name: "Bàn làm việc đang mở" }),
+    screen.getByRole("tablist", { name: "Màn hình đang mở" }),
   ).getByRole("tab", { name: new RegExp(`^${name}`) });
   const owner = document.getElementById(tab.getAttribute("aria-controls")!);
   expect(owner).toHaveAttribute("role", "tabpanel");
@@ -206,9 +207,10 @@ it("retains UNKNOWN recovery locally through activation and blocks its owner's c
     recovery,
   );
   expect(
-    within(
-      screen.getByRole("tablist", { name: "Bàn làm việc đang mở" }),
-    ).getByRole("tab", { name: /^Công thức/ }),
+    within(screen.getByRole("tablist", { name: "Màn hình đang mở" })).getByRole(
+      "tab",
+      { name: /^Công thức/ },
+    ),
   ).toHaveAttribute("aria-selected", "true");
   expect(
     screen.queryByRole("button", { name: "Bỏ thay đổi" }),
@@ -229,7 +231,7 @@ it("opens rapid destinations immediately and activates existing owners without d
   expect(planning).toHaveAttribute("hidden");
   expect(pxk).toHaveAttribute("hidden");
   const tabs = within(
-    screen.getByRole("tablist", { name: "Bàn làm việc đang mở" }),
+    screen.getByRole("tablist", { name: "Màn hình đang mở" }),
   );
   expect(tabs.getAllByRole("tab")).toHaveLength(4);
   expect(tabs.getAllByRole("tab", { selected: true })).toHaveLength(1);
@@ -310,22 +312,20 @@ it("keeps shell and session context stationary with only the active owner's cont
   const { container } = await show();
   const header = container.querySelector("header");
   const main = screen.getByRole("main");
-  const launcher = screen.getByRole("button", { name: "Bàn làm việc" });
+  const launcher = screen.getByRole("button", { name: "Chức năng" });
   const account = screen.getByRole("button", {
     name: "Tài khoản và môi trường",
   });
-  const tabs = screen.getByRole("tablist", { name: "Bàn làm việc đang mở" });
+  const tabs = screen.getByRole("tablist", { name: "Màn hình đang mở" });
   const schools = panel("Trường học");
   await recipe();
   expect(container.querySelector("header")).toBe(header);
   expect(screen.getByRole("main")).toBe(main);
-  expect(screen.getByRole("button", { name: "Bàn làm việc" })).toBe(launcher);
+  expect(screen.getByRole("button", { name: "Chức năng" })).toBe(launcher);
   expect(screen.getByRole("button", { name: "Tài khoản và môi trường" })).toBe(
     account,
   );
-  expect(screen.getByRole("tablist", { name: "Bàn làm việc đang mở" })).toBe(
-    tabs,
-  );
+  expect(screen.getByRole("tablist", { name: "Màn hình đang mở" })).toBe(tabs);
   expect(schools).toHaveAttribute("hidden");
   expect(schools).toHaveAttribute("inert");
   expect(

@@ -13,8 +13,8 @@ from playwright.sync_api import sync_playwright, expect
 
 
 def launch(page, label):
-    page.get_by_role("button", name="Bàn làm việc", exact=True).click()
-    page.get_by_role("dialog", name="Bàn làm việc", exact=True).get_by_role(
+    page.get_by_role("button", name="Chức năng", exact=True).click()
+    page.get_by_role("dialog", name="Chức năng", exact=True).get_by_role(
         "button", name=label, exact=True
     ).click()
     filters = page.get_by_role("button", name="Bộ lọc", exact=True)
@@ -26,7 +26,7 @@ def close_owner(page, label):
     close = page.get_by_role("button", name=f"Đóng {label}", exact=True)
     if not close.count():
         page.get_by_role("button", name=re.compile("^Đang mở:")).click()
-        close = page.get_by_role("dialog", name="Bàn làm việc đang mở", exact=True).get_by_role("button", name=f"Đóng {label}", exact=True)
+        close = page.get_by_role("dialog", name="Màn hình đang mở", exact=True).get_by_role("button", name=f"Đóng {label}", exact=True)
     close.click()
 
 
@@ -147,7 +147,7 @@ def main():
             expect(page.get_by_role("grid")).to_have_count(0)
             expect(trigger).to_be_focused()
             trigger.click()
-            page.get_by_role("button", name="Bàn làm việc", exact=True).click()
+            page.get_by_role("button", name="Chức năng", exact=True).click()
             expect(page.get_by_role("grid")).to_have_count(0)
             page.keyboard.press("Escape")
             assert not page.evaluate("!!document.activeElement?.closest('[hidden],[inert]')")

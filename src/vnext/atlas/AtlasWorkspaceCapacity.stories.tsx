@@ -47,7 +47,7 @@ export function Capacity() {
             tabIndex={0}
             p="md"
           >
-            <Text mb="sm">Kiểm tra sức chứa 12 bàn làm việc</Text>
+            <Text mb="sm">Kiểm tra khi mở đồng thời 12 màn hình</Text>
             <Input aria-label={`Dữ liệu ${id}`} defaultValue={id} />
           </Box>
         ))}

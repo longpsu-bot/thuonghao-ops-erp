@@ -201,8 +201,8 @@ def visual(browser):
         snap(page, f"smoke-{index:02}", results)
     assert page.locator('main>[role="tabpanel"]').count() == len(OWNERS)
     snap(page, "workspace-thirteen-open-tabs", results)
-    page.get_by_role("button", name="Bàn làm việc", exact=True).click()
-    expect(page.get_by_role("dialog", name="Bàn làm việc").locator("button[data-destination]")).to_have_count(len(OWNERS))
+    page.get_by_role("button", name="Chức năng", exact=True).click()
+    expect(page.get_by_role("dialog", name="Chức năng").locator("button[data-destination]")).to_have_count(len(OWNERS))
     snap(page, "launcher-thirteen", results)
     gates.close(page, failures)
 

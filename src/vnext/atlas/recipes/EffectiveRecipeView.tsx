@@ -77,7 +77,7 @@ export function EffectiveRecipeView({
         Công thức hiệu lực
       </Heading>
       {!effective ? (
-        <Text mt="sm">Chưa tải được công thức hiệu lực chính thức.</Text>
+        <Text mt="sm">Chưa tải được công thức áp dụng. Hãy thử tải lại.</Text>
       ) : effective.effective_readiness.status === "READY" ? (
         <>
           <Flex gap="sm" wrap="wrap" align="baseline">

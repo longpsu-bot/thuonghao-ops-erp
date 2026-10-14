@@ -210,7 +210,7 @@ export function DishRecipeWorkbench(
           disabled={!c.canCommand}
           onClick={() => c.transition({ kind: "import" })}
         >
-          Nhập workbook
+          Nhập từ Excel
         </Button>
       </Flex>
       <Grid

@@ -46,8 +46,8 @@ it("keeps registry icons identical in launcher, desktop tabs and mobile switcher
       </AtlasVNextProvider>,
     );
   const desktop = show();
-  fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
-  const launcher = screen.getByRole("dialog", { name: "Bàn làm việc" });
+  fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
+  const launcher = screen.getByRole("dialog", { name: "Chức năng" });
   const iconShapes = new Map<string, string>();
   for (const item of atlasWorkbenches) {
     const launcherIcon = within(launcher)
@@ -70,7 +70,7 @@ it("keeps registry icons identical in launcher, desktop tabs and mobile switcher
     iconShapes.get("planning"),
   );
   fireEvent.click(trigger);
-  const mobile = screen.getByRole("dialog", { name: "Bàn làm việc đang mở" });
+  const mobile = screen.getByRole("dialog", { name: "Màn hình đang mở" });
   for (const item of atlasWorkbenches) {
     const icon = within(mobile)
       .getByRole("button", { name: item.label })

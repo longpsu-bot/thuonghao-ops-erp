@@ -35,13 +35,13 @@ it("uses stable IDs, selects via the launcher, and restores trigger focus", asyn
       </AtlasVNextShell>
     </AtlasVNextProvider>,
   );
-  const trigger = screen.getByRole("button", { name: "Bàn làm việc" });
-  expect(trigger).toHaveAttribute("title", "Bàn làm việc");
+  const trigger = screen.getByRole("button", { name: "Chức năng" });
+  expect(trigger).toHaveAttribute("title", "Chức năng");
   expect(trigger.textContent).toBe("");
   expect(screen.getByRole("banner").firstElementChild).toBe(trigger);
   fireEvent.click(trigger);
-  const launcher = screen.getByRole("dialog", { name: "Bàn làm việc" });
-  expect(within(launcher).getByText("Bàn làm việc")).toBeVisible();
+  const launcher = screen.getByRole("dialog", { name: "Chức năng" });
+  expect(within(launcher).getByText("Chức năng")).toBeVisible();
   expect(
     within(launcher).getByRole("button", { name: "Trường học" }),
   ).toHaveAttribute("aria-current", "page");
@@ -124,11 +124,11 @@ it("opens launcher without changing workspace geometry and removes the primary r
   expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
   const main = screen.getByRole("main"),
     before = main.getAttribute("class");
-  const tabs = screen.getByRole("tablist", { name: "Bàn làm việc đang mở" });
+  const tabs = screen.getByRole("tablist", { name: "Màn hình đang mở" });
   expect(getComputedStyle(tabs).overflowX).toBe("auto");
-  fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+  fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
   expect(main.getAttribute("class")).toBe(before);
-  expect(screen.getByRole("dialog", { name: "Bàn làm việc" })).toBeVisible();
+  expect(screen.getByRole("dialog", { name: "Chức năng" })).toBeVisible();
 });
 
 it("keeps all twelve test destinations reachable on desktop and in the narrow selector", () => {
@@ -170,7 +170,7 @@ it("keeps all twelve test destinations reachable on desktop and in the narrow se
       name: `Đang mở: ${capacityDestinations[0]!.label}`,
     }),
   );
-  const selector = screen.getByRole("dialog", { name: "Bàn làm việc đang mở" });
+  const selector = screen.getByRole("dialog", { name: "Màn hình đang mở" });
   for (const item of capacityDestinations) {
     expect(
       within(selector).getByRole("button", { name: item.label }),

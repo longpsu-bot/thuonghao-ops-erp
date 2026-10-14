@@ -188,7 +188,7 @@ export function SchoolFulfilmentWorkbench(
                 <Text p="md" textStyle="body" color="fg.muted">
                   {c.rows.length
                     ? "Không có kết quả phù hợp bộ lọc."
-                    : "Không có phạm vi đối chiếu hiện hành phù hợp."}
+                    : "Chưa có dữ liệu đối chiếu cho trường và khoảng ngày đã chọn."}
                 </Text>
               )}
             </Box>

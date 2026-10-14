@@ -59,7 +59,7 @@ function show() {
 }
 
 async function open(label: string) {
-  fireEvent.click(screen.getByRole("button", { name: "Bàn làm việc" }));
+  fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
   fireEvent.click(await screen.findByRole("button", { name: label }));
 }
 async function planning() {
@@ -95,7 +95,7 @@ it("Need activates same-context Procurement without a discrepancy, remount or re
     "true",
   );
   expect(
-    screen.queryByText(/^Nhu cầu .* yêu cầu Phân bổ NCC/),
+    screen.queryByText(/^Cần phân bổ NCC cho nhu cầu từ/),
   ).not.toBeInTheDocument();
   expect(h.allocationRead).toHaveBeenCalledTimes(allocationReads);
   expect(h.ordersRead).toHaveBeenCalledTimes(ordersReads);
@@ -127,12 +127,12 @@ it("Need discloses the intended context while retaining Allocation's different l
   const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
   fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
   continueAllocation();
-  const notice = screen.getByText(/^Nhu cầu .* yêu cầu Phân bổ NCC/);
+  const notice = screen.getByText(/^Cần phân bổ NCC cho nhu cầu từ/);
   expect(notice.closest('[role="status"]')).toBeVisible();
   expect(notice).toHaveTextContent(
-    `Nhu cầu ${applicationReviewDate} → ${applicationReviewDate} yêu cầu Phân bổ NCC`,
+    `Cần phân bổ NCC cho nhu cầu từ ${applicationReviewDate} đến ${applicationReviewDate}`,
   );
-  expect(notice).toHaveTextContent("giữ khoảng 2026-09-08 → 2026-09-08");
+  expect(notice).toHaveTextContent("giữ khoảng ngày 2026-09-08 → 2026-09-08");
   expect(screen.getByRole("tabpanel", { name: "Phân bổ NCC" })).toBe(panel);
   expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
   expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(

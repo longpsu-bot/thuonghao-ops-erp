@@ -67,10 +67,10 @@ export function planningPantryReviewRows(
     if (priorZero !== preview.no_additions_confirmed)
       rows.push({
         school: "Toàn tuần",
-        context: "Xác nhận bổ sung",
-        before: priorZero ? "Không có bổ sung" : "Chưa xác nhận",
+        context: "Xác nhận hàng đặt riêng",
+        before: priorZero ? "Không có hàng đặt riêng" : "Chưa xác nhận",
         after: preview.no_additions_confirmed
-          ? "Không có bổ sung"
+          ? "Không có hàng đặt riêng"
           : "Chưa xác nhận",
         action: "Đổi",
       });
