@@ -1,0 +1,194 @@
+{
+  "status": "HOSTED_ROLLBACK_ACCEPTANCE_PASS",
+  "project_id": "rnzxmxiiqgtdevzregff",
+  "source_sha": "72c80979ac632351dd25f7197eabfad3bcecd5bc",
+  "merged_sha": "8e68c2ce2cf766279d020210e9b53b457048db22",
+  "captured_at": "2026-10-14 12:32:38 UTC",
+  "completed_at": "2026-10-14 12:44:38 UTC",
+  "deployment": {
+    "sha": "8e68c2ce2cf766279d020210e9b53b457048db22",
+    "run_id": 38565480612,
+    "url": "https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38565480612",
+    "status": "SUCCESS",
+    "main_frontend_ci": 38564165289,
+    "main_full_integration": 38564165442
+  },
+  "sources": {
+    "migration": {
+      "bytes": 2376,
+      "sha256": "f325f391e5d81aa58568714af146538f350e9a7809ba1a01264946052e6d2ea9"
+    },
+    "synthetic": {
+      "sha": "8e68c2ce2cf766279d020210e9b53b457048db22",
+      "bytes": 44704,
+      "sha256": "424d16fcf2ee3c1f81b9c0f1c2418bb9727d632f1d6d9f263cf9a6a7a435a778"
+    },
+    "postflight": {
+      "bytes": 4154,
+      "sha256": "e704c86a5bcaa9a62e8119b75a6092a30c216364475c5dc40cc5546ea526eede"
+    }
+  },
+  "preflight": {
+    "success": true,
+    "probe_rows": 0,
+    "draft_po_count": 17,
+    "draft_po_fingerprint": "cefbff23b30cbc15dac0b890a956d884",
+    "migration_108_present": true,
+    "probe_relation_checks": 36
+  },
+  "catalog_and_facts": {
+    "migration_tip": "20261014090000",
+    "function_count": 470,
+    "migration_count": 108,
+    "existing_pxk_md5": "77b0dff11e1bf5641e9bec50cf1322f9",
+    "existing_pxk_rows": 12,
+    "actor_assignment_rows": 27,
+    "actor_assignments_md5": "daaf16513f92e9bee608886b29fc3185",
+    "changed_function_count": 3,
+    "other_function_catalog_md5": "bad79b369c461135e23ee58f1ac6a1f4",
+    "changed_function_posture_md5": "6cf8a3ff98098fae30012a1703e185cd"
+  },
+  "advisor_baseline": [
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "level": "WARN",
+      "count": 118,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+    },
+    {
+      "name": "auth_leaked_password_protection",
+      "level": "WARN",
+      "count": 1,
+      "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+    }
+  ],
+  "after_deployment": {
+    "snapshot": {
+      "migration_tip": "20261014120320",
+      "function_count": 470,
+      "migration_count": 109,
+      "existing_pxk_md5": "77b0dff11e1bf5641e9bec50cf1322f9",
+      "existing_pxk_rows": 12,
+      "actor_assignment_rows": 27,
+      "actor_assignments_md5": "daaf16513f92e9bee608886b29fc3185",
+      "changed_function_count": 3,
+      "other_function_catalog_md5": "bad79b369c461135e23ee58f1ac6a1f4",
+      "changed_function_posture_md5": "6cf8a3ff98098fae30012a1703e185cd"
+    },
+    "postflight": {
+      "success": true,
+      "probe_rows": 0,
+      "draft_po_count": 17,
+      "draft_po_fingerprint": "cefbff23b30cbc15dac0b890a956d884",
+      "migration_108_present": true,
+      "probe_relation_checks": 36
+    },
+    "helper": {
+      "owner": "atlas_read_runtime",
+      "settings": ["search_path=\"\""],
+      "anon_execute": false,
+      "read_execute": true,
+      "browser_execute": false,
+      "service_execute": false,
+      "dispatch_execute": true,
+      "security_definer": true,
+      "helper_source_md5": "ea89c38274a1011da1f47112ad1af7c3",
+      "pxk_read_uses_helper": true,
+      "reconciliation_uses_helper": true
+    }
+  },
+  "acceptance": {
+    "cases": [
+      "default_change_frozen_pxk_unchanged",
+      "dispatch_helper_security_unchanged",
+      "exact_school_denial_zero_writes",
+      "exact_school_shared_default_read",
+      "exact_school_shared_default_reconciliation",
+      "exact_school_shared_default_release_denied",
+      "explicit_CUSTOMER_read",
+      "explicit_CUSTOMER_reconciliation",
+      "explicit_CUSTOMER_release",
+      "explicit_DELIVERY_LOCATION_read",
+      "explicit_DELIVERY_LOCATION_reconciliation",
+      "explicit_DELIVERY_LOCATION_release",
+      "explicit_GLOBAL_read",
+      "explicit_GLOBAL_reconciliation",
+      "explicit_GLOBAL_release",
+      "migration_108_present",
+      "migration_109_present",
+      "po_complete_school_read",
+      "po_complete_school_release",
+      "po_global_release_control",
+      "po_missing_read_capability",
+      "po_missing_write_capability",
+      "po_official_number_and_snapshot",
+      "po_partial_read_hidden",
+      "po_partial_release_denied",
+      "po_replay_preserves_number",
+      "po_shared_default_still_denied",
+      "po_stale_version_denied",
+      "preparation_did_not_change_commitments",
+      "preparation_still_requires_global",
+      "probe_namespace_empty",
+      "pxk_global_read_control",
+      "pxk_global_release_control",
+      "pxk_missing_read_capability",
+      "pxk_missing_release_capability",
+      "pxk_replay_and_number",
+      "pxk_scoped_release",
+      "pxk_scoped_rows",
+      "pxk_wrong_school_denied",
+      "reconciliation_global_control",
+      "reconciliation_missing_capability",
+      "reconciliation_scoped_rows",
+      "single_actor_multiple_school_read",
+      "single_actor_multiple_school_reconciliation",
+      "single_actor_multiple_school_release",
+      "single_actor_release_attribution",
+      "single_actor_release_replay",
+      "synthetic_date_empty"
+    ],
+    "success": true,
+    "case_count": 48,
+    "synthetic_date": "2098-10-14",
+    "probe_rollback_verified": true,
+    "synthetic_releases_only": true
+  },
+  "final": {
+    "snapshot": {
+      "migration_tip": "20261014120320",
+      "function_count": 470,
+      "migration_count": 109,
+      "existing_pxk_md5": "77b0dff11e1bf5641e9bec50cf1322f9",
+      "existing_pxk_rows": 12,
+      "actor_assignment_rows": 27,
+      "actor_assignments_md5": "daaf16513f92e9bee608886b29fc3185",
+      "changed_function_count": 3,
+      "other_function_catalog_md5": "bad79b369c461135e23ee58f1ac6a1f4",
+      "changed_function_posture_md5": "6cf8a3ff98098fae30012a1703e185cd"
+    },
+    "postflight": {
+      "success": true,
+      "probe_rows": 0,
+      "draft_po_count": 17,
+      "draft_po_fingerprint": "cefbff23b30cbc15dac0b890a956d884",
+      "migration_108_present": true,
+      "probe_relation_checks": 36
+    },
+    "advisors": [
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "level": "WARN",
+        "count": 118,
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "level": "WARN",
+        "count": 1,
+        "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+      }
+    ],
+    "advisor_entities_unchanged": true
+  }
+}
