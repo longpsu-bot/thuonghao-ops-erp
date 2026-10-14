@@ -12,6 +12,9 @@ select plan(29);
 
 -- Grouping 02 adds two forced-RLS Dispatch tables, nine policies, three APIs,
 -- three guards plus one private lock helper, four triggers and 28 precise grants.
+-- Effective composition generation 107 adds four private functions, two immediate
+-- capture triggers, two SELECT-only policies and twelve private catalog grants.
+-- Browser API/capability/role/table catalogs and runtime posture remain unchanged.
 -- Exact Atlas schema and relation posture.
 select is(
   (
@@ -177,8 +180,16 @@ select ok(
     where granted_role.rolname like 'atlas\_%\_runtime' escape '\'
       and member_role.rolname = 'postgres'
       and membership.set_option
+  )
+  and exists (
+    select 1 from pg_auth_members membership
+    where membership.roleid='atlas_need_generation_runtime'::regrole
+      and membership.member='postgres'::regrole
+      and membership.grantor='postgres'::regrole
+      and not membership.admin_option and membership.inherit_option
+      and not membership.set_option
   ),
-  'CAT-04A postgres retains owner SET while runtime SET memberships stay disabled'
+  'CAT-04A postgres retains owner SET and original Need ownership inheritance while runtime SET stays disabled'
 );
 
 select is(
@@ -447,8 +458,8 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 672,
-    'md5', '38ba098e23069ce416ed1cd60551a497'
+    'count', 674,
+    'md5', 'b20fe6da611858ba85a679a3e4be56cf'
   ),
   'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
@@ -1775,17 +1786,17 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 672,
-    'policy_catalog_md5', '38ba098e23069ce416ed1cd60551a497',
+    'policy_count', 674,
+    'policy_catalog_md5', 'b20fe6da611858ba85a679a3e4be56cf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 344,
+    'private_function_count', 348,
     -- Includes the two private resolved-readiness overloads from migration 105.
-    'private_function_catalog_md5', 'c2de30b429fae61320f0f673ee410511',
-    'trigger_count', 124,
-    'trigger_catalog_md5', '24157de1722f445b7e98adfde302a2d4',
-    -- Two additional Procurement owner EXECUTE grants; no new browser grant.
-    'positive_target_grant_count', 1840,
-    'positive_target_grant_md5', '40518a498e233db6804ae19280cd72cf',
+    'private_function_catalog_md5', '340d5644317b25f3418322db6e92e511',
+    'trigger_count', 126,
+    'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
+    -- Includes private effective-rule numeric parsing; no new browser grant.
+    'positive_target_grant_count', 1853,
+    'positive_target_grant_md5', '44bb6a64626869804a99c9b788b764af',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

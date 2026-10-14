@@ -6,6 +6,8 @@
 
 **Owning domain:** Planning
 
+**Product amendment — 14 October 2026:** [ATLAS-EFFECTIVE-COMPOSITION-GENERATION-01](../decisions/decision-atlas-effective-composition-generation.md) supersedes the historical base-only Recipe composition input described below. After unchanged released-base selection, exact-context canonical effective composition owns final Ingredient, Unit and quantity per basis. Generated evidence supports both base and ADD line identities; currentness, validation, release and materialization reject changed composition through existing correction concepts. API versions, arithmetic, Pantry, zero demand, quantity policy and Procurement semantics are unchanged.
+
 **Capability:** `planning.need_generation.write` for writes; existing `planning.inputs.read` for the read
 **Runtime:** `atlas_need_generation_runtime` (`NOLOGIN NOINHERIT`)
 

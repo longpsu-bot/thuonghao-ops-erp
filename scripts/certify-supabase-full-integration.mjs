@@ -18,6 +18,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "atlas_backend_convergence_02b_helpers.sql",
   "atlas_backend_convergence_02b_allocation.sql",
   "need_generation_operational_scale.sql",
+  "atlas_effective_composition_generation.sql",
   "staging_count_unit_policies.sql",
   "school_catering_handoff_allocation.sql",
   "school_catering_planning_correction.sql",

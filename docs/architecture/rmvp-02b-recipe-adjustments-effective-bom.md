@@ -2,6 +2,8 @@
 
 ## Decision and ownership
 
+**Product amendment — 14 October 2026:** [ATLAS-EFFECTIVE-COMPOSITION-GENERATION-01](../decisions/decision-atlas-effective-composition-generation.md) makes this domain's canonical effective composition the calculation input authority for Need Generation. Native Change Orders affect future generation at the exact service date/School/Dish/School Type; Planning captures immutable supporting evidence. The resolver's precedence and authored Recipe/Adjustment authority remain unchanged. This is a dated correction to the former base-only Planning integration, not a rewrite of its historical behavior.
+
 RMVP-02B adds one Admin / Recipe business object, `RecipeCompositionAdjustment`, with an immutable revision chain. Admin owns rule scope, action, effective period, correction lifecycle, what-if preview, effective-composition policy, and source audit.
 
 Planning still owns Planning Input approval, Need Generation, and immutable per-run evidence of the exact Recipe, Recipe Version, Recipe Line, and future adjustment revisions used. RMVP-02B does not generate theoretical need, rewrite a Need Generation run, mutate Confirmed Need or Purchase Handoff, or write Planning, Procurement, Evidence, Dispatch, or Warehouse facts. Rules affect only a future effective-composition resolution requested with an explicit date.
