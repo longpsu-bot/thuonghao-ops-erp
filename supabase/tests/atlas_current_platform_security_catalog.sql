@@ -1794,9 +1794,9 @@ select is(
     'private_function_catalog_md5', '340d5644317b25f3418322db6e92e511',
     'trigger_count', 126,
     'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
-    -- Two additional Procurement owner EXECUTE grants; no new browser grant.
-    'positive_target_grant_count', 1852,
-    'positive_target_grant_md5', '585cd4fc3512ac6305cec02cbd76391b',
+    -- Includes private effective-rule numeric parsing; no new browser grant.
+    'positive_target_grant_count', 1853,
+    'positive_target_grant_md5', '44bb6a64626869804a99c9b788b764af',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

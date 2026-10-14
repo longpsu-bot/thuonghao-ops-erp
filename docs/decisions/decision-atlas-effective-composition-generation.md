@@ -36,6 +36,8 @@ Pre-107 base-only captures remain current only when their exact base values and 
 
 Public API names, request/response versions, authorization, capabilities and browser table privileges remain unchanged. The forward schema admits null base line IDs only alongside exact ADD evidence. Frontend generated types and shaped contracts are untouched. Pantry/direct Need, zero-demand policy, Planning rounding, human confirmation, Procurement and D-047 Unit adoption remain unchanged; native cross-Unit corrections still fail the existing no-conversion boundary.
 
+The Need runtime receives the existing private numeric-parser execute grant required by conditional effective rules. Browser roles retain no execute privilege on that parser.
+
 ## Migration and rollback
 
 Forward migration 107 is `20261014052605_atlas_need_generation_effective_composition.sql`. It adds capture/ADD columns and FKs on existing private evidence, two unique indexes plus three FK lookup indexes, two private immediate capture triggers, four private helpers/guards, and two SELECT-only adjustment policies for the existing Need runtime. It amends generator, deferred generation integrity, governed removal, preflight, V1 validate/release and shared Confirmed Need materialization functions. No table, API, role, capability, timeout or lifecycle is added.

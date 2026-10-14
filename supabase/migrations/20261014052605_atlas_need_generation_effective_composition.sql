@@ -72,7 +72,8 @@ grant execute on function
   atlas_core.rmvp_02b_resolve_selected_composition(date,uuid,uuid,jsonb,uuid,uuid),
   atlas_core.rmvp_02b_active_rules(date,uuid,uuid,jsonb,uuid),
   atlas_core.rmvp_02b_transform_line(jsonb,jsonb),
-  atlas_core.rmvp_02b_safe_date(text)
+  atlas_core.rmvp_02b_safe_date(text),
+  atlas_core.pa_05b_safe_numeric(text)
   to atlas_need_generation_runtime;
 
 -- Check the capture once per selection, never per Ingredient. Later transitions

@@ -6,6 +6,10 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 set local track_functions = 'all';
 select no_plan();
+select ok(has_function_privilege('atlas_need_generation_runtime','atlas_core.pa_05b_safe_numeric(text)','EXECUTE')
+  and not exists(select 1 from (values('anon'),('authenticated'),('service_role')) roles(role_name)
+    where has_function_privilege(role_name,'atlas_core.pa_05b_safe_numeric(text)','EXECUTE')),
+  'conditional effective rules retain private numeric parsing without browser execution');
 create function pg_temp.ng_id(n bigint) returns uuid language sql immutable as $$
   select ('a7400000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
