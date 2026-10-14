@@ -1,45 +1,44 @@
 # Atlas Autopilot — Active Task
 
-Task: ATLAS-CUTOVER-READ-ACCEPTANCE-01
-Status: IMPLEMENTED LOCALLY — fixed-head review and exact-head CI pending
+Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01
+Status: AUTHORIZED — documentation only; Product choices undecided
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
-Starting main: 8e68c2ce2cf766279d020210e9b53b457048db22
-Atlas Staging: rnzxmxiiqgtdevzregff — migration 109
+Starting main: f6686c7952024b499fcd3499cbcb38948ab15a5d
+Atlas Staging: rnzxmxiiqgtdevzregff — migration 109; no hosted action in this task
 OPS v1 / Retool / Production: no writes or commitments
 
-## Previous task accepted
+## Previous read gate accepted — 14 October 2026
 
-ATLAS-PXK-EXACT-SCHOOL-SCOPE-01 merged through [PR #382](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/382). Exact-main Frontend 38564165289 and Full Integration 38564165442 passed; guarded deployment 38565480612 passed. Native migration tip is `20261014120320`. Reviewed rollback acceptance at source `72c80979ac632351dd25f7197eabfad3bcecd5bc` passed 48 cases, with independent final 36 relation checks / zero probes and unchanged 17 real Draft POs/hash `cefbff23b30cbc15dac0b890a956d884`.
+[PR #383](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/383) merged at starting main with a tree identical to reviewed source `64491061df79bf9c8349d5f397d57c06a8fe9edb`. Source Frontend 38568664899 and Full Integration 38568760358 passed. Root's protected [actual HTTP read 38570792340](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38570792340) passed against deployed business `8e68c2ce2cf766279d020210e9b53b457048db22` using verifier starting main: 236 distinct families, 4,973.201109 ms, full actual-row PostgreSQL MD5 `48e433c45fac665d873103542408a484`, unchanged source/receipt/audit fact digest `d55edbee74200aa3e02e8fc94ca8787d` (matching acceptance 105).
 
-The other 467 function catalog rows, existing 12 PXK fact rows and 27 Actor configuration rows retained their exact before/after hashes; helper owner/SECURITY DEFINER/path/ACL and existing advisor entities were unchanged. See [109 evidence](../testing/atlas-pxk-exact-school-scope-109.md) and [parsed native reports](../testing/evidence/atlas-pxk-exact-school-scope-staging-109.json). The global mandate now records Product's one-staff-per-operational-task constraint without assigning users or waiving existing exception/approval gates.
+Root independently confirmed 36 probe-relation checks / zero probes, 17 real Draft POs and unchanged fingerprint `cefbff23b30cbc15dac0b890a956d884`. This is one successful hosted observation, not a load test or three-sample performance certification. Main Frontend 38570729098 and Full Integration 38570728987 were still running at handoff; no pass is asserted here. The formal A/B/C gate 38566354791 and 109's 48-case rollback acceptance remain complete; do not rerun them or rewrite historical 108/109 evidence.
 
-## Approved read-only gate
+## Authorized document packet
 
-Extend the existing School fulfilment verifier with an explicit opt-in released-allocation-read mode. Its default formal A/B/C behavior remains unchanged. Root's default formal [A/B/C run 38566354791](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38566354791) passed all three scenarios at business/verifier starting-main SHA on 14 October 2026, 12:46:40 UTC. That gate is closed; do not rerun it, repair fixtures or replay Identity/Foundation.
+Prepare the smallest one-operator receiving design for Product review under the active Autopilot horizon. First record this baton and the completed read gate in a separate commit, before design files. Approved constraints and existing authority must be distinguished from proposed choices. All four Product groups remain explicitly UNDECIDED:
 
-The opt-in mode must perform exactly one actual authenticated HTTP `get_confirmed_supplier_allocation_workbench` for `2026-10-12` with closed payload and no automatic retry. Require completed response in less than 8,000 ms, 236 distinct family rows, balanced/current Handoff/source lineage, exact quantities and Preparation ready/allowed version 5 for released batch `69661e86-abb3-4bf4-88a5-4717fe18c472`. PostgreSQL must hash the actual HTTP response's canonical assignment/quantity/lineage projection to `48e433c45fac665d873103542408a484`; a second SQL RPC or JavaScript serialization hash cannot substitute for that body.
+1. First receiving site/job and physical receipt evidence versus stock creation.
+2. Procurement supplier-confirmation gap, exact current released revision, partial arrivals and superseded orders.
+3. Observed physical facts, quantity/Unit evidence and owning exception rules.
+4. Commit/correction boundary, capability and relational scope.
 
-Reuse only exported `snapshotSql` from the existing hosted-purchase acceptance script for read-only before/after source, lineage, split, Handoff, 17-PO, receipt/audit fact hashes. Execute under BEGIN READ ONLY, 8-second statement / 1-second lock caps. Never invoke that script's main, executeAcceptance, Preparation preflight or replay. Changed facts, missing prerequisite, transport limit, malformed evidence or timeout fail closed; attempt read-only postflight and sign-out on failure when possible. Never restore data, retry automatically or raise timeouts.
+Offer concrete alternatives, consequences and questions without selecting business policy where operating facts are unknown. Ordinary work must be possible for one authorized Actor; capabilities, scope, audit and approved exception owners remain mandatory. `RELEASED_TO_SUPPLIER` does not establish supplier confirmation or `READY_FOR_WAREHOUSE_RECEIVING`. The in-memory prototype is exploratory evidence only, not connected authority or a lifecycle to copy.
 
-## Allowed files and validation
+## Allowed files and checks
 
-- `scripts/verify-atlas-staging-school-fulfilment.mjs` and its existing test file.
-- `scripts/atlas-staging-contract.test.mjs`: necessary existing workflow-contract assertions for the typed opt-in/default commands. Preserve exact credential allowlist, target/dual-SHA/read-only guards; the mode flag is step-local, not a new protected credential.
-- `.github/workflows/atlas-staging-school-fulfilment-verify.yml`: typed opt-in input/CLI flag using existing protected target and credential guards.
-- This baton, mandate, 109 parsed evidence/validation doc, affected cutover-readiness runbook/evidence.
-- No new runner, npm command, framework, dependency, schema/migration, business function, UI or unrelated workflow change.
+- This baton.
+- `docs/runbooks/school-fulfilment-cutover-readiness.md`: close the actual read gate.
+- `docs/testing/evidence/atlas-cutover-released-allocation-read-staging-109.json`: durable parsed report from Root's saved evidence.
+- `docs/architecture/warehouse-receiving-minimum-design.md`.
+- `docs/decisions/decision-atlas-warehouse-receiving-minimum.md`.
+- `docs/decisions/decision-register.md`: PROPOSED link only.
+- `docs/architecture/roadmap.md`: Warehouse design gate pointer only.
 
-Test-first focused coverage must reject wrong target/migration before client creation, preserve dry-run/default behavior, permit only the one GET RPC, reject duplicate identities/quantity/lineage/hash/released-state/prepare-version errors and elapsed time >=8s, compare complete before/after facts including receipts, encode SQL input safely for apostrophe/backslash/Unicode/dollar quotes, prove the digest consumes the actual HTTP body and guarantee failure-path postflight/sign-out. No rows, tokens or credentials may be logged.
+Read AGENTS, mandate, README, vision, business-rule/decision registers and the existing Warehouse receiving/stock-release contracts, PD-03 conformance review, ARCH-002, roadmap, School Procurement API and fixture prototype. Run focused formatting, whitespace and local-link validation only; no tests for prose and no new test framework.
 
-## Delivery and hard stops
+## Delivery and hard stop
 
-One fresh bounded branch and Draft PR, fixed-SHA Terra review and exact-head CI. Root runs the actual protected hosted mode after review/merge/CI; the implementer does not execute it. No staff grants, Production/OPS-v1/Retool write, real commitments, Preparation execution, new hosted fixtures or Warehouse implementation.
+Fresh bounded branch from verified latest main, Draft PR and fixed-SHA Terra audit; Root owns routine integration. The packet may become READY FOR PRODUCT REVIEW, while every business choice remains PROPOSED. Final explicit Warehouse Product design approval is a HARD STOP before any implementation.
 
-After verified read acceptance, proposed next work is a thin Warehouse receiving design packet READY FOR PRODUCT REVIEW. Final Warehouse business-design approval remains a hard stop before implementation; this task does not authorize that code.
-
-## Local verification
-
-The existing verifier now has an explicit opt-in flag and protected boolean workflow input defaulting false. The default A/B/C behavior is retained. PostgreSQL hashes the full actual HTTP rows sorted by nested family ID; no selected subset or second SQL RPC is used. Read-only snapshot preflight precedes client construction; response completion has an unchanged 8-second abort/check, and independent postflight plus sign-out run on failure when possible.
-
-Test-first controls reproduced the previously absent mode, bad response envelope and missing Confirmed Need lineage. Focused verifier (51), staging-contract (116) and existing purchase acceptance (6) tests pass: 173 total. Generated snapshot SQL also parsed/executed against the disposable local 109 database as two READ ONLY queries; absent workload prerequisites stopped before client construction. Formatting and diff whitespace pass. These are local tooling checks, not hosted latency evidence. Actual opt-in hosted read and final gate result remain pending Root's reviewed merged-SHA workflow run.
+No lifecycle/status machinery, role grants, staff assignments, database/API/UI/prototype edits, hosted action, fixture creation, Production/v1/Retool write or real commitment is authorized. Preserve released history, existing drafts and exception ownership. No Warehouse backend or connected UI work follows automatically from merging this documentation.
