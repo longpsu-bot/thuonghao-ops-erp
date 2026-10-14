@@ -1,6 +1,6 @@
 # Migration 108 Staging authorization acceptance
 
-Status: initial hosted workload attempt stopped on the aggregate statement cap; revised per-RPC workload source validated locally and awaiting review. Synthetic hosted acceptance has not run.
+Status: hosted rollback acceptance passed on 14 October 2026 at independently reviewed source `8340e9a38fcdd27755a8c5cecbe70da8eafb053e`. Workload: 16 checks across eight RPC cases; synthetic: 27 checks; independent postflight: 36 clear relation checks and zero probe rows after each batch. PR #381 remains a review/CI gate for these acceptance artifacts and the next task baton.
 
 On 14 October 2026, the Product Owner's “Please proceed” advanced the concrete reviewed PR #380 handoff through merge, protected Atlas Staging deployment and rollback-only acceptance. The approval is bounded to that correction. It does not authorize Production, real supplier/PXK commitments, OPS v1/Retool writes or a decision about inherited PXK shared-location matching.
 
@@ -46,8 +46,22 @@ The initial workload batch hit SQLSTATE `57014` at its 8-second cap inside the e
 
 An explicitly authorized independent read-only diagnostic used the existing managed GLOBAL operator, authenticated execution, the same 8-second/1-second caps, date `2026-10-12` and one supplier. It returned one real PO successfully in 2,212.95 ms. This does not establish an individual RPC exceeding eight seconds. Deployed currentness-function MD5 `39f65214edb8019ef57c8e5280091784` and v2-base MD5 `7442905d426082ad8ef9ea81f5f06cec` match the canonical deployed source. Migration 108 does not rewrite that currentness path. The revised harness separates statement budgets instead of changing product timeout or currentness semantics.
 
+## Verified hosted result — 14 October 2026
+
+Terra audited the revised exact source and Product/Architecture explicitly cleared its execution after diagnosis. This was a reviewed revision; the original stopped attempt remains evidence. Each committed SQL file was fetched in full and checked against its byte length and SHA-256 before execution on the explicit Staging project. The [durable JSON evidence](evidence/atlas-auth-scope-alignment-staging-108.json) contains source hashes, deployment SHA, every named case and all five parsed reports.
+
+- Fresh preflight: migration 108 present, 36 relation checks, zero probe rows, 17 real Draft POs, fingerprint `cefbff23b30cbc15dac0b890a956d884`.
+- Workload: all 16 checks / eight RPC cases passed. The selected PO `3bf24a48-2bab-4519-9fe1-07e907ed7cf6` contains 148 lines and 21 School scopes. Full and GLOBAL reads returned complete content; partial scope returned no selected PO. Procurement capability, missing capability, matching/outside Customer filtering and exact private-helper security checks passed. Selected PO fingerprint remained `47e3b267c0b3b3573ed739d64a81b198`.
+- Independent postflight after workload: 36 checks / zero probes, identical 17-Draft fingerprint.
+- Synthetic: all 27 checks passed, including isolated PO/PXK release, capability denials, wrong scope, GLOBAL controls, replay/numbering, stale version, reconciliation, exact-School PO shared-location denial and Preparation's inherited GLOBAL gate. Releases used only reserved `f108` fixtures/date `2098-10-14` and rolled back.
+- Independent postflight after synthetic: 36 checks / zero probes, identical 17-Draft fingerprint. No persistent probe identities, scopes, receipts, audit facts or documents remained. No real PO/PXK was released.
+
+The three real PO reads took 2,923.66 ms (full School scope), 2,256.09 ms (partial scope) and 2,762.68 ms (GLOBAL). Generated Review cases took 46.89, 4.38, 0.98, 3.90 and 3.09 ms. All completed with unchanged 8-second statement / 1-second lock caps. These single-run observations cover this selected 148-line/21-School PO and the available Generated Review fixture source; they do not establish a latency distribution or broader scale guarantee. The selected Generated Review source date was `2046-09-19`, an existing Staging rehearsal source.
+
+Full sanitized connector responses remain outside the repository in `C:/Users/HOME/AppData/Local/Temp/atlas-auth-staging-108-acceptance-per-rpc.json`; the earlier timeout and independent read-only diagnosis remain in the separate files listed in the durable JSON. Business deployment remains `d254c099098a1f004f4eaaf78092f1aab9c32bd3`; acceptance source is `8340e9a38fcdd27755a8c5cecbe70da8eafb053e`.
+
 ## Remaining Product decision
 
 The existing PXK/reconciliation predicate accepts the scoped School's default delivery location. Whether `SCHOOL` must mean exact School-only access or preserve that location coverage when Schools share a default is a separate Product choice. No response to that question is approval. The acceptance code preserves the deployed predicate and does not change authorization policy.
 
-After verified hosted acceptance, update the active baton with evidence and that unresolved decision. Do not mark Production/cutover authority or the PXK policy complete by implication.
+The active baton now records that unresolved decision. Migration 108's bounded authorization correction has passed Staging acceptance; Production/cutover authority and the separate PXK policy remain unapproved.
