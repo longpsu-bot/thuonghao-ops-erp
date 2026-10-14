@@ -11,7 +11,7 @@ create function atlas_core.school_catering_purchase_order_actor_has_full_scope(
 returns boolean
 language sql
 stable
-security definer
+security invoker
 set search_path=''
 as $$
   with scope_rows as (
