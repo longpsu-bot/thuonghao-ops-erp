@@ -121,9 +121,12 @@ begin
       end if;
       perform pg_temp.a108_require('real_po_read_success_'||actor_number,v_response->>'success'='true');
       perform pg_temp.a108_require('real_po_complete_or_hidden_'||actor_number,
-        exists(select 1 from jsonb_array_elements(v_response->'purchase_orders') po
+        case when actor_number=2 then
+          not exists(select 1 from jsonb_array_elements(v_response->'purchase_orders') po
+            where po->>'purchase_order_id'=v_po.purchase_order_id::text)
+        else exists(select 1 from jsonb_array_elements(v_response->'purchase_orders') po
           where po->>'purchase_order_id'=v_po.purchase_order_id::text
-            and jsonb_array_length(po->'lines')=v_po.line_count)=(actor_number<>2));
+            and jsonb_array_length(po->'lines')=v_po.line_count) end);
     end loop;
 
     select line.service_date into v_date

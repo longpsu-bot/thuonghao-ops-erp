@@ -34,6 +34,8 @@ The new synthetic acceptance passes all 27 cases against a newly created disposa
 
 An injected assertion failure after synthetic command execution aborted loudly and left postflight clear. This verifies that the successful-rollback handler cannot hide an assertion failure. No hosted acceptance result is claimed by local validation.
 
+Source review also found that the original workload assertion could accept a redacted PO for a partial Actor. The revised assertion requires the selected PO ID to be absent entirely for that Actor, while full/GLOBAL Actors require the complete line count. A locally injected zero-line PO leak reproduced the original assertion defect, then failed loudly with the revised assertion. Normal workload acceptance still passes all 16 cases and postflight remains clear.
+
 ## Remaining Product decision
 
 The existing PXK/reconciliation predicate accepts the scoped School's default delivery location. Whether `SCHOOL` must mean exact School-only access or preserve that location coverage when Schools share a default is a separate Product choice. No response to that question is approval. The acceptance code preserves the deployed predicate and does not change authorization policy.
