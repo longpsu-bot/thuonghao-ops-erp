@@ -122,10 +122,10 @@ jsonb_build_object('service_date','2050-09-19','expected_current_need_generation
 select set_config('request.jwt.claims',jsonb_build_object('sub',pg_temp.ng_id(101),'role','authenticated')::text,true);
 set local role authenticated;
 insert into ng_results select 'menu',atlas_api.save_weekly_menu(request),null from ng_requests where name='menu';
-select is((select response->>'success' from ng_results where name='menu'),'true','380-assignment weekly Menu is saved through the real command');
+select is((select response->>'success' from ng_results where name='menu'),'true','40-assignment weekly Menu is saved through the real command');
 select diag(jsonb_build_object('error_code',response->>'error_code','first_blocker',response#>'{blocking_references,0}')::text) from ng_results where name='menu' and response->>'success'<>'true';
 insert into ng_results select 'attendance',atlas_api.save_attendance(request),null from ng_requests where name='attendance';
-select is((select response->>'success' from ng_results where name='attendance'),'true','95-row Attendance is saved through the real command');
+select is((select response->>'success' from ng_results where name='attendance'),'true','10-row Attendance is saved through the real command');
 insert into ng_results select 'pantry',atlas_api.save_pantry(request),null from ng_requests where name='pantry';
 select is((select response->>'success' from ng_results where name='pantry'),'true','exact Pantry source is saved');
 insert into ng_results select 'preflight',atlas_api.get_planning_input_preflight(jsonb_build_object(
