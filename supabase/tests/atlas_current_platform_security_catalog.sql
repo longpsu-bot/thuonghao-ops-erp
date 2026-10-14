@@ -180,8 +180,16 @@ select ok(
     where granted_role.rolname like 'atlas\_%\_runtime' escape '\'
       and member_role.rolname = 'postgres'
       and membership.set_option
+  )
+  and exists (
+    select 1 from pg_auth_members membership
+    where membership.roleid='atlas_need_generation_runtime'::regrole
+      and membership.member='postgres'::regrole
+      and membership.grantor='postgres'::regrole
+      and not membership.admin_option and membership.inherit_option
+      and not membership.set_option
   ),
-  'CAT-04A postgres retains owner SET while runtime SET memberships stay disabled'
+  'CAT-04A postgres retains owner SET and original Need ownership inheritance while runtime SET stays disabled'
 );
 
 select is(

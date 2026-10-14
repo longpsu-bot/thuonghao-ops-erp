@@ -1,5 +1,14 @@
 -- Migration 107. Product amendment ATLAS-EFFECTIVE-COMPOSITION-GENERATION-01.
 -- Generated evidence only; existing rows and released base Recipes are untouched.
+reset role;
+create temporary table atlas_effective_runtime_access_before as
+select role.rolname,membership.admin_option,membership.inherit_option,membership.set_option
+from pg_catalog.pg_roles role left join pg_catalog.pg_auth_members membership
+  on membership.roleid=role.oid and membership.member='postgres'::regrole
+ and membership.grantor='postgres'::regrole
+where role.rolname in ('atlas_need_generation_runtime','atlas_planning_materialization_runtime');
+create temporary table atlas_effective_schema_access_before as
+select pg_catalog.has_schema_privilege('atlas_need_generation_runtime','atlas_core','CREATE') as had_create;
 grant atlas_need_generation_runtime to postgres with set true;
 grant atlas_planning_materialization_runtime to postgres with set true;
 set role atlas_owner;
@@ -527,8 +536,25 @@ $sql$||anchor);
 end $lifecycle_currentness$;
 
 
-revoke atlas_need_generation_runtime,atlas_planning_materialization_runtime from postgres;
-
-set role atlas_owner;
-revoke create on schema atlas_core from atlas_need_generation_runtime;
 reset role;
+-- Restore exact pre-migration privileges, including existing non-SET ownership
+-- memberships used by the controlled upgrade/rehearsal tooling.
+do $restore_access$
+declare access record;
+begin
+  if not (select had_create from pg_temp.atlas_effective_schema_access_before) then
+    revoke create on schema atlas_core from atlas_need_generation_runtime;
+  end if;
+  for access in select * from pg_temp.atlas_effective_runtime_access_before loop
+    if access.admin_option is null then
+      execute pg_catalog.format('revoke %I from postgres',access.rolname);
+    else
+      execute pg_catalog.format('grant %I to postgres with admin %s, inherit %s, set %s',
+        access.rolname,case when access.admin_option then 'true' else 'false' end,
+        case when access.inherit_option then 'true' else 'false' end,
+        case when access.set_option then 'true' else 'false' end);
+    end if;
+  end loop;
+end $restore_access$;
+drop table pg_temp.atlas_effective_schema_access_before;
+drop table pg_temp.atlas_effective_runtime_access_before;
