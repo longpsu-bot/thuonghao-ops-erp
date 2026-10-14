@@ -1,130 +1,43 @@
 # Atlas Autopilot — Active Task
 
-Task: ATLAS-AUTH-SCOPE-ALIGNMENT-01
-Status: IMPLEMENTED IN DRAFT PR #380 — Product/Terra review and CI pending
+Task: ATLAS-PXK-SHARED-LOCATION-SCOPE-DECISION-01
+Status: AWAITING PRODUCT DECISION — read-only evidence preparation only
 Navigator: Terra/read-only role
-Implementer: Sol 6.1 when available
-Starting main: 54b074da1f1049b87f9403682348b2dc7cec7573
-Atlas Staging migration tip: 107 — atlas_need_generation_effective_composition
+Implementer: Sol 6.1 after an explicit bounded implementation decision
+Current business main: d254c099098a1f004f4eaaf78092f1aab9c32bd3
+Atlas Staging: rnzxmxiiqgtdevzregff — migration 108
 OPS v1 / Retool: read-only evidence; no writes.
 
-## Why this task exists
+## Previous task accepted
 
-The cutover audit found authorization behavior that conflicts with the documented least-privilege contract. This is a bounded security/contract-alignment task. It must not reopen Procurement business semantics or PXK document semantics.
+ATLAS-AUTH-SCOPE-ALIGNMENT-01 was merged through [PR #380](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/380) and deployed at the business SHA above. The Product Owner's 14 October 2026 “Please proceed” advanced the concrete reviewed handoff through merge, protected Atlas Staging deployment and rollback-only acceptance. It did not approve Production, real supplier/PXK commitments, OPS v1/Retool writes or a new shared-location policy.
 
-## Confirmed navigator findings
+- Merged-head [Frontend CI](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38545264913) and [Full Integration](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38545264875) passed. Guarded [Staging deployment](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38546830503) passed, including platform verification.
+- Independent review accepted the bounded helper: canonical positive contribution/supplier overlap, complete line coverage, exact `SCHOOL` identity and captured Confirmed Need customer lineage. Generic/PXK scope helpers were preserved. Local focused suites passed all 492 assertions; exact migration-107 catalog cross-check and bounded two-line/two-School timing were retained in PR #380.
+- Hosted rollback acceptance at reviewed source `8340e9a38fcdd27755a8c5cecbe70da8eafb053e` passed 16 workload checks across eight public RPC cases plus 27 isolated synthetic checks. Three independent read-only checks each reported 36 clear relations / zero probes, unchanged 17 real Draft POs and fingerprint `cefbff23b30cbc15dac0b890a956d884`. No real document was released.
+- The earlier aggregate-statement timeout stopped probe execution and is retained with its clear postflight and read-only diagnosis. Revised acceptance kept the 8-second statement / 1-second lock caps and assigned one public RPC per top-level statement. No product timeout or currentness semantics changed.
+- [Acceptance evidence](../testing/atlas-auth-scope-alignment-staging-108.md) and its [JSON reports](../testing/evidence/atlas-auth-scope-alignment-staging-108.json) contain exact source/deployment identities and bounded measurements. [Draft PR #381](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/381) holds the acceptance artifacts and this next baton; its review/CI/merge gate remains separate from the accepted deployed business correction.
 
-A. Generated Purchase Review capability mismatch
+## Decision required
 
-atlas_api.get_generated_purchase_review is documented to require procurement.school_catering.read but deployed code checks confirmed_need_review.read. The read already filters rows through school_catering_actor_has_scope.
+The inherited PXK/reconciliation predicate accepts a matching School scope when the target delivery location equals that scoped School's default delivery location. Two Schools sharing that location can therefore match through location coverage. Existing accepted task B/C required preserving this guard; the atomic PO rule was explicitly stricter and was implemented locally in the new whole-PO predicate.
 
-Required correction: align implementation to the documented Procurement read capability. Preserve relational filtering and zero-write behavior.
+Product must select the intended PXK/reconciliation meaning:
 
-B. Dispatch/PXK read paths are accidentally GLOBAL-only
+1. `SCHOOL` authorizes that exact School only; explicit Customer/location scopes retain their separately approved meanings.
+2. Preserve existing scoped-School default-location coverage, including another School sharing that location.
 
-The School Dispatch workbench base read and PO/PXK reconciliation call pa_05b_authorize_actor with null scope targets and return immediately on SCOPE_DENIED. Null targets can only match GLOBAL, so relationally scoped actors never reach the existing exact School/location filter.
+Neither choice is selected. A pending response is not approval. Do not infer policy from the PO rule or silently rewrite the generic authorizer.
 
-Required correction: preserve capability denial, but allow SCOPE_DENIED to fall through to the stronger exact relational filter. GLOBAL remains valid.
+## Allowed work while pending
 
-C. PXK release has the same unreachable exact scope guard
+- Read approved security, Procurement, PXK and reconciliation contracts; trace existing callers and distinguish School, Customer and delivery-location authority.
+- Gather read-only examples and identify the smallest affected caller/helper/test/document boundary for either choice.
+- Prepare a concrete Product decision with compatibility and historical-document implications. Preserve immutable released content, identity, numbering and source lineage.
+- Keep acceptance PR #381 reviewable and resolve bounded review/CI defects without changing business behavior.
 
-release_school_dispatch_document first performs null-target generic authorization and then school_dispatch_actor_has_scope(actor, school, location).
+## Implementation gate and hard stops
 
-Required correction: capability denial still fails; exact School/location scope decides non-GLOBAL access. Do not weaken the exact guard.
+No new runtime/migration/role/scope change is authorized by this baton. After Product chooses policy, record the decision in repository authority and issue a bounded implementation task with explicit allowed files and acceptance criteria before code changes.
 
-D. PO release requires atomic document-wide scope
-
-release_school_catering_purchase_order currently has the null-target GLOBAL precheck but no equivalent relational guard.
-
-Product security rule:
-
-A non-GLOBAL actor may release a PO only when the actor has valid relational scope for every School/delivery-location contribution represented by that entire Supplier/date PO.
-
-Partial document scope denies release of the whole PO. Never expose or issue a partially authorized supplier document. GLOBAL remains valid. Existing procurement.school_catering.write capability, currentness, idempotency, immutable release and numbering semantics remain unchanged.
-
-PO read consistency: preserve the existing whole-document visibility rule. A non-GLOBAL actor may see a Supplier/date PO only when the actor is authorized for every School/delivery-location contribution represented by that PO. Do not return a partially redacted PO; hide/deny the whole document instead.
-
-## Mandatory investigation before editing
-
-Trace current-main and deployed call chains for:
-
-- get_generated_purchase_review
-- get_school_catering_purchase_orders and base chain
-- release_school_catering_purchase_order
-- get_school_dispatch_release_workbench and base chain
-- release_school_dispatch_document
-- get_school_fulfilment_reconciliation_workbench
-- pa_05b_authorize_actor
-- school_catering_actor_has_scope
-- school_dispatch_actor_has_scope
-
-Do not rewrite the generic authorizer globally. Fix only bounded callers/guards proven inconsistent.
-
-## Required tests
-
-1. Generated Purchase Review:
-
-- Procurement-read capability succeeds.
-- Confirmed-Need-read without Procurement-read does not gain access.
-- relational scope filters rows; out-of-scope rows stay invisible.
-- GLOBAL unchanged.
-
-2. PXK workbench and reconciliation:
-
-- scoped actor sees only allowed School/location rows.
-- out-of-scope data is invisible.
-- capability denial remains denial.
-- GLOBAL unchanged.
-
-3. PXK release:
-
-- exact School/location scoped actor succeeds in local/rollback fixture.
-- wrong scope and missing capability are denied.
-- GLOBAL unchanged.
-
-4. PO read/release:
-
-- actor covering every constituent School/location can read and release the whole PO.
-- actor missing any constituent scope cannot see a partial PO and is denied release of the entire PO.
-- no partial commit/exposure.
-- GLOBAL unchanged.
-- replay/currentness/numbering unchanged.
-
-5. Preparation:
-
-- prepare_school_catering_purchase_orders retains its current whole-batch GLOBAL requirement.
-
-## Change boundary
-
-Preferred result: one forward migration, expected migration 108; tests and affected security/contract docs; no frontend product behavior change unless strictly required.
-
-Do not grant everyone GLOBAL, add broad capabilities, change role membership globally, weaken RLS, change PO/PXK grouping, relax Preparation authorization, touch Warehouse, Attendance XLSX, OPS v1 or Retool, or deploy to Staging before Product review.
-
-## Validation
-
-Require focused allowed/denied pgTAP evidence, security/catalog regression, School-catering PO/PXK/reconciliation suites, Procurement regression, Supabase Full Integration, and exact-head CI. Measure any material performance change; do not raise timeouts.
-
-## Delivery
-
-Create one bounded branch and one Draft PR.
-
-Suggested branch: fix/cutover-auth-scope-alignment-01
-Suggested PR: fix(atlas): align Procurement and PXK relational authorization
-
-Do not merge or deploy.
-
-## Stop conditions
-
-Stop if the documented relational contract cannot be satisfied without changing PO/PXK business meaning; a fix requires material privilege broadening; whole-PO scope cannot be proven deterministically; or a current-main wrapper supersedes these findings incompatibly.
-
-## Implementation evidence — 14 October 2026
-
-Draft PR: https://github.com/longpsu-bot/thuonghao-ops-erp/pull/380. No merge or deployment is authorized by this handoff.
-
-- Whole-PO authorization reuses canonical positive supplier/contribution overlap, checks complete per-line quantity coverage, and matches `SCHOOL` IDs exactly. Customer authority follows captured Confirmed Need lineage. A shared default location cannot authorize the other School, and a zero-overlap contribution cannot over-restrict another supplier's PO.
-- Both defects were reproduced with failing rollback pgTAP assertions before the bounded helper correction. Browser RPC coverage verifies partial read/release denial, complete School/Customer coverage, missing capabilities, unchanged GLOBAL release/replay/currentness/numbering, and Preparation's inherited GLOBAL lifecycle requirement.
-- Focused local suites: security catalog 30; PO 155; PXK 69; reconciliation 16; Purchase Review/Preparation 193; Preparation projection 7; source ambiguity 9; released allocation read 13. All 492 assertions passed in a newly created disposable local database; previous local volumes were preserved.
-- CAT-22 remains exact. Removing only the new helper inside a local rollback restores the complete migration-107 catalog checks. Migration 108 changes only private function count 348→349 and its catalog fingerprint, plus target grants 1853→1855 and their fingerprint. Both new grants are runtime-only; browser grants, RLS, roles, capabilities, tables, views and triggers remain unchanged.
-- Bounded local timing, two-line/two-School PO, 100 allowed and 100 denied evaluations per runtime: prior helper 3.45–3.61 ms/call; corrected helper 3.13–3.31 ms/call. This is not hosted scale acceptance; no timeout was raised.
-- Existing PXK/reconciliation default-location matching is retained. Shared-default-location School isolation there remains a separate Product decision; this task adds no such guarantee.
-- Exact-head Frontend CI and Supabase Full Integration must pass, followed by read-only architecture/security audit and Product review. Atlas Staging remains migration 107; OPS v1, Retool and Production were not changed.
+Do not grant broad authority, change persisted role memberships, bypass RLS, alter PO/PXK grouping or lifecycles, relax Preparation's GLOBAL gate, issue real commitments, mutate OPS v1/Retool, create/use Production, or implement Warehouse under this task. Do not merge PR #381 before its exact-head CI and independent review pass. No further hosted probe writes are needed merely to restate the completed acceptance.

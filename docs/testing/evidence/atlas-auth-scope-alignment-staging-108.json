@@ -1,0 +1,170 @@
+{
+  "accepted_on": "2026-10-14",
+  "project_id": "rnzxmxiiqgtdevzregff",
+  "source_sha": "8340e9a38fcdd27755a8c5cecbe70da8eafb053e",
+  "deployment_sha": "d254c099098a1f004f4eaaf78092f1aab9c32bd3",
+  "status": "HOSTED_ROLLBACK_ACCEPTANCE_PASS",
+  "sources": {
+    "workload": {
+      "path": "supabase/local/atlas_auth_scope_alignment_workload_acceptance.sql",
+      "bytes": 13933,
+      "sha256": "f229b9ac62da02f6816de96add3abc48f4a968815b82f7ae41edc55e9d829a37"
+    },
+    "synthetic": {
+      "path": "supabase/local/atlas_auth_scope_alignment_synthetic_acceptance.sql",
+      "bytes": 36882,
+      "sha256": "ad007aab71f75deb4604fb5ae9a0d4d3223f8a1e5d8e2d6686275e58d5828ea7"
+    },
+    "postflight": {
+      "path": "supabase/local/atlas_auth_scope_alignment_postflight.sql",
+      "bytes": 4154,
+      "sha256": "e704c86a5bcaa9a62e8119b75a6092a30c216364475c5dc40cc5546ea526eede"
+    }
+  },
+  "reports": {
+    "preflight": {
+      "success": true,
+      "probe_rows": 0,
+      "draft_po_count": 17,
+      "draft_po_fingerprint": "cefbff23b30cbc15dac0b890a956d884",
+      "migration_108_present": true,
+      "probe_relation_checks": 36
+    },
+    "workload": {
+      "cases": [
+        "generated_capability_3",
+        "generated_capability_4",
+        "generated_capability_5",
+        "generated_matching_customer_scope",
+        "generated_outside_scope_hidden",
+        "helper_exact_security_boundary",
+        "migration_108_present",
+        "probe_namespace_empty",
+        "real_generated_source_available",
+        "real_multischool_draft_available",
+        "real_po_complete_or_hidden_1",
+        "real_po_complete_or_hidden_2",
+        "real_po_complete_or_hidden_3",
+        "real_po_read_success_1",
+        "real_po_read_success_2",
+        "real_po_read_success_3"
+      ],
+      "success": true,
+      "case_count": 16,
+      "real_po_id": "3bf24a48-2bab-4519-9fe1-07e907ed7cf6",
+      "rpc_results": [
+        {
+          "checks": ["real_po_complete_or_hidden_1", "real_po_read_success_1"],
+          "case_number": 1,
+          "rpc_elapsed_ms": 2923.66
+        },
+        {
+          "checks": ["real_po_complete_or_hidden_2", "real_po_read_success_2"],
+          "case_number": 2,
+          "rpc_elapsed_ms": 2256.09
+        },
+        {
+          "checks": ["real_po_complete_or_hidden_3", "real_po_read_success_3"],
+          "case_number": 3,
+          "rpc_elapsed_ms": 2762.68
+        },
+        {
+          "checks": ["generated_capability_3"],
+          "case_number": 4,
+          "rpc_elapsed_ms": 46.89
+        },
+        {
+          "checks": ["generated_capability_4"],
+          "case_number": 5,
+          "rpc_elapsed_ms": 4.38
+        },
+        {
+          "checks": ["generated_capability_5"],
+          "case_number": 6,
+          "rpc_elapsed_ms": 0.98
+        },
+        {
+          "checks": ["generated_matching_customer_scope"],
+          "case_number": 7,
+          "rpc_elapsed_ms": 3.9
+        },
+        {
+          "checks": ["generated_outside_scope_hidden"],
+          "case_number": 8,
+          "rpc_elapsed_ms": 3.09
+        }
+      ],
+      "real_po_unchanged": true,
+      "real_po_line_count": 148,
+      "real_po_fingerprint": "47e3b267c0b3b3573ed739d64a81b198",
+      "real_po_scope_count": 21,
+      "top_level_rpc_cases": 8,
+      "generated_source_date": "2046-09-19",
+      "probe_rollback_verified": true
+    },
+    "after_workload": {
+      "success": true,
+      "probe_rows": 0,
+      "draft_po_count": 17,
+      "draft_po_fingerprint": "cefbff23b30cbc15dac0b890a956d884",
+      "migration_108_present": true,
+      "probe_relation_checks": 36
+    },
+    "synthetic": {
+      "cases": [
+        "migration_108_present",
+        "po_complete_school_read",
+        "po_complete_school_release",
+        "po_global_release_control",
+        "po_missing_read_capability",
+        "po_missing_write_capability",
+        "po_official_number_and_snapshot",
+        "po_partial_read_hidden",
+        "po_partial_release_denied",
+        "po_replay_preserves_number",
+        "po_shared_default_still_denied",
+        "po_stale_version_denied",
+        "preparation_did_not_change_commitments",
+        "preparation_still_requires_global",
+        "probe_namespace_empty",
+        "pxk_global_read_control",
+        "pxk_global_release_control",
+        "pxk_missing_read_capability",
+        "pxk_missing_release_capability",
+        "pxk_replay_and_number",
+        "pxk_scoped_release",
+        "pxk_scoped_rows",
+        "pxk_wrong_school_denied",
+        "reconciliation_global_control",
+        "reconciliation_missing_capability",
+        "reconciliation_scoped_rows",
+        "synthetic_date_empty"
+      ],
+      "success": true,
+      "case_count": 27,
+      "synthetic_date": "2098-10-14",
+      "probe_rollback_verified": true,
+      "synthetic_releases_only": true
+    },
+    "after_synthetic": {
+      "success": true,
+      "probe_rows": 0,
+      "draft_po_count": 17,
+      "draft_po_fingerprint": "cefbff23b30cbc15dac0b890a956d884",
+      "migration_108_present": true,
+      "probe_relation_checks": 36
+    }
+  },
+  "retained_prior_evidence": {
+    "initial_source_sha": "32bffd5547e05ea772e8213a9d0b9764659db300",
+    "initial_workload_error": "57014: aggregate DO statement reached unchanged 8-second cap; no acceptance pass; no automatic retry",
+    "independent_postflight": "36 checks / 0 probes; real Draft count and fingerprint unchanged",
+    "readonly_global_diagnostic": {
+      "purchase_order_count": 1,
+      "elapsed_ms": 2212.95
+    },
+    "local_raw_reports": "C:/Users/HOME/AppData/Local/Temp/atlas-auth-staging-108-acceptance-per-rpc.json",
+    "local_initial_failure": "C:/Users/HOME/AppData/Local/Temp/atlas-auth-staging-108-acceptance.json",
+    "local_readonly_diagnosis": "C:/Users/HOME/AppData/Local/Temp/atlas-auth-staging-108-readonly-diagnostic.json"
+  }
+}

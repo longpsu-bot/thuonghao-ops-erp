@@ -397,6 +397,11 @@ describe("06B peer navigation and action hierarchy", () => {
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
     await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+    // jsdom does not run the CSS exit animation; deliver its native completion.
+    fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
     expect(screen.getByRole("tab", { name: "Nguyên liệu" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -410,7 +415,10 @@ describe("06B peer navigation and action hierarchy", () => {
     await waitFor(() =>
       expect(discardDialog).toHaveAttribute("data-state", "closed"),
     );
-    fireEvent.animationEnd(discardDialog);
+    fireEvent(discardDialog, new Event("animationcancel", { bubbles: true }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
     await waitFor(() =>
       expect(screen.getByRole("tab", { name: "Nhà cung ứng" })).toHaveAttribute(
         "aria-selected",

@@ -200,6 +200,9 @@ describe("Công thức operator workbench", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
+    await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+    // jsdom does not run the CSS exit animation; deliver its native completion.
+    fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
@@ -404,6 +407,9 @@ describe("Công thức operator workbench", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
+    await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+    // jsdom does not run the CSS exit animation; deliver its native completion.
+    fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
