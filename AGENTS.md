@@ -51,6 +51,12 @@ Proceed only when all of the following are true:
 
 If any verification fails, stop and report the mismatch instead of mutating the workspace.
 
+## Atlas Autopilot
+
+When docs/autopilot/ATLAS-AUTOPILOT.md exists and its status is ACTIVE, it governs routine sequencing through the approved horizon. Before implementation, read both docs/autopilot/ATLAS-AUTOPILOT.md and docs/autopilot/ACTIVE_TASK.md.
+
+Preserve the role split: navigator/reviewer is read-only; implementer edits only the bounded active task. The active task cannot override this file, approved architecture/business contracts, or explicit Product hard stops.
+
 ## Mandatory reading before implementation
 
 - `README.md`
