@@ -83,6 +83,12 @@ ATLAS-AUTH-SCOPE-ALIGNMENT-01 corrects a generic null-target authorization short
 
 The amendment adds no role, capability, scope kind or browser relation privilege.
 
+## Exact-School authorization amendment — 14 October 2026
+
+[ATLAS-PXK-EXACT-SCHOOL-SCOPE-01](../decisions/decision-atlas-pxk-exact-school-scope.md) amends the inherited shared-default-location limitation above. PXK workbench, release and School fulfilment reconciliation use the same private Dispatch predicate: an active/effective `SCHOOL` scope matches only the target School ID. Sharing a default delivery location never authorizes another School. Exact School access still follows that School's captured operational location after a master-default change; released snapshots remain immutable.
+
+Explicit `DELIVERY_LOCATION`, location-derived `CUSTOMER` and `GLOBAL` scope coverage remain unchanged. The existing read/release capabilities are independently mandatory. One staff Actor may hold those capabilities and explicit scopes for multiple Schools, read/reconcile/release each authorized School and remain the initiating Actor in release/audit evidence. No second-person or maker/checker requirement, new role/capability, actual staff grant or automatic GLOBAL access is introduced. The generic school-catering authorizer, whole-PO rule and Preparation GLOBAL requirement are unchanged.
+
 ## Release command
 
 The standard command envelope requires:

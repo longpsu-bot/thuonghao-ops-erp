@@ -163,6 +163,10 @@ Planning quantity/Save contracts and multi-day preparation restrictions remain.
 
 [ATLAS-AUTH-SCOPE-ALIGNMENT-01](decision-atlas-cutover-auth-scope-alignment.md) restores the accepted least-privilege boundary for Generated Purchase Review, School-catering PO read/release, PXK read/release and PO/PXK reconciliation. Capabilities remain mandatory; exact relational School/customer/location scope governs bounded rows/documents; a Supplier/date PO is authorized atomically across every constituent School/location; Purchase Preparation remains `GLOBAL`. No role, capability, scope kind, business grouping or lifecycle is added.
 
+### Product-approved PXK exact-School scope — 14 October 2026
+
+[ATLAS-PXK-EXACT-SCHOOL-SCOPE-01](decision-atlas-pxk-exact-school-scope.md) narrows only Dispatch/PXK and reconciliation `SCHOOL` authorization to exact School identity. Shared defaults confer no other School's authority. Explicit location/customer/GLOBAL scopes and mandatory read/release capabilities remain unchanged. One Actor may perform task actions across several explicitly authorized Schools; no second-person requirement, new roles/capabilities or actual staff grants are introduced. This amends the inherited Dispatch compatibility limitation in migration 108's decision.
+
 ### Approved Atlas Planning catch-up source policy
 
 The Owner-approved [incomplete Recipe and Túi Unit decision](decision-atlas-planning-empty-recipe-tui-unit.md) permits active zero-BoM V1 Recipe identities to migrate as typed roots without versions or lines, retaining source evidence and backend-derived operational unreadiness. It also admits the exact distinct COUNT Unit `Túi` through the established hash algorithm. Invalid references and unknown future Units still fail closed. Live OPS, Retool, hosted apply and fabricated composition remain unauthorized.

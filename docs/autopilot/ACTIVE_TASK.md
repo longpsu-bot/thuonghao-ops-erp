@@ -1,43 +1,53 @@
 # Atlas Autopilot — Active Task
 
-Task: ATLAS-PXK-SHARED-LOCATION-SCOPE-DECISION-01
-Status: AWAITING PRODUCT DECISION — read-only evidence preparation only
+Task: ATLAS-PXK-EXACT-SCHOOL-SCOPE-01
+Status: IMPLEMENTED LOCALLY — independent review and exact-head CI pending
 Navigator: Terra/read-only role
-Implementer: Sol 6.1 after an explicit bounded implementation decision
-Current business main: d254c099098a1f004f4eaaf78092f1aab9c32bd3
-Atlas Staging: rnzxmxiiqgtdevzregff — migration 108
-OPS v1 / Retool: read-only evidence; no writes.
+Implementer: Sol 6.1
+Starting main: fbafca0cb404231e5930df079703f869fb9b29fb
+Atlas Staging: rnzxmxiiqgtdevzregff — migration 108; no hosted probes or deployment by implementer
+OPS v1 / Retool: strict no-write
 
-## Previous task accepted
+## Accepted authority
 
-ATLAS-AUTH-SCOPE-ALIGNMENT-01 was merged through [PR #380](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/380) and deployed at the business SHA above. The Product Owner's 14 October 2026 “Please proceed” advanced the concrete reviewed handoff through merge, protected Atlas Staging deployment and rollback-only acceptance. It did not approve Production, real supplier/PXK commitments, OPS v1/Retool writes or a new shared-location policy.
+The Product Owner approved exact-School PXK scope on 14 October 2026 and clarified one staff member per task. [ATLAS-PXK-EXACT-SCHOOL-SCOPE-01](../decisions/decision-atlas-pxk-exact-school-scope.md) records the accepted interpretation before runtime implementation. `SCHOOL` matches only the target School ID; a shared default location grants no other School's authority.
 
-- Merged-head [Frontend CI](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38545264913) and [Full Integration](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38545264875) passed. Guarded [Staging deployment](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38546830503) passed, including platform verification.
-- Independent review accepted the bounded helper: canonical positive contribution/supplier overlap, complete line coverage, exact `SCHOOL` identity and captured Confirmed Need customer lineage. Generic/PXK scope helpers were preserved. Local focused suites passed all 492 assertions; exact migration-107 catalog cross-check and bounded two-line/two-School timing were retained in PR #380.
-- Hosted rollback acceptance at reviewed source `8340e9a38fcdd27755a8c5cecbe70da8eafb053e` passed 16 workload checks across eight public RPC cases plus 27 isolated synthetic checks. Three independent read-only checks each reported 36 clear relations / zero probes, unchanged 17 real Draft POs and fingerprint `cefbff23b30cbc15dac0b890a956d884`. No real document was released.
-- The earlier aggregate-statement timeout stopped probe execution and is retained with its clear postflight and read-only diagnosis. Revised acceptance kept the 8-second statement / 1-second lock caps and assigned one public RPC per top-level statement. No product timeout or currentness semantics changed.
-- [Acceptance evidence](../testing/atlas-auth-scope-alignment-staging-108.md) and its [JSON reports](../testing/evidence/atlas-auth-scope-alignment-staging-108.json) contain exact source/deployment identities and bounded measurements. [Draft PR #381](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/381) holds the acceptance artifacts and this next baton; its review/CI/merge gate remains separate from the accepted deployed business correction.
+One Actor may hold the existing task read/release capabilities and explicit scopes for multiple Schools. No two-person rule, new role/capability, actual staff membership change or automatic GLOBAL grant is introduced. Existing `DELIVERY_LOCATION`, location-derived `CUSTOMER`, `GLOBAL`, scope status and effective-time semantics remain unchanged.
 
-## Decision required
+## Scope and allowed files
 
-The inherited PXK/reconciliation predicate accepts a matching School scope when the target delivery location equals that scoped School's default delivery location. Two Schools sharing that location can therefore match through location coverage. Existing accepted task B/C required preserving this guard; the atomic PO rule was explicitly stricter and was implemented locally in the new whole-PO predicate.
+- One forward SQL migration after 108: replace the existing private Dispatch scope helper's SCHOOL branch and route PXK base-workbench/reconciliation row filters through it. Release already uses it.
+- `supabase/tests/school_dispatch_release.sql` and `school_fulfilment_reconciliation.sql`: authenticated rollback cases and existing fixture reuse. Relevant PO and security/catalog regression checks may be adjusted only for exact intended catalog fingerprints; counts and grants must stay unchanged.
+- `supabase/local/atlas_auth_scope_alignment_synthetic_acceptance.sql`: extend the existing f108 rollback fixture for migration 109's exact-School, multi-School single-Actor and explicit broad-scope controls. Preserve pinned migration-108 historical reports; no new runner/framework/extension. Its independent 36-relation postflight remains unchanged.
+- This baton, accepted decision/register, affected Dispatch/reconciliation API contracts and migration-108 decision compatibility addendum. Record accurate evidence/readiness without rewriting historical 108 acceptance.
+- No UI, dependency, runtime configuration, general framework, unrelated source or hosted data changes.
 
-Product must select the intended PXK/reconciliation meaning:
+Preserve helper signature, owner, SECURITY DEFINER, empty search path, ACL/RLS and existing read/Dispatch runtimes. Stop on an unexpected permission gap rather than broaden grants. Do not alter shared school-catering/generic authorizers, whole-PO authorization, Preparation GLOBAL, document grouping, snapshots, lifecycles or numbering.
 
-1. `SCHOOL` authorizes that exact School only; explicit Customer/location scopes retain their separately approved meanings.
-2. Preserve existing scoped-School default-location coverage, including another School sharing that location.
+## Required validation
 
-Neither choice is selected. A pending response is not approval. Do not infer policy from the PO rule or silently rewrite the generic authorizer.
+Write failing authenticated RPC rollback tests before runtime changes, then prove:
 
-## Allowed work while pending
+1. School A scope allows A and denies B sharing location L across PXK read/reconciliation/release; wrong-scope release writes no receipt/document/event.
+2. The same Actor with both existing capabilities and explicit A+B scopes operates both Schools, with release attribution to that Actor and no handoff.
+3. Each missing capability denies access; explicit L/Customer/GLOBAL scope behavior remains valid.
+4. Wrong location, cross-Customer, inactive/revoked/expired/future scopes fail closed.
+5. Default changes cannot confer B; exact A keeps captured historical location and frozen PXK content.
+6. Replay, immutable numbering, successor/currentness and Preparation/whole-PO regression remain unchanged.
+7. Focused Dispatch/reconciliation/PO/catalog suites pass; catalog counts/grants and security posture remain exact; exact-head CI and independent Terra review pass.
 
-- Read approved security, Procurement, PXK and reconciliation contracts; trace existing callers and distinguish School, Customer and delivery-location authority.
-- Gather read-only examples and identify the smallest affected caller/helper/test/document boundary for either choice.
-- Prepare a concrete Product decision with compatibility and historical-document implications. Preserve immutable released content, identity, numbering and source lineage.
-- Keep acceptance PR #381 reviewable and resolve bounded review/CI defects without changing business behavior.
+Use only a newly created disposable local database for development; preserve pre-existing volumes. No timeout increase or hosted probe rerun merely for evidence.
 
-## Implementation gate and hard stops
+## Delivery and gates
 
-No new runtime/migration/role/scope change is authorized by this baton. After Product chooses policy, record the decision in repository authority and issue a bounded implementation task with explicit allowed files and acceptance criteria before code changes.
+One bounded branch and one Draft PR from latest main. Push a fixed SHA with RED/GREEN logs and focused counts for independent review. No merge/deployment by implementer; protected Staging migration/rollback acceptance requires a later reviewed plan and clearance. OPS v1/Retool, Production, real supplier/PXK commitments and Warehouse remain excluded.
 
-Do not grant broad authority, change persisted role memberships, bypass RLS, alter PO/PXK grouping or lifecycles, relax Preparation's GLOBAL gate, issue real commitments, mutate OPS v1/Retool, create/use Production, or implement Warehouse under this task. Do not merge PR #381 before its exact-head CI and independent review pass. No further hosted probe writes are needed merely to restate the completed acceptance.
+Previous correction ATLAS-AUTH-SCOPE-ALIGNMENT-01 was merged/deployed at `d254c099098a1f004f4eaaf78092f1aab9c32bd3` and passed 43 hosted rollback checks with zero persistent probes. [PR #381](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/381) recorded acceptance and merged at the starting main above after independent review and exact-head Frontend/Full Integration passed. See [migration 108 evidence](../testing/atlas-auth-scope-alignment-staging-108.md). This new task implements the separately approved policy.
+
+## Implementation evidence
+
+Migration `20261014120320_atlas_pxk_exact_school_scope.sql` replaces only the existing Dispatch helper body and two read-filter callers. The release path already uses the helper. Owner `atlas_read_runtime`, SECURITY DEFINER, empty search path, runtime/browser ACL and all exact catalog identities/counts/grants remain unchanged.
+
+The rollback matrix first reproduced exactly three migration-108 failures: cross-School PXK read, reconciliation and release at a shared default. After migration 109, Dispatch 134, reconciliation 16, PO 155 and exact security/catalog 30 assertions pass (335 total). The extended manual synthetic acceptance passes 48 fail-loud cases locally; restoring only the old scope functions inside an isolated local transaction makes its exact-School read assertion fail loudly, with no success report. Independent postflight is clear. See [migration 109 validation and rollout procedure](../testing/atlas-pxk-exact-school-scope-109.md).
+
+Hosted migration 109, hosted acceptance, exact-head CI and independent final review are not yet complete. Do not advance this baton or claim deployment from local evidence. After reviewed Staging acceptance, the next proposed horizon is read-only cutover-evidence refresh before a Warehouse receiving design packet for Product review; no Warehouse implementation is authorized.
