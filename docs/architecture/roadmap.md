@@ -148,6 +148,8 @@ UI and document tracks may proceed in parallel with backend convergence; their c
 
 ⬜ Warehouse has not started.
 
+Documentation only: [minimum receiving packet](warehouse-receiving-minimum-design.md) is READY FOR PRODUCT REVIEW; [the decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) is PROPOSED with four UNDECIDED Product groups. Final explicit Warehouse design approval is required before implementation; merging the packet does not authorize code.
+
 Start only after the freeze PR and a backend baseline sufficiently certified for the new Warehouse domain boundary. This record designs no Warehouse contract or stock behavior; existing bounded School PXK is not Warehouse implementation.
 
 Use thin operational slices:
