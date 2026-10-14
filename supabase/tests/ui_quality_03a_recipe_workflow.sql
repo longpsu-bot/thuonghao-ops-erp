@@ -638,6 +638,7 @@ select is(
   'pre-use Save may advance internal lineage while keeping one current release'
 );
 
+-- Versions from different Recipe roots can share a number; compare in total order.
 create temporary table uiq03a_before_lock as
 select
   count(*)::integer as version_count,
@@ -648,7 +649,7 @@ select
       'composition', atlas_core.rmvp_02a_recipe_version_composition(
         version.recipe_version_id
       )
-    ) order by version.version_number
+    ) order by version.version_number, version.recipe_version_id
   ) as recipe_evidence
 from atlas_admin.recipe_versions version
 join atlas_admin.recipes recipe on recipe.recipe_id = version.recipe_id
@@ -1249,7 +1250,7 @@ select is(
           'composition', atlas_core.rmvp_02a_recipe_version_composition(
             version.recipe_version_id
           )
-        ) order by version.version_number
+        ) order by version.version_number, version.recipe_version_id
       )
     )
     from atlas_admin.recipe_versions version
