@@ -4,6 +4,8 @@
 
 **Domain:** Planning
 
+**Product amendment — 14 October 2026:** [Effective Recipe composition owns Need Generation inputs](../decisions/decision-atlas-effective-composition-generation.md) explicitly replaces this historical contract's base-only composition authority. For each exact service date × School × Dish × School Type, retain released-base selection, resolve canonical effective composition, block non-READY resolution and calculate from final PRESENT effective lines. Base lineage remains exact; ADD uses stable Adjustment/AdjustmentRevision/AdjustmentLine evidence without fabricated base lines. Immutable captures and existing OUTDATED/correction behavior cover later composition changes. Other quantity and downstream contracts remain unchanged.
+
 **Business owner:** Tổ Kế hoạch
 
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture

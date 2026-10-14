@@ -61,6 +61,8 @@ Detailed legacy evidence, approved directions, recommendations, and still-pendin
 
 ## Planned rule domains
 
+| BR-050 | Recipe-derived Need uses canonical READY effective composition for the exact service date, School, Dish and School Type after existing released-base selection. Calculate only final PRESENT lines; persist immutable final values and exact base or ADD adjustment lineage. A changed composition or applied revision makes prior generation OUTDATED and requires the existing safe correction path; no base rewrite, fabricated RecipeLine or new operator state is allowed. | Product-approved amendment, 14 October 2026; [effective composition decision](../decisions/decision-atlas-effective-composition-generation.md) |
+
 Future rules will be grouped under:
 
 - Demand

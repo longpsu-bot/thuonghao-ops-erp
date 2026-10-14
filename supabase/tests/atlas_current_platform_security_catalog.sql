@@ -12,6 +12,9 @@ select plan(29);
 
 -- Grouping 02 adds two forced-RLS Dispatch tables, nine policies, three APIs,
 -- three guards plus one private lock helper, four triggers and 28 precise grants.
+-- Effective composition generation 107 adds four private functions, two immediate
+-- capture triggers, two SELECT-only policies and twelve private catalog grants.
+-- Browser API/capability/role/table catalogs and runtime posture remain unchanged.
 -- Exact Atlas schema and relation posture.
 select is(
   (
@@ -447,8 +450,8 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 672,
-    'md5', '38ba098e23069ce416ed1cd60551a497'
+    'count', 674,
+    'md5', 'b20fe6da611858ba85a679a3e4be56cf'
   ),
   'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
@@ -1775,17 +1778,17 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 672,
-    'policy_catalog_md5', '38ba098e23069ce416ed1cd60551a497',
+    'policy_count', 674,
+    'policy_catalog_md5', 'b20fe6da611858ba85a679a3e4be56cf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 344,
+    'private_function_count', 348,
     -- Includes the two private resolved-readiness overloads from migration 105.
-    'private_function_catalog_md5', 'c2de30b429fae61320f0f673ee410511',
-    'trigger_count', 124,
-    'trigger_catalog_md5', '24157de1722f445b7e98adfde302a2d4',
+    'private_function_catalog_md5', '340d5644317b25f3418322db6e92e511',
+    'trigger_count', 126,
+    'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
     -- Two additional Procurement owner EXECUTE grants; no new browser grant.
-    'positive_target_grant_count', 1840,
-    'positive_target_grant_md5', '40518a498e233db6804ae19280cd72cf',
+    'positive_target_grant_count', 1852,
+    'positive_target_grant_md5', '585cd4fc3512ac6305cec02cbd76391b',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,
