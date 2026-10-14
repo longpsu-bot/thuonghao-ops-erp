@@ -159,6 +159,10 @@ Planning quantity/Save contracts and multi-day preparation restrictions remain.
 
 [ATLAS-EFFECTIVE-COMPOSITION-GENERATION-01](decision-atlas-effective-composition-generation.md) amends the Planning/Procurement business freeze only for Recipe-derived Need calculation inputs and generated lineage. Exact-context canonical effective Recipe composition supplies final Ingredient, Unit and quantity per basis. Existing base selection, arithmetic, Pantry, zero-demand, Planning policy, Unit adoption, downstream correction guards and Procurement semantics remain unchanged. Migration 107 generalizes supporting evidence and currentness without adding authored authority, an API or lifecycle state. Hosted deployment and business writes remain separately unauthorized.
 
+### Product-approved cutover authorization alignment — 14 October 2026
+
+[ATLAS-AUTH-SCOPE-ALIGNMENT-01](decision-atlas-cutover-auth-scope-alignment.md) restores the accepted least-privilege boundary for Generated Purchase Review, School-catering PO read/release, PXK read/release and PO/PXK reconciliation. Capabilities remain mandatory; exact relational School/customer/location scope governs bounded rows/documents; a Supplier/date PO is authorized atomically across every constituent School/location; Purchase Preparation remains `GLOBAL`. No role, capability, scope kind, business grouping or lifecycle is added.
+
 ### Approved Atlas Planning catch-up source policy
 
 The Owner-approved [incomplete Recipe and Túi Unit decision](decision-atlas-planning-empty-recipe-tui-unit.md) permits active zero-BoM V1 Recipe identities to migrate as typed roots without versions or lines, retaining source evidence and backend-derived operational unreadiness. It also admits the exact distinct COUNT Unit `Túi` through the established hash algorithm. Invalid references and unknown future Units still fail closed. Live OPS, Retool, hosted apply and fabricated composition remain unauthorized.
