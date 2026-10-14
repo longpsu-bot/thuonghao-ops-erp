@@ -34,7 +34,7 @@ The private PO predicate derives scope from authoritative current PO evidence:
 
 current PO revision → PO line source split → allocation family revision/contribution → Handoff/Confirmed Need lineage → exact customer, School and delivery location.
 
-The helper is supporting authorization logic, not business state. Browser roles cannot execute it. Only the shaped-read and Procurement command runtimes receive execute privilege.
+The helper is supporting authorization logic, not business state. It is `SECURITY INVOKER` so the existing shaped-read or Procurement command runtime remains the RLS execution identity while evaluating private lineage and Actor scopes. Browser roles cannot execute it. Only those two runtimes receive execute privilege.
 
 ## Compatibility and rollback
 
