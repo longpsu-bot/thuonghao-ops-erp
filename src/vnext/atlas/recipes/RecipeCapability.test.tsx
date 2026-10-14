@@ -487,15 +487,26 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
+    await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+    // jsdom does not run the CSS exit animation; deliver its native completion.
+    fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
     expect(input).toHaveValue("2,25");
     fireEvent.click(screen.getByRole("tab", { name: "Lệnh điều chỉnh" }));
+    const discard = await screen.findByRole("dialog");
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(discard).getByRole("button", {
         name: "Bỏ thay đổi",
       }),
+    );
+    await waitFor(() =>
+      expect(discard).toHaveAttribute("data-state", "closed"),
+    );
+    fireEvent(discard, new Event("animationcancel", { bubbles: true }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
     await screen.findByRole("table", { name: "Lệnh điều chỉnh" });
   });
@@ -509,11 +520,16 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     );
     expect(f.calls.filter((c) => c.name === "read")).toHaveLength(reads);
     fireEvent.click(screen.getByRole("tab", { name: "Công thức" }));
+    const cancelled = await screen.findByRole("dialog");
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(cancelled).getByRole("button", {
         name: "Tiếp tục chỉnh sửa",
       }),
     );
+    await waitFor(() =>
+      expect(cancelled).toHaveAttribute("data-state", "closed"),
+    );
+    fireEvent(cancelled, new Event("animationcancel", { bubbles: true }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
@@ -521,11 +537,16 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       "Điều chỉnh theo thực đơn",
     );
     fireEvent.click(screen.getByRole("button", { name: "Đóng lệnh" }));
+    const discard = await screen.findByRole("dialog");
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(discard).getByRole("button", {
         name: "Bỏ thay đổi",
       }),
     );
+    await waitFor(() =>
+      expect(discard).toHaveAttribute("data-state", "closed"),
+    );
+    fireEvent(discard, new Event("animationcancel", { bubbles: true }));
     await waitFor(() =>
       expect(
         screen.queryByLabelText("Lý do điều chỉnh"),
