@@ -976,6 +976,7 @@ join atlas_procurement.purchase_order_revisions por
   on por.purchase_order_id=po.purchase_order_id and por.is_current
 where po.school_catering_service_date='2026-09-23'
   and po.purchase_order_status='DRAFT';
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
 reset role;
 
 select is((select jsonb_array_length(response->'purchase_orders')
