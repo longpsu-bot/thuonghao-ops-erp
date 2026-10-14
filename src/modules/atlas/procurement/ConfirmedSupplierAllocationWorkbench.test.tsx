@@ -122,9 +122,11 @@ it("prepares through one backend command then reads official drafts", async () =
   ).toHaveLength(1);
   fireEvent.click(proceed);
   await screen.findByRole("heading", { name: "Đơn mua", level: 1 });
-  expect(
-    screen.getByRole("heading", { name: "Đơn mua", level: 1 }),
-  ).toHaveFocus();
+  await waitFor(() =>
+    expect(
+      screen.getByRole("heading", { name: "Đơn mua", level: 1 }),
+    ).toHaveFocus(),
+  );
   expect(invoke.mock.calls[1]![0]).toBe(
     "atlas_api.prepare_school_catering_purchase_orders",
   );

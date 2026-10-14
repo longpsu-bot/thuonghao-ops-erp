@@ -297,8 +297,10 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Lưu thông tin món" }));
     await screen.findByText("Đã lưu thông tin món.");
-    expect(status).toHaveBeenLastCalledWith(
-      expect.objectContaining({ unsaved: false, blocked: false }),
+    await waitFor(() =>
+      expect(status).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: false, blocked: false }),
+      ),
     );
   });
   it("clears metadata status only after approved discard completes", async () => {
