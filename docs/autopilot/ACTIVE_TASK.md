@@ -1,10 +1,10 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-AUTH-SCOPE-ALIGNMENT-01
-Status: READY FOR IMPLEMENTER after navigator review
+Status: IMPLEMENTED IN DRAFT PR #380 — Product/Terra review and CI pending
 Navigator: Terra/read-only role
 Implementer: Sol 6.1 when available
-Starting main: 7f8397bad56c90aee5c8e57ced7aef9948c98bcb
+Starting main: 54b074da1f1049b87f9403682348b2dc7cec7573
 Atlas Staging migration tip: 107 — atlas_need_generation_effective_composition
 OPS v1 / Retool: read-only evidence; no writes.
 
