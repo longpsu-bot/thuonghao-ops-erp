@@ -300,6 +300,81 @@ select is((select response#>>'{affected_aggregate_ids,confirmed_need_batch_id}' 
 reset role;
 select ok((select bool_and(theoretical_quantity=0) from atlas_planning.theoretical_need_lines where service_date='2050-09-21'),'zero Recipe contributions retain audit evidence');
 
+create function pg_temp.effective_v1_create(service_day date) returns jsonb language plpgsql as $$
+declare evaluated jsonb; requested jsonb; readiness_request jsonb; sources jsonb; candidates jsonb;
+begin
+ select response#>'{preflight,source_evidence}' into sources from ng_results where name='preflight';
+ candidates:=jsonb_build_object('weekly_menu',jsonb_build_object(
+ 'weekly_menu_id',sources#>'{weekly_menu,selected,weekly_menu_id}',
+ 'weekly_menu_version',sources#>'{weekly_menu,selected,weekly_menu_version}',
+ 'weekly_menu_approval_snapshot_id',sources#>'{weekly_menu,selected,weekly_menu_approval_snapshot_id}'),
+ 'attendance',jsonb_build_object('attendance_batch_id',sources#>'{attendance,selected,attendance_batch_id}',
+ 'attendance_version',sources#>'{attendance,selected,attendance_version}',
+ 'attendance_approval_snapshot_id',sources#>'{attendance,selected,attendance_approval_snapshot_id}'),
+ 'pantry',jsonb_build_object('pantry_need_batch_id',sources#>'{pantry,selected,pantry_need_batch_id}',
+ 'pantry_need_batch_version',sources#>'{pantry,selected,pantry_need_batch_version}',
+ 'pantry_need_approval_snapshot_id',sources#>'{pantry,selected,pantry_need_approval_snapshot_id}'));
+ readiness_request:=(pg_temp.ng_request('RMVP-03B.v1','READINESS_EVALUATION_REQUESTED',jsonb_build_object(
+   'period_start',service_day,'period_end',service_day,'source_candidates',candidates))-'expected_version')
+   ||jsonb_build_object('reason_note',null,'expected_root_status','ABSENT','expected_current_evaluation_id',null,'expected_current_evaluation_version',null);
+ evaluated:=atlas_api.evaluate_planning_input_readiness(readiness_request);
+ if evaluated->>'success'<>'true' then return evaluated; end if;
+ requested:=atlas_api.request_planning_input_need_generation(
+   (pg_temp.ng_request('RMVP-03B.v1','NEED_GENERATION_HANDOFF_REQUESTED',jsonb_build_object('period_start',service_day,
+    'period_end',service_day,'planning_input_set_id',evaluated#>'{affected_aggregate_ids,planning_input_set_id}'))-'expected_version')
+   ||jsonb_build_object('reason_note',null,'expected_root_status','READY',
+    'expected_current_evaluation_id',evaluated#>'{affected_aggregate_ids,planning_input_evaluation_id}',
+    'expected_current_evaluation_version',evaluated#>'{new_versions,current_evaluation_version}'));
+ if requested->>'success'<>'true' then return requested; end if;
+ return atlas_api.create_need_generation_run(pg_temp.ng_request('RMVP-04.v1','NEED_GENERATION_CREATED',jsonb_build_object(
+   'planning_input_set_id',requested#>'{affected_aggregate_ids,planning_input_set_id}',
+   'planning_input_evaluation_id',evaluated#>'{affected_aggregate_ids,planning_input_evaluation_id}',
+   'period_start',service_day,'period_end',service_day))||jsonb_build_object('reason_note',null,
+   'expected_version',evaluated#>'{new_versions,current_evaluation_version}'));
+end $$;
+set local role authenticated;
+insert into ng_results values('v1-generated',pg_temp.effective_v1_create('2050-09-22'),null),
+ ('v1-for-validation',pg_temp.effective_v1_create('2050-09-23'),null);
+select diag(response::text) from ng_results where name='v1-generated' and response->>'success'<>'true';
+select is((select response->>'success' from ng_results where name='v1-generated'),'true','retained v1 can create exact effective generated evidence');
+insert into ng_results select 'v1-validated',atlas_api.validate_need_generation_run(
+ pg_temp.ng_request('RMVP-04.v1','NEED_GENERATION_VALIDATED',jsonb_build_object('need_generation_run_id',response#>'{affected_aggregate_ids,need_generation_run_id}'))
+ ||jsonb_build_object('reason_note',null)),null from ng_results where name='v1-for-validation';
+select is((select response->>'success' from ng_results where name='v1-validated'),'true','retained v1 validates unchanged effective evidence');
+reset role;
+create temp table stale_before as select jsonb_build_object(
+ 'runs',(select jsonb_agg(to_jsonb(r) order by need_generation_run_id) from atlas_planning.need_generation_runs r),
+ 'releases',(select jsonb_agg(to_jsonb(r) order by need_generation_release_snapshot_id) from atlas_planning.need_generation_release_snapshots r),
+ 'batches',(select jsonb_agg(to_jsonb(b) order by confirmed_need_batch_id) from atlas_planning.confirmed_need_batches b)
+) as captured;
+insert into atlas_admin.recipe_composition_adjustment_revisions(
+ recipe_composition_adjustment_revision_id,recipe_composition_adjustment_id,scope_kind,action_kind,
+ revision_number,predecessor_revision_id,effective_from,quantity_per_basis,reason_code,reason_note,created_by_actor_id)
+values(pg_temp.ng_id(6502),pg_temp.ng_id(6002),'SYSTEM_DISH','ADJUST_QUANTITY',3,pg_temp.ng_id(6302),'2050-09-21',13,
+ 'EFFECTIVE_GENERATION_FIXTURE','Synthetic change after v1 progression',pg_temp.ng_id(1));
+update atlas_admin.recipe_composition_adjustments set current_revision_id=pg_temp.ng_id(6502),current_revision_number=3,version=3
+ where recipe_composition_adjustment_id=pg_temp.ng_id(6002);
+set local role authenticated;
+insert into ng_results select 'stale-validate',atlas_api.validate_need_generation_run(
+ pg_temp.ng_request('RMVP-04.v1','NEED_GENERATION_VALIDATED',jsonb_build_object('need_generation_run_id',response#>'{affected_aggregate_ids,need_generation_run_id}'))
+ ||jsonb_build_object('reason_note',null)),null from ng_results where name='v1-generated';
+insert into ng_results select 'stale-release',atlas_api.release_need_generation_run(
+ pg_temp.ng_request('RMVP-04.v1','NEED_GENERATION_RELEASED',jsonb_build_object('need_generation_run_id',response#>'{affected_aggregate_ids,need_generation_run_id}'))
+ ||jsonb_build_object('reason_note',null,'expected_version',response#>'{new_versions,need_generation_run_version}')), null from ng_results where name='v1-validated';
+insert into ng_results select 'stale-materialize',atlas_api.create_confirmed_needs_from_generation(
+ pg_temp.ng_request('PA-06E-H0C.v1','EFFECTIVE_GENERATION_FIXTURE',jsonb_build_object(
+ 'need_generation_run_id',response#>'{affected_aggregate_ids,need_generation_run_id}',
+ 'need_generation_run_version',response#>'{new_versions,need_generation_run_version}','confirmed_need_batch_id',null))),null from ng_results where name='zero';
+select is((select response->>'error_code' from ng_results where name='stale-validate'),'STALE_SOURCE_BINDING','v1 validate rejects changed composition');
+select is((select response->>'error_code' from ng_results where name='stale-release'),'STALE_SOURCE_BINDING','v1 release rejects changed composition');
+select is((select response->>'error_code' from ng_results where name='stale-materialize'),'STALE_SOURCE_BINDING','CMD-15 rejects changed released composition');
+reset role;
+select is(jsonb_build_object(
+ 'runs',(select jsonb_agg(to_jsonb(r) order by need_generation_run_id) from atlas_planning.need_generation_runs r),
+ 'releases',(select jsonb_agg(to_jsonb(r) order by need_generation_release_snapshot_id) from atlas_planning.need_generation_release_snapshots r),
+ 'batches',(select jsonb_agg(to_jsonb(b) order by confirmed_need_batch_id) from atlas_planning.confirmed_need_batches b)
+),(select captured from stale_before),'stale lifecycle attempts preserve exact run/release/batch evidence');
+
 -- Canonical blocked resolution must roll back the whole generation package.
 insert into atlas_admin.recipe_composition_adjustments(
  recipe_composition_adjustment_id,scope_kind,action_kind,target_ingredient_id,created_by_actor_id,updated_by_actor_id)
