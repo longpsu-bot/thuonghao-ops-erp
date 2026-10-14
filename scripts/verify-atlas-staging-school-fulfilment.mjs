@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import { createClient } from "@supabase/supabase-js";
 import {
   redactAtlasStagingDiagnostic,
+  executeAtlasStagingManagementSql,
   validateApprovedAtlasStagingTarget,
   validateAtlasStagingProtectedValues,
 } from "./atlas-staging-contract.mjs";
+import { snapshotSql } from "./hosted-purchase-acceptance.mjs";
 
 export const SCHOOL_FULFILMENT_SCENARIO_DATES = Object.freeze([
   "2046-09-17",
@@ -14,6 +17,266 @@ export const SCHOOL_FULFILMENT_SCENARIO_DATES = Object.freeze([
 ]);
 
 const NEED_QUANTITY_SCALE = 6;
+const RELEASED_DATE = "2026-10-12";
+const RELEASED_BATCH = "69661e86-abb3-4bf4-88a5-4717fe18c472";
+const PREPARATION_COMMAND = "c51a2f96-54ab-400d-94fb-910544949f37";
+const RELEASED_ROWS_MD5 = "48e433c45fac665d873103542408a484";
+const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
+
+function releasedSnapshotSql() {
+  const projection = snapshotSql(PREPARATION_COMMAND)
+    .replace(/^begin read only;\s*/i, "")
+    .replace(/;\s*rollback;\s*$/i, "");
+  return `begin read only;
+set local statement_timeout='8s';
+set local lock_timeout='1s';
+with snapshot as (${projection})
+select evidence || jsonb_build_object(
+ 'migration_count',(select count(*) from supabase_migrations.schema_migrations),
+ 'migration_tip',(select max(version) from supabase_migrations.schema_migrations),
+ 'migration_106_present',exists(select 1 from supabase_migrations.schema_migrations
+   where version='20261013102219')) as evidence from snapshot;
+rollback;`;
+}
+
+function managementRow(value, key) {
+  let rows;
+  try {
+    rows = JSON.parse(value);
+  } catch {
+    throw new Error("Read-only management evidence is missing or malformed.");
+  }
+  if (!Array.isArray(rows) || rows.length !== 1 || !rows[0]?.[key])
+    throw new Error("Read-only management evidence is missing or malformed.");
+  return rows[0][key];
+}
+
+function assertReleasedSnapshot(state) {
+  const expected = {
+    allocations: 236,
+    allocation_revisions: 472,
+    priority_defaults: 236,
+    manual_defaults: 0,
+    promoted_families: 236,
+    handoffs: 1,
+    released_handoffs: 1,
+    po_roots: 17,
+    draft_pos: 17,
+    po_lines: 236,
+    po_suppliers: 17,
+    invalid_lineage: 0,
+    invalid_quantities: 0,
+    invalid_po_lines: 0,
+    migration_count: 109,
+    migration_tip: "20261014120320",
+    migration_106_present: true,
+  };
+  if (
+    Object.entries(expected).some(([key, value]) => state?.[key] !== value) ||
+    state.batch?.state !== "RELEASED_FOR_PURCHASE_HANDOFF" ||
+    state.batch?.version !== 5 ||
+    state.receipt?.outcome !== "COMPLETED" ||
+    state.receipt?.response_payload?.success !== true ||
+    !/^[0-9a-f]{32}$/.test(state.fact_digest) ||
+    !Number.isSafeInteger(state.fact_count) ||
+    state.fact_count <= 0 ||
+    !Array.isArray(state.current_allocations) ||
+    state.current_allocations.length !== 236
+  )
+    throw new Error(
+      "Released allocation source/migration preflight does not match the accepted baseline.",
+    );
+}
+
+function assertReleasedRows(data) {
+  if (
+    data?.success !== true ||
+    data.contract_version !== "CONFIRMED-SUPPLIER-ALLOCATION.v1" ||
+    data.date_start !== RELEASED_DATE ||
+    data.date_end !== RELEASED_DATE ||
+    !Array.isArray(data.rows) ||
+    data.rows.length !== 236 ||
+    new Set(data.rows.map((row) => row?.family?.family_id)).size !== 236
+  )
+    throw new Error(
+      "Released allocation read requires 236 distinct family identities.",
+    );
+  const preparation = data.preparation;
+  if (
+    preparation?.ready !== true ||
+    preparation.allowed !== true ||
+    !Array.isArray(preparation.blockers) ||
+    preparation.blockers.length ||
+    preparation.service_date !== RELEASED_DATE ||
+    preparation.expected_version !== 5 ||
+    preparation.confirmed_need_batch_id !== RELEASED_BATCH
+  )
+    throw new Error("Released allocation Preparation evidence changed.");
+  for (const row of data.rows) {
+    if (
+      !UUID.test(row.family?.family_id) ||
+      row.service_date !== RELEASED_DATE ||
+      row.state !== "BALANCED" ||
+      row.complete !== true ||
+      row.source_kind !== "PURCHASE_HANDOFF" ||
+      row.family.source_kind !== "PURCHASE_HANDOFF" ||
+      row.family.source_confirmed_need_batch_id !== RELEASED_BATCH ||
+      !UUID.test(row.source_purchase_handoff_revision_id) ||
+      !/^[0-9a-f]{64}$/.test(row.source_fingerprint) ||
+      row.family.source_fingerprint !== row.source_fingerprint ||
+      !Array.isArray(row.splits) ||
+      row.splits.length !== 1 ||
+      !UUID.test(row.splits[0].supplier_id) ||
+      !Array.isArray(row.contributions) ||
+      !row.contributions.length ||
+      row.contributions.some(
+        (item) => !UUID.test(item.purchase_handoff_line_revision_id),
+      ) ||
+      typeof row.family_quantity !== "string" ||
+      needQuantity(row.family_quantity) <= 0n ||
+      needQuantity(row.family_quantity) !==
+        sumNeedQuantities(row.splits, "allocated_quantity") ||
+      needQuantity(row.family_quantity) !==
+        sumNeedQuantities(row.contributions, "contribution_quantity")
+    )
+      throw new Error(
+        "Released allocation quantity, current Handoff or source lineage is invalid.",
+      );
+  }
+}
+
+function releasedRowsDigestSql(data) {
+  // Hex transports the actual HTTP JSON as data, independent of SQL string settings.
+  const hex = Buffer.from(JSON.stringify(data), "utf8").toString("hex");
+  return `begin read only;
+set local statement_timeout='8s';
+set local lock_timeout='1s';
+select md5(jsonb_agg(value order by value#>>'{family,family_id}')::text)
+ as assignment_quantity_lineage_md5
+from jsonb_array_elements(convert_from(decode('${hex}','hex'),'UTF8')::jsonb->'rows');
+rollback;`;
+}
+
+async function verifyReleasedAllocationRead({
+  plan,
+  createClientFactory,
+  executeSql,
+  now,
+}) {
+  let before, after, client, failure, result;
+  const snapshot = async () =>
+    managementRow(
+      await executeSql(plan.target, releasedSnapshotSql()),
+      "evidence",
+    );
+  try {
+    before = await snapshot();
+    assertReleasedSnapshot(before);
+    client = createClientFactory(
+      plan.target.supabaseUrl,
+      plan.target.publishableKey,
+      {
+        db: { retry: false },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+        },
+      },
+    );
+    let signIn;
+    try {
+      signIn = await client.auth.signInWithPassword({
+        email: plan.target.testEmail,
+        password: plan.target.testPassword,
+      });
+    } catch {
+      throw new Error("Protected Atlas staging sign-in failed safely.");
+    }
+    if (signIn.error || !signIn.data.session?.user.id)
+      throw new Error("Protected Atlas staging sign-in failed safely.");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    let data, elapsed;
+    try {
+      const started = now();
+      data = await readRpc(
+        client,
+        "get_confirmed_supplier_allocation_workbench",
+        envelope(
+          "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+          signIn.data.session.user.id,
+          {
+            date_start: RELEASED_DATE,
+            date_end: RELEASED_DATE,
+            school_ids: [],
+            states: [],
+            search: null,
+          },
+        ),
+        controller.signal,
+      );
+      elapsed = now() - started;
+    } catch {
+      throw new Error("Released allocation HTTP read failed safely.");
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (!Number.isFinite(elapsed) || elapsed < 0 || elapsed >= 8000)
+      throw new Error(
+        "Released allocation HTTP response did not complete below 8000 ms.",
+      );
+    assertReleasedRows(data);
+    const digest = managementRow(
+      await executeSql(plan.target, releasedRowsDigestSql(data)),
+      "assignment_quantity_lineage_md5",
+    );
+    if (digest !== RELEASED_ROWS_MD5)
+      throw new Error(
+        "Actual HTTP allocation rows do not match the accepted PostgreSQL canonical digest.",
+      );
+    result = {
+      status: "verified",
+      mode: "released-allocation-read",
+      rows: 236,
+      elapsed_ms: elapsed,
+      assignment_quantity_lineage_md5: digest,
+      fact_digest: before.fact_digest,
+      networkWrites: false,
+    };
+  } catch (error) {
+    failure = error;
+  } finally {
+    try {
+      after = await snapshot();
+      if (!before || !isDeepStrictEqual(before, after))
+        throw new Error(
+          "Read-only allocation verification changed source facts, receipts or audit evidence.",
+        );
+    } catch (error) {
+      failure = failure
+        ? new Error(
+            `${failure.message} Independent read-only postflight could not be verified.`,
+          )
+        : error;
+    }
+    if (client) {
+      try {
+        const signOut = await client.auth.signOut({ scope: "local" });
+        if (signOut.error)
+          throw new Error("The staging verification session was not cleared.");
+      } catch {
+        failure = new Error(
+          failure
+            ? `${failure.message} The staging verification session was not cleared.`
+            : "The staging verification session was not cleared.",
+        );
+      }
+    }
+  }
+  if (failure) throw failure;
+  return result;
+}
 
 function needQuantity(value) {
   const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(String(value).trim());
@@ -252,11 +515,11 @@ function envelope(contractVersion, authSubject, payload) {
   };
 }
 
-async function readRpc(client, name, request) {
-  const { data, error } = await client
-    .schema("atlas_api")
-    .rpc(name, { request })
-    .retry(false);
+async function readRpc(client, name, request, signal) {
+  const query = client.schema("atlas_api").rpc(name, { request });
+  const { data, error } = await (
+    signal ? query.abortSignal(signal) : query
+  ).retry(false);
   if (error || data?.success !== true)
     throw new Error(`Read-only ${name} verification failed.`);
   return data;
@@ -326,7 +589,10 @@ async function readDailyNeedEvidence(client, authSubject) {
   };
 }
 
-export function planSchoolFulfilmentVerification(environment = process.env) {
+export function planSchoolFulfilmentVerification(
+  environment = process.env,
+  releasedAllocationRead = false,
+) {
   const target = validateAtlasStagingProtectedValues(environment, {
     requireDatabasePassword: false,
   });
@@ -334,14 +600,16 @@ export function planSchoolFulfilmentVerification(environment = process.env) {
   return {
     target,
     dates: SCHOOL_FULFILMENT_SCENARIO_DATES,
-    routes: [
-      "get_need_generation_workbench",
-      "get_confirmed_need_review",
-      "get_confirmed_supplier_allocation_workbench",
-      "get_school_catering_purchase_orders",
-      "get_school_dispatch_release_workbench",
-      "get_school_fulfilment_reconciliation_workbench",
-    ],
+    routes: releasedAllocationRead
+      ? ["get_confirmed_supplier_allocation_workbench"]
+      : [
+          "get_need_generation_workbench",
+          "get_confirmed_need_review",
+          "get_confirmed_supplier_allocation_workbench",
+          "get_school_catering_purchase_orders",
+          "get_school_dispatch_release_workbench",
+          "get_school_fulfilment_reconciliation_workbench",
+        ],
     networkWrites: false,
   };
 }
@@ -350,9 +618,22 @@ export async function verifyAtlasStagingSchoolFulfilment({
   environment = process.env,
   createClientFactory = createClient,
   dryRun = false,
+  releasedAllocationRead = false,
+  executeSql = executeAtlasStagingManagementSql,
+  now = () => performance.now(),
 } = {}) {
-  const plan = planSchoolFulfilmentVerification(environment);
+  const plan = planSchoolFulfilmentVerification(
+    environment,
+    releasedAllocationRead,
+  );
   if (dryRun) return plan;
+  if (releasedAllocationRead)
+    return verifyReleasedAllocationRead({
+      plan,
+      createClientFactory,
+      executeSql,
+      now,
+    });
   const client = createClientFactory(
     plan.target.supabaseUrl,
     plan.target.publishableKey,
@@ -470,12 +751,15 @@ export async function verifyAtlasStagingSchoolFulfilment({
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   verifyAtlasStagingSchoolFulfilment({
     dryRun: process.argv.includes("--dry-run"),
+    releasedAllocationRead: process.argv.includes("--released-allocation-read"),
   })
     .then((result) =>
       console.log(
         process.argv.includes("--dry-run")
           ? "School fulfilment verifier dry-run passed."
-          : `School fulfilment verifier passed (${result.scenarios} scenarios).`,
+          : result.mode === "released-allocation-read"
+            ? JSON.stringify(result)
+            : `School fulfilment verifier passed (${result.scenarios} scenarios).`,
       ),
     )
     .catch((error) => {

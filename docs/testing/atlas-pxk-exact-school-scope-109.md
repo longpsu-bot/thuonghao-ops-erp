@@ -1,6 +1,6 @@
 # Migration 109 exact-School PXK validation
 
-Status: local implementation and rollback validation passed; fixed-head review, exact-head CI and guarded hosted rollout pending.
+Status: migration 109 passed reviewed exact-head CI, guarded Staging deployment and hosted rollback acceptance on 14 October 2026. No Production or real-commitment authority follows.
 
 ## Boundary and local evidence
 
@@ -26,9 +26,19 @@ A bounded local helper timing used the existing two-School/two-location fixture 
 
 Sanitized local logs are retained under `C:/Users/HOME/AppData/Local/Temp/`: `atlas-pxk-exact-school-red.log`, `atlas-pxk-exact-dispatch-green.log`, `atlas-pxk-exact-synthetic-green.log`, `atlas-pxk-109-manual-old-scope-red.log` and the `atlas-pxk109-*.sql.log` focused/postflight files. No hosted probes were executed by the implementer.
 
-## Guarded Staging procedure after review
+## Completed hosted acceptance — 14 October 2026
 
-Require the exact reviewed merged business SHA to pass Frontend CI and Supabase Full Integration, then use the existing protected Staging workflow on `rnzxmxiiqgtdevzregff` only. Require migration tip 108 before the one forward migration; inspect 109 history and unchanged helper owner `atlas_read_runtime`, SECURITY DEFINER, empty search path, existing read/Dispatch execution and denied browser/service execution afterward. Compare exact catalog identities/counts/grants and the existing advisory baseline. No runtime deployment is authorized solely by this document.
+[PR #382](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/382) merged as `8e68c2ce2cf766279d020210e9b53b457048db22` after independent Terra review. Exact-main [Frontend CI](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38564165289) and [Full Integration](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38564165442) passed. Guarded [Staging deployment](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38565480612) passed at that SHA. Native readback confirmed 109 migrations, tip `20261014120320`.
+
+Reviewed acceptance source `72c80979ac632351dd25f7197eabfad3bcecd5bc` passed all 48 synthetic rollback cases under unchanged 8-second/1-second caps. Independent native final postflight confirmed 36 clear relations, zero probes and unchanged 17 real Draft POs/fingerprint `cefbff23b30cbc15dac0b890a956d884`.
+
+The 470-function catalog retained identical posture except the three allowed bodies; the other 467 complete function rows retained hash `bad79b369c461135e23ee58f1ac6a1f4`. Existing PXK facts remained 12 rows/hash `77b0dff11e1bf5641e9bec50cf1322f9`; Actor configuration remained 27 rows/hash `daaf16513f92e9bee608886b29fc3185`. Helper owner/read+Dispatch ACL, SECURITY DEFINER and empty search path were unchanged. Advisor entities were unchanged: 118 existing [authenticated guarded-API definer warnings](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable) and one existing [Auth leaked-password-protection warning](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). No unrelated Auth or API policy change was made.
+
+[Durable parsed JSON reports](evidence/atlas-pxk-exact-school-scope-staging-109.json) preserve exact deployment/source hashes, acceptance cases, helper security and before/after facts. Full sanitized native reports and queries remain in `C:/Users/HOME/AppData/Local/Temp/atlas-pxk109-staging-acceptance.json`. Root performed the reviewed hosted execution; no real PO/PXK release or staff assignment persisted.
+
+## Retained guarded Staging procedure
+
+The following procedure records the completed 109 gate; it does not authorize a rerun. Require the exact reviewed merged business SHA to pass Frontend CI and Supabase Full Integration, then use the existing protected Staging workflow on `rnzxmxiiqgtdevzregff` only. Require migration tip 108 before the one forward migration; inspect 109 history and unchanged helper owner `atlas_read_runtime`, SECURITY DEFINER, empty search path, existing read/Dispatch execution and denied browser/service execution afterward. Compare exact catalog identities/counts/grants and the existing advisory baseline. No runtime deployment is authorized solely by this document.
 
 After a fixed-source audit and explicit execution clearance:
 

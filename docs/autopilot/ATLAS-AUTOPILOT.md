@@ -32,9 +32,14 @@ Terra is read-only. It may inspect repository, Supabase, Retool and evidence; tr
 
 Sol 6.1 is the preferred implementer. It may create a bounded task branch, edit code/migrations/tests/docs, run focused validation, push, and open a Draft PR. It must stop on a new business-policy choice, destructive migration need, materially broader architecture contradiction, material privilege broadening, or production-data correction.
 
+## One staff member per operational task
+
+`ONE_STAFF_PER_OPERATIONAL_TASK` is the Product Owner's operating constraint recorded on 14 October 2026. Ordinary flows must work with one authorized Actor per task; that Actor may hold the existing task capabilities and explicit scopes for multiple Schools. Capability, relational scope, immutable evidence and audit attribution remain mandatory. This fact does not assign users, grant privileges or automatically grant GLOBAL scope, and does not waive already approved exception/override approvals, separation rules or staff-grant review gates. Do not invent a second-person or maker/checker step for an ordinary task.
+
 ## Hard Product stops
 
 Stop for explicit Product Owner approval before:
+
 1. introducing or changing business meaning where more than one reasonable policy exists;
 2. creating paid or Production infrastructure;
 3. first production write-ownership transfer from OPS v1 to Atlas;
@@ -61,6 +66,7 @@ Do not add persisted lifecycle/status machinery where state is derivable. Do not
 ## Active-task protocol
 
 Before implementation, read:
+
 1. AGENTS.md
 2. docs/autopilot/ATLAS-AUTOPILOT.md
 3. docs/autopilot/ACTIVE_TASK.md

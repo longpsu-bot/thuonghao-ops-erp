@@ -1,53 +1,45 @@
 # Atlas Autopilot — Active Task
 
-Task: ATLAS-PXK-EXACT-SCHOOL-SCOPE-01
-Status: IMPLEMENTED LOCALLY — independent review and exact-head CI pending
+Task: ATLAS-CUTOVER-READ-ACCEPTANCE-01
+Status: IMPLEMENTED LOCALLY — fixed-head review and exact-head CI pending
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
-Starting main: fbafca0cb404231e5930df079703f869fb9b29fb
-Atlas Staging: rnzxmxiiqgtdevzregff — migration 108; no hosted probes or deployment by implementer
-OPS v1 / Retool: strict no-write
+Starting main: 8e68c2ce2cf766279d020210e9b53b457048db22
+Atlas Staging: rnzxmxiiqgtdevzregff — migration 109
+OPS v1 / Retool / Production: no writes or commitments
 
-## Accepted authority
+## Previous task accepted
 
-The Product Owner approved exact-School PXK scope on 14 October 2026 and clarified one staff member per task. [ATLAS-PXK-EXACT-SCHOOL-SCOPE-01](../decisions/decision-atlas-pxk-exact-school-scope.md) records the accepted interpretation before runtime implementation. `SCHOOL` matches only the target School ID; a shared default location grants no other School's authority.
+ATLAS-PXK-EXACT-SCHOOL-SCOPE-01 merged through [PR #382](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/382). Exact-main Frontend 38564165289 and Full Integration 38564165442 passed; guarded deployment 38565480612 passed. Native migration tip is `20261014120320`. Reviewed rollback acceptance at source `72c80979ac632351dd25f7197eabfad3bcecd5bc` passed 48 cases, with independent final 36 relation checks / zero probes and unchanged 17 real Draft POs/hash `cefbff23b30cbc15dac0b890a956d884`.
 
-One Actor may hold the existing task read/release capabilities and explicit scopes for multiple Schools. No two-person rule, new role/capability, actual staff membership change or automatic GLOBAL grant is introduced. Existing `DELIVERY_LOCATION`, location-derived `CUSTOMER`, `GLOBAL`, scope status and effective-time semantics remain unchanged.
+The other 467 function catalog rows, existing 12 PXK fact rows and 27 Actor configuration rows retained their exact before/after hashes; helper owner/SECURITY DEFINER/path/ACL and existing advisor entities were unchanged. See [109 evidence](../testing/atlas-pxk-exact-school-scope-109.md) and [parsed native reports](../testing/evidence/atlas-pxk-exact-school-scope-staging-109.json). The global mandate now records Product's one-staff-per-operational-task constraint without assigning users or waiving existing exception/approval gates.
 
-## Scope and allowed files
+## Approved read-only gate
 
-- One forward SQL migration after 108: replace the existing private Dispatch scope helper's SCHOOL branch and route PXK base-workbench/reconciliation row filters through it. Release already uses it.
-- `supabase/tests/school_dispatch_release.sql` and `school_fulfilment_reconciliation.sql`: authenticated rollback cases and existing fixture reuse. Relevant PO and security/catalog regression checks may be adjusted only for exact intended catalog fingerprints; counts and grants must stay unchanged.
-- `supabase/local/atlas_auth_scope_alignment_synthetic_acceptance.sql`: extend the existing f108 rollback fixture for migration 109's exact-School, multi-School single-Actor and explicit broad-scope controls. Preserve pinned migration-108 historical reports; no new runner/framework/extension. Its independent 36-relation postflight remains unchanged.
-- This baton, accepted decision/register, affected Dispatch/reconciliation API contracts and migration-108 decision compatibility addendum. Record accurate evidence/readiness without rewriting historical 108 acceptance.
-- No UI, dependency, runtime configuration, general framework, unrelated source or hosted data changes.
+Extend the existing School fulfilment verifier with an explicit opt-in released-allocation-read mode. Its default formal A/B/C behavior remains unchanged. Root's default formal [A/B/C run 38566354791](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38566354791) passed all three scenarios at business/verifier starting-main SHA on 14 October 2026, 12:46:40 UTC. That gate is closed; do not rerun it, repair fixtures or replay Identity/Foundation.
 
-Preserve helper signature, owner, SECURITY DEFINER, empty search path, ACL/RLS and existing read/Dispatch runtimes. Stop on an unexpected permission gap rather than broaden grants. Do not alter shared school-catering/generic authorizers, whole-PO authorization, Preparation GLOBAL, document grouping, snapshots, lifecycles or numbering.
+The opt-in mode must perform exactly one actual authenticated HTTP `get_confirmed_supplier_allocation_workbench` for `2026-10-12` with closed payload and no automatic retry. Require completed response in less than 8,000 ms, 236 distinct family rows, balanced/current Handoff/source lineage, exact quantities and Preparation ready/allowed version 5 for released batch `69661e86-abb3-4bf4-88a5-4717fe18c472`. PostgreSQL must hash the actual HTTP response's canonical assignment/quantity/lineage projection to `48e433c45fac665d873103542408a484`; a second SQL RPC or JavaScript serialization hash cannot substitute for that body.
 
-## Required validation
+Reuse only exported `snapshotSql` from the existing hosted-purchase acceptance script for read-only before/after source, lineage, split, Handoff, 17-PO, receipt/audit fact hashes. Execute under BEGIN READ ONLY, 8-second statement / 1-second lock caps. Never invoke that script's main, executeAcceptance, Preparation preflight or replay. Changed facts, missing prerequisite, transport limit, malformed evidence or timeout fail closed; attempt read-only postflight and sign-out on failure when possible. Never restore data, retry automatically or raise timeouts.
 
-Write failing authenticated RPC rollback tests before runtime changes, then prove:
+## Allowed files and validation
 
-1. School A scope allows A and denies B sharing location L across PXK read/reconciliation/release; wrong-scope release writes no receipt/document/event.
-2. The same Actor with both existing capabilities and explicit A+B scopes operates both Schools, with release attribution to that Actor and no handoff.
-3. Each missing capability denies access; explicit L/Customer/GLOBAL scope behavior remains valid.
-4. Wrong location, cross-Customer, inactive/revoked/expired/future scopes fail closed.
-5. Default changes cannot confer B; exact A keeps captured historical location and frozen PXK content.
-6. Replay, immutable numbering, successor/currentness and Preparation/whole-PO regression remain unchanged.
-7. Focused Dispatch/reconciliation/PO/catalog suites pass; catalog counts/grants and security posture remain exact; exact-head CI and independent Terra review pass.
+- `scripts/verify-atlas-staging-school-fulfilment.mjs` and its existing test file.
+- `scripts/atlas-staging-contract.test.mjs`: necessary existing workflow-contract assertions for the typed opt-in/default commands. Preserve exact credential allowlist, target/dual-SHA/read-only guards; the mode flag is step-local, not a new protected credential.
+- `.github/workflows/atlas-staging-school-fulfilment-verify.yml`: typed opt-in input/CLI flag using existing protected target and credential guards.
+- This baton, mandate, 109 parsed evidence/validation doc, affected cutover-readiness runbook/evidence.
+- No new runner, npm command, framework, dependency, schema/migration, business function, UI or unrelated workflow change.
 
-Use only a newly created disposable local database for development; preserve pre-existing volumes. No timeout increase or hosted probe rerun merely for evidence.
+Test-first focused coverage must reject wrong target/migration before client creation, preserve dry-run/default behavior, permit only the one GET RPC, reject duplicate identities/quantity/lineage/hash/released-state/prepare-version errors and elapsed time >=8s, compare complete before/after facts including receipts, encode SQL input safely for apostrophe/backslash/Unicode/dollar quotes, prove the digest consumes the actual HTTP body and guarantee failure-path postflight/sign-out. No rows, tokens or credentials may be logged.
 
-## Delivery and gates
+## Delivery and hard stops
 
-One bounded branch and one Draft PR from latest main. Push a fixed SHA with RED/GREEN logs and focused counts for independent review. No merge/deployment by implementer; protected Staging migration/rollback acceptance requires a later reviewed plan and clearance. OPS v1/Retool, Production, real supplier/PXK commitments and Warehouse remain excluded.
+One fresh bounded branch and Draft PR, fixed-SHA Terra review and exact-head CI. Root runs the actual protected hosted mode after review/merge/CI; the implementer does not execute it. No staff grants, Production/OPS-v1/Retool write, real commitments, Preparation execution, new hosted fixtures or Warehouse implementation.
 
-Previous correction ATLAS-AUTH-SCOPE-ALIGNMENT-01 was merged/deployed at `d254c099098a1f004f4eaaf78092f1aab9c32bd3` and passed 43 hosted rollback checks with zero persistent probes. [PR #381](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/381) recorded acceptance and merged at the starting main above after independent review and exact-head Frontend/Full Integration passed. See [migration 108 evidence](../testing/atlas-auth-scope-alignment-staging-108.md). This new task implements the separately approved policy.
+After verified read acceptance, proposed next work is a thin Warehouse receiving design packet READY FOR PRODUCT REVIEW. Final Warehouse business-design approval remains a hard stop before implementation; this task does not authorize that code.
 
-## Implementation evidence
+## Local verification
 
-Migration `20261014120320_atlas_pxk_exact_school_scope.sql` replaces only the existing Dispatch helper body and two read-filter callers. The release path already uses the helper. Owner `atlas_read_runtime`, SECURITY DEFINER, empty search path, runtime/browser ACL and all exact catalog identities/counts/grants remain unchanged.
+The existing verifier now has an explicit opt-in flag and protected boolean workflow input defaulting false. The default A/B/C behavior is retained. PostgreSQL hashes the full actual HTTP rows sorted by nested family ID; no selected subset or second SQL RPC is used. Read-only snapshot preflight precedes client construction; response completion has an unchanged 8-second abort/check, and independent postflight plus sign-out run on failure when possible.
 
-The rollback matrix first reproduced exactly three migration-108 failures: cross-School PXK read, reconciliation and release at a shared default. After migration 109, Dispatch 134, reconciliation 16, PO 155 and exact security/catalog 30 assertions pass (335 total). The extended manual synthetic acceptance passes 48 fail-loud cases locally; restoring only the old scope functions inside an isolated local transaction makes its exact-School read assertion fail loudly, with no success report. Independent postflight is clear. See [migration 109 validation and rollout procedure](../testing/atlas-pxk-exact-school-scope-109.md).
-
-Hosted migration 109, hosted acceptance, exact-head CI and independent final review are not yet complete. Do not advance this baton or claim deployment from local evidence. After reviewed Staging acceptance, the next proposed horizon is read-only cutover-evidence refresh before a Warehouse receiving design packet for Product review; no Warehouse implementation is authorized.
+Test-first controls reproduced the previously absent mode, bad response envelope and missing Confirmed Need lineage. Focused verifier (51), staging-contract (116) and existing purchase acceptance (6) tests pass: 173 total. Generated snapshot SQL also parsed/executed against the disposable local 109 database as two READ ONLY queries; absent workload prerequisites stopped before client construction. Formatting and diff whitespace pass. These are local tooling checks, not hosted latency evidence. Actual opt-in hosted read and final gate result remain pending Root's reviewed merged-SHA workflow run.
