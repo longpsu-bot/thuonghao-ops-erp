@@ -79,14 +79,14 @@ end;
 $$;
 grant execute on function pg_temp.review_read(text,text,jsonb) to authenticated;
 create function pg_temp.generated_read_as(p_subject uuid)
-returns jsonb language sql stable set search_path='' as $
+returns jsonb language sql stable set search_path='' as $generated_review$
   select atlas_api.get_generated_purchase_review(jsonb_build_object(
     'contract_version','PURCHASE-REVIEW.v1',
     'correlation_id',gen_random_uuid(),
     'requested_by_auth_subject',p_subject,
     'payload',jsonb_build_object('service_date','2026-11-02')
   ));
-$;
+$generated_review$;
 grant execute on function pg_temp.generated_read_as(uuid) to authenticated;
 create temporary table before_preview as select
   (select count(*) from atlas_procurement.school_catering_allocation_family_revisions) allocation_count,
