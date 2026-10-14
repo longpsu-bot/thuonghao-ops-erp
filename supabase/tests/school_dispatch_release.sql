@@ -312,7 +312,7 @@ returns jsonb language sql stable security definer set search_path='' as $$
     '26020000-0000-4000-8000-000000000011') preview) source;
 $$;
 create function pg_temp.pxk_release_isolated(p_request jsonb)
-returns jsonb language plpgsql volatile set search_path='' as $
+returns jsonb language plpgsql volatile set search_path='' as $pxk_release_isolated$
 declare v_response jsonb;
 begin
   v_response:=atlas_api.release_school_dispatch_document(p_request);
@@ -320,12 +320,12 @@ begin
 exception when sqlstate 'PXS99' then
   return v_response;
 end;
-$;
+$pxk_release_isolated$;
 grant execute on function pg_temp.pxk_release_isolated(jsonb) to authenticated;
 
 create function pg_temp.pxk_procurement_command(
   p_command uuid,p_expected bigint,p_reason text,p_payload jsonb
-) returns jsonb language sql stable set search_path='' as $
+) returns jsonb language sql stable set search_path='' as $pxk_procurement$
   select jsonb_build_object(
     'contract_version','SCHOOL-CATERING-PROCUREMENT.v1',
     'command_id',p_command,'correlation_id',p_command,
@@ -333,7 +333,7 @@ create function pg_temp.pxk_procurement_command(
     'requested_by_auth_subject','26000000-0000-4000-8000-000000000101'::uuid,
     'requested_at',transaction_timestamp()-interval '1 second',
     'reason_code',p_reason,'reason_note',null,'payload',p_payload);
-$$;
+$pxk_procurement$;
 create function pg_temp.pxk_ungrouped_release_isolated(p_request jsonb)
 returns jsonb language plpgsql volatile security definer set search_path='' as $$
 declare v_response jsonb; v_document jsonb;
