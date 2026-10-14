@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01
-Status: READY FOR PRODUCT REVIEW — documentation only; all four Product choices undecided
+Status: READY FOR PRODUCT REVIEW — awaiting Product choices and explicit design approval; no implementation authorized.
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
 Starting main: f6686c7952024b499fcd3499cbcb38948ab15a5d
