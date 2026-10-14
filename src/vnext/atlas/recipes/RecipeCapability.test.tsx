@@ -225,8 +225,10 @@ describe("Unified Recipe capability and Change Order operator job", () => {
   it("reports untouched create and each metadata field edit/revert through the capability", async () => {
     const status = vi.fn();
     await setup("ACTIVE", "recipes", status);
-    expect(status).toHaveBeenLastCalledWith(
-      expect.objectContaining({ unsaved: false, blocked: false }),
+    await waitFor(() =>
+      expect(status).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unsaved: false, blocked: false }),
+      ),
     );
     fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
     expect(status).toHaveBeenLastCalledWith(
