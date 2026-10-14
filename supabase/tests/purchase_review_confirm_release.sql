@@ -110,6 +110,7 @@ insert into review_results values('generated-procurement-capability',
 select set_config('request.jwt.claim.sub','b6010000-0000-4000-8000-000000000103',true);
 insert into review_results values('generated-confirmed-capability-only',
   pg_temp.generated_read_as('b6010000-0000-4000-8000-000000000103'));
+select set_config('request.jwt.claim.sub','b6000000-0000-0000-0000-000000000101',true);
 reset role;
 select is(pg_temp.safe_review_read('{"date_start":"2026-11-02","date_end":"2026-11-02","school_ids":null}')->>'error_code',
   'VALIDATION_FAILED','explicit null filter returns safe validation error');
