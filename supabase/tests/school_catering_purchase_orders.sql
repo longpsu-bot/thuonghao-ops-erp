@@ -4,13 +4,18 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(135);
+select plan(141);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
 select has_function('atlas_api', 'release_school_catering_purchase_order', array['jsonb']);
 select has_function('atlas_api', 'create_school_catering_purchase_order_replacement', array['jsonb']);
 select has_function('atlas_api', 'get_school_catering_purchase_orders', array['jsonb']);
+select has_function('atlas_core','school_catering_purchase_order_actor_has_full_scope',
+  array['uuid','uuid'],'whole-PO relational authorization helper exists');
+select function_privs_are('atlas_core','school_catering_purchase_order_actor_has_full_scope',
+  array['uuid','uuid'],'authenticated',array[]::text[],
+  'whole-PO scope helper is private from browser actors');
 select function_owner_is('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb'],
   'atlas_procurement_command_runtime');
 select function_owner_is('atlas_api', 'release_school_catering_purchase_order', array['jsonb'],
@@ -150,6 +155,24 @@ values
    'pr-b-school-a','PR-B School Alpha','24020000-0000-4000-8000-000000000011',1),
   ('24020000-0000-4000-8000-000000000022','24020000-0000-4000-8000-000000000001',
    'pr-b-school-b','PR-B School Beta','24020000-0000-4000-8000-000000000012',2);
+
+-- Relational cutover actors reuse the exact Procurement capability role but
+-- have bounded scope instead of GLOBAL.
+insert into atlas_core.actors(actor_id,actor_type,display_name) values
+  ('24000000-0000-4000-8000-000000000002','HUMAN','PR-B School A operator'),
+  ('24000000-0000-4000-8000-000000000003','HUMAN','PR-B Customer operator');
+insert into atlas_core.actor_auth_subjects(actor_id,auth_subject_id) values
+  ('24000000-0000-4000-8000-000000000002','24000000-0000-4000-8000-000000000102'),
+  ('24000000-0000-4000-8000-000000000003','24000000-0000-4000-8000-000000000103');
+insert into atlas_core.actor_role_memberships(actor_id,role_id) values
+  ('24000000-0000-4000-8000-000000000002','24010000-0000-4000-8000-000000000001'),
+  ('24000000-0000-4000-8000-000000000003','24010000-0000-4000-8000-000000000001');
+insert into atlas_core.actor_scopes(actor_id,scope_kind,school_id)
+values('24000000-0000-4000-8000-000000000002','SCHOOL',
+  '24020000-0000-4000-8000-000000000021');
+insert into atlas_core.actor_scopes(actor_id,scope_kind,customer_id)
+values('24000000-0000-4000-8000-000000000003','CUSTOMER',
+  '24020000-0000-4000-8000-000000000001');
 insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code)
 values('24020000-0000-4000-8000-000000000031','pr-b-kg','PR-B kilogram','mass');
 insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id,document_code)
@@ -890,6 +913,87 @@ select ok((select (response ->> 'success')::boolean
   join atlas_procurement.purchase_orders po using(purchase_order_id)
   where po.school_catering_service_date='2026-09-23' and por.is_current
 ), 'the initial source truth materializes one two-line DRAFT');
+
+-- A shared Supplier/date PO is one atomic authorization object: never partially
+-- expose or release it to an actor missing any constituent School/location.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000102',true);
+insert into prb_results values('shared-po-school-a-read',
+  atlas_api.get_school_catering_purchase_orders(jsonb_build_object(
+    'contract_version','SCHOOL-CATERING-PROCUREMENT.v1',
+    'requested_by_auth_subject','24000000-0000-4000-8000-000000000102',
+    'correlation_id',gen_random_uuid(),
+    'payload',jsonb_build_object(
+      'date_start','2026-09-23','date_end','2026-09-23',
+      'supplier_ids','[]'::jsonb,'statuses','[]'::jsonb,'search',null
+    )
+  )));
+insert into prb_results
+select 'shared-po-school-a-release',
+  atlas_api.release_school_catering_purchase_order(
+    pg_temp.prb_command(
+      '24050000-0000-4000-8000-000000000024',po.version,
+      'SCHOOL_CATERING_PO_RELEASED',
+      jsonb_build_object(
+        'purchase_order_id',po.purchase_order_id,
+        'expected_purchase_order_revision_id',por.purchase_order_revision_id
+      ),
+      '24000000-0000-4000-8000-000000000102'
+    )
+  )
+from atlas_procurement.purchase_orders po
+join atlas_procurement.purchase_order_revisions por
+  on por.purchase_order_id=po.purchase_order_id and por.is_current
+where po.school_catering_service_date='2026-09-23'
+  and po.purchase_order_status='DRAFT';
+
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000103',true);
+insert into prb_results values('shared-po-customer-read',
+  atlas_api.get_school_catering_purchase_orders(jsonb_build_object(
+    'contract_version','SCHOOL-CATERING-PROCUREMENT.v1',
+    'requested_by_auth_subject','24000000-0000-4000-8000-000000000103',
+    'correlation_id',gen_random_uuid(),
+    'payload',jsonb_build_object(
+      'date_start','2026-09-23','date_end','2026-09-23',
+      'supplier_ids','[]'::jsonb,'statuses','[]'::jsonb,'search',null
+    )
+  )));
+insert into prb_results
+select 'shared-po-customer-release',
+  pg_temp.prb_release_isolated(
+    pg_temp.prb_command(
+      '24050000-0000-4000-8000-000000000025',po.version,
+      'SCHOOL_CATERING_PO_RELEASED',
+      jsonb_build_object(
+        'purchase_order_id',po.purchase_order_id,
+        'expected_purchase_order_revision_id',por.purchase_order_revision_id
+      ),
+      '24000000-0000-4000-8000-000000000103'
+    )
+  )
+from atlas_procurement.purchase_orders po
+join atlas_procurement.purchase_order_revisions por
+  on por.purchase_order_id=po.purchase_order_id and por.is_current
+where po.school_catering_service_date='2026-09-23'
+  and po.purchase_order_status='DRAFT';
+reset role;
+
+select is((select jsonb_array_length(response->'purchase_orders')
+  from prb_results where name='shared-po-school-a-read'),0,
+  'School-A-only actor cannot see a shared PO that also contains School B');
+select ok((select jsonb_array_length(response->'purchase_orders')=1
+    and jsonb_array_length(response#>'{purchase_orders,0,lines}')=2
+  from prb_results where name='shared-po-customer-read'),
+  'Customer-scoped actor sees the entire shared two-line PO');
+select ok((select response->>'error_code'='SCOPE_DENIED'
+  from prb_results where name='shared-po-school-a-release')
+  and (select bool_and(purchase_order_status='DRAFT')
+    from atlas_procurement.purchase_orders
+    where school_catering_service_date='2026-09-23'),
+  'partial School scope denies the entire PO release with zero commitment');
+select is((select response->>'success'
+  from prb_results where name='shared-po-customer-release'),'true',
+  'actor covering every constituent School/location can release the whole PO');
 
 set session_replication_role = replica;
 update atlas_planning.purchase_handoff_revisions
