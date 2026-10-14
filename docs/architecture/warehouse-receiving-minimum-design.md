@@ -1,9 +1,13 @@
 # Warehouse receiving — minimum Product review packet
 
-Date: 14 October 2026  
-Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01  
-Packet status: READY FOR PRODUCT REVIEW  
-Business choices: PROPOSED — all four groups UNDECIDED  
+Date: 14 October 2026
+
+Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01
+
+Packet status: READY FOR PRODUCT REVIEW
+
+Business choices: PROPOSED — all four groups UNDECIDED
+
 Implementation: NOT AUTHORIZED
 
 This packet asks which single receiving job Atlas should support first. It does not activate the older Warehouse prototype, define a database/API, or approve stock operations. Product must resolve the four groups below and explicitly approve the resulting minimum design before implementation. Merging this packet does not provide that approval.

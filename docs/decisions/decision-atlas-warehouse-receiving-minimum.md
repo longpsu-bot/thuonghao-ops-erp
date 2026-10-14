@@ -1,9 +1,13 @@
 # Proposed decision — minimum Warehouse receiving
 
-Date: 14 October 2026  
-Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01  
-Status: PROPOSED — READY FOR PRODUCT REVIEW; not accepted  
-Product approval: NOT RECORDED  
+Date: 14 October 2026
+
+Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01
+
+Status: PROPOSED — READY FOR PRODUCT REVIEW; not accepted
+
+Product approval: NOT RECORDED
+
 Implementation: HARD STOP
 
 ## Purpose and authority
