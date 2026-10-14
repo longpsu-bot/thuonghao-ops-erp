@@ -485,8 +485,8 @@ select is(
         and (c.relname like 'need_generation_%' or c.relname = 'theoretical_need_lines')
     ) and not t.tgisinternal
   ),
-  23,
-  'the H0A5b catalog plus the approved 02A Recipe replacement guard contains exactly twenty-three triggers'
+  25,
+  'the H0A5b catalog plus the approved 02A Recipe replacement guard contains exactly twenty-five triggers'
 );
 
 select is(
@@ -534,6 +534,8 @@ select is(
     'need_generation_calculation_contract_revisions_integrity',
     'need_generation_calculation_contracts_guard',
     'need_generation_calculation_contracts_integrity',
+    'need_generation_effective_capture',
+    'need_generation_effective_use',
     'need_generation_input_snapshots_guard',
     'need_generation_input_snapshots_integrity',
     'need_generation_issues_guard',
@@ -554,7 +556,7 @@ select is(
     'theoretical_need_lines_integrity',
     'theoretical_need_lines_recipe_replacement_integrity'
   ]::text[],
-  'all twenty-three trigger names are exact'
+  'all twenty-five trigger names are exact'
 );
 
 select is(
@@ -809,7 +811,7 @@ select is(
 
 select is(
   (
-    select count(*)::integer
+    select array_agg(c.relname||'.'||a.attname order by c.relname,a.attname)::text[]
     from pg_attribute a
     join pg_class c on c.oid = a.attrelid
     join pg_namespace n on n.oid = c.relnamespace
@@ -819,8 +821,8 @@ select is(
       and a.attnum > 0 and not a.attisdropped
       and a.atttypid in ('json'::regtype, 'jsonb'::regtype)
   ),
-  0,
-  'typed H0A5b lineage uses no JSON columns'
+  array['need_generation_recipe_line_uses.effective_line','need_generation_recipe_selections.effective_composition']::text[],
+  'typed lineage adds only the two exact immutable effective composition capture columns'
 );
 
 select * from finish();

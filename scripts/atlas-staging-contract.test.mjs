@@ -1038,7 +1038,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(115);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(116);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [
@@ -2290,8 +2290,8 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.authenticatedApiSignatures).not.toContain(
       dispatchSnapshotBase,
     );
-    expect(authority.policyCount).toBe(672);
-    expect(authority.policyDigest).toBe("38ba098e23069ce416ed1cd60551a497");
+    expect(authority.policyCount).toBe(674);
+    expect(authority.policyDigest).toBe("b20fe6da611858ba85a679a3e4be56cf");
   });
 
   it("compares authenticated EXECUTE against CAT-18 rather than physical CAT-15", () => {
@@ -2404,7 +2404,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 672");
+    expect(sql).toContain("normal_policy_count <> 674");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -2493,11 +2493,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [672, 1, true],
-    [672, 0, false],
-    [672, 2, false],
-    [671, 1, false],
+    [674, 1, true],
+    [674, 0, false],
+    [674, 2, false],
     [673, 1, false],
+    [675, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

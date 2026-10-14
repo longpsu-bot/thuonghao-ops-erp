@@ -6,9 +6,10 @@
 
 **Constraints:** One task branch and one Draft PR. Forward migration 107 only; migrations 1–106 stay untouched. Preserve source selection, arithmetic, Pantry, zero-demand, quantity policy, authorization and Procurement semantics. No hosted deployment, business writes, accounts or legacy import.
 
-- [ ] Add a synthetic effective-read versus generation regression and demonstrate failure on migration 106.
-- [ ] Implement selection-level resolution, immutable effective-line lineage, complete deferred guards and correction/currentness in migration 107.
-- [ ] Exercise no-adjustment equivalence, all adjustment actions/layers, dated revision changes, correction, zero demand and mixed Pantry.
-- [ ] Run Recipe, RMVP-04, Planning, Confirmed Need, Procurement, security/catalog and operational scale regressions.
-- [ ] Append dated amendments to authoritative contracts and registers; record compatibility and rollback effects.
-- [ ] Obtain independent code review, push, open one Draft PR and complete Supabase Full Integration and applicable Frontend CI.
+- [x] Add a synthetic effective-read versus generation regression and demonstrate failure on migration 106.
+- [x] Implement selection-level resolution, immutable effective-line lineage, complete deferred guards and correction/currentness in migration 107.
+- [x] Exercise no-adjustment equivalence, all adjustment actions/layers, dated revision changes, correction, zero demand and mixed Pantry.
+- [x] Run Recipe, RMVP-04, Planning, Confirmed Need, Procurement, security/catalog and operational scale regressions.
+- [x] Append dated amendments to authoritative contracts and registers; record compatibility and rollback effects.
+- [x] Obtain independent code review, push and open Draft PR #377.
+- [ ] Complete final-head Supabase Full Integration and Frontend CI.

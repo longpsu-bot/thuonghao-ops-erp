@@ -18,10 +18,10 @@ alter table atlas_planning.need_generation_recipe_line_uses
   add column adjustment_revision_id uuid,
   add column effective_ingredient_id uuid generated always as ((effective_line->>'final_ingredient_id')::uuid) stored,
   add column effective_unit_id uuid generated always as ((effective_line->>'final_unit_id')::uuid) stored,
-  add constraint need_generation_effective_ingredient_fkey foreign key (effective_ingredient_id) references atlas_admin.ingredients,
-  add constraint need_generation_effective_unit_fkey foreign key (effective_unit_id) references atlas_admin.units,
+  add constraint need_generation_effective_ingredient_fkey foreign key (effective_ingredient_id) references atlas_admin.ingredients on delete restrict,
+  add constraint need_generation_effective_unit_fkey foreign key (effective_unit_id) references atlas_admin.units on delete restrict,
   add constraint need_generation_add_revision_fkey foreign key (adjustment_revision_id,adjustment_id)
-    references atlas_admin.recipe_composition_adjustment_revisions(recipe_composition_adjustment_revision_id,recipe_composition_adjustment_id),
+    references atlas_admin.recipe_composition_adjustment_revisions(recipe_composition_adjustment_revision_id,recipe_composition_adjustment_id) on delete restrict,
   add constraint need_generation_effective_line_identity check (
     (recipe_line_id is not null and recipe_line_revision_id is not null
       and adjustment_line_id is null and adjustment_id is null and adjustment_revision_id is null)
@@ -45,6 +45,12 @@ create unique index need_generation_effective_add_line_key
 create unique index theoretical_need_lines_effective_use_key
   on atlas_planning.theoretical_need_lines(need_generation_recipe_line_use_id,attendance_approval_snapshot_line_id)
   where need_generation_recipe_line_use_id is not null;
+create index need_generation_effective_ingredient_idx on atlas_planning.need_generation_recipe_line_uses(effective_ingredient_id)
+  where effective_ingredient_id is not null;
+create index need_generation_effective_unit_idx on atlas_planning.need_generation_recipe_line_uses(effective_unit_id)
+  where effective_unit_id is not null;
+create index need_generation_add_revision_idx on atlas_planning.need_generation_recipe_line_uses(adjustment_revision_id,adjustment_id)
+  where adjustment_revision_id is not null;
 
 grant select on atlas_admin.recipe_composition_adjustments,atlas_admin.recipe_composition_adjustment_revisions
   to atlas_need_generation_runtime;
