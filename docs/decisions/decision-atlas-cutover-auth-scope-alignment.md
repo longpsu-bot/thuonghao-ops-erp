@@ -32,11 +32,15 @@ No generic authorizer behavior changes. No role, capability, scope kind, busines
 
 The private PO predicate derives scope from authoritative current PO evidence:
 
-current PO revision → PO line source split → allocation family revision/contribution → Handoff/Confirmed Need lineage → exact customer, School and delivery location.
+current PO revision → PO line source split → canonical positive supplier/contribution interval overlap (`school_catering_po_school_breakdown`) → Handoff/Confirmed Need lineage → exact customer, School and delivery location.
+
+The scope calculation uses the same represented School quantities as the official PO. A School with zero overlap in that supplier split does not belong to its authorization object. Every line must have complete quantity coverage; missing or incomplete lineage fails closed for a relational Actor. Customer identity comes from captured Confirmed Need lineage, not later master-data ownership. Active, currently effective `SCHOOL` scopes match the exact represented School ID; sharing a default delivery location does not confer another School's authority. Explicit `CUSTOMER` and `DELIVERY_LOCATION` scopes retain their corresponding relational coverage.
 
 The helper is supporting authorization logic, not business state. It is `SECURITY INVOKER` so the existing shaped-read or Procurement command runtime remains the RLS execution identity while evaluating private lineage and Actor scopes. Browser roles cannot execute it. Only those two runtimes receive execute privilege.
 
 ## Compatibility and rollback
+
+The existing PXK/reconciliation predicate also accepts the scoped School's default delivery location. This task preserves that approved caller boundary; it does not claim School-ID isolation when Schools share that default. Whether to narrow the inherited dispatch predicate requires a separate Product scope decision. The explicit whole-PO rule above is enforced locally without rewriting the shared authorizer.
 
 Existing `GLOBAL` operators preserve behavior. Relational operators gain only the access already described by accepted contracts and only where all exact rows/documents are covered.
 

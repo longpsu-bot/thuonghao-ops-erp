@@ -14,11 +14,12 @@ stable
 security invoker
 set search_path=''
 as $$
-  with scope_rows as (
-    select distinct
-      confirmed.customer_id,
-      confirmed.school_id,
-      confirmed.delivery_location_id
+  -- Use the document's positive supplier overlap, not every contribution in its family.
+  with lines as materialized (
+    select line.ordered_quantity,split.family_revision_id,
+      atlas_core.school_catering_po_school_breakdown(
+        line.school_catering_allocation_supplier_split_id
+      ) breakdown
     from atlas_procurement.purchase_orders po
     join atlas_procurement.purchase_order_revisions revision
       on revision.purchase_order_id=po.purchase_order_id
@@ -30,37 +31,55 @@ as $$
      and stable.purchase_order_id=po.purchase_order_id
     join atlas_procurement.school_catering_allocation_supplier_splits split
       on split.supplier_split_id=line.school_catering_allocation_supplier_split_id
-    join atlas_procurement.school_catering_allocation_family_revisions family_revision
-      on family_revision.family_revision_id=split.family_revision_id
-     and family_revision.family_id=stable.school_catering_allocation_family_id
+    where po.purchase_order_id=p_purchase_order_id
+      and po.purchase_order_kind='SCHOOL_CATERING'
+  ), scope_rows as (
+    select distinct
+      confirmed.customer_id,confirmed.school_id,confirmed.delivery_location_id
+    from lines
+    cross join lateral pg_catalog.jsonb_array_elements(lines.breakdown) school
     join atlas_procurement.school_catering_allocation_family_contributions contribution
-      on contribution.family_revision_id=family_revision.family_revision_id
+      on contribution.family_revision_id=lines.family_revision_id
     left join atlas_planning.purchase_handoff_line_revisions handoff
       on handoff.purchase_handoff_line_revision_id=
         contribution.purchase_handoff_line_revision_id
     join atlas_planning.confirmed_need_line_revisions confirmed
-      on confirmed.confirmed_need_line_revision_id=
-        coalesce(
-          contribution.confirmed_need_line_revision_id,
-          handoff.confirmed_need_line_revision_id
-        )
-    where po.purchase_order_id=p_purchase_order_id
-      and po.purchase_order_kind='SCHOOL_CATERING'
+      on confirmed.confirmed_need_line_revision_id=coalesce(
+        contribution.confirmed_need_line_revision_id,handoff.confirmed_need_line_revision_id)
+     and confirmed.school_id=(school->>'school_id')::uuid
+     and confirmed.delivery_location_id=(school->>'delivery_location_id')::uuid
   )
   select
     atlas_core.school_catering_actor_has_scope(
       p_actor_id,null,null,null
     )
     or (
-      exists(select 1 from scope_rows)
+      exists(select 1 from lines)
+      and exists(select 1 from scope_rows)
+      and not exists(
+        select 1 from lines
+        where (select sum((school->>'ordered_quantity')::numeric)
+          from pg_catalog.jsonb_array_elements(lines.breakdown) school)
+          is distinct from lines.ordered_quantity
+      )
       and not exists(
         select 1
         from scope_rows scope
-        where not atlas_core.school_catering_actor_has_scope(
-          p_actor_id,
-          scope.customer_id,
-          scope.school_id,
-          scope.delivery_location_id
+        where not exists(
+          select 1 from atlas_core.actor_scopes actor_scope
+          where actor_scope.actor_id=p_actor_id
+            and actor_scope.scope_status='ACTIVE'
+            and actor_scope.effective_from<=pg_catalog.transaction_timestamp()
+            and (actor_scope.effective_to is null
+              or actor_scope.effective_to>pg_catalog.transaction_timestamp())
+            and (
+              (actor_scope.scope_kind='SCHOOL'
+                and actor_scope.school_id=scope.school_id)
+              or (actor_scope.scope_kind='DELIVERY_LOCATION'
+                and actor_scope.delivery_location_id=scope.delivery_location_id)
+              or (actor_scope.scope_kind='CUSTOMER'
+                and actor_scope.customer_id=scope.customer_id)
+            )
         )
       )
     );

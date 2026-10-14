@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(67);
+select plan(69);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -466,6 +466,18 @@ select is((
     )
   )->>'error_code'),'CAPABILITY_DENIED',
   'relational scope never bypasses the required dispatch read capability');
+select is((atlas_api.release_school_dispatch_document(jsonb_set(
+    pg_temp.pxk_release('26060000-0000-4000-8000-000000000013',0,null),
+    '{requested_by_auth_subject}',
+    to_jsonb('26000000-0000-4000-8000-000000000104'::uuid)))->>'error_code'),
+  'CAPABILITY_DENIED','School scope cannot bypass missing PXK release capability');
+select is((atlas_api.get_school_fulfilment_reconciliation_workbench(
+  jsonb_build_object('contract_version','SCHOOL-FULFILMENT-RECONCILIATION.v1',
+    'requested_by_auth_subject','26000000-0000-4000-8000-000000000104',
+    'correlation_id',gen_random_uuid(),'payload',jsonb_build_object(
+      'date_start','2026-09-24','date_end','2026-09-24',
+      'school_ids','[]'::jsonb,'search',null)))->>'error_code'),
+  'CAPABILITY_DENIED','reconciliation independently requires dispatch read capability');
 select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
 reset role;
 
@@ -1310,6 +1322,11 @@ select ok((select response->>'success'='true'
   from pxk_results where name='fulfilment-reconciliation'),
   'reconciliation excludes stale PO quantity, retains PXK history and captured location');
 
+-- Restore distinct defaults after the captured-location regressions above.
+-- The inherited dispatch predicate also matches a School's default location.
+update atlas_admin.schools
+set default_delivery_location_id='26020000-0000-4000-8000-000000000011'
+where school_id='26020000-0000-4000-8000-000000000021';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000102',true);
 insert into pxk_results values('scoped-a-workbench',

@@ -82,7 +82,7 @@ ATLAS-AUTH-SCOPE-ALIGNMENT-01 corrects authorization plumbing without changing P
 - `GLOBAL` remains valid. `procurement.school_catering.read` / `write`, existing PO currentness, idempotency, supplier eligibility, numbering, immutable snapshots and replacement rules are unchanged.
 - `prepare_school_catering_purchase_orders` remains a complete single-date batch command and retains its existing `GLOBAL` requirement. This amendment does not make Preparation relationally scoped.
 
-The whole-PO predicate is private backend support derived from the PO's exact current revision → source split/family contribution → Confirmed Need School/location lineage. It adds no authored authority, role, capability, scope kind or browser table access.
+The whole-PO predicate is private backend support derived from the PO's exact current revision → canonical positive supplier/contribution overlap → captured Confirmed Need customer/School/location lineage. It uses the official document breakdown, requires complete quantity coverage on every line, and excludes zero-overlap Schools from that supplier's document scope. `SCHOOL` authority matches the represented School ID exactly, including when Schools share a default location; explicit Customer or delivery-location scope retains its corresponding coverage. It adds no authored authority, role, capability, scope kind or browser table access.
 
 ## Implemented requests and responses
 

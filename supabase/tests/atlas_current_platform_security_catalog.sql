@@ -1812,14 +1812,14 @@ select is(
     'policy_count', 674,
     'policy_catalog_md5', 'b20fe6da611858ba85a679a3e4be56cf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 348,
-    -- Includes the two private resolved-readiness overloads from migration 105.
-    'private_function_catalog_md5', '340d5644317b25f3418322db6e92e511',
+    'private_function_count', 349,
+    -- Migration 108 adds one private SECURITY INVOKER whole-PO predicate.
+    'private_function_catalog_md5', 'cbccd848f27a6d344eb6d1e1ff156bea',
     'trigger_count', 126,
     'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
-    -- Includes private effective-rule numeric parsing; no new browser grant.
-    'positive_target_grant_count', 1853,
-    'positive_target_grant_md5', '44bb6a64626869804a99c9b788b764af',
+    -- Only read/Procurement runtimes can execute it; browser grants are unchanged.
+    'positive_target_grant_count', 1855,
+    'positive_target_grant_md5', '07c41179025e2bbdbf165e26a667ca44',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

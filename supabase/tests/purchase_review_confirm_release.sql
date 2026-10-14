@@ -125,6 +125,36 @@ select is((select response->>'success' from review_results where name='generated
   'true','generated review accepts the documented Procurement read capability');
 select is((select response->>'error_code' from review_results where name='generated-confirmed-capability-only'),
   'CAPABILITY_DENIED','Confirmed Need read alone cannot access Generated Purchase Review');
+savepoint generated_relational_scope;
+insert into atlas_admin.customers(customer_id,customer_code,customer_name,customer_type)
+values('b6010000-0000-4000-8000-000000000004','generated-outside-customer',
+  'Generated review outside Customer','SCHOOL_CATERING');
+update atlas_core.actor_scopes
+set scope_kind='CUSTOMER',customer_id='b6500000-0000-0000-0000-000000000001'
+where actor_id='b6010000-0000-4000-8000-000000000002';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b6010000-0000-4000-8000-000000000102',true);
+insert into review_results values('generated-relational-allowed',
+  pg_temp.generated_read_as('b6010000-0000-4000-8000-000000000102'));
+reset role;
+select ok((select response->>'success'='true'
+    and jsonb_array_length(response->'rows')>0
+    and not exists(select 1 from jsonb_array_elements(response->'rows') row
+      where row->>'school_id'<>'b6500000-0000-0000-0000-000000000004')
+  from review_results where name='generated-relational-allowed'),
+  'Procurement reader with matching Customer scope sees its generated School rows');
+update atlas_core.actor_scopes
+set customer_id='b6010000-0000-4000-8000-000000000004'
+where actor_id='b6010000-0000-4000-8000-000000000002';
+set local role authenticated;
+insert into review_results values('generated-relational-outside',
+  pg_temp.generated_read_as('b6010000-0000-4000-8000-000000000102'));
+reset role;
+select ok((select response->>'success'='true'
+    and jsonb_array_length(response->'rows')=0
+  from review_results where name='generated-relational-outside'),
+  'Procurement capability cannot expose generated rows outside Customer scope');
+rollback to savepoint generated_relational_scope;
 select is((select line->>'family_quantity' from review_results,
   lateral jsonb_array_elements(response->'rows') line where name='generated'
   and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),'100.000000','generated Need uses exact100');
@@ -803,6 +833,24 @@ select is((select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
   (select (request->>'command_id')::uuid from command_requests where name='prepare-child-failure')),
   (select receipt_snapshot from before_failed_preparation),
   'MC-Q04 failed preparation retains no child receipt or accepted child command');
+
+savepoint preparation_relational_scope;
+update atlas_core.actor_scopes
+set scope_kind='CUSTOMER',customer_id='b6500000-0000-0000-0000-000000000001'
+where actor_id='b6000000-0000-0000-0000-000000000001'
+  and scope_kind='GLOBAL';
+set local role authenticated;
+insert into review_results values('prepare-without-global',
+  pg_temp.review_invoke('prepare_school_catering_purchase_orders',
+    pg_temp.review_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',3,
+      '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}')));
+reset role;
+select is((select response->>'error_code' from review_results where name='prepare-without-global'),
+  'ACTOR_NOT_AUTHORIZED','Preparation retains complete-batch GLOBAL requirement despite full Customer scope');
+select is(pg_temp.preparation_business_snapshot(),
+  (select business_snapshot from before_failed_preparation),
+  'non-GLOBAL Preparation denial preserves all business evidence');
+rollback to savepoint preparation_relational_scope;
 
 set local role authenticated;
 insert into command_requests values('prepare',pg_temp.review_command('PURCHASE-COMMITMENT.v1',
