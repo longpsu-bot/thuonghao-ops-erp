@@ -466,6 +466,7 @@ select is((
     )
   )->>'error_code'),'CAPABILITY_DENIED',
   'relational scope never bypasses the required dispatch read capability');
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
 reset role;
 
 set local role authenticated;
@@ -1331,6 +1332,7 @@ insert into pxk_results values('scoped-a-reconciliation',
       'school_ids','[]'::jsonb,'search',null
     )
   )));
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
 reset role;
 
 select ok((select jsonb_array_length(response->'rows')>0
