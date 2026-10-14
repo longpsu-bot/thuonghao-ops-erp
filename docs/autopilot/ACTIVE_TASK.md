@@ -1,10 +1,10 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-AUTH-SCOPE-ALIGNMENT-01
-Status: READY FOR IMPLEMENTER after navigator review
+Status: IMPLEMENTED IN DRAFT PR #380 — Product/Terra review and CI pending
 Navigator: Terra/read-only role
 Implementer: Sol 6.1 when available
-Starting main: 7f8397bad56c90aee5c8e57ced7aef9948c98bcb
+Starting main: 54b074da1f1049b87f9403682348b2dc7cec7573
 Atlas Staging migration tip: 107 — atlas_need_generation_effective_composition
 OPS v1 / Retool: read-only evidence; no writes.
 
@@ -47,6 +47,7 @@ PO read consistency: preserve the existing whole-document visibility rule. A non
 ## Mandatory investigation before editing
 
 Trace current-main and deployed call chains for:
+
 - get_generated_purchase_review
 - get_school_catering_purchase_orders and base chain
 - release_school_catering_purchase_order
@@ -62,23 +63,27 @@ Do not rewrite the generic authorizer globally. Fix only bounded callers/guards 
 ## Required tests
 
 1. Generated Purchase Review:
+
 - Procurement-read capability succeeds.
 - Confirmed-Need-read without Procurement-read does not gain access.
 - relational scope filters rows; out-of-scope rows stay invisible.
 - GLOBAL unchanged.
 
 2. PXK workbench and reconciliation:
+
 - scoped actor sees only allowed School/location rows.
 - out-of-scope data is invisible.
 - capability denial remains denial.
 - GLOBAL unchanged.
 
 3. PXK release:
+
 - exact School/location scoped actor succeeds in local/rollback fixture.
 - wrong scope and missing capability are denied.
 - GLOBAL unchanged.
 
 4. PO read/release:
+
 - actor covering every constituent School/location can read and release the whole PO.
 - actor missing any constituent scope cannot see a partial PO and is denied release of the entire PO.
 - no partial commit/exposure.
@@ -86,6 +91,7 @@ Do not rewrite the generic authorizer globally. Fix only bounded callers/guards 
 - replay/currentness/numbering unchanged.
 
 5. Preparation:
+
 - prepare_school_catering_purchase_orders retains its current whole-batch GLOBAL requirement.
 
 ## Change boundary
@@ -110,3 +116,15 @@ Do not merge or deploy.
 ## Stop conditions
 
 Stop if the documented relational contract cannot be satisfied without changing PO/PXK business meaning; a fix requires material privilege broadening; whole-PO scope cannot be proven deterministically; or a current-main wrapper supersedes these findings incompatibly.
+
+## Implementation evidence — 14 October 2026
+
+Draft PR: https://github.com/longpsu-bot/thuonghao-ops-erp/pull/380. No merge or deployment is authorized by this handoff.
+
+- Whole-PO authorization reuses canonical positive supplier/contribution overlap, checks complete per-line quantity coverage, and matches `SCHOOL` IDs exactly. Customer authority follows captured Confirmed Need lineage. A shared default location cannot authorize the other School, and a zero-overlap contribution cannot over-restrict another supplier's PO.
+- Both defects were reproduced with failing rollback pgTAP assertions before the bounded helper correction. Browser RPC coverage verifies partial read/release denial, complete School/Customer coverage, missing capabilities, unchanged GLOBAL release/replay/currentness/numbering, and Preparation's inherited GLOBAL lifecycle requirement.
+- Focused local suites: security catalog 30; PO 155; PXK 69; reconciliation 16; Purchase Review/Preparation 193; Preparation projection 7; source ambiguity 9; released allocation read 13. All 492 assertions passed in a newly created disposable local database; previous local volumes were preserved.
+- CAT-22 remains exact. Removing only the new helper inside a local rollback restores the complete migration-107 catalog checks. Migration 108 changes only private function count 348→349 and its catalog fingerprint, plus target grants 1853→1855 and their fingerprint. Both new grants are runtime-only; browser grants, RLS, roles, capabilities, tables, views and triggers remain unchanged.
+- Bounded local timing, two-line/two-School PO, 100 allowed and 100 denied evaluations per runtime: prior helper 3.45–3.61 ms/call; corrected helper 3.13–3.31 ms/call. This is not hosted scale acceptance; no timeout was raised.
+- Existing PXK/reconciliation default-location matching is retained. Shared-default-location School isolation there remains a separate Product decision; this task adds no such guarantee.
+- Exact-head Frontend CI and Supabase Full Integration must pass, followed by read-only architecture/security audit and Product review. Atlas Staging remains migration 107; OPS v1, Retool and Production were not changed.

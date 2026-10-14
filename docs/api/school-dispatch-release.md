@@ -72,6 +72,17 @@ that the requested location belongs to the same Customer; another same-Customer
 location receives no Need without its own captured lineage, and a cross-Customer
 location remains invalid.
 
+## Cutover authorization amendment — 14 October 2026
+
+ATLAS-AUTH-SCOPE-ALIGNMENT-01 corrects a generic null-target authorization short-circuit that previously made the connected PXK surfaces effectively `GLOBAL`-only even though their exact relational guards already existed.
+
+- The PXK workbench and School fulfilment reconciliation still require `dispatch.school_release.read`; after capability verification, their shaped rows are filtered by the existing exact School/delivery-location relational scope predicate.
+- `release_school_dispatch_document` still requires `dispatch.school_release.release`; after capability verification, the existing exact `school_dispatch_actor_has_scope(actor, school, location)` guard decides relational scope.
+- Missing capability remains `CAPABILITY_DENIED`; a mismatch under the existing predicate remains `SCOPE_DENIED`. `GLOBAL` remains valid. The inherited predicate accepts an exact School or its default delivery location; shared-default-location School isolation is a separate Product decision, not a guarantee added by this correction.
+- No PXK readiness, source fingerprint, numbering, successor, immutable snapshot, export, reconciliation or document grouping rule changes.
+
+The amendment adds no role, capability, scope kind or browser relation privilege.
+
 ## Release command
 
 The standard command envelope requires:

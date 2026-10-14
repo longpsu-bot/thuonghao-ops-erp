@@ -73,6 +73,17 @@ All requests are one `jsonb` argument and all responses are safe `jsonb` envelop
 | `release_school_catering_purchase_order`           | B, callable | command | `SCHOOL-CATERING-PROCUREMENT.v1` | `procurement.school_catering.write` | Release exactly one current school-catering PO draft to its supplier.                                        |
 | `get_school_catering_purchase_orders`              | B, callable | read    | `SCHOOL-CATERING-PROCUREMENT.v1` | `procurement.school_catering.read`  | Read shaped school-catering PO roots, revisions, lines, lineage and actions.                                 |
 
+## Cutover authorization amendment — 14 October 2026
+
+ATLAS-AUTH-SCOPE-ALIGNMENT-01 corrects authorization plumbing without changing Procurement business grouping or commitment semantics.
+
+- `get_generated_purchase_review` requires the documented `procurement.school_catering.read` capability. `confirmed_need_review.read` alone grants no access. Rows remain filtered by the existing relational School/customer/delivery-location predicate.
+- A Supplier/date School-catering PO is one authorization object. A non-`GLOBAL` actor may read or release it only when the Actor's active relational scopes cover **every** School/delivery-location contribution represented by that whole PO. If any constituent scope is missing, the PO is hidden from the shaped read and release returns `SCOPE_DENIED`; no partial/redacted PO and no partial commitment is produced.
+- `GLOBAL` remains valid. `procurement.school_catering.read` / `write`, existing PO currentness, idempotency, supplier eligibility, numbering, immutable snapshots and replacement rules are unchanged.
+- `prepare_school_catering_purchase_orders` remains a complete single-date batch command and retains its existing `GLOBAL` requirement. This amendment does not make Preparation relationally scoped.
+
+The whole-PO predicate is private backend support derived from the PO's exact current revision → canonical positive supplier/contribution overlap → captured Confirmed Need customer/School/location lineage. It uses the official document breakdown, requires complete quantity coverage on every line, and excludes zero-overlap Schools from that supplier's document scope. `SCHOOL` authority matches the represented School ID exactly, including when Schools share a default location; explicit Customer or delivery-location scope retains its corresponding coverage. It adds no authored authority, role, capability, scope kind or browser table access.
+
 ## Implemented requests and responses
 
 `release_school_catering_purchase_handoff` uses the normal command envelope, reason `SCHOOL_CATERING_PURCHASE_HANDOFF_RELEASED`, expected Confirmed Need version, and payload `{ confirmed_need_batch_id }`. It returns Handoff root/revision/line/reference IDs, new version, event/audit IDs and replay status. First release creates a BASE revision; a corrected release reuses the root and creates a SUPERSEDING revision. Only released NEED_GENERATION snapshots qualify.

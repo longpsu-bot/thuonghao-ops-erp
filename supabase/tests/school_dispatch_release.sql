@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(62);
+select plan(69);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -101,6 +101,27 @@ values
   ('26020000-0000-4000-8000-000000000022','26020000-0000-4000-8000-000000000001',
     'pxk-school-b','Trường Tiểu học Trưng Vương','26020000-0000-4000-8000-000000000012',2,
     'CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO','Địa chỉ PXK đã cấu hình');
+
+-- Relational-scope operators for cutover authorization regression.
+insert into atlas_core.actors(actor_id,actor_type,display_name) values
+  ('26000000-0000-4000-8000-000000000002','HUMAN','PXK School A operator'),
+  ('26000000-0000-4000-8000-000000000003','HUMAN','PXK School B operator'),
+  ('26000000-0000-4000-8000-000000000004','HUMAN','PXK no-capability operator');
+insert into atlas_core.actor_auth_subjects(actor_id,auth_subject_id) values
+  ('26000000-0000-4000-8000-000000000002','26000000-0000-4000-8000-000000000102'),
+  ('26000000-0000-4000-8000-000000000003','26000000-0000-4000-8000-000000000103'),
+  ('26000000-0000-4000-8000-000000000004','26000000-0000-4000-8000-000000000104');
+insert into atlas_core.actor_role_memberships(actor_id,role_id) values
+  ('26000000-0000-4000-8000-000000000002','26010000-0000-4000-8000-000000000001'),
+  ('26000000-0000-4000-8000-000000000003','26010000-0000-4000-8000-000000000001');
+insert into atlas_core.roles(role_id,role_code,role_name)
+values('26010000-0000-4000-8000-000000000004','school_pxk_no_cap','School PXK no-capability role');
+insert into atlas_core.actor_role_memberships(actor_id,role_id)
+values('26000000-0000-4000-8000-000000000004','26010000-0000-4000-8000-000000000004');
+insert into atlas_core.actor_scopes(actor_id,scope_kind,school_id) values
+  ('26000000-0000-4000-8000-000000000002','SCHOOL','26020000-0000-4000-8000-000000000021'),
+  ('26000000-0000-4000-8000-000000000003','SCHOOL','26020000-0000-4000-8000-000000000022'),
+  ('26000000-0000-4000-8000-000000000004','SCHOOL','26020000-0000-4000-8000-000000000021');
 insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code)
 values('26020000-0000-4000-8000-000000000031','pxk-kg','Kilôgam','mass');
 insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id,document_code)
@@ -290,9 +311,21 @@ returns jsonb language sql stable security definer set search_path='' as $$
     '26020000-0000-4000-8000-000000000021',
     '26020000-0000-4000-8000-000000000011') preview) source;
 $$;
+create function pg_temp.pxk_release_isolated(p_request jsonb)
+returns jsonb language plpgsql volatile set search_path='' as $pxk_release_isolated$
+declare v_response jsonb;
+begin
+  v_response:=atlas_api.release_school_dispatch_document(p_request);
+  raise exception using errcode='PXS99';
+exception when sqlstate 'PXS99' then
+  return v_response;
+end;
+$pxk_release_isolated$;
+grant execute on function pg_temp.pxk_release_isolated(jsonb) to authenticated;
+
 create function pg_temp.pxk_procurement_command(
   p_command uuid,p_expected bigint,p_reason text,p_payload jsonb
-) returns jsonb language sql stable set search_path='' as $$
+) returns jsonb language sql stable set search_path='' as $pxk_procurement$
   select jsonb_build_object(
     'contract_version','SCHOOL-CATERING-PROCUREMENT.v1',
     'command_id',p_command,'correlation_id',p_command,
@@ -300,7 +333,7 @@ create function pg_temp.pxk_procurement_command(
     'requested_by_auth_subject','26000000-0000-4000-8000-000000000101'::uuid,
     'requested_at',transaction_timestamp()-interval '1 second',
     'reason_code',p_reason,'reason_note',null,'payload',p_payload);
-$$;
+$pxk_procurement$;
 create function pg_temp.pxk_ungrouped_release_isolated(p_request jsonb)
 returns jsonb language plpgsql volatile security definer set search_path='' as $$
 declare v_response jsonb; v_document jsonb;
@@ -396,6 +429,56 @@ select is((atlas_api.release_school_dispatch_document(jsonb_set(
     pg_temp.pxk_release('26060000-0000-4000-8000-000000000010',0,null),
     '{reason_note}',to_jsonb(' padded note '::text)))->>'error_code'),
   'VALIDATION_FAILED','PXK release rejects an unnormalized document note');
+reset role;
+
+-- Relational authorization happens after capability verification and before any
+-- document mutation. Use isolated success so the canonical GLOBAL path remains.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000102',true);
+select is((
+  pg_temp.pxk_release_isolated(
+    jsonb_set(
+      pg_temp.pxk_release('26060000-0000-4000-8000-000000000011',0,null),
+      '{requested_by_auth_subject}',
+      to_jsonb('26000000-0000-4000-8000-000000000102'::uuid)
+    )
+  )->>'success'),'true',
+  'School-scoped operator can release its authorized PXK');
+
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000103',true);
+select is((
+  atlas_api.release_school_dispatch_document(
+    jsonb_set(
+      pg_temp.pxk_release('26060000-0000-4000-8000-000000000012',0,null),
+      '{requested_by_auth_subject}',
+      to_jsonb('26000000-0000-4000-8000-000000000103'::uuid)
+    )
+  )->>'error_code'),'SCOPE_DENIED',
+  'wrong School scope cannot release another School PXK');
+
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000104',true);
+select is((
+  atlas_api.get_school_dispatch_release_workbench(
+    jsonb_set(
+      pg_temp.pxk_read(),
+      '{requested_by_auth_subject}',
+      to_jsonb('26000000-0000-4000-8000-000000000104'::uuid)
+    )
+  )->>'error_code'),'CAPABILITY_DENIED',
+  'relational scope never bypasses the required dispatch read capability');
+select is((atlas_api.release_school_dispatch_document(jsonb_set(
+    pg_temp.pxk_release('26060000-0000-4000-8000-000000000013',0,null),
+    '{requested_by_auth_subject}',
+    to_jsonb('26000000-0000-4000-8000-000000000104'::uuid)))->>'error_code'),
+  'CAPABILITY_DENIED','School scope cannot bypass missing PXK release capability');
+select is((atlas_api.get_school_fulfilment_reconciliation_workbench(
+  jsonb_build_object('contract_version','SCHOOL-FULFILMENT-RECONCILIATION.v1',
+    'requested_by_auth_subject','26000000-0000-4000-8000-000000000104',
+    'correlation_id',gen_random_uuid(),'payload',jsonb_build_object(
+      'date_start','2026-09-24','date_end','2026-09-24',
+      'school_ids','[]'::jsonb,'search',null)))->>'error_code'),
+  'CAPABILITY_DENIED','reconciliation independently requires dispatch read capability');
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
 reset role;
 
 set local role authenticated;
@@ -1238,6 +1321,51 @@ select ok((select response->>'success'='true'
       '26020000-0000-4000-8000-000000000011'
   from pxk_results where name='fulfilment-reconciliation'),
   'reconciliation excludes stale PO quantity, retains PXK history and captured location');
+
+-- Restore distinct defaults after the captured-location regressions above.
+-- The inherited dispatch predicate also matches a School's default location.
+update atlas_admin.schools
+set default_delivery_location_id='26020000-0000-4000-8000-000000000011'
+where school_id='26020000-0000-4000-8000-000000000021';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000102',true);
+insert into pxk_results values('scoped-a-workbench',
+  atlas_api.get_school_dispatch_release_workbench(jsonb_build_object(
+    'contract_version','SCHOOL-DISPATCH-RELEASE.v1',
+    'requested_by_auth_subject','26000000-0000-4000-8000-000000000102',
+    'correlation_id',gen_random_uuid(),
+    'payload',jsonb_build_object(
+      'date_start','2026-09-25','date_end','2026-09-25',
+      'school_ids','[]'::jsonb,'search',null
+    )
+  )));
+insert into pxk_results values('scoped-a-reconciliation',
+  atlas_api.get_school_fulfilment_reconciliation_workbench(jsonb_build_object(
+    'contract_version','SCHOOL-FULFILMENT-RECONCILIATION.v1',
+    'requested_by_auth_subject','26000000-0000-4000-8000-000000000102',
+    'correlation_id',gen_random_uuid(),
+    'payload',jsonb_build_object(
+      'date_start','2026-09-25','date_end','2026-09-25',
+      'school_ids','[]'::jsonb,'search',null
+    )
+  )));
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+reset role;
+
+select ok((select jsonb_array_length(response->'rows')>0
+    and not exists(
+      select 1 from jsonb_array_elements(response->'rows') row
+      where row->>'school_id'<>'26020000-0000-4000-8000-000000000021'
+    )
+  from pxk_results where name='scoped-a-workbench'),
+  'PXK workbench returns only relationally authorized School rows');
+select ok((select jsonb_array_length(response->'rows')>0
+    and not exists(
+      select 1 from jsonb_array_elements(response->'rows') row
+      where row->>'school_id'<>'26020000-0000-4000-8000-000000000021'
+    )
+  from pxk_results where name='scoped-a-reconciliation'),
+  'PO/PXK reconciliation returns only relationally authorized School rows');
 
 select * from finish();
 rollback;

@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(29);
+select plan(30);
 
 -- D-047 regeneration adds one invoker helper and three SELECT-only policies.
 -- Five private grants: legacy schema USAGE, three relation SELECTs, helper EXECUTE.
@@ -14,7 +14,9 @@ select plan(29);
 -- three guards plus one private lock helper, four triggers and 28 precise grants.
 -- Effective composition generation 107 adds four private functions, two immediate
 -- capture triggers, two SELECT-only policies and twelve private catalog grants.
--- Browser API/capability/role/table catalogs and runtime posture remain unchanged.
+-- Cutover authorization alignment 108 adds one private whole-PO scope helper with
+-- EXECUTE only for read/procurement runtimes; public API/capability/role/table
+-- catalogs and browser privileges remain unchanged.
 -- Exact Atlas schema and relation posture.
 select is(
   (
@@ -1327,6 +1329,27 @@ select ok(
 
 select ok(
   (
+    select pg_get_userbyid(p.proowner)='atlas_owner'
+      and not p.prosecdef
+      and p.proconfig=array['search_path=""']::text[]
+      and has_function_privilege(
+        'atlas_read_runtime',p.oid,'EXECUTE')
+      and has_function_privilege(
+        'atlas_procurement_command_runtime',p.oid,'EXECUTE')
+      and not has_function_privilege('authenticated',p.oid,'EXECUTE')
+      and not has_function_privilege('anon',p.oid,'EXECUTE')
+      and not has_function_privilege('service_role',p.oid,'EXECUTE')
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='atlas_core'
+      and p.proname='school_catering_purchase_order_actor_has_full_scope'
+      and pg_get_function_identity_arguments(p.oid)='p_actor_id uuid, p_purchase_order_id uuid'
+  ),
+  'CAT-21B whole-PO authorization helper is private and runtime-bounded'
+);
+
+select ok(
+  (
     select count(*) = 10
       and bool_and(
         p.proconfig = array['search_path=""']::text[]
@@ -1789,14 +1812,14 @@ select is(
     'policy_count', 674,
     'policy_catalog_md5', 'b20fe6da611858ba85a679a3e4be56cf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 348,
-    -- Includes the two private resolved-readiness overloads from migration 105.
-    'private_function_catalog_md5', '340d5644317b25f3418322db6e92e511',
+    'private_function_count', 349,
+    -- Migration 108 adds one private SECURITY INVOKER whole-PO predicate.
+    'private_function_catalog_md5', 'cbccd848f27a6d344eb6d1e1ff156bea',
     'trigger_count', 126,
     'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
-    -- Includes private effective-rule numeric parsing; no new browser grant.
-    'positive_target_grant_count', 1853,
-    'positive_target_grant_md5', '44bb6a64626869804a99c9b788b764af',
+    -- Only read/Procurement runtimes can execute it; browser grants are unchanged.
+    'positive_target_grant_count', 1855,
+    'positive_target_grant_md5', '07c41179025e2bbdbf165e26a667ca44',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,
