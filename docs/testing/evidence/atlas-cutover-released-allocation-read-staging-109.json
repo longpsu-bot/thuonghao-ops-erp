@@ -1,0 +1,47 @@
+{
+  "task": "ATLAS-CUTOVER-READ-ACCEPTANCE-01",
+  "status": "HOSTED_READ_ACCEPTANCE_PASS",
+  "observed_at": "2026-10-14T13:19:57.8300662Z",
+  "project_ref": "rnzxmxiiqgtdevzregff",
+  "migration_tip": "20261014120320",
+  "pr": 383,
+  "base": "8e68c2ce2cf766279d020210e9b53b457048db22",
+  "head": "64491061df79bf9c8349d5f397d57c06a8fe9edb",
+  "review": "TERRA_CLEAR",
+  "frontend": 38568664899,
+  "frontend_status": "success",
+  "full": 38568760358,
+  "source_full_status": "success",
+  "merged_main": "f6686c7952024b499fcd3499cbcb38948ab15a5d",
+  "merged_tree_equals_reviewed": true,
+  "hosted_read_run": 38570792340,
+  "hosted_business_sha": "8e68c2ce2cf766279d020210e9b53b457048db22",
+  "main_frontend": 38570729098,
+  "main_full": 38570728987,
+  "workflow_url": "https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38570792340",
+  "result": {
+    "status": "verified",
+    "mode": "released-allocation-read",
+    "rows": 236,
+    "elapsed_ms": 4973.2011090000005,
+    "assignment_quantity_lineage_md5": "48e433c45fac665d873103542408a484",
+    "fact_digest": "d55edbee74200aa3e02e8fc94ca8787d",
+    "networkWrites": false
+  },
+  "independent_postflight": {
+    "success": true,
+    "probe_rows": 0,
+    "draft_po_count": 17,
+    "draft_po_fingerprint": "cefbff23b30cbc15dac0b890a956d884",
+    "migration_108_present": true,
+    "probe_relation_checks": 36
+  },
+  "notes": [
+    "Exactly one authenticated public HTTP read; retry disabled and unchanged 8000ms ceiling.",
+    "Full actual HTTP rows canonical PostgreSQL JSONB digest matches historical accepted rows.",
+    "Before/after full source/receipt/audit snapshots equal; fact digest also matches original 105 acceptance.",
+    "One hosted observation, not a load test or multi-sample performance certification.",
+    "Main post-merge Frontend/Full workflow IDs are recorded separately; no success assertion here until completed.",
+    "No Preparation command, staff grant, real commitment, OPS v1/Retool/Production write or Warehouse implementation."
+  ]
+}

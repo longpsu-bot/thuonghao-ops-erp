@@ -2,6 +2,8 @@
 
 This register records approved project and architecture decisions. Detailed decisions may later be expanded into ADR files under `docs/decisions/adr/`.
 
+PROPOSED, not accepted: [ATLAS-WAREHOUSE-RECEIVING-DESIGN-01 — minimum receiving](decision-atlas-warehouse-receiving-minimum.md). All four Product choice groups remain UNDECIDED; final explicit Product approval is required before implementation.
+
 <!-- prettier-ignore -->
 | ID    | Decision                                                                                  | Status   | Rationale                                                                                                                                                                                                                                                 |
 | ----- | ----------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

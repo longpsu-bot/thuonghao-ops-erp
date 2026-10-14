@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01
-Status: AUTHORIZED — documentation only; Product choices undecided
+Status: READY FOR PRODUCT REVIEW — documentation only; all four Product choices undecided
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
 Starting main: f6686c7952024b499fcd3499cbcb38948ab15a5d
@@ -42,3 +42,7 @@ Read AGENTS, mandate, README, vision, business-rule/decision registers and the e
 Fresh bounded branch from verified latest main, Draft PR and fixed-SHA Terra audit; Root owns routine integration. The packet may become READY FOR PRODUCT REVIEW, while every business choice remains PROPOSED. Final explicit Warehouse Product design approval is a HARD STOP before any implementation.
 
 No lifecycle/status machinery, role grants, staff assignments, database/API/UI/prototype edits, hosted action, fixture creation, Production/v1/Retool write or real commitment is authorized. Preserve released history, existing drafts and exception ownership. No Warehouse backend or connected UI work follows automatically from merging this documentation.
+
+## Packet and focused verification
+
+The [minimum design](../architecture/warehouse-receiving-minimum-design.md) and [PROPOSED decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) separate approved authority from historical Draft Warehouse contracts and in-memory prototype evidence. No Product option is selected. The [closed read gate](../runbooks/school-fulfilment-cutover-readiness.md) links the durable parsed report, which equals Root's saved report. Focused formatting, whitespace and local-link/anchor checks pass; no tests or hosted actions were needed for this prose-only task. Fixed-SHA Terra audit and PR CI remain integration gates, not Warehouse business-design approval.
