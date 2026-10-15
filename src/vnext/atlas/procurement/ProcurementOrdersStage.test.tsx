@@ -252,4 +252,42 @@ describe("Supplier purchase orders", () => {
       ).toBeDisabled();
     },
   );
+  it.each(["PO_SOURCE_NOT_READY", "CORRECTION_PENDING"])(
+    "keeps official export but suppresses premature replacement for %s",
+    (code) => {
+      const f = createProcurementReviewFixture("replacement_required");
+      const order = f.orders.purchase_orders[0]!;
+      order.blockers = [code, "PO_REPLACEMENT_REQUIRED"];
+      order.disabled_reasons = [code];
+      order.allowed_actions.create_replacement = false;
+      render(
+        <AtlasVNextProvider>
+          <ProcurementOrdersStage
+            data={f.orders}
+            disabled={false}
+            search=""
+            onAction={vi.fn()}
+            onExportXlsx={vi.fn()}
+          />
+        </AtlasVNextProvider>,
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Xem đơn NCC An Phú" }),
+      );
+      const detail = screen.getByRole("region", {
+        name: "Chi tiết đơn mua NCC An Phú",
+      });
+      expect(detail).toHaveTextContent("Chưa đủ dữ liệu nguồn chính thức");
+      expect(detail).not.toHaveTextContent(
+        "Tạo và kiểm tra đơn thay thế đầy đủ",
+      );
+      expect(
+        within(detail).queryByRole("button", { name: "Tạo đơn thay thế" }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(detail).getByRole("button", { name: "Xuất Excel" }),
+      ).toBeEnabled();
+      expect(detail).not.toHaveTextContent(code);
+    },
+  );
 });

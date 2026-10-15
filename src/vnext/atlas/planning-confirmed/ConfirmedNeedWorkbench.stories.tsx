@@ -164,3 +164,13 @@ export const Mobile: Story = {
   ...story("needs_review"),
   globals: { viewport: { value: "mobile1", isRotated: false } },
 };
+
+export const ReleasedCorrection: Story = {
+  args: { scenario: "correction_shared" },
+};
+export const CorrectionUnknown: Story = {
+  args: { scenario: "correction_unknown" },
+};
+export const CorrectionReadback: Story = {
+  args: { scenario: "correction_readback" },
+};

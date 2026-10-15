@@ -11,6 +11,7 @@ import {
   confirmedNeedCorrectionCommandRequest,
   confirmedNeedCorrectionPreviewFromResult,
   confirmedNeedCorrectionOutcome,
+  confirmedNeedCorrectionMessage,
   type ConfirmedNeedCorrectionPayload,
   type ConfirmedNeedCorrectionCommandRequest,
   type ConfirmedNeedCorrectionPreview,
@@ -835,11 +836,11 @@ export function useConfirmedNeedWorkbench({
                 ? null
                 : result.kind === "success"
                   ? readFailure
-                  : confirmedNeedResultMessage(result),
+                  : confirmedNeedCorrectionMessage(result),
             }
           : v,
       );
-    } catch (error) {
+    } catch {
       if (
         !invalidRange.current &&
         token === correctionEpoch.current &&
@@ -851,7 +852,8 @@ export function useConfirmedNeedWorkbench({
                 ...v,
                 status: "EDITING",
                 preview: null,
-                error: error instanceof Error ? error.message : readFailure,
+                error:
+                  "Chưa xem được ảnh hưởng. Kiểm tra số lượng, lý do và ghi chú rồi thử lại.",
               }
             : v,
         );
@@ -1262,6 +1264,7 @@ export function useConfirmedNeedWorkbench({
     dirty,
     errors,
     released,
+    correctionSourceCurrent: current,
     editable,
     canSave,
     canGenerate,

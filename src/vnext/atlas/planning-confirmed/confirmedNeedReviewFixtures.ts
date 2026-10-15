@@ -274,6 +274,12 @@ export function reviewNeed(): NeedGenerationWorkbenchData {
 }
 export type ConfirmedReviewScenario =
   | "normal"
+  | "correction_shared"
+  | "correction_zero"
+  | "correction_authority"
+  | "correction_unknown"
+  | "correction_readback"
+  | "correction_pending"
   | "oct12_school_first"
   | "loading"
   | "read_failure"
@@ -436,12 +442,37 @@ export function createConfirmedNeedReviewFixture(
   }
   if (scenario === "historical")
     batch.lines[0]!.confirmed_quantity_after = "10.123456";
-  if (scenario === "released" || scenario === "correction_blocked") {
+  if (
+    scenario === "released" ||
+    scenario === "correction_blocked" ||
+    scenario.startsWith("correction_")
+  ) {
     batch.authoritative_batch_status = "RELEASED_FOR_PURCHASE_HANDOFF";
     batch.editing_allowed = false;
     batch.allowed_actions.save_confirmed_needs = false;
     preflight.current_need!.confirmed_need_batch_status =
       "RELEASED_FOR_PURCHASE_HANDOFF";
+  }
+  if (
+    [
+      "correction_shared",
+      "correction_authority",
+      "correction_unknown",
+      "correction_readback",
+      "correction_pending",
+    ].includes(scenario)
+  ) {
+    const member = structuredClone(batch.lines[0]!);
+    member.confirmed_need_line_id = "line-6";
+    member.current_revision_id = "revision-6";
+    member.current_decision_id = "decision-6";
+    member.school = structuredClone(batch.lines[1]!.school);
+    member.confirmed_quantity_after = "20.000000";
+    member.proposed_confirmed_quantity = "20.000000";
+    batch.lines.push(member);
+    batch.line_counts.total++;
+    batch.line_counts.confirmed++;
+    batch.pagination.total_lines++;
   }
   if (scenario === "not_generated") {
     preflight.downstream_currentness = "NOT_GENERATED";
@@ -525,6 +556,7 @@ export function createConfirmedNeedReviewFixture(
   let saveAttempted = false;
   let savedSnapshot = false;
   let correctedSnapshot = false;
+  let correctionReadFailed = false;
   let generated = false;
   const preflightApi: PreflightApi = {
     async preflight() {
@@ -649,12 +681,45 @@ export function createConfirmedNeedReviewFixture(
             delivery_location_id: l.delivery_location.id,
           })),
         },
-        allowed_actions: { correct: true },
-        disabled_reasons: { correct: null },
+        allowed_actions: { correct: scenario !== "correction_authority" },
+        disabled_reasons: {
+          correct:
+            scenario === "correction_authority"
+              ? "CORRECTION_AUTHORITY_REQUIRED"
+              : null,
+        },
         procurement_details_coverage: "AUTHORIZED_DETAILS_ONLY",
-        procurement_details: [],
+        procurement_details:
+          scenario === "correction_shared"
+            ? [
+                {
+                  family_id: "review-family",
+                  supplier_splits: [
+                    {
+                      supplier_id: "review-supplier",
+                      supplier_name: "NCC An Phú",
+                      allocated_quantity: correctionText(before),
+                      split_ratio: "1.000000",
+                      supplier_note:
+                        "Giao đúng bếp chính, tách theo từng trường.",
+                    },
+                  ],
+                },
+              ]
+            : [],
         purchase_order_coverage: "AUTHORIZED_DOCUMENTS_ONLY",
-        purchase_orders: [],
+        purchase_orders:
+          scenario === "correction_shared"
+            ? [
+                {
+                  purchase_order_id: "review-official-po",
+                  document_number: `PO-${serviceDate.replaceAll("-", "")}-01`,
+                  supplier_name: "NCC An Phú",
+                  purchase_order_status: "RELEASED_TO_SUPPLIER",
+                  lines: [],
+                },
+              ]
+            : [],
       });
     },
     async correct(request) {
@@ -724,10 +789,26 @@ export function createConfirmedNeedReviewFixture(
         request: JSON.stringify(request),
         result: structuredClone(result),
       });
+      if (scenario === "correction_unknown")
+        return {
+          kind: "transport_error",
+          diagnostic: {
+            code: "NETWORK_FAILURE",
+            safeMessage: "Không nhận được phản hồi.",
+          },
+        };
       return result;
     },
 
     async getReview() {
+      if (
+        correctedSnapshot &&
+        scenario === "correction_readback" &&
+        !correctionReadFailed
+      ) {
+        correctionReadFailed = true;
+        return reviewFailure();
+      }
       if (saveAttempted && scenario === "recovery_failed")
         return reviewFailure();
       return reviewSuccess({

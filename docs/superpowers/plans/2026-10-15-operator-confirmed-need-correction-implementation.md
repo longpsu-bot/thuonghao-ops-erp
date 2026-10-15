@@ -478,3 +478,7 @@ Only exact terminal original receipt evidence can resolve prior UNKNOWN on failu
 ## Task6 released after Task5 fixed review
 
 Terra cleared c7bc64e; Root authorizes the bounded incumbent correction UI described in the [Task6 baton](../../autopilot/ACTIVE_TASK.md#task6-technical-release--authority-before-ui). Keep SQL67820cb2 frozen and Tasks7–8 held. Add one colocated dialog within the existing dirty owner, safe authorized-detail display, controlled Vietnamese correction/pending guidance and real fallback focus after released-row unmount. Focused tests precede implementation; Root owns actual in-memory browser QA after UI freeze. No new backend/owner/framework/dependency, push or hosted action.
+
+## Task6 local UI image — awaiting bounded browser QA
+
+The [Task6 freeze ledger](../../autopilot/ACTIVE_TASK.md#task6-local-ui-freeze--browser-review-pending) records the authority-first bounded dialog, safe optional disclosures, same-owner recovery/focus, controlled pending PO guidance and six existing-review scenarios. Prior10-file287 PASS plus final changed dialog/fixture20 PASS are overlapping source images, not additive counts. Typecheck/boundary/format pass; Root browser/detector remain pending. No SQL bytes changed from67820cb2, no producer/native rerun or Task7 authority.

@@ -1,3 +1,12 @@
+export function purchaseOrderSourcePending(order: {
+  blockers: string[];
+  disabled_reasons: string[];
+  warnings: string[];
+}) {
+  return [...order.blockers, ...order.disabled_reasons, ...order.warnings].some(
+    (code) => ["PO_SOURCE_NOT_READY", "CORRECTION_PENDING"].includes(code),
+  );
+}
 const reasonLabels: Record<string, string> = {
   PO_DOCUMENT_CODE_REQUIRED:
     "Bổ sung mã hàng và mã NCC trên chứng từ trong Dữ liệu gốc trước khi phát hành.",
@@ -14,6 +23,10 @@ const reasonLabels: Record<string, string> = {
   SUPPLIER_INELIGIBLE: "Nhà cung cấp không còn phù hợp với nguyên liệu này.",
   PO_LINES_MISSING: "Đơn mua chưa có đủ dòng hàng để phát hành.",
   PO_ALREADY_RELEASED: "Đơn đã được phát hành cho nhà cung cấp.",
+  PO_SOURCE_NOT_READY:
+    "Chưa đủ dữ liệu nguồn chính thức. Rà soát và phát hành nhu cầu, bàn giao mua hàng trước khi xác định ảnh hưởng; chưa thể tạo đơn thay thế. Đơn đã phát hành vẫn được giữ nguyên.",
+  CORRECTION_PENDING:
+    "Chưa đủ dữ liệu nguồn chính thức. Rà soát và phát hành nhu cầu, bàn giao mua hàng trước khi xác định ảnh hưởng; chưa thể tạo đơn thay thế. Đơn đã phát hành vẫn được giữ nguyên.",
   PO_REPLACEMENT_REQUIRED:
     "Đơn đã phát hành không còn khớp phân bổ hiện tại; cần phát hành đơn thay thế.",
   CANCELLATION_REQUIRED:
@@ -36,7 +49,14 @@ export function procurementOperatorMessages(
   values: string[],
   fallback: string,
 ) {
+  const pending = values.some((code) =>
+    ["PO_SOURCE_NOT_READY", "CORRECTION_PENDING"].includes(code),
+  );
   return Array.from(
-    new Set(values.map((value) => procurementOperatorMessage(value, fallback))),
+    new Set(
+      values
+        .filter((value) => !pending || value !== "PO_REPLACEMENT_REQUIRED")
+        .map((value) => procurementOperatorMessage(value, fallback)),
+    ),
   );
 }

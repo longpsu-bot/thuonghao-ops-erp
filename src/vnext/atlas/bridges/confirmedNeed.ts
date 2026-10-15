@@ -82,5 +82,6 @@ export type {
 export {
   confirmedNeedCorrectionPreviewFromResult,
   confirmedNeedCorrectionOutcome,
+  confirmedNeedCorrectionMessage,
 } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedModel";
 export type { ConfirmedNeedCorrectionPreview } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedModel";

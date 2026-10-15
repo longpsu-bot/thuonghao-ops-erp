@@ -683,6 +683,49 @@ export function confirmedNeedCorrectionPreviewFromResult(
     return null;
   return value as unknown as ConfirmedNeedCorrectionPreview;
 }
+export function confirmedNeedCorrectionMessage(
+  result: AtlasRpcResult | string,
+) {
+  const code =
+    typeof result === "string"
+      ? result
+      : result.kind === "backend_error"
+        ? result.error.error_code
+        : result.kind === "auth_error"
+          ? "SESSION_REQUIRED"
+          : "UNAVAILABLE";
+  if (code.startsWith("STALE_"))
+    return "Nhu cầu hoặc dữ liệu nguồn đã thay đổi. Tải lại rồi xem ảnh hưởng trước khi lưu.";
+  const messages: Record<string, string> = {
+    CAPABILITY_DENIED:
+      "Không có quyền thực hiện điều chỉnh này. Kiểm tra quyền theo nhiệm vụ trước khi tiếp tục.",
+    SCOPE_DENIED: "Nhu cầu này nằm ngoài phạm vi được phép điều chỉnh.",
+    CORRECTION_AUTHORITY_REQUIRED:
+      "Không có quyền lưu điều chỉnh. Cần đủ quyền theo nhiệm vụ và phạm vi được giao.",
+    SESSION_REQUIRED:
+      "Phiên làm việc đã hết. Đăng nhập lại để xác nhận đúng yêu cầu đã gửi.",
+    NO_APPLICABLE_CORRECTION:
+      "Số lượng không thay đổi. Nhập số lượng khác trước khi xem ảnh hưởng.",
+    QUANTITY_NOT_REPRESENTABLE:
+      "Số lượng chưa đúng độ chính xác cho phép. Kiểm tra lại giá trị đã nhập.",
+    VALIDATION_FAILED:
+      "Chưa đủ dữ liệu điều chỉnh hợp lệ. Kiểm tra số lượng, lý do và ghi chú.",
+    UNIT_INACTIVE:
+      "Đơn vị tính không còn hoạt động. Tải lại và kiểm tra dữ liệu trước khi tiếp tục.",
+    CONFIRMED_SOURCE_INCOMPLETE:
+      "Chưa đủ dữ liệu nhu cầu nguồn. Tải lại và kiểm tra các trường trong nhóm.",
+    CONFIRMED_SOURCE_AMBIGUOUS_OR_MISSING:
+      "Chưa xác định được nguồn nhu cầu đầy đủ. Tải lại và kiểm tra trước khi điều chỉnh.",
+    CORRECTION_NOT_APPLICABLE:
+      "Nhu cầu hiện không còn ở bước cho phép điều chỉnh này. Tải lại dữ liệu.",
+    RETRYABLE_CONCURRENCY_FAILURE:
+      "Dữ liệu đang được xử lý. Thử lại đúng yêu cầu đã gửi để xác nhận kết quả.",
+  };
+  return (
+    messages[code] ??
+    "Chưa thể xác nhận điều chỉnh. Giữ nguyên nội dung và tải lại để kiểm tra trước khi tiếp tục."
+  );
+}
 export type ConfirmedNeedCorrectionOutcome =
   | { kind: "committed"; version: number }
   | { kind: "unknown" }
@@ -717,7 +760,10 @@ export function confirmedNeedCorrectionOutcome(
   }
   if (result.kind === "transport_error") return { kind: "unknown" };
   if (result.kind !== "backend_error")
-    return { kind: "rejected", message: confirmedNeedResultMessage(result) };
+    return {
+      kind: "rejected",
+      message: confirmedNeedCorrectionMessage(result),
+    };
   if (
     !["NO_COMMITTED_CHANGE", "NO_BUSINESS_WRITE", "NO_WRITE"].includes(
       result.error.write_certainty ?? "",
@@ -730,7 +776,7 @@ export function confirmedNeedCorrectionOutcome(
       : result.error.retryable
         ? "retryable"
         : "rejected",
-    message: confirmedNeedResultMessage(result),
+    message: confirmedNeedCorrectionMessage(result),
     ...(result.error.contract_version === "CONFIRMED-NEED-CORRECTION.v1" &&
     result.error.command_name === "correct_confirmed_need" &&
     result.error.command_id === request.command_id &&

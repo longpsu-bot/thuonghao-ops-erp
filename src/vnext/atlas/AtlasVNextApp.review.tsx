@@ -396,6 +396,37 @@ function Review() {
         });
       };
     }
+    const correctionScenarios = [
+      "correction_shared",
+      "correction_zero",
+      "correction_authority",
+      "correction_unknown",
+      "correction_readback",
+      "correction_pending",
+    ] as const;
+    const correctionScenario = correctionScenarios.find(
+      (value) => value === scenario,
+    );
+    if (correctionScenario) {
+      const need = createConfirmedNeedReviewFixture(
+        correctionScenario,
+        applicationReviewNow.toISOString().slice(0, 10),
+      );
+      fixture.planningReadiness = need.preflightApi;
+      fixture.needGeneration = need.needGenerationApi;
+      fixture.confirmedNeed = need.confirmedNeedApi;
+      if (correctionScenario === "correction_pending") {
+        const procurement = createProcurementReviewFixture(
+          "replacement_required",
+        );
+        const order = procurement.orders.purchase_orders[0]!;
+        order.blockers = ["PO_SOURCE_NOT_READY", "PO_REPLACEMENT_REQUIRED"];
+        order.disabled_reasons = ["PO_SOURCE_NOT_READY"];
+        order.allowed_actions.create_replacement = false;
+        fixture.purchaseReview = procurement.purchaseReviewApi;
+        fixture.procurement = procurement.procurementApi;
+      }
+    }
     return fixture;
   }, []);
   if (params.has("internal"))

@@ -114,4 +114,62 @@ describe("dated correction review adapter", () => {
     expect(read?.lines[0]?.confirmed_quantity_after).toBe("13.000000");
     expect(read?.service_period.period_start).toBe("2026-10-12");
   });
+  it.each([
+    "correction_shared",
+    "correction_authority",
+    "correction_unknown",
+    "correction_readback",
+    "correction_pending",
+  ] as const)(
+    "keeps %s date-aligned full-family review and exact recovery",
+    async (scenario) => {
+      const f = createConfirmedNeedReviewFixture(scenario, "2026-10-12");
+      const request = requestFor(f);
+      const result = await f.confirmedNeedApi.previewCorrection(request);
+      const preview = confirmedNeedCorrectionPreviewFromResult(
+        result,
+        request.payload,
+      );
+      expect(preview?.family.service_date).toBe("2026-10-12");
+      expect(preview?.family.contributions).toHaveLength(2);
+      expect(preview?.allowed_actions.correct).toBe(
+        scenario !== "correction_authority",
+      );
+      if (scenario === "correction_authority") return;
+      const command = confirmedNeedCorrectionCommandRequest(
+        "actor",
+        "correlation",
+        request.payload,
+        preview!.proposal_fingerprint,
+      );
+      const write = await f.confirmedNeedApi.correct(command);
+      expect(write.kind).toBe(
+        scenario === "correction_unknown" ? "transport_error" : "success",
+      );
+      const replay = await f.confirmedNeedApi.correct(command);
+      expect(replay.kind).toBe("success");
+      if (scenario === "correction_readback")
+        expect(
+          (
+            await f.confirmedNeedApi.getReview(
+              "actor",
+              "correlation",
+              f.batch.confirmed_need_batch_id,
+              {
+                service_date: "2026-10-12",
+                school_id: null,
+                delivery_location_id: null,
+                ingredient_id: null,
+                decision_state: null,
+              },
+            )
+          ).kind,
+        ).toBe("backend_error");
+      expect(f.batch.authoritative_batch_status).toBe("REOPENED");
+      expect(f.batch.lines[0]!.confirmed_quantity_after).toBe("12.500001");
+      expect(f.batch.lines[6]!.current_revision_id).toBe(
+        "revision-6-2026-10-12",
+      );
+    },
+  );
 });
