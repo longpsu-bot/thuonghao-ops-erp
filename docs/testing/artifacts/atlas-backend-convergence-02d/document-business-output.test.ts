@@ -42,7 +42,7 @@ it("repeat PO document generation preserves the issued facts, exact quantity, Un
   expect(first.summaryLines[0]).toMatchObject({
     supplierNote: "Giao trước 05:30",
     orderedQuantity: order.lines[0]!.ordered_quantity,
-    unitCode: order.lines[0]!.unit.unit_code,
+    unitLabel: order.lines[0]!.unit.unit_code,
   });
   expect(first.schoolLines).not.toHaveLength(0);
 });
