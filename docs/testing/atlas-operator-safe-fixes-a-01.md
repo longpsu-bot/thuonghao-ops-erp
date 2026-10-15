@@ -44,3 +44,9 @@ The **combined four-workbook printed gate remains FAIL** at a pre-existing Dispa
 The pre-existing `Ngày dùng` header label wraps/clips its second line in both PO detail directions; baseline and final have the same issue, while the date value remains visible. This is outside the bounded School-column correction. The whole page is not certified flawless, and arbitrary labels/other Office-font-printer environments are not guaranteed.
 
 Historical 108/109 reports and prior document certifications remain unchanged. No Unit-label contract change, backend migration, real PO release, hosted fixture, staff assignment, OPS-v1/Retool/Production write or Warehouse work occurred. A reviewed Draft and exact-head CI do not authorize merge/deployment under the current brief.
+
+## CI coverage follow-up
+
+[Frontend run 38672710681](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38672710681) at original review head `6db5e86a78e7068df28aa9f0235f299891e88cd2` failed two retained tests: the multi-owner Handoff/sign-out test still assumed an initially open School owner, and the exact-quantity document test still expected the old Theo hàng C40/F38 widths. The same two failures were reproduced locally before correction. The Handoff test now explicitly opens Schools before editing; all note, identity, dirty-owner and sign-out assertions remain. The document test expects C46/F32 only for Theo hàng, preserves C40/F38 for Theo trường, and adds the unchanged total-width invariant. All quantity/PDF/metadata assertions remain. No production source change or acceptance-threshold change is part of this follow-up.
+
+The corrected focused invocation passes all 27 collected assertions (including the two affected files). Original CI/local RED and the intermediate metadata-column sum diagnostic are retained outside the repository; the final invariant covers A:F only and does not count hidden parsing columns. Exact-head full frontend CI remains the integration gate.
