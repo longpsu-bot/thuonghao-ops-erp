@@ -221,7 +221,7 @@ function Review() {
       >();
       const needFor = (date: string) => {
         if (!dailyNeed.has(date))
-          dailyNeed.set(date, createConfirmedNeedReviewFixture());
+          dailyNeed.set(date, createConfirmedNeedReviewFixture("normal", date));
         return dailyNeed.get(date)!;
       };
       const datedNeed = <T,>(value: T, date: string): T =>
@@ -253,6 +253,14 @@ function Review() {
           await needFor(date).confirmedNeedApi.save(request),
           date,
         );
+      };
+      fixture.confirmedNeed.previewCorrection = async (request) => {
+        const date = request.payload.confirmed_need_batch_id.slice(-10);
+        return needFor(date).confirmedNeedApi.previewCorrection(request);
+      };
+      fixture.confirmedNeed.correct = async (request) => {
+        const date = request.payload.confirmed_need_batch_id.slice(-10);
+        return needFor(date).confirmedNeedApi.correct(request);
       };
       fixture.needGeneration.getWorkbench = async (...args) =>
         datedNeed(

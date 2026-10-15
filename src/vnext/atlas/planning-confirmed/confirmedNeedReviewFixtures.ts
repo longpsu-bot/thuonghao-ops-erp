@@ -1,3 +1,4 @@
+import type { ConfirmedNeedCorrectionPayload } from "../bridges/confirmedNeed";
 import type {
   AtlasRpcResult,
   AtlasSuccessEnvelope,
@@ -295,6 +296,7 @@ export type ConfirmedReviewScenario =
 // Review snapshots are explicit fixtures, never a simulation of backend rules.
 export function createConfirmedNeedReviewFixture(
   scenario: ConfirmedReviewScenario = "normal",
+  serviceDate: string = reviewDate,
 ) {
   const batch = reviewBatch();
   const preflight = reviewPreflight();
@@ -468,8 +470,29 @@ export function createConfirmedNeedReviewFixture(
       },
     ];
   }
+  // Stamp explicit synthetic identities before the adapter owns state, not only outgoing JSON.
+  const dated = <T>(value: T): T =>
+    serviceDate === reviewDate
+      ? structuredClone(value)
+      : (JSON.parse(
+          JSON.stringify(value)
+            .replaceAll(reviewDate, serviceDate)
+            .replaceAll('"batch-current"', `"batch-current-${serviceDate}"`)
+            .replaceAll('"run-current"', `"run-current-${serviceDate}"`)
+            .replace(
+              /"((?:line|revision|decision)-(?:\d+|saved))"/g,
+              `"$1-${serviceDate}"`,
+            ),
+        ) as T);
+  if (serviceDate !== reviewDate) {
+    Object.assign(batch, dated(batch));
+    Object.assign(preflight, dated(preflight));
+    Object.assign(need, dated(need));
+  }
   const saved =
-    scenario === "oct12_school_first" ? structuredClone(batch) : reviewBatch();
+    scenario === "oct12_school_first"
+      ? structuredClone(batch)
+      : dated(reviewBatch());
   saved.batch_version = 5;
   saved.line_counts.adjusted = 1;
   saved.lines[0] = {
@@ -501,24 +524,252 @@ export function createConfirmedNeedReviewFixture(
   };
   let saveAttempted = false;
   let savedSnapshot = false;
+  let correctedSnapshot = false;
   let generated = false;
   const preflightApi: PreflightApi = {
     async preflight() {
       if (scenario === "loading") return new Promise<AtlasRpcResult>(() => {});
       if (scenario === "read_failure") return reviewFailure();
       return reviewSuccess({
-        preflight: generated ? reviewPreflight() : preflight,
+        preflight: generated ? dated(reviewPreflight()) : preflight,
       });
     },
   };
+
+  const correctionError = (code: string): AtlasRpcResult => ({
+    kind: "backend_error",
+    error: {
+      success: false,
+      error_code: code,
+      contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+      safe_message:
+        "Không thể lưu điều chỉnh. Hãy kiểm tra và xem lại dữ liệu.",
+      retryable: false,
+      write_certainty: "NO_COMMITTED_CHANGE",
+    },
+  });
+  let correctionProposal: {
+    target: ConfirmedNeedCorrectionPayload;
+    fingerprint: string;
+  } | null = null;
+  const correctionReceipts = new Map<
+    string,
+    { request: string; result: AtlasRpcResult }
+  >();
+  const correctionExact = (v: string) => {
+    const [a, b = ""] = v.split(".");
+    return BigInt(a! + b.padEnd(6, "0"));
+  };
+  const correctionText = (v: bigint) => {
+    const sign = v < 0n ? "-" : "";
+    const a = (v < 0n ? -v : v).toString().padStart(7, "0");
+    return sign + a.slice(0, -6) + "." + a.slice(-6);
+  };
+
   const confirmedNeedApi: ConfirmedNeedApi = {
+    async previewCorrection(request) {
+      const target = request.payload,
+        line = batch.lines.find(
+          (l) => l.confirmed_need_line_id === target.confirmed_need_line_id,
+        );
+      if (
+        !line ||
+        batch.confirmed_need_batch_id !== target.confirmed_need_batch_id ||
+        batch.need_generation_source.run_id !== target.need_generation_run_id ||
+        batch.need_generation_source.run_version !==
+          target.expected_need_generation_run_version ||
+        batch.authoritative_batch_status !== "RELEASED_FOR_PURCHASE_HANDOFF"
+      )
+        return correctionError("CORRECTION_NOT_APPLICABLE");
+      if (
+        batch.batch_version !== target.expected_confirmed_need_batch_version ||
+        line.current_revision_id !== target.expected_current_revision_id ||
+        line.current_decision_id !== target.expected_current_decision_id
+      )
+        return correctionError("STALE_VERSION");
+      if (!target.reason_note.trim())
+        return correctionError("ADJUSTMENT_REASON_INCOMPLETE");
+      const members = batch.lines.filter(
+        (l) =>
+          l.service_date === line.service_date &&
+          l.delivery_location.id === line.delivery_location.id &&
+          l.ingredient.id === line.ingredient.id &&
+          l.controlled_unit.id === line.controlled_unit.id,
+      );
+      const before = members.reduce(
+          (sum, l) => sum + correctionExact(l.confirmed_quantity_after!),
+          0n,
+        ),
+        delta =
+          correctionExact(target.proposed_confirmed_quantity) -
+          correctionExact(line.confirmed_quantity_after!);
+      if (delta === 0n) return correctionError("NO_APPLICABLE_CORRECTION");
+      const fingerprint = crypto.randomUUID().replaceAll("-", "").repeat(2);
+      correctionProposal = { target: structuredClone(target), fingerprint };
+      return reviewSuccess({
+        contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+        read_name: "get_confirmed_need_correction_preview",
+        write_certainty: "NO_WRITE",
+        target: structuredClone(target),
+        proposal_fingerprint: fingerprint,
+        quantity: {
+          before: line.confirmed_quantity_after,
+          after: target.proposed_confirmed_quantity,
+          delta: correctionText(delta),
+        },
+        family: {
+          service_date: line.service_date,
+          delivery_location_id: line.delivery_location.id,
+          ingredient_id: line.ingredient.id,
+          unit_id: line.controlled_unit.id,
+          quantity_before: correctionText(before),
+          quantity_after: correctionText(before + delta),
+          contributions: members.map((l) => ({
+            confirmed_need_batch_id: batch.confirmed_need_batch_id,
+            confirmed_need_line_id: l.confirmed_need_line_id,
+            revision_id: l.current_revision_id,
+            decision_id: l.current_decision_id,
+            school_id: l.school.id,
+            customer_id: l.customer.id,
+            delivery_location_id: l.delivery_location.id,
+            quantity: l.confirmed_quantity_after,
+            source_membership: [],
+          })),
+        },
+        display: {
+          ingredient_name: line.ingredient.name,
+          delivery_location_name: line.delivery_location.name,
+          unit_name: line.controlled_unit.name,
+          schools: members.map((l) => ({
+            confirmed_need_line_id: l.confirmed_need_line_id,
+            school_id: l.school.id,
+            school_name: l.school.name,
+            customer_id: l.customer.id,
+            customer_name: l.customer.name,
+            delivery_location_id: l.delivery_location.id,
+          })),
+        },
+        allowed_actions: { correct: true },
+        disabled_reasons: { correct: null },
+        procurement_details_coverage: "AUTHORIZED_DETAILS_ONLY",
+        procurement_details: [],
+        purchase_order_coverage: "AUTHORIZED_DOCUMENTS_ONLY",
+        purchase_orders: [],
+      });
+    },
+    async correct(request) {
+      const replay = correctionReceipts.get(request.command_id);
+      if (replay)
+        return replay.request === JSON.stringify(request)
+          ? structuredClone(replay.result)
+          : correctionError("IDEMPOTENCY_KEY_REUSED");
+      const { proposal_fingerprint, ...target } = request.payload;
+      if (
+        !correctionProposal ||
+        proposal_fingerprint !== correctionProposal.fingerprint ||
+        JSON.stringify(target) !== JSON.stringify(correctionProposal.target) ||
+        batch.batch_version !== request.expected_version
+      )
+        return correctionError("STALE_CORRECTION_PROPOSAL");
+      const line = batch.lines.find(
+        (l) => l.confirmed_need_line_id === target.confirmed_need_line_id,
+      )!;
+      correctedSnapshot = true;
+      const oldRevision = line.current_revision_id,
+        oldDecision = line.current_decision_id;
+      batch.batch_version += 2;
+      batch.authoritative_batch_status = "REOPENED";
+      batch.batch_status = "REOPENED";
+      batch.editing_allowed = true;
+      batch.allowed_actions.save_confirmed_needs = true;
+      line.current_revision_number += 1;
+      line.current_revision_id = crypto.randomUUID();
+      line.current_decision_number = (line.current_decision_number ?? 0) + 1;
+      line.current_decision_id = crypto.randomUUID();
+      line.confirmed_quantity_after = target.proposed_confirmed_quantity;
+      line.current_decision_kind = "OPERATIONAL_ADJUSTMENT";
+      batch.line_counts.adjusted = batch.lines.filter((item) =>
+        item.current_decision_kind?.includes("ADJUST"),
+      ).length;
+      line.decision_history.push({
+        decision_id: line.current_decision_id,
+        decision_number: line.current_decision_number,
+        predecessor_decision_id: oldDecision,
+        decision_kind: "OPERATIONAL_ADJUSTMENT",
+        revision_id: line.current_revision_id,
+        theoretical_quantity_before: line.theoretical_quantity,
+        proposed_quantity_before: line.proposed_confirmed_quantity,
+        confirmed_quantity_after: target.proposed_confirmed_quantity,
+        planning_tick_count: "0",
+        reason_code: target.reason_code,
+        reason_note: target.reason_note,
+        policy_revision_id: line.effective_policy?.revision_id ?? oldRevision,
+        decided_at: request.requested_at,
+        batch_version: batch.batch_version,
+      });
+      const result = reviewSuccess({
+        contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+        command_name: "correct_confirmed_need",
+        command_id: request.command_id,
+        confirmed_need_batch_id: batch.confirmed_need_batch_id,
+        receipt_id: crypto.randomUUID(),
+        idempotency_status: "COMPLETED",
+        resulting_batch_version: batch.batch_version,
+        child_command_ids: [crypto.randomUUID(), crypto.randomUUID()],
+        created_successor_revision_ids: [line.current_revision_id],
+        created_decision_ids: [line.current_decision_id],
+        authoritative_readback: structuredClone(batch) as unknown as JsonValue,
+      });
+      correctionReceipts.set(request.command_id, {
+        request: JSON.stringify(request),
+        result: structuredClone(result),
+      });
+      return result;
+    },
+
     async getReview() {
       if (saveAttempted && scenario === "recovery_failed")
         return reviewFailure();
-      return reviewSuccess({ workbench: savedSnapshot ? saved : batch });
+      return reviewSuccess({
+        workbench: correctedSnapshot ? batch : savedSnapshot ? saved : batch,
+      });
     },
-    async save() {
+    async save(request) {
       saveAttempted = true;
+      if (correctedSnapshot) {
+        if (request.expected_version !== batch.batch_version)
+          return reviewFailure(
+            "STALE_CONFIRMED_NEED_BATCH",
+            "NO_COMMITTED_CHANGE",
+          );
+        for (const changed of request.payload.lines) {
+          const line = batch.lines.find(
+            (l) => l.confirmed_need_line_id === changed.confirmed_need_line_id,
+          );
+          if (
+            !line ||
+            line.current_revision_id !== changed.expected_current_revision_id ||
+            line.current_decision_id !== changed.expected_current_decision_id
+          )
+            return reviewFailure(
+              "STALE_CONFIRMED_NEED_LINE",
+              "NO_COMMITTED_CHANGE",
+            );
+        }
+        batch.batch_version++;
+        for (const changed of request.payload.lines) {
+          const line = batch.lines.find(
+            (l) => l.confirmed_need_line_id === changed.confirmed_need_line_id,
+          )!;
+          line.confirmed_quantity_after = changed.proposed_confirmed_quantity;
+          line.current_revision_id = crypto.randomUUID();
+          line.current_revision_number++;
+          line.current_decision_id = crypto.randomUUID();
+          line.current_decision_number =
+            (line.current_decision_number ?? 0) + 1;
+        }
+        return reviewSuccess({ authoritative_readback: batch });
+      }
       if (scenario === "stale")
         return reviewFailure(
           "STALE_CONFIRMED_NEED_BATCH",

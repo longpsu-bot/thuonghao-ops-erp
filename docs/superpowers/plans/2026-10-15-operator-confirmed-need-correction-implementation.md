@@ -268,7 +268,7 @@ select is((select document_ids from pg_temp.c_observed where phase='after'),
 
 **Files:** API/model/registry/bridge/review adapter and tests; current Confirmed Need controller/test. **Consumes:** Task3 envelopes/readback. **Produces:** one preview, one atomic command and exact-request recovery under the existing dirty owner.
 
-- [ ] Write RED tests for the exact two RPC map entries and closed requests, six-place quantity/IDs, outer/payload version equality and unchanged ordinary Save. No browser prepare/Save orchestration. Add only the exact bridge methods/types; run boundary gate immediately.
+- [x] Write RED tests for the exact two RPC map entries and closed requests, six-place quantity/IDs, outer/payload version equality and unchanged ordinary Save. No browser prepare/Save orchestration. Add only the exact bridge methods/types; run boundary gate immediately.
 
 ```ts
 expect(invoker.invoke).toHaveBeenCalledWith(
@@ -281,8 +281,8 @@ expect(invoker.invoke).not.toHaveBeenCalledWith(
 );
 ```
 
-- [ ] Implement builders/parsers and correction state within Confirmed Need's existing dirty owner. Preserve ordinary released-editing guard and13 persistent owners. Quantity/reason edits invalidate preview; selected context/date/School epochs reject late responses. Server owns delta and impact.
-- [ ] Build one complete command on explicit Save, retain it for UNKNOWN/retry. Lock edits/close/date/context/module/signout while outcome is unknown. Retry identical ID/time/payload. Stale preserves input but requires fresh preview. Read authoritatively once after success; show success only with certainty and return focus after busy/readback clears.
+- [x] Implement builders/parsers and correction state within Confirmed Need's existing dirty owner. Preserve ordinary released-editing guard and13 persistent owners. Quantity/reason edits invalidate preview; selected context/date/School epochs reject late responses. Server owns delta and impact.
+- [x] Build one complete command on explicit Save, retain it for UNKNOWN/retry. Lock edits/close/date/context/module/signout while outcome is unknown. Retry identical ID/time/payload. Stale preserves input but requires fresh preview. Read authoritatively once after success; show success only with certainty and return focus after busy/readback clears.
 
 ```ts
 await act(() => controller.correct());
@@ -293,7 +293,7 @@ expect(api.save).not.toHaveBeenCalled();
 expect(api.releaseSaved).not.toHaveBeenCalled();
 ```
 
-- [ ] Test missing capability, server reason, late preview/context, read failure after success, UNKNOWN/exact retry/recovery, dirty date/School/module/signout Cancel/discard and completed-readback focus. Align review mocks with selected dates/Schools and append only selected line. Run tracked API/controller/registry tests excluding mirrors; commit.
+- [x] Test missing capability, server reason, late preview/context, read failure after success, UNKNOWN/exact retry/recovery, dirty date/School/module/signout Cancel/discard and completed-readback focus. Align review mocks with selected dates/Schools and append only selected line. Run tracked API/controller/registry tests excluding mirrors; commit.
 
 ### Task 6: Incumbent correction dialog and browser proof
 
@@ -448,3 +448,9 @@ Task4's exact seven authoritative reconstruction regression remains unchanged. T
 Terra cleared fixed76a4b48; Root releases only Task5 transport/builders/parsers/existing dirty-owner recovery. Exact file reach and outcome/lock requirements are in the [active baton](../../autopilot/ACTIVE_TASK.md#task5-technical-release--transport-and-existing-dirty-owner-only). No new dialog, dirty owner, command framework or browser prepare+Save orchestration. SQL remains frozen at b4df9fc0; Tasks6–8/push/hosted actions remain held. All actual legacy/review ConfirmedNeedApi callers must implement the exact new methods rather than optional unsafe fallbacks. Root/Terra review the local Task5 GREEN commit before UI work.
 
 Task7 performance qualification: `school_catering_procurement_date_current(date)` still nests scalar commitment wrappers perSupplier/PO and may reconstruct retained contexts despite top-level resolved maps. Measure full official paths with250 families and predecessor chains before claiming whole-RPC reuse; any necessary bounded backend reuse is a later measured technical repair, not part of Task5.
+
+## Task5 local GREEN handoff
+
+The [Task5 baton checkpoint](../../autopilot/ACTIVE_TASK.md#task5-local-transportcontroller-checkpoint--review-only) records exact two-route transport, closed quantity/R/D binding, existing-owner recovery and in-memory dated caller reach. Focused10-file266 PASS is a prior source image; final three changed API/fixture/controller files111 PASS after the later ordinary-Save/exact-replay test and simulator derived-kind/count update. These overlapping totals must not be added. Final typecheck/boundary/format/whitespace pass. Missing-method/typed-membership RED and two test-authoring failures remain qualified. SQL b4df is unchanged; no push/hosted action.
+
+Task6 still requires real UI focus fallback after the released trigger unmounts, controlled Vietnamese C/pending messages rather than English backend text/raw codes, and actual new C module/signout/browser journeys. Task5 proves existing owner contracts/controller transitions and a still-connected return target only. Root/Terra review the fixed local Task5 commit before any Task6 code.

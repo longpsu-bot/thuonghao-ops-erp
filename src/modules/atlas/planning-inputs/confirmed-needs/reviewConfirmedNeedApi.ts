@@ -1,3 +1,4 @@
+import type { ConfirmedNeedCorrectionPayload } from "./confirmedNeedApi";
 import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
 import type { AtlasReviewScenario } from "../../review/reviewMode";
 import type {
@@ -274,7 +275,199 @@ export function createReviewConfirmedNeedApi(
   );
   const receipts = new Map<string, AtlasRpcResult>();
 
+  const correctionError = (code: string): AtlasRpcResult => ({
+    kind: "backend_error",
+    error: {
+      success: false,
+      error_code: code,
+      contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+      safe_message:
+        "Không thể lưu điều chỉnh. Hãy kiểm tra và xem lại dữ liệu.",
+      retryable: false,
+      write_certainty: "NO_COMMITTED_CHANGE",
+    },
+  });
+  let correctionProposal: {
+    target: ConfirmedNeedCorrectionPayload;
+    fingerprint: string;
+  } | null = null;
+  const correctionReceipts = new Map<
+    string,
+    { request: string; result: AtlasRpcResult }
+  >();
+  const correctionExact = (v: string) => {
+    const [a, b = ""] = v.split(".");
+    return BigInt(a! + b.padEnd(6, "0"));
+  };
+  const correctionText = (v: bigint) => {
+    const sign = v < 0n ? "-" : "";
+    const a = (v < 0n ? -v : v).toString().padStart(7, "0");
+    return sign + a.slice(0, -6) + "." + a.slice(-6);
+  };
+
   return {
+    async previewCorrection(request) {
+      if (scenario === "permission_denied")
+        return correctionError("CAPABILITY_DENIED");
+      const target = request.payload,
+        line = state.lines.find(
+          (l) => l.confirmed_need_line_id === target.confirmed_need_line_id,
+        );
+      if (
+        !line ||
+        state.confirmed_need_batch_id !== target.confirmed_need_batch_id ||
+        state.need_generation_source.run_id !== target.need_generation_run_id ||
+        state.need_generation_source.run_version !==
+          target.expected_need_generation_run_version ||
+        state.authoritative_batch_status !== "RELEASED_FOR_PURCHASE_HANDOFF"
+      )
+        return correctionError("CORRECTION_NOT_APPLICABLE");
+      if (
+        state.batch_version !== target.expected_confirmed_need_batch_version ||
+        line.current_revision_id !== target.expected_current_revision_id ||
+        line.current_decision_id !== target.expected_current_decision_id
+      )
+        return correctionError("STALE_VERSION");
+      if (!target.reason_note.trim())
+        return correctionError("ADJUSTMENT_REASON_INCOMPLETE");
+      const members = state.lines.filter(
+        (l) =>
+          l.service_date === line.service_date &&
+          l.delivery_location.id === line.delivery_location.id &&
+          l.ingredient.id === line.ingredient.id &&
+          l.controlled_unit.id === line.controlled_unit.id,
+      );
+      const before = members.reduce(
+          (sum, l) => sum + correctionExact(l.confirmed_quantity_after!),
+          0n,
+        ),
+        delta =
+          correctionExact(target.proposed_confirmed_quantity) -
+          correctionExact(line.confirmed_quantity_after!);
+      if (delta === 0n) return correctionError("NO_APPLICABLE_CORRECTION");
+      const fingerprint = crypto.randomUUID().replaceAll("-", "").repeat(2);
+      correctionProposal = { target: structuredClone(target), fingerprint };
+      return success({
+        contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+        read_name: "get_confirmed_need_correction_preview",
+        write_certainty: "NO_WRITE",
+        target: structuredClone(target),
+        proposal_fingerprint: fingerprint,
+        quantity: {
+          before: line.confirmed_quantity_after,
+          after: target.proposed_confirmed_quantity,
+          delta: correctionText(delta),
+        },
+        family: {
+          service_date: line.service_date,
+          delivery_location_id: line.delivery_location.id,
+          ingredient_id: line.ingredient.id,
+          unit_id: line.controlled_unit.id,
+          quantity_before: correctionText(before),
+          quantity_after: correctionText(before + delta),
+          contributions: members.map((l) => ({
+            confirmed_need_batch_id: state.confirmed_need_batch_id,
+            confirmed_need_line_id: l.confirmed_need_line_id,
+            revision_id: l.current_revision_id,
+            decision_id: l.current_decision_id,
+            school_id: l.school.id,
+            customer_id: l.customer.id,
+            delivery_location_id: l.delivery_location.id,
+            quantity: l.confirmed_quantity_after,
+            source_membership: [],
+          })),
+        },
+        display: {
+          ingredient_name: line.ingredient.name,
+          delivery_location_name: line.delivery_location.name,
+          unit_name: line.controlled_unit.name,
+          schools: members.map((l) => ({
+            confirmed_need_line_id: l.confirmed_need_line_id,
+            school_id: l.school.id,
+            school_name: l.school.name,
+            customer_id: l.customer.id,
+            customer_name: l.customer.name,
+            delivery_location_id: l.delivery_location.id,
+          })),
+        },
+        allowed_actions: { correct: true },
+        disabled_reasons: { correct: null },
+        procurement_details_coverage: "AUTHORIZED_DETAILS_ONLY",
+        procurement_details: [],
+        purchase_order_coverage: "AUTHORIZED_DOCUMENTS_ONLY",
+        purchase_orders: [],
+      });
+    },
+    async correct(request) {
+      if (scenario === "permission_denied")
+        return correctionError("CAPABILITY_DENIED");
+      const replay = correctionReceipts.get(request.command_id);
+      if (replay)
+        return replay.request === JSON.stringify(request)
+          ? structuredClone(replay.result)
+          : correctionError("IDEMPOTENCY_KEY_REUSED");
+      const { proposal_fingerprint, ...target } = request.payload;
+      if (
+        !correctionProposal ||
+        proposal_fingerprint !== correctionProposal.fingerprint ||
+        JSON.stringify(target) !== JSON.stringify(correctionProposal.target) ||
+        state.batch_version !== request.expected_version
+      )
+        return correctionError("STALE_CORRECTION_PROPOSAL");
+      const line = state.lines.find(
+        (l) => l.confirmed_need_line_id === target.confirmed_need_line_id,
+      )!;
+      const oldRevision = line.current_revision_id,
+        oldDecision = line.current_decision_id;
+      state.batch_version += 2;
+      state.authoritative_batch_status = "REOPENED";
+      state.batch_status = "REOPENED";
+      state.editing_allowed = true;
+      state.allowed_actions.save_confirmed_needs = true;
+      line.current_revision_number += 1;
+      line.current_revision_id = crypto.randomUUID();
+      line.current_decision_number = (line.current_decision_number ?? 0) + 1;
+      line.current_decision_id = crypto.randomUUID();
+      line.confirmed_quantity_after = target.proposed_confirmed_quantity;
+      line.current_decision_kind = "OPERATIONAL_ADJUSTMENT";
+      state.line_counts.adjusted = state.lines.filter((item) =>
+        item.current_decision_kind?.includes("ADJUST"),
+      ).length;
+      line.decision_history.push({
+        decision_id: line.current_decision_id,
+        decision_number: line.current_decision_number,
+        predecessor_decision_id: oldDecision,
+        decision_kind: "OPERATIONAL_ADJUSTMENT",
+        revision_id: line.current_revision_id,
+        theoretical_quantity_before: line.theoretical_quantity,
+        proposed_quantity_before: line.proposed_confirmed_quantity,
+        confirmed_quantity_after: target.proposed_confirmed_quantity,
+        planning_tick_count: "0",
+        reason_code: target.reason_code,
+        reason_note: target.reason_note,
+        policy_revision_id: line.effective_policy?.revision_id ?? oldRevision,
+        decided_at: request.requested_at,
+        batch_version: state.batch_version,
+      });
+      const result = success({
+        contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+        command_name: "correct_confirmed_need",
+        command_id: request.command_id,
+        confirmed_need_batch_id: state.confirmed_need_batch_id,
+        receipt_id: crypto.randomUUID(),
+        idempotency_status: "COMPLETED",
+        resulting_batch_version: state.batch_version,
+        child_command_ids: [crypto.randomUUID(), crypto.randomUUID()],
+        created_successor_revision_ids: [line.current_revision_id],
+        created_decision_ids: [line.current_decision_id],
+        authoritative_readback: structuredClone(state) as unknown as JsonValue,
+      });
+      correctionReceipts.set(request.command_id, {
+        request: JSON.stringify(request),
+        result: structuredClone(result),
+      });
+      return result;
+    },
     async getReview(
       _subject,
       correlationId,

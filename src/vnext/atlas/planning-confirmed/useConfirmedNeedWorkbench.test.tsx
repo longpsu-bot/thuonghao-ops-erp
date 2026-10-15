@@ -1,3 +1,4 @@
+import { confirmedNeedSaveV2Request } from "../bridges/confirmedNeed";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useConfirmedNeedWorkbench } from "./useConfirmedNeedWorkbench";
@@ -1178,3 +1179,282 @@ it.each(["normal", "not_generated"] as const)(
     ).toBe(true);
   },
 );
+
+describe("released correction within the existing owner", () => {
+  async function editing() {
+    const h = await ready("released");
+    act(() => h.result.current.openCorrection("line-0"));
+    act(() =>
+      h.result.current.updateCorrection({
+        quantity: "12.500001",
+        reason_code: "OTHER",
+        reason_note: "Bếp yêu cầu",
+      }),
+    );
+    return h;
+  }
+  async function reviewed() {
+    const h = await editing();
+    await act(() => h.result.current.previewCorrection());
+    expect(h.result.current.correction?.preview).not.toBeNull();
+    return h;
+  }
+  it("preserves ordinary released guard and sends one atomic correction followed by fresh read", async () => {
+    const h = await reviewed(),
+      command = vi.spyOn(h.fixture.confirmedNeedApi, "correct");
+    const reads = h.read.mock.calls.length;
+    await act(() => h.result.current.saveCorrection());
+    expect(command).toHaveBeenCalledTimes(1);
+    expect(h.save).not.toHaveBeenCalled();
+    expect(h.read).toHaveBeenCalledTimes(reads + 1);
+    expect(h.result.current.workbench?.lines[0]?.confirmed_quantity_after).toBe(
+      "12.500001",
+    );
+    expect(h.result.current.workbench?.lines[1]?.current_revision_id).toBe(
+      "revision-1",
+    );
+    expect(h.result.current.correction).toBeNull();
+    expect(h.result.current.notice).toContain("Đã lưu điều chỉnh");
+  });
+  it("keeps full input and exact command while UNKNOWN locks context/close/exit", async () => {
+    const h = await reviewed(),
+      api = h.fixture.confirmedNeedApi,
+      original = api.correct,
+      call = vi
+        .spyOn(api, "correct")
+        .mockRejectedValueOnce(new Error("response lost"));
+    await act(() => h.result.current.saveCorrection());
+    const request = structuredClone(call.mock.calls[0]![0]);
+    expect(h.result.current.lock).toBe("unknown");
+    const exit = vi.fn();
+    act(() => {
+      h.result.current.updateCorrection({ quantity: "99" });
+      h.result.current.closeCorrection();
+      h.result.current.transition({ date: "2026-09-08" });
+      h.result.current.requestExit(exit);
+    });
+    expect(exit).not.toHaveBeenCalled();
+    expect(h.result.current.date).toBe(reviewDate);
+    expect(h.result.current.correction?.quantity).toBe("12.500001");
+    call.mockImplementation(original);
+    await act(() => h.result.current.retryCorrection());
+    expect(call.mock.calls[1]![0]).toEqual(request);
+    expect(h.result.current.lock).toBeNull();
+    expect(h.result.current.correction).toBeNull();
+  });
+  it("does not emit success or discard a committed request on readback failure, and recovers without another write", async () => {
+    const h = await reviewed(),
+      command = vi.spyOn(h.fixture.confirmedNeedApi, "correct");
+    h.read.mockResolvedValueOnce(reviewFailure());
+    await act(() => h.result.current.saveCorrection());
+    expect(h.result.current.correction?.status).toBe("READBACK");
+    expect(h.result.current.notice ?? "").not.toContain("Đã lưu điều chỉnh");
+    expect(h.result.current.lock).toBe("unknown");
+    await act(() => h.result.current.recover());
+    expect(command).toHaveBeenCalledTimes(1);
+    expect(h.result.current.correction).toBeNull();
+  });
+  it("accepts fresh later current data after replay instead of its frozen response", async () => {
+    const h = await reviewed(),
+      api = h.fixture.confirmedNeedApi,
+      original = api.correct;
+    const command = vi
+      .spyOn(api, "correct")
+      .mockImplementationOnce(async (request) => {
+        await original(request);
+        const line = h.fixture.batch.lines[0]!;
+        await api.save(
+          confirmedNeedSaveV2Request(
+            "operator",
+            "later",
+            h.fixture.batch.confirmed_need_batch_id,
+            h.fixture.batch.batch_version,
+            [
+              {
+                confirmed_need_line_id: line.confirmed_need_line_id,
+                expected_current_revision_id: line.current_revision_id,
+                expected_current_decision_id: line.current_decision_id,
+                proposed_confirmed_quantity: "13.000000",
+                reason_code: "OTHER",
+                reason_note: "Lưu thông thường sau điều chỉnh",
+              },
+            ],
+          ),
+        );
+        throw new Error("committed response lost");
+      });
+    await act(() => h.result.current.saveCorrection());
+    expect(h.result.current.correction?.status).toBe("UNKNOWN");
+    const request = structuredClone(command.mock.calls[0]![0]);
+    command.mockImplementation(original);
+    await act(() => h.result.current.retryCorrection());
+    expect(command.mock.calls[1]![0]).toEqual(request);
+    expect(h.result.current.workbench?.batch_version).toBe(7);
+    expect(h.result.current.workbench?.lines[0]?.confirmed_quantity_after).toBe(
+      "13.000000",
+    );
+  });
+  it("invalidates a proposal on edits and ignores a late preview", async () => {
+    const h = await editing(),
+      api = h.fixture.confirmedNeedApi;
+    let resolve!: (result: ReturnType<typeof reviewSuccess>) => void;
+    const original = api.previewCorrection,
+      spy = vi.spyOn(api, "previewCorrection").mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            resolve = r;
+          }),
+      );
+    let pending!: Promise<void>;
+    act(() => {
+      pending = h.result.current.previewCorrection();
+    });
+    const delayed = await original(spy.mock.calls[0]![0]);
+    act(() =>
+      h.result.current.updateCorrection({
+        reason_note: "Thay đổi sau xem trước",
+      }),
+    );
+    await act(async () => {
+      resolve(delayed as ReturnType<typeof reviewSuccess>);
+      await pending;
+    });
+    expect(h.result.current.correction?.preview).toBeNull();
+    expect(h.result.current.correction?.reason_note).toBe(
+      "Thay đổi sau xem trước",
+    );
+  });
+  it("guards dirty School/date/module transitions with Cancel and explicit discard", async () => {
+    const h = await editing(),
+      exit = vi.fn();
+    act(() => h.result.current.transition({ schoolIds: ["school-1"] }));
+    expect(h.result.current.pendingTransition).not.toBeNull();
+    act(() => h.result.current.cancelTransition());
+    expect(h.result.current.correction?.quantity).toBe("12.500001");
+    expect(h.result.current.schoolIds).toEqual([]);
+    act(() => h.result.current.requestExit(exit));
+    act(() => h.result.current.discardTransition());
+    expect(exit).toHaveBeenCalledTimes(1);
+    expect(h.result.current.correction).toBeNull();
+  });
+  it("retains stale input, clears proposal and requires fresh authoritative refresh/review", async () => {
+    const h = await reviewed();
+    vi.spyOn(h.fixture.confirmedNeedApi, "correct").mockResolvedValueOnce(
+      reviewFailure("STALE_CORRECTION_PROPOSAL", "NO_COMMITTED_CHANGE"),
+    );
+    await act(() => h.result.current.saveCorrection());
+    expect(h.result.current.correction?.status).toBe("STALE");
+    expect(h.result.current.correction?.preview).toBeNull();
+    expect(h.result.current.correction?.quantity).toBe("12.500001");
+    await act(() => h.result.current.recover());
+    expect(h.result.current.correction?.status).toBe("EDITING");
+    expect(h.result.current.correction?.preview).toBeNull();
+  });
+  it("keeps known retry exact and reports authority/reason denial without a write", async () => {
+    const h = await reviewed(),
+      spy = vi
+        .spyOn(h.fixture.confirmedNeedApi, "correct")
+        .mockResolvedValueOnce(
+          reviewFailure("RETRYABLE_CONCURRENCY_FAILURE", "NO_COMMITTED_CHANGE"),
+        );
+    await act(() => h.result.current.saveCorrection());
+    expect(h.result.current.correction?.status).toBe("RETRYABLE");
+    const request = spy.mock.calls[0]![0];
+    await act(() => h.result.current.retryCorrection());
+    expect(spy.mock.calls[1]![0]).toEqual(request);
+    const denied = await editing();
+    vi.spyOn(
+      denied.fixture.confirmedNeedApi,
+      "previewCorrection",
+    ).mockResolvedValueOnce(reviewFailure("CAPABILITY_DENIED", "NO_WRITE"));
+    await act(() => denied.result.current.previewCorrection());
+    expect(denied.result.current.correction?.preview).toBeNull();
+    expect(denied.result.current.correction?.error).toBeTruthy();
+  });
+  it("returns focus only after completed fresh readback", async () => {
+    const h = await ready("released"),
+      trigger = document.createElement("button");
+    document.body.append(trigger);
+    act(() => h.result.current.openCorrection("line-0", trigger));
+    act(() =>
+      h.result.current.updateCorrection({
+        quantity: "11",
+        reason_note: "Bếp yêu cầu",
+      }),
+    );
+    await act(() => h.result.current.previewCorrection());
+    await act(() => h.result.current.saveCorrection());
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+    trigger.remove();
+  });
+  it("reason-code-only changes are dirty and incomplete reasons never invoke preview", async () => {
+    const h = await ready("released"),
+      spy = vi.spyOn(h.fixture.confirmedNeedApi, "previewCorrection");
+    act(() => h.result.current.openCorrection("line-0"));
+    act(() => h.result.current.updateCorrection({ reason_code: "OTHER" }));
+    expect(h.result.current.allDirty).toBe(true);
+    await act(() => h.result.current.previewCorrection());
+    expect(spy).not.toHaveBeenCalled();
+    expect(h.result.current.correction?.error).toBeTruthy();
+  });
+  it("guards correction during range and loaded-day navigation, retaining input on Cancel", async () => {
+    const h = await ready("released");
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: "2026-09-08" }),
+    );
+    await waitFor(() => expect(h.result.current.rangeBusy).toBe(false));
+    act(() => h.result.current.openCorrection("line-0"));
+    act(() =>
+      h.result.current.updateCorrection({
+        quantity: "12",
+        reason_note: "Bếp yêu cầu",
+      }),
+    );
+    act(() => h.result.current.selectDay("2026-09-08"));
+    expect(h.result.current.pendingTransition).not.toBeNull();
+    expect(h.result.current.date).toBe(reviewDate);
+    act(() => h.result.current.cancelTransition());
+    expect(h.result.current.correction?.quantity).toBe("12");
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: reviewDate }),
+    );
+    expect(h.result.current.pendingTransition).not.toBeNull();
+    expect(h.result.current.range.end).toBe("2026-09-08");
+    act(() => h.result.current.discardTransition());
+    expect(h.result.current.range.end).toBe(reviewDate);
+    expect(h.result.current.correction).toBeNull();
+  });
+  it("ignores a preview returned after explicit dirty context discard", async () => {
+    const h = await editing(),
+      api = h.fixture.confirmedNeedApi,
+      original = api.previewCorrection;
+    let resolve!: (v: Awaited<ReturnType<typeof original>>) => void;
+    const spy = vi
+      .spyOn(api, "previewCorrection")
+      .mockImplementationOnce(() => new Promise((r) => (resolve = r)));
+    let pending!: Promise<void>;
+    act(() => {
+      pending = h.result.current.previewCorrection();
+    });
+    const result = await original(spy.mock.calls[0]![0]);
+    act(() => h.result.current.transition({ schoolIds: ["school-1"] }));
+    act(() => h.result.current.discardTransition());
+    await act(async () => {
+      resolve(result);
+      await pending;
+    });
+    expect(h.result.current.correction).toBeNull();
+    expect(h.result.current.schoolIds).toEqual(["school-1"]);
+  });
+  it("keeps a committed request locked when fresh read belongs to the wrong batch", async () => {
+    const h = await reviewed();
+    const wrong = structuredClone(h.fixture.batch);
+    wrong.confirmed_need_batch_id = "other";
+    h.read.mockResolvedValueOnce(reviewSuccess({ workbench: wrong }));
+    await act(() => h.result.current.saveCorrection());
+    expect(h.result.current.correction?.status).toBe("READBACK");
+    expect(h.result.current.lock).toBe("unknown");
+    await act(() => h.result.current.recover());
+    expect(h.result.current.correction).toBeNull();
+  });
+});
