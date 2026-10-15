@@ -1,3 +1,4 @@
+import type { AtlasRpcResult } from "../bridges/confirmedNeed";
 import { confirmedNeedSaveV2Request } from "../bridges/confirmedNeed";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -1457,4 +1458,153 @@ describe("released correction within the existing owner", () => {
     await act(() => h.result.current.recover());
     expect(h.result.current.correction).toBeNull();
   });
+  it("does not open a correction from a retained workbench under invalid range", async () => {
+    const h = await ready("released"),
+      preview = vi.spyOn(h.fixture.confirmedNeedApi, "previewCorrection"),
+      write = vi.spyOn(h.fixture.confirmedNeedApi, "correct");
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: "2026-09-15" }),
+    );
+    expect(h.result.current.rangeError).toBeTruthy();
+    act(() => h.result.current.openCorrection("line-0"));
+    await act(() => h.result.current.previewCorrection());
+    await act(() => h.result.current.saveCorrection());
+    expect(h.result.current.correction).toBeNull();
+    expect(preview).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
+  });
+  it("blocks a previously reviewed correction Save under invalid range while retaining input", async () => {
+    const h = await reviewed(),
+      write = vi.spyOn(h.fixture.confirmedNeedApi, "correct");
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: "2026-09-15" }),
+    );
+    await act(() => h.result.current.saveCorrection());
+    expect(write).not.toHaveBeenCalled();
+    expect(h.result.current.correction?.quantity).toBe("12.500001");
+    expect(h.result.current.correction?.preview).toBeNull();
+  });
+  it("ignores a late preview and prevents another preview under invalid range", async () => {
+    const h = await editing(),
+      api = h.fixture.confirmedNeedApi,
+      original = api.previewCorrection;
+    let resolve!: (v: AtlasRpcResult) => void;
+    const preview = vi
+      .spyOn(api, "previewCorrection")
+      .mockImplementationOnce(() => new Promise((r) => (resolve = r)));
+    let pending!: Promise<void>;
+    act(() => {
+      pending = h.result.current.previewCorrection();
+    });
+    const answer = await original(preview.mock.calls[0]![0]);
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: "2026-09-15" }),
+    );
+    await act(async () => {
+      resolve(answer);
+      await pending;
+    });
+    await act(() => h.result.current.previewCorrection());
+    expect(preview).toHaveBeenCalledTimes(1);
+    expect(h.result.current.correction?.preview).toBeNull();
+    expect(h.result.current.correction?.quantity).toBe("12.500001");
+  });
+  it("blocks retry/recovery under invalid range without replacing the frozen request", async () => {
+    const h = await reviewed(),
+      api = h.fixture.confirmedNeedApi,
+      original = api.correct;
+    const write = vi
+      .spyOn(api, "correct")
+      .mockResolvedValue(
+        reviewFailure("RETRYABLE_CONCURRENCY_FAILURE", "NO_COMMITTED_CHANGE"),
+      );
+    await act(() => h.result.current.saveCorrection());
+    const request = structuredClone(write.mock.calls[0]![0]);
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: "2026-09-15" }),
+    );
+    await act(() => h.result.current.retryCorrection());
+    await act(() => h.result.current.recover());
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(h.result.current.correction?.quantity).toBe("12.500001");
+    act(() =>
+      h.result.current.changeRange({ start: reviewDate, end: reviewDate }),
+    );
+    act(() => h.result.current.cancelTransition());
+    write.mockImplementation(original);
+    await act(() => h.result.current.retryCorrection());
+    expect(write.mock.calls[1]![0]).toEqual(request);
+    expect(h.result.current.correction).toBeNull();
+  });
+  it.each([
+    "auth",
+    "client",
+    "cap-no-write",
+    "cap-no-business-write",
+    "retry-no-change",
+    "transport",
+  ])(
+    "keeps original UNKNOWN through an inconclusive %s retry, then resolves exact receipt replay",
+    async (kind) => {
+      const h = await reviewed(),
+        api = h.fixture.confirmedNeedApi,
+        original = api.correct;
+      const write = vi
+        .spyOn(api, "correct")
+        .mockImplementationOnce(async (request) => {
+          await original(request);
+          throw new Error("committed response lost");
+        });
+      await act(() => h.result.current.saveCorrection());
+      const request = structuredClone(write.mock.calls[0]![0]);
+      const diagnostic = {
+        code: "SESSION_EXPIRED" as const,
+        safeMessage: "Phiên làm việc đã hết hạn.",
+      };
+      const failed: AtlasRpcResult =
+        kind === "auth"
+          ? { kind: "auth_error", diagnostic }
+          : kind === "client"
+            ? {
+                kind: "client_error",
+                diagnostic: { ...diagnostic, code: "RPC_NOT_ALLOWED" },
+              }
+            : kind === "transport"
+              ? {
+                  kind: "transport_error",
+                  diagnostic: { ...diagnostic, code: "NETWORK_FAILURE" },
+                }
+              : reviewFailure(
+                  kind === "retry-no-change"
+                    ? "RETRYABLE_CONCURRENCY_FAILURE"
+                    : "CAPABILITY_DENIED",
+                  kind === "cap-no-write"
+                    ? "NO_WRITE"
+                    : kind === "cap-no-business-write"
+                      ? "NO_BUSINESS_WRITE"
+                      : "NO_COMMITTED_CHANGE",
+                );
+      write.mockResolvedValueOnce(failed);
+      await act(() => h.result.current.retryCorrection());
+      expect(h.result.current.lock).toBe("unknown");
+      expect(h.result.current.correction?.status).toBe("UNKNOWN");
+      const exit = vi.fn();
+      act(() => {
+        h.result.current.updateCorrection({ quantity: "99" });
+        h.result.current.closeCorrection();
+        h.result.current.requestExit(exit);
+        h.result.current.changeRange({ start: reviewDate, end: "2026-09-15" });
+        h.result.current.discardTransition();
+      });
+      expect(exit).not.toHaveBeenCalled();
+      expect(h.result.current.correction?.quantity).toBe("12.500001");
+      expect(h.result.current.rangeError).toBeNull();
+      write.mockImplementation(original);
+      await act(() => h.result.current.retryCorrection());
+      expect(write.mock.calls[1]![0]).toEqual(request);
+      expect(write.mock.calls[2]![0]).toEqual(request);
+      expect(h.result.current.correction).toBeNull();
+      expect(h.result.current.lock).toBeNull();
+    },
+  );
 });

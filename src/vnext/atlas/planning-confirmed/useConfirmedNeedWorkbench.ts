@@ -159,6 +159,7 @@ export function useConfirmedNeedWorkbench({
   const correctionRequest =
     useRef<ConfirmedNeedCorrectionCommandRequest | null>(null);
   const correctionCommittedVersion = useRef<number | null>(null);
+  const correctionOriginalUnknown = useRef(false);
   const correctionFocus = useRef<HTMLElement | null>(null);
   const [correctionFocusPending, setCorrectionFocusPending] = useState(false);
   const correctionDirty = Boolean(
@@ -218,6 +219,7 @@ export function useConfirmedNeedWorkbench({
     setCorrection(null);
     correctionRequest.current = null;
     correctionCommittedVersion.current = null;
+    correctionOriginalUnknown.current = false;
   }, [authSubject, preflightApi, confirmedNeedApi]);
   const shoppingContext = useRef({
     range,
@@ -705,10 +707,12 @@ export function useConfirmedNeedWorkbench({
     setCorrection(null);
     correctionRequest.current = null;
     correctionCommittedVersion.current = null;
+    correctionOriginalUnknown.current = false;
     setCorrectionFocusPending(true);
   };
   const openCorrection = (id: string, returnFocus?: HTMLElement) => {
     if (
+      invalidRange.current ||
       !released ||
       !current ||
       allDirty ||
@@ -758,6 +762,7 @@ export function useConfirmedNeedWorkbench({
     >,
   ) => {
     if (
+      invalidRange.current ||
       !correctionRef.current ||
       inFlight.current ||
       correctionRequest.current ||
@@ -774,6 +779,7 @@ export function useConfirmedNeedWorkbench({
   const previewCorrection = async () => {
     const form = correctionRef.current;
     if (
+      invalidRange.current ||
       !form ||
       !authSubject ||
       inFlight.current ||
@@ -799,7 +805,11 @@ export function useConfirmedNeedWorkbench({
         v ? { ...v, status: "PREVIEWING", preview: null, error: null } : v,
       );
       const result = await confirmedNeedApi.previewCorrection(request);
-      if (token !== correctionEpoch.current || context !== epoch.current)
+      if (
+        invalidRange.current ||
+        token !== correctionEpoch.current ||
+        context !== epoch.current
+      )
         return;
       const preview = confirmedNeedCorrectionPreviewFromResult(
         result,
@@ -820,7 +830,11 @@ export function useConfirmedNeedWorkbench({
           : v,
       );
     } catch (error) {
-      if (token === correctionEpoch.current && context === epoch.current)
+      if (
+        !invalidRange.current &&
+        token === correctionEpoch.current &&
+        context === epoch.current
+      )
         setCorrection((v) =>
           v
             ? {
@@ -840,6 +854,7 @@ export function useConfirmedNeedWorkbench({
     },
     context: number,
   ) => {
+    if (invalidRange.current) throw new Error(readFailure);
     if (!authSubject || !preflight) return false;
     const fresh = await loadCompleteConfirmedNeedReview(
       confirmedNeedApi,
@@ -848,6 +863,7 @@ export function useConfirmedNeedWorkbench({
       date,
     );
     if (epoch.current !== context) return false;
+    if (invalidRange.current) throw new Error(readFailure);
     if (
       !validBatch(fresh, preflight, date) ||
       fresh.batch_version <
@@ -907,7 +923,7 @@ export function useConfirmedNeedWorkbench({
   const executeCorrection = async (
     request: ConfirmedNeedCorrectionCommandRequest,
   ) => {
-    if (inFlight.current) return;
+    if (invalidRange.current || inFlight.current) return;
     const context = epoch.current;
     inFlight.current = true;
     setBusy(true);
@@ -918,6 +934,7 @@ export function useConfirmedNeedWorkbench({
       if (context !== epoch.current) return;
       const outcome = confirmedNeedCorrectionOutcome(result, request);
       if (outcome.kind === "committed") {
+        correctionOriginalUnknown.current = false;
         correctionCommittedVersion.current = outcome.version;
         setCorrection((v) => (v ? { ...v, status: "READBACK" } : v));
         try {
@@ -930,7 +947,12 @@ export function useConfirmedNeedWorkbench({
             );
           }
         }
-      } else if (outcome.kind === "unknown") {
+      } else if (
+        outcome.kind === "unknown" ||
+        correctionOriginalUnknown.current
+      ) {
+        // A denied or no-write retry does not resolve an earlier lost response.
+        correctionOriginalUnknown.current = true;
         setLock("unknown");
         setCorrection((v) =>
           v
@@ -938,7 +960,9 @@ export function useConfirmedNeedWorkbench({
                 ...v,
                 status: "UNKNOWN",
                 error:
-                  "Chưa xác định được kết quả. Thử lại đúng yêu cầu đã gửi để xác nhận.",
+                  outcome.kind === "unknown"
+                    ? "Chưa xác định được kết quả. Thử lại đúng yêu cầu đã gửi để xác nhận."
+                    : `${outcome.message} Kết quả yêu cầu ban đầu vẫn chưa xác định; cần xác nhận đúng yêu cầu đã gửi.`,
               }
             : v,
         );
@@ -964,6 +988,7 @@ export function useConfirmedNeedWorkbench({
       }
     } catch {
       if (context === epoch.current) {
+        correctionOriginalUnknown.current = true;
         setLock("unknown");
         setCorrection((v) =>
           v
@@ -986,6 +1011,7 @@ export function useConfirmedNeedWorkbench({
   const saveCorrection = async () => {
     const form = correctionRef.current;
     if (
+      invalidRange.current ||
       !form?.preview?.allowed_actions.correct ||
       !authSubject ||
       inFlight.current ||
@@ -1006,6 +1032,7 @@ export function useConfirmedNeedWorkbench({
     await executeCorrection(request);
   };
   const retryCorrection = async () => {
+    if (invalidRange.current) return;
     if (
       correctionRequest.current &&
       correctionCommittedVersion.current === null
@@ -1014,7 +1041,8 @@ export function useConfirmedNeedWorkbench({
   };
   const recoverCorrection = async () => {
     const form = correctionRef.current;
-    if (!form || !authSubject || inFlight.current) return;
+    if (invalidRange.current || !form || !authSubject || inFlight.current)
+      return;
     if (
       correctionRequest.current &&
       correctionCommittedVersion.current === null
@@ -1140,6 +1168,16 @@ export function useConfirmedNeedWorkbench({
       setRangeError(error);
       invalidRange.current = error;
       if (error) {
+        correctionEpoch.current++;
+        setCorrection((v) =>
+          v
+            ? {
+                ...v,
+                preview: null,
+                status: v.status === "PREVIEWING" ? "EDITING" : v.status,
+              }
+            : v,
+        );
         rangeEpoch.current++;
         setRangeBusy(false);
         return;
