@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-CONFIRMED-NEED-CORRECTION-C-01
-Status: TASK1_ONLY — human written-spec approval recorded; baseline/public fixture/RED released after this stored-plan authority commit; no new C business function or migration definition authorized.
+Status: TASK1_COMPLETE — local109 baseline, owner probes and authentic public fixture/RED complete; Tasks2–8 await reviewed fence/root/bridge release; no C business function or migration definition authorized.
 Navigator/reviewer: Terra, read-only
 Implementer/document author: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
@@ -36,6 +36,16 @@ Frontend [38690592645](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/
 ## Task1 initialization checkpoint
 
 The first owned `atlas_c_correction_01` attempt is preserved after accepted migration20260802164523 failed its CMD-15 exact-anchor check. TEMP Python text stdin translated LF to CRLF; no repository migration was changed. Before any retry, the captured19-row global runtime-membership image was restored transactionally and verified exact JSON equality. Original failed log and before/failed/restored membership reports remain under `%TEMP%/atlas-c-*`. A fresh proven-absent C02 will use byte stdin; this is baseline transport repair, not a C business change or a fabricated ledger.
+
+## Completed Task1 evidence — local only
+
+Owned `atlas_c_correction_02` started absent on the verified canonicalE Docker PostgreSQL17 container. All109 original Git blob byte images from main `d102b2f1b083005d6553867fa5ccdf8c988a0316` applied identically, tip20261014120320. This is schema-applied, no fabricated migration ledger. Global memberships, role attributes and configs compare exactly before/after. Baseline catalog30/30 passes:121 public APIs,349 private functions,117 tables; A2 column/B API absent. C01's failed transport setup remains preserved.
+
+The rollback fixture uses one authenticated synthetic Actor through public Pantry Save→two CREATED generation runs→Need Save→allocation Save→validation/approval/release-from-approved V1→Handoff→four explicit supplier/date PO releases→three explicit School PXK releases→official authenticated reads. SchoolsA/B share a destination; SchoolC is another destination/date; six immutable decisions/four aggregate families/two Suppliers are real public command outputs. No direct released authority/replica seeding. V2 release's saved-review entry was correctly rejected after explicit approval, so the fixture uses the existing approved-state release entry. This is a fixture sequence correction, not a production change.
+
+Tracked initial suite:7 public setup/guard assertions PASS,2 expected missing-C-API RED; ordinary released Save remains blocked and adds no successor. Separate authenticated invocation proves missing function. Reports outside repository: `%TEMP%/atlas-c02-public-fixture-proof.json` (30 stages,29 successful and1 intentional denial), `atlas-c02-public-fixture-red-final.log`, `atlas-c02-undefined-rpc-red.log`, baseline/owner reports and `atlas-c02-postflight.json`. Final postflight:0 actors/Need lines/receipts/PO/PXK, both C APIs absent. No expected-RED suite registration/push before later business GREEN.
+
+C02 confirms the historical projection is review-owned SECURITY INVOKER; EXECUTE alone cannot fix procurement's absent validation SELECT. Plan now uses a narrow review-owned SECURITY DEFINER frozen-attempt bridge plus proc-owned Handoff membership/current-root context and exact runtime EXECUTE only. No table grants were made. Snapshot lines store revision/quantity/Unit, while exact immutable revisions/contributions capture School/customer/destination; never derive original identity from today's stable pointer or Master defaults.
 
 ## Required technical review
 
