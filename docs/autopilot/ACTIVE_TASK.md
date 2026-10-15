@@ -1,48 +1,41 @@
 # Atlas Autopilot — Active Task
 
-Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01
-Status: READY FOR PRODUCT REVIEW — awaiting Product choices and explicit design approval; no implementation authorized.
+Task: ATLAS-OPERATOR-SAFE-FIXES-A-01
+Status: AUTHORIZED — PR A implementation; Draft PR only
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
-Starting main: f6686c7952024b499fcd3499cbcb38948ab15a5d
-Atlas Staging: rnzxmxiiqgtdevzregff — migration 109; no hosted action in this task
-OPS v1 / Retool / Production: no writes or commitments
+Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
+Canonical checkout: E:/Project/OPS ERP/thuonghao-ops-erp
 
-## Previous read gate accepted — 14 October 2026
+## Task authority — 15 October 2026
 
-[PR #383](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/383) merged at starting main with a tree identical to reviewed source `64491061df79bf9c8349d5f397d57c06a8fe9edb`. Source Frontend 38568664899 and Full Integration 38568760358 passed. Root's protected [actual HTTP read 38570792340](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38570792340) passed against deployed business `8e68c2ce2cf766279d020210e9b53b457048db22` using verifier starting main: 236 distinct families, 4,973.201109 ms, full actual-row PostgreSQL MD5 `48e433c45fac665d873103542408a484`, unchanged source/receipt/audit fact digest `d55edbee74200aa3e02e8fc94ca8787d` (matching acceptance 105).
+The Product Owner approved the bounded existing-flow operator fixes in `C:/Users/HOME/Downloads/ATLAS_OPERATOR_FIXES_2026-10-15.md`. PR A proceeds first. The brief's explicit Draft-only delivery supersedes standing routine merge/deploy permission for this task: do not merge, deploy or write to any hosted database. OPS v1, Retool and Production remain no-write; no real PO/PXK commitment or staff grant is authorized.
 
-Root independently confirmed 36 probe-relation checks / zero probes, 17 real Draft POs and unchanged fingerprint `cefbff23b30cbc15dac0b890a956d884`. This is one successful hosted observation, not a load test or three-sample performance certification. Main Frontend 38570729098 and Full Integration 38570728987 were still running at handoff; no pass is asserted here. The formal A/B/C gate 38566354791 and 109's 48-case rollback acceptance remain complete; do not rerun them or rewrite historical 108/109 evidence.
+Preserve OPS_SYSTEM_MAP v1.0, FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED, the Planning/Procurement freeze, current Design Language v3/A+ and thirteen persistent workbench owners. PostgreSQL remains business authority; React coordinates presentation and existing commands.
 
-## Authorized document packet
+## Approved A1/A3/A4 boundary
 
-Prepare the smallest one-operator receiving design for Product review under the active Autopilot horizon. First record this baton and the completed read gate in a separate commit, before design files. Approved constraints and existing authority must be distinguished from proposed choices. All four Product groups remain explicitly UNDECIDED:
+- A1: initialize all three Atlas workspace references (`openIds`, `activeId`, `entries`) to existing `planning` (Thực đơn). Preserve auth, date/week selection, thirteen owners, local persistence and dirty/close/sign-out guards.
+- A3: keep the supplier/day PO list full width and use existing detail drawer/expansion patterns. Show recipient count, first one or two labels and an expandable complete list. Separate total/generated, Draft, released and attention counts. Any release confirmation/toast must identify the single supplier/document and one-item scope; no bulk commitment claim.
+- A4: improve `details_ing` School-column wrapping in the existing ExcelJS production exporter. Keep the complete canonical School text, exact quantities, technical identity and frozen document lineage. Verify native Excel/print behavior, including `PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2`; do not insert arbitrary newline artifacts or substitute a new workbook generator.
 
-1. First receiving site/job and physical receipt evidence versus stock creation.
-2. Procurement supplier-confirmation gap, exact current released revision, partial arrivals and superseded orders.
-3. Observed physical facts, quantity/Unit evidence and owning exception rules.
-4. Commit/correction boundary, capability and relational scope.
+A2 is ON HOLD pending Terra's exact Unit-label contract map and a separately bounded instruction. Confirmed Need already exposes Unit name, but Allocation/PO and released snapshots need investigation. Do not add backend projections, migrations, current-master joins for historical released labels, backfills or quantities/Unit-code changes under this initial boundary. Read those edges only. Await Terra's final map before final code sequencing.
 
-Offer concrete alternatives, consequences and questions without selecting business policy where operating facts are unknown. Ordinary work must be possible for one authorized Actor; capabilities, scope, audit and approved exception owners remain mandatory. `RELEASED_TO_SUPPLIER` does not establish supplier confirmation or `READY_FOR_WAREHOUSE_RECEIVING`. The in-memory prototype is exploratory evidence only, not connected authority or a lifecycle to copy.
+## Allowed reach
 
-## Allowed files and checks
+- `src/vnext/atlas/AtlasVNextApp.tsx` and directly affected existing tests/review fixture.
+- `src/vnext/atlas/procurement/ProcurementOrdersStage.tsx`, directly required presentation components/caller release-message path and existing focused tests/review fixtures.
+- `src/modules/atlas/procurement/purchaseOrderExports.ts`, its existing tests and existing document/native-Excel QA helpers where needed for A4.
+- This baton and bounded validation/evidence documentation for PR A.
 
-- This baton.
-- `docs/runbooks/school-fulfilment-cutover-readiness.md`: close the actual read gate.
-- `docs/testing/evidence/atlas-cutover-released-allocation-read-staging-109.json`: durable parsed report from Root's saved evidence.
-- `docs/architecture/warehouse-receiving-minimum-design.md`.
-- `docs/decisions/decision-atlas-warehouse-receiving-minimum.md`.
-- `docs/decisions/decision-register.md`: PROPOSED link only.
-- `docs/architecture/roadmap.md`: Warehouse design gate pointer only.
+Reuse incumbent tokens/components, review/story fixtures and QA helpers. No new dependencies, framework, generator, role/capability, schema/migration, business arithmetic, lifecycle or status. PR B/C/D and Warehouse implementation are excluded. Any actual contract gap or larger reach must be reported before expanding.
 
-Read AGENTS, mandate, README, vision, business-rule/decision registers and the existing Warehouse receiving/stock-release contracts, PD-03 conformance review, ARCH-002, roadmap, School Procurement API and fixture prototype. Run focused formatting, whitespace and local-link validation only; no tests for prose and no new test framework.
+## Validation and delivery
 
-## Delivery and hard stop
+Use focused test-first RED/GREEN regressions for landing/persistent owner behavior, PO states/counts/one-item release messages and export text/quantity/lineage. Run focused related tests and necessary type/format checks; GitHub owns full routine CI. Apply Impeccable craft floor immediately before UI edits and its mechanical detection once after the final UI batch. Use existing Chakra v3 and React guidance with natural Vietnamese operational copy.
 
-Fresh bounded branch from verified latest main, Draft PR and fixed-SHA Terra audit; Root owns routine integration. The packet may become READY FOR PRODUCT REVIEW, while every business choice remains PROPOSED. Final explicit Warehouse Product design approval is a HARD STOP before any implementation.
+Bounded local browser QA at 1280/1440/1920 checks no overlapping columns/actions, scrolling, drawer focus and correct 17-PO fixture counts (16 Draft, one released). Reuse existing native Excel helpers and production-generated workbook for School suffix/print QA; Root may perform the native hidden-instance inspection. No hosted fixtures or business commands. Preserve raw RED/GREEN and sanitized visual/native evidence, report exact changed files and starting/final SHAs, push one Draft PR for independent audit. No merge or deployment follows.
 
-No lifecycle/status machinery, role grants, staff assignments, database/API/UI/prototype edits, hosted action, fixture creation, Production/v1/Retool write or real commitment is authorized. Preserve released history, existing drafts and exception ownership. No Warehouse backend or connected UI work follows automatically from merging this documentation.
+## Deferred Warehouse Product hard stop
 
-## Packet and focused verification
-
-The [minimum design](../architecture/warehouse-receiving-minimum-design.md) and [PROPOSED decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) separate approved authority from historical Draft Warehouse contracts and in-memory prototype evidence. No Product option is selected. The [closed read gate](../runbooks/school-fulfilment-cutover-readiness.md) links the durable parsed report, which equals Root's saved report. Focused formatting, whitespace and local-link/anchor checks pass; no tests or hosted actions were needed for this prose-only task. Fixed-SHA Terra audit and PR CI remain integration gates, not Warehouse business-design approval.
+The prior [minimum Warehouse packet](../architecture/warehouse-receiving-minimum-design.md) remains READY FOR PRODUCT REVIEW. Its [decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) is PROPOSED with all four Product groups undecided. PR A does not approve those choices or authorize Warehouse implementation. Completed 108/109 and cutover read evidence remain historical and unchanged.
