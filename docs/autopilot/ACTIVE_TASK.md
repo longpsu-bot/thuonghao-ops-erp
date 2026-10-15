@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-CONFIRMED-NEED-CORRECTION-C-DESIGN-01
-Status: DESIGN_REVIEW_ONLY — proposed architectural spec prepared for human written-spec review; implementation is not authorized.
+Status: PLANNING — human written-spec approval recorded; TEMP implementation plan awaits Root/Terra technical review; only the bounded CI assertion correction below is authorized.
 Navigator/reviewer: Terra, read-only
 Implementer/document author: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
@@ -10,9 +10,9 @@ OPS v1 / Retool / Production: no writes or commitments
 
 ## Authority — 15 October 2026
 
-The Product Owner's operator fixes brief C and subsequent instruction to proceed authorize investigation/design of the existing append-only post-handoff correction workflow. D-044 already accepts School Need correction after PO/PXK, complete affected supplier/date replacement, the existing zero cancellation-required guard and explicit PXK successor release. The [proposed C architecture](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) preserves that meaning; its new interface, continuity, locks and catalog reach remain PROPOSED technical design.
+The Product Owner's operator fixes brief C and subsequent instruction to proceed authorize the existing append-only post-handoff correction workflow. On 15 October the user approved the reviewed spec: “if this mean PO/Dispatch can still re released after need correction then approve”. Root clarified the accepted meaning: valid affected positive POs can be explicitly released as reviewed complete replacements; Dispatch can be explicitly released as successors; old released documents remain preserved; true zero retains the existing cancellation-required guard. This matches spec `340721a49788163416176db816477168895f3442` and adds no automatic release chain or staff authority. D-044 already accepts School Need correction after PO/PXK, complete affected supplier/date replacement, the existing zero cancellation-required guard and explicit PXK successor release. The [proposed C architecture](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) preserves that meaning; its interface, continuity, locks and exact catalog implementation remain subject to the implementation-plan technical review before code.
 
-Root released this documentation-only Draft after Terra's TEMP design review while independent B CI continues. This does not authorize C code, migrations, tests, configuration or an implementation plan. Human written-spec review under the architectural brainstorming gate and a new bounded implementation baton are required before implementation. The user may approve the reviewed spec in ordinary language; no prescribed approval phrase or repeated confirmation is required.
+Human written-spec review is complete. Root authorized TEMP implementation planning and preparation of this baton, keeping the same C branch/PR. No C runtime implementation, migration or business test is authorized until Root/Terra review that concrete plan and release the bounded coding baton. The user may approve reviewed work in ordinary language; no prescribed approval phrase or repeated confirmation is required.
 
 ## Exact document scope
 
@@ -21,6 +21,10 @@ Root released this documentation-only Draft after Terra's TEMP design review whi
 - Clearly PROPOSED dated pointers in existing `docs/api/confirmed-need-save-release-v2.md`, `docs/api/school-catering-procurement.md` and `docs/api/school-dispatch-release.md`; existing implemented contracts remain authoritative.
 
 No app, SQL, test, config, workflow, dependency, A2/B implementation, historical 108/109 proof or Warehouse change. No merge, manual deployment or hosted database write is authorized/performed; automatic Pages previews from existing CI are not backend deployment/acceptance evidence. No actual staff grants, real supplier/PO/PXK commitments, Production or OPS v1/Retool writes.
+
+## Bounded CI assertion correction — separately authorized
+
+C design Frontend [38689177469](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38689177469) failed one existing focus assertion in `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.test.tsx:127`: the Sĩ số review region was present while focus remained on Lưu. Terra traced mount-effect focus and independently passed the tracked 38-case file locally; the timing failure was not locally reproduced. Root authorized only replacing the immediate `expect(review).toHaveFocus()` with `await waitFor(() => expect(review).toHaveFocus())`, using the existing import/default timeout. Preserve every other focus/removal assertion; no app changes, sleeps, timeout increases or test weakening. Commit this authority amendment before that one-line test edit. This exception does not release C runtime implementation.
 
 ## Required technical review
 
@@ -36,4 +40,4 @@ PR #385/#386 remain separate operator Drafts; C assumes neither their schema nor
 
 ## Completion and next gate
 
-Format and check relative links plus exact-range whitespace; commit/push a separate Draft architectural PR and attach it. No tests are added or rerun for prose. Keep the documentation Draft for human review. The next allowed action is written-spec review/clarification, not runtime implementation, merge, manual deployment or hosted writes.
+Format and check relative links plus exact-range whitespace; commit/push a separate Draft architectural PR and attach it. No tests are added for prose. Run only the authorized tracked 38-case PlanningInputsWorkbench file for the CI assertion correction, excluding ignored mirrors, then format/check and push the Draft. Continue the TEMP implementation plan for Root/Terra review; C runtime implementation, merge, manual deployment and hosted writes remain outside this phase.
