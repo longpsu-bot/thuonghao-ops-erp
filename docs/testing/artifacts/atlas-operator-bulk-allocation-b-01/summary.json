@@ -5,8 +5,13 @@
   "authority_commit": "5e891db431fdc683a5674ecfdf45cb2777df7b93",
   "migration": {
     "path": "supabase/migrations/20261015042701_operator_bulk_supplier_allocation.sql",
-    "sha256": "59361dd32f08916813ecb5f0219a272fe60d79a35298ee2efe9c99b16e3754c0",
-    "forward_apply": "COMMIT on reconstructed schema-applied main109; original main catalog30/30 before migration; no fabricated migration ledger"
+    "forward_apply": "COMMIT on reconstructed schema-applied main109; original main catalog30/30 before migration; no fabricated migration ledger",
+    "committed_lf_sha256": "718d274c0ba0616c4381ccc9ae4e47248adc4c9457bc58ccde69093216ac3ca2",
+    "applied_crlf_sha256": "59361dd32f08916813ecb5f0219a272fe60d79a35298ee2efe9c99b16e3754c0",
+    "committed_crlf_pairs": 0,
+    "applied_crlf_pairs": 420,
+    "normalized_bytes_equal": true,
+    "byte_image_qualification": "All current local SQL and lock-wait03 observations executed the CRLF working image. The committed Git image is LF; replacing CRLF with LF produces that Git blob byte-for-byte, with zero semantic delta. Original execution report hashes remain unchanged."
   },
   "current_hash_sql": [
     {
@@ -227,5 +232,6 @@
     "No hosted execution/deployment/real commitments or staff grants",
     "A2 unledgered default postgres and unrelated volumes preserved; no A2 snapshot field in B database",
     "No producer/export changes or native export re-certification"
-  ]
+  ],
+  "prior_connected_checkpoint_byte_image": "Working/applied checkpoint image; original recorded hash retained."
 }
