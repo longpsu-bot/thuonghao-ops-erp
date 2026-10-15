@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=extensions,public,pg_catalog;
-select plan(29);
+select plan(45);
 \ir ../local/confirmed_need_correction_fixture.sql
 
 -- These helpers only invoke existing public commands under the fixture JWT.
@@ -217,5 +217,106 @@ select is((select count(*)from unnest(array[
  'procurement gains no access to lifecycle-only proof predicates');
 select is((select count(*)from pg_proc p join pg_namespace n on n.oid=p.pronamespace
  where n.nspname='atlas_api'),121::bigint,'private proof slice adds no public API');
+
+select is((select count(*)from pg_proc p where p.oid=to_regprocedure(
+ 'atlas_core.confirmed_need_correction_lock_days(date,date)')
+ and p.proowner='atlas_owner'::regrole and not p.prosecdef
+ and p.provolatile='v' and p.proconfig @> array['search_path=""']),1::bigint,
+ 'daily absent-root fence is the exact private owner/INVOKER/volatile exception');
+select is((select count(*)from pg_proc p cross join unnest(array['authenticated','anon','service_role'])actor_role
+ where p.oid=to_regprocedure('atlas_core.confirmed_need_correction_lock_days(date,date)')
+ and has_function_privilege(actor_role,p.oid,'EXECUTE')),0::bigint,
+ 'no browser/service principal can directly acquire daily fences');
+select is((select count(*)from pg_proc p cross join unnest(array[
+ 'atlas_need_generation_runtime','atlas_planning_materialization_runtime',
+ 'atlas_planning_command_runtime','atlas_confirmed_need_review_runtime',
+ 'atlas_procurement_command_runtime','atlas_dispatch_command_runtime'])actor_role
+ where p.oid=to_regprocedure('atlas_core.confirmed_need_correction_lock_days(date,date)')
+ and has_function_privilege(actor_role,p.oid,'EXECUTE')),6::bigint,
+ 'only the exact existing writer runtimes gain the shared advisory primitive');
+select throws_ok($$select atlas_core.confirmed_need_correction_lock_days(null,'2026-11-05')$$,
+ '22023',null,'NULL fence bounds fail closed');
+select throws_ok($$select atlas_core.confirmed_need_correction_lock_days('2026-11-05','2026-11-04')$$,
+ '22023',null,'reversed fence bounds fail closed');
+do $range_fence$
+begin
+ if to_regprocedure('atlas_core.confirmed_need_correction_lock_days(date,date)')is not null then
+  grant atlas_need_generation_runtime to postgres with set true;
+  set local role atlas_need_generation_runtime;
+  perform atlas_core.confirmed_need_correction_lock_days('2026-11-04','2026-11-05');
+  reset role;
+  grant atlas_need_generation_runtime to postgres with set false;
+ end if;
+end;
+$range_fence$;
+select is((select count(*)from pg_locks where pid=pg_backend_pid()and locktype='advisory'
+ and granted and objsubid=1 and ((classid::bigint<<32)|objid::bigint)in(
+ hashtextextended('PLANNING-CONTRACT-01:2026-11-04:2026-11-04',0),
+ hashtextextended('PLANNING-CONTRACT-01:2026-11-05:2026-11-05',0))),2::bigint,
+ 'an authorized range locks both individual day identities, not only its range hash');
+
+
+-- The root universe is independent of continuity success/Supplier visibility.
+-- At this point canonical validation succeeded but exact retained-D proof failed.
+do $context_probe$begin
+ if to_regprocedure('atlas_core.purchase_review_correction_context(uuid)')is not null then
+  insert into c_context select 'root-context',atlas_core.purchase_review_correction_context(confirmed_need_batch_id)
+  from c_selected;
+ end if;
+end;$context_probe$;
+select is((select value->>'available'from c_context where name='root-context'),'true',
+ 'failed family continuity does not deny complete Need root enumeration');
+select is((select jsonb_array_length(value->'batch_ids')from c_context where name='root-context'),1,
+ 'complete shared-School root is deduplicated without unrelated other-day batch');
+select is((select jsonb_array_length(value->'family_ids')from c_context where name='root-context'),2,
+ 'both retained/current Ingredient families participate in root resolution');
+select is((select count(distinct c->>'school_id')from c_context context
+ cross join lateral jsonb_array_elements(context.value->'sources')source
+ cross join lateral jsonb_array_elements(source->'contributions')c
+ where context.name='root-context'),2::bigint,'root context preserves both shared-location Schools');
+select is((select count(*)from pg_proc p where p.oid=to_regprocedure(
+ 'atlas_core.confirmed_need_correction_lock_roots(uuid)')
+ and p.proowner='atlas_need_generation_runtime'::regrole and p.prosecdef
+ and p.proconfig @> array['search_path=""']),1::bigint,'complete root locker retains exact Need runtime ownership');
+do $root_probe$begin
+ if to_regprocedure('atlas_core.confirmed_need_correction_lock_roots(uuid)')is not null then
+  insert into c_context select 'locked-context',atlas_core.confirmed_need_correction_lock_roots(confirmed_need_batch_id)
+  from c_selected;
+ end if;
+end;$root_probe$;
+select ok(coalesce((select value->'batch_ids'from c_context where name='locked-context')
+ = (select value->'batch_ids'from c_context where name='root-context'),false),
+ 'complete prelock returns a fresh root context with the exact contributing batch set');
+
+select ok(has_function_privilege('atlas_need_generation_runtime',
+ 'atlas_core.purchase_review_lock_allocations(uuid)','EXECUTE'),
+ 'standalone Need prepare receives the exact private complete-domain lock bridge');
+
+do $membership_probe$begin
+ if to_regprocedure('atlas_core.confirmed_need_handoff_membership(uuid)')is not null then
+  insert into c_context select 'historical-handoff-members',atlas_core.confirmed_need_handoff_membership(hr.purchase_handoff_revision_id)
+  from atlas_planning.purchase_handoff_batches hb
+  join atlas_planning.purchase_handoff_revisions hr using(purchase_handoff_batch_id)
+  where hb.confirmed_need_batch_id=(select confirmed_need_batch_id from c_selected)
+  order by hr.revision_number limit 1;
+ end if;
+end;$membership_probe$;
+select is((select value->>'complete'from c_context where name='historical-handoff-members'),'true',
+ 'historical invalidated Handoff still reconstructs exact immutable released Need authority');
+select is((select count(*)from c_context context
+ cross join lateral jsonb_array_elements(context.value->'members')member
+ join c_original old on old.confirmed_need_line_id=(member->>'confirmed_need_line_id')::uuid
+ where context.name='historical-handoff-members'
+ and row(member->>'current_confirmed_need_line_revision_id',member->>'current_confirmed_need_line_decision_id')
+ is not distinct from row(old.revision_id::text,old.decision_id::text)),4::bigint,
+ 'every old Handoff member binds original R/D rather than current pointer or same quantity');
+do $missing_membership$begin
+ if to_regprocedure('atlas_core.confirmed_need_handoff_membership(uuid)')is not null then
+  insert into c_context values('missing-handoff-members',atlas_core.confirmed_need_handoff_membership(null));
+ end if;
+end;$missing_membership$;
+select is((select value->>'complete'from c_context where name='missing-handoff-members'),'false',
+ 'missing Handoff authority is unavailable, never an authoritative zero');
+
 select * from finish();
 rollback;
