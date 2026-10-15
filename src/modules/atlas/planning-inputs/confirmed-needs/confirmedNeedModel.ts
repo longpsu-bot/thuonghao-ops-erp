@@ -686,7 +686,11 @@ export function confirmedNeedCorrectionPreviewFromResult(
 export type ConfirmedNeedCorrectionOutcome =
   | { kind: "committed"; version: number }
   | { kind: "unknown" }
-  | { kind: "retryable" | "stale" | "rejected"; message: string };
+  | {
+      kind: "retryable" | "stale" | "rejected";
+      message: string;
+      originalResolved?: true;
+    };
 export function confirmedNeedCorrectionOutcome(
   result: AtlasRpcResult,
   request: ConfirmedNeedCorrectionCommandRequest,
@@ -727,5 +731,17 @@ export function confirmedNeedCorrectionOutcome(
         ? "retryable"
         : "rejected",
     message: confirmedNeedResultMessage(result),
+    ...(result.error.contract_version === "CONFIRMED-NEED-CORRECTION.v1" &&
+    result.error.command_name === "correct_confirmed_need" &&
+    result.error.command_id === request.command_id &&
+    typeof result.error.receipt_id === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      result.error.receipt_id,
+    ) &&
+    result.error.idempotency_status === "FAILED_NON_RETRYABLE" &&
+    result.error.write_certainty === "NO_COMMITTED_CHANGE" &&
+    result.error.retryable === false
+      ? { originalResolved: true as const }
+      : {}),
   };
 }

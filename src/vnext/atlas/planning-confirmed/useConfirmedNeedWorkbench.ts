@@ -772,7 +772,13 @@ export function useConfirmedNeedWorkbench({
     correctionEpoch.current++;
     setCorrection((v) =>
       v
-        ? { ...v, ...change, status: "EDITING", preview: null, error: null }
+        ? {
+            ...v,
+            ...change,
+            status: v.status === "STALE" ? "STALE" : "EDITING",
+            preview: null,
+            error: v.status === "STALE" ? v.error : null,
+          }
         : v,
     );
   };
@@ -819,7 +825,11 @@ export function useConfirmedNeedWorkbench({
         v
           ? {
               ...v,
-              status: "EDITING",
+              status:
+                result.kind === "backend_error" &&
+                result.error.error_code.startsWith("STALE_")
+                  ? "STALE"
+                  : "EDITING",
               preview,
               error: preview
                 ? null
@@ -889,6 +899,7 @@ export function useConfirmedNeedWorkbench({
               target: {
                 ...v.target,
                 expected_confirmed_need_batch_version: fresh.batch_version,
+                need_generation_run_id: fresh.need_generation_source.run_id,
                 expected_need_generation_run_version:
                   fresh.need_generation_source.run_version,
                 expected_current_revision_id: line.current_revision_id,
@@ -949,7 +960,7 @@ export function useConfirmedNeedWorkbench({
         }
       } else if (
         outcome.kind === "unknown" ||
-        correctionOriginalUnknown.current
+        (correctionOriginalUnknown.current && !outcome.originalResolved)
       ) {
         // A denied or no-write retry does not resolve an earlier lost response.
         correctionOriginalUnknown.current = true;
@@ -967,6 +978,7 @@ export function useConfirmedNeedWorkbench({
             : v,
         );
       } else {
+        correctionOriginalUnknown.current = false;
         setLock(null);
         correctionCommittedVersion.current = null;
         if (outcome.kind !== "retryable") correctionRequest.current = null;

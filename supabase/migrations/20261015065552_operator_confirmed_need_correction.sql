@@ -1190,7 +1190,7 @@ begin
  if proposal->>'success'is distinct from 'true'or proposal->>'proposal_fingerprint'is distinct from payload->>'proposal_fingerprint'then
   return atlas_core.pa_05b_finish_command(receipt,atlas_core.d037_error(request,contract,name,
    case when proposal->>'success'='true'then 'STALE_CORRECTION_PROPOSAL'else proposal->>'error_code'end,
-   'Refresh and review the exact quantity correction before saving.'),false);end if;
+   'Refresh and review the exact quantity correction before saving.')||jsonb_build_object('receipt_id',receipt,'idempotency_status','FAILED_NON_RETRYABLE'),false);end if;
  prepare_id:=md5(receipt::text||':prepare')::uuid;save_id:=md5(receipt::text||':save')::uuid;
  begin
   child:=request||jsonb_build_object('contract_version','PLANNING-CORRECTION.v1','command_id',prepare_id,
@@ -1213,7 +1213,7 @@ begin
   if failed->>'error_code'in('RETRYABLE_CONCURRENCY_FAILURE','INTERNAL_COMMAND_FAILURE')then
    raise exception using errcode='40001',message='Correction child outcome requires exact retry';end if;
   return atlas_core.pa_05b_finish_command(receipt,atlas_core.d037_error(request,contract,name,
-   coalesce(failed->>'error_code','CORRECTION_CHILD_REJECTED'),'The correction was not saved; all child effects were rolled back.'),false);
+   coalesce(failed->>'error_code','CORRECTION_CHILD_REJECTED'),'The correction was not saved; all child effects were rolled back.')||jsonb_build_object('receipt_id',receipt,'idempotency_status','FAILED_NON_RETRYABLE'),false);
  end;
  answer:=jsonb_build_object('success',true,'contract_version',contract,'command_name',name,'command_id',request->'command_id',
   'correlation_id',request->'correlation_id','receipt_id',receipt,'idempotency_status','COMPLETED',

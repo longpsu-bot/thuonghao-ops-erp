@@ -189,4 +189,53 @@ describe("correction response boundary", () => {
       ).kind,
     ).toBe("unknown");
   });
+  it.each([
+    "valid",
+    "contract",
+    "name",
+    "command",
+    "receipt",
+    "status",
+    "certainty",
+    "retryable",
+    "missing-retryable",
+  ])(
+    "recognizes original failed-receipt proof only with exact %s metadata",
+    (field) => {
+      const request = confirmedNeedCorrectionCommandRequest(
+        "subject",
+        "correlation",
+        target,
+        "a".repeat(64),
+      );
+      const error = {
+        success: false,
+        error_code: "STALE_CORRECTION_PROPOSAL",
+        safe_message: "Refresh",
+        contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+        command_name: "correct_confirmed_need",
+        command_id: request.command_id,
+        receipt_id: "11111111-1111-4111-8111-111111111111",
+        idempotency_status: "FAILED_NON_RETRYABLE",
+        write_certainty: "NO_COMMITTED_CHANGE",
+        retryable: false,
+      } as Record<string, unknown>;
+      if (field === "contract") error.contract_version = "wrong";
+      if (field === "name") error.command_name = "save_confirmed_needs";
+      if (field === "command") error.command_id = "another-command";
+      if (field === "receipt") error.receipt_id = "not-a-uuid";
+      if (field === "status") error.idempotency_status = "IN_PROGRESS";
+      if (field === "certainty") error.write_certainty = "NO_WRITE";
+      if (field === "retryable") error.retryable = true;
+      if (field === "missing-retryable") delete error.retryable;
+      const outcome = confirmedNeedCorrectionOutcome(
+        { kind: "backend_error", error } as AtlasRpcResult,
+        request,
+      );
+      expect(outcome).toMatchObject({ kind: "stale" });
+      expect(
+        "originalResolved" in outcome && outcome.originalResolved === true,
+      ).toBe(field === "valid");
+    },
+  );
 });

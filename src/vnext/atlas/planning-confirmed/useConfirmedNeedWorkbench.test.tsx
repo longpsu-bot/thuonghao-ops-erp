@@ -1607,4 +1607,157 @@ describe("released correction within the existing owner", () => {
       expect(h.result.current.lock).toBeNull();
     },
   );
+  it("keeps Save-stale across quantity and reason edits until fresh recovery", async () => {
+    const h = await reviewed(),
+      api = h.fixture.confirmedNeedApi;
+    vi.spyOn(api, "correct").mockResolvedValueOnce(
+      reviewFailure("STALE_CORRECTION_PROPOSAL", "NO_COMMITTED_CHANGE"),
+    );
+    const preview = vi.spyOn(api, "previewCorrection");
+    await act(() => h.result.current.saveCorrection());
+    const error = h.result.current.correction?.error;
+    act(() =>
+      h.result.current.updateCorrection({
+        quantity: "14.000001",
+        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+        reason_note: "Rà soát lại",
+      }),
+    );
+    expect(h.result.current.correction?.status).toBe("STALE");
+    expect(h.result.current.correction?.error).toBe(error);
+    await act(() => h.result.current.previewCorrection());
+    expect(preview).not.toHaveBeenCalled();
+    await act(() => h.result.current.recover());
+    expect(h.result.current.correction?.status).toBe("EDITING");
+    expect(h.result.current.correction?.quantity).toBe("14.000001");
+    expect(h.result.current.correction?.reason_note).toBe("Rà soát lại");
+    await act(() => h.result.current.previewCorrection());
+    expect(preview).toHaveBeenCalledTimes(1);
+  });
+  it.each(["STALE_VERSION", "STALE_CONFIRMED_NEED_SOURCE"])(
+    "requires fresh target after preview %s",
+    async (code) => {
+      const h = await editing(),
+        api = h.fixture.confirmedNeedApi;
+      const preview = vi
+        .spyOn(api, "previewCorrection")
+        .mockResolvedValueOnce(reviewFailure(code, "NO_WRITE"));
+      await act(() => h.result.current.previewCorrection());
+      expect(h.result.current.correction?.status).toBe("STALE");
+      act(() =>
+        h.result.current.updateCorrection({
+          quantity: "14.000001",
+          reason_note: "Giữ ghi chú",
+        }),
+      );
+      await act(() => h.result.current.previewCorrection());
+      expect(preview).toHaveBeenCalledTimes(1);
+      h.fixture.batch.batch_version++;
+      h.fixture.batch.lines[0]!.current_revision_id = "fresh-revision";
+      h.fixture.batch.lines[0]!.current_decision_id = "fresh-decision";
+      await act(() => h.result.current.recover());
+      expect(h.result.current.correction?.target).toMatchObject({
+        need_generation_run_id: h.fixture.batch.need_generation_source.run_id,
+        expected_confirmed_need_batch_version: h.fixture.batch.batch_version,
+        expected_need_generation_run_version:
+          h.fixture.batch.need_generation_source.run_version,
+        expected_current_revision_id: "fresh-revision",
+        expected_current_decision_id: "fresh-decision",
+      });
+      expect(h.result.current.correction?.quantity).toBe("14.000001");
+      expect(h.result.current.correction?.reason_note).toBe("Giữ ghi chú");
+      await act(() => h.result.current.previewCorrection());
+      expect(preview).toHaveBeenCalledTimes(2);
+      expect(h.result.current.correction?.preview).not.toBeNull();
+    },
+  );
+  it.each(["STALE_CORRECTION_PROPOSAL", "UNIT_INACTIVE"])(
+    "resolves lost terminal %s only from exact failed receipt",
+    async (code) => {
+      const h = await reviewed(),
+        api = h.fixture.confirmedNeedApi;
+      const write = vi
+        .spyOn(api, "correct")
+        .mockRejectedValueOnce(new Error("terminal response lost"));
+      await act(() => h.result.current.saveCorrection());
+      const request = structuredClone(write.mock.calls[0]![0]);
+      write.mockResolvedValueOnce({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: code,
+          safe_message: "Không lưu điều chỉnh.",
+          contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+          command_name: "correct_confirmed_need",
+          command_id: request.command_id,
+          receipt_id: "11111111-1111-4111-8111-111111111111",
+          idempotency_status: "FAILED_NON_RETRYABLE",
+          write_certainty: "NO_COMMITTED_CHANGE",
+          retryable: false,
+        },
+      } as AtlasRpcResult);
+      await act(() => h.result.current.retryCorrection());
+      expect(write.mock.calls[1]![0]).toEqual(request);
+      expect(h.result.current.lock).toBeNull();
+      expect(h.result.current.correction?.status).toBe(
+        code.startsWith("STALE_") ? "STALE" : "EDITING",
+      );
+      expect(h.result.current.correction?.quantity).toBe("12.500001");
+      expect(h.result.current.notice ?? "").not.toContain("Đã lưu điều chỉnh");
+      act(() => h.result.current.closeCorrection());
+      expect(h.result.current.pendingTransition).not.toBeNull();
+    },
+  );
+  it.each(["contract", "command", "receipt", "certainty", "retryable"])(
+    "keeps committed UNKNOWN through malformed %s failure proof until exact success",
+    async (field) => {
+      const h = await reviewed(),
+        api = h.fixture.confirmedNeedApi,
+        original = api.correct;
+      const write = vi
+        .spyOn(api, "correct")
+        .mockImplementationOnce(async (request) => {
+          await original(request);
+          throw new Error("committed response lost");
+        });
+      await act(() => h.result.current.saveCorrection());
+      const request = structuredClone(write.mock.calls[0]![0]);
+      const error: Record<string, unknown> = {
+        success: false,
+        error_code: "UNIT_INACTIVE",
+        safe_message: "Rejected",
+        contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+        command_name: "correct_confirmed_need",
+        command_id: request.command_id,
+        receipt_id: "11111111-1111-4111-8111-111111111111",
+        idempotency_status: "FAILED_NON_RETRYABLE",
+        write_certainty: "NO_COMMITTED_CHANGE",
+        retryable: false,
+      };
+      if (field === "contract") error.contract_version = "wrong";
+      if (field === "command") error.command_id = "wrong";
+      if (field === "receipt") error.receipt_id = "not-a-uuid";
+      if (field === "certainty") error.write_certainty = "NO_WRITE";
+      if (field === "retryable") error.retryable = true;
+      write.mockResolvedValueOnce({
+        kind: "backend_error",
+        error,
+      } as AtlasRpcResult);
+      await act(() => h.result.current.retryCorrection());
+      expect(h.result.current.lock).toBe("unknown");
+      expect(h.result.current.correction?.status).toBe("UNKNOWN");
+      expect(write.mock.calls[1]![0]).toEqual(request);
+      act(() => {
+        h.result.current.closeCorrection();
+        h.result.current.updateCorrection({ quantity: "99" });
+      });
+      expect(h.result.current.correction?.quantity).toBe("12.500001");
+      expect(h.result.current.pendingTransition).toBeNull();
+      write.mockImplementation(original);
+      await act(() => h.result.current.retryCorrection());
+      expect(write.mock.calls[2]![0]).toEqual(request);
+      expect(h.result.current.lock).toBeNull();
+      expect(h.result.current.correction).toBeNull();
+    },
+  );
 });

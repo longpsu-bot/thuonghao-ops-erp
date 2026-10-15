@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=extensions,public,pg_catalog;
-select plan(92);
+select plan(103);
 \ir ../local/confirmed_need_correction_fixture.sql
 select ok(not exists(select from c_results where invoked_as<>'authenticated'),
  'C fixture calls tested public APIs as authenticated');
@@ -311,6 +311,44 @@ create temporary table c_late_before as select jsonb_build_object(
  'handoffs',(select jsonb_agg(to_jsonb(x)order by purchase_handoff_revision_id)from atlas_planning.purchase_handoff_revisions x),
  'events',(select jsonb_agg(to_jsonb(x)order by domain_event_id)from atlas_audit.domain_events x),
  'audits',(select jsonb_agg(to_jsonb(x)order by audit_event_id)from atlas_audit.audit_events x))facts;
+-- Failed-original outcome evidence is recorded only after an outer receipt exists.
+insert into c_requests select 'terminal-stale-command',request||jsonb_build_object('command_id',gen_random_uuid(),
+ 'idempotency_key',gen_random_uuid(),'payload',request->'payload'||jsonb_build_object('proposal_fingerprint',repeat('0',64)))
+ from c_requests where name='command';
+insert into c_results select 'terminal-stale',pg_temp.c_correct_call('correct_confirmed_need',request),
+ 'authenticated'from c_requests where name='terminal-stale-command';
+select is((select response->>'error_code'from c_results where name='terminal-stale'),'STALE_CORRECTION_PROPOSAL',
+ 'post-begin proposal mismatch is a terminal original failure');
+select ok((select response->>'receipt_id'=parent.command_receipt_id::text
+ and response->>'idempotency_status'='FAILED_NON_RETRYABLE'and parent.outcome='FAILED_NON_RETRYABLE'
+ and response->>'command_id'=r.request->>'command_id'and response->>'contract_version'='CONFIRMED-NEED-CORRECTION.v1'
+ and response->>'command_name'='correct_confirmed_need'and response->>'write_certainty'='NO_COMMITTED_CHANGE'
+ and response->'retryable'='false'::jsonb and response=parent.response_payload from c_results result join c_requests r on r.name='terminal-stale-command'
+ join atlas_core.command_receipts parent on parent.command_id=(r.request->>'command_id')::uuid where result.name='terminal-stale'),
+ 'terminal stale outcome identifies the exact stored failed receipt');
+select is(pg_temp.c_correct_call('correct_confirmed_need',(select request from c_requests where name='terminal-stale-command')),
+ (select response from c_results where name='terminal-stale'),'terminal stale exact replay preserves original receipt proof');
+select is((select count(*)from atlas_core.command_receipts child where child.idempotency_key like(
+ select parent.command_receipt_id::text||':%'from atlas_core.command_receipts parent join c_requests r
+ on parent.command_id=(r.request->>'command_id')::uuid where r.name='terminal-stale-command')),0::bigint,
+ 'terminal stale outcome creates no child receipts');
+select is((select facts from c_late_before),jsonb_build_object(
+ 'batches',(select jsonb_agg(to_jsonb(x)order by confirmed_need_batch_id)from atlas_planning.confirmed_need_batches x),
+ 'runs',(select jsonb_agg(to_jsonb(x)order by need_generation_run_id)from atlas_planning.need_generation_runs x),
+ 'revisions',(select jsonb_agg(to_jsonb(x)order by confirmed_need_line_revision_id)from atlas_planning.confirmed_need_line_revisions x),
+ 'decisions',(select jsonb_agg(to_jsonb(x)order by confirmed_need_line_decision_id)from atlas_planning.confirmed_need_line_decisions x),
+ 'handoffs',(select jsonb_agg(to_jsonb(x)order by purchase_handoff_revision_id)from atlas_planning.purchase_handoff_revisions x),
+ 'events',(select jsonb_agg(to_jsonb(x)order by domain_event_id)from atlas_audit.domain_events x),
+ 'audits',(select jsonb_agg(to_jsonb(x)order by audit_event_id)from atlas_audit.audit_events x)),
+ 'terminal stale receipt preserves the entire business event and audit image');
+select ok(not(pg_temp.c_without_authority('planning.need_generation.write',true)?|array['receipt_id','idempotency_status']),
+ 'early capability rejection cannot claim original receipt resolution');
+select ok(not(pg_temp.c_correct_call('correct_confirmed_need',
+ (select jsonb_set(request,'{requested_by_auth_subject}',to_jsonb(gen_random_uuid()))from c_requests where name='command'))
+ ?|array['receipt_id','idempotency_status']),'early JWT subject mismatch has no original receipt resolution marker');
+select ok(not(pg_temp.c_correct_call('correct_confirmed_need',
+ (select request||'{"unknown":true}'from c_requests where name='command'))?|array['receipt_id','idempotency_status']),
+ 'early closed-envelope rejection has no failed-original marker');
 insert into c_requests select 'late-command',request||jsonb_build_object('command_id',gen_random_uuid(),
  'idempotency_key',gen_random_uuid())from c_requests where name='command';
 -- Controlled local fault at a real prerequisite boundary, not a stubbed Save:
@@ -352,6 +390,13 @@ select is((select count(*)from atlas_core.command_receipts child
 select is((select outcome from atlas_core.command_receipts parent join c_requests r
  on parent.command_id=(r.request->>'command_id')::uuid where r.name='late-command'),'FAILED_NON_RETRYABLE',
  'only the exact nonretryable outer failure receipt may remain');
+select ok((select response->>'receipt_id'=parent.command_receipt_id::text
+ and response->>'idempotency_status'='FAILED_NON_RETRYABLE'and parent.outcome='FAILED_NON_RETRYABLE'
+ and response->>'command_id'=r.request->>'command_id'and response->>'contract_version'='CONFIRMED-NEED-CORRECTION.v1'
+ and response->>'command_name'='correct_confirmed_need'and response->>'write_certainty'='NO_COMMITTED_CHANGE'
+ and response->'retryable'='false'::jsonb and response=parent.response_payload from c_results result join c_requests r on r.name='late-command'
+ join atlas_core.command_receipts parent on parent.command_id=(r.request->>'command_id')::uuid where result.name='late-save-failure'),
+ 'rolled-back late child rejection identifies only its exact terminal outer receipt');
 select is(pg_temp.c_correct_call('correct_confirmed_need',(select request from c_requests where name='late-command')),
  (select response from c_results where name='late-save-failure'),'failed exact replay does not rerun mutable children');
 select is((select response?'child_command_ids'from c_results where name='late-save-failure'),false,
@@ -376,6 +421,8 @@ select is((select response->>'write_certainty'from c_results where name='retryab
  'NO_COMMITTED_CHANGE','caught SQL failure reports the known rolled-back outcome explicitly');
 select is((select response->>'refresh_read'from c_results where name='retryable-conflict'),
  'get_confirmed_need_review','retryable SQL outcome names the authoritative recovery read');
+select ok((select not(response?|array['receipt_id','idempotency_status'])from c_results where name='retryable-conflict'),
+ 'retryable rolled-back attempt cannot prove original terminal outcome');
 select is((select count(*)from atlas_core.command_receipts parent join c_requests r
  on parent.command_id=(r.request->>'command_id')::uuid where r.name='retry-command'),0::bigint,
  'retryable outer failure leaves no blocking outer receipt');
@@ -402,6 +449,9 @@ select is(pg_temp.c_correct_call('correct_confirmed_need',(select jsonb_set(requ
 select is(pg_temp.c_correct_call('correct_confirmed_need',(select jsonb_set(request,
  '{payload,reason_note}','"Different correction intent"')from c_requests where name='command'))->>'write_certainty',
  'NO_COMMITTED_CHANGE','conflicting replay reports safe rejection without an inferred UNKNOWN state');
+select ok(not(pg_temp.c_correct_call('correct_confirmed_need',(select jsonb_set(request,
+ '{payload,reason_note}','"Different correction intent"')from c_requests where name='command'))?|array['receipt_id','idempotency_status']),
+ 'conflicting request identity has no original failed-receipt marker');
 select is((select count(distinct id)from c_results r
  cross join lateral jsonb_array_elements_text(r.response->'child_command_ids')id
  where r.name='saved-correction'and id<>r.response->>'command_id'),2::bigint,

@@ -292,6 +292,43 @@ describe("Atlas RPC transport", () => {
     }
   });
 
+  it("retains only string failed-receipt evidence without interpreting generic errors", async () => {
+    for (const typed of [true, false]) {
+      const fake = rpcClient({
+        data: {
+          success: false,
+          error_code: "UNIT_INACTIVE",
+          safe_message: "Rejected",
+          receipt_id: typed ? "11111111-1111-4111-8111-111111111111" : 12,
+          idempotency_status: typed
+            ? "FAILED_NON_RETRYABLE"
+            : { status: "FAILED_NON_RETRYABLE" },
+          private_internal: "hidden",
+        },
+        error: null,
+      });
+      const result = await createAtlasRpcTransport(fake.client).invoke(
+        "atlas_api.correct_confirmed_need",
+        {},
+      );
+      expect(result.kind).toBe("backend_error");
+      if (result.kind === "backend_error") {
+        expect(result.error).toMatchObject(
+          typed
+            ? {
+                receipt_id: "11111111-1111-4111-8111-111111111111",
+                idempotency_status: "FAILED_NON_RETRYABLE",
+              }
+            : {},
+        );
+        if (!typed) {
+          expect(result.error).not.toHaveProperty("receipt_id");
+          expect(result.error).not.toHaveProperty("idempotency_status");
+        }
+        expect(result.error).not.toHaveProperty("private_internal");
+      }
+    }
+  });
   it("preserves authoritative backend write certainty", async () => {
     const fake = rpcClient({
       data: {

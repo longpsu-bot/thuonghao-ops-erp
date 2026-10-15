@@ -210,6 +210,8 @@ export type AtlasSafeBackendError = {
   actual_version?: number;
   correlation_id?: string;
   command_id?: string;
+  receipt_id?: string;
+  idempotency_status?: string;
   write_certainty?: AtlasWriteCertainty;
 };
 
@@ -300,6 +302,8 @@ function safeBackendError(
     "read_name",
     "correlation_id",
     "command_id",
+    "receipt_id",
+    "idempotency_status",
   ] as const;
   for (const key of stringKeys) {
     if (typeof value[key] === "string") result[key] = value[key];
