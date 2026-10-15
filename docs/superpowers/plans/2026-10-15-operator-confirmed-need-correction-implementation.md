@@ -458,3 +458,5 @@ Task6 still requires real UI focus fallback after the released trigger unmounts,
 ## Task5 review finding — range correction only
 
 Terra's fixed-bf1bd5e review found the new correction actions/late preview could bypass the existing invalid-range fence while the old released workbench remained loaded. Root releases a bounded controller/test RED→GREEN repair only; [baton authority](../../autopilot/ACTIVE_TASK.md#task5-review-correction--invalid-operator-range) names the exact gap. Preserve form/exact request and existing recovery/dirty semantics. Task6 remains held and SQL b4df stays unchanged.
+
+The bounded Task5 review repair also preserves sticky original UNKNOWN through authentication/client/capability failures on exact retry before receipt lookup. These errors describe the retry's absence of writes, not the original command's outcome. Retain original request and locks until authoritative original resolution; no new response privilege/framework. Add focused committed-loss/retry-denial/exact-success regressions and report any definitive failed-receipt recovery limitation separately.
