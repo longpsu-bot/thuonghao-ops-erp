@@ -208,6 +208,8 @@ not exists (
 
 **Files:** new CLI migration, correction SQL suite. **Consumes:** Task1 history, Task2 reviewed fence/prelock primitives and current canonical prepare/Save. **Produces:** two public RPCs, shared quantity evaluator, exact grants/receipts.
 
+**Technical release:** Root authorized Task3 after Terra cleared fixed `b54eaf0` private/full-file checkpoint and the required genuine public publication/PH Save/CN Save/zero-parent-rollback/opposite Preparation wait proofs. Standalone CMD15 publishes CN from an existing staged run, not a new run; overlapping Preparations correctly serialize and both succeed without new PO work. Preserved harness mistakes are not feature RED. Task4 consumers/UI remain later checkpoints;250-family/history budgets remain Task7, not claimed here. Implement this task as the sole Sol6.1 writer under the human-approved design; no extra human approval or execution-choice roundtrip.
+
 - [ ] Write RED cases: unknown/null/wrong type envelope/payload; mismatched outer/payload version; wrong JWT/missing each capability/GLOBAL; source/run/batch/line mismatch/stale; bad precision/reason/Unit/policy; WHOLESALE/upstream stale; write permitted without Procurement-read. Preview must change no facts/receipts.
 - [ ] Extract canonical quantity evaluator without changing ordinary preview errors/lifecycle. Implement new preview and command with owner/ACL above, not a public bypass flag.
 - [ ] Implement exact command order using existing prepare/finish receipt helpers:
