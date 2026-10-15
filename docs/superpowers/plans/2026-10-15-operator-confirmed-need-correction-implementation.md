@@ -306,6 +306,8 @@ expect(api.releaseSaved).not.toHaveBeenCalled();
 
 ### Task 7: Historical consumer/export, scale, catalog and registration
 
+**Technical release:** Root released Task7 after Terra cleared61214daa and Root closed ten original functional browser cases plus the targeted date confirmation. Five runtime UI detector targets each ran once with zero findings. Task8/push remain held; no UI/producer changes. Current SQL freeze is67820cb240ff42fc96c45833c3a877e776093bc14490d58f35332f5977480d6d. Measure first; any SQL optimization needs a separately recorded precise technical exception. Initial bounded history target is eight selected-family corrections after initial release, with actual completed depth and failures reported. Root owns actual historical export QA and waits for the backend/database window.
+
 **Files:** new scale/continuity suites, exact catalog, incumbent registry/contract tests and existing official export tests. **Consumes:** final public journey/backend. **Produces:** focused local evidence and exact-head CI reach.
 
 - [ ] Read actual old released PO/PXK snapshots through their authenticated official consumer after replacement/successor, feed them into unchanged existing export producers, and compare frozen School/Supplier/number/exact quantity/lineage. Raw database hashes alone are insufficient. Use existing ExcelJS cell/metadata and PDF producer checks, without A2/A4 copies or whole-page/native print claims.
@@ -323,14 +325,15 @@ select extract(epoch from clock_timestamp()-:'c_preview_started_at'::timestamptz
 ```
 
 - [ ] Keep separate timing statements. Preserve any failure, profile repeated source/proof work and optimize only backend-resolved reuse after locks; do not reduce 250 families or increase timeout. Report local workload limits, no hosted-scale certification.
-- [ ] Prove a fresh owned `atlas_c_correction_forward_01` absent, install 109 baseline, verify catalog then apply full C transaction once. Record committed LF blob and actual applied byte hashes separately if CRLF differs, with normalized byte equality. A migration failure rolls back DDL/transient authoring grants; final memberships/SET=false must match baseline.
+- [ ] Clone a proven-absent owned scale database from verified empty forward06 (109 original blobs plus whole C file once, no fabricated CLI ledger). Preserve all existing databases. If SQL changes are technically authorized, use a new proven-absent forward target for whole-file baseline/atomic application and global/schema ACL parity. Record committed LF and actual applied byte hashes separately if different; no in-place reset.
 - [ ] Explain exact function/EXECUTE catalog changes, including PUBLIC ACL not covered by CAT22. Assert owners/security/path and private browser denial; new public authenticated-only. Update exact CAT14/15/17/18/21/22 counts/digests only from explained clean rows. No table/policy/trigger/capability/role or unrelated catalog change. Prefer reusing an existing helper over creating an unnecessary new layer; catalog counts follow actual minimal implementation.
-- [ ] Register all three SQL suites in `DATABASE_TESTS_BEFORE_BROWSER` and its existing purchase-review include-expanding group. Search every caller of reused SQL that gains local includes, including nested procurement verifier; use the existing expander, no new runner/config. Reproduce caller-registration RED before correction.
+- [ ] Register all four SQL suites in `DATABASE_TESTS_BEFORE_BROWSER` and its existing purchase-review include-expanding group. Search every caller of reused SQL that gains local includes, including nested procurement verifier; use the existing expander, no new runner/config. Reproduce caller-registration RED before correction. Repair the existing runner with a pure exported TAP completeness validator and guarded CLI entry: reject84 assertions against92, nonsequential numbering, not-ok, Bailout and nonzero exit; accept complete92, incumbent complete31+11 streams and leading/trailing no_plan plans. Test in the existing contract file, without a new framework.
 
 ```ts
 for (const file of [
   "confirmed_need_correction.sql",
   "confirmed_need_correction_continuity.sql",
+  "confirmed_need_correction_consumers.sql",
   "confirmed_need_correction_scale.sql",
 ])
   expect(commands).toContainEqual({
@@ -339,7 +342,7 @@ for (const file of [
   });
 ```
 
-- [ ] Run `pnpm exec vitest run scripts/atlas-staging-contract.test.mjs scripts/check-atlas-vnext-ui-boundary.test.mjs --exclude '**/.superpowers/**'`, exact changed API/controller/dialog/models/official-export tests, `pnpm typecheck`, `pnpm ui:vnext:check`, exact-file Prettier and post-commit `git diff --check origin/main..HEAD`. Keep exact TAP/test counts from tracked sources. No local routine full suite. Root owns existing manual local-only Full Integration on fixed Draft head.
+- [ ] Run `pnpm exec vitest run scripts/atlas-staging-contract.test.mjs scripts/check-atlas-vnext-ui-boundary.test.mjs --exclude '**/.superpowers/**'`, exact changed API/controller/dialog/models/official-export tests, `pnpm typecheck`, `pnpm ui:vnext:check`, exact-file Prettier and post-commit `git diff --check origin/main..HEAD`. Keep exact TAP/test counts from tracked sources. No local routine full suite. Full Integration is remote ephemeral GitHub CI only; do not invoke its local Docker-resetting entry. Root owns dispatch on the later fixed Draft head.
 
 ### Task 8: Evidence and fixed Draft review
 

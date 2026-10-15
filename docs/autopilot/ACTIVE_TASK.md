@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-CONFIRMED-NEED-CORRECTION-C-01
-Status: TASK6_BROWSER_REVIEW — bounded UI/fixtures locally GREEN and frozen for Root browser QA; Tasks7–8 remain held.
+Status: TASK7_IMPLEMENTATION — Task6 cleared; genuine workload measurement, exact catalog and existing test-runner registration only. Task8/push remain held.
 Navigator/reviewer: Terra, read-only
 Implementer/document author: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
@@ -9,6 +9,14 @@ Atlas Staging: rnzxmxiiqgtdevzregff — accepted migration 109; no hosted databa
 OPS v1 / Retool / Production: no writes or commitments
 
 ## Authority — 15 October 2026
+
+### Task7 technical release — authority before acceptance tooling
+
+Root releases Task7 after Terra cleared final Task6 `61214daa7143e1a0db341f7786bcd685f69dc50b`. Root's existing in-memory browser proof records ten unique functional cases on5586b01 plus targeted pending-date confirmation on61214daa:07/09/2026, PO-20260907-ANPHU, controlled blocked guidance, no replacement action and no page errors/external requests. Five runtime UI targets were each mechanically checked once with zero findings (four vNext raw results plus one legacy result); all five runtime UI files are byte-identical across the date-only repair. The aggregate is `%TEMP%/atlas-root-c-task6-browser/root-freeze-browser-proof.json`. This closes Task6; no further UI changes are authorized here.
+
+Task7 permits the genuine public-path scale fixture/suite, exact affected catalog assertions, registration of all four C suites (base, continuity, consumers, scale) in the existing Full Integration list/include-expanding dispatch, and a minimal pure TAP validator in the existing runner with tests in its existing contract test. The validator must reject incomplete84/92 and accept complete92, multiple complete31+11 streams and leading/trailing no_plan plans. Full Integration runs only in remote ephemeral GitHub CI: its local entry resets the shared Docker stack and must not run here. No new runner/framework/dependency. Root owns authenticated historical PO/PXK export-consumer QA using unchanged producers after the backend freeze.
+
+Measure a genuine50-School/distinct-location by5-Ingredient250-family workload, cold and after consecutive correction/Handoff history, before SQL optimization. Preserve every failure and actual workload/depth; retain authenticated8s/1s-lock caps and existing Preparation20s. Proposed initial history is eight explicit selected-family corrections after the initial release, preserving249 other allocation/contribution/split identities; report actual completed depth rather than promising it. Any necessary frozen SQL change requires a precise Root technical exception after measured failure/profile. Current SQL remains LF/applied SHA25667820cb240ff42fc96c45833c3a877e776093bc14490d58f35332f5977480d6d. Use a proven-absent owned clone of empty verified forward06; preserve all databases/volumes and schema-applied109 history without fabricated ledger. Coordinate clone/authoring windows with Root. No push/Task8/merge/manual deployment/hosted database write, new staff authority, A2/B dependency or producer changes.
 
 The Product Owner's operator fixes brief C and subsequent instruction to proceed authorize the existing append-only post-handoff correction workflow. On 15 October the user approved the reviewed spec: “if this mean PO/Dispatch can still re released after need correction then approve”. Root clarified the accepted meaning: valid affected positive POs can be explicitly released as reviewed complete replacements; Dispatch can be explicitly released as successors; old released documents remain preserved; true zero retains the existing cancellation-required guard. This matches spec `340721a49788163416176db816477168895f3442` and adds no automatic release chain or staff authority. D-044 already accepts School Need correction after PO/PXK, complete affected supplier/date replacement, the existing zero cancellation-required guard and explicit PXK successor release. The [proposed C architecture](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) preserves that meaning; its interface, continuity, locks and exact catalog implementation remain subject to the implementation-plan technical review before code.
 
