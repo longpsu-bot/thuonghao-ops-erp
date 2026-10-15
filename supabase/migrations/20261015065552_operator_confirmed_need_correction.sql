@@ -418,7 +418,7 @@ grant execute on function atlas_core.purchase_review_correction_context(uuid)
 
 
 -- Resolve each historical (batch,attempt) once. Original decisions come through
--- immutable demandÃ¢â€ â€™approvalÃ¢â€ â€™validation observations, never today's pointers.
+-- immutable demand→approval→validation observations, never today's pointers.
 create function atlas_core.confirmed_need_handoff_membership(p_revision uuid)
 returns jsonb language sql stable security definer set search_path='' as $membership$
  with bindings as materialized (
@@ -513,7 +513,7 @@ begin
   order by f.ingredient_id::text,f.service_date::text,f.delivery_location_id::text,f.unit_id::text loop
   perform atlas_core.school_catering_lock_supplier_evidence(item.service_date,item.ingredient_id,item.splits,false);
  end loop;
- -- FOR UPDATE now prevents a KEY SHAREÃ¢â€ â€™UPDATE upgrade after family locks,
+ -- FOR UPDATE now prevents a KEY SHARE→UPDATE upgrade after family locks,
  -- while an incumbent PH Save holds KEY SHARE and waits for that family.
  perform 1 from atlas_planning.purchase_handoff_batches h
   where h.confirmed_need_batch_id=any(batches)order by h.purchase_handoff_batch_id for update;
@@ -566,7 +566,7 @@ begin
  foreach source_run in array runs loop
   perform pg_advisory_xact_lock(hashtextextended('atlas:planning-correction:'||source_run::text,0));
  end loop;
- -- Match direct create_need_generation_run: input-setÃ¢â€ â€™evaluationÃ¢â€ â€™run, never
+ -- Match direct create_need_generation_run: input-set→evaluation→run, never
  -- an input/evaluation lock acquired late while holding a target run/CN row.
  perform 1 from atlas_planning.planning_input_sets s where s.planning_input_set_id=any(sets)
   order by s.planning_input_set_id for key share;
@@ -653,7 +653,7 @@ begin
   perform atlas_core.purchase_review_lock_allocations(v_batch_id);$replacement6$),
 ('atlas_core.issue_223_execute_need_generation_v2(jsonb)','atlas_need_generation_runtime',$anchor7$  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');$anchor7$,$replacement7$  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
   perform atlas_core.confirmed_need_correction_lock_days(v_start,v_end);
-  -- Direct create_need_generation_run is input-setÃ¢â€ â€™evaluationÃ¢â€ â€™run.
+  -- Direct create_need_generation_run is input-set→evaluation→run.
   perform 1 from atlas_planning.planning_input_sets source_set
    where source_set.period_start=v_start and source_set.period_end=v_end
    order by source_set.planning_input_set_id for key share;
