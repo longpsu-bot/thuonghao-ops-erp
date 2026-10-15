@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=extensions,public,pg_catalog;
-select plan(70);
+select plan(72);
 \ir ../local/confirmed_need_correction_fixture.sql
 
 -- These helpers only invoke existing public commands under the fixture JWT.
@@ -367,14 +367,15 @@ select is((select count(*)from pg_proc p cross join unnest(array['anon','authent
  to_regprocedure('atlas_core.purchase_review_family_continuity(uuid,text,jsonb)'))
  and has_function_privilege(actor_role,p.oid,'EXECUTE')),0::bigint,
  'no browser/service principal can supply private resolved evidence or invoke applicability');
-select is((select count(*)from pg_proc p cross join unnest(array['atlas_read_runtime',
+select is((select array_agg(actor_role||':'||p.proname||':'||p.pronargs order by actor_role,p.proname,p.pronargs)from pg_proc p cross join unnest(array['atlas_read_runtime',
  'atlas_need_generation_runtime','atlas_confirmed_need_review_runtime',
  'atlas_planning_command_runtime','atlas_dispatch_command_runtime'])actor_role
  where p.oid in(to_regprocedure('atlas_core.purchase_review_continuity_context(uuid)'),
  to_regprocedure('atlas_core.purchase_review_family_continuity(uuid,text)'),
  to_regprocedure('atlas_core.purchase_review_family_continuity(uuid,text,jsonb)'))
- and has_function_privilege(actor_role,p.oid,'EXECUTE')),0::bigint,
- 'this private proof checkpoint grants no speculative consumer access');
+ and has_function_privilege(actor_role,p.oid,'EXECUTE')),array['atlas_read_runtime:purchase_review_continuity_context:1',
+ 'atlas_read_runtime:purchase_review_family_continuity:3']::text[],
+ 'only the exact approved Read context/resolved pair gains consumer EXECUTE; scalar and all other runtimes remain denied');
 
 select is((select count(*)from unnest(array[
  'atlas_core.confirmed_need_historical_validation_complete(uuid,uuid)',
@@ -484,5 +485,17 @@ end;$missing_membership$;
 select is((select value->>'complete'from c_context where name='missing-handoff-members'),'false',
  'missing Handoff authority is unavailable, never an authoritative zero');
 
+select is(atlas_core.purchase_review_correction_roots((select confirmed_need_batch_id from c_selected)),
+ (select value-'sources'from c_context where name='root-context'),
+ 'pure roots retain the exact invalidated-Handoff batch/family/period/allocation closure');
+select ok((select p.proowner='atlas_procurement_command_runtime'::regrole and p.prosecdef
+ and p.provolatile='s'and p.proconfig @>array['search_path=""']
+ and has_function_privilege('atlas_need_generation_runtime',p.oid,'EXECUTE')
+ and not exists(select 1 from unnest(array['authenticated','anon','service_role','atlas_read_runtime',
+ 'atlas_confirmed_need_review_runtime','atlas_planning_command_runtime','atlas_dispatch_command_runtime'])principal
+ where has_function_privilege(principal,p.oid,'EXECUTE'))
+ and not exists(select 1 from aclexplode(p.proacl)acl where acl.grantee=0)
+ from pg_proc p where p.oid='atlas_core.purchase_review_correction_roots(uuid)'::regprocedure),
+ 'pure root closure exposes only the exact Need runtime bridge with Procurement ownership');
 select * from finish();
 rollback;

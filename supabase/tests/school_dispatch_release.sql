@@ -593,11 +593,13 @@ select ok((select pg_get_functiondef(
     !~* '\m(stock|inventory|lot|reservation|pick|trip|vehicle|driver|load)\M'),
   'PXK readiness has no stock, receiving, trip, vehicle, driver, or load dependency');
 select ok((select pg_get_functiondef(
-    'atlas_core.school_dispatch_release_preview(date,uuid,uuid)'::regprocedure)
+    'atlas_core.school_dispatch_release_preview(date,uuid,uuid,jsonb)'::regprocedure)
       ~ 'contribution_start'
     and pg_get_functiondef(
-      'atlas_core.school_dispatch_release_preview(date,uuid,uuid)'::regprocedure)
-      !~ 'contribution_quantity\s*\*\s*split\.split_ratio'),
+      'atlas_core.school_dispatch_release_preview(date,uuid,uuid,jsonb)'::regprocedure)
+      !~ 'contribution_quantity\s*\*\s*split\.split_ratio'
+    and pg_get_functiondef('atlas_core.school_dispatch_release_preview(date,uuid,uuid)'::regprocedure)
+      ~ 'school_dispatch_release_preview\(p_service_date,p_school_id,p_delivery_location_id,'),
   'PXK source coverage uses exact residual-preserving contribution/supplier ranges');
 select throws_ok($$update atlas_dispatch.school_dispatch_release_lines set quantity=99$$,
   '23514','School dispatch release history is immutable.',

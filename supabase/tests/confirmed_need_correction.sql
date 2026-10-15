@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=extensions,public,pg_catalog;
-select plan(83);
+select plan(92);
 \ir ../local/confirmed_need_correction_fixture.sql
 select ok(not exists(select from c_results where invoked_as<>'authenticated'),
  'C fixture calls tested public APIs as authenticated');
@@ -42,7 +42,7 @@ join atlas_planning.confirmed_need_line_revisions r on r.confirmed_need_line_id=
 where b.period_start='2026-11-02'order by l.confirmed_need_line_id limit 1;
 create function pg_temp.c_correct_call(api text,request jsonb)returns jsonb language plpgsql as $$
 declare answer jsonb;begin
- if api not in('get_confirmed_need_correction_preview','correct_confirmed_need')then raise exception 'Unexpected C API';end if;
+ if api not in('get_confirmed_need_correction_preview','correct_confirmed_need','get_school_dispatch_release_workbench','release_school_dispatch_document')then raise exception 'Unexpected C API';end if;
  if to_regprocedure('atlas_api.'||api||'(jsonb)')is null then
   return jsonb_build_object('success',false,'error_code','MISSING_RPC');end if;
  set local role authenticated;
@@ -206,6 +206,9 @@ select is(pg_temp.c_correct_call('correct_confirmed_need',
  (select jsonb_set(request,'{payload,proposal_fingerprint}',to_jsonb(repeat('0',64)))||
  jsonb_build_object('command_id',gen_random_uuid(),'idempotency_key',gen_random_uuid())from c_requests where name='command'))
  ->>'error_code','STALE_CORRECTION_PROPOSAL','command binds the exact reviewed server proposal');
+select is(atlas_core.purchase_review_correction_roots((select(request#>>'{payload,confirmed_need_batch_id}')::uuid from c_requests where name='preview')),
+ atlas_core.purchase_review_correction_context((select(request#>>'{payload,confirmed_need_batch_id}')::uuid from c_requests where name='preview'))-'sources',
+ 'pure raw root closure preserves complete released batch/family/period/allocation identities');
 savepoint c_incomplete_overlap;
 create function pg_temp.c_setup_call(api text,request jsonb)returns jsonb language plpgsql as $$
 declare answer jsonb;begin
@@ -272,6 +275,33 @@ select is((select count(*)from atlas_planning.confirmed_need_lines l
 select is(pg_temp.c_correct_call('get_confirmed_need_correction_preview',
  (select request from c_requests where name='preview'))->>'success','false',
  'an overlapping incomplete published source cannot become a valid aggregated family proposal');
+select is(atlas_core.purchase_review_correction_roots((select(request#>>'{payload,confirmed_need_batch_id}')::uuid from c_requests where name='preview')),
+ atlas_core.purchase_review_correction_context((select(request#>>'{payload,confirmed_need_batch_id}')::uuid from c_requests where name='preview'))-'sources',
+ 'raw/full root closure stays exact with incomplete overlapping sources');
+select is(jsonb_array_length(atlas_core.purchase_review_correction_roots((select(request#>>'{payload,confirmed_need_batch_id}')::uuid from c_requests where name='preview'))->'batch_ids'),3,
+ 'raw closure includes both days and genuine incomplete overlapping batch');
+select ok(not coalesce((atlas_core.school_catering_po_date_readiness('2026-11-02')->>'ready')::boolean,false)
+ and not coalesce((atlas_core.school_catering_po_date_readiness('2026-11-03')->>'ready')::boolean,false),
+ 'an unknown overlapping source blocks complete official date readiness on both days');
+select ok(not atlas_core.purchase_review_po_coverage('2026-11-02')and not atlas_core.purchase_review_po_coverage('2026-11-03'),
+ 'old exact PO sets cannot hide an incomplete overlapping Need universe');
+select ok(atlas_core.purchase_review_preparation_po_frontier('2026-11-02')->>'acceptable'='false'
+ and atlas_core.purchase_review_preparation_po_frontier('2026-11-03')->>'frontier'<>'EXACT_COVERAGE',
+ 'Preparation frontier cannot short-circuit incomplete sources through old PO coverage');
+insert into c_results values('overlap-pxk',pg_temp.c_correct_call('get_school_dispatch_release_workbench',
+ pg_temp.c_read('SCHOOL-DISPATCH-RELEASE.v1',jsonb_build_object('date_start','2026-11-02','date_end','2026-11-03','school_ids','[]'::jsonb,'search',null))),'authenticated');
+select ok((select response->>'success'='true'and jsonb_array_length(response->'rows')=3
+ and not exists(select 1 from jsonb_array_elements(response->'rows')row where row#>>'{preview,ready}'is distinct from 'false'
+ or row#>>'{allowed_actions,release}'is distinct from 'false')from c_results where name='overlap-pxk'),
+ 'authenticated PXK read and action block unknown overlapping School contributions');
+select is(pg_temp.c_correct_call('release_school_dispatch_document',pg_temp.c_command('SCHOOL-DISPATCH-RELEASE.v1','SCHOOL_DISPATCH_DOCUMENT_RELEASED',
+ (select(response#>>'{rows,0,expected_version}')::bigint from c_results where name='overlap-pxk'),
+ (select jsonb_build_object('service_date',row->'service_date','school_id',row->'school_id','delivery_location_id',row->'delivery_location_id',
+ 'expected_source_fingerprint',row#>'{preview,source_fingerprint}','predecessor_release_id',row#>'{current_release,school_dispatch_release_id}')
+ from c_results cross join lateral(select response#>'{rows,0}'row)selected where name='overlap-pxk')))->>'error_code','PXK_NOT_READY',
+ 'direct PXK release rejects incomplete source before duplicate or numbering');
+select is((select count(*)from atlas_dispatch.school_dispatch_releases),3::bigint,
+ 'rejected unknown-source PXK release preserves all original official roots');
 rollback to savepoint c_incomplete_overlap;
 create temporary table c_late_before as select jsonb_build_object(
  'batches',(select jsonb_agg(to_jsonb(x)order by confirmed_need_batch_id)from atlas_planning.confirmed_need_batches x),

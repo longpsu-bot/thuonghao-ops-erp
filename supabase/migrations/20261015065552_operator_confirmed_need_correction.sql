@@ -16,7 +16,7 @@ from(values('atlas_confirmed_need_review_runtime','atlas_core'),
  ('atlas_need_generation_runtime','atlas_api'),('atlas_confirmed_need_review_runtime','atlas_api'),
  ('atlas_procurement_command_runtime','atlas_api'),('atlas_planning_command_runtime','atlas_api'),
  ('atlas_planning_materialization_runtime','atlas_core'),('atlas_dispatch_command_runtime','atlas_api'),
- ('atlas_read_runtime','atlas_core'))access(role_name,schema_name);
+ ('atlas_read_runtime','atlas_core'),('atlas_read_runtime','atlas_api'))access(role_name,schema_name);
 grant select on c_task2_schema_before to atlas_owner;
 grant atlas_confirmed_need_review_runtime,atlas_procurement_command_runtime,atlas_need_generation_runtime,
  atlas_planning_materialization_runtime,atlas_planning_command_runtime,atlas_dispatch_command_runtime,atlas_read_runtime
@@ -347,10 +347,10 @@ reset role;
 set role atlas_procurement_command_runtime;
 -- Pure backend source universe. Include incomplete/zero current Need and every
 -- retained PH root independently of applicability, Supplier eligibility or UI.
-create function atlas_core.purchase_review_correction_context(p_batch uuid)
-returns jsonb language plpgsql stable security definer set search_path='' as $context$
+create function atlas_core.purchase_review_correction_roots(p_batch uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $raw_roots$
 declare batches uuid[]:=array[p_batch]; visited uuid[]:='{}'; families uuid[]:='{}';
- target uuid; batch record; sources jsonb:='[]'; items jsonb;
+ target uuid; batch record;
  first_day date; last_day date; allocation_fingerprint text;
 begin
  if p_batch is null then return jsonb_build_object('available',false);end if;
@@ -362,8 +362,6 @@ begin
   if not found then return jsonb_build_object('available',false);end if;
   visited:=array_append(visited,target);
   first_day:=least(first_day,batch.period_start);last_day:=greatest(last_day,batch.period_end);
-  items:=atlas_core.purchase_review_confirmed_source_universe(target);
-  sources:=sources||items;
   select coalesce(array_agg(distinct id order by id),'{}')into batches from(
    select unnest(batches)id union all
    -- Raw batch identities are never filtered through a shaped projection.
@@ -371,8 +369,6 @@ begin
    select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
     where b.source_kind='NEED_GENERATION' and b.period_start<=batch.period_end
      and b.period_end>=batch.period_start
-   union all
-   select (item->>'source_confirmed_need_batch_id')::uuid from jsonb_array_elements(items)item
    union all
    select r.source_confirmed_need_batch_id from atlas_procurement.school_catering_allocation_families f
    join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
@@ -395,9 +391,6 @@ begin
      where r.family_id=f.family_id and r.is_current)
   )represented;
  end loop;
- select coalesce(jsonb_agg(item order by item->>'source_confirmed_need_batch_id',
-  item->>'service_date',item->>'delivery_location_id',item->>'ingredient_id',item->>'unit_id'),'[]')
- into sources from(select distinct value item from jsonb_array_elements(sources))canonical;
  select encode(sha256(convert_to(coalesce(jsonb_agg(jsonb_build_object(
   'family_id',f.family_id,'revision_id',r.family_revision_id,'splits',(
    select coalesce(jsonb_agg(jsonb_build_object('split_id',sp.supplier_split_id,
@@ -408,9 +401,25 @@ begin
  join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
  where r.is_current and f.family_id=any(families);
  return jsonb_build_object('available',true,'allocation_lock_fingerprint',allocation_fingerprint,'batch_ids',to_jsonb(batches),
-  'family_ids',to_jsonb(families),'period_start',first_day,'period_end',last_day,'sources',sources);
+  'family_ids',to_jsonb(families),'period_start',first_day,'period_end',last_day);
 end;
-$context$;
+$raw_roots$;
+revoke all on function atlas_core.purchase_review_correction_roots(uuid)from public,anon,authenticated,service_role;
+grant execute on function atlas_core.purchase_review_correction_roots(uuid)to atlas_need_generation_runtime;
+create function atlas_core.purchase_review_correction_context(p_batch uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $context$
+declare facts jsonb;batch uuid;sources jsonb:='[]';
+begin
+ facts:=atlas_core.purchase_review_correction_roots(p_batch);
+ if facts->>'available'is distinct from 'true'then return facts;end if;
+ for batch in select value::uuid from jsonb_array_elements_text(facts->'batch_ids')loop
+  sources:=sources||atlas_core.purchase_review_confirmed_source_universe(batch);
+ end loop;
+ select coalesce(jsonb_agg(item order by item->>'source_confirmed_need_batch_id',
+  item->>'service_date',item->>'delivery_location_id',item->>'ingredient_id',item->>'unit_id'),'[]')
+ into sources from(select distinct value item from jsonb_array_elements(sources))canonical;
+ return facts||jsonb_build_object('sources',sources);
+end;$context$;
 revoke all on function atlas_core.purchase_review_correction_context(uuid)
  from public,anon,authenticated,service_role;
 grant execute on function atlas_core.purchase_review_correction_context(uuid)
@@ -494,7 +503,7 @@ create or replace function atlas_core.purchase_review_lock_allocations(p_batch u
 returns void language plpgsql volatile security definer set search_path='' as $domain_locks$
 declare initial jsonb; fresh jsonb; families uuid[]; batches uuid[]; item record;
 begin
- initial:=atlas_core.purchase_review_correction_context(p_batch);
+ initial:=atlas_core.purchase_review_correction_roots(p_batch);
  if initial->>'available' is distinct from 'true' then return;end if;
  select array_agg(id::uuid order by id::uuid)into families
  from jsonb_array_elements_text(initial->'family_ids')id;
@@ -523,7 +532,7 @@ begin
   order by h.purchase_handoff_revision_id for update;
  perform 1 from atlas_procurement.school_catering_allocation_families f
   where f.family_id=any(families)order by f.family_id for update;
- fresh:=atlas_core.purchase_review_correction_context(p_batch);
+ fresh:=atlas_core.purchase_review_correction_roots(p_batch);
  if fresh->>'available' is distinct from 'true'
   or not ((initial->'batch_ids') @> (fresh->'batch_ids'))
   or not ((initial->'family_ids') @> (fresh->'family_ids'))
@@ -543,7 +552,7 @@ returns jsonb language plpgsql volatile security definer set search_path='' as $
 declare initial jsonb; fresh jsonb; batches uuid[]; runs uuid[]; sets uuid[];
  source_run uuid; fresh_runs uuid[]; evaluations uuid[]; fresh_sets uuid[]; fresh_evaluations uuid[];
 begin
- initial:=atlas_core.purchase_review_correction_context(p_batch);
+ initial:=atlas_core.purchase_review_correction_roots(p_batch);
  if initial->>'available' is distinct from 'true' then return initial;end if;
  select array_agg(id::uuid order by id::uuid)into batches
  from jsonb_array_elements_text(initial->'batch_ids')id;
@@ -583,7 +592,7 @@ begin
   order by b.confirmed_need_batch_id for update;
  -- Never lock immutable Need R/D FOR UPDATE before Supplier evidence: incumbent
  -- PH allocation Save may acquire FK KEY SHARE on them after Supplier locks.
- fresh:=atlas_core.purchase_review_correction_context(p_batch);
+ fresh:=atlas_core.purchase_review_correction_roots(p_batch);
  select array_agg(distinct r.planning_input_set_id order by r.planning_input_set_id)into fresh_sets
  from atlas_planning.need_generation_runs r where r.need_generation_run_id in(
   select b.current_need_generation_run_id from atlas_planning.confirmed_need_batches b
@@ -1227,6 +1236,1562 @@ grant execute on function atlas_api.correct_confirmed_need(jsonb)to authenticate
 reset role;
 set role atlas_need_generation_runtime;
 grant execute on function atlas_api.prepare_planning_source_correction(jsonb)to atlas_confirmed_need_review_runtime;
+
+-- Task4: derived applicability supplements raw support identity only.
+reset role;
+set role atlas_procurement_command_runtime;
+grant execute on function atlas_core.purchase_review_continuity_context(uuid),atlas_core.purchase_review_family_continuity(uuid,text,jsonb)to atlas_read_runtime;
+reset role;
+set role atlas_procurement_command_runtime;
+do $consumer$
+declare definition text:=pg_get_functiondef('atlas_core.purchase_review_allocation_ready(uuid)'::regprocedure);
+begin
+ if strpos(definition,$old0$
+  with source as materialized (
+    select p from atlas_core.purchase_review_confirmed_batch_sources(p_batch) p
+  )
+  select exists(select 1 from source) and not exists(
+    select 1 from source where p->>'complete' is distinct from 'true'
+      or ((p->>'family_quantity')::numeric>0 and not exists(
+        select 1 from atlas_procurement.school_catering_allocation_families f
+        join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+        where f.service_date=(p->>'service_date')::date and f.delivery_location_id=(p->>'delivery_location_id')::uuid
+          and f.ingredient_id=(p->>'ingredient_id')::uuid and f.unit_id=(p->>'unit_id')::uuid
+          and r.is_current and r.source_kind='CONFIRMED_NEED' and r.source_confirmed_need_batch_id=p_batch
+          and r.source_fingerprint=p->>'source_fingerprint' and r.family_quantity=(p->>'family_quantity')::numeric
+          and r.source_confirmed_need_batch_version<=(p->>'source_confirmed_need_batch_version')::bigint
+          and (select sum(s.allocated_quantity) from atlas_procurement.school_catering_allocation_supplier_splits s
+            where s.family_revision_id=r.family_revision_id)=r.family_quantity
+          and not exists(select 1 from atlas_procurement.school_catering_allocation_supplier_splits s
+            where s.family_revision_id=r.family_revision_id and not exists(
+              select 1 from atlas_admin.suppliers sp join atlas_admin.supplier_eligibilities e using(supplier_id)
+              where sp.supplier_id=s.supplier_id and sp.supplier_status='ACTIVE' and e.eligibility_status='ACTIVE'
+                and e.ingredient_id=f.ingredient_id and e.effective_from<=f.service_date
+                and (e.effective_to is null or e.effective_to>f.service_date))))));
+$old0$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_allocation_ready(uuid)/0';end if;
+ definition:=replace(definition,$old0$
+  with source as materialized (
+    select p from atlas_core.purchase_review_confirmed_batch_sources(p_batch) p
+  )
+  select exists(select 1 from source) and not exists(
+    select 1 from source where p->>'complete' is distinct from 'true'
+      or ((p->>'family_quantity')::numeric>0 and not exists(
+        select 1 from atlas_procurement.school_catering_allocation_families f
+        join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+        where f.service_date=(p->>'service_date')::date and f.delivery_location_id=(p->>'delivery_location_id')::uuid
+          and f.ingredient_id=(p->>'ingredient_id')::uuid and f.unit_id=(p->>'unit_id')::uuid
+          and r.is_current and r.source_kind='CONFIRMED_NEED' and r.source_confirmed_need_batch_id=p_batch
+          and r.source_fingerprint=p->>'source_fingerprint' and r.family_quantity=(p->>'family_quantity')::numeric
+          and r.source_confirmed_need_batch_version<=(p->>'source_confirmed_need_batch_version')::bigint
+          and (select sum(s.allocated_quantity) from atlas_procurement.school_catering_allocation_supplier_splits s
+            where s.family_revision_id=r.family_revision_id)=r.family_quantity
+          and not exists(select 1 from atlas_procurement.school_catering_allocation_supplier_splits s
+            where s.family_revision_id=r.family_revision_id and not exists(
+              select 1 from atlas_admin.suppliers sp join atlas_admin.supplier_eligibilities e using(supplier_id)
+              where sp.supplier_id=s.supplier_id and sp.supplier_status='ACTIVE' and e.eligibility_status='ACTIVE'
+                and e.ingredient_id=f.ingredient_id and e.effective_from<=f.service_date
+                and (e.effective_to is null or e.effective_to>f.service_date))))));
+$old0$,$new0$
+ select atlas_core.purchase_review_allocation_ready(p_batch,atlas_core.purchase_review_confirmed_source_universe(p_batch));
+$new0$);
+ execute definition;
+end;$consumer$;
+
+reset role;
+set role atlas_procurement_command_runtime;
+do $consumer$
+declare definition text:=pg_get_functiondef('atlas_core.purchase_review_preparation_allocation_ready(uuid)'::regprocedure);
+begin
+ if strpos(definition,$old0$
+  with source as materialized (
+    select value p
+    from atlas_core.purchase_review_confirmed_batch_sources(p_batch) source(value)
+  )
+  select exists(select 1 from source)
+    and not exists(
+      select 1
+      from source
+      where p->>'complete' is distinct from 'true'
+        or ((p->>'family_quantity')::numeric>0 and not (
+          exists(
+            select 1
+            from atlas_procurement.school_catering_allocation_families family
+            join atlas_procurement.school_catering_allocation_family_revisions revision
+              using(family_id)
+            where family.service_date=(p->>'service_date')::date
+              and family.delivery_location_id=(p->>'delivery_location_id')::uuid
+              and family.ingredient_id=(p->>'ingredient_id')::uuid
+              and family.unit_id=(p->>'unit_id')::uuid
+              and revision.is_current
+              and revision.source_kind='CONFIRMED_NEED'
+              and revision.source_confirmed_need_batch_id=p_batch
+              and revision.source_fingerprint=p->>'source_fingerprint'
+              and revision.family_quantity=(p->>'family_quantity')::numeric
+              and revision.source_confirmed_need_batch_version<=
+                (p->>'source_confirmed_need_batch_version')::bigint
+              and (select pg_catalog.sum(split.allocated_quantity)
+                from atlas_procurement.school_catering_allocation_supplier_splits split
+                where split.family_revision_id=revision.family_revision_id)=revision.family_quantity
+              and not exists(
+                select 1
+                from atlas_procurement.school_catering_allocation_supplier_splits split
+                where split.family_revision_id=revision.family_revision_id
+                  and not exists(
+                    select 1
+                    from atlas_admin.suppliers supplier
+                    join atlas_admin.supplier_eligibilities eligibility using(supplier_id)
+                    where supplier.supplier_id=split.supplier_id
+                      and supplier.supplier_status='ACTIVE'
+                      and eligibility.eligibility_status='ACTIVE'
+                      and eligibility.ingredient_id=family.ingredient_id
+                      and eligibility.effective_from<=family.service_date
+                      and (eligibility.effective_to is null
+                        or eligibility.effective_to>family.service_date))))
+          or (
+            not exists(
+              select 1
+              from atlas_procurement.school_catering_allocation_families family
+              join atlas_procurement.school_catering_allocation_family_revisions revision
+                using(family_id)
+              where family.service_date=(p->>'service_date')::date
+                and family.delivery_location_id=(p->>'delivery_location_id')::uuid
+                and family.ingredient_id=(p->>'ingredient_id')::uuid
+                and family.unit_id=(p->>'unit_id')::uuid
+                and revision.is_current)
+            and atlas_core.purchase_review_supplier_advice(
+              (p->>'service_date')::date,
+              (p->>'ingredient_id')::uuid,
+              (p->>'family_quantity')::numeric)->'recommendation' <> 'null'::jsonb)
+        )));
+$old0$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_preparation_allocation_ready(uuid)/0';end if;
+ definition:=replace(definition,$old0$
+  with source as materialized (
+    select value p
+    from atlas_core.purchase_review_confirmed_batch_sources(p_batch) source(value)
+  )
+  select exists(select 1 from source)
+    and not exists(
+      select 1
+      from source
+      where p->>'complete' is distinct from 'true'
+        or ((p->>'family_quantity')::numeric>0 and not (
+          exists(
+            select 1
+            from atlas_procurement.school_catering_allocation_families family
+            join atlas_procurement.school_catering_allocation_family_revisions revision
+              using(family_id)
+            where family.service_date=(p->>'service_date')::date
+              and family.delivery_location_id=(p->>'delivery_location_id')::uuid
+              and family.ingredient_id=(p->>'ingredient_id')::uuid
+              and family.unit_id=(p->>'unit_id')::uuid
+              and revision.is_current
+              and revision.source_kind='CONFIRMED_NEED'
+              and revision.source_confirmed_need_batch_id=p_batch
+              and revision.source_fingerprint=p->>'source_fingerprint'
+              and revision.family_quantity=(p->>'family_quantity')::numeric
+              and revision.source_confirmed_need_batch_version<=
+                (p->>'source_confirmed_need_batch_version')::bigint
+              and (select pg_catalog.sum(split.allocated_quantity)
+                from atlas_procurement.school_catering_allocation_supplier_splits split
+                where split.family_revision_id=revision.family_revision_id)=revision.family_quantity
+              and not exists(
+                select 1
+                from atlas_procurement.school_catering_allocation_supplier_splits split
+                where split.family_revision_id=revision.family_revision_id
+                  and not exists(
+                    select 1
+                    from atlas_admin.suppliers supplier
+                    join atlas_admin.supplier_eligibilities eligibility using(supplier_id)
+                    where supplier.supplier_id=split.supplier_id
+                      and supplier.supplier_status='ACTIVE'
+                      and eligibility.eligibility_status='ACTIVE'
+                      and eligibility.ingredient_id=family.ingredient_id
+                      and eligibility.effective_from<=family.service_date
+                      and (eligibility.effective_to is null
+                        or eligibility.effective_to>family.service_date))))
+          or (
+            not exists(
+              select 1
+              from atlas_procurement.school_catering_allocation_families family
+              join atlas_procurement.school_catering_allocation_family_revisions revision
+                using(family_id)
+              where family.service_date=(p->>'service_date')::date
+                and family.delivery_location_id=(p->>'delivery_location_id')::uuid
+                and family.ingredient_id=(p->>'ingredient_id')::uuid
+                and family.unit_id=(p->>'unit_id')::uuid
+                and revision.is_current)
+            and atlas_core.purchase_review_supplier_advice(
+              (p->>'service_date')::date,
+              (p->>'ingredient_id')::uuid,
+              (p->>'family_quantity')::numeric)->'recommendation' <> 'null'::jsonb)
+        )));
+$old0$,$new0$
+ select atlas_core.purchase_review_preparation_allocation_ready(p_batch,atlas_core.purchase_review_confirmed_source_universe(p_batch));
+$new0$);
+ execute definition;
+end;$consumer$;
+
+reset role;
+set role atlas_procurement_command_runtime;
+do $consumer$
+declare definition text:=pg_get_functiondef('atlas_core.purchase_review_allocation_ready(uuid,jsonb)'::regprocedure);
+begin
+ if strpos(definition,$old0$  with source as materialized ($old0$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_allocation_ready(uuid,jsonb)/0';end if;
+ definition:=replace(definition,$old0$  with source as materialized ($old0$,$new0$  with continuity as materialized(select atlas_core.purchase_review_continuity_context(p_batch) value), source as materialized ($new0$);
+ if strpos(definition,$old1$and r.source_kind='CONFIRMED_NEED' and r.source_confirmed_need_batch_id=p_batch
+          and r.source_fingerprint=p->>'source_fingerprint' and r.family_quantity=(p->>'family_quantity')::numeric
+          and r.source_confirmed_need_batch_version<=(p->>'source_confirmed_need_batch_version')::bigint$old1$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_allocation_ready(uuid,jsonb)/1';end if;
+ definition:=replace(definition,$old1$and r.source_kind='CONFIRMED_NEED' and r.source_confirmed_need_batch_id=p_batch
+          and r.source_fingerprint=p->>'source_fingerprint' and r.family_quantity=(p->>'family_quantity')::numeric
+          and r.source_confirmed_need_batch_version<=(p->>'source_confirmed_need_batch_version')::bigint$old1$,$new1$and ((r.source_kind='CONFIRMED_NEED' and r.source_confirmed_need_batch_id=p_batch
+          and r.source_fingerprint=p->>'source_fingerprint' and r.family_quantity=(p->>'family_quantity')::numeric
+          and r.source_confirmed_need_batch_version<=(p->>'source_confirmed_need_batch_version')::bigint) or (r.source_kind='PURCHASE_HANDOFF' and atlas_core.purchase_review_family_continuity(r.family_revision_id,'PROSPECTIVE',(select value from continuity))->>'applicable'='true'))$new1$);
+ execute definition;
+end;$consumer$;
+
+reset role;
+set role atlas_procurement_command_runtime;
+do $consumer$
+declare definition text:=pg_get_functiondef('atlas_core.purchase_review_preparation_allocation_ready(uuid,jsonb)'::regprocedure);
+begin
+ if strpos(definition,$old0$  with source as materialized ($old0$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_preparation_allocation_ready(uuid,jsonb)/0';end if;
+ definition:=replace(definition,$old0$  with source as materialized ($old0$,$new0$  with continuity as materialized(select atlas_core.purchase_review_continuity_context(p_batch) value), source as materialized ($new0$);
+ if strpos(definition,$old1$and revision.source_kind='CONFIRMED_NEED'
+              and revision.source_confirmed_need_batch_id=p_batch
+              and revision.source_fingerprint=p->>'source_fingerprint'
+              and revision.family_quantity=(p->>'family_quantity')::numeric
+              and revision.source_confirmed_need_batch_version<=
+                (p->>'source_confirmed_need_batch_version')::bigint$old1$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_preparation_allocation_ready(uuid,jsonb)/1';end if;
+ definition:=replace(definition,$old1$and revision.source_kind='CONFIRMED_NEED'
+              and revision.source_confirmed_need_batch_id=p_batch
+              and revision.source_fingerprint=p->>'source_fingerprint'
+              and revision.family_quantity=(p->>'family_quantity')::numeric
+              and revision.source_confirmed_need_batch_version<=
+                (p->>'source_confirmed_need_batch_version')::bigint$old1$,$new1$and ((revision.source_kind='CONFIRMED_NEED'
+              and revision.source_confirmed_need_batch_id=p_batch
+              and revision.source_fingerprint=p->>'source_fingerprint'
+              and revision.family_quantity=(p->>'family_quantity')::numeric
+              and revision.source_confirmed_need_batch_version<=
+                (p->>'source_confirmed_need_batch_version')::bigint) or (revision.source_kind='PURCHASE_HANDOFF' and atlas_core.purchase_review_family_continuity(revision.family_revision_id,'PROSPECTIVE',(select value from continuity))->>'applicable'='true'))$new1$);
+ execute definition;
+end;$consumer$;
+
+reset role;
+set role atlas_procurement_command_runtime;
+do $consumer$
+declare definition text:=pg_get_functiondef('atlas_core.purchase_review_promote_allocations(uuid,uuid,uuid,uuid,uuid)'::regprocedure);
+begin
+ if strpos(definition,$old0$  v_expected jsonb; v_actual jsonb; v_event uuid; v_audit uuid;$old0$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_promote_allocations(uuid,uuid,uuid,uuid,uuid)/0';end if;
+ definition:=replace(definition,$old0$  v_expected jsonb; v_actual jsonb; v_event uuid; v_audit uuid;$old0$,$new0$  v_expected jsonb; v_actual jsonb; v_event uuid; v_audit uuid; continuity jsonb;$new0$);
+ if strpos(definition,$old1$  for p in select source.value$old1$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_promote_allocations(uuid,uuid,uuid,uuid,uuid)/1';end if;
+ definition:=replace(definition,$old1$  for p in select source.value$old1$,$new1$  continuity:=atlas_core.purchase_review_continuity_context(p_batch);
+  for p in select source.value$new1$);
+ if strpos(definition,$old2$    h:=atlas_core.school_catering_family_projection$old2$)=0 then raise exception 'C consumer anchor missing: atlas_core.purchase_review_promote_allocations(uuid,uuid,uuid,uuid,uuid)/2';end if;
+ definition:=replace(definition,$old2$    h:=atlas_core.school_catering_family_projection$old2$,$new2$    if r.source_kind='PURCHASE_HANDOFF' and atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',continuity)->>'applicable'='true'then continue;end if;
+    h:=atlas_core.school_catering_family_projection$new2$);
+ execute definition;
+end;$consumer$;
+
+reset role;
+set role atlas_read_runtime;
+do $consumer$
+declare definition text:=pg_get_functiondef('atlas_api.get_confirmed_supplier_allocation_workbench(jsonb)'::regprocedure);
+begin
+ if strpos(definition,$old0$  v_blockers jsonb:=$old0$)=0 then raise exception 'C consumer anchor missing: atlas_api.get_confirmed_supplier_allocation_workbench(jsonb)/0';end if;
+ definition:=replace(definition,$old0$  v_blockers jsonb:=$old0$,$new0$  continuity_contexts jsonb; continuity jsonb;
+  v_blockers jsonb:=$new0$);
+ if strpos(definition,$old1$  for p in select value from jsonb_array_elements(v_sources) loop$old1$)=0 then raise exception 'C consumer anchor missing: atlas_api.get_confirmed_supplier_allocation_workbench(jsonb)/1';end if;
+ definition:=replace(definition,$old1$  for p in select value from jsonb_array_elements(v_sources) loop$old1$,$new1$  select coalesce(jsonb_object_agg(batch_id,atlas_core.purchase_review_continuity_context(batch_id::uuid)),'{}') into continuity_contexts from(select distinct value->>'source_confirmed_need_batch_id' batch_id from jsonb_array_elements(v_sources))batches where batch_id is not null;
+  for p in select value from jsonb_array_elements(v_sources) loop$new1$);
+ if strpos(definition,$old2$    -- Once promoted, retain the real Handoff source for currentness and legacy Save.$old2$)=0 then raise exception 'C consumer anchor missing: atlas_api.get_confirmed_supplier_allocation_workbench(jsonb)/2';end if;
+ definition:=replace(definition,$old2$    -- Once promoted, retain the real Handoff source for currentness and legacy Save.$old2$,$new2$    continuity:=atlas_core.purchase_review_family_continuity(r.family_revision_id,case when p->>'batch_status'='RELEASED_FOR_PURCHASE_HANDOFF'then 'OFFICIAL'else 'PROSPECTIVE'end,continuity_contexts->(p->>'source_confirmed_need_batch_id'));
+    -- Keep raw source identity for every explicit legacy Save.$new2$);
+ if strpos(definition,$old3$when r.source_fingerprint=p->>'source_fingerprint' and v_eligible$old3$)=0 then raise exception 'C consumer anchor missing: atlas_api.get_confirmed_supplier_allocation_workbench(jsonb)/3';end if;
+ definition:=replace(definition,$old3$when r.source_fingerprint=p->>'source_fingerprint' and v_eligible$old3$,$new3$when (r.source_fingerprint=p->>'source_fingerprint' or continuity->>'applicable'='true') and v_eligible$new3$);
+ execute definition;
+end;$consumer$;
+
+
+-- Task4 official date/PO applicability; no raw fingerprint substitution.
+reset role;
+set role atlas_owner;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_core.school_catering_po_date_readiness(date)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  with source_families as (
+    select distinct lr.service_date,lr.delivery_location_id,lr.ingredient_id,lr.unit_id
+    from atlas_planning.purchase_handoff_batches b
+    join atlas_planning.purchase_handoff_revisions hr
+      on hr.purchase_handoff_batch_id=b.purchase_handoff_batch_id
+     and hr.is_current and hr.revision_status='RELEASED_TO_PROCUREMENT'
+    join atlas_planning.purchase_handoff_line_revisions lr
+      on lr.purchase_handoff_revision_id=hr.purchase_handoff_revision_id
+    join atlas_planning.purchase_demand_references d
+      on d.purchase_handoff_line_revision_id=lr.purchase_handoff_line_revision_id
+     and d.source_kind='NEED_GENERATION'
+    where b.handoff_status='RELEASED_TO_PROCUREMENT'
+      and lr.service_date=p_service_date
+$old0$,'')))/length($old0$  with source_families as (
+    select distinct lr.service_date,lr.delivery_location_id,lr.ingredient_id,lr.unit_id
+    from atlas_planning.purchase_handoff_batches b
+    join atlas_planning.purchase_handoff_revisions hr
+      on hr.purchase_handoff_batch_id=b.purchase_handoff_batch_id
+     and hr.is_current and hr.revision_status='RELEASED_TO_PROCUREMENT'
+    join atlas_planning.purchase_handoff_line_revisions lr
+      on lr.purchase_handoff_revision_id=hr.purchase_handoff_revision_id
+    join atlas_planning.purchase_demand_references d
+      on d.purchase_handoff_line_revision_id=lr.purchase_handoff_line_revision_id
+     and d.source_kind='NEED_GENERATION'
+    where b.handoff_status='RELEASED_TO_PROCUREMENT'
+      and lr.service_date=p_service_date
+$old0$)<>1 then raise exception 'C official anchor missing: atlas_core.school_catering_po_date_readiness(date)/0';end if;
+ definition:=replace(definition,$old0$  with source_families as (
+    select distinct lr.service_date,lr.delivery_location_id,lr.ingredient_id,lr.unit_id
+    from atlas_planning.purchase_handoff_batches b
+    join atlas_planning.purchase_handoff_revisions hr
+      on hr.purchase_handoff_batch_id=b.purchase_handoff_batch_id
+     and hr.is_current and hr.revision_status='RELEASED_TO_PROCUREMENT'
+    join atlas_planning.purchase_handoff_line_revisions lr
+      on lr.purchase_handoff_revision_id=hr.purchase_handoff_revision_id
+    join atlas_planning.purchase_demand_references d
+      on d.purchase_handoff_line_revision_id=lr.purchase_handoff_line_revision_id
+     and d.source_kind='NEED_GENERATION'
+    where b.handoff_status='RELEASED_TO_PROCUREMENT'
+      and lr.service_date=p_service_date
+$old0$,$new0$  with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=p_service_date and b.period_end>=p_service_date
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date=p_service_date and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date=p_service_date and r.is_current
+ ), source_families as (
+    select distinct lr.service_date,lr.delivery_location_id,lr.ingredient_id,lr.unit_id
+    from atlas_planning.purchase_handoff_batches b
+    join atlas_planning.purchase_handoff_revisions hr
+      on hr.purchase_handoff_batch_id=b.purchase_handoff_batch_id
+     and hr.is_current and hr.revision_status='RELEASED_TO_PROCUREMENT'
+    join atlas_planning.purchase_handoff_line_revisions lr
+      on lr.purchase_handoff_revision_id=hr.purchase_handoff_revision_id
+    join atlas_planning.purchase_demand_references d
+      on d.purchase_handoff_line_revision_id=lr.purchase_handoff_line_revision_id
+     and d.source_kind='NEED_GENERATION'
+    where b.handoff_status='RELEASED_TO_PROCUREMENT'
+      and lr.service_date=p_service_date
+
+    union select nr.service_date,nr.delivery_location_id,nr.ingredient_id,nr.unit_id
+    from atlas_planning.confirmed_need_line_revisions nr
+    join atlas_planning.confirmed_need_batches nb using(confirmed_need_batch_id)
+    where nr.is_current and nr.service_date=p_service_date and nb.source_kind='NEED_GENERATION'
+$new0$);
+ if (length(definition)-length(replace(definition,$old1$when f.family_id is null$old1$,'')))/length($old1$when f.family_id is null$old1$)<>1 then raise exception 'C official anchor missing: atlas_core.school_catering_po_date_readiness(date)/1';end if;
+ definition:=replace(definition,$old1$when f.family_id is null$old1$,$new1$when exists(select 1 from atlas_planning.confirmed_need_line_revisions nr
+          join atlas_planning.confirmed_need_batches nb using(confirmed_need_batch_id)
+          where nr.is_current and nb.source_kind='NEED_GENERATION'
+           and row(nr.service_date,nr.delivery_location_id,nr.ingredient_id,nr.unit_id)=row(sf.service_date,sf.delivery_location_id,sf.ingredient_id,sf.unit_id)
+           and nb.batch_status<>'RELEASED_FOR_PURCHASE_HANDOFF')then 'CORRECTION_PENDING'
+        when f.family_id is null$new1$);
+ if (length(definition)-length(replace(definition,$old2$r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+          or r.family_quantity is distinct from
+            atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old2$,'')))/length($old2$r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+          or r.family_quantity is distinct from
+            atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old2$)<>1 then raise exception 'C official anchor missing: atlas_core.school_catering_po_date_readiness(date)/2';end if;
+ definition:=replace(definition,$old2$r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+          or r.family_quantity is distinct from
+            atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old2$,$new2$(r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+          or r.family_quantity is distinct from
+            atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) and not coalesce((select value->>'applicable'='true'from continuity_families where family_revision_id=r.family_revision_id),false)$new2$);
+ execute definition;
+end;$official$;
+
+reset role;
+set role atlas_owner;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_core.school_catering_po_draft_is_stale(uuid,uuid)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  ), expected as ($old0$,'')))/length($old0$  ), expected as ($old0$)<>1 then raise exception 'C official anchor missing: atlas_core.school_catering_po_draft_is_stale(uuid,uuid)/0';end if;
+ definition:=replace(definition,$old0$  ), expected as ($old0$,$new0$  ), continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=(select school_catering_service_date from root) and b.period_end>=(select school_catering_service_date from root)
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date=(select school_catering_service_date from root) and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date=(select school_catering_service_date from root) and r.is_current
+ ), expected as ($new0$);
+ if (length(definition)-length(replace(definition,$old1$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old1$,'')))/length($old1$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old1$)<>1 then raise exception 'C official anchor missing: atlas_core.school_catering_po_draft_is_stale(uuid,uuid)/1';end if;
+ definition:=replace(definition,$old1$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old1$,$new1$((r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) or coalesce((select value->>'applicable'='true'from continuity_families where family_revision_id=r.family_revision_id),false))$new1$);
+ if (length(definition)-length(replace(definition,$old2$r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+        or r.family_quantity is distinct from
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old2$,'')))/length($old2$r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+        or r.family_quantity is distinct from
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old2$)<>1 then raise exception 'C official anchor missing: atlas_core.school_catering_po_draft_is_stale(uuid,uuid)/2';end if;
+ definition:=replace(definition,$old2$r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+        or r.family_quantity is distinct from
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old2$,$new2$((r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+        or r.family_quantity is distinct from
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) and not coalesce((select value->>'applicable'='true'from continuity_families where family_revision_id=r.family_revision_id),false))$new2$);
+ execute definition;
+end;$official$;
+
+reset role;
+set role atlas_read_runtime;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_core.school_catering_po_commitment_state(uuid,uuid)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  select case$old0$,'')))/length($old0$  select case$old0$)<>1 then raise exception 'C official anchor missing: atlas_core.school_catering_po_commitment_state(uuid,uuid)/0';end if;
+ definition:=replace(definition,$old0$  select case$old0$,$new0$  with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=(select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and b.period_end>=(select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id)
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date=(select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date=(select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and r.is_current
+ ) select case$new0$);
+ if (length(definition)-length(replace(definition,$old1$    when po.purchase_order_status='RELEASED_TO_SUPPLIER' and exists(
+      select 1
+      from atlas_procurement.school_catering_allocation_families f
+      join atlas_procurement.school_catering_allocation_family_revisions r
+        on r.family_id=f.family_id and r.is_current
+      join atlas_procurement.school_catering_allocation_supplier_splits s
+        on s.family_revision_id=r.family_revision_id
+       and s.supplier_id=po.supplier_id
+      cross join lateral (
+        select atlas_core.school_catering_family_projection(
+          f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+        ) value
+      ) projection
+      where f.service_date=po.school_catering_service_date
+        and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+        and r.family_quantity=
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
+    ) then 'REPLACEMENT_REQUIRED'
+    when po.purchase_order_status='RELEASED_TO_SUPPLIER'
+      then 'CANCELLATION_REQUIRED'
+$old1$,'')))/length($old1$    when po.purchase_order_status='RELEASED_TO_SUPPLIER' and exists(
+      select 1
+      from atlas_procurement.school_catering_allocation_families f
+      join atlas_procurement.school_catering_allocation_family_revisions r
+        on r.family_id=f.family_id and r.is_current
+      join atlas_procurement.school_catering_allocation_supplier_splits s
+        on s.family_revision_id=r.family_revision_id
+       and s.supplier_id=po.supplier_id
+      cross join lateral (
+        select atlas_core.school_catering_family_projection(
+          f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+        ) value
+      ) projection
+      where f.service_date=po.school_catering_service_date
+        and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+        and r.family_quantity=
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
+    ) then 'REPLACEMENT_REQUIRED'
+    when po.purchase_order_status='RELEASED_TO_SUPPLIER'
+      then 'CANCELLATION_REQUIRED'
+$old1$)<>1 then raise exception 'C official anchor missing: atlas_core.school_catering_po_commitment_state(uuid,uuid)/1';end if;
+ definition:=replace(definition,$old1$    when po.purchase_order_status='RELEASED_TO_SUPPLIER' and exists(
+      select 1
+      from atlas_procurement.school_catering_allocation_families f
+      join atlas_procurement.school_catering_allocation_family_revisions r
+        on r.family_id=f.family_id and r.is_current
+      join atlas_procurement.school_catering_allocation_supplier_splits s
+        on s.family_revision_id=r.family_revision_id
+       and s.supplier_id=po.supplier_id
+      cross join lateral (
+        select atlas_core.school_catering_family_projection(
+          f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+        ) value
+      ) projection
+      where f.service_date=po.school_catering_service_date
+        and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+        and r.family_quantity=
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
+    ) then 'REPLACEMENT_REQUIRED'
+    when po.purchase_order_status='RELEASED_TO_SUPPLIER'
+      then 'CANCELLATION_REQUIRED'
+$old1$,$new1$    when po.purchase_order_status='RELEASED_TO_SUPPLIER' and exists(
+      select 1 from atlas_procurement.purchase_order_line_revisions line
+      where line.purchase_order_revision_id=p_purchase_order_revision_id)
+      and not exists(
+       select 1 from atlas_procurement.purchase_order_line_revisions line
+       join atlas_procurement.school_catering_allocation_supplier_splits old_split
+        on old_split.supplier_split_id=line.school_catering_allocation_supplier_split_id
+       join atlas_procurement.school_catering_allocation_family_revisions old_revision
+        on old_revision.family_revision_id=old_split.family_revision_id
+       left join atlas_procurement.school_catering_allocation_family_revisions r
+        on r.family_id=old_revision.family_id and r.is_current
+       where line.purchase_order_revision_id=p_purchase_order_revision_id and not (
+        coalesce((select value->>'classification'='AUTHORITATIVE_ZERO'from continuity_families
+          where family_revision_id=r.family_revision_id),false)
+        or (coalesce((select value->>'applicable'='true'from continuity_families
+          where family_revision_id=r.family_revision_id),false)
+         and not exists(select 1 from atlas_procurement.school_catering_allocation_supplier_splits s
+          where s.family_revision_id=r.family_revision_id and s.supplier_id=po.supplier_id))))
+      then 'CANCELLATION_REQUIRED'
+    when po.purchase_order_status='RELEASED_TO_SUPPLIER' then 'REPLACEMENT_REQUIRED'
+$new1$);
+ execute definition;
+end;$official$;
+
+reset role;
+set role atlas_procurement_command_runtime;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_core.purchase_review_po_coverage(date)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  with expected as materialized ($old0$,'')))/length($old0$  with expected as materialized ($old0$)<>1 then raise exception 'C official anchor missing: atlas_core.purchase_review_po_coverage(date)/0';end if;
+ definition:=replace(definition,$old0$  with expected as materialized ($old0$,$new0$  with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=p_date and b.period_end>=p_date
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date=p_date and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date=p_date and r.is_current
+ ), expected as materialized ($new0$);
+ if (length(definition)-length(replace(definition,$old1$r.source_fingerprint=atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id)->>'source_fingerprint'$old1$,'')))/length($old1$r.source_fingerprint=atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id)->>'source_fingerprint'$old1$)<>1 then raise exception 'C official anchor missing: atlas_core.purchase_review_po_coverage(date)/1';end if;
+ definition:=replace(definition,$old1$r.source_fingerprint=atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id)->>'source_fingerprint'$old1$,$new1$(r.source_fingerprint=atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id)->>'source_fingerprint' or coalesce((select value->>'applicable'='true'from continuity_families where family_revision_id=r.family_revision_id),false))$new1$);
+ definition:=replace(definition,'select exists(select 1 from expected)',
+  'select coalesce((atlas_core.school_catering_po_date_readiness(p_date)->>''ready'')::boolean,false) and exists(select 1 from expected)');
+ execute definition;
+end;$official$;
+
+
+-- Task4 resolved PO consumers: caller-owned maps, never public request fields.
+reset role;
+set role atlas_owner;
+CREATE OR REPLACE FUNCTION atlas_core.school_catering_po_draft_is_stale(p_purchase_order_id uuid, p_purchase_order_revision_id uuid, p_continuity jsonb)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SET search_path TO ''
+AS $function$
+  with root as (
+    select po.supplier_id,po.school_catering_service_date
+    from atlas_procurement.purchase_orders po
+    where po.purchase_order_id=p_purchase_order_id
+      and po.purchase_order_kind='SCHOOL_CATERING'
+  ), continuity_families as materialized(select key::uuid family_revision_id,value from jsonb_each(coalesce(p_continuity,'{}'::jsonb))), expected as (
+    select s.supplier_split_id
+    from root
+    join atlas_procurement.school_catering_allocation_families f
+      on f.service_date=root.school_catering_service_date
+    join atlas_procurement.school_catering_allocation_family_revisions r
+      on r.family_id=f.family_id and r.is_current and r.source_kind='PURCHASE_HANDOFF'
+    join atlas_procurement.school_catering_allocation_supplier_splits s
+      on s.family_revision_id=r.family_revision_id and s.supplier_id=root.supplier_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
+    where ((r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) or coalesce((select value->>'applicable'='true'from continuity_families where family_revision_id=r.family_revision_id),false))
+  ), actual as (
+    select polr.school_catering_allocation_supplier_split_id supplier_split_id
+    from atlas_procurement.purchase_order_line_revisions polr
+    where polr.purchase_order_revision_id=p_purchase_order_revision_id
+  )
+  select exists(
+    select 1
+    from atlas_procurement.purchase_order_line_revisions polr
+    join atlas_procurement.school_catering_allocation_supplier_splits s
+      on s.supplier_split_id=polr.school_catering_allocation_supplier_split_id
+    join atlas_procurement.school_catering_allocation_family_revisions r
+      on r.family_revision_id=s.family_revision_id
+    join atlas_procurement.school_catering_allocation_families f using(family_id)
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
+    where polr.purchase_order_revision_id=p_purchase_order_revision_id
+      and (r.source_kind<>'PURCHASE_HANDOFF' or not r.is_current
+        or ((r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+        or r.family_quantity is distinct from
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) and not coalesce((select value->>'applicable'='true'from continuity_families where family_revision_id=r.family_revision_id),false)))
+  ) or exists((select supplier_split_id from expected except select supplier_split_id from actual))
+    or exists((select supplier_split_id from actual except select supplier_split_id from expected));
+$function$
+;
+revoke all on function atlas_core.school_catering_po_draft_is_stale(uuid,uuid,jsonb)from public,anon,authenticated,service_role;
+grant execute on function atlas_core.school_catering_po_draft_is_stale(uuid,uuid,jsonb)to atlas_read_runtime,atlas_procurement_command_runtime;
+
+reset role;
+set role atlas_owner;
+CREATE OR REPLACE FUNCTION atlas_core.school_catering_po_draft_is_stale(p_purchase_order_id uuid, p_purchase_order_revision_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SET search_path TO ''
+AS $function$
+ select atlas_core.school_catering_po_draft_is_stale(p_purchase_order_id,p_purchase_order_revision_id,(with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=(select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and b.period_end>=(select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id)
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between (select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and (select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between (select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and (select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families));
+$function$
+;
+
+reset role;
+set role atlas_read_runtime;
+CREATE OR REPLACE FUNCTION atlas_core.school_catering_po_commitment_state(p_purchase_order_id uuid, p_purchase_order_revision_id uuid, p_continuity jsonb)
+ RETURNS text
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  with continuity_families as materialized(select key::uuid family_revision_id,value from jsonb_each(coalesce(p_continuity,'{}'::jsonb))) select case
+    when po.purchase_order_status='SUPERSEDED' then 'SUPERSEDED'
+    when po.purchase_order_status='DRAFT' then
+      case when atlas_core.school_catering_po_draft_is_stale(
+        po.purchase_order_id,p_purchase_order_revision_id,p_continuity)
+        then 'DRAFT_STALE' else 'DRAFT_CURRENT' end
+    when po.purchase_order_status='RELEASED_TO_SUPPLIER'
+      and not atlas_core.school_catering_po_draft_is_stale(
+        po.purchase_order_id,p_purchase_order_revision_id,p_continuity) then 'CURRENT'
+    when po.purchase_order_status='RELEASED_TO_SUPPLIER'
+      and not exists(select 1 from atlas_procurement.school_catering_allocation_families current_family
+       join atlas_procurement.school_catering_allocation_family_revisions current_revision using(family_id)
+       join atlas_procurement.school_catering_allocation_supplier_splits current_split using(family_revision_id)
+       where current_family.service_date=po.school_catering_service_date and current_revision.is_current
+        and current_split.supplier_id=po.supplier_id and current_split.allocated_quantity>0
+        and not coalesce((select value->>'classification'='AUTHORITATIVE_ZERO'from continuity_families
+         where family_revision_id=current_revision.family_revision_id),false))
+      and exists(
+      select 1 from atlas_procurement.purchase_order_line_revisions line
+      where line.purchase_order_revision_id=p_purchase_order_revision_id)
+      and not exists(
+       select 1 from atlas_procurement.purchase_order_line_revisions line
+       join atlas_procurement.school_catering_allocation_supplier_splits old_split
+        on old_split.supplier_split_id=line.school_catering_allocation_supplier_split_id
+       join atlas_procurement.school_catering_allocation_family_revisions old_revision
+        on old_revision.family_revision_id=old_split.family_revision_id
+       join atlas_procurement.school_catering_allocation_families old_family on old_family.family_id=old_revision.family_id
+       left join atlas_procurement.school_catering_allocation_family_revisions r
+        on r.family_id=old_revision.family_id and r.is_current
+       where line.purchase_order_revision_id=p_purchase_order_revision_id and not (
+        coalesce((select value->>'classification'='AUTHORITATIVE_ZERO'from continuity_families
+          where family_revision_id=r.family_revision_id),false)
+        or ((r.source_kind='PURCHASE_HANDOFF'and (
+          exists(select 1 from atlas_planning.purchase_handoff_revisions c_hr
+           cross join lateral(select atlas_core.school_catering_family_projection(
+            old_family.service_date,old_family.delivery_location_id,old_family.ingredient_id,old_family.unit_id)value)c_projection
+           where c_hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+            and c_hr.is_current and c_hr.revision_status='RELEASED_TO_PROCUREMENT'
+            and r.source_fingerprint=c_projection.value->>'source_fingerprint'
+            and r.family_quantity=atlas_core.pa_05b_safe_numeric(c_projection.value->>'family_quantity'))
+          or coalesce((select value->>'applicable'='true'from continuity_families
+           where family_revision_id=r.family_revision_id),false)))
+         and not exists(select 1 from atlas_procurement.school_catering_allocation_supplier_splits s
+          where s.family_revision_id=r.family_revision_id and s.supplier_id=po.supplier_id))))
+      then 'CANCELLATION_REQUIRED'
+    when po.purchase_order_status='RELEASED_TO_SUPPLIER' then 'REPLACEMENT_REQUIRED'
+    else po.purchase_order_status
+  end
+  from atlas_procurement.purchase_orders po
+  where po.purchase_order_id=p_purchase_order_id
+    and po.purchase_order_kind='SCHOOL_CATERING';
+$function$
+;
+revoke all on function atlas_core.school_catering_po_commitment_state(uuid,uuid,jsonb)from public,anon,authenticated,service_role;
+grant execute on function atlas_core.school_catering_po_commitment_state(uuid,uuid,jsonb)to atlas_procurement_command_runtime;
+
+reset role;
+set role atlas_read_runtime;
+CREATE OR REPLACE FUNCTION atlas_core.school_catering_po_commitment_state(p_purchase_order_id uuid, p_purchase_order_revision_id uuid)
+ RETURNS text
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+ select atlas_core.school_catering_po_commitment_state(p_purchase_order_id,p_purchase_order_revision_id,(with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=(select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and b.period_end>=(select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id)
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between (select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and (select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between (select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and (select school_catering_service_date from atlas_procurement.purchase_orders where purchase_order_id=p_purchase_order_id) and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families));
+$function$
+;
+
+reset role;
+set role atlas_read_runtime;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_core.get_school_catering_purchase_orders_numeric_compat(jsonb)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  with base as ($old0$,'')))/length($old0$  with base as ($old0$)<>1 then raise exception 'C official anchor missing: atlas_core.get_school_catering_purchase_orders_numeric_compat(jsonb)/0';end if;
+ definition:=replace(definition,$old0$  with base as ($old0$,$new0$  with continuity_map as materialized(select (with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=v_date_end and b.period_end>=v_date_start
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between v_date_start and v_date_end and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between v_date_start and v_date_end and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families) value), base as ($new0$);
+ if (length(definition)-length(replace(definition,$old1$po.purchase_order_id,por.purchase_order_revision_id) stale$old1$,'')))/length($old1$po.purchase_order_id,por.purchase_order_revision_id) stale$old1$)<>1 then raise exception 'C official anchor missing: atlas_core.get_school_catering_purchase_orders_numeric_compat(jsonb)/1';end if;
+ definition:=replace(definition,$old1$po.purchase_order_id,por.purchase_order_revision_id) stale$old1$,$new1$po.purchase_order_id,por.purchase_order_revision_id,(select value from continuity_map)) stale$new1$);
+ execute definition;
+end;$official$;
+
+reset role;
+set role atlas_read_runtime;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_api.get_school_catering_purchase_orders_v2_base(jsonb)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  v_base jsonb;$old0$,'')))/length($old0$  v_base jsonb;$old0$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_catering_purchase_orders_v2_base(jsonb)/0';end if;
+ definition:=replace(definition,$old0$  v_base jsonb;$old0$,$new0$  continuity_map jsonb;
+  v_base jsonb;$new0$);
+ if (length(definition)-length(replace(definition,$old1$  with shaped as ($old1$,'')))/length($old1$  with shaped as ($old1$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_catering_purchase_orders_v2_base(jsonb)/1';end if;
+ definition:=replace(definition,$old1$  with shaped as ($old1$,$new1$  continuity_map:=(with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=v_date_end and b.period_end>=v_date_start
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between v_date_start and v_date_end and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between v_date_start and v_date_end and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families);
+  with date_states as materialized(select service_date,atlas_core.school_catering_po_date_readiness(service_date) value from(select distinct school_catering_service_date service_date from atlas_procurement.purchase_orders where school_catering_service_date between v_date_start and v_date_end)dates), shaped as ($new1$);
+ if (length(definition)-length(replace(definition,$old2$      po.replaces_purchase_order_id,por.purchase_order_revision_id,$old2$,'')))/length($old2$      po.replaces_purchase_order_id,por.purchase_order_revision_id,$old2$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_catering_purchase_orders_v2_base(jsonb)/2';end if;
+ definition:=replace(definition,$old2$      po.replaces_purchase_order_id,por.purchase_order_revision_id,$old2$,$new2$      po.replaces_purchase_order_id,por.purchase_order_revision_id,
+      coalesce((select value->>'ready'='true'from date_states where service_date=po.school_catering_service_date),false) official_ready,$new2$);
+ if (length(definition)-length(replace(definition,$old3$po.purchase_order_id,por.purchase_order_revision_id) commitment_state$old3$,'')))/length($old3$po.purchase_order_id,por.purchase_order_revision_id) commitment_state$old3$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_catering_purchase_orders_v2_base(jsonb)/3';end if;
+ definition:=replace(definition,$old3$po.purchase_order_id,por.purchase_order_revision_id) commitment_state$old3$,$new3$po.purchase_order_id,por.purchase_order_revision_id,continuity_map) commitment_state$new3$);
+ if (length(definition)-length(replace(definition,$old4$child.purchase_order_id,child_revision.purchase_order_revision_id)$old4$,'')))/length($old4$child.purchase_order_id,child_revision.purchase_order_revision_id)$old4$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_catering_purchase_orders_v2_base(jsonb)/4';end if;
+ definition:=replace(definition,$old4$child.purchase_order_id,child_revision.purchase_order_revision_id)$old4$,$new4$child.purchase_order_id,child_revision.purchase_order_revision_id,continuity_map)$new4$);
+ if (length(definition)-length(replace(definition,$old5$when 'REPLACEMENT_REQUIRED' then jsonb_build_array('PO_REPLACEMENT_REQUIRED')$old5$,'')))/length($old5$when 'REPLACEMENT_REQUIRED' then jsonb_build_array('PO_REPLACEMENT_REQUIRED')$old5$)<>2 then raise exception 'C official anchor missing: atlas_api.get_school_catering_purchase_orders_v2_base(jsonb)/5';end if;
+ definition:=replace(definition,$old5$when 'REPLACEMENT_REQUIRED' then jsonb_build_array('PO_REPLACEMENT_REQUIRED')$old5$,$new5$when 'REPLACEMENT_REQUIRED' then jsonb_build_array(case when s.official_ready then 'PO_REPLACEMENT_REQUIRED'else 'PO_SOURCE_NOT_READY'end)$new5$);
+ if (length(definition)-length(replace(definition,$old6$'create_replacement',s.commitment_state='REPLACEMENT_REQUIRED'$old6$,'')))/length($old6$'create_replacement',s.commitment_state='REPLACEMENT_REQUIRED'$old6$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_catering_purchase_orders_v2_base(jsonb)/6';end if;
+ definition:=replace(definition,$old6$'create_replacement',s.commitment_state='REPLACEMENT_REQUIRED'$old6$,$new6$'create_replacement',s.commitment_state='REPLACEMENT_REQUIRED' and s.official_ready$new6$);
+ execute definition;
+end;$official$;
+
+reset role;
+set role atlas_procurement_command_runtime;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_api.create_school_catering_purchase_order_replacement(jsonb)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  v_name constant text$old0$,'')))/length($old0$  v_name constant text$old0$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_replacement(jsonb)/0';end if;
+ definition:=replace(definition,$old0$  v_name constant text$old0$,$new0$  continuity_map jsonb;
+  v_name constant text$new0$);
+ if (length(definition)-length(replace(definition,$old1$  if not atlas_core.school_catering_po_draft_is_stale($old1$,'')))/length($old1$  if not atlas_core.school_catering_po_draft_is_stale($old1$)<>2 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_replacement(jsonb)/1';end if;
+ definition:=replace(definition,$old1$  if not atlas_core.school_catering_po_draft_is_stale($old1$,$new1$  continuity_map:=(with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=v_replaced.school_catering_service_date and b.period_end>=v_replaced.school_catering_service_date
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between v_replaced.school_catering_service_date and v_replaced.school_catering_service_date and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between v_replaced.school_catering_service_date and v_replaced.school_catering_service_date and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families);
+  if not atlas_core.school_catering_po_draft_is_stale($new1$);
+ if (length(definition)-length(replace(definition,$old2$v_replaced_id,v_expected_revision_id) then$old2$,'')))/length($old2$v_replaced_id,v_expected_revision_id) then$old2$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_replacement(jsonb)/2';end if;
+ definition:=replace(definition,$old2$v_replaced_id,v_expected_revision_id) then$old2$,$new2$v_replaced_id,v_expected_revision_id,continuity_map) then$new2$);
+ if (length(definition)-length(replace(definition,$old3$  if not exists(
+    select 1
+    from atlas_procurement.school_catering_allocation_families f
+    join atlas_procurement.school_catering_allocation_family_revisions r
+      on r.family_id=f.family_id and r.is_current
+    join atlas_procurement.school_catering_allocation_supplier_splits s
+      on s.family_revision_id=r.family_revision_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
+    where f.service_date=v_replaced.school_catering_service_date
+      and s.supplier_id=v_replaced.supplier_id
+      and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
+  ) then$old3$,'')))/length($old3$  if not exists(
+    select 1
+    from atlas_procurement.school_catering_allocation_families f
+    join atlas_procurement.school_catering_allocation_family_revisions r
+      on r.family_id=f.family_id and r.is_current
+    join atlas_procurement.school_catering_allocation_supplier_splits s
+      on s.family_revision_id=r.family_revision_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
+    where f.service_date=v_replaced.school_catering_service_date
+      and s.supplier_id=v_replaced.supplier_id
+      and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
+  ) then$old3$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_replacement(jsonb)/3';end if;
+ definition:=replace(definition,$old3$  if not exists(
+    select 1
+    from atlas_procurement.school_catering_allocation_families f
+    join atlas_procurement.school_catering_allocation_family_revisions r
+      on r.family_id=f.family_id and r.is_current
+    join atlas_procurement.school_catering_allocation_supplier_splits s
+      on s.family_revision_id=r.family_revision_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
+    where f.service_date=v_replaced.school_catering_service_date
+      and s.supplier_id=v_replaced.supplier_id
+      and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
+  ) then$old3$,$new3$  if atlas_core.school_catering_po_commitment_state(v_replaced_id,v_expected_revision_id,continuity_map)='CANCELLATION_REQUIRED'then$new3$);
+ if (length(definition)-length(replace(definition,$old4$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old4$,'')))/length($old4$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old4$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_replacement(jsonb)/4';end if;
+ definition:=replace(definition,$old4$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old4$,$new4$((r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) or coalesce(continuity_map->(r.family_revision_id::text)->>'applicable'='true',false))$new4$);
+ execute definition;
+end;$official$;
+
+reset role;
+set role atlas_procurement_command_runtime;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_api.create_school_catering_purchase_order_drafts(jsonb)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  v_name constant text$old0$,'')))/length($old0$  v_name constant text$old0$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_drafts(jsonb)/0';end if;
+ definition:=replace(definition,$old0$  v_name constant text$old0$,$new0$  continuity_map jsonb;
+  v_name constant text$new0$);
+ if (length(definition)-length(replace(definition,$old1$  -- Match release ordering:$old1$,'')))/length($old1$  -- Match release ordering:$old1$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_drafts(jsonb)/1';end if;
+ definition:=replace(definition,$old1$  -- Match release ordering:$old1$,$new1$  continuity_map:=(with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=v_date_end and b.period_end>=v_date_start
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between v_date_start and v_date_end and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between v_date_start and v_date_end and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families);
+  -- Match release ordering:$new1$);
+ if (length(definition)-length(replace(definition,$old2$  -- Recompute readiness under the deterministic source locks.$old2$,'')))/length($old2$  -- Recompute readiness under the deterministic source locks.$old2$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_drafts(jsonb)/2';end if;
+ definition:=replace(definition,$old2$  -- Recompute readiness under the deterministic source locks.$old2$,$new2$  continuity_map:=(with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=v_date_end and b.period_end>=v_date_start
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between v_date_start and v_date_end and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between v_date_start and v_date_end and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families);
+  -- Recompute readiness under the deterministic source locks.$new2$);
+ if (length(definition)-length(replace(definition,$old3$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old3$,'')))/length($old3$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old3$)<>3 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_drafts(jsonb)/3';end if;
+ definition:=replace(definition,$old3$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old3$,$new3$((r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) or coalesce(continuity_map->(r.family_revision_id::text)->>'applicable'='true',false))$new3$);
+ if (length(definition)-length(replace(definition,$old4$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+    and r.family_quantity=
+      atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old4$,'')))/length($old4$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+    and r.family_quantity=
+      atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old4$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_drafts(jsonb)/4';end if;
+ definition:=replace(definition,$old4$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+    and r.family_quantity=
+      atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old4$,$new4$((r.source_fingerprint=projection.value ->> 'source_fingerprint'
+    and r.family_quantity=
+      atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) or coalesce(continuity_map->(r.family_revision_id::text)->>'applicable'='true',false))$new4$);
+ if (length(definition)-length(replace(definition,$old5$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+        and r.family_quantity=
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old5$,'')))/length($old5$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+        and r.family_quantity=
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old5$)<>1 then raise exception 'C official anchor missing: atlas_api.create_school_catering_purchase_order_drafts(jsonb)/5';end if;
+ definition:=replace(definition,$old5$r.source_fingerprint=projection.value ->> 'source_fingerprint'
+        and r.family_quantity=
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')$old5$,$new5$((r.source_fingerprint=projection.value ->> 'source_fingerprint'
+        and r.family_quantity=
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')) or coalesce(continuity_map->(r.family_revision_id::text)->>'applicable'='true',false))$new5$);
+ execute definition;
+end;$official$;
+
+
+-- Task4 School resolved consumers preserve complete intervals and frozen provenance.
+reset role;
+set role atlas_read_runtime;
+CREATE OR REPLACE FUNCTION atlas_core.school_dispatch_release_preview(p_service_date date, p_school_id uuid, p_delivery_location_id uuid, p_continuity jsonb)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  with scope as (
+    select school.school_id,school.school_name,location.delivery_location_id,
+      location.location_name,location.address_text
+    from atlas_admin.schools school
+    join atlas_admin.delivery_locations location
+      on location.delivery_location_id=p_delivery_location_id
+     and location.customer_id=school.customer_id
+    where school.school_id=p_school_id
+  ), contributions as materialized (
+    select contribution.family_contribution_id,
+      contribution.contribution_quantity,revision.family_revision_id,
+      revision.source_fingerprint,revision.family_quantity,
+      family.ingredient_id,family.unit_id,confirmed_revision.school_id,
+      handoff_line.confirmed_need_line_revision_id,
+      confirmed_line.current_confirmed_need_line_decision_id
+        confirmed_need_line_decision_id
+    from atlas_procurement.school_catering_allocation_families family
+    join atlas_procurement.school_catering_allocation_family_revisions revision
+      on revision.family_id=family.family_id and revision.is_current
+     and revision.source_kind='PURCHASE_HANDOFF'
+    join atlas_procurement.school_catering_allocation_family_contributions contribution
+      on contribution.family_revision_id=revision.family_revision_id
+     and contribution.purchase_handoff_line_revision_id is not null
+    join atlas_planning.purchase_handoff_line_revisions handoff_line
+      on handoff_line.purchase_handoff_line_revision_id=
+        contribution.purchase_handoff_line_revision_id
+    join atlas_planning.purchase_handoff_revisions handoff_revision
+      on handoff_revision.purchase_handoff_revision_id=
+        handoff_line.purchase_handoff_revision_id
+     and ((handoff_revision.is_current and handoff_revision.revision_status='RELEASED_TO_PROCUREMENT') or coalesce(p_continuity->(revision.family_revision_id::text)->>'applicable'='true',false))
+    join atlas_planning.purchase_handoff_batches handoff_batch
+      on handoff_batch.purchase_handoff_batch_id=
+        handoff_revision.purchase_handoff_batch_id
+     and handoff_batch.handoff_status='RELEASED_TO_PROCUREMENT'
+    join atlas_planning.purchase_demand_references demand
+      on demand.purchase_handoff_line_revision_id=
+        handoff_line.purchase_handoff_line_revision_id
+     and demand.source_kind='NEED_GENERATION'
+    join atlas_planning.confirmed_need_line_revisions confirmed_revision
+      on confirmed_revision.confirmed_need_line_revision_id=
+        handoff_line.confirmed_need_line_revision_id
+    join atlas_planning.confirmed_need_lines confirmed_line
+      on confirmed_line.confirmed_need_line_id=confirmed_revision.confirmed_need_line_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        family.service_date,family.delivery_location_id,
+        family.ingredient_id,family.unit_id) value
+    ) projection
+    where family.service_date=p_service_date
+      and family.delivery_location_id=p_delivery_location_id
+      and confirmed_revision.service_date=p_service_date
+      and confirmed_revision.delivery_location_id=p_delivery_location_id
+      and confirmed_line.current_confirmed_need_line_decision_id is not null
+      and ((revision.source_fingerprint=projection.value->>'source_fingerprint'
+      and revision.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value->>'family_quantity')) or coalesce(p_continuity->(revision.family_revision_id::text)->>'applicable'='true',false))
+  ), contribution_ranges as materialized (
+    select contribution.*,
+      coalesce(sum(contribution.contribution_quantity) over(
+        partition by contribution.family_revision_id
+        order by contribution.family_contribution_id
+        rows between unbounded preceding and 1 preceding),0)::numeric(20,6)
+        contribution_start,
+      sum(contribution.contribution_quantity) over(
+        partition by contribution.family_revision_id
+        order by contribution.family_contribution_id
+        rows between unbounded preceding and current row)::numeric(20,6)
+        contribution_end
+    from contributions contribution
+  ), split_ranges as materialized (
+    select split.*,
+      coalesce(sum(split.allocated_quantity) over(
+        partition by split.family_revision_id
+        order by split.supplier_id
+        rows between unbounded preceding and 1 preceding),0)::numeric(20,6)
+        split_start,
+      sum(split.allocated_quantity) over(
+        partition by split.family_revision_id
+        order by split.supplier_id
+        rows between unbounded preceding and current row)::numeric(20,6)
+        split_end
+    from atlas_procurement.school_catering_allocation_supplier_splits split
+    where split.family_revision_id in (
+      select distinct contribution.family_revision_id from contributions contribution
+    )
+  ), coverage as materialized (
+    select contribution.*,split.supplier_split_id,split.supplier_id,
+      (least(contribution.contribution_end,split.split_end)-
+        greatest(contribution.contribution_start,split.split_start))::numeric(20,6)
+        covered_quantity,
+      purchase.purchase_order_id,purchase.purchase_order_revision_id,
+      purchase.purchase_order_line_revision_id
+    from contribution_ranges contribution
+    join split_ranges split
+      on split.family_revision_id=contribution.family_revision_id
+    left join lateral (
+      select po.purchase_order_id,por.purchase_order_revision_id,
+        line.purchase_order_line_revision_id
+      from atlas_procurement.purchase_orders po
+      join atlas_procurement.purchase_order_revisions por
+        on por.purchase_order_id=po.purchase_order_id and por.is_current
+       and por.revision_status='RELEASED_TO_SUPPLIER'
+      join atlas_procurement.purchase_order_line_revisions line
+        on line.purchase_order_revision_id=por.purchase_order_revision_id
+       and line.school_catering_allocation_supplier_split_id=
+         split.supplier_split_id
+      where po.purchase_order_kind='SCHOOL_CATERING'
+        and po.purchase_order_status='RELEASED_TO_SUPPLIER'
+        and po.school_catering_service_date=p_service_date
+        and po.supplier_id=split.supplier_id
+        and not atlas_core.school_catering_po_draft_is_stale(
+          po.purchase_order_id,por.purchase_order_revision_id,p_continuity)
+      order by po.created_at desc limit 1
+    ) purchase on true
+    where contribution.school_id=p_school_id
+      and least(contribution.contribution_end,split.split_end)>
+        greatest(contribution.contribution_start,split.split_start)
+  ), line_keys as (
+    select ingredient_id,unit_id,sum(contribution_quantity)::numeric(20,6) quantity
+    from contribution_ranges where school_id=p_school_id
+    group by ingredient_id,unit_id
+  ), lines as (
+    select key.ingredient_id,ingredient.ingredient_name,key.unit_id,unit.unit_code,
+      key.quantity,
+      coalesce((select jsonb_agg(jsonb_build_object(
+        'confirmed_need_line_revision_id',source.confirmed_need_line_revision_id,
+        'confirmed_need_line_decision_id',source.confirmed_need_line_decision_id,
+        'allocation_family_revision_id',source.family_revision_id,
+        'allocation_family_contribution_id',source.family_contribution_id,
+        'allocation_supplier_split_id',source.supplier_split_id,
+        'purchase_order_id',source.purchase_order_id,
+        'purchase_order_revision_id',source.purchase_order_revision_id,
+        'purchase_order_line_revision_id',source.purchase_order_line_revision_id,
+        'covered_quantity',source.covered_quantity::text
+      ) order by source.family_contribution_id,source.supplier_split_id)
+      from coverage source
+      where source.ingredient_id=key.ingredient_id and source.unit_id=key.unit_id),
+      '[]'::jsonb) sources
+    from line_keys key
+    join atlas_admin.ingredients ingredient on ingredient.ingredient_id=key.ingredient_id
+    join atlas_admin.units unit on unit.unit_id=key.unit_id
+  ), facts as (
+    select coalesce(string_agg(concat_ws('|',
+      confirmed_need_line_revision_id,confirmed_need_line_decision_id,
+      family_revision_id,family_contribution_id,supplier_split_id,
+      covered_quantity,purchase_order_id,purchase_order_revision_id,
+      purchase_order_line_revision_id),';' order by family_contribution_id,
+      supplier_split_id),'') value from coverage
+  ), historical_commitments as materialized (
+    select distinct atlas_core.school_catering_po_commitment_state(
+      po.purchase_order_id,por.purchase_order_revision_id,p_continuity) commitment_state
+    from atlas_procurement.purchase_orders po
+    join atlas_procurement.purchase_order_revisions por
+      on por.purchase_order_id=po.purchase_order_id and por.is_current
+    join atlas_procurement.purchase_order_line_revisions po_line
+      on po_line.purchase_order_revision_id=por.purchase_order_revision_id
+    join atlas_procurement.school_catering_allocation_supplier_splits historical_split
+      on historical_split.supplier_split_id=
+        po_line.school_catering_allocation_supplier_split_id
+    join atlas_procurement.school_catering_allocation_family_revisions
+      historical_family_revision
+      on historical_family_revision.family_revision_id=historical_split.family_revision_id
+    join atlas_procurement.school_catering_allocation_family_contributions
+      historical_contribution
+      on historical_contribution.family_revision_id=
+        historical_family_revision.family_revision_id
+    join atlas_planning.purchase_handoff_line_revisions historical_handoff_line
+      on historical_handoff_line.purchase_handoff_line_revision_id=
+        historical_contribution.purchase_handoff_line_revision_id
+    join atlas_planning.confirmed_need_line_revisions historical_need_revision
+      on historical_need_revision.confirmed_need_line_revision_id=
+        historical_handoff_line.confirmed_need_line_revision_id
+    where po.purchase_order_kind='SCHOOL_CATERING'
+      and po.school_catering_service_date=p_service_date
+      and po.purchase_order_status='RELEASED_TO_SUPPLIER'
+      and po_line.service_date=p_service_date
+      and po_line.delivery_location_id=p_delivery_location_id
+      and historical_need_revision.service_date=p_service_date
+      and historical_need_revision.school_id=p_school_id
+      and historical_need_revision.delivery_location_id=p_delivery_location_id
+  ), state_base as (
+    select exists(select 1 from contribution_ranges where school_id=p_school_id)
+        has_need,
+      exists(select 1 from atlas_planning.confirmed_need_line_revisions expected
+       join atlas_planning.confirmed_need_batches expected_batch using(confirmed_need_batch_id)
+       join atlas_planning.confirmed_need_lines expected_line using(confirmed_need_line_id)
+       where expected.is_current and expected_batch.source_kind='NEED_GENERATION'
+        and expected.school_id=p_school_id and expected.service_date=p_service_date
+        and expected.delivery_location_id=p_delivery_location_id
+        and (expected.confirmed_quantity is null or expected_line.current_confirmed_need_line_decision_id is null
+         or expected_batch.batch_status<>'RELEASED_FOR_PURCHASE_HANDOFF'
+         or (expected.confirmed_quantity>0 and not exists(select 1 from contribution_ranges actual
+         where actual.confirmed_need_line_revision_id=expected.confirmed_need_line_revision_id
+          and actual.confirmed_need_line_decision_id=expected_line.current_confirmed_need_line_decision_id
+         group by actual.confirmed_need_line_revision_id
+         having sum(actual.contribution_quantity)=expected.confirmed_quantity)))) source_incomplete,
+      exists(select 1 from coverage where purchase_order_id is null) missing_po,
+      exists(select 1 from historical_commitments
+        where commitment_state='CANCELLATION_REQUIRED') relevant_cancellation_required,
+      exists(select 1 from historical_commitments
+        where commitment_state='REPLACEMENT_REQUIRED') relevant_replacement_required
+  ), state as (
+    select state_base.*,
+      not state_base.source_incomplete and not state_base.missing_po
+        and not state_base.relevant_cancellation_required
+        and not state_base.relevant_replacement_required procurement_current
+    from state_base
+  )
+  select jsonb_build_object(
+    'service_date',p_service_date,'school_id',p_school_id,
+    'delivery_location_id',p_delivery_location_id,
+    'school_name',(select school_name from scope),
+    'delivery_location_name',(select location_name from scope),
+    'delivery_address',(select address_text from scope),
+    'source_fingerprint',encode(extensions.digest(
+      convert_to((select value from facts),'UTF8'),'sha256'),'hex'),
+    'ready',(select has_need and not missing_po and procurement_current
+      and exists(select 1 from scope) from state),
+    'lines',coalesce((select jsonb_agg(jsonb_build_object(
+      'ingredient_id',ingredient_id,'ingredient_name',ingredient_name,
+      'unit_id',unit_id,'unit_code',unit_code,'quantity',quantity::text,
+      'sources',sources) order by ingredient_name,ingredient_id,unit_id) from lines),
+      '[]'::jsonb),
+    'blockers',(select
+      (case when not exists(select 1 from scope)
+        then jsonb_build_array('SCHOOL_SCOPE_INVALID') else '[]'::jsonb end)
+      || (case when not has_need
+        then jsonb_build_array('NO_CURRENT_NEED') else '[]'::jsonb end)
+      || (case when relevant_cancellation_required
+        then jsonb_build_array('CANCELLATION_REQUIRED') else '[]'::jsonb end)
+      || (case when source_incomplete then jsonb_build_array('SOURCE_CHANGED')else '[]'::jsonb end)
+      || (case when missing_po
+        then jsonb_build_array('PO_COVERAGE_INCOMPLETE') else '[]'::jsonb end)
+      || (case when relevant_replacement_required
+        then jsonb_build_array('PROCUREMENT_NOT_CURRENT') else '[]'::jsonb end)
+      from state),
+    'warnings','[]'::jsonb);
+$function$
+;
+revoke all on function atlas_core.school_dispatch_release_preview(date,uuid,uuid,jsonb)from public,anon,authenticated,service_role;
+
+reset role;
+set role atlas_read_runtime;
+CREATE OR REPLACE FUNCTION atlas_core.school_dispatch_release_preview(p_service_date date, p_school_id uuid, p_delivery_location_id uuid)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+ select atlas_core.school_dispatch_release_preview(p_service_date,p_school_id,p_delivery_location_id,(with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=p_service_date and b.period_end>=p_service_date
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between p_service_date and p_service_date and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between p_service_date and p_service_date and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families));
+$function$
+;
+
+reset role;
+set role atlas_read_runtime;
+CREATE OR REPLACE FUNCTION atlas_core.school_fulfilment_reconciliation_scope(p_service_date date, p_school_id uuid, p_delivery_location_id uuid, p_continuity jsonb)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  with preview as materialized (select atlas_core.school_dispatch_release_preview(
+    p_service_date,p_school_id,p_delivery_location_id,p_continuity) value),
+  current_release as materialized (
+    select release.* from atlas_dispatch.school_dispatch_releases release
+    where release.service_date=p_service_date and release.school_id=p_school_id
+      and release.delivery_location_id=p_delivery_location_id and release.release_status='RELEASED'
+  ), po_lines as materialized (
+    select jsonb_build_object('ingredient_id',line->>'ingredient_id',
+      'ingredient_name',line->>'ingredient_name','unit_id',line->>'unit_id',
+      'unit_code',line->>'unit_code','quantity',
+      sum((source->>'covered_quantity')::numeric)::numeric(20,6)::text) value
+    from preview cross join lateral jsonb_array_elements(preview.value->'lines') line
+    cross join lateral jsonb_array_elements(line->'sources') source
+    where source->>'purchase_order_id' is not null
+    group by line->>'ingredient_id',line->>'ingredient_name',line->>'unit_id',line->>'unit_code'
+  ), pxk_lines as materialized (
+    select jsonb_build_object('ingredient_id',line.ingredient_id,
+      'ingredient_name',line.ingredient_name_snapshot,'unit_id',line.unit_id,
+      'unit_code',line.unit_code_snapshot,'quantity',line.quantity::text) value
+    from current_release release join atlas_dispatch.school_dispatch_release_lines line
+      on line.school_dispatch_release_id=release.school_dispatch_release_id
+  ), comparison as materialized (select atlas_core.school_fulfilment_compare(
+    coalesce((select jsonb_agg(value) from po_lines),'[]'::jsonb),
+    coalesce((select jsonb_agg(value) from pxk_lines),'[]'::jsonb)) value),
+  enriched_details as materialized (
+    select coalesce(jsonb_agg(detail||jsonb_build_object(
+      'purchase_order_ids',coalesce((select jsonb_agg(document.purchase_order_id
+        order by document.document_number) from (
+          select distinct po.purchase_order_id,po.document_number
+          from preview
+          cross join lateral jsonb_array_elements(preview.value->'lines') preview_line
+          cross join lateral jsonb_array_elements(preview_line->'sources') source
+          join atlas_procurement.purchase_orders po
+            on po.purchase_order_id=(source->>'purchase_order_id')::uuid
+          where preview_line->>'ingredient_id'=detail->>'ingredient_id'
+            and preview_line->>'unit_id'=detail->>'unit_id') document),'[]'::jsonb),
+      'school_dispatch_release_line_id',(select line.school_dispatch_release_line_id
+        from current_release release
+        join atlas_dispatch.school_dispatch_release_lines line
+          on line.school_dispatch_release_id=release.school_dispatch_release_id
+        where line.ingredient_id=(detail->>'ingredient_id')::uuid
+          and line.unit_id=(detail->>'unit_id')::uuid)
+    ) order by detail->>'ingredient_name',detail->>'ingredient_id',detail->>'unit_id'),
+    '[]'::jsonb) value
+    from comparison cross join lateral jsonb_array_elements(comparison.value->'details') detail
+  ),
+  po_documents as materialized (
+    select distinct po.purchase_order_id,po.document_number
+    from preview cross join lateral jsonb_array_elements(preview.value->'lines') line
+    cross join lateral jsonb_array_elements(line->'sources') source
+    join atlas_procurement.purchase_orders po
+      on po.purchase_order_id=(source->>'purchase_order_id')::uuid
+  ), operational as (
+    select case when not (preview.value->>'ready')::boolean then 'BLOCKED'
+      when not exists(select 1 from current_release) then 'READY'
+      when (select source_fingerprint from current_release)=preview.value->>'source_fingerprint'
+        then 'CURRENT' else 'REPLACEMENT_REQUIRED' end pxk_state from preview
+  )
+  select jsonb_build_object('service_date',p_service_date,'school_id',p_school_id,
+    'school_name',preview.value->>'school_name','delivery_location_id',p_delivery_location_id,
+    'delivery_location_name',preview.value->>'delivery_location_name',
+    'comparison_status',comparison.value->>'comparison_status',
+    'quantity_totals_by_unit',comparison.value->'quantity_totals_by_unit',
+    'purchase_order_numbers',coalesce((select jsonb_agg(document_number order by document_number)
+      from po_documents),'[]'::jsonb),
+    'purchase_order_ids',coalesce((select jsonb_agg(purchase_order_id order by document_number)
+      from po_documents),'[]'::jsonb),
+    'pxk_document_number',(select document_number from current_release),
+    'school_dispatch_release_id',(select school_dispatch_release_id from current_release),
+    'pxk_state',(select pxk_state from operational),
+    'blockers',preview.value->'blockers'||case
+      when (select pxk_state from operational)='REPLACEMENT_REQUIRED'
+        then jsonb_build_array('PXK_REPLACEMENT_REQUIRED') else '[]'::jsonb end,
+    'warnings',preview.value->'warnings','details',enriched_details.value,
+    'history',coalesce((select jsonb_agg(atlas_core.school_dispatch_release_json(
+      history.school_dispatch_release_id) order by history.released_at desc)
+      from atlas_dispatch.school_dispatch_releases history
+      where history.service_date=p_service_date and history.school_id=p_school_id
+        and history.delivery_location_id=p_delivery_location_id),'[]'::jsonb))
+  from preview cross join comparison cross join enriched_details;
+$function$
+;
+revoke all on function atlas_core.school_fulfilment_reconciliation_scope(date,uuid,uuid,jsonb)from public,anon,authenticated,service_role;
+
+reset role;
+set role atlas_read_runtime;
+CREATE OR REPLACE FUNCTION atlas_core.school_fulfilment_reconciliation_scope(p_service_date date, p_school_id uuid, p_delivery_location_id uuid)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+ select atlas_core.school_fulfilment_reconciliation_scope(p_service_date,p_school_id,p_delivery_location_id,(with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=p_service_date and b.period_end>=p_service_date
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between p_service_date and p_service_date and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between p_service_date and p_service_date and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families));
+$function$
+;
+
+reset role;
+set role atlas_read_runtime;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_api.get_school_dispatch_release_workbench_v1_base(jsonb)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  with scopes as ($old0$,'')))/length($old0$  with scopes as ($old0$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_dispatch_release_workbench_v1_base(jsonb)/0';end if;
+ definition:=replace(definition,$old0$  with scopes as ($old0$,$new0$  with continuity_map as materialized(select (with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=v_end and b.period_end>=v_start
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between v_start and v_end and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between v_start and v_end and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families) value), scopes as ($new0$);
+ if (length(definition)-length(replace(definition,$old1$scope.service_date,scope.school_id,scope.delivery_location_id) value) preview$old1$,'')))/length($old1$scope.service_date,scope.school_id,scope.delivery_location_id) value) preview$old1$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_dispatch_release_workbench_v1_base(jsonb)/1';end if;
+ definition:=replace(definition,$old1$scope.service_date,scope.school_id,scope.delivery_location_id) value) preview$old1$,$new1$scope.service_date,scope.school_id,scope.delivery_location_id,(select value from continuity_map)) value) preview$new1$);
+ execute definition;
+end;$official$;
+
+reset role;
+set role atlas_read_runtime;
+do $official$
+declare definition text:=pg_get_functiondef('atlas_api.get_school_fulfilment_reconciliation_workbench(jsonb)'::regprocedure);
+begin
+ if (length(definition)-length(replace(definition,$old0$  with confirmed_scopes as ($old0$,'')))/length($old0$  with confirmed_scopes as ($old0$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_fulfilment_reconciliation_workbench(jsonb)/0';end if;
+ definition:=replace(definition,$old0$  with confirmed_scopes as ($old0$,$new0$  with continuity_map as materialized(select (with continuity_roots as materialized (
+ select b.confirmed_need_batch_id from atlas_planning.confirmed_need_batches b
+ where b.source_kind='NEED_GENERATION' and b.period_start<=v_end and b.period_end>=v_start
+ union select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where f.service_date between v_start and v_end and r.is_current
+ ), continuity_contexts as materialized (
+ select confirmed_need_batch_id,atlas_core.purchase_review_continuity_context(confirmed_need_batch_id) value
+ from continuity_roots where confirmed_need_batch_id is not null
+ ), continuity_families as materialized (
+ select r.family_revision_id,atlas_core.purchase_review_family_continuity(r.family_revision_id,'OFFICIAL',context.value) value
+ from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ join continuity_contexts context on context.confirmed_need_batch_id=coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)
+ where f.service_date between v_start and v_end and r.is_current
+ ) select coalesce(jsonb_object_agg(family_revision_id::text,value),'{}')from continuity_families) value), confirmed_scopes as ($new0$);
+ if (length(definition)-length(replace(definition,$old1$scope.school_id,scope.delivery_location_id) value) row$old1$,'')))/length($old1$scope.school_id,scope.delivery_location_id) value) row$old1$)<>1 then raise exception 'C official anchor missing: atlas_api.get_school_fulfilment_reconciliation_workbench(jsonb)/1';end if;
+ definition:=replace(definition,$old1$scope.school_id,scope.delivery_location_id) value) row$old1$,$new1$scope.school_id,scope.delivery_location_id,(select value from continuity_map)) value) row$new1$);
+ execute definition;
+end;$official$;
+
+
+-- Preserve the incumbent ordinary-source reconstruction budget. Resolve frozen
+-- history only for a retained PH revision whose raw supporting identity changed.
+reset role;
+do $lazy_continuity$
+declare target record;definition text;condition text:=$condition$exists(select 1 from atlas_procurement.school_catering_allocation_family_revisions c_revision
+ join atlas_procurement.school_catering_allocation_families c_family using(family_id)
+ left join atlas_planning.purchase_handoff_revisions c_handoff
+  on c_handoff.purchase_handoff_revision_id=c_revision.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches c_batch using(purchase_handoff_batch_id)
+ cross join lateral(select atlas_core.school_catering_family_projection(c_family.service_date,
+  c_family.delivery_location_id,c_family.ingredient_id,c_family.unit_id)value)c_projection
+ where c_revision.is_current and c_revision.source_kind='PURCHASE_HANDOFF'
+  and coalesce(c_revision.source_confirmed_need_batch_id,c_batch.confirmed_need_batch_id)=BATCH
+  and(c_revision.source_fingerprint is distinct from c_projection.value->>'source_fingerprint'
+   or c_revision.family_quantity is distinct from atlas_core.pa_05b_safe_numeric(c_projection.value->>'family_quantity')))$condition$;
+begin
+ for target in select p.oid from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+ where n.nspname in('atlas_core','atlas_api')and p.prokind='f'and(
+  p.prosrc like '%from continuity_roots where confirmed_need_batch_id is not null%'
+  or p.prosrc like '%with continuity as materialized(select atlas_core.purchase_review_continuity_context(p_batch) value)%'
+  or(p.proname='get_confirmed_supplier_allocation_workbench'and p.prosrc like '%into continuity_contexts%'))loop
+  definition:=pg_get_functiondef(target.oid);
+  definition:=replace(definition,'from continuity_roots where confirmed_need_batch_id is not null',
+   'from continuity_roots where confirmed_need_batch_id is not null and '||replace(condition,'BATCH','continuity_roots.confirmed_need_batch_id'));
+  definition:=replace(definition,'with continuity as materialized(select atlas_core.purchase_review_continuity_context(p_batch) value)',
+   'with continuity as materialized(select atlas_core.purchase_review_continuity_context(p_batch) value where '||replace(condition,'BATCH','p_batch')||')');
+  definition:=replace(definition,'batches where batch_id is not null;',
+   'batches where batch_id is not null and '||replace(condition,'BATCH','batch_id::uuid')||';');
+  execute definition;
+ end loop;
+end;$lazy_continuity$;
+
+
+reset role;
+do $lazy_promotion$
+declare definition text:=pg_get_functiondef('atlas_core.purchase_review_promote_allocations(uuid,uuid,uuid,uuid,uuid)'::regprocedure);
+begin
+ if strpos(definition,'continuity:=atlas_core.purchase_review_continuity_context(p_batch);')=0 then raise exception 'C promotion lazy anchor missing';end if;
+ definition:=replace(definition,'continuity:=atlas_core.purchase_review_continuity_context(p_batch);',
+ $guard$if exists(select 1 from atlas_procurement.school_catering_allocation_family_revisions c_lazy_revision
+ join atlas_procurement.school_catering_allocation_families c_lazy_family using(family_id)
+ join atlas_planning.purchase_handoff_revisions c_lazy_handoff on c_lazy_handoff.purchase_handoff_revision_id=c_lazy_revision.source_purchase_handoff_revision_id
+ join atlas_planning.purchase_handoff_batches c_lazy_batch using(purchase_handoff_batch_id)
+ cross join lateral(select atlas_core.school_catering_family_projection(c_lazy_family.service_date,c_lazy_family.delivery_location_id,c_lazy_family.ingredient_id,c_lazy_family.unit_id)value)c_lazy_projection
+ where c_lazy_revision.is_current and c_lazy_revision.source_kind='PURCHASE_HANDOFF'and c_lazy_batch.confirmed_need_batch_id=p_batch
+ and(c_lazy_revision.source_fingerprint is distinct from c_lazy_projection.value->>'source_fingerprint'
+ or c_lazy_revision.family_quantity is distinct from atlas_core.pa_05b_safe_numeric(c_lazy_projection.value->>'family_quantity')))then continuity:=atlas_core.purchase_review_continuity_context(p_batch);end if;$guard$);
+ execute definition;
+end;$lazy_promotion$;
+
 reset role;
 set role atlas_owner;
 
