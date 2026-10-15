@@ -156,6 +156,8 @@ export const ATLAS_RPC_FUNCTIONS = {
     "get_confirmed_supplier_allocation_workbench",
   "atlas_api.save_confirmed_supplier_allocation":
     "save_confirmed_supplier_allocation",
+  "atlas_api.apply_supplier_allocation_batch":
+    "apply_supplier_allocation_batch",
   "atlas_api.prepare_school_catering_purchase_orders":
     "prepare_school_catering_purchase_orders",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
@@ -202,6 +204,7 @@ export type AtlasSafeBackendError = {
   read_name?: string;
   retryable?: boolean;
   field_errors?: JsonValue[];
+  conflicts?: JsonValue[];
   blocking_references?: JsonValue[];
   expected_version?: number;
   actual_version?: number;
@@ -304,6 +307,8 @@ function safeBackendError(
   if (typeof value.retryable === "boolean") result.retryable = value.retryable;
   if (Array.isArray(value.field_errors))
     result.field_errors = value.field_errors as JsonValue[];
+  if (Array.isArray(value.conflicts))
+    result.conflicts = value.conflicts as JsonValue[];
   if (Array.isArray(value.blocking_references))
     result.blocking_references = value.blocking_references as JsonValue[];
   if (typeof value.expected_version === "number")

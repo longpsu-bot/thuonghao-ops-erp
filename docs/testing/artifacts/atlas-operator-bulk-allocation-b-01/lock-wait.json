@@ -1,0 +1,90 @@
+{
+  "database": "atlas_bulk_b_wait_03",
+  "migration_sha256": "59361dd32f08916813ecb5f0219a272fe60d79a35298ee2efe9c99b16e3754c0",
+  "before": {
+    "revisions": 0,
+    "batch_version": 2,
+    "allocation_events": 0,
+    "allocation_receipts": 0
+  },
+  "source_save": {
+    "success": true,
+    "audit_id": "e9427bd3-5f5b-461a-9377-b574fa2a5b58",
+    "event_id": "44889c09-4046-4fd0-9b66-67b9293e0c5c",
+    "command_id": "1f4380fe-2c48-4f2f-aa9c-e225533437df",
+    "receipt_id": "8e8a775e-8128-45cf-a3d5-c480a86277b2",
+    "command_name": "save_confirmed_needs",
+    "correlation_id": "9932f2f4-53bd-4ea0-be5f-4b72b86e69c9",
+    "contract_version": "RMVP-05.v2",
+    "idempotency_status": "COMPLETED",
+    "adjusted_line_count": 1,
+    "prior_batch_version": 2,
+    "created_decision_ids": ["e5b15bec-f1a3-4558-b810-1aadbb506885"],
+    "safe_operator_message": "Confirmed Need changes were saved.",
+    "confirmed_need_batch_id": "b6500000-0000-0000-0000-000000000050",
+    "resulting_batch_version": 3,
+    "advanced_stable_line_ids": ["b6560000-0000-0000-0000-000000000001"],
+    "unchanged_accepted_line_count": 0,
+    "created_successor_revision_ids": ["8d02f4e9-6456-41a0-815d-1c1983c131c8"]
+  },
+  "observed_wait": [
+    {
+      "state": "active",
+      "wait_type": "Lock",
+      "wait_event": "transactionid"
+    }
+  ],
+  "elapsed_ms": 750.0,
+  "apply_output": "b6000000-0000-0000-0000-000000000101\n{\"domain\": \"PROCUREMENT\", \"success\": false, \"conflicts\": [{\"family\": {\"unit_id\": \"b6500000-0000-0000-0000-000000000005\", \"source_kind\": \"CONFIRMED_NEED\", \"service_date\": \"2026-11-02\", \"ingredient_id\": \"b6500000-0000-0000-0000-000000000006\", \"delivery_location_id\": \"b6500000-0000-0000-0000-000000000002\", \"expected_family_version\": 0, \"expected_source_batch_id\": \"b6500000-0000-0000-0000-000000000050\", \"expected_source_fingerprint\": \"24177d76f68359b01d1514aa0928e132565f11aa548d033f7fa76fcb827a8724\", \"expected_source_batch_version\": 2}, \"reason\": \"STALE_BULK_PROPOSAL\"}, {\"family\": {\"unit_id\": \"b6500000-0000-0000-0000-000000000005\", \"source_kind\": \"CONFIRMED_NEED\", \"service_date\": \"2026-11-02\", \"ingredient_id\": \"b6500000-0000-0000-0000-000000000007\", \"delivery_location_id\": \"b6500000-0000-0000-0000-000000000002\", \"expected_family_version\": 0, \"expected_source_batch_id\": \"b6500000-0000-0000-0000-000000000050\", \"expected_source_fingerprint\": \"79212448464f348f339d73e3478d86e0886194401f83c181e1146064ef3d2e59\", \"expected_source_batch_version\": 2}, \"reason\": \"STALE_BULK_PROPOSAL\"}], \"retryable\": false, \"command_id\": \"efb40a96-29b8-4071-b07e-50431f9e5cb5\", \"error_code\": \"STALE_BULK_PROPOSAL\", \"command_name\": \"apply_supplier_allocation_batch\", \"field_errors\": [], \"safe_message\": \"\u0110\u1ec1 xu\u1ea5t \u0111\u00e3 thay \u0111\u1ed5i. T\u1ea3i l\u1ea1i \u0111\u1ec3 xem v\u00e0 ch\u1ecdn l\u1ea1i.\", \"actual_version\": null, \"correlation_id\": \"7b131af8-3fa1-4c74-ae52-24cf05281f0f\", \"expected_version\": 1, \"blocking_references\": []}\n",
+  "apply_result": {
+    "domain": "PROCUREMENT",
+    "success": false,
+    "conflicts": [
+      {
+        "family": {
+          "unit_id": "b6500000-0000-0000-0000-000000000005",
+          "source_kind": "CONFIRMED_NEED",
+          "service_date": "2026-11-02",
+          "ingredient_id": "b6500000-0000-0000-0000-000000000006",
+          "delivery_location_id": "b6500000-0000-0000-0000-000000000002",
+          "expected_family_version": 0,
+          "expected_source_batch_id": "b6500000-0000-0000-0000-000000000050",
+          "expected_source_fingerprint": "24177d76f68359b01d1514aa0928e132565f11aa548d033f7fa76fcb827a8724",
+          "expected_source_batch_version": 2
+        },
+        "reason": "STALE_BULK_PROPOSAL"
+      },
+      {
+        "family": {
+          "unit_id": "b6500000-0000-0000-0000-000000000005",
+          "source_kind": "CONFIRMED_NEED",
+          "service_date": "2026-11-02",
+          "ingredient_id": "b6500000-0000-0000-0000-000000000007",
+          "delivery_location_id": "b6500000-0000-0000-0000-000000000002",
+          "expected_family_version": 0,
+          "expected_source_batch_id": "b6500000-0000-0000-0000-000000000050",
+          "expected_source_fingerprint": "79212448464f348f339d73e3478d86e0886194401f83c181e1146064ef3d2e59",
+          "expected_source_batch_version": 2
+        },
+        "reason": "STALE_BULK_PROPOSAL"
+      }
+    ],
+    "retryable": false,
+    "command_id": "efb40a96-29b8-4071-b07e-50431f9e5cb5",
+    "error_code": "STALE_BULK_PROPOSAL",
+    "command_name": "apply_supplier_allocation_batch",
+    "field_errors": [],
+    "safe_message": "\u0110\u1ec1 xu\u1ea5t \u0111\u00e3 thay \u0111\u1ed5i. T\u1ea3i l\u1ea1i \u0111\u1ec3 xem v\u00e0 ch\u1ecdn l\u1ea1i.",
+    "actual_version": null,
+    "correlation_id": "7b131af8-3fa1-4c74-ae52-24cf05281f0f",
+    "expected_version": 1,
+    "blocking_references": []
+  },
+  "after": {
+    "revisions": 0,
+    "batch_version": 3,
+    "allocation_events": 0,
+    "allocation_receipts": 0
+  },
+  "pass": true
+}

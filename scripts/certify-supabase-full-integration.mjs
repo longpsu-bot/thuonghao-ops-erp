@@ -27,6 +27,9 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "school_fulfilment_reconciliation.sql",
   "purchase_handoff_clock_skew.sql",
   "purchase_review_confirm_release.sql",
+  "operator_bulk_allocation.sql",
+  "operator_bulk_allocation_mixed.sql",
+  "operator_bulk_allocation_scale.sql",
   "purchase_preparation_release_projection.sql",
   "purchase_preparation_source_ambiguity.sql",
   "supplier_allocation_released_read.sql",
@@ -141,6 +144,10 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
               })
             : [
                   "purchase_review_confirm_release.sql",
+                  "operator_bulk_allocation.sql",
+                  "operator_bulk_allocation_mixed.sql",
+                  "operator_bulk_allocation_scale.sql",
+                  "school_catering_purchase_orders.sql",
                   "purchase_preparation_release_projection.sql",
                   "purchase_preparation_source_ambiguity.sql",
                   "supplier_allocation_released_read.sql",

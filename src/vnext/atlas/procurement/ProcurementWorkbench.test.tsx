@@ -983,3 +983,100 @@ describe("Procurement vNext operator workbench", () => {
     expect(save).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("bulk supplier review", () => {
+  it("reviews DEFAULT and explicitly applies once without per-family Save or Preparation", async () => {
+    const h = show("normal");
+    await action();
+    const apply = vi.spyOn(h.fixture.purchaseReviewApi, "applyAllocationBatch");
+    const prepare = vi.spyOn(
+      h.fixture.purchaseReviewApi,
+      "preparePurchaseOrders",
+    );
+    const trigger = screen.getByRole("button", {
+      name: "Gán NCC mặc định / Cân bằng phân bổ",
+    });
+    fireEvent.click(trigger);
+    const review = await screen.findByRole("region", {
+      name: "Xem trước phân bổ hàng loạt",
+    });
+    expect(within(review).getByText("Kilôgam")).toBeInTheDocument();
+    expect(
+      within(review).getByRole("checkbox", {
+        name: "Chọn Gạo thơm — Bếp chính Nguyễn Du — 2026-09-10",
+      }),
+    ).toBeChecked();
+    expect(
+      within(review).getByText(/Chỉ hiển thị đơn mua trong phạm vi/),
+    ).toBeInTheDocument();
+    openFilters();
+    expect(
+      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+    ).toBeDisabled();
+    expect(apply).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Áp dụng và lưu 1 nhóm" }),
+    );
+    await waitFor(() => expect(apply).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("region", { name: "Xem trước phân bổ hàng loạt" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(h.save).not.toHaveBeenCalled();
+    expect(prepare).not.toHaveBeenCalled();
+    expect(trigger).toHaveFocus();
+  });
+  it("requires explicit selection for REBALANCE and protects a changed selection on close", async () => {
+    show("rebalance");
+    await action();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Gán NCC mặc định / Cân bằng phân bổ",
+      }),
+    );
+    const review = await screen.findByRole("region", {
+      name: "Xem trước phân bổ hàng loạt",
+    });
+    expect(
+      within(review).getByRole("button", { name: "Áp dụng và lưu 0 nhóm" }),
+    ).toBeDisabled();
+    await userEvent.click(within(review).getByRole("checkbox"));
+    expect(
+      within(review).getByRole("button", { name: "Áp dụng và lưu 1 nhóm" }),
+    ).toBeEnabled();
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Đóng xem trước" }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Có lựa chọn phân bổ chưa lưu",
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Tiếp tục xem trước" }),
+    );
+    await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+    fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Có lựa chọn phân bổ chưa lưu" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(within(review).getByRole("checkbox")).toBeChecked();
+  });
+});
+
+it("keeps incomplete bulk quantity unknown instead of fabricating zero", async () => {
+  show("blocked");
+  await action();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Gán NCC mặc định / Cân bằng phân bổ" }),
+  );
+  const review = await screen.findByRole("region", {
+    name: "Xem trước phân bổ hàng loạt",
+  });
+  expect(within(review).getByText("Chưa xác định")).toBeInTheDocument();
+  expect(within(review).queryByText(/^0$/)).not.toBeInTheDocument();
+  expect(
+    within(review).getByRole("button", { name: "Áp dụng và lưu 0 nhóm" }),
+  ).toBeDisabled();
+});

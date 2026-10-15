@@ -1,5 +1,6 @@
 import type {
   AllocationFamilyRow,
+  SupplierAllocationBulkPreview,
   AtlasRpcResult,
   AtlasSuccessEnvelope,
   ConfirmedAllocationWorkbench,
@@ -332,12 +333,88 @@ export function reviewOrder(
   };
 }
 
+/** Explicit in-memory review projection; never used by the connected transport. */
+export function reviewBulkPreview(
+  rows: AllocationFamilyRow[],
+): SupplierAllocationBulkPreview {
+  const families = rows.map((row) => {
+    const kind =
+      row.complete !== false &&
+      row.family_quantity &&
+      row.allowed_actions.save_allocation
+        ? row.state === "UNALLOCATED" && row.recommendation
+          ? ("DEFAULT" as const)
+          : row.state === "STALE_REBALANCE_AVAILABLE" && row.rebalance_proposal
+            ? ("REBALANCE" as const)
+            : null
+        : null;
+    const proposed =
+      kind === "DEFAULT"
+        ? [row.recommendation!]
+        : (row.rebalance_proposal ?? []);
+    return {
+      ...structuredClone(row),
+      unit_label: row.unit_code === "kg" ? "Kilôgam" : "Chưa có tên đơn vị",
+      schools: row.schools ?? [],
+      decision_origin: row.splits.length ? "MANUAL" : null,
+      candidate: kind
+        ? {
+            family: {
+              service_date: row.service_date,
+              delivery_location_id: row.delivery_location_id,
+              ingredient_id: row.ingredient_id,
+              unit_id: row.unit_id,
+              source_kind: row.family.source_kind ?? "PURCHASE_HANDOFF",
+              expected_family_version: row.family.version,
+              expected_source_fingerprint: row.family.source_fingerprint,
+              ...(row.family.source_kind === "CONFIRMED_NEED"
+                ? {
+                    expected_source_batch_id:
+                      row.family.source_confirmed_need_batch_id,
+                    expected_source_batch_version:
+                      row.family.source_confirmed_need_batch_version,
+                  }
+                : {}),
+            },
+            proposal_kind: kind,
+            proposal_fingerprint: `review:${row.family.source_fingerprint}:${row.family.version}:${kind}`,
+            proposed_splits: proposed.map((p) => ({
+              supplier_id: p.supplier_id,
+              allocated_quantity: p.allocated_quantity,
+              supplier_note:
+                row.splits.find((s) => s.supplier_id === p.supplier_id)
+                  ?.supplier_note ?? null,
+            })),
+          }
+        : null,
+      exclusion_reason: kind
+        ? null
+        : row.state === "BALANCED"
+          ? "EXISTING_DECISION_PRESERVED"
+          : "CONFIRMED_NEED_INCOMPLETE",
+      purchase_order_impact: {
+        coverage: "AUTHORIZED_DOCUMENTS_ONLY" as const,
+        documents: [],
+      },
+    };
+  });
+  return {
+    families,
+    total_count: families.length,
+    applicable_count: families.filter((r) => r.candidate).length,
+    excluded_count: families.filter((r) => !r.candidate).length,
+    allowed: true,
+  };
+}
+
 /** Explicit review snapshots only. No hosted adapter and no backend derivation. */
 export function createProcurementReviewFixture(
   scenario: ProcurementReviewScenario = "normal",
+  dateOverride?: string,
 ) {
   const serviceDate =
-    scenario === "oct12_recommendations" ? oct12ReviewDate : reviewDate;
+    dateOverride ??
+    (scenario === "oct12_recommendations" ? oct12ReviewDate : reviewDate);
   const preparationReady = ["ready", "oct12_recommendations"].includes(
     scenario,
   );
@@ -347,7 +424,19 @@ export function createProcurementReviewFixture(
       contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
       date_start: serviceDate,
       date_end: serviceDate,
-      rows: scenario === "empty" ? [] : [reviewFamily(scenario)],
+      rows:
+        scenario === "empty"
+          ? []
+          : [
+              (() => {
+                const row = reviewFamily(scenario);
+                return {
+                  ...row,
+                  service_date: serviceDate,
+                  family: { ...row.family, service_date: serviceDate },
+                };
+              })(),
+            ],
       warnings: [],
       blockers: [],
       preparation: {
@@ -379,7 +468,7 @@ export function createProcurementReviewFixture(
   let allocationReads = 0;
   const purchaseReviewApi: PurchaseReviewApi = {
     getGeneratedReview: async () => reviewFailure("NOT_AVAILABLE"),
-    getConfirmedAllocations: async () => {
+    getConfirmedAllocations: async (request) => {
       allocationReads += 1;
       if (scenario === "unknown_recovery_failure" && allocationReads === 2) {
         return {
@@ -392,9 +481,77 @@ export function createProcurementReviewFixture(
           },
         };
       }
+      const payload =
+        request.payload &&
+        typeof request.payload === "object" &&
+        !Array.isArray(request.payload)
+          ? request.payload
+          : {};
+      const schools = Array.isArray(payload.school_ids)
+        ? payload.school_ids
+        : [];
+      const previewRows = fixture.allocation.rows.filter(
+        (row) =>
+          row.service_date >= String(payload.date_start) &&
+          row.service_date <= String(payload.date_end) &&
+          (!schools.length ||
+            row.schools?.some((s) => schools.includes(s.school_id))),
+      );
       return scenario === "read_failure"
         ? reviewFailure("ACCESS_DENIED")
-        : reviewSuccess(fixture.allocation);
+        : reviewSuccess({
+            ...fixture.allocation,
+            ...(request.payload &&
+            typeof request.payload === "object" &&
+            !Array.isArray(request.payload) &&
+            request.payload.include_bulk_preview
+              ? { bulk_preview: reviewBulkPreview(previewRows) }
+              : {}),
+          });
+    },
+    applyAllocationBatch: async (request) => {
+      if (fixture.commandResult.kind !== "success")
+        return fixture.commandResult;
+      const preview = reviewBulkPreview(fixture.allocation.rows);
+      const selected = request.payload.candidates;
+      if (
+        !selected.length ||
+        selected.some(
+          (c) =>
+            !preview.families.some(
+              (r) => JSON.stringify(r.candidate) === JSON.stringify(c),
+            ),
+        )
+      )
+        return reviewFailure("STALE_BULK_PROPOSAL");
+      for (const candidate of selected) {
+        const row = fixture.allocation.rows.find(
+          (r) =>
+            r.service_date === candidate.family.service_date &&
+            r.ingredient_id === candidate.family.ingredient_id &&
+            r.delivery_location_id === candidate.family.delivery_location_id &&
+            r.unit_id === candidate.family.unit_id,
+        )!;
+        row.splits = candidate.proposed_splits.map((p) => ({
+          ...p,
+          supplier_note: p.supplier_note ?? null,
+          supplier_split_id: `review-${p.supplier_id}`,
+          supplier_name: row.eligible_suppliers.find(
+            (s) => s.supplier_id === p.supplier_id,
+          )!.supplier_name,
+          split_ratio:
+            row.rebalance_proposal?.find((s) => s.supplier_id === p.supplier_id)
+              ?.split_ratio ?? "1.000000000000",
+        }));
+        row.state = "BALANCED";
+        row.family.version += 1;
+        row.recommendation = null;
+        row.rebalance_proposal = null;
+      }
+      return reviewSuccess({
+        contract_version: "SUPPLIER-ALLOCATION-BATCH.v1",
+        applied_count: selected.length,
+      });
     },
     saveConfirmedAllocation: command,
     preparePurchaseOrders: command,

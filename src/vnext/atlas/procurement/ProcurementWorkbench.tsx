@@ -27,6 +27,7 @@ import {
   procurementOperatorMessages,
   type ProcurementSchoolOption,
 } from "../bridges/procurement";
+import { ProcurementBulkReview } from "./ProcurementBulkReview";
 import { ProcurementAllocationTable } from "./ProcurementAllocationTable";
 import { ProcurementCommandFeedback } from "./ProcurementCommandFeedback";
 import {
@@ -75,6 +76,33 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const [exception, setException] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [bulkStatus, setBulkStatus] = useState<AtlasWorkbenchStatus>({
+    unsaved: false,
+    blocked: false,
+  });
+  const bulkExit = useRef<AtlasModuleExitHandle>(null);
+  const bulkTrigger = useRef<HTMLButtonElement>(null);
+  const wasBulk = useRef(false);
+  const returnBulkFocus = useRef(false);
+  useEffect(() => {
+    if (wasBulk.current && !controller.bulkPreview)
+      returnBulkFocus.current = true;
+    wasBulk.current = Boolean(controller.bulkPreview);
+    if (
+      returnBulkFocus.current &&
+      !controller.busy &&
+      !controller.loading &&
+      !bulkTrigger.current?.disabled
+    ) {
+      bulkTrigger.current?.focus();
+      returnBulkFocus.current = false;
+    }
+  }, [
+    controller.bulkPreview,
+    controller.busy,
+    controller.loading,
+    controller.locked,
+  ]);
   const [detailStatus, setDetailStatus] = useState<AtlasWorkbenchStatus>({
     unsaved: false,
     blocked: false,
@@ -136,7 +164,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   );
   const rows = controller.allocation?.rows ?? [];
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
-    unsaved: Boolean(selected && detailStatus.unsaved),
+    unsaved:
+      Boolean(selected && detailStatus.unsaved) ||
+      Boolean(controller.bulkPreview && bulkStatus.unsaved),
     blocked: controller.busy || controller.locked,
     attention: controller.locked
       ? "Cần xác nhận dữ liệu hiện tại"
@@ -170,7 +200,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   useImperativeHandle(props.exitRef, () => ({
     requestExit: (next) => {
       if (controller.busy || controller.locked) return;
-      if (selected) detailExit.current?.requestExit(next);
+      if (controller.bulkPreview) bulkExit.current?.requestExit(next);
+      else if (selected) detailExit.current?.requestExit(next);
       else next();
     },
   }));
@@ -187,6 +218,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     (controller.stage === "allocation" && Boolean(controller.rangeError));
   const canPrepare =
     !multiDay &&
+    !controller.bulkPreview &&
     preparation?.ready &&
     preparation.allowed &&
     !selected &&
@@ -261,7 +293,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
           <Tabs.Root
             value={controller.stage}
             onValueChange={({ value }) => {
-              if (selected) return;
+              if (selected || controller.bulkPreview) return;
               setSelectedKey(null);
               setSearch("");
               controller.changeStage(
@@ -279,7 +311,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   <Tabs.Trigger
                     value="allocation"
                     disabled={
-                      Boolean(selected) && controller.stage !== "allocation"
+                      Boolean(selected || controller.bulkPreview) &&
+                      controller.stage !== "allocation"
                     }
                     {...atlasPrimaryTabTrigger}
                   >
@@ -288,7 +321,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   <Tabs.Trigger
                     value="orders"
                     disabled={
-                      Boolean(selected) && controller.stage !== "orders"
+                      Boolean(selected || controller.bulkPreview) &&
+                      controller.stage !== "orders"
                     }
                     {...atlasPrimaryTabTrigger}
                   >
@@ -348,7 +382,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     value={controller.range}
                     error={controller.rangeError}
                     errorMessageId={`${ownerId}-range-error`}
-                    disabled={Boolean(selected) || controller.busy}
+                    disabled={
+                      Boolean(selected) ||
+                      Boolean(controller.bulkPreview) ||
+                      controller.busy
+                    }
                     onValueChange={controller.changeRange}
                   />
                 </Box>
@@ -367,9 +405,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     <ProcurementSchoolScope
                       schools={catalogue}
                       value={controller.schoolIds}
-                      disabled={controller.loading || Boolean(selected)}
+                      disabled={
+                        controller.loading ||
+                        Boolean(selected) ||
+                        Boolean(controller.bulkPreview)
+                      }
                       onApply={(ids) => {
-                        if (selected) return;
+                        if (selected || controller.bulkPreview) return;
                         setSelectedKey(null);
                         controller.changeSchools(ids);
                       }}
@@ -378,7 +420,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 )}
                 {controller.stage === "allocation" && (
                   <Field.Root
-                    disabled={Boolean(selected)}
+                    disabled={
+                      Boolean(selected) || Boolean(controller.bulkPreview)
+                    }
                     display={{
                       base: filtersOpen ? "block" : "none",
                       md: "block",
@@ -387,7 +431,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     gridColumn={{ base: "1 / -1", md: "auto" }}
                   >
                     <Field.Label>Ngoại lệ</Field.Label>
-                    <NativeSelect.Root disabled={Boolean(selected)}>
+                    <NativeSelect.Root
+                      disabled={
+                        Boolean(selected) || Boolean(controller.bulkPreview)
+                      }
+                    >
                       <NativeSelect.Field
                         aria-label="Ngoại lệ"
                         value={exception}
@@ -420,7 +468,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   aria-label="Tìm kiếm"
                   placeholder="Nguyên liệu, trường, nhà cung ứng"
                   value={search}
-                  disabled={Boolean(selected)}
+                  disabled={
+                    Boolean(selected) || Boolean(controller.bulkPreview)
+                  }
                   onChange={(event) => setSearch(event.target.value)}
                 />
               </Field.Root>
@@ -463,6 +513,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     controller.busy ||
                     controller.locked ||
                     Boolean(selected) ||
+                    Boolean(controller.bulkPreview) ||
                     Boolean(controller.rangeError)
                   }
                   onClick={() => void controller.reload()}
@@ -545,6 +596,18 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                         ).length
                       }
                     </Text>
+                    <Button
+                      ref={bulkTrigger}
+                      variant="secondary"
+                      disabled={
+                        commandDisabled ||
+                        Boolean(selected) ||
+                        Boolean(controller.bulkPreview)
+                      }
+                      onClick={() => void controller.previewBulk()}
+                    >
+                      Gán NCC mặc định / Cân bằng phân bổ
+                    </Button>
                     {canPrepare && (
                       <Button
                         variant="businessPrimary"
@@ -566,6 +629,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                           variant="secondary"
                           disabled={
                             Boolean(selected) ||
+                            Boolean(controller.bulkPreview) ||
                             controller.busy ||
                             Boolean(controller.rangeError)
                           }
@@ -591,51 +655,64 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                       ⚠ {message}
                     </Text>
                   ))}
-                  <Grid
-                    data-testid="procurement-master-detail"
-                    style={
-                      {
-                        "--atlas-attached-detail-width": "390px",
-                      } as CSSProperties
-                    }
-                    minW="var(--atlas-layout-zero, 0)"
-                    gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
-                    p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
-                    templateColumns={{
-                      base: "minmax(0, 1fr)",
-                      xl: selected
-                        ? "minmax(0, 1fr) var(--atlas-attached-detail-width)"
-                        : "minmax(0, 1fr)",
-                    }}
-                  >
-                    <ProcurementAllocationTable
-                      rows={visible}
-                      showServiceDate={multiDay}
-                      selectedKey={selected ? selectedKey : null}
-                      disabled={
-                        controller.loading ||
-                        controller.busy ||
-                        Boolean(controller.rangeError)
+                  {controller.bulkPreview ? (
+                    <ProcurementBulkReview
+                      preview={controller.bulkPreview}
+                      disabled={commandDisabled}
+                      onApply={(candidates) =>
+                        void controller.applyBulk(candidates)
                       }
-                      onSelect={(row, trigger) => {
-                        rowTrigger.current = trigger;
-                        setSelectedKey(row.family.source_fingerprint);
-                      }}
+                      onClose={controller.closeBulk}
+                      exitRef={bulkExit}
+                      onWorkspaceStatus={setBulkStatus}
                     />
-                    {selected && (
-                      <ProcurementSupplierDetail
-                        exitRef={detailExit}
-                        onWorkspaceStatus={setDetailStatus}
-                        key={`${selected.family.source_fingerprint}:${controller.revision}`}
-                        row={selected}
-                        disabled={commandDisabled}
-                        onSave={(splits) =>
-                          void controller.save(selected, splits)
+                  ) : (
+                    <Grid
+                      data-testid="procurement-master-detail"
+                      style={
+                        {
+                          "--atlas-attached-detail-width": "390px",
+                        } as CSSProperties
+                      }
+                      minW="var(--atlas-layout-zero, 0)"
+                      gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
+                      p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
+                      templateColumns={{
+                        base: "minmax(0, 1fr)",
+                        xl: selected
+                          ? "minmax(0, 1fr) var(--atlas-attached-detail-width)"
+                          : "minmax(0, 1fr)",
+                      }}
+                    >
+                      <ProcurementAllocationTable
+                        rows={visible}
+                        showServiceDate={multiDay}
+                        selectedKey={selected ? selectedKey : null}
+                        disabled={
+                          controller.loading ||
+                          controller.busy ||
+                          Boolean(controller.rangeError)
                         }
-                        onClose={closeDetail}
+                        onSelect={(row, trigger) => {
+                          rowTrigger.current = trigger;
+                          setSelectedKey(row.family.source_fingerprint);
+                        }}
                       />
-                    )}
-                  </Grid>
+                      {selected && (
+                        <ProcurementSupplierDetail
+                          exitRef={detailExit}
+                          onWorkspaceStatus={setDetailStatus}
+                          key={`${selected.family.source_fingerprint}:${controller.revision}`}
+                          row={selected}
+                          disabled={commandDisabled}
+                          onSave={(splits) =>
+                            void controller.save(selected, splits)
+                          }
+                          onClose={closeDetail}
+                        />
+                      )}
+                    </Grid>
+                  )}
                 </>
               ) : (
                 <ProcurementOrdersStage

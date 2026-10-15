@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-15T12:15:05.0170782+07:00",
+  "environment": "local in-memory atlas-vnext-review.html only",
+  "viewports": ["1280x720", "1440x900", "1920x1080"],
+  "checks": [
+    "DEFAULT preselected; explicit Apply saves one family and readback reports one; focus returns to bulk button",
+    "REBALANCE initially unchecked; explicit selection saves 72/48 from prior60/40 against total120, verified normal detail readback",
+    "Manual existing60/40 excluded with Apply0 disabled",
+    "Incomplete/null family and contribution quantity display unknown, never fabricated zero; Apply disabled",
+    "Dirty bulk selection prompts before discard; cancel retains selection",
+    "Date/School/search/context controls disabled while preview open",
+    "UNKNOWN blocks further Apply/Close, authoritative readback recovers",
+    "Retryable failure exposes Retry, new Apply remains disabled, no false success",
+    "Dirty detail61/40 blocks bulk, module exit prompts, cancel retains61, explicit discard restores saved100"
+  ],
+  "layout": "document scrollWidth equals viewport width at1280/1440/1920; visual screenshots checked",
+  "evidence": [
+    "default-1280.jpg",
+    "saved-default-1280.jpg",
+    "rebalance-1440.jpg",
+    "blocked-1920.jpg",
+    "unknown-locked-1280.jpg",
+    "retry-locked-1280.jpg",
+    "manual-preserved-1280.jpg"
+  ],
+  "limits": [
+    "Browser tests use synthetic in-memory APIs; database semantics are verified separately by authenticated SQL tests",
+    "Exact original request retry and failed-readback lock are automated controller tests, not browser hidden-state inspection",
+    "No hosted writes, PO commitments, or deployment; native document export outside B scope"
+  ]
+}

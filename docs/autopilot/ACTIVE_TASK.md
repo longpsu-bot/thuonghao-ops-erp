@@ -1,48 +1,66 @@
 # Atlas Autopilot — Active Task
 
-Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01
-Status: READY FOR PRODUCT REVIEW — awaiting Product choices and explicit design approval; no implementation authorized.
+Task: ATLAS-OPERATOR-BULK-ALLOCATION-B-01
+Status: IMPLEMENTED — Draft fixed-SHA review and exact-head CI pending; no merge, deployment or hosted write authorized.
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
-Starting main: f6686c7952024b499fcd3499cbcb38948ab15a5d
-Atlas Staging: rnzxmxiiqgtdevzregff — migration 109; no hosted action in this task
+Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
+Atlas Staging: rnzxmxiiqgtdevzregff — accepted migration 109; no hosted write or deployment authorized
 OPS v1 / Retool / Production: no writes or commitments
 
-## Previous read gate accepted — 14 October 2026
+## Authority and deferred work — 15 October 2026
 
-[PR #383](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/383) merged at starting main with a tree identical to reviewed source `64491061df79bf9c8349d5f397d57c06a8fe9edb`. Source Frontend 38568664899 and Full Integration 38568760358 passed. Root's protected [actual HTTP read 38570792340](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38570792340) passed against deployed business `8e68c2ce2cf766279d020210e9b53b457048db22` using verifier starting main: 236 distinct families, 4,973.201109 ms, full actual-row PostgreSQL MD5 `48e433c45fac665d873103542408a484`, unchanged source/receipt/audit fact digest `d55edbee74200aa3e02e8fc94ca8787d` (matching acceptance 105).
+The Product Owner's `ATLAS_OPERATOR_FIXES_2026-10-15.md` brief and subsequent instruction to proceed authorize optional bulk supplier defaults/rebalance within the existing Allocation flow. Root's bounded phase-one instruction authorizes this baton and the [dated Procurement amendment](../api/school-catering-procurement.md#optional-bulk-defaults-and-rebalance--15-october-2026) only. Commit those documents before code, report the proposed interface and locking boundaries, then hold for review. The brief overrides routine Autopilot integration: deliver a separate Draft PR; no merge, manual deployment or live database write.
 
-Root independently confirmed 36 probe-relation checks / zero probes, 17 real Draft POs and unchanged fingerprint `cefbff23b30cbc15dac0b890a956d884`. This is one successful hosted observation, not a load test or three-sample performance certification. Main Frontend 38570729098 and Full Integration 38570728987 were still running at handoff; no pass is asserted here. The formal A/B/C gate 38566354791 and 109's 48-case rollback acceptance remain complete; do not rerun them or rewrite historical 108/109 evidence.
+PR #385 (safe presentation, head `b57dd270da20ca2f348ee6b296253de203967e02`) and PR #386 (A2 Unit labels/Draft School projection, head `775989fc9c7bae2eb10db733b5244e846f31d896`) remain frozen separate Drafts. This branch starts from accepted main, not either PR. Do not copy A2 schema, helpers or projections. Historical 108/109 acceptance, migration packages and checksums remain historical. The [Warehouse packet](../architecture/warehouse-receiving-minimum-design.md) remains READY FOR PRODUCT REVIEW with four UNDECIDED groups and no implementation authority. Operator C/D remain deferred.
 
-## Authorized document packet
+Root's read-only environment review reconfirmed Atlas Staging at `20261014120320`, authenticated 8-second budget, and Retool bulk behavior as loaded School-days sent to a v1 backend RPC. Retool detail browser arithmetic is behavioral reference only; no v1 authority is transplanted.
 
-Prepare the smallest one-operator receiving design for Product review under the active Autopilot horizon. First record this baton and the completed read gate in a separate commit, before design files. Approved constraints and existing authority must be distinguished from proposed choices. All four Product groups remain explicitly UNDECIDED:
+## Bounded design
 
-1. First receiving site/job and physical receipt evidence versus stock creation.
-2. Procurement supplier-confirmation gap, exact current released revision, partial arrivals and superseded orders.
-3. Observed physical facts, quantity/Unit evidence and owning exception rules.
-4. Commit/correction boundary, capability and relational scope.
+- Extend the existing active confirmed-allocation read with opt-in backend-derived bulk preview; default reads and the normal derived-default journey remain unchanged. Bulk apply is optional, not a prerequisite to Preparation or a second confirmation authority.
+- Filter by selected dates/Schools using ANY contributing School, then deduplicate whole location/date/Ingredient/Unit families. Show every affected School/contribution and full exact family quantity; never save a clipped School slice. Local search/state filtering is not hidden bulk scope.
+- Distinguish safe missing defaults, explicitly reviewed stale prior-ratio rebalance, preserved existing/manual decisions, and blocked/zero/no-eligible cases. Preserve retained Supplier notes. Browser selection performs no authoritative arithmetic.
+- One new batch command uses the existing Procurement write capability and exact existing location-family predicate. Both current source kinds route to their existing persistence primitives. Preparation's GLOBAL/release requirement and the old Handoff-only confirmation/safe-skip RPC stay unchanged.
+- Bind each selected candidate to its source kind/evidence, batch/version where applicable, family version/fingerprint and exact server proposal/context digest. Recompute under canonical locks; any changed authority/proposal fails the entire selected set. Explicitly disclosed preview exclusions are not applied or reported as saved.
+- Preserve both canonical lock orders across the whole set: all relevant Confirmed Need batches/lines first, Supplier evidence, Handoff sources, then family roots. Reuse an outer receipt/exception subtransaction, distinct child command identities, audit and exact replay before child generation. Collect safe per-family conflicts and roll back all selected writes on any failure, including errors returned as JSON by a private writer. Never loop independent public Save requests.
+- PO impact exposes only documents authorized by the existing whole-PO predicate, with the same authorized-documents-only coverage statement for empty and nonempty lists. No hidden-only flags, inaccessible existence/count/status or assurance of no commitments. Allocation authority remains independent. No PO preparation, regeneration, release or historical rewrite follows bulk apply.
+- Existing toolbar/controller plus a bounded review surface provides explicit Apply-and-Save, dirty/context/date/focus protection, exact-request recovery, UNKNOWN lock and one authoritative Allocation readback with accurate saved-family count. One authorized Actor can perform the ordinary task; no second-person rule or new role/capability/scope kind.
 
-Offer concrete alternatives, consequences and questions without selecting business policy where operating facts are unknown. Ordinary work must be possible for one authorized Actor; capabilities, scope, audit and approved exception owners remain mandatory. `RELEASED_TO_SUPPLIER` does not establish supplier confirmation or `READY_FOR_WAREHOUSE_RECEIVING`. The in-memory prototype is exploratory evidence only, not connected authority or a lifecycle to copy.
+## Allowed reach after design review
 
-## Allowed files and checks
+Phase one changes only this baton and `docs/api/school-catering-procurement.md`.
 
-- This baton.
-- `docs/runbooks/school-fulfilment-cutover-readiness.md`: close the actual read gate.
-- `docs/testing/evidence/atlas-cutover-released-allocation-read-staging-109.json`: durable parsed report from Root's saved evidence.
-- `docs/architecture/warehouse-receiving-minimum-design.md`.
-- `docs/decisions/decision-atlas-warehouse-receiving-minimum.md`.
-- `docs/decisions/decision-register.md`: PROPOSED link only.
-- `docs/architecture/roadmap.md`: Warehouse design gate pointer only.
+After explicit Root coding release, expected reach is:
 
-Read AGENTS, mandate, README, vision, business-rule/decision registers and the existing Warehouse receiving/stock-release contracts, PD-03 conformance review, ARCH-002, roadmap, School Procurement API and fixture prototype. Run focused formatting, whitespace and local-link validation only; no tests for prose and no new test framework.
+- One Supabase CLI-created forward migration from the accepted main 109 baseline: existing confirmed-allocation read extension, one new batch RPC, and only necessary private proposal/orchestration helpers. Identify it by generated version/file, not an assumed ordinal 110. No new derived-state table/status, existing-function retirement, source rewrite, historical correction, broad table grant or policy change. Exact hardened function ownership/EXECUTE changes must be reviewed against the catalog.
+- Existing Procurement `purchaseReviewApi.ts`, `schoolCateringProcurementModel.ts`, review simulator and directly affected API tests; active `useProcurementWorkbench.ts`, `ProcurementWorkbench.tsx`, `procurementAllocationPresentation.ts`, review fixtures/stories, the existing explicit `AtlasVNextApp.review.tsx` in-memory entry and focused tests. A small colocated bulk-review component/test is permitted if it keeps the existing workbench readable. Follow existing UI v3/A+, Chakra recipes and Vietnamese copy. Preserve legacy callers and single-family detail behavior.
+- Existing `supabase/tests/purchase_review_confirm_release.sql`, `school_catering_handoff_allocation.sql`, `procurement_supplier_line_note.sql`, `school_catering_purchase_orders.sql`, exact `atlas_current_platform_security_catalog.sql`, and the reusable purchase-preparation scale fixture where relevant. A bounded bulk-specific SQL test may isolate the matrix rather than duplicate fixtures. Existing local integration registration may add that exact test if necessary; no workflow/security-gate relaxation.
+- One bounded validation/rollback record and sanitized evidence under the existing `docs/testing/` artifact pattern. No new runner, framework or dependency.
 
-## Delivery and hard stop
+Report before any additional API, lock-order/privilege reach or source-authority change beyond the dated contract. No A1/A2/A3/A4 changes, Planning correction, Warehouse, staff assignment, real commitment, OPS v1/Retool write or hosted fixture is in scope.
 
-Fresh bounded branch from verified latest main, Draft PR and fixed-SHA Terra audit; Root owns routine integration. The packet may become READY FOR PRODUCT REVIEW, while every business choice remains PROPOSED. Final explicit Warehouse Product design approval is a HARD STOP before any implementation.
+## Test-first sequence and release gates
 
-No lifecycle/status machinery, role grants, staff assignments, database/API/UI/prototype edits, hosted action, fixture creation, Production/v1/Retool write or real commitment is authorized. Preserve released history, existing drafts and exception ownership. No Warehouse backend or connected UI work follows automatically from merging this documentation.
+1. Authority-only commit `5e891db431fdc683a5674ecfdf45cb2777df7b93` was reviewed by Root and cleared by Terra; phase-two coding is released within this contract.
+2. Establish a fresh owned-disposable local main 109 database. The existing owned local volume has ledger109 plus unledgered A2 DDL and is not a valid B baseline. Preserve all pre-existing volumes and frozen A2 evidence; never reset an unproven-disposable target.
+3. Observe RED for public authenticated mixed-source atomic apply and preview. Prove both writers; exact default/unique priority/ties/ineligible/no eligible/zero; prior-ratio deterministic residual, scale and retained notes; whole-family School dedup; existing allowed/denied location-family scope; whole-PO nondisclosure; source/version/priority/eligibility races; exact/conflicting replay and all-or-nothing rollback with zero partial allocation facts/events.
+4. Prove UI/API selection-only payloads, exact request retry, UNKNOWN/readback failure lock, successful authoritative counts, dirty/date/context/focus guards and no write on preview/open. Exclude ignored `.superpowers` reference copies from local focused test collection without changing tracked discovery.
+5. Measure read/preview and one batch command on a local 50-School current Confirmed Need workload (target 5 Ingredients / 250 families); mixed-source correctness is a separate small authenticated matrix, with actual family/contribution counts and timings recorded under the unchanged authenticated 8-second budget. No timeout increase or claim of hosted scale certification. Verify exact catalog changes and unchanged unrelated PO/replay/currentness/Preparation tests.
+6. Run focused tests/typecheck, affected format and exact-range whitespace checks; obtain fixed-SHA Terra audit and exact-head Frontend/local Full Integration CI while keeping Draft. No merge, deployment or hosted acceptance follows automatically.
 
-## Packet and focused verification
+## Design review questions
 
-The [minimum design](../architecture/warehouse-receiving-minimum-design.md) and [PROPOSED decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) separate approved authority from historical Draft Warehouse contracts and in-memory prototype evidence. No Product option is selected. The [closed read gate](../runbooks/school-fulfilment-cutover-readiness.md) links the durable parsed report, which equals Root's saved report. Focused formatting, whitespace and local-link/anchor checks pass; no tests or hosted actions were needed for this prose-only task. Fixed-SHA Terra audit and PR CI remain integration gates, not Warehouse business-design approval.
+The dated amendment proposes opt-in `include_bulk_preview`, a stateless canonical proposal digest and `apply_supplier_allocation_batch`. Verify the proposed combined Confirmed Need batch/lines → Supplier evidence → Handoff source → family ordering against every existing writer. Prefer internal existing public Save commands; any private resolved seam must consume complete canonical backend source evidence including overlapping batches and fresh revalidation after waits. Existing ownership/ACLs must support the private read/proposal reuse; stop on a real permission gap rather than broadening table access. These are technical review points, not new Product-policy choices.
+
+## Actual caller reach and isolated local baseline
+
+The first backend tests target the existing confirmed-allocation read (including its closed Handoff forwarding), both source-specific Save commands, canonical source/advice helpers and receipt rollback. Frontend reach is the active Allocation toolbar/controller, current Procurement API/model, review simulator and their focused tests; normal single-family/legacy behavior remains a regression gate. Preview-only Unit names come from authorized current Unit data with a controlled warning, without importing pending A2.
+
+Local isolation may create a new task-owned database `atlas_bulk_b_01` on the verified local `supabase_db_thuonghao-ops-erp` container, initialized from schema-only Supabase Auth support and all 109 accepted main migration files. This is schema-applied development validation, not a CLI-recorded 109-entry migration ledger; exact-head Full Integration must prove clean CLI migration application. It must start absent; never drop/reset the existing `postgres` database or any existing volume. This preserves the unledgered A2 development database and all unrelated state. Verify database/container identity and absence of the A2 snapshot column before tests.
+
+## Implemented handoff — 15 October 2026
+
+Authority commit `5e891db` was reviewed and released by Root/Terra before implementation. The [bounded validation record](../testing/atlas-operator-bulk-allocation-b-01.md) and [sanitized evidence](../testing/artifacts/atlas-operator-bulk-allocation-b-01/summary.json) cover the CLI-generated migration `20261015042701_operator_bulk_supplier_allocation.sql`, exact catalog/ACL posture, actual two-session wait,119 final-hash SQL assertions, 895 connected checkpoint regressions and 282 tracked-source frontend assertions. Local 50-School/250-family preview 4086.131ms and Apply 1826.887ms retain the 8-second budget. The existing in-memory browser entry passed nine behavioral checks across 1280/1440/1920. Typecheck, UI boundary and Impeccable scan passed.
+
+Next: preserve this source for independent fixed-SHA Terra review, create/push a Draft PR, and require exact-head Frontend plus manual local-only Full Integration CI. Keep Draft; user authorization explicitly excludes merge, deployment and hosted writes. GitHub CI results remain pending until actually observed. No additional native export or hosted acceptance run is needed for this B-only implementation. Warehouse Product choices and operator C/D remain deferred.

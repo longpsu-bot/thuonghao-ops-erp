@@ -7,6 +7,7 @@ import {
   confirmedAllocationRequest,
   generatedPurchaseReviewRequest,
   preparePurchaseOrdersRequest,
+  supplierAllocationBatchRequest,
 } from "./purchaseReviewApi";
 import {
   purchaseOrdersReadRequest,
@@ -143,4 +144,47 @@ it("keeps generated100 separate from saved120, retained72/48 and explicit75/50 t
   expect(
     unrelated.kind === "success" && unrelated.response.purchase_orders,
   ).toEqual([]);
+});
+
+it("synthetic bulk keeps preview read-only and replays one accepted exact proposal", async () => {
+  const { seedReviewPurchaseJourney } =
+    await import("./reviewPurchaseReviewApi");
+  const journey = await seedReviewPurchaseJourney("confirmed");
+  const scope = {
+    date_start: "2026-09-03",
+    date_end: "2026-09-03",
+    school_ids: [],
+    states: [],
+    search: null,
+  };
+  const before = journey.inspect();
+  const data = confirmedAllocationFromResult(
+    await journey.purchaseReviewApi.getConfirmedAllocations(
+      confirmedAllocationReadRequest("actor", "trace", scope, true),
+    ),
+  )!;
+  expect(journey.inspect()).toEqual(before);
+  expect(data.bulk_preview?.families[0]?.unit_label).toBe(
+    before.need.lines[0]!.controlled_unit.name,
+  );
+  const candidate = data.bulk_preview!.families[0]!.candidate!;
+  expect(candidate.proposal_kind).toBe("DEFAULT");
+  const request = supplierAllocationBatchRequest(
+    "actor",
+    "trace",
+    { date_start: scope.date_start, date_end: scope.date_end, school_ids: [] },
+    [candidate],
+  );
+  const result = await journey.purchaseReviewApi.applyAllocationBatch(request);
+  expect(result).toMatchObject({
+    kind: "success",
+    response: { applied_count: 1 },
+  });
+  expect(await journey.purchaseReviewApi.applyAllocationBatch(request)).toEqual(
+    result,
+  );
+  expect(journey.inspect().allocations).toHaveLength(
+    before.allocations.length + 1,
+  );
+  expect(journey.inspect().orders).toEqual(before.orders);
 });

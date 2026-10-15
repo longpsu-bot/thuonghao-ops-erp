@@ -13,6 +13,56 @@ import type {
   SupplierSplitInput,
 } from "./schoolCateringProcurementModel";
 
+export type SupplierAllocationBatchCandidate = {
+  family: AllocationFamilyReference & {
+    source_kind: "CONFIRMED_NEED" | "PURCHASE_HANDOFF";
+    expected_family_version: number;
+    expected_source_batch_id?: string;
+    expected_source_batch_version?: number;
+  };
+  proposal_kind: "DEFAULT" | "REBALANCE";
+  proposal_fingerprint: string;
+  proposed_splits: SupplierSplitInput[];
+};
+export type BulkAllocationFamily = Pick<
+  AllocationFamilyRow,
+  | "service_date"
+  | "delivery_location_id"
+  | "location_name"
+  | "ingredient_id"
+  | "ingredient_name"
+  | "unit_id"
+  | "family_quantity"
+  | "contributions"
+  | "eligible_suppliers"
+  | "splits"
+> & {
+  unit_label: string;
+  schools: NonNullable<AllocationFamilyRow["schools"]>;
+  decision_origin: string | null;
+  candidate: SupplierAllocationBatchCandidate | null;
+  exclusion_reason: string | null;
+  purchase_order_impact: {
+    coverage: "AUTHORIZED_DOCUMENTS_ONLY";
+    documents: {
+      purchase_order_id: string;
+      document_number: string | null;
+      version: number;
+      status: string;
+      purchase_order_revision_id: string;
+      supplier_name: string;
+      commitment_state?: string;
+    }[];
+  };
+};
+export type SupplierAllocationBulkPreview = {
+  families: BulkAllocationFamily[];
+  total_count: number;
+  applicable_count: number;
+  excluded_count: number;
+  allowed: boolean;
+};
+
 export type PurchasePreparation = {
   service_date: string;
   confirmed_need_batch_id: string;
@@ -27,6 +77,7 @@ export type ConfirmedAllocationWorkbench = Omit<
 > & {
   contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1";
   preparation: PurchasePreparation | null;
+  bulk_preview?: SupplierAllocationBulkPreview;
 };
 export type GeneratedPurchaseReviewRow = Pick<
   AllocationFamilyRow,
@@ -76,12 +127,38 @@ export function confirmedAllocationReadRequest(
   authSubject: string,
   correlationId: string,
   scope: ProcurementWorkbenchScope,
+  includeBulkPreview = false,
 ): AtlasRpcRequest {
   return {
     contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
     requested_by_auth_subject: authSubject,
     correlation_id: correlationId,
-    payload: scope,
+    payload: includeBulkPreview
+      ? { ...scope, include_bulk_preview: true }
+      : scope,
+  };
+}
+export function supplierAllocationBatchRequest(
+  authSubject: string,
+  correlationId: string,
+  scope: Pick<
+    ProcurementWorkbenchScope,
+    "date_start" | "date_end" | "school_ids"
+  >,
+  candidates: SupplierAllocationBatchCandidate[],
+) {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "SUPPLIER-ALLOCATION-BATCH.v1" as const,
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `allocation-batch:${commandId}`,
+    expected_version: 1,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "SUPPLIER_ALLOCATION_BATCH_APPLIED",
+    reason_note: null,
+    payload: structuredClone({ scope, candidates }),
   };
 }
 export function confirmedAllocationRequest(
@@ -166,6 +243,9 @@ export function createPurchaseReviewApi(
         "atlas_api.get_confirmed_supplier_allocation_workbench",
         request,
       ),
+    applyAllocationBatch: (
+      request: ReturnType<typeof supplierAllocationBatchRequest>,
+    ) => invoker.invoke("atlas_api.apply_supplier_allocation_batch", request),
     saveConfirmedAllocation: (
       request: ReturnType<typeof confirmedAllocationRequest>,
     ) =>

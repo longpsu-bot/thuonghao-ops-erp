@@ -19,10 +19,10 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function runNodeScript(relativePath, label, environment = {}) {
+function runNodeScript(relativePath, label, environment = {}, args = []) {
   const result = spawnSync(
     process.execPath,
-    [fileURLToPath(new URL(relativePath, import.meta.url))],
+    [fileURLToPath(new URL(relativePath, import.meta.url)), ...args],
     {
       cwd: process.cwd(),
       env: { ...process.env, ...environment },
@@ -87,14 +87,21 @@ function install(relativePath) {
 }
 
 function verifyPlanningCorrectionBoundaries() {
-  for (const testFile of [
-    "supabase/tests/school_catering_planning_correction.sql",
-    "supabase/tests/school_catering_purchase_orders.sql",
-  ]) {
-    runPinnedSupabase(["test", "db", testFile, "--local"], {
-      stdio: "inherit",
-    });
-  }
+  runPinnedSupabase(
+    [
+      "test",
+      "db",
+      "supabase/tests/school_catering_planning_correction.sql",
+      "--local",
+    ],
+    { stdio: "inherit" },
+  );
+  runNodeScript(
+    "./test-local-purchase-review.mjs",
+    "School-catering PO correction boundaries",
+    {},
+    ["school_catering_purchase_orders.sql"],
+  );
 }
 
 async function invoke(client, name, request) {
