@@ -418,6 +418,7 @@ function Review() {
       if (correctionScenario === "correction_pending") {
         const procurement = createProcurementReviewFixture(
           "replacement_required",
+          applicationReviewNow.toISOString().slice(0, 10),
         );
         const order = procurement.orders.purchase_orders[0]!;
         order.blockers = ["PO_SOURCE_NOT_READY", "PO_REPLACEMENT_REQUIRED"];
