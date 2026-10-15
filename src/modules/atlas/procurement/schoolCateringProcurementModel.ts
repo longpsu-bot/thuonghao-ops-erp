@@ -82,6 +82,7 @@ export type AllocationFamilyRow = {
   ingredient_name: string;
   unit_id: string;
   unit_code: string;
+  unit_name?: string | null;
   family_quantity: ExactQuantity | null;
   contributions: AllocationContribution[];
   contribution_count: number;
@@ -129,6 +130,7 @@ export type PurchaseOrderLine = {
   ingredient_document_code_snapshot?: string | null;
   ingredient_name_snapshot?: string | null;
   unit_code_snapshot?: string | null;
+  unit_name_snapshot?: string | null;
   purchase_order_line_revision_id: string;
   purchase_order_line_id: string;
   ingredient: {
@@ -138,7 +140,7 @@ export type PurchaseOrderLine = {
   };
   ordered_quantity: ExactQuantity;
   supplier_note: string | null;
-  unit: { unit_id: string; unit_code: string };
+  unit: { unit_id: string; unit_code: string; unit_name?: string | null };
   delivery_location: {
     delivery_location_id: string;
     location_name: string;

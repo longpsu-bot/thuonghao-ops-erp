@@ -1,0 +1,53 @@
+{
+  "workbooks": [
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 81,
+      "native_save_reopen": true,
+      "sheets": [
+        {
+          "pdf": "PO-units-details_ing-sheet-1.pdf",
+          "horizontal_page_breaks": [],
+          "name": "02-09-2026 - Theo hàng",
+          "print_titles": "$1:$9",
+          "vertical_page_breaks": 0
+        }
+      ],
+      "file": "PO-units-details_ing.xlsx",
+      "normal_open": true
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 79,
+      "native_save_reopen": true,
+      "sheets": [
+        {
+          "pdf": "PO-units-details_school-sheet-1.pdf",
+          "horizontal_page_breaks": [],
+          "name": "02-09-2026 - Theo trường",
+          "print_titles": "$1:$9",
+          "vertical_page_breaks": 0
+        }
+      ],
+      "file": "PO-units-details_school.xlsx",
+      "normal_open": true
+    },
+    {
+      "clean_unchanged": true,
+      "exact_text_checks": 73,
+      "native_save_reopen": true,
+      "sheets": [
+        {
+          "pdf": "PO-units-sum-sheet-1.pdf",
+          "horizontal_page_breaks": [],
+          "name": "02-09-2026 - Tổng",
+          "print_titles": "$1:$10",
+          "vertical_page_breaks": 0
+        }
+      ],
+      "file": "PO-units-sum.xlsx",
+      "normal_open": true
+    }
+  ],
+  "excel_version": "16.0"
+}

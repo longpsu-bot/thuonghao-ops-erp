@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../bridges/confirmedNeed";
 import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { useId, useState } from "react";
 import type { CSSProperties } from "react";
@@ -283,7 +284,10 @@ export function ConfirmedNeedTable({
                       color="fg.muted"
                       ml="xs"
                     >
-                      {line.controlled_unit.code}
+                      {operatorUnitLabel(
+                        line.controlled_unit.name,
+                        line.controlled_unit.code,
+                      )}
                     </Box>
                   </Text>
                 </Table.Cell>
@@ -338,7 +342,10 @@ export function ConfirmedNeedTable({
                       }
                     />
                     <Text textStyle="unitInline" color="fg.muted">
-                      {line.controlled_unit.code}
+                      {operatorUnitLabel(
+                        line.controlled_unit.name,
+                        line.controlled_unit.code,
+                      )}
                     </Text>
                   </Box>
                   {historical && (
@@ -361,7 +368,10 @@ export function ConfirmedNeedTable({
                         color="fg.primary"
                         ml="xs"
                       >
-                        {line.controlled_unit.code}
+                        {operatorUnitLabel(
+                          line.controlled_unit.name,
+                          line.controlled_unit.code,
+                        )}
                       </Box>
                     </Text>
                   ) : (

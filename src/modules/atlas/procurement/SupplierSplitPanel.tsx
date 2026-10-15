@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../master-data/unitDisplay";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   AllocationFamilyRow,
@@ -188,7 +189,7 @@ export function SupplierSplitPanel({
             {authoritativeTotal === null
               ? "—"
               : displayScaled(authoritativeTotal)}{" "}
-            {row.unit_code}
+            {operatorUnitLabel(row.unit_name, row.unit_code)}
           </strong>
         </span>
         <span>
@@ -196,7 +197,7 @@ export function SupplierSplitPanel({
           <strong>
             {total === null
               ? "Không hợp lệ"
-              : `${displayScaled(total)} ${row.unit_code}`}
+              : `${displayScaled(total)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`}
           </strong>
         </span>
         <span
@@ -206,7 +207,7 @@ export function SupplierSplitPanel({
           <strong>
             {difference === null
               ? "Không hợp lệ"
-              : `${displayScaled(difference)} ${row.unit_code}`}
+              : `${displayScaled(difference)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`}
           </strong>
           <small>
             {difference === null
@@ -231,7 +232,7 @@ export function SupplierSplitPanel({
             )?.supplier_name ?? "Nhà cung ứng phù hợp"}{" "}
             ·{" "}
             {displayScaled(scaled(row.recommendation.allocated_quantity) ?? 0n)}{" "}
-            {row.unit_code}
+            {operatorUnitLabel(row.unit_name, row.unit_code)}
           </span>
           <button
             type="button"
@@ -267,7 +268,7 @@ export function SupplierSplitPanel({
                   (supplier) => supplier.supplier_id === split.supplier_id,
                 )?.supplier_name ?? split.supplier_id}
                 : {displayScaled(scaled(split.allocated_quantity) ?? 0n)}{" "}
-                {row.unit_code}
+                {operatorUnitLabel(row.unit_name, row.unit_code)}
               </li>
             ))}
           </ul>
@@ -296,8 +297,9 @@ export function SupplierSplitPanel({
         <p className="procurement-inline-danger" key={split.supplier_id}>
           {split.supplier_name} không còn phù hợp (
           {displayScaled(scaled(split.allocated_quantity) ?? 0n)}{" "}
-          {row.unit_code}). Atlas không tự chuyển phần đã phân bổ sang nhà cung
-          ứng khác; cần chọn NCC thay thế thủ công.
+          {operatorUnitLabel(row.unit_name, row.unit_code)}). Atlas không tự
+          chuyển phần đã phân bổ sang nhà cung ứng khác; cần chọn NCC thay thế
+          thủ công.
         </p>
       ))}
 
@@ -329,7 +331,7 @@ export function SupplierSplitPanel({
                 }
                 disabled={busy || mutationLocked || row.complete === false}
               />
-              <span>{row.unit_code}</span>
+              <span>{operatorUnitLabel(row.unit_name, row.unit_code)}</span>
               {operatorAddedIds.has(supplier.supplier_id) && (
                 <button
                   type="button"

@@ -5,8 +5,13 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(155);
+select plan(173);
 
+select has_column('atlas_procurement','purchase_order_line_revisions','unit_name_snapshot','future PO lines retain nullable human Unit snapshot');
+select ok((select count(*)=1 and bool_and(atttypid='text'::regtype and not attnotnull and not atthasdef)
+ from pg_attribute where attrelid='atlas_procurement.purchase_order_line_revisions'::regclass
+ and attname='unit_name_snapshot' and not attisdropped),
+ 'Unit name snapshot is nullable text without an invented default or historical backfill');
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
 select has_function('atlas_api', 'release_school_catering_purchase_order', array['jsonb']);
@@ -407,6 +412,32 @@ select ok((select (response ->> 'success')::boolean
       response #> '{authoritative_readback,purchase_order_ids}')=3
   from prb_results where name='drafts'),
   'bounded range draft materialization succeeds for ready dates');
+
+-- Current labels must not change Allocation identity or source authority.
+savepoint a2_current_unit_names;
+set local role authenticated;
+insert into prb_results values
+ ('a2-allocation-before',atlas_api.get_school_catering_procurement_workbench(jsonb_set(pg_temp.prb_read(),'{payload}','{"date_start":"2026-09-21","date_end":"2026-09-22"}'))),
+ ('a2-confirmed-before',atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_set(pg_temp.prb_read(),'{payload}','{"date_start":"2026-09-21","date_end":"2026-09-22"}')||'{"contract_version":"CONFIRMED-SUPPLIER-ALLOCATION.v1"}'));
+reset role;
+update atlas_admin.units set unit_name='Cái' where unit_id='24020000-0000-4000-8000-000000000031';
+set local role authenticated;
+insert into prb_results values
+ ('a2-allocation-after',atlas_api.get_school_catering_procurement_workbench(jsonb_set(pg_temp.prb_read(),'{payload}','{"date_start":"2026-09-21","date_end":"2026-09-22"}'))),
+ ('a2-confirmed-after',atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_set(pg_temp.prb_read(),'{payload}','{"date_start":"2026-09-21","date_end":"2026-09-22"}')||'{"contract_version":"CONFIRMED-SUPPLIER-ALLOCATION.v1"}'));
+reset role;
+select ok((select count(*)=4 and bool_and(response->>'success'='true' and jsonb_array_length(response->'rows')=4)
+ from prb_results where name like 'a2-%-before' or name like 'a2-%-after'),
+ 'both Allocation routes retain four authorized families before/after Unit rename');
+select ok((select count(*)=16 and bool_and(row->>'unit_name' is not distinct from case when name like '%-before' then 'PR-B kilogram' else 'Cái' end)
+ from prb_results,jsonb_array_elements(response->'rows') row where name like 'a2-%-before' or name like 'a2-%-after'),
+ 'both Allocation routes expose current human Unit names');
+select is((select jsonb_agg(jsonb_build_array(replace(name,'-before',''),row-'unit_name') order by name,ordinality)
+ from prb_results,jsonb_array_elements(response->'rows') with ordinality rows(row,ordinality) where name like 'a2-%-before'),
+ (select jsonb_agg(jsonb_build_array(replace(name,'-after',''),row-'unit_name') order by name,ordinality)
+ from prb_results,jsonb_array_elements(response->'rows') with ordinality rows(row,ordinality) where name like 'a2-%-after'),
+ 'Unit rename preserves IDs/codes/quantities/fingerprints/currentness on both Allocation routes');
+rollback to savepoint a2_current_unit_names;
 select ok((select response -> 'ready_dates' @> '["2026-09-21"]'::jsonb
     and response -> 'skipped_dates' @> '[{"service_date":"2026-09-22"}]'::jsonb
   from prb_results where name='drafts'),
@@ -498,6 +529,22 @@ select ok((select bool_and(jsonb_typeof(line -> 'ordered_quantity')='string'
     on source_line.purchase_order_line_revision_id=(line ->> 'purchase_order_line_revision_id')::uuid
   where result.name='read-draft'),
   'PO read serializes every exact ordered quantity as a lossless string');
+select ok((select count(*)=4 and bool_and(line#>>'{unit,unit_name}' is not distinct from 'PR-B kilogram' and line#>>'{unit,unit_code}' is not distinct from 'pr-b-kg'
+    and line#>>'{unit,unit_id}' is not distinct from '24020000-0000-4000-8000-000000000031')
+  from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line
+  where name='read-draft'),'Draft read adds human Unit name without replacing controlled code or UUID');
+select ok((select count(*)=4 and bool_and(jsonb_array_length(line->'school_breakdown')=1
+    and line#>>'{school_breakdown,0,school_id}' is not distinct from case line#>>'{delivery_location,delivery_location_id}'
+      when '24020000-0000-4000-8000-000000000011' then '24020000-0000-4000-8000-000000000021'
+      else '24020000-0000-4000-8000-000000000022' end
+    and line#>>'{school_breakdown,0,ordered_quantity}' is not distinct from line->>'ordered_quantity')
+  from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line
+  where name='read-draft'),'Draft School projection retains exact represented School IDs and positive supplier quantities');
+select is((select jsonb_agg(jsonb_build_array(line->>'purchase_order_line_revision_id',line->'school_breakdown') order by line->>'purchase_order_line_revision_id')
+    from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-stale'),
+  (select jsonb_agg(jsonb_build_array(line->>'purchase_order_line_revision_id',line->'school_breakdown') order by line->>'purchase_order_line_revision_id')
+    from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-draft'),
+  'stale Draft School projection stays on its original split instead of the successor allocation');
 select ok((
   select count(*) filter(where (row ->> 'stale')::boolean)=2
     and count(*) filter(where not (row ->> 'stale')::boolean)=1
@@ -686,6 +733,14 @@ select ok((
 ), 'release freezes a complete exact School breakdown on every official PO line');
 select is((select supplier_document_code_snapshot from atlas_procurement.purchase_order_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a')),'53','release header freezes supplier document code');
 select ok((select bool_and(line.ingredient_document_code_snapshot='1082' and line.ingredient_name_snapshot='PR-B Rice' and line.unit_code_snapshot='pr-b-kg') from atlas_procurement.purchase_order_line_revisions line where line.purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a')),'release line freezes exact item code, name and Unit code');
+select ok((select count(*)=2 and bool_and(to_jsonb(line)->>'unit_name_snapshot' is not distinct from 'PR-B kilogram')
+  from atlas_procurement.purchase_order_line_revisions line where purchase_order_revision_id=
+    (select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a')),
+  'ordinary release freezes the human Unit name');
+select throws_ok($$update atlas_procurement.purchase_order_line_revisions set unit_name_snapshot='REWRITE' where unit_code_snapshot='pr-b-kg'$$,
+  '23514','PO item document snapshots are immutable','released human Unit snapshot cannot be rewritten');
+select throws_ok($$update atlas_procurement.purchase_order_line_revisions set unit_name_snapshot='BACKFILL' where unit_code_snapshot is null$$,
+  '23514','PO item document snapshots are immutable','null Unit snapshot cannot be backfilled');
 select throws_ok($$update atlas_procurement.purchase_order_revisions set supplier_document_code_snapshot='REWRITE' where supplier_document_code_snapshot='53'$$,'23514','PO supplier document snapshot is immutable','released supplier code cannot be rewritten');
 select throws_ok($$update atlas_procurement.purchase_order_line_revisions set ingredient_name_snapshot='REWRITE' where ingredient_name_snapshot='PR-B Rice'$$,'23514','PO item document snapshots are immutable','released item labels cannot be rewritten');
 select throws_ok($$update atlas_procurement.purchase_order_line_revisions set ingredient_document_code_snapshot='REWRITE' where ingredient_document_code_snapshot='1082'$$,'23514','PO item document snapshots are immutable','released item codes cannot be rewritten');
@@ -708,11 +763,16 @@ select ok((
 ), 'read model exposes only a released PO as export-ready with its official number');
 -- Later Admin edits must not change any displayed fact of the official release.
 update atlas_admin.ingredients set ingredient_name='PR-B Rice renamed',document_code='9999' where ingredient_id='24020000-0000-4000-8000-000000000041';
-update atlas_admin.units set unit_code='pr-b-new-unit' where unit_id='24020000-0000-4000-8000-000000000031';
+update atlas_admin.units set unit_code='pr-b-new-unit',unit_name='Miếng' where unit_id='24020000-0000-4000-8000-000000000031';
 update atlas_admin.suppliers set supplier_name='PR-B Supplier Alpha renamed',document_code='99' where supplier_id='24020000-0000-4000-8000-000000000051';
 set local role authenticated;
 insert into prb_results values('read-frozen-document-identity',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
 reset role;
+select ok((select count(*)=2 and bool_and(line->>'unit_name_snapshot' is not distinct from 'PR-B kilogram'
+    and line#>>'{unit,unit_name}' is not distinct from 'PR-B kilogram' and line#>>'{unit,unit_code}' is not distinct from 'pr-b-kg')
+  from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line
+  where name='read-frozen-document-identity' and po->>'status'='RELEASED_TO_SUPPLIER'),
+  'released human Unit display never follows current Master Data rename');
 select ok((select bool_and(line->>'supplier_note'='Frozen supplier note') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-released' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),'released shaped lines expose the captured supplier note');
 select ok((select (po->>'document_snapshot_complete')::boolean and po#>>'{current_revision,supplier_document_code_snapshot}'='53' and po#>>'{supplier,supplier_name}'='PR-B Supplier Alpha' and bool_and(line#>>'{ingredient,document_code}'='1082' and line#>>'{ingredient,ingredient_name}'='PR-B Rice' and line#>>'{unit,unit_code}'='pr-b-kg') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-frozen-document-identity' and po->>'status'='RELEASED_TO_SUPPLIER' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051' group by po),'released shaped display uses frozen identity after all current master edits');
 select ok((
@@ -1153,6 +1213,19 @@ select is(jsonb_array_length(atlas_core.school_catering_po_school_breakdown(
    where revision.purchase_order_id=(select purchase_order_id from split_scope_target)
      and revision.is_current))),1,
   'isolated supplier split represents exactly School A, not the later School B contribution');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000102',true);
+insert into prb_results values('a2-positive-overlap-read',atlas_api.get_school_catering_purchase_orders(
+ pg_temp.prb_read()||jsonb_build_object('requested_by_auth_subject','24000000-0000-4000-8000-000000000102',
+ 'payload',jsonb_build_object('date_start','2026-09-23','date_end','2026-09-23',
+ 'supplier_ids','[]'::jsonb,'statuses','[]'::jsonb,'search',null))));
+reset role;
+select ok((select count(*)=1 and bool_and(jsonb_array_length(line->'school_breakdown')=1
+ and line#>>'{school_breakdown,0,school_id}' is not distinct from '24020000-0000-4000-8000-000000000021'
+ and line#>>'{school_breakdown,0,ordered_quantity}' is not distinct from '30.000000')
+ from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line
+ where name='a2-positive-overlap-read'),
+ 'public Draft School projection excludes the other School with zero split overlap');
 set local role atlas_read_runtime;
 select ok(atlas_core.school_catering_purchase_order_actor_has_full_scope(
     '24000000-0000-4000-8000-000000000002',purchase_order_id),
@@ -1474,6 +1547,10 @@ select ok((
   where supplier_id='24020000-0000-4000-8000-000000000051'
     and school_catering_service_date='2026-09-21'
 ), 'replacement release atomically supersedes the old root and preserves both numbers');
+select ok((select count(*)=2 and bool_and(to_jsonb(line)->>'unit_name_snapshot' is not distinct from 'Miếng')
+  from atlas_procurement.purchase_order_line_revisions line where purchase_order_revision_id=
+    (select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-replacement-a')),
+  'replacement release freezes its own current human Unit name');
 select ok((select supplier_document_code_snapshot='99' and supplier_name_snapshot='PR-B Supplier Alpha renamed' from atlas_procurement.purchase_order_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-replacement-a')),'replacement freezes its current supplier identity');
 select ok((select bool_and(ingredient_document_code_snapshot='9999' and ingredient_name_snapshot='PR-B Rice renamed' and unit_code_snapshot='pr-b-new-unit') from atlas_procurement.purchase_order_line_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-replacement-a')),'replacement freezes its current item identity');
 set local role authenticated;
@@ -1482,6 +1559,49 @@ reset role;
 select ok((select (po->>'export_ready')::boolean and (po#>>'{allowed_actions,export}')::boolean and (po->>'document_snapshot_complete')::boolean and po#>>'{current_revision,supplier_document_code_snapshot}'='53' and bool_and(line->>'ingredient_document_code_snapshot'='1082' and line->>'ingredient_name_snapshot'='PR-B Rice' and line->>'unit_code_snapshot'='pr-b-kg') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-superseded-document-identity' and po->>'status'='SUPERSEDED' group by po),'superseded official PO remains exportable from its original immutable display facts');
 select ok((select bool_and(line->>'supplier_note'='Frozen supplier note') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-superseded-document-identity' and po->>'status'='SUPERSEDED'),'superseded history preserves its original captured supplier note');
 select ok((select bool_and(line->>'supplier_note'='Corrected supplier note') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-superseded-document-identity' and po->>'status'='RELEASED_TO_SUPPLIER' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),'replacement official lines capture the corrected supplier note');
+savepoint a2_historical_unit;
+set local session_replication_role=replica;
+update atlas_procurement.purchase_order_line_revisions set unit_name_snapshot='Cái',unit_code_snapshot=null
+where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a');
+set local session_replication_role=origin;
+set local role authenticated;
+insert into prb_results values('a2-missing-unit-code',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+reset role;
+select ok((select count(*)>0 and bool_and(not (po->>'document_snapshot_complete')::boolean and not (po->>'export_ready')::boolean
+    and not (po#>>'{allowed_actions,export}')::boolean and line->>'unit_name_snapshot'='Cái')
+  from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line
+  where name='a2-missing-unit-code' and po->>'status'='SUPERSEDED'),
+  'human Unit name cannot replace missing controlled-code snapshot evidence');
+set local session_replication_role=replica;
+update atlas_procurement.purchase_order_line_revisions set unit_name_snapshot=null,unit_code_snapshot='kg'
+where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a');
+set local session_replication_role=origin;
+set local role authenticated;
+insert into prb_results values('a2-legacy-unit',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+reset role;
+select throws_ok($$update atlas_procurement.purchase_order_line_revisions set unit_name_snapshot='BACKFILL'
+ where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a')$$,
+ '23514','PO item document snapshots are immutable','historical official null Unit name cannot be backfilled');
+select ok((select count(*)>0 and bool_and((po->>'document_snapshot_complete')::boolean and (po->>'export_ready')::boolean
+    and line->>'unit_name_snapshot' is null and line#>>'{unit,unit_code}'='kg')
+  from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line
+  where name='a2-legacy-unit' and po->>'status'='SUPERSEDED'),
+  'historical null human snapshot retains valid frozen kg export without master reconstruction');
+set local session_replication_role=replica;
+update atlas_procurement.purchase_order_line_revisions set unit_code_snapshot='v1-unit-91a0b1c14124'
+where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a');
+set local session_replication_role=origin;
+set local role authenticated;
+insert into prb_results values('a2-technical-unit',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+reset role;
+select ok((select count(*)>0 and bool_and(not (po->>'document_snapshot_complete')::boolean and not (po->>'export_ready')::boolean
+    and not (po#>>'{allowed_actions,export}')::boolean and po->'blockers' ? 'PO_DOCUMENT_SNAPSHOT_INCOMPLETE'
+    and line#>>'{unit,unit_name}' is null)
+  from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line
+  where name='a2-technical-unit' and po->>'status'='SUPERSEDED'),
+  'technical-only historical Unit stays readable but existing official export gate fails closed');
+rollback to savepoint a2_historical_unit;
+
 savepoint historical_document_identity;
 set session_replication_role=replica;
 update atlas_procurement.purchase_order_revisions set supplier_name_snapshot=U&'\00A0\FEFF' where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a');

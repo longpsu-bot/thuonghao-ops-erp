@@ -64,6 +64,18 @@ function show(
 async function quantity() {
   return screen.findByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" });
 }
+it("shows human Unit names while retaining controlled Unit identity and code", async () => {
+  const { f } = show("normal", {}, (fixture) => {
+    for (const line of fixture.batch.lines) {
+      line.controlled_unit.code = "v1-unit-91a0b1c14124";
+      line.controlled_unit.name = "Cái";
+    }
+  });
+  await quantity();
+  expect(screen.getAllByText("Cái").length).toBeGreaterThan(0);
+  expect(screen.queryByText(/v1-unit-/)).not.toBeInTheDocument();
+  expect(f.batch.lines[0]!.controlled_unit.code).toBe("v1-unit-91a0b1c14124");
+});
 async function editValid() {
   fireEvent.change(await quantity(), { target: { value: "12,5" } });
   fireEvent.change(screen.getByRole("combobox", { name: "Lý do Gạo thơm" }), {
@@ -627,7 +639,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     fireEvent.change(await quantity(), {
       target: { value: "99999999999999,99" },
     });
-    expect(screen.getByRole("cell", { name: "+0,01 kg" })).toBeVisible();
+    expect(screen.getByRole("cell", { name: "+0,01 Kilôgam" })).toBeVisible();
   });
   it("pages Need detail through bounded backend reads and applies school/ingredient filters explicitly", async () => {
     const h = show();
@@ -743,9 +755,9 @@ describe("Confirmed Need Chakra operator surface", () => {
       }),
     ).toHaveAttribute("tabindex", "0");
     const evidenceRow = within(evidence).getByText("Gạo thơm").closest("tr")!;
-    expect(evidenceRow).toHaveTextContent("0,0255 kg");
-    expect(evidenceRow).toHaveTextContent("0,1 kg");
-    expect(evidenceRow).toHaveTextContent("0,01 kg");
+    expect(evidenceRow).toHaveTextContent("0,0255 Kilôgam");
+    expect(evidenceRow).toHaveTextContent("0,1 Kilôgam");
+    expect(evidenceRow).toHaveTextContent("0,01 Kilôgam");
   });
   it("fails closed when Need detail cannot distinguish two customers with the exposed detail identity", async () => {
     show("normal", {}, (fixture) => {
@@ -802,7 +814,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(
       document.getElementById(input.getAttribute("aria-describedby")!),
-    ).toHaveTextContent("Số lượng xác nhận phải theo bước 0,25 kg.");
+    ).toHaveTextContent("Số lượng xác nhận phải theo bước 0,25 Kilôgam.");
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
@@ -828,7 +840,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       within(row).getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
     ).toHaveValue("Bếp yêu cầu");
     expect(row.querySelector('[data-field="delta"]')).toHaveTextContent(
-      "+2,25 kg",
+      "+2,25 Kilôgam",
     );
     expect(h.f.batch.lines[0]!.confirmed_quantity_after).toBe("10.250000");
     expect(h.save).toHaveBeenCalledTimes(1);

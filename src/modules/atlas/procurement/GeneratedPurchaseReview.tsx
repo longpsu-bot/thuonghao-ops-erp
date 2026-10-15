@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../master-data/unitDisplay";
 import { useEffect, useRef, useState } from "react";
 import {
   generatedPurchaseReviewFromResult,
@@ -167,7 +168,8 @@ export function GeneratedPurchaseReview({
                     </span>
                     <span>{row.ingredient_name}</span>
                     <strong>
-                      {row.family_quantity} {row.unit_code}
+                      {row.family_quantity}{" "}
+                      {operatorUnitLabel(row.unit_name, row.unit_code)}
                     </strong>
                     {row.warnings.map((code) => (
                       <small key={code}>{generatedReviewWarning(code)}</small>

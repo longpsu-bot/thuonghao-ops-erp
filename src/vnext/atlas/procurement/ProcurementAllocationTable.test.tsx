@@ -59,6 +59,30 @@ function visibleIssues() {
 }
 
 describe("Procurement allocation issue sorting", () => {
+  it("uses the human Unit name in quantities and remainder without changing selection data", () => {
+    const family = {
+      ...row("piece", "Cà rốt", "NEEDS_REALLOCATION", "10.000000", "6.000000"),
+      unit_name: "Cái",
+      unit_code: "v1-unit-91a0b1c14124",
+    };
+    const select = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementAllocationTable
+          rows={[family]}
+          selectedKey={null}
+          disabled={false}
+          onSelect={select}
+        />
+      </AtlasVNextProvider>,
+    );
+    expect(screen.getByText("Thiếu 4 Cái")).toBeVisible();
+    expect(screen.queryByText(/v1-unit-/)).not.toBeInTheDocument();
+    const origin = screen.getByRole("button", { name: /Phân bổ NCC Cà rốt/ });
+    fireEvent.click(origin);
+    expect(select).toHaveBeenCalledWith(family, origin);
+    expect(family.unit_code).toBe("v1-unit-91a0b1c14124");
+  });
   it("keeps daily families separate and makes an explicit Ingredient sort primary across dates", () => {
     const first = {
       ...row("first", "Bí đỏ", "UNALLOCATED", "1"),

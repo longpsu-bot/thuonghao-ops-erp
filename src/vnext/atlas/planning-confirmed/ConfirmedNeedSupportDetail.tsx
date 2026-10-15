@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../bridges/confirmedNeed";
 import {
   Box,
   Button,
@@ -309,17 +310,20 @@ export function ConfirmedNeedSupportDetail({
                         <Text>
                           Từ công thức:{" "}
                           {formatQuantity(g.recipe_derived_quantity)}{" "}
-                          {g.unit_name}
+                          {operatorUnitLabel(g.unit_name, null)}
                         </Text>
                         <Text>
                           Bổ sung: {formatQuantity(g.pantry_direct_quantity)}{" "}
-                          {g.unit_name}
+                          {operatorUnitLabel(g.unit_name, null)}
                         </Text>
                         {line && (
                           <Text fontWeight="semibold">
                             Nhu cầu tính:{" "}
                             {exactQuantityDisplay(line.theoretical_quantity)}{" "}
-                            {line.controlled_unit.code}
+                            {operatorUnitLabel(
+                              line.controlled_unit.name,
+                              line.controlled_unit.code,
+                            )}
                           </Text>
                         )}
                       </Table.Cell>
@@ -331,14 +335,20 @@ export function ConfirmedNeedSupportDetail({
                               {exactQuantityDisplay(
                                 line.proposal_rounding_step,
                               )}{" "}
-                              {line.controlled_unit.code}
+                              {operatorUnitLabel(
+                                line.controlled_unit.name,
+                                line.controlled_unit.code,
+                              )}
                             </Text>
                             <Text fontWeight="semibold">
                               Đề xuất vận hành:{" "}
                               {exactQuantityDisplay(
                                 line.proposed_confirmed_quantity,
                               )}{" "}
-                              {line.controlled_unit.code}
+                              {operatorUnitLabel(
+                                line.controlled_unit.name,
+                                line.controlled_unit.code,
+                              )}
                             </Text>
                           </>
                         ) : (
@@ -354,7 +364,10 @@ export function ConfirmedNeedSupportDetail({
                             {exactQuantityDisplay(
                               line.effective_policy.planning_step,
                             )}{" "}
-                            {line.controlled_unit.code}
+                            {operatorUnitLabel(
+                              line.controlled_unit.name,
+                              line.controlled_unit.code,
+                            )}
                           </Text>
                         ) : (
                           <Text color="status.warning">
@@ -367,7 +380,10 @@ export function ConfirmedNeedSupportDetail({
                             {exactQuantityDisplay(
                               line.confirmed_quantity_after,
                             )}{" "}
-                            {line.controlled_unit.code}
+                            {operatorUnitLabel(
+                              line.controlled_unit.name,
+                              line.controlled_unit.code,
+                            )}
                           </Text>
                         )}
                       </Table.Cell>
@@ -409,7 +425,8 @@ export function ConfirmedNeedSupportDetail({
                   {a.pantry_source_reference
                     ? `· ${a.pantry_source_reference}`
                     : ""}{" "}
-                  · {formatQuantity(a.theoretical_quantity)} {a.unit_name}
+                  · {formatQuantity(a.theoretical_quantity)}{" "}
+                  {operatorUnitLabel(a.unit_name, null)}
                 </Text>
               ))}
             </Box>

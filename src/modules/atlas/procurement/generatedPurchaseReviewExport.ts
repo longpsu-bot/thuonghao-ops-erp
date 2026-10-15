@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../master-data/unitDisplay";
 import type { Row, Worksheet } from "exceljs";
 import type {
   GeneratedPurchaseReview,
@@ -318,7 +319,7 @@ export async function createGeneratedPurchaseReviewXlsx(
         index + 1,
         null,
         `${first.ingredient_name}\n${supplier}`,
-        first.unit_code,
+        operatorUnitLabel(first.unit_name, first.unit_code),
         total,
         null,
       ]);
@@ -341,7 +342,7 @@ export async function createGeneratedPurchaseReviewXlsx(
           null,
           index + 1,
           item.ingredient_name,
-          item.unit_code,
+          operatorUnitLabel(item.unit_name, item.unit_code),
           item.family_quantity,
           null,
         ]);

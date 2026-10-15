@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-UNIT-LABELS-A2-01
-Status: AUTHORITY RECORDED — implementation paused while PR #385 CI expectations are corrected; separate Draft PR only.
+Status: READY FOR DRAFT REVIEW — bounded A2 implementation and focused local proof prepared; no merge, deployment or hosted write authorized.
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
@@ -10,7 +10,7 @@ OPS v1 / Retool / Production: no writes or commitments
 
 ## Authority and deferred work — 15 October 2026
 
-The Product Owner's `ATLAS_OPERATOR_FIXES_2026-10-15.md` brief authorizes bounded existing-flow operator corrections. This task implements A2 human Unit labels and the authoritative Draft School projection identified during A3 review. The brief overrides routine integration authority: deliver a Draft PR only; no merge, manual deployment or hosted database write. PR #385 remains frozen at `6db5e86a78e7068df28aa9f0235f299891e88cd2`, independently reviewed without actionable findings; Root monitors its remaining CI separately. Its A1/A3/A4 changes are not copied into this branch.
+The Product Owner's `ATLAS_OPERATOR_FIXES_2026-10-15.md` brief authorizes bounded existing-flow operator corrections. This task implements A2 human Unit labels and the authoritative Draft School projection identified during A3 review. The brief overrides routine integration authority: deliver a Draft PR only; no merge, manual deployment or hosted database write. PR #385 remains separate at follow-up head `b57dd270da20ca2f348ee6b296253de203967e02`; its original head was independently reviewed without actionable findings, and two stale CI expectations were corrected with focused RED/GREEN proof. Root confirmed its follow-up review clear and exact Frontend 38673614899 / Smoke 38673615038 passing; PR #385 remains Draft and outside this branch. Its A1/A3/A4 changes are not copied into this branch.
 
 The [Warehouse receiving packet](../architecture/warehouse-receiving-minimum-design.md) remains READY FOR PRODUCT REVIEW with four UNDECIDED choice groups. No Warehouse implementation is approved. B/C/D operator work is outside this task. Historical 108/109 acceptance and checksums remain unchanged; the closed read gate is not rerun.
 
@@ -31,6 +31,8 @@ One new Supabase CLI-generated migration after 109 may add the nullable column a
 
 TypeScript changes are limited to the existing Confirmed Need, Allocation, Generated Review and PO models/API mappings, active and legacy display callers, review fixtures/simulated capture, generated-review export and PO PDF/XLSX producers, plus a small tested operator Unit-label helper if needed. Preserve ExcelJS as production authority, existing Shopping List resolver/import files and contract, controlled codes/IDs and hidden lineage. No dependency, runtime configuration, unrelated UI redesign or new test framework.
 
+Bounded validation documentation may use `docs/testing/atlas-operator-unit-labels-a2-01.md` and sanitized reports/selected PNGs under its existing artifact-folder pattern. No new generator or QA framework is needed.
+
 ## Test-first sequence and acceptance
 
 1. Record this baton and the dated API amendment in an authority-only commit before code. Then write failing focused label tests: `Cái` alongside its unchanged technical code/UUID, human legacy `kg`, and controlled missing-label warning; preserve the Shopping List's existing code-first regressions.
@@ -40,3 +42,9 @@ TypeScript changes are limited to the existing Confirmed Need, Allocation, Gener
 5. Run focused tests, typecheck, affected formatting and exact-range whitespace checks; preserve RED/GREEN logs. Push a Draft PR and fixed SHA for Terra audit and GitHub CI. Full integration may be dispatched manually on the fixed branch while keeping Draft; no merge/deploy/hosted verification follows automatically.
 
 No actual staff assignments, business commitments, hosted fixtures, historical corrections/backfill, OPS v1/Retool writes, Production, Warehouse or unrelated module changes are authorized.
+
+## Prepared result and review gate
+
+The [A2 validation record](../testing/atlas-operator-unit-labels-a2-01.md) records 368 tracked-source assertions across 16 focused files, 531 local rolled-back pgTAP assertions across six suites, unchanged exact catalog expectations and successful type checking. Native evidence covers three production-generated workbooks/233 exact checks, nine native Unit cells and nine PDFMake Unit cells for frozen `Cái`, `Miếng` and `Kilogram`; it certifies those cells, not the whole page. The final formatted producer/helper hashes are retained in the report. No hosted migration or acceptance was executed.
+
+Migration `20261015030326_atlas_operator_unit_labels.sql` adds nullable future-only evidence and amends existing bodies/trigger columns without new roles, grants, policies, API functions, or historical backfill. Local SQL development applied to the owned disposable database; fresh full migration integration remains GitHub CI's gate. Keep this PR Draft; fixed-head Terra review and exact-head Frontend/local Full Integration are required before any later separately authorized integration. Warehouse choices remain undecided, and existing 108/109 deployment/evidence is unchanged.

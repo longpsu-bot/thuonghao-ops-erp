@@ -121,6 +121,27 @@ select is(pg_temp.safe_review_read('{"date_start":"2026-11-02","date_end":"2026-
 select is(pg_temp.safe_review_read('{"date_start":"2026-11-02","date_end":"2026-11-02","states":["INVENTED"]}')->>'error_code',
   'VALIDATION_FAILED','unknown allocation state is rejected');
 select is((select response->>'success' from review_results where name='generated'),'true','generated review is readable before decisions');
+savepoint a2_generated_unit_names;
+update atlas_admin.units set unit_name='Cái'
+where unit_id in (select (row->>'unit_id')::uuid from review_results,
+ jsonb_array_elements(response->'rows') row where name='generated');
+set local role authenticated;
+insert into review_results values('a2-generated-name',pg_temp.review_read('get_generated_purchase_review',
+ 'PURCHASE-REVIEW.v1','{"service_date":"2026-11-02"}'));
+reset role;
+select ok((select response->>'success'='true' and jsonb_array_length(response->'rows')>0
+ and jsonb_array_length(response->'rows')=(select jsonb_array_length(response->'rows') from review_results where name='generated')
+ from review_results where name='a2-generated-name'),
+ 'Generated Review remains readable with its exact authorized row count after Unit rename');
+select ok((select count(*)>0 and bool_and(row->>'unit_name' is not distinct from 'Cái')
+ from review_results,jsonb_array_elements(response->'rows') row where name='a2-generated-name'),
+ 'Generated Review supplies the current human Unit name');
+select is((select jsonb_agg(row-'unit_name' order by ordinality)
+ from review_results,jsonb_array_elements(response->'rows') with ordinality rows(row,ordinality) where name='a2-generated-name'),
+ (select jsonb_agg(row-'unit_name' order by ordinality)
+ from review_results,jsonb_array_elements(response->'rows') with ordinality rows(row,ordinality) where name='generated'),
+ 'Generated Review Unit name rename preserves codes/UUIDs/quantities and source evidence');
+rollback to savepoint a2_generated_unit_names;
 select is((select response->>'success' from review_results where name='generated-procurement-capability'),
   'true','generated review accepts the documented Procurement read capability');
 select is((select response->>'error_code' from review_results where name='generated-confirmed-capability-only'),
