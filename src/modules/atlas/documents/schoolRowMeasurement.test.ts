@@ -18,26 +18,28 @@ function schoolSheet() {
 describe("measured School row height", () => {
   it("sums native Excel visible column widths and ignores hidden metadata", () => {
     const sheet = schoolSheet();
-    // Native Excel COM: these visible widths span 678pt; B contributes zero.
-    expect(actualVisibleWidthPoints(sheet, 1, 6)).toBe(678);
+    // Production ExcelJS export Normal is Calibri 11 (7px MDW), not blank-probe Arial.
+    expect(actualVisibleWidthPoints(sheet, 1, 6)).toBe(593.25);
     sheet.getColumn(2).width = 255;
-    expect(actualVisibleWidthPoints(sheet, 1, 6)).toBe(678);
+    expect(actualVisibleWidthPoints(sheet, 1, 6)).toBe(593.25);
     sheet.getColumn(3).width = 8.43;
-    expect(actualVisibleWidthPoints(sheet, 3, 3)).toBe(50.25);
+    expect(actualVisibleWidthPoints(sheet, 3, 3)).toBe(44.25);
+    sheet.getColumn(3).width = 40;
+    expect(actualVisibleWidthPoints(sheet, 3, 3)).toBe(210);
   });
 
   it.each([
     [1, 28],
-    [5, 44],
-    [9, 60],
-    [13, 76],
-    [17, 92],
-    [21, 108],
+    [4, 44],
+    [7, 60],
+    [10, 76],
+    [13, 92],
+    [16, 108],
   ])(
     "allocates uncapped line height for %i bold wide glyphs",
     (count, height) => {
       const sheet = schoolSheet();
-      // D is 60pt, less the 3.75pt Excel edge padding. Bold W is measured 14pt.
+      // D is 52.5pt, less the 3.75pt edge padding. Three bold W glyphs fit.
       expect(measuredSchoolRowHeight("W".repeat(count), sheet, 4, 4)).toBe(
         height,
       );
@@ -47,6 +49,7 @@ describe("measured School row height", () => {
   it("uses Theo hàng's School cell width independently of the full band", () => {
     const sheet = schoolSheet();
     const text = "WWWW WWWW WWWW WWWW WWWW";
+    sheet.getColumn(4).width = 16;
     expect(measuredSchoolRowHeight(text, sheet, 1, 6, false)).toBe(28);
     expect(measuredSchoolRowHeight(text, sheet, 4, 4, false)).toBe(92);
     sheet.getColumn(4).width = 18;

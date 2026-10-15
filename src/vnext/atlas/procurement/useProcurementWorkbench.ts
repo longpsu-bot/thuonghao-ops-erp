@@ -308,6 +308,7 @@ export function useProcurementWorkbench({
     invoke: () => Promise<AtlasRpcResult>,
     target: ProcurementStage,
     preparation = false,
+    releasedOrder?: SchoolCateringPurchaseOrder,
   ) => {
     const ticket = generation.current;
     active.current = true;
@@ -338,6 +339,16 @@ export function useProcurementWorkbench({
         setFeedback(uncertain());
         setMutationLocked(true);
       } else if (preparation) await enterOrdersAfterRead(target);
+      else if (releasedOrder && result.kind === "success") {
+        const number = result.response.document_number;
+        setFeedback({
+          ...nextFeedback,
+          message:
+            typeof number === "string" && number.trim()
+              ? `Đã phát hành 1 đơn mua cho ${releasedOrder.supplier.supplier_name} · ${number}.`
+              : `Đã phát hành 1 đơn mua cho ${releasedOrder.supplier.supplier_name}. Mở đơn để xem số chứng từ.`,
+        });
+      }
       return;
     }
     if (["stale", "unknown"].includes(nextFeedback.kind))
@@ -346,7 +357,7 @@ export function useProcurementWorkbench({
       // This closure retains the exact request built before the first attempt.
       retryCommand.current = async () => {
         if (generation.current === ticket && !active.current)
-          await runCommand(invoke, target, preparation);
+          await runCommand(invoke, target, preparation, releasedOrder);
       };
       setHasRetry(true);
     }
@@ -482,6 +493,8 @@ export function useProcurementWorkbench({
       await runCommand(
         () => procurementApi.releasePurchaseOrder(request),
         "orders",
+        false,
+        order,
       );
     } else if (
       order.status === "DRAFT" &&

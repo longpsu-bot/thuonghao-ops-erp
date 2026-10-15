@@ -1,0 +1,53 @@
+{
+  "status": "PASS",
+  "fixture_only": true,
+  "hosted_requests": 0,
+  "business_commands_executed": 0,
+  "source": "existing atlas-vnext-review.html?scenario=operatorSafe",
+  "login_and_fresh_mount_weekly_menu": true,
+  "checks": [
+    {
+      "width": 1280,
+      "height": 900,
+      "summary": "17 đơn đã tạo\n\n16 bản nháp\n\n1 đã phát hành\n\n0 cần xử lý",
+      "full_width_retained_on_selection": true,
+      "distinct_school_disclosure": true,
+      "focus_return": true,
+      "draft_release_vs_released_export_gates": true,
+      "tableWidth": 1258,
+      "viewportWidth": 1280,
+      "bodyOverflow": 0,
+      "cellOverflows": [],
+      "actionOverlaps": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "summary": "17 đơn đã tạo\n\n16 bản nháp\n\n1 đã phát hành\n\n0 cần xử lý",
+      "full_width_retained_on_selection": true,
+      "distinct_school_disclosure": true,
+      "focus_return": true,
+      "draft_release_vs_released_export_gates": true,
+      "tableWidth": 1418,
+      "viewportWidth": 1440,
+      "bodyOverflow": 0,
+      "cellOverflows": [],
+      "actionOverlaps": false
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "summary": "17 đơn đã tạo\n\n16 bản nháp\n\n1 đã phát hành\n\n0 cần xử lý",
+      "full_width_retained_on_selection": true,
+      "distinct_school_disclosure": true,
+      "focus_return": true,
+      "draft_release_vs_released_export_gates": true,
+      "tableWidth": 1898,
+      "viewportWidth": 1920,
+      "bodyOverflow": 0,
+      "cellOverflows": [],
+      "actionOverlaps": false
+    }
+  ],
+  "page_errors": []
+}

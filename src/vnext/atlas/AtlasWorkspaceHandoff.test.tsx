@@ -178,6 +178,7 @@ it("Need returns to Procurement's dirty selected Supplier detail with its note a
 
 it("retains PXK note and selection across switches and includes the hidden draft in a multi-owner sign-out block", async () => {
   const h = show();
+  await open("Trường học");
   const school = (
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ })
   )[0]!;

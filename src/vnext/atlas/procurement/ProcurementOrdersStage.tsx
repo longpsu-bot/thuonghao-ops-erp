@@ -10,7 +10,8 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import {
   procurementOperatorMessages,
   type PurchaseOrdersData,
@@ -58,6 +59,79 @@ function hasDedicatedGuidance(
     (state === "CANCELLATION_REQUIRED" && code === "CANCELLATION_REQUIRED")
   );
 }
+function OrderRecipients({ order }: { order: SchoolCateringPurchaseOrder }) {
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId();
+  const schools = Array.from(
+    new Map(
+      order.lines
+        .flatMap((line) => line.school_breakdown)
+        .map((school) => [
+          school.school_id,
+          { ...school, display_order: school.school_display_order },
+        ]),
+    ).values(),
+  ).sort(compareCanonicalSchools);
+  const complete =
+    order.lines.length > 0 &&
+    order.lines.every((line) => line.school_breakdown.length > 0);
+  const locations = Array.from(
+    new Map(
+      order.lines.map((line) => [
+        line.delivery_location.delivery_location_id,
+        {
+          id: line.delivery_location.delivery_location_id,
+          name: line.delivery_location.location_name,
+        },
+      ]),
+    ).values(),
+  );
+  const items = complete
+    ? schools.map((school) => ({
+        id: school.school_id,
+        name: school.school_name,
+      }))
+    : locations;
+  const noun = complete ? "trường" : "điểm giao";
+  return (
+    <Stack gap="xs" overflowWrap="anywhere">
+      <Text fontWeight="semibold">
+        {complete
+          ? `${schools.length} trường`
+          : schools.length
+            ? "Chưa đủ danh sách trường"
+            : "Chưa có danh sách trường"}
+      </Text>
+      {!complete && (
+        <Text textStyle="helper" color="fg.muted">
+          {locations.length} điểm giao đã có dữ liệu
+        </Text>
+      )}
+      <Stack id={listId} gap="xs">
+        {(expanded ? items : items.slice(0, 2)).map((item) => (
+          <Text key={item.id} textStyle="helper" color="fg.secondary">
+            {item.name}
+          </Text>
+        ))}
+      </Stack>
+      {items.length > 2 && (
+        <Button
+          size="sm"
+          variant="tertiary"
+          alignSelf="start"
+          whiteSpace="normal"
+          aria-controls={listId}
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded
+            ? `Thu gọn danh sách ${noun}`
+            : `Xem đủ ${items.length} ${noun}`}
+        </Button>
+      )}
+    </Stack>
+  );
+}
 export function ProcurementOrdersStage({
   data,
   disabled,
@@ -99,18 +173,23 @@ export function ProcurementOrdersStage({
       ...order.lines.flatMap((line) => [
         line.ingredient.ingredient_name,
         line.delivery_location.location_name,
+        ...line.school_breakdown.map((school) => school.school_name),
       ]),
     ]
       .join(" ")
       .toLocaleLowerCase("vi")
       .includes(search.toLocaleLowerCase("vi")),
   );
-  const locations = (order: SchoolCateringPurchaseOrder) =>
-    [
-      ...new Set(
-        order.lines.map((line) => line.delivery_location.location_name),
-      ),
-    ].join(", ");
+  const orders = data?.purchase_orders ?? [];
+  const draftCount = orders.filter((order) => order.status === "DRAFT").length;
+  const releasedCount = orders.filter(
+    (order) => order.status === "RELEASED_TO_SUPPLIER",
+  ).length;
+  const attentionCount = orders.filter((order) =>
+    ["DRAFT_STALE", "REPLACEMENT_REQUIRED", "CANCELLATION_REQUIRED"].includes(
+      order.commitment_state,
+    ),
+  ).length;
   const primary =
     selected?.status === "DRAFT"
       ? selected.commitment_state === "DRAFT_STALE"
@@ -170,9 +249,24 @@ export function ProcurementOrdersStage({
     : [];
   return (
     <Box>
-      <Text px="md" py="sm" textStyle="helper" color="fg.muted">
-        {visible.length} đơn mua theo nhà cung cấp
-      </Text>
+      <Flex
+        role="region"
+        aria-label="Tình trạng đơn mua trong phạm vi đã tải"
+        px="md"
+        py="sm"
+        gap="md"
+        wrap="wrap"
+        textStyle="helper"
+        color="fg.secondary"
+      >
+        <Text>{orders.length} đơn đã tạo</Text>
+        <Text>{draftCount} bản nháp</Text>
+        <Text>{releasedCount} đã phát hành</Text>
+        <Text color={attentionCount ? "status.warning" : "fg.secondary"}>
+          {attentionCount} cần xử lý
+        </Text>
+        {search && <Text>{visible.length} đơn khớp tìm kiếm</Text>}
+      </Flex>
       <AtlasWorkbar
         px="md"
         pb="sm"
@@ -221,18 +315,7 @@ export function ProcurementOrdersStage({
           ⚠ {message}
         </Text>
       ))}
-      <Grid
-        templateColumns={{
-          base: "minmax(0, 1fr)",
-          xl: selected
-            ? "minmax(0, 62fr) minmax(320px, 38fr)"
-            : "minmax(0, 1fr)",
-          "2xl": selected
-            ? "minmax(0, 45fr) minmax(0, 55fr)"
-            : "minmax(0, 1fr)",
-        }}
-        minW="var(--atlas-layout-zero, 0)"
-      >
+      <Grid templateColumns="minmax(0, 1fr)" minW="var(--atlas-layout-zero, 0)">
         <Box minW="var(--atlas-layout-zero, 0)">
           <Table.ScrollArea
             maxH={{
@@ -246,7 +329,7 @@ export function ProcurementOrdersStage({
               size="sm"
               stickyHeader
               tableLayout="fixed"
-              w="var(--atlas-orders-table-width, 1040px)"
+              w="full"
               minW="var(--atlas-orders-table-width, 1040px)"
             >
               <Table.ColumnGroup>
@@ -286,7 +369,7 @@ export function ProcurementOrdersStage({
                       {selectedId === order.purchase_order_id && (
                         <Box data-selection-indicator="" aria-hidden="true" />
                       )}
-                      <Text fontWeight="semibold">
+                      <Text fontWeight="semibold" overflowWrap="anywhere">
                         {order.supplier.supplier_name}
                       </Text>
                     </Table.Cell>
@@ -294,7 +377,7 @@ export function ProcurementOrdersStage({
                       {dateLabel(order.service_date)}
                     </Table.Cell>
                     <Table.Cell minW="var(--atlas-layout-order-location-width, 140px)">
-                      {locations(order)}
+                      <OrderRecipients order={order} />
                     </Table.Cell>
                     <Table.Cell textAlign="end">
                       {order.lines.length}
@@ -336,7 +419,9 @@ export function ProcurementOrdersStage({
                         </Text>
                       ))}
                     </Table.Cell>
-                    <Table.Cell>{order.document_number ?? "—"}</Table.Cell>
+                    <Table.Cell overflowWrap="anywhere">
+                      {order.document_number ?? "—"}
+                    </Table.Cell>
                     <Table.Cell>
                       <Button
                         size="sm"

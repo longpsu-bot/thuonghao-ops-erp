@@ -333,6 +333,56 @@ export function reviewOrder(
 }
 
 /** Explicit review snapshots only. No hosted adapter and no backend derivation. */
+export function operatorPurchaseOrders(): PurchaseOrdersData {
+  const orders = Array.from({ length: 17 }, (_, index) => ({
+    ...reviewOrder(index === 16 ? "po_released" : "po_draft"),
+    purchase_order_id: `operator-order-${index}`,
+    service_date: "2026-10-12",
+    supplier: {
+      supplier_id: `operator-supplier-${index}`,
+      supplier_name: `NCC ${index + 1}`,
+      supplier_status: "ACTIVE",
+    },
+  }));
+  const line = orders[16]!.lines[0]!;
+  line.school_breakdown = [1, 2, 3].map((branch) => ({
+    school_id: `a4150000-0000-4000-8000-00000000000${branch}`,
+    school_name: `PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU ${branch}`,
+    school_display_order: branch,
+    delivery_location_id: "shared-location",
+    delivery_location_name: "Cùng điểm giao",
+    ordered_quantity: branch === 3 ? "20.000001" : "20.000000",
+  }));
+  for (const order of orders) {
+    if (order.status === "RELEASED_TO_SUPPLIER")
+      order.document_number = "PO-20261012-ONE";
+    for (const row of order.lines) {
+      row.service_date = "2026-10-12";
+    }
+  }
+  orders[16]!.lines.push({
+    ...line,
+    purchase_order_line_revision_id: "another-ingredient",
+    purchase_order_line_id: "another-ingredient-line",
+    ingredient: {
+      ingredient_id: "another-ingredient",
+      ingredient_name: "Đậu đỏ",
+    },
+    ordered_quantity: "20.000000",
+    school_breakdown: [line.school_breakdown[0]!],
+  });
+  return {
+    success: true,
+    contract_version: "SCHOOL-CATERING-PROCUREMENT.v1",
+    date_start: "2026-10-12",
+    date_end: "2026-10-12",
+    procurement_current: true,
+    blockers: [],
+    warnings: [],
+    purchase_orders: orders,
+  };
+}
+
 export function createProcurementReviewFixture(
   scenario: ProcurementReviewScenario = "normal",
 ) {

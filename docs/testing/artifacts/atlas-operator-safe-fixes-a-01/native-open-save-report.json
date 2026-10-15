@@ -1,0 +1,83 @@
+{
+  "excel_version": "16.0",
+  "workbooks": [
+    {
+      "file": "PO-School-measured-rows.xlsx",
+      "sheets": [
+        {
+          "print_titles": "$1:$9",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [21, 24],
+          "pdf": "PO-School-measured-rows-sheet-1.pdf",
+          "name": "02-09-2026 - Theo hàng"
+        },
+        {
+          "print_titles": "$1:$9",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [31, 46],
+          "pdf": "PO-School-measured-rows-sheet-2.pdf",
+          "name": "02-09-2026 - Theo trường"
+        },
+        {
+          "print_titles": "$1:$10",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [],
+          "pdf": "PO-School-measured-rows-sheet-3.pdf",
+          "name": "02-09-2026 - Tổng"
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "exact_text_checks": 528,
+      "clean_unchanged": true
+    },
+    {
+      "file": "Dispatch-explicit-Vinh-Tan.xlsx",
+      "sheets": [
+        {
+          "print_titles": "$1:$10",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [],
+          "pdf": "Dispatch-explicit-Vinh-Tan-sheet-1.pdf",
+          "name": "09-24 VĨNH TÂN"
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "exact_text_checks": 65,
+      "clean_unchanged": true
+    },
+    {
+      "file": "Dispatch-long-school-header.xlsx",
+      "sheets": [
+        {
+          "print_titles": "$1:$10",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [],
+          "pdf": "Dispatch-long-school-header-sheet-1.pdf",
+          "name": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PH"
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "exact_text_checks": 60,
+      "clean_unchanged": true
+    },
+    {
+      "file": "Dispatch-Hung-Vuong-five-numbers.xlsx",
+      "sheets": [
+        {
+          "print_titles": "$1:$10",
+          "vertical_page_breaks": 0,
+          "horizontal_page_breaks": [],
+          "pdf": "Dispatch-Hung-Vuong-five-numbers-sheet-1.pdf",
+          "name": "09-24 CHUYÊN HÙNG VƯƠNG"
+        }
+      ],
+      "normal_open": true,
+      "native_save_reopen": true,
+      "exact_text_checks": 89,
+      "clean_unchanged": true
+    }
+  ]
+}

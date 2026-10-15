@@ -99,6 +99,31 @@ async function selectRange(start: string, end: string, label = "Khoảng ngày")
     );
 }
 
+it("opens only Weekly Menu for a fresh session and a fresh application mount", async () => {
+  const first = show();
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Thực đơn" }),
+  ).toBeVisible();
+  expect(screen.getAllByRole("tab")).toHaveLength(1);
+  expect(screen.getByRole("tab", { name: /Thực đơn/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(screen.queryByRole("tab", { name: /Trường học/ })).toBeNull();
+  await nav("Trường học");
+  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
+  first.unmount();
+  show();
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Thực đơn" }),
+  ).toBeVisible();
+  expect(screen.getAllByRole("tab")).toHaveLength(1);
+  expect(screen.getByRole("tab", { name: /Thực đơn/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+});
+
 it("carries the selected seven-day range from new Confirmed Need to Allocation and Orders without preparation", async () => {
   const { apis } = show();
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
@@ -250,7 +275,7 @@ it.each(modules)(
   "launches %s with one active heading",
   async (label, heading) => {
     show();
-    await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
+    await screen.findByRole("heading", { level: 1, name: "Thực đơn" });
     await nav(label!);
     expect(
       await screen.findByRole("heading", { level: 1, name: heading! }),
@@ -274,6 +299,7 @@ it.each(modules)(
 );
 it("blocks dirty sign-out without discarding and resolves School through its close guard", async () => {
   const { signOut } = show();
+  await nav("Trường học");
   const fields = await screen.findAllByRole("textbox", {
     name: /Học sinh mặc định/,
   });
@@ -305,7 +331,7 @@ it("Confirmed Need continues to supplier allocation with no hidden write", async
   const { apis } = show();
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
-  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
+  await screen.findByRole("heading", { level: 1, name: "Thực đơn" });
   await nav("Thực đơn");
   await nav("Xác nhận nhu cầu");
   const proceed = await screen.findByRole("button", {
@@ -328,7 +354,7 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
   const pxk = vi.spyOn(apis.schoolDispatch, "getWorkbench");
   const reconciliation = vi.spyOn(apis.reconciliation, "getWorkbench");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
-  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
+  await screen.findByRole("heading", { level: 1, name: "Thực đơn" });
   await nav("Thực đơn");
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   const date = await screen.findByRole("combobox", { name: "Ngày phục vụ" });
@@ -386,6 +412,7 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
 
 it("clean sign out runs immediately and a changed identity loses the prior draft", async () => {
   const { apis, signOut, rerender } = show();
+  await nav("Trường học");
   const fields = await screen.findAllByRole("textbox", {
     name: /Học sinh mặc định/,
   });
@@ -403,6 +430,8 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
       />
     </AtlasVNextProvider>,
   );
+  await screen.findByRole("heading", { level: 1, name: "Thực đơn" });
+  await nav("Trường học");
   await waitFor(() =>
     expect(
       screen.getAllByRole("textbox", { name: /Học sinh mặc định/ })[0],
@@ -414,7 +443,7 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
 it("uses the injected business date for Recipe's independent initial as-of context", async () => {
   const { apis } = show();
   const effective = vi.spyOn(apis.recipe, "getEffectiveWorkbench");
-  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
+  await screen.findByRole("heading", { level: 1, name: "Thực đơn" });
   await nav("Công thức");
   fireEvent.click(
     await screen.findByRole("button", {

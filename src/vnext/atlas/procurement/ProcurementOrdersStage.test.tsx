@@ -9,7 +9,10 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ProcurementOrdersStage } from "./ProcurementOrdersStage";
-import { createProcurementReviewFixture } from "./procurementReviewFixtures";
+import {
+  createProcurementReviewFixture,
+  operatorPurchaseOrders,
+} from "./procurementReviewFixtures";
 afterEach(cleanup);
 function show(
   scenario: Parameters<typeof createProcurementReviewFixture>[0] = "po_draft",
@@ -43,6 +46,102 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it.each([false, true])(
+    "shows unavailable School coverage and known locations for a Draft with partial=%s breakdowns",
+    (partial) => {
+      const fixture = createProcurementReviewFixture("po_draft");
+      const order = fixture.orders.purchase_orders[0]!;
+      if (partial) {
+        order.lines.push({
+          ...order.lines[0]!,
+          purchase_order_line_revision_id: "known-line",
+          school_breakdown: [
+            {
+              school_id: "school-known",
+              school_name: "Trường đã biết",
+              school_display_order: 1,
+              delivery_location_id: "location-0",
+              delivery_location_name: "Bếp chính Nguyễn Du",
+              ordered_quantity: "1.000000",
+            },
+          ],
+        });
+      }
+      render(
+        <AtlasVNextProvider>
+          <ProcurementOrdersStage
+            data={fixture.orders}
+            disabled={false}
+            search=""
+            onAction={vi.fn()}
+          />
+        </AtlasVNextProvider>,
+      );
+      const row = screen
+        .getByRole("button", { name: "Xem đơn NCC An Phú" })
+        .closest("tr")!;
+      expect(row).toHaveTextContent(
+        partial ? "Chưa đủ danh sách trường" : "Chưa có danh sách trường",
+      );
+      expect(row).toHaveTextContent("Bếp chính Nguyễn Du");
+      expect(row).not.toHaveTextContent("0 trường");
+      expect(row).not.toHaveTextContent("1 trường");
+    },
+  );
+  it("finds supplied canonical School names as well as delivery locations", () => {
+    const fixture = createProcurementReviewFixture("po_released");
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search="Trường Nguyễn Du"
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    expect(
+      screen.getByRole("button", { name: "Xem đơn NCC An Phú" }),
+    ).toBeVisible();
+  });
+  it("separates 16 Drafts from one released PO and discloses distinct School recipients", () => {
+    const fixture = createProcurementReviewFixture("po_draft");
+    fixture.orders = operatorPurchaseOrders();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    const summary = screen.getByRole("region", {
+      name: "Tình trạng đơn mua trong phạm vi đã tải",
+    });
+    expect(summary).toHaveTextContent("17 đơn đã tạo");
+    expect(summary).toHaveTextContent("16 bản nháp");
+    expect(summary).toHaveTextContent("1 đã phát hành");
+    expect(summary).toHaveTextContent("0 cần xử lý");
+    const row = screen
+      .getByRole("button", { name: "Xem đơn NCC 17" })
+      .closest("tr")!;
+    expect(row).toHaveTextContent("3 trường");
+    expect(within(row).getByText("PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1")).toBeVisible();
+    expect(within(row).getByText("PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2")).toBeVisible();
+    expect(within(row).queryByText("PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3")).toBeNull();
+    const disclosure = within(row).getByRole("button", {
+      name: "Xem đủ 3 trường",
+    });
+    fireEvent.click(disclosure);
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    expect(within(row).getByText("PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3")).toBeVisible();
+    fireEvent.click(
+      within(row).getByRole("button", { name: "Thu gọn danh sách trường" }),
+    );
+    expect(within(row).queryByText("PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3")).toBeNull();
+  });
   it("shows each immutable supplier instruction in the PO line detail", () => {
     const fixture = createProcurementReviewFixture("po_draft");
     fixture.orders.purchase_orders[0]!.lines[0]!.supplier_note =

@@ -36,25 +36,43 @@ try {
   );
   const geometry = baseline.worksheets[0];
   const automatic = [];
-  for (const lines of [2, 3, 4, 5]) {
-    let label = "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM";
-    while (
-      measuredSchoolRowHeight(label, geometry, 1, 6) <
-      28 + 16 * (lines - 1)
-    )
-      label += " PHÂN HIỆU THƯỢNG HẢO";
-    assert.equal(
-      measuredSchoolRowHeight(label, geometry, 1, 6),
-      28 + 16 * (lines - 1),
+  const comparisonManifest = process.argv[3]
+    ? JSON.parse(await fs.readFile(process.argv[3], "utf8"))
+    : null;
+  if (comparisonManifest) {
+    automatic.push(
+      ...comparisonManifest.files[0].sheets[0].schoolRows
+        .map((row) => row.text)
+        .filter((text) => text.startsWith("TRƯỜNG ĐO CHIỀU CAO VIỆT NAM")),
     );
-    automatic.push(label);
-  }
+    assert.equal(
+      automatic.length,
+      4,
+      "Comparison must retain all four baseline long School labels.",
+    );
+  } else
+    for (const lines of [2, 3, 4, 5]) {
+      let label = "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM";
+      while (
+        measuredSchoolRowHeight(label, geometry, 1, 6) <
+        28 + 16 * (lines - 1)
+      )
+        label += " PHÂN HIỆU THƯỢNG HẢO";
+      assert.equal(
+        measuredSchoolRowHeight(label, geometry, 1, 6),
+        28 + 16 * (lines - 1),
+      );
+      automatic.push(label);
+    }
   const labels = [
     "PHẠM VĂN CỘI",
     "LÊ VĂN THẾ",
     "VĨNH TÂN",
     "VĨNH TÂN - PHÂN HIỆU",
     "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+    "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+    "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+    "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
     ...automatic,
     "W".repeat(140),
     "DÒNG MỘT\nDÒNG HAI\nDÒNG BA\nDÒNG BỐN",
@@ -62,7 +80,10 @@ try {
   line.ordered_quantity = `${labels.length}.000000`;
   line.school_breakdown = labels.map((name, index) => ({
     ...base,
-    school_id: `fixture-school-${index}`,
+    school_id:
+      index >= 5 && index <= 7
+        ? `a4150000-0000-4000-8000-00000000000${index - 4}`
+        : `fixture-school-${index}`,
     school_name: name,
     school_display_order: index,
     ordered_quantity: "1.000000",

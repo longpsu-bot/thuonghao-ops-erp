@@ -13,6 +13,7 @@ import {
   reviewOrder,
   reviewFamily,
   reviewSuccess,
+  operatorPurchaseOrders,
 } from "./procurement/procurementReviewFixtures";
 import { Capacity } from "./AtlasWorkspaceCapacity.stories";
 import { createConfirmedNeedReviewFixture } from "./planning-confirmed/confirmedNeedReviewFixtures";
@@ -388,6 +389,10 @@ function Review() {
         });
       };
     }
+    if (scenario === "operatorSafe") {
+      fixture.procurement.getPurchaseOrders = async () =>
+        reviewSuccess(operatorPurchaseOrders());
+    }
     return fixture;
   }, []);
   if (params.has("internal"))
@@ -420,7 +425,9 @@ function Review() {
               : "Local"
           }
           now={
-            params.get("scenario") === "planningMaster"
+            ["planningMaster", "operatorSafe"].includes(
+              params.get("scenario") ?? "",
+            )
               ? new Date("2026-10-12T03:00:00Z")
               : applicationReviewNow
           }

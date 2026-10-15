@@ -107,9 +107,15 @@ describe("printed exact quantities", () => {
         expect(sheet.columns.filter((column) => !column.hidden)).toHaveLength(
           5,
         );
-        expect(sheet.getColumn(3).width).toBe(40);
+        expect(sheet.getColumn(3).width).toBe(mode === "details_ing" ? 46 : 40);
         expect(sheet.getColumn(5).width).toBe(12);
-        expect(sheet.getColumn(6).width).toBe(38);
+        expect(sheet.getColumn(6).width).toBe(mode === "details_ing" ? 32 : 38);
+        expect(
+          Array.from(
+            { length: 6 },
+            (_, index) => sheet.getColumn(index + 1).width ?? 0,
+          ).reduce((sum, width) => sum + width, 0),
+        ).toBe(119);
       }
       const tables = (
         buildPurchaseOrderPdfDefinition(order, mode).content as {

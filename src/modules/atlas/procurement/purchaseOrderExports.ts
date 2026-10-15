@@ -638,9 +638,17 @@ function addDetailSheet(
   sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
   // Fixed scale preserves manual breaks; Excel fit-to-page ignores them.
   sheet.pageSetup.fitToPage = quantityWidth <= 18;
-  [7, 12, descriptionWidth + 6, 10, quantityWidth, noteWidth + 6].forEach(
-    (width, i) => (sheet.getColumn(i + 1).width = width),
-  );
+  // Give School suffixes the existing note padding without changing print width.
+  // Native Calibri-Normal widths keep the note's conservative 168pt budget.
+  const schoolWidthAllowance = direction === "details_ing" ? 6 : 0;
+  [
+    7,
+    12,
+    descriptionWidth + 6 + schoolWidthAllowance,
+    10,
+    quantityWidth,
+    noteWidth + 6 - schoolWidthAllowance,
+  ].forEach((width, i) => (sheet.getColumn(i + 1).width = width));
   sheet.getColumn(2).hidden = true;
   for (const [row, height] of [
     [1, 22],

@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "file": "PO-School-measured-rows.xlsx",
+      "status": "PASS"
+    },
+    {
+      "file": "Dispatch-explicit-Vinh-Tan.xlsx",
+      "status": "PASS"
+    },
+    {
+      "file": "Dispatch-long-school-header.xlsx",
+      "status": "PASS"
+    },
+    {
+      "file": "Dispatch-Hung-Vuong-five-numbers.xlsx",
+      "status": "PASS"
+    }
+  ],
+  "method": "Hidden ITEM identity/exact quantities plus veryHidden metadata source payloads; physical row numbers excluded because pagination may change."
+}
