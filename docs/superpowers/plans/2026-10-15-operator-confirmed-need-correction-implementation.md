@@ -100,10 +100,10 @@ All private seams use `SECURITY DEFINER` and `search_path=''`; verify owners alr
 
 ### Task 1: Fresh public-path fixture and RED contract
 
-**Files:** authority docs, new local fixture/new three SQL suites. **Consumes:** reviewed plan release and main109. **Produces:** isolated schema-applied 109 `atlas_c_correction_01`, real released history and RED logs.
+**Files:** authority docs, new local fixture/new three SQL suites. **Consumes:** reviewed plan release and main109. **Produces:** isolated schema-applied 109 `atlas_c_correction_02`, real released history and RED logs.
 
 - [ ] Reverify canonical/origin/fresh main/clean/workspace; read mandatory docs plus Supabase/Postgres/TDD/systematic-debugging/executing-plans. Commit bounded authority before runtime edits.
-- [ ] Inspect local container labels/ports and DB inventory. Prove `atlas_c_correction_01` absent, then create it in verified `supabase_db_thuonghao-ops-erp`. Replay schema-only Auth prerequisites and109accepted migration files with explicit `-d atlas_c_correction_01`, ON_ERROR_STOP, hashes/list. No reset/drop/defaultpostgres use or fabricated ledger. Preserve all existing A2/B/default/wait DBs and volumes. Outside-repo TEMP adapter of existing include expander changes only explicit DB target; CI uses incumbent runner.
+- [ ] Inspect local container labels/ports and DB inventory. Prove `atlas_c_correction_02` absent, then create it in verified `supabase_db_thuonghao-ops-erp`. Replay schema-only Auth prerequisites and109accepted migration files with explicit `-d atlas_c_correction_02`, ON_ERROR_STOP, hashes/list. No reset/drop/defaultpostgres use or fabricated ledger. Preserve all existing A2/B/default/wait DBs and volumes. Outside-repo TEMP adapter of existing include expander changes only explicit DB target; CI uses incumbent runner.
 - [ ] Capture baseline catalog/ACL/membership and confirm A2 column/B API absent. Baseline catalog30 must pass. Probe exact named owner SELECT/row-lock privileges for proposed seams.
 - [ ] Seed only synthetic source/master/Actor prerequisites using incumbent fixture patterns. Authenticated public source Save→preflight→Need generation→ConfirmedSave→validate/approve/release→Handoff→Allocation→POgenerate/release→PXKrelease creates tested history. Capture actual response IDs dynamically. SchoolsA/B shareL; C another date. ChangedIngredientI and unchanged J; two affected Suppliers plus unaffected Supplier/date. One Actor has existing capabilities/GLOBAL. Every public fixture step raises unless success IS NOT DISTINCT FROM true; no replica-created approval/Handoff/PO/PXK proof.
 - [ ] Add undefined new RPC RED and unchanged ordinary released-Save denial. Save before tuples for all unaffected R/D/alloc/contribution/split/PO/PXK IDs, versions, numbers, fingerprints/content.
@@ -114,7 +114,7 @@ select atlas_api.get_confirmed_need_correction_preview(
 -- Expected main109 RED: function does not exist, after authentic public fixture succeeds.
 ```
 
-The TEMP adapter is copied from `scripts/test-local-purchase-review.mjs`: replace only its root resolution with the absolute canonical repository root and its explicit database argument with `atlas_c_correction_01`; keep include validation/fail-on-TAP behavior. After creation, the exact focused commands are:
+The TEMP adapter is copied from `scripts/test-local-purchase-review.mjs`: replace only its root resolution with the absolute canonical repository root and its explicit database argument with `atlas_c_correction_02`; keep include validation/fail-on-TAP behavior. After creation, the exact focused commands are:
 
 ```powershell
 node "$env:TEMP/atlas-c-test-purchase-review.mjs" confirmed_need_correction.sql
@@ -124,21 +124,22 @@ node "$env:TEMP/atlas-c-test-purchase-review.mjs" confirmed_need_correction_scal
 
 - [ ] Run through TEMP explicit-C include expander; preserve exact RED and setup logs. Do not claim business RED until the public released prerequisite journey works. Commit fixture/test checkpoint.
 
-## Open creation-fence gate — must clear before Task2 code
+## Open CN-publication fence gate — must clear before Task2 code
 
-Terra proved existing locks do not fence an absent/new overlapping root. `atlas_api.execute_need_generation(jsonb)` private-v2 path uses `PLANNING-CONTRACT-01:start:end`; readiness uses distinct `RMVP-03B:start:end`; direct run creation and compatibility materialization do not share a daily mutex. Per-run advisories, enumerated UUIDs, exact-period uniqueness and FK/KEY SHARE locks cannot prevent a new overlapping CN source.
+Assembled-catalog tracing narrows School CN publication to `atlas_api.execute_need_generation(jsonb)` → `atlas_core.issue_223_execute_need_generation_v2(jsonb)` → `atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)` (ordinary and zero-adoption branches), plus public compatibility `atlas_api.create_confirmed_needs_from_generation(jsonb)` → the same materializer. Readiness/direct run creation/source Saves do not publish CN. Do not automatically patch those nonproducer APIs; audit known-root lock compatibility separately.
 
-Concrete candidate for Root/Terra review: reuse **exclusive daily** `PLANNING-CONTRACT-01:D:D` transaction advisory keys, acquired for every date in the union of the request and contributing source ranges, ascending date, **before any existing period/run/input/evaluation/CN/Supplier/Handoff/family lock**. A range acquires every daily key, so differently shaped overlapping ranges contend. Existing period-specific mutexes may be reacquired only after this daily prefix. Do not discover another day late: resolve all immutable periods first and, if root/day expansion is observed after waits, reject/retry at the command boundary without acquiring an earlier key under existing row locks.
+Proposed minimum primitive: `atlas_core.confirmed_need_correction_lock_days(p_start date,p_end date) returns void`, owner `atlas_owner`, `VOLATILE SECURITY INVOKER`, `search_path=''`. Validate non-NULL ordered dates within existing caller range contracts, then acquire exclusive transaction advisories `PLANNING-CONTRACT-01:D:D` for every contained day, ascending date. Only exact runtime EXECUTE is proposed: `atlas_need_generation_runtime`, `atlas_planning_materialization_runtime`, `atlas_planning_command_runtime`, `atlas_confirmed_need_review_runtime`, `atlas_procurement_command_runtime`, `atlas_dispatch_command_runtime`; revoke PUBLIC/anon/authenticated/service_role. No table/role/capability grants. Shared days serialize range-versus-day sources even when no current run exists.
 
-The following exact creation/mutation/consumption entrypoints must participate before their first old row/advisory lock; nesting must be audited so an old parent cannot call a newly blocking child after holding later locks:
+Exact early callgraph before existing period/run/input/evaluation/Admin/CN/domain locks:
 
-- `atlas_api.evaluate_planning_input_readiness(jsonb)` (input/evaluation creation);
-- `atlas_api.execute_need_generation(jsonb)` and its actual current private implementation; `atlas_api.create_need_generation_run(jsonb)` direct compatibility path;
-- `atlas_api.create_confirmed_needs_from_generation(jsonb)` and `atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)`, including every actual private-v2/materializer caller found by source/catalog tracing;
-- existing public `atlas_api.save_weekly_menu(jsonb)`, `atlas_api.save_attendance(jsonb)`, `atlas_api.save_pantry(jsonb)` and their guarded nested source mutation paths, before locks/mutations that can invalidate/create source membership;
-- consuming correction prepare/wrapper, Confirmed Save/release, Allocation Save, Preparation, Handoff release/promotion and PO/PXK currentness release paths whenever they accept this continuity proof. Read-only unlocked previews may project without holding the transaction-wide prefix but must bind/recheck the same source state under the command fence.
+- execute parent before its old period/run/batch locks, covering both ordinary and zero-adoption nested materialization;
+- standalone compatibility materializer after authentication/outer receipt replay but before Admin KEY SHARE, input/evaluation or run rows;
+- Preparation and direct School Handoff before target locks;
+- new correction, standalone Planning release and PO/PXK writing continuity consumers before their target locks, including every nested parent path accepting continuity.
 
-At this plan phase this is a **proposed wider lock protocol**, not a claimed proved implementation. Terra is tracing minimal actual materializer callers. Task1 does not change any of them. Before Task2 release, record the complete exact signature/owner/initial-lock table, select the minimum common entrypoints and prove a real absent-root creation race against a concurrent consumer, plus opposite overlapping ranges without deadlock. A late advisory lock added only inside materialization after its caller holds a run/input row is explicitly invalid. Supplier priority's Ingredient FOR UPDATE cannot stand in for this fence.
+A deep materializer call may only reacquire keys already held by its execute parent. Never acquire a new blocking day lock inside a parent already holding a run/input/CN row. Resolve immutable complete periods first; if post-wait universe expands days, reject/retry at the outer boundary rather than acquire an earlier key late. Preserve whole-parent rollback on nested materializer failure. Pure shaped reads do not take blocking day fences. Wholesale remains outside this policy; guard-rejected overlaps remain rejected.
+
+Before Task2 release, review exact signatures/owners/first-lock anchors for all callers. Prove actual Prepare versus public materializer new-contributor race, ordinary and zero nested execute plus standalone compatibility, range-versus-day, overlapping Preparation, compatible known CN/Handoff writers and late nested failure rolling back the entire parent. Existing per-run/advisory/FK KEY SHARE/unique snapshot constraints do not replace this absent-root fence. Complete known-root ordering and fresh checks still apply. Task1 changes no producer/consumer functions.
 
 ### Task 2: Immutable continuity and complete root locking
 
