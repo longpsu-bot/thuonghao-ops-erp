@@ -382,7 +382,7 @@ select is((select count(*)from unnest(array[
  where has_function_privilege('atlas_procurement_command_runtime',signature,'EXECUTE')),0::bigint,
  'procurement gains no access to lifecycle-only proof predicates');
 select is((select count(*)from pg_proc p join pg_namespace n on n.oid=p.pronamespace
- where n.nspname='atlas_api'),121::bigint,'private proof slice adds no public API');
+ where n.nspname='atlas_api'),123::bigint,'only the two approved correction APIs extend the public catalog');
 
 select is((select count(*)from pg_proc p where p.oid=to_regprocedure(
  'atlas_core.confirmed_need_correction_lock_days(date,date)')

@@ -140,6 +140,9 @@ insert into ng_results select 'base',atlas_api.execute_need_generation(request),
 select is((select response->>'success' from ng_results where name='base'),'true','no-adjustment generation succeeds');
 select diag(response::text) from ng_results where name='base' and response->>'success'<>'true';
 reset role;
+select is(atlas_core.confirmed_need_correction_source_current(
+ (select (response#>>'{affected_aggregate_ids,need_generation_run_id}')::uuid from ng_results where name='base')),true,
+ 'C source-current delegation accepts the genuine public baseline generation');
 select ok((select bool_and(theoretical_quantity=case when contribution_family='PANTRY_DIRECT' then 2.5 when recipe_line_id=pg_temp.ng_id(3102) then 9.5 else 1.234567 end) from atlas_planning.theoretical_need_lines),'no-adjustment numeric output is identical');
 create temp table original_evidence as select * from atlas_planning.theoretical_need_lines;
 
@@ -174,6 +177,11 @@ insert into ng_results select 'changed-preflight',atlas_api.get_planning_input_p
  'contract_version','RMVP-03B.v2','requested_by_auth_subject',pg_temp.ng_id(101),'correlation_id',gen_random_uuid(),
  'payload',jsonb_build_object('period_start','2050-09-19','period_end','2050-09-19'))),null;
 select is((select response#>>'{preflight,downstream_currentness}' from ng_results where name='changed-preflight'),'OUTDATED','applicable Change Order makes prior generation outdated');
+reset role;
+select is(atlas_core.confirmed_need_correction_source_current(
+ (select (response#>>'{affected_aggregate_ids,need_generation_run_id}')::uuid from ng_results where name='base')),false,
+ 'C source-current delegation rejects the explicitly synthetic effective-composition drift');
+set local role authenticated;
 insert into ng_results select 'effective',atlas_api.execute_need_generation(
  jsonb_set(pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',jsonb_build_object(
  'service_date','2050-09-19','expected_current_need_generation_run_id',response#>'{affected_aggregate_ids,need_generation_run_id}')), '{expected_version}',

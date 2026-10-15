@@ -1,12 +1,12 @@
--- Operator C Task2: private immutable evidence and early locking only.
--- No public correction API, backfill, released-status downgrade or new authority.
+-- Operator C: private immutable proof/fences and closed atomic quantity correction.
+-- No backfill, released-status downgrade, automatic document release or new human authority.
 begin;
 create temporary table c_task2_role_before on commit drop as
 select r.rolname role_name,a.admin_option,a.inherit_option,a.set_option
 from pg_roles r left join pg_auth_members a on a.roleid=r.oid
  and a.member='postgres'::regrole and a.grantor='postgres'::regrole
 where r.rolname in('atlas_confirmed_need_review_runtime','atlas_procurement_command_runtime','atlas_need_generation_runtime',
- 'atlas_planning_materialization_runtime','atlas_planning_command_runtime','atlas_dispatch_command_runtime');
+ 'atlas_planning_materialization_runtime','atlas_planning_command_runtime','atlas_dispatch_command_runtime','atlas_read_runtime');
 create temporary table c_task2_schema_before on commit drop as
 select role_name,schema_name,has_schema_privilege(role_name,schema_name,'CREATE') had_create
 from(values('atlas_confirmed_need_review_runtime','atlas_core'),
@@ -15,10 +15,11 @@ from(values('atlas_confirmed_need_review_runtime','atlas_core'),
  ('atlas_need_generation_runtime','atlas_core'),
  ('atlas_need_generation_runtime','atlas_api'),('atlas_confirmed_need_review_runtime','atlas_api'),
  ('atlas_procurement_command_runtime','atlas_api'),('atlas_planning_command_runtime','atlas_api'),
- ('atlas_planning_materialization_runtime','atlas_core'),('atlas_dispatch_command_runtime','atlas_api'))access(role_name,schema_name);
+ ('atlas_planning_materialization_runtime','atlas_core'),('atlas_dispatch_command_runtime','atlas_api'),
+ ('atlas_read_runtime','atlas_core'))access(role_name,schema_name);
 grant select on c_task2_schema_before to atlas_owner;
 grant atlas_confirmed_need_review_runtime,atlas_procurement_command_runtime,atlas_need_generation_runtime,
- atlas_planning_materialization_runtime,atlas_planning_command_runtime,atlas_dispatch_command_runtime
+ atlas_planning_materialization_runtime,atlas_planning_command_runtime,atlas_dispatch_command_runtime,atlas_read_runtime
  to postgres with set true;
 set role atlas_owner;
 do $authoring_create$
@@ -417,7 +418,7 @@ grant execute on function atlas_core.purchase_review_correction_context(uuid)
 
 
 -- Resolve each historical (batch,attempt) once. Original decisions come through
--- immutable demand→approval→validation observations, never today's pointers.
+-- immutable demandÃ¢â€ â€™approvalÃ¢â€ â€™validation observations, never today's pointers.
 create function atlas_core.confirmed_need_handoff_membership(p_revision uuid)
 returns jsonb language sql stable security definer set search_path='' as $membership$
  with bindings as materialized (
@@ -512,7 +513,7 @@ begin
   order by f.ingredient_id::text,f.service_date::text,f.delivery_location_id::text,f.unit_id::text loop
   perform atlas_core.school_catering_lock_supplier_evidence(item.service_date,item.ingredient_id,item.splits,false);
  end loop;
- -- FOR UPDATE now prevents a KEY SHARE→UPDATE upgrade after family locks,
+ -- FOR UPDATE now prevents a KEY SHAREÃ¢â€ â€™UPDATE upgrade after family locks,
  -- while an incumbent PH Save holds KEY SHARE and waits for that family.
  perform 1 from atlas_planning.purchase_handoff_batches h
   where h.confirmed_need_batch_id=any(batches)order by h.purchase_handoff_batch_id for update;
@@ -565,7 +566,7 @@ begin
  foreach source_run in array runs loop
   perform pg_advisory_xact_lock(hashtextextended('atlas:planning-correction:'||source_run::text,0));
  end loop;
- -- Match direct create_need_generation_run: input-set→evaluation→run, never
+ -- Match direct create_need_generation_run: input-setÃ¢â€ â€™evaluationÃ¢â€ â€™run, never
  -- an input/evaluation lock acquired late while holding a target run/CN row.
  perform 1 from atlas_planning.planning_input_sets s where s.planning_input_set_id=any(sets)
   order by s.planning_input_set_id for key share;
@@ -652,7 +653,7 @@ begin
   perform atlas_core.purchase_review_lock_allocations(v_batch_id);$replacement6$),
 ('atlas_core.issue_223_execute_need_generation_v2(jsonb)','atlas_need_generation_runtime',$anchor7$  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');$anchor7$,$replacement7$  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
   perform atlas_core.confirmed_need_correction_lock_days(v_start,v_end);
-  -- Direct create_need_generation_run is input-set→evaluation→run.
+  -- Direct create_need_generation_run is input-setÃ¢â€ â€™evaluationÃ¢â€ â€™run.
   perform 1 from atlas_planning.planning_input_sets source_set
    where source_set.period_start=v_start and source_set.period_end=v_end
    order by source_set.planning_input_set_id for key share;
@@ -885,6 +886,347 @@ end;
 $continuity_entry$;
 revoke all on function atlas_core.purchase_review_family_continuity(uuid,text)
  from public,anon,authenticated,service_role;
+reset role;
+set role atlas_owner;
+
+-- This bridge is optional disclosure only; no Need proposal/write path binds it.
+reset role;
+set role atlas_read_runtime;
+create function atlas_core.confirmed_need_correction_procurement_details(
+ p_actor uuid,p_date date,p_location uuid,p_ingredient uuid,p_unit uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $details$
+declare denied jsonb;details jsonb;orders jsonb;
+ empty_result jsonb:=jsonb_build_object('procurement_details_coverage','AUTHORIZED_DETAILS_ONLY',
+  'procurement_details','[]'::jsonb,'purchase_order_coverage','AUTHORIZED_DOCUMENTS_ONLY','purchase_orders','[]'::jsonb);
+begin
+ denied:=atlas_core.pa_05b_authorize_actor('{}',p_actor,'procurement.school_catering.read',
+  'PROCUREMENT','get_confirmed_need_correction_preview',null,null,null);
+ if(denied is not null and denied->>'error_code'is distinct from 'SCOPE_DENIED')
+  or not atlas_core.school_catering_actor_has_scope(p_actor,null,null,p_location)then return empty_result;end if;
+ select jsonb_agg(jsonb_build_object('family_id',f.family_id,'family_revision_id',r.family_revision_id,
+  'family_quantity',r.family_quantity::text,'decision_origin',r.decision_origin,
+  'supplier_splits',(select jsonb_agg(jsonb_build_object('supplier_split_id',s.supplier_split_id,
+   'supplier_id',s.supplier_id,'supplier_name',sp.supplier_name,'allocated_quantity',s.allocated_quantity::text,
+   'split_ratio',s.split_ratio::text,'decision_origin',s.decision_origin,'supplier_note',s.supplier_note)
+   order by s.supplier_split_id)from atlas_procurement.school_catering_allocation_supplier_splits s
+   join atlas_admin.suppliers sp using(supplier_id)where s.family_revision_id=r.family_revision_id))order by f.family_id)
+ into details from atlas_procurement.school_catering_allocation_families f
+ join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+ where r.is_current and row(f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id)
+  =row(p_date,p_location,p_ingredient,p_unit);
+ select jsonb_agg(jsonb_build_object('purchase_order_id',po.purchase_order_id,
+  'purchase_order_revision_id',rev.purchase_order_revision_id,'document_number',po.document_number,
+  'purchase_order_status',po.purchase_order_status,'supplier_id',po.supplier_id,
+  'supplier_name',coalesce(nullif(btrim(rev.supplier_name_snapshot),''),'Supplier label unavailable'),
+  'lines',(select jsonb_agg(jsonb_build_object('purchase_order_line_id',lr.purchase_order_line_id,
+   'ingredient_id',lr.ingredient_id,'unit_id',lr.unit_id,'ordered_quantity',lr.ordered_quantity::text,
+   'school_breakdown',lr.school_breakdown_snapshot,'supplier_note',lr.supplier_note_snapshot)
+   order by lr.purchase_order_line_revision_id)from atlas_procurement.purchase_order_line_revisions lr
+   where lr.purchase_order_revision_id=rev.purchase_order_revision_id))order by po.purchase_order_id)
+ into orders from atlas_procurement.purchase_orders po
+ join atlas_procurement.purchase_order_revisions rev using(purchase_order_id)
+ where rev.is_current and po.purchase_order_kind='SCHOOL_CATERING'
+  and atlas_core.school_catering_purchase_order_actor_has_full_scope(p_actor,po.purchase_order_id)
+  and exists(select 1 from atlas_procurement.purchase_order_line_revisions lr
+   join atlas_procurement.school_catering_allocation_supplier_splits s
+    on s.supplier_split_id=lr.school_catering_allocation_supplier_split_id
+   join atlas_procurement.school_catering_allocation_family_revisions r on r.family_revision_id=s.family_revision_id
+   join atlas_procurement.school_catering_allocation_families f using(family_id)
+   where lr.purchase_order_revision_id=rev.purchase_order_revision_id
+    and row(f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id)=row(p_date,p_location,p_ingredient,p_unit));
+ return empty_result||jsonb_build_object('procurement_details',coalesce(details,'[]'),
+  'purchase_orders',coalesce(orders,'[]'));
+end;$details$;
+revoke all on function atlas_core.confirmed_need_correction_procurement_details(uuid,date,uuid,uuid,uuid)
+ from public,anon,authenticated,service_role;
+grant execute on function atlas_core.confirmed_need_correction_procurement_details(uuid,date,uuid,uuid,uuid)
+ to atlas_confirmed_need_review_runtime;
+reset role;
+set role atlas_read_runtime;
+create function atlas_core.confirmed_need_correction_source_current(p_run uuid)
+returns boolean language plpgsql stable security definer set search_path='' as $source_current$
+declare run atlas_planning.need_generation_runs%rowtype;preflight jsonb;
+begin
+ select * into run from atlas_planning.need_generation_runs where need_generation_run_id=p_run;
+ if not found then return false;end if;
+ preflight:=atlas_core.planning_contract_01_preflight_payload(run.period_start,run.period_end,null);
+ return coalesce(preflight->>'downstream_currentness'='CURRENT'
+  and preflight#>>'{current_need,need_generation_run_id}'=p_run::text
+  and preflight#>>'{current_need,need_generation_run_version}'=run.version::text,false);
+end;$source_current$;
+revoke all on function atlas_core.confirmed_need_correction_source_current(uuid)
+ from public,anon,authenticated,service_role;
+grant execute on function atlas_core.confirmed_need_correction_source_current(uuid)to atlas_confirmed_need_review_runtime;
+reset role;
+set role atlas_confirmed_need_review_runtime;
+
+-- Share the exact incumbent evaluator. Ordinary callers retain its lifecycle,
+-- errors and hash; only the private correction route admits a released batch.
+do $quantity_evaluator$
+declare original text:=pg_get_functiondef('atlas_core.rmvp_05_canonical_preview(uuid,bigint,jsonb)'::regprocedure);
+ signature text:='batch_id uuid, expected_batch_version bigint, requested_lines jsonb';
+ anchor text:=$old$if v_batch.batch_status not in ('DRAFT_REVIEW', 'REOPENED') then$old$;
+begin
+ if strpos(original,signature)=0 or strpos(original,anchor)=0 then
+  raise exception 'C canonical quantity evaluator anchor mismatch';end if;
+ execute replace(replace(original,signature,signature||', p_correction boolean'),anchor,
+  $new$if v_batch.batch_status not in ('DRAFT_REVIEW', 'REOPENED')
+   and not(p_correction and v_batch.batch_status='RELEASED_FOR_PURCHASE_HANDOFF') then$new$);
+ execute substring(original from 1 for strpos(original,'AS $function$')-1)||$wrapper$AS $function$
+ begin return atlas_core.rmvp_05_canonical_preview(batch_id,expected_batch_version,requested_lines,false);end;
+ $function$;$wrapper$;
+end;$quantity_evaluator$;
+revoke all on function atlas_core.rmvp_05_canonical_preview(uuid,bigint,jsonb,boolean)
+ from public,anon,authenticated,service_role;
+
+create function atlas_core.confirmed_need_correction_request_valid(request jsonb,p_write boolean)
+returns boolean language plpgsql immutable set search_path='' as $closed$
+declare payload jsonb:=request->'payload';keys text[];field text;
+begin
+ if request is null or jsonb_typeof(request)<>'object'or jsonb_typeof(payload)is distinct from 'object'then return false;end if;
+ keys:=array['contract_version','requested_by_auth_subject','correlation_id','payload'];
+ if p_write then keys:=keys||array['command_id','idempotency_key','expected_version','requested_at','reason_code','reason_note'];end if;
+ if request-keys<>'{}'::jsonb or not(request?&keys)
+  or request->>'contract_version'is distinct from 'CONFIRMED-NEED-CORRECTION.v1'
+  or atlas_core.pa_05b_safe_uuid(request->>'requested_by_auth_subject')is null
+  or atlas_core.pa_05b_safe_uuid(request->>'correlation_id')is null then return false;end if;
+ foreach field in array array['requested_by_auth_subject','correlation_id']loop
+  if jsonb_typeof(request->field)is distinct from 'string'then return false;end if;
+ end loop;
+ keys:=array['need_generation_run_id','expected_need_generation_run_version','confirmed_need_batch_id',
+  'expected_confirmed_need_batch_version','confirmed_need_line_id','expected_current_revision_id',
+  'expected_current_decision_id','proposed_confirmed_quantity','reason_code','reason_note'];
+ if p_write then keys:=keys||'proposal_fingerprint'::text;end if;
+ if payload-keys<>'{}'::jsonb or not(payload?&keys)then return false;end if;
+ foreach field in array array['need_generation_run_id','confirmed_need_batch_id','confirmed_need_line_id',
+  'expected_current_revision_id','expected_current_decision_id']loop
+  if jsonb_typeof(payload->field)is distinct from 'string'
+   or atlas_core.pa_05b_safe_uuid(payload->>field)is null then return false;end if;
+ end loop;
+ foreach field in array array['expected_need_generation_run_version','expected_confirmed_need_batch_version']loop
+  if jsonb_typeof(payload->field)is distinct from 'number'
+   or coalesce(atlas_core.pa_05b_safe_bigint(payload->>field),0)<1 then return false;end if;
+ end loop;
+ if jsonb_typeof(payload->'proposed_confirmed_quantity')is distinct from 'string'
+  or jsonb_typeof(payload->'reason_code')is distinct from 'string'
+  or jsonb_typeof(payload->'reason_note')not in('string','null')then return false;end if;
+ if p_write and(jsonb_typeof(request->'expected_version')is distinct from 'number'
+  or atlas_core.pa_05b_safe_bigint(request->>'expected_version')is distinct from
+   atlas_core.pa_05b_safe_bigint(payload->>'expected_confirmed_need_batch_version')
+  or jsonb_typeof(request->'command_id')is distinct from 'string'
+  or atlas_core.pa_05b_safe_uuid(request->>'command_id')is null
+  or jsonb_typeof(request->'requested_at')is distinct from 'string'
+  or atlas_core.pa_05b_safe_timestamptz(request->>'requested_at')is null
+  or jsonb_typeof(request->'idempotency_key')is distinct from 'string'
+  or coalesce(length(btrim(request->>'idempotency_key')),0)not between 1 and 200
+  or request->>'reason_code'is distinct from 'CONFIRMED_NEED_CORRECTION_SAVED'
+  or jsonb_typeof(request->'reason_note')is distinct from 'string'
+  or coalesce(length(btrim(request->>'reason_note')),0)=0
+  or jsonb_typeof(payload->'proposal_fingerprint')is distinct from 'string'
+  or payload->>'proposal_fingerprint'!~'^[0-9a-f]{64}$')then return false;end if;
+ return true;
+end;$closed$;
+revoke all on function atlas_core.confirmed_need_correction_request_valid(jsonb,boolean)
+ from public,anon,authenticated,service_role;
+
+create function atlas_core.confirmed_need_correction_proposal(payload jsonb)
+returns jsonb language plpgsql stable security definer set search_path='' as $proposal$
+declare batch atlas_planning.confirmed_need_batches%rowtype;run atlas_planning.need_generation_runs%rowtype;
+ line atlas_planning.confirmed_need_line_revisions%rowtype;preview jsonb;item jsonb;family jsonb;
+ proposal jsonb;fingerprint text;sources jsonb;source jsonb;raw_members jsonb;display jsonb;
+begin
+ select * into batch from atlas_planning.confirmed_need_batches
+ where confirmed_need_batch_id=(payload->>'confirmed_need_batch_id')::uuid and source_kind='NEED_GENERATION';
+ select * into run from atlas_planning.need_generation_runs
+ where need_generation_run_id=(payload->>'need_generation_run_id')::uuid;
+ if batch.confirmed_need_batch_id is null or run.need_generation_run_id is null
+  or batch.current_need_generation_run_id is distinct from run.need_generation_run_id then
+  return jsonb_build_object('success',false,'error_code','CORRECTION_CHAIN_NOT_FOUND');end if;
+ if batch.version<>(payload->>'expected_confirmed_need_batch_version')::bigint
+  or run.version<>(payload->>'expected_need_generation_run_version')::bigint then
+  return jsonb_build_object('success',false,'error_code','STALE_VERSION');end if;
+ if batch.batch_status<>'RELEASED_FOR_PURCHASE_HANDOFF'then
+  return jsonb_build_object('success',false,'error_code','CORRECTION_NOT_APPLICABLE');end if;
+ if run.run_status<>'RELEASED_FOR_CONFIRMATION'or exists(select 1 from atlas_planning.need_generation_runs later
+  where later.planning_input_set_id=run.planning_input_set_id and later.attempt_ordinal>run.attempt_ordinal)then
+  return jsonb_build_object('success',false,'error_code','STALE_CONFIRMED_NEED_SOURCE');end if;
+ if not atlas_core.confirmed_need_correction_source_current(run.need_generation_run_id)then
+  return jsonb_build_object('success',false,'error_code','STALE_CONFIRMED_NEED_SOURCE');end if;
+ select r.* into line from atlas_planning.confirmed_need_line_revisions r
+ join atlas_planning.confirmed_need_lines l using(confirmed_need_line_id)
+ where r.confirmed_need_line_revision_id=(payload->>'expected_current_revision_id')::uuid
+  and r.confirmed_need_line_id=(payload->>'confirmed_need_line_id')::uuid and r.is_current
+  and r.confirmed_need_batch_id=batch.confirmed_need_batch_id
+  and l.current_confirmed_need_line_decision_id=(payload->>'expected_current_decision_id')::uuid;
+ if found and payload->>'proposed_confirmed_quantity'~'^(0|[1-9][0-9]{0,13})(\.[0-9]{1,6})?$'
+  and(payload->>'proposed_confirmed_quantity')::numeric=line.confirmed_quantity then
+  return jsonb_build_object('success',false,'error_code','NO_APPLICABLE_CORRECTION');end if;
+ preview:=atlas_core.rmvp_05_canonical_preview(batch.confirmed_need_batch_id,batch.version,
+  jsonb_build_array(payload-array['need_generation_run_id','expected_need_generation_run_version',
+   'confirmed_need_batch_id','expected_confirmed_need_batch_version','proposal_fingerprint']),true);
+ if preview->>'success'is distinct from 'true'then return preview;end if;
+ item:=preview#>'{ordered_preview_lines,0}';
+ select * into strict line from atlas_planning.confirmed_need_line_revisions
+ where confirmed_need_line_revision_id=(item->>'current_revision_id')::uuid;
+ if line.confirmed_quantity=(item->>'confirmed_quantity_after')::numeric then
+  return jsonb_build_object('success',false,'error_code','NO_APPLICABLE_CORRECTION');end if;
+ select coalesce(jsonb_agg(s),'[]')into sources
+ from atlas_core.purchase_review_confirmed_sources(line.service_date,line.service_date)s
+ where s->>'delivery_location_id'=line.delivery_location_id::text and s->>'ingredient_id'=line.ingredient_id::text
+  and s->>'unit_id'=line.unit_id::text;
+ if jsonb_array_length(sources)<>1 then
+  return jsonb_build_object('success',false,'error_code','CONFIRMED_SOURCE_AMBIGUOUS_OR_MISSING');end if;
+ source:=sources->0;
+ if source->>'complete'is distinct from 'true'or source->>'source_confirmed_need_batch_id'is distinct from batch.confirmed_need_batch_id::text then
+  return jsonb_build_object('success',false,'error_code','CONFIRMED_SOURCE_INCOMPLETE');end if;
+ select jsonb_build_object('service_date',line.service_date,'delivery_location_id',line.delivery_location_id,
+  'ingredient_id',line.ingredient_id,'unit_id',line.unit_id,
+  'quantity_before',sum(r.confirmed_quantity)::numeric(20,6)::text,
+  'quantity_after',(sum(r.confirmed_quantity)+(item->>'confirmed_quantity_after')::numeric-line.confirmed_quantity)::numeric(20,6)::text,
+  'contributions',jsonb_agg(jsonb_build_object('confirmed_need_batch_id',r.confirmed_need_batch_id,
+   'confirmed_need_line_id',r.confirmed_need_line_id,'revision_id',r.confirmed_need_line_revision_id,
+   'decision_id',l.current_confirmed_need_line_decision_id,'school_id',r.school_id,'customer_id',r.customer_id,
+   'delivery_location_id',r.delivery_location_id,'quantity',r.confirmed_quantity::text,
+   'source_membership',(select jsonb_agg(to_jsonb(c)order by c.theoretical_need_line_id)
+    from atlas_planning.confirmed_need_line_revision_contributions c
+    where c.confirmed_need_line_revision_id=r.confirmed_need_line_revision_id))order by r.confirmed_need_line_id))
+ into family from atlas_planning.confirmed_need_line_revisions r
+ join atlas_planning.confirmed_need_lines l using(confirmed_need_line_id)
+ where r.is_current and r.source_kind='NEED_GENERATION'and r.service_date=line.service_date
+  and r.delivery_location_id=line.delivery_location_id and r.ingredient_id=line.ingredient_id and r.unit_id=line.unit_id;
+ select jsonb_agg(jsonb_build_array(m->>'revision_id',m->>'decision_id',m->>'school_id',m->>'customer_id',
+  (m->>'quantity')::numeric)order by m->>'revision_id')into raw_members from jsonb_array_elements(family->'contributions')m;
+ if raw_members is distinct from(select jsonb_agg(jsonb_build_array(m->>'confirmed_need_line_revision_id',
+  m->>'confirmed_need_line_decision_id',m->>'school_id',m->>'customer_id',(m->>'contribution_quantity')::numeric)
+  order by m->>'confirmed_need_line_revision_id')from jsonb_array_elements(source->'contributions')m)
+  or family->>'quantity_before'is distinct from source->>'family_quantity'then
+  return jsonb_build_object('success',false,'error_code','CONFIRMED_SOURCE_INCOMPLETE');end if;
+ proposal:=jsonb_build_object('payload',payload-'proposal_fingerprint','canonical_preview_hash',preview->'preview_hash','family',family);
+ fingerprint:=encode(sha256(convert_to(proposal::text,'UTF8')),'hex');
+ select jsonb_build_object('ingredient_name',ingredient.ingredient_name,'delivery_location_name',location.location_name,
+  'unit_name',case when nullif(btrim(unit.unit_name),'')is not null
+   and unit.unit_name!~*'^(v1[-_]|rmvp[-_]|[0-9a-f]{8}-[0-9a-f]{4}-)'then unit.unit_name else null end,
+  'schools',(select jsonb_agg(jsonb_build_object('confirmed_need_line_id',member->'confirmed_need_line_id',
+   'school_id',member->'school_id','school_name',school.school_name,'customer_id',member->'customer_id',
+   'customer_name',customer.customer_name,'delivery_location_id',member->'delivery_location_id')
+   order by member->>'confirmed_need_line_id')from jsonb_array_elements(family->'contributions')member
+   join atlas_admin.schools school on school.school_id=(member->>'school_id')::uuid
+   join atlas_admin.customers customer on customer.customer_id=(member->>'customer_id')::uuid))
+ into display from atlas_admin.ingredients ingredient cross join atlas_admin.delivery_locations location
+ cross join atlas_admin.units unit where ingredient.ingredient_id=line.ingredient_id
+  and location.delivery_location_id=line.delivery_location_id and unit.unit_id=line.unit_id;
+ return jsonb_build_object('success',true,'proposal_fingerprint',fingerprint,'family',family,
+  'display',display,
+  'quantity',jsonb_build_object('before',line.confirmed_quantity::text,'after',item->'confirmed_quantity_after',
+   'delta',((item->>'confirmed_quantity_after')::numeric-line.confirmed_quantity)::numeric(20,6)::text),
+  'target',payload-'proposal_fingerprint','canonical_preview',preview);
+end;$proposal$;
+revoke all on function atlas_core.confirmed_need_correction_proposal(jsonb)
+ from public,anon,authenticated,service_role;
+
+create function atlas_api.get_confirmed_need_correction_preview(request jsonb)
+returns jsonb language plpgsql stable security definer set search_path='' as $correction_preview$
+declare name constant text:='get_confirmed_need_correction_preview';context jsonb;answer jsonb;can_correct boolean:=true;cap text;
+begin
+ if not atlas_core.confirmed_need_correction_request_valid(request,false)then
+  return atlas_core.d037_error(request,'CONFIRMED-NEED-CORRECTION.v1',name,
+   'VALIDATION_FAILED','The correction preview request is invalid.')
+   ||jsonb_build_object('read_name',name,'write_certainty','NO_WRITE');end if;
+ context:=atlas_core.rmvp_05_authorize_global(request,'confirmed_need_review.read',name,true);
+ if context?'error'then return(context->'error')||jsonb_build_object('contract_version','CONFIRMED-NEED-CORRECTION.v1');end if;
+ answer:=atlas_core.confirmed_need_correction_proposal(request->'payload');
+ foreach cap in array array['planning.need_generation.write','confirmed_need_release.release','confirmed_need_quantities.confirm']loop
+  if atlas_core.rmvp_05_authorize_global(request,cap,name,true)?'error'then can_correct:=false;end if;
+ end loop;
+ answer:=answer||jsonb_build_object('contract_version','CONFIRMED-NEED-CORRECTION.v1','read_name',name,
+  'write_certainty','NO_WRITE','allowed_actions',jsonb_build_object('correct',can_correct and coalesce(answer->>'success'='true',false)),
+  'disabled_reasons',jsonb_build_object('correct',case when not can_correct then 'CORRECTION_AUTHORITY_REQUIRED'
+   when answer->>'success'is distinct from 'true'then answer->>'error_code'else null end),
+  'procurement_details_coverage','AUTHORIZED_DETAILS_ONLY','procurement_details','[]'::jsonb,
+  'purchase_order_coverage','AUTHORIZED_DOCUMENTS_ONLY','purchase_orders','[]'::jsonb);
+ if answer->>'success'='true'then
+  answer:=answer||atlas_core.confirmed_need_correction_procurement_details((context->>'actor_id')::uuid,
+   (answer#>>'{family,service_date}')::date,(answer#>>'{family,delivery_location_id}')::uuid,
+   (answer#>>'{family,ingredient_id}')::uuid,(answer#>>'{family,unit_id}')::uuid);
+ end if;
+ return answer;
+end;$correction_preview$;
+revoke all on function atlas_api.get_confirmed_need_correction_preview(jsonb)from public,anon,service_role;
+grant execute on function atlas_api.get_confirmed_need_correction_preview(jsonb)to authenticated;
+
+create function atlas_api.correct_confirmed_need(request jsonb)
+returns jsonb language plpgsql volatile security definer set search_path='' as $correct$
+declare name constant text:='correct_confirmed_need';contract constant text:='CONFIRMED-NEED-CORRECTION.v1';
+ payload jsonb:=request->'payload';context jsonb;actor uuid;cap text;started jsonb;receipt uuid;
+ proposal jsonb;prepared jsonb;saved jsonb;child jsonb;failed jsonb;answer jsonb;
+ prepare_id uuid;save_id uuid;
+begin
+ if not atlas_core.confirmed_need_correction_request_valid(request,true)then
+  return atlas_core.d037_error(request,contract,name,'VALIDATION_FAILED','The correction command request is invalid.');end if;
+ foreach cap in array array['planning.need_generation.write','confirmed_need_release.release','confirmed_need_quantities.confirm']loop
+  context:=atlas_core.rmvp_05_authorize_global(request,cap,name,false);
+  if context?'error'then return(context->'error')||jsonb_build_object('contract_version',contract);end if;
+ end loop;
+ actor:=(context->>'actor_id')::uuid;
+ started:=atlas_core.pa_05b_begin_command(request,actor,name,'PLANNING','ConfirmedNeedBatch:'||(payload->>'confirmed_need_batch_id'));
+ if started->>'status'<>'NEW'then
+  return(started->'response')||jsonb_build_object('contract_version',contract)
+   ||case when started#>>'{response,success}'='true'then '{}'::jsonb else
+    jsonb_build_object('write_certainty','NO_COMMITTED_CHANGE','refresh_read','get_confirmed_need_review')end;
+ end if;
+ receipt:=(started->>'receipt_id')::uuid;
+ perform atlas_core.confirmed_need_correction_lock_roots((payload->>'confirmed_need_batch_id')::uuid);
+ perform atlas_core.purchase_review_lock_allocations((payload->>'confirmed_need_batch_id')::uuid);
+ proposal:=atlas_core.confirmed_need_correction_proposal(payload);
+ if proposal->>'success'is distinct from 'true'or proposal->>'proposal_fingerprint'is distinct from payload->>'proposal_fingerprint'then
+  return atlas_core.pa_05b_finish_command(receipt,atlas_core.d037_error(request,contract,name,
+   case when proposal->>'success'='true'then 'STALE_CORRECTION_PROPOSAL'else proposal->>'error_code'end,
+   'Refresh and review the exact quantity correction before saving.'),false);end if;
+ prepare_id:=md5(receipt::text||':prepare')::uuid;save_id:=md5(receipt::text||':save')::uuid;
+ begin
+  child:=request||jsonb_build_object('contract_version','PLANNING-CORRECTION.v1','command_id',prepare_id,
+   'idempotency_key',receipt::text||':prepare','expected_version',payload->'expected_need_generation_run_version',
+   'reason_code','PLANNING_SOURCE_CORRECTION_PREPARED','payload',jsonb_build_object(
+    'need_generation_run_id',payload->'need_generation_run_id','confirmed_need_batch_id',payload->'confirmed_need_batch_id',
+    'expected_confirmed_need_batch_version',payload->'expected_confirmed_need_batch_version'));
+  prepared:=atlas_api.prepare_planning_source_correction(child);
+  if prepared->>'success'is distinct from 'true'then failed:=prepared;raise exception using errcode='CNC01',message='Correction child rejected';end if;
+  child:=request||jsonb_build_object('contract_version','RMVP-05.v2','command_id',save_id,
+   'idempotency_key',receipt::text||':save','expected_version',prepared#>'{new_versions,confirmed_need_batch_version}',
+   'reason_code','CONFIRMED_NEED_SAVED','reason_note',null,'payload',jsonb_build_object(
+    'confirmed_need_batch_id',payload->'confirmed_need_batch_id','lines',jsonb_build_array(payload-array[
+     'need_generation_run_id','expected_need_generation_run_version','confirmed_need_batch_id',
+     'expected_confirmed_need_batch_version','proposal_fingerprint'])));
+  saved:=atlas_api.save_confirmed_needs(child);
+  if saved->>'success'is distinct from 'true'then failed:=saved;raise exception using errcode='CNC01',message='Correction child rejected';end if;
+  set constraints all immediate;set constraints all deferred;
+ exception when sqlstate 'CNC01'then
+  if failed->>'error_code'in('RETRYABLE_CONCURRENCY_FAILURE','INTERNAL_COMMAND_FAILURE')then
+   raise exception using errcode='40001',message='Correction child outcome requires exact retry';end if;
+  return atlas_core.pa_05b_finish_command(receipt,atlas_core.d037_error(request,contract,name,
+   coalesce(failed->>'error_code','CORRECTION_CHILD_REJECTED'),'The correction was not saved; all child effects were rolled back.'),false);
+ end;
+ answer:=jsonb_build_object('success',true,'contract_version',contract,'command_name',name,'command_id',request->'command_id',
+  'correlation_id',request->'correlation_id','receipt_id',receipt,'idempotency_status','COMPLETED',
+  'need_generation_run_id',payload->'need_generation_run_id','confirmed_need_batch_id',payload->'confirmed_need_batch_id',
+  'resulting_batch_version',saved->'resulting_batch_version','created_successor_revision_ids',saved->'created_successor_revision_ids',
+  'created_decision_ids',saved->'created_decision_ids','authoritative_readback',saved->'authoritative_readback',
+  'child_command_ids',jsonb_build_array(prepare_id,save_id),
+  'emitted_event_ids',coalesce(prepared->'emitted_event_ids','[]')||coalesce(saved->'emitted_event_ids',jsonb_build_array(saved->'event_id')),
+  'audit_event_ids',coalesce(prepared->'audit_event_ids','[]')||coalesce(saved->'audit_event_ids',jsonb_build_array(saved->'audit_id')),
+  'safe_operator_message','The selected Need quantity was corrected. Review downstream changes before any explicit release.');
+ return atlas_core.pa_05b_finish_command(receipt,answer,true);
+exception when serialization_failure or deadlock_detected or lock_not_available or query_canceled then
+ return atlas_core.d037_error(request,contract,name,'RETRYABLE_CONCURRENCY_FAILURE',
+  'The correction was not committed. Retry the exact original request.',true);
+ when others then return atlas_core.d037_error(request,contract,name,'INTERNAL_COMMAND_FAILURE',
+  'The correction failed safely. No changes were committed. Recover using the exact original request.',true);
+end;$correct$;
+revoke all on function atlas_api.correct_confirmed_need(jsonb)from public,anon,service_role;
+grant execute on function atlas_api.correct_confirmed_need(jsonb)to authenticated;
+reset role;
+set role atlas_need_generation_runtime;
+grant execute on function atlas_api.prepare_planning_source_correction(jsonb)to atlas_confirmed_need_review_runtime;
 reset role;
 set role atlas_owner;
 
