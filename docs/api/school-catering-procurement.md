@@ -405,3 +405,65 @@ cache persists between requests, and reads create no supporting business facts.
 The hosted migration-105 baseline and local migration-106 regression are recorded
 in [the bounded read-performance task](../implementation-tasks/TASK-PROCUREMENT-POST-RELEASE-ALLOCATION-READ-01.md).
 Hosted post-fix acceptance remains subject to Product-approved deployment.
+
+## Optional bulk defaults and rebalance — 15 October 2026
+
+Authority: Product-approved operator brief B, implemented only after the authority-phase review in [ATLAS-OPERATOR-BULK-ALLOCATION-B-01](../autopilot/ACTIVE_TASK.md). This is optional orchestration of existing Allocation defaults/rebalance and explicit Save. Normal safe defaults still need no extra confirmation before ordinary Preparation. Existing single-family commands, source precedence, exact quantity rules, manual decisions/notes, Handoff promotion and immutable PO commitments retain their meaning. The older Handoff-only `confirm_school_catering_supplier_recommendations` API and its confirmed/skipped result remain unchanged.
+
+### Read and preview shape
+
+Extend `atlas_api.get_confirmed_supplier_allocation_workbench` / `CONFIRMED-SUPPLIER-ALLOCATION.v1` with optional payload `include_bulk_preview: boolean` (omitted means false; explicit null or another type is invalid). Ordinary responses/calculation paths remain unchanged when omitted/false. With true, return additive `bulk_preview` for the exact selected `date_start`, `date_end` and optional `school_ids`. Existing backend range and operator 1–7-day limits remain. Existing `states`/`search` may narrow table presentation but do not silently reduce this explicitly disclosed date/School preview scope.
+
+The backend includes a whole aggregate family when ANY contributor matches the School selection, deduplicates by date + delivery location + Ingredient + Unit, and retains the current authoritative source-kind precedence. Each preview family exposes its full exact quantity, all represented School UUIDs/names and exact source contributions, persisted splits/decision origin/notes, eligible Suppliers, and either:
+
+- `DEFAULT`: genuinely no persisted allocation revision, complete/current positive source, no blocker, exactly one ACTIVE effective eligible Supplier with unique lowest non-null priority; proposal is its full quantity with a null initial note.
+- `REBALANCE`: an existing safe stale prior-ratio proposal, explicitly selected after review. Reuse the canonical backend ordering, six-decimal quantity rounding and exact residual to the deterministic final Supplier, with twelve-decimal ratios. Retained Supplier notes survive; no manual split is silently replaced.
+- No applicable proposal: retain current/manual decisions or disclose the existing blocked, incomplete, zero, missing/ambiguous priority, ineligible or no-eligible reason. Zero is never coerced into a positive default or an invented cancellation rule. An invalid/nonpositive proposed split remains an exception under existing writer rules.
+
+Preview supplies total/applicable/excluded counts only over the Actor-authorized family set and per-family reasons. It writes no allocation, receipt, audit event, Handoff or PO. Server-derived applicability is not a new persisted lifecycle state. `allowed`/disabled reasons reflect existing capability/scope checks, never client authority.
+
+Each applicable entry contains the existing family key, `source_kind`, expected family version and source fingerprint; Confirmed Need entries also contain expected source batch ID/version, and Handoff entries bind their exact authoritative source evidence through the canonical fingerprint. It supplies a `proposal_kind`, exact `proposed_splits` (Supplier UUID, six-decimal allocated quantity and retained normalized Supplier note), and `proposal_fingerprint`. The digest is derived from canonical backend JSON of the source binding, full family quantity, existing decision/notes, relevant effective eligibility/priority evidence and exact proposed splits. It is a stateless concurrency comparison, not a trusted browser token or persisted preview record. The command regenerates this evidence under locks; supplying a digest or splits never makes client data authoritative.
+
+For each family, `purchase_order_impact` contains only whole documents authorized through the existing whole-PO predicate, using their existing shaped identity, current revision/status/currentness and relevant visible lines. Always include the same coverage value `AUTHORIZED_DOCUMENTS_ONLY` and explanation: the list covers authorized documents and does not establish absence of other commitments. Empty and nonempty lists use identical coverage semantics. Do not expose hidden document counts, existence, statuses, completeness flags or a hidden-only blocker. If document detail is unavailable, the coverage statement remains; it does not change independent location-family allocation authorization. Full PO visibility is never an Apply prerequisite, hidden documents never cause a special Apply failure, and informational impact needs no PO locks. Existing PO/currentness/replacement rules govern later document work; a bulk allocation change itself never edits a commitment.
+
+### Atomic command shape
+
+Proposed new API: `atlas_api.apply_supplier_allocation_batch(request jsonb)`, contract `SUPPLIER-ALLOCATION-BATCH.v1`, reason `SUPPLIER_ALLOCATION_BATCH_APPLIED`. Use the normal closed authenticated command envelope, command/correlation/idempotency identifiers, requested timestamp, optional reason note and sentinel `expected_version: 1`; concurrency is checked separately for every family, not against an invented batch aggregate.
+
+Payload:
+
+```text
+{
+  scope: { date_start, date_end, school_ids? },
+  candidates: [{
+    family: {
+      service_date, delivery_location_id, ingredient_id, unit_id,
+      source_kind, expected_family_version, expected_source_fingerprint,
+      expected_source_batch_id?, expected_source_batch_version?
+    },
+    proposal_kind: DEFAULT | REBALANCE,
+    proposal_fingerprint,
+    proposed_splits: [{ supplier_id, allocated_quantity, supplier_note }]
+  }]
+}
+```
+
+The candidate set must be nonempty, unique by whole-family key, within the explicit date/School selection, structurally closed and precision-valid. It contains only explicitly selected applicable entries. Excluded preview families are shown separately and never counted as saved. Default selection includes only genuinely missing safe defaults; stale rebalance requires explicit review/selection. No browser-generated ratio/residual, implicit manual overwrite, sequential public Save loop or hidden write on opening preview is permitted.
+
+Resolve the authenticated Actor and require active `procurement.school_catering.write` plus the exact existing Allocation location-family predicate (`school_catering_actor_has_scope(actor, null, null, delivery_location_id)`) for every candidate. Preview retains `procurement.school_catering.read`. Do not replace Allocation scope with the stricter whole-PO predicate, require Preparation's GLOBAL scope, or add a release capability, role, staff grant or second-person approval. One authorized Actor can complete this ordinary task.
+
+Plan locks across the complete selected set before writing: deterministically lock all relevant Confirmed Need batches and their lines/revisions, then canonical Ingredient/Supplier/eligibility evidence, then relevant Handoff batches/revisions, then family roots. This preserves the existing Confirmed Need batch → lines/revisions → Supplier evidence → family order and Handoff Supplier evidence → Handoff source → family order; never lock a later Confirmed Need batch behind an earlier family's lock. Resolve the complete canonical source universe, including overlapping batches, rather than a selected-family subset that could hide ambiguity. Refresh source evidence and revalidate after waits, then recheck source-kind precedence, batch/version/fingerprint, full source quantity, family version, effective Supplier/priority evidence, normalized notes and exact proposal. A changed unique best Supplier, eligibility, source or proposal is a conflict; the command must not silently save a newly computed alternative.
+
+Prefer invoking the existing source-authoritative public Save commands internally under their existing `atlas_procurement_command_runtime` boundary. Each child has a distinct command UUID and a deterministic outer-receipt/family-derived idempotency key; never reuse the outer command ID for several families. A private resolved-writer optimization is permitted only if its complete source evidence is constructed and refreshed by trusted backend canonical helpers, never by copying preview payloads. Do not invoke a public read as a command shortcut or impose its extra read capability on Apply. Do not call the complete-batch Preparation materializer or create/promote Handoffs.
+
+Reuse existing command receipt/idempotency, conflict-replay, domain-event and audit conventions. A successful response identifies every saved family/revision/version, `applied_count` equal to the selected set size, receipt/event evidence and replay status; no safe-skipped member is described as applied. Resolve exact outer replay before generating child commands; it returns the original accepted response without reapplying, while conflicting payload reuse fails. Validate the complete set and report safe per-family reasons. Any conflict or later writer failure rolls back ALL selected allocation/revision/contribution/split and success-event changes, including when a private writer returns a failure JSON rather than raising. A controlled failure response may identify the caller-submitted family key and safe reason, but must not disclose inaccessible source/document facts. Use the existing Preparation-style outer receipt and exception subtransaction: a controlled late child failure must raise through that rollback boundary before returning a safe response; returning failure alone cannot undo prior children. Retryable failure rolls back the outer receipt too. A nonretryable failure may retain only the failed outer receipt, never rolled-back child IDs/events or a partial-success receipt. Retryable concurrency uses the existing exact-request retry contract.
+
+Bulk writes allocations only. They create/regenerate/release no PO, perform no cancellation/replacement and rewrite no historical snapshot. Changed allocation can make existing downstream evidence stale under current rules; the preview explains authorized visible impact without claiming an absence of commitments. Preserve the separate Preparation, PO replacement/cancellation and PXK rules.
+
+### UI, verification and rollback boundary
+
+Use the existing Allocation toolbar/controller and a bounded review surface for defaults versus rebalance, shared Schools, proposals, preserved decisions/notes, exclusions and authorized document impact. Explicit Apply-and-Save submits the reviewed selection once. Preserve dirty/detail/date/context/focus guards; lock mutation on UNKNOWN or failed authoritative readback. Retain the exact original request for supported retry and obtain one authoritative Allocation readback after success. Feedback reports the actual applied family count, not all displayed rows, dates, POs or supplier releases.
+
+Test authenticated mixed-source atomic rollback, both source writers, unique priority/ties/eligibility, exact residuals/notes/zero, whole-family School dedup, existing scopes/capabilities and identical disclosure/Apply behavior with versus without an inaccessible PO. Cover source/version/priority races, exact/conflicting replay, UNKNOWN/readback and dirty/date/focus behavior. Benchmark a recorded local 50-School workload under the unchanged authenticated 8-second budget; do not infer hosted-scale certification or increase timeouts.
+
+No new derived-state relation/status, dependency, general runner or business authority is introduced. Use one CLI-generated forward migration based on accepted main109 and identify it by actual filename/version; pending A2 is independent, so no fixed ordinal is assigned. Preserve hardened runtime ownership, forced RLS, empty search paths and revoke-first public API EXECUTE patterns, with exact catalog proof and no broad table/policy grants. Forward rollback can disable/hide the optional bulk entry point while retaining accepted immutable allocation history and single-family commands; never delete accepted allocations to roll back tooling. Historical 108/109 evidence remains unchanged. Delivery is Draft-only; no merge, manual deployment, hosted database write, real commitment or Warehouse implementation is authorized.
