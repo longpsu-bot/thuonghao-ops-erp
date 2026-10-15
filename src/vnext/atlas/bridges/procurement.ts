@@ -29,7 +29,9 @@ export {
 export {
   procurementOperatorMessage,
   procurementOperatorMessages,
+  purchaseOrderUnitLabel,
 } from "../../../modules/atlas/procurement/procurementOperatorCopy";
+export { operatorUnitLabel } from "../../../modules/atlas/master-data/unitDisplay";
 export type {
   AtlasRpcResult,
   AtlasRpcRequest,

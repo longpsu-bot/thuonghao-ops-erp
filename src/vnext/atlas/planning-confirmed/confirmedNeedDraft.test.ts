@@ -12,6 +12,7 @@ function lineForStep(step: string, unitCode = "kg") {
   line.current_decision_kind = null;
   line.effective_policy!.planning_step = step;
   line.controlled_unit.code = unitCode;
+  line.controlled_unit.name = unitCode === "kg" ? "Kilôgam" : unitCode;
   return line;
 }
 
@@ -54,7 +55,7 @@ describe("Confirmed Need exact Planning-step drafts", () => {
         reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
         reason_note: "Bếp yêu cầu",
       }),
-    ).toBe("Số lượng xác nhận phải theo bước 0,01 kg.");
+    ).toBe("Số lượng xác nhận phải theo bước 0,01 Kilôgam.");
   });
 
   it.each(["4", "4.0"])("accepts exact %s at step 1", (quantity) => {

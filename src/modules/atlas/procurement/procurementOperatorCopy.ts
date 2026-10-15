@@ -1,3 +1,15 @@
+import type { SchoolCateringPurchaseOrder } from "./schoolCateringProcurementModel";
+import { operatorUnitLabel } from "../master-data/unitDisplay";
+
+export function purchaseOrderUnitLabel(
+  order: Pick<SchoolCateringPurchaseOrder, "status">,
+  line: SchoolCateringPurchaseOrder["lines"][number],
+) {
+  return order.status === "DRAFT"
+    ? operatorUnitLabel(line.unit.unit_name, line.unit.unit_code)
+    : operatorUnitLabel(line.unit_name_snapshot, line.unit_code_snapshot);
+}
+
 const reasonLabels: Record<string, string> = {
   PO_DOCUMENT_CODE_REQUIRED:
     "Bổ sung mã hàng và mã NCC trên chứng từ trong Dữ liệu gốc trước khi phát hành.",

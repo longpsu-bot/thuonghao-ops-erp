@@ -431,7 +431,7 @@ describe("Confirmed Need two-action workbench", () => {
       within(riceRow).getByText("Trường Tiểu học Nguyễn Du"),
     ).toBeVisible();
     expect(within(riceRow).getByText("Bếp phụ")).toBeVisible();
-    expect(within(riceRow).getByText("kg")).toBeVisible();
+    expect(within(riceRow).getByText("Kilôgam")).toBeVisible();
     expect(within(riceRow).getByText("10,25")).toBeVisible();
     expect(
       within(riceRow).getByLabelText("Số lượng xác nhận Gạo thơm"),

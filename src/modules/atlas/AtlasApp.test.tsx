@@ -54,8 +54,8 @@ describe("Atlas master-data shell", () => {
     const allocations = await screen.findByRole("table", {
       name: "Allocation Family",
     });
-    expect(allocations).toHaveTextContent("120 kg");
-    expect(allocations).not.toHaveTextContent("100 kg");
+    expect(allocations).toHaveTextContent("120 Kilôgam");
+    expect(allocations).not.toHaveTextContent("100 Kilôgam");
     expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue(workingDate);
     expect(
       screen.getByRole("heading", { name: "Phân bổ nhà cung ứng", level: 1 }),

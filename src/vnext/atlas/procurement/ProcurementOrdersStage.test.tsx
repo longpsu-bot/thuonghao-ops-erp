@@ -43,6 +43,41 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it.each(["po_draft", "po_released"] as const)(
+    "shows the %s human Unit label from the correct current or frozen authority",
+    (scenario) => {
+      const fixture = createProcurementReviewFixture(scenario);
+      const order = fixture.orders.purchase_orders[0]!;
+      for (const line of order.lines) {
+        line.unit.unit_code = "v1-unit-91a0b1c14124";
+        line.unit.unit_name = "Cái";
+        line.unit_code_snapshot = "v1-unit-91a0b1c14124";
+        line.unit_name_snapshot = "Miếng";
+      }
+      render(
+        <AtlasVNextProvider>
+          <ProcurementOrdersStage
+            data={fixture.orders}
+            disabled={false}
+            search=""
+            onAction={vi.fn()}
+          />
+        </AtlasVNextProvider>,
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Xem đơn NCC An Phú" }),
+      );
+      const detail = screen.getByRole("region", {
+        name: "Chi tiết đơn mua NCC An Phú",
+      });
+      const expected = scenario === "po_draft" ? "Cái" : "Miếng";
+      expect(detail.textContent).toContain(expected);
+      expect(detail.textContent).not.toContain("v1-unit-");
+      if (scenario === "po_released")
+        expect(detail.textContent).not.toContain("Cái");
+      expect(order.lines[0]!.unit.unit_code).toBe("v1-unit-91a0b1c14124");
+    },
+  );
   it("shows each immutable supplier instruction in the PO line detail", () => {
     const fixture = createProcurementReviewFixture("po_draft");
     fixture.orders.purchase_orders[0]!.lines[0]!.supplier_note =

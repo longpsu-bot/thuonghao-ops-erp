@@ -1,0 +1,284 @@
+{
+  "status": "PASS",
+  "fixtureOnly": true,
+  "hostedRequests": 0,
+  "minimumNativeClearancePoints": 0.5,
+  "manifestSha256": "8d141cb91f18333565515f6293f2a83268e9bc7b6bbed46f8e0f24f195fd0ddc",
+  "sourceHashes": {
+    "producer": "88fefbc8392800b885ca74775fc681cd0a1691e120377a7558de1681d33e06a7",
+    "helper": "313f8c370b1919534c8a231370ac89c7163dbd491ba185696b233fa25fe89205"
+  },
+  "nativeUnitRowsChecked": 9,
+  "nativeChecks": [
+    {
+      "mode": "details_ing",
+      "address": "D11",
+      "sourceText": "Cái",
+      "sourceHeight": 28,
+      "canonicalTextMatches": true,
+      "text": "Cái",
+      "printedLineCount": 1,
+      "cellBounds": [261.24, 250.39, 311.18, 273.91],
+      "topClearancePoints": 5.91935999999987,
+      "bottomClearancePoints": 4.640620000000126,
+      "leftClearancePoints": 1.6800100000000384,
+      "rightClearancePoints": 30.25855999999999,
+      "page": 1
+    },
+    {
+      "mode": "details_ing",
+      "address": "D14",
+      "sourceText": "Kilogram",
+      "sourceHeight": 42,
+      "canonicalTextMatches": true,
+      "text": "Kilogra\nm",
+      "printedLineCount": 2,
+      "cellBounds": [261.24, 314.47, 311.18, 350.74],
+      "topClearancePoints": 4.269360000000006,
+      "bottomClearancePoints": 2.960620000000006,
+      "leftClearancePoints": 1.6800100000000384,
+      "rightClearancePoints": 8.91343999999998,
+      "page": 1
+    },
+    {
+      "mode": "details_ing",
+      "address": "D17",
+      "sourceText": "Miếng",
+      "sourceHeight": 28,
+      "canonicalTextMatches": true,
+      "text": "Miếng",
+      "printedLineCount": 1,
+      "cellBounds": [261.24, 391.3, 311.18, 414.84],
+      "topClearancePoints": 5.939360000000022,
+      "bottomClearancePoints": 4.640620000000013,
+      "leftClearancePoints": 1.6800100000000384,
+      "rightClearancePoints": 14.42719999999997,
+      "page": 1
+    },
+    {
+      "mode": "details_school",
+      "address": "D11",
+      "sourceText": "Cái",
+      "sourceHeight": 30,
+      "canonicalTextMatches": true,
+      "text": "Cái",
+      "printedLineCount": 1,
+      "cellBounds": [261.24, 253.03, 311.18, 278.47],
+      "topClearancePoints": 6.87936000000002,
+      "bottomClearancePoints": 5.600650000000087,
+      "leftClearancePoints": 1.6800100000000384,
+      "rightClearancePoints": 30.25855999999999,
+      "page": 1
+    },
+    {
+      "mode": "details_school",
+      "address": "D12",
+      "sourceText": "Kilogram",
+      "sourceHeight": 42,
+      "canonicalTextMatches": true,
+      "text": "Kilogra\nm",
+      "printedLineCount": 2,
+      "cellBounds": [261.24, 279.43, 311.18, 315.67],
+      "topClearancePoints": 4.239360000000033,
+      "bottomClearancePoints": 2.9606500000001006,
+      "leftClearancePoints": 1.6800100000000384,
+      "rightClearancePoints": 8.91343999999998,
+      "page": 1
+    },
+    {
+      "mode": "details_school",
+      "address": "D13",
+      "sourceText": "Miếng",
+      "sourceHeight": 30,
+      "canonicalTextMatches": true,
+      "text": "Miếng",
+      "printedLineCount": 1,
+      "cellBounds": [261.24, 316.63, 311.18, 342.1],
+      "topClearancePoints": 6.909359999999879,
+      "bottomClearancePoints": 5.60065000000003,
+      "leftClearancePoints": 1.6800100000000384,
+      "rightClearancePoints": 14.42719999999997,
+      "page": 1
+    },
+    {
+      "mode": "sum",
+      "address": "D11",
+      "sourceText": "Cái",
+      "sourceHeight": 30,
+      "canonicalTextMatches": true,
+      "text": "Cái",
+      "printedLineCount": 1,
+      "cellBounds": [268.92, 250.63, 316.7, 275.83],
+      "topClearancePoints": 7.067519999999945,
+      "bottomClearancePoints": 5.412490000000048,
+      "leftClearancePoints": 1.6799800000000573,
+      "rightClearancePoints": 28.41919999999999,
+      "page": 1
+    },
+    {
+      "mode": "sum",
+      "address": "D12",
+      "sourceText": "Kilogram",
+      "sourceHeight": 42,
+      "canonicalTextMatches": true,
+      "text": "Kilogra\nm",
+      "printedLineCount": 2,
+      "cellBounds": [268.92, 276.79, 316.7, 312.55],
+      "topClearancePoints": 4.427519999999959,
+      "bottomClearancePoints": 2.7724900000000616,
+      "leftClearancePoints": 1.6799800000000573,
+      "rightClearancePoints": 7.367599999999982,
+      "page": 1
+    },
+    {
+      "mode": "sum",
+      "address": "D13",
+      "sourceText": "Miếng",
+      "sourceHeight": 30,
+      "canonicalTextMatches": true,
+      "text": "Miếng",
+      "printedLineCount": 1,
+      "cellBounds": [268.92, 313.51, 316.7, 338.74],
+      "topClearancePoints": 7.097520000000031,
+      "bottomClearancePoints": 5.412459999999953,
+      "leftClearancePoints": 1.6799800000000573,
+      "rightClearancePoints": 12.646399999999971,
+      "page": 1
+    }
+  ],
+  "pdfmakeTextChecks": [
+    {
+      "mode": "details_ing",
+      "unitCellChecks": [
+        {
+          "label": "Cái",
+          "printedText": "Cái",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 19.368164051999997,
+            "top": 3.906249750000029,
+            "bottom": 1.500000249999971
+          }
+        },
+        {
+          "label": "Kilogram",
+          "printedText": "Kilog\nram",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 8.061523420000015,
+            "top": 3.906249749999972,
+            "bottom": 1.5000002500000278
+          }
+        },
+        {
+          "label": "Miếng",
+          "printedText": "Miến\ng",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 8.717773419999958,
+            "top": 3.906249749999972,
+            "bottom": 1.5000002500000278
+          }
+        }
+      ],
+      "pages": 1,
+      "allThreeFrozenLabelsPresent": true,
+      "noCurrentNameOrTechnicalCodeLeak": true,
+      "exactQuantityOccurrences": 3,
+      "fonts": [
+        "BZZZZZ+Roboto-Medium",
+        "CZZZZZ+Roboto-Italic",
+        "DZZZZZ+Roboto-Regular"
+      ]
+    },
+    {
+      "mode": "details_school",
+      "unitCellChecks": [
+        {
+          "label": "Cái",
+          "printedText": "Cái",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 19.368164051999997,
+            "top": 3.906249750000029,
+            "bottom": 1.500000249999971
+          }
+        },
+        {
+          "label": "Kilogram",
+          "printedText": "Kilog\nram",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 8.061523420000015,
+            "top": 3.906249750000029,
+            "bottom": 1.500000249999971
+          }
+        },
+        {
+          "label": "Miếng",
+          "printedText": "Miến\ng",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 8.717773419999958,
+            "top": 3.906249749999972,
+            "bottom": 1.5000002500000278
+          }
+        }
+      ],
+      "pages": 1,
+      "allThreeFrozenLabelsPresent": true,
+      "noCurrentNameOrTechnicalCodeLeak": true,
+      "exactQuantityOccurrences": 3,
+      "fonts": [
+        "BZZZZZ+Roboto-Medium",
+        "CZZZZZ+Roboto-Italic",
+        "DZZZZZ+Roboto-Regular"
+      ]
+    },
+    {
+      "mode": "sum",
+      "unitCellChecks": [
+        {
+          "label": "Cái",
+          "printedText": "Cái",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 19.368164051999997,
+            "top": 3.906249750000029,
+            "bottom": 1.500000249999971
+          }
+        },
+        {
+          "label": "Kilogram",
+          "printedText": "Kilog\nram",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 8.061523420000015,
+            "top": 3.906249750000029,
+            "bottom": 1.500000249999971
+          }
+        },
+        {
+          "label": "Miếng",
+          "printedText": "Miến\ng",
+          "clearancesAfterConservativeOnePointInset": {
+            "left": 3.5,
+            "right": 8.717773419999958,
+            "top": 3.906249750000029,
+            "bottom": 1.5000002500000278
+          }
+        }
+      ],
+      "pages": 1,
+      "allThreeFrozenLabelsPresent": true,
+      "noCurrentNameOrTechnicalCodeLeak": true,
+      "exactQuantityOccurrences": 3,
+      "fonts": [
+        "BZZZZZ+Roboto-Medium",
+        "CZZZZZ+Roboto-Italic",
+        "DZZZZZ+Roboto-Regular"
+      ]
+    }
+  ],
+  "visualInspection": "PASS for Unit text/row containment in all six first-page PNGs (three native Excel PDFs, three production PDFMake PDFs); unchanged general header layout is outside this scoped acceptance"
+}

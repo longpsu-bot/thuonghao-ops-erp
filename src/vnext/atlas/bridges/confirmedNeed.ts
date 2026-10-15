@@ -1,4 +1,5 @@
 // Reviewed non-presentation contracts only. No legacy lifecycle commands escape.
+export { operatorUnitLabel } from "../../../modules/atlas/master-data/unitDisplay";
 import type { createPlanningInputReadinessApi } from "../../../modules/atlas/planning-inputs/readiness/planningInputReadinessApi";
 import type { NeedGenerationApi as GenerationApi } from "../../../modules/atlas/planning-inputs/need-generation/needGenerationApi";
 import type { ConfirmedNeedApi as ConfirmationApi } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";

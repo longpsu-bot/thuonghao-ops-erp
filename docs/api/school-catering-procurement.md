@@ -405,3 +405,19 @@ cache persists between requests, and reads create no supporting business facts.
 The hosted migration-105 baseline and local migration-106 regression are recorded
 in [the bounded read-performance task](../implementation-tasks/TASK-PROCUREMENT-POST-RELEASE-ALLOCATION-READ-01.md).
 Hosted post-fix acceptance remains subject to Product-approved deployment.
+
+## Operator Unit labels and Draft School projection — 15 October 2026
+
+Product's operator-fixes brief authorizes this additive A2 contract correction under `ATLAS-OPERATOR-UNIT-LABELS-A2-01`. Delivery is a separate Draft PR only: no merge, manual deployment or hosted database write. The following behavior is the implementation target, not a claim of deployment.
+
+Current Confirmed Need already supplies the controlled Unit name. Both Allocation read routes and Generated Review add `unit_name` beside unchanged Unit ID and `unit_code`; Draft PO reads expose the current Unit name. Operator presentation prefers a valid human name, then a valid human legacy code, with a controlled missing-label warning when neither is usable. Technical adoption codes and UUIDs are not human labels. Unit identity, controlled codes, scale, quantities, source lineage, currentness and fingerprints retain their existing meaning.
+
+One forward migration adds nullable `purchase_order_line_revisions.unit_name_snapshot` without backfill. The existing future ordinary/replacement release capture reads the Unit name after its existing Unit lock, alongside the retained frozen code. The existing document-identity guard and trigger protect this new field, including a historical null. Replacement release captures its own current label; predecessor and replay evidence remain unchanged.
+
+Official `RELEASED_TO_SUPPLIER` and `SUPERSEDED` display/export uses only a valid frozen human name or a valid human frozen legacy code such as `kg`. It must never join current Master Data to repair historical display. A historical technical-only code without a human snapshot remains readable with a controlled warning, but fails the existing incomplete-evidence official export gate (`document_snapshot_complete: false`, `export_ready: false`, `allowed_actions.export: false`, `PO_DOCUMENT_SNAPSHOT_INCOMPLETE`). This amendment adds no new export state or PO release prohibition and does not fabricate historical labels.
+
+Draft `school_breakdown` is derived by the existing canonical `school_catering_po_school_breakdown` helper for that displayed revision's supplier split, preserving exact positive contribution/split overlaps and School UUIDs. Stale Drafts keep their own revision/split basis rather than a newer successor allocation. Released/superseded School breakdown uses only its frozen snapshot. Unknown historical official evidence is not replaced with current School relationships.
+
+**Shopping List exception:** the approved [Shopping List Unit display task](../implementation-tasks/TASK-ATLAS-SHOPPING-LIST-UNIT-DISPLAY-01.md) remains code-first, shared by visible export/reference, ambiguity validation and import. Its V2 presentation contract supersedes geometry only. A2's name-first operator and PO display does not modify that resolver, its import contract or hidden controlled Unit identity.
+
+No public API, role, capability, scope kind, policy or privilege grant is added. Existing authentication, scoped access, immutable facts, exact quantities, replay, numbering and release/currentness rules remain authoritative. Local test-first proof must cover name `Cái`, legacy `kg`, frozen history versus rename, ordinary/replacement capture, immutable nulls, incomplete historical evidence, scoped denial and exact stale-Draft School overlaps. Final production-generated XLSX/PDF layout must be checked with `Cái`, `Miếng` and `Kilogram`; no unapproved abbreviation or font shrinking is implied.

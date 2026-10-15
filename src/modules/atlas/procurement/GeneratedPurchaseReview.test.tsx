@@ -48,6 +48,33 @@ const review: ReviewData = {
   ],
 };
 describe("generated purchase review worksheet", () => {
+  it("uses the supplied human Unit name in review and both preliminary sheets", async () => {
+    const data = structuredClone(review);
+    data.rows[0]!.unit_code = "v1-unit-91a0b1c14124";
+    data.rows[0]!.unit_name = "Cái";
+    const source = structuredClone(data);
+    const invoke = vi
+      .fn()
+      .mockResolvedValue({ kind: "success", response: data });
+    render(
+      <GeneratedPurchaseReview
+        api={createPurchaseReviewApi({ invoke })}
+        authSubject="actor"
+        serviceDate="2026-11-02"
+        onExport={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "In bản dự kiến" }));
+    expect(await screen.findByText("100.000000 Cái")).toBeVisible();
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createGeneratedPurchaseReviewXlsx(data));
+    for (const sheet of book.worksheets) {
+      const text = JSON.stringify(sheet.model);
+      expect(text).toContain("Cái");
+      expect(text).not.toContain("v1-unit-91a0b1c14124");
+    }
+    expect(data).toEqual(source);
+  });
   it("reads generated evidence, labels it preliminary, and exports without commands", async () => {
     const invoke = vi
       .fn()

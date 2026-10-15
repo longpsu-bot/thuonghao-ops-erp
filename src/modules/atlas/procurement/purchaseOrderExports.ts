@@ -3,6 +3,7 @@ import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import type { Row, Worksheet } from "exceljs";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
 import { measuredSchoolRowHeight } from "../documents/schoolRowMeasurement";
+import { humanUnitLabel } from "../master-data/unitDisplay";
 import {
   appendDocumentParsingMetadata,
   prepareDocumentParsingColumns,
@@ -48,7 +49,7 @@ type PurchaseOrderExportLine = {
   ingredientDocumentCode: string;
   ingredientName: string;
   orderedQuantity: string;
-  unitCode: string;
+  unitLabel: string;
   supplierNote: string | null;
 };
 
@@ -117,7 +118,8 @@ export function buildPurchaseOrderExportData(
         (line) =>
           !officialCode(line.ingredient_document_code_snapshot) ||
           !line.ingredient_name_snapshot?.trim() ||
-          !line.unit_code_snapshot?.trim(),
+          !line.unit_code_snapshot?.trim() ||
+          !humanUnitLabel(line.unit_name_snapshot, line.unit_code_snapshot),
       ))
   ) {
     throw new Error(incompleteMessage);
@@ -142,7 +144,7 @@ export function buildPurchaseOrderExportData(
     {
       ingredientName: string;
       ingredientDocumentCode: string;
-      unitCode: string;
+      unitLabel: string;
       supplierNote: string | null;
       quantity: bigint;
       ingredientId: string;
@@ -177,7 +179,10 @@ export function buildPurchaseOrderExportData(
       sources: [...(current?.sources ?? []), source],
       ingredientDocumentCode: line.ingredient_document_code_snapshot!,
       ingredientName: line.ingredient_name_snapshot!,
-      unitCode: line.unit_code_snapshot!,
+      unitLabel: humanUnitLabel(
+        line.unit_name_snapshot,
+        line.unit_code_snapshot,
+      )!,
       supplierNote: line.supplier_note,
       quantity: (current?.quantity ?? 0n) + quantity,
     });
@@ -220,7 +225,10 @@ export function buildPurchaseOrderExportData(
         ingredientDocumentCode: line.ingredient_document_code_snapshot!,
         ingredientName: line.ingredient_name_snapshot!,
         orderedQuantity: exactQuantity(schoolQuantity),
-        unitCode: line.unit_code_snapshot!,
+        unitLabel: humanUnitLabel(
+          line.unit_name_snapshot,
+          line.unit_code_snapshot,
+        )!,
         supplierNote: line.supplier_note,
       });
     }
@@ -256,7 +264,7 @@ export function buildPurchaseOrderExportData(
       ingredientName: line.ingredientName,
       ingredientDocumentCode: line.ingredientDocumentCode,
       orderedQuantity: exactQuantity(line.quantity),
-      unitCode: line.unitCode,
+      unitLabel: line.unitLabel,
       supplierNote: line.supplierNote,
     })),
     schoolLines,
@@ -335,7 +343,7 @@ function groupLabel(
   const first = lines[0]!;
   return direction === "details_school"
     ? schoolLabel(first)
-    : `${first.ingredientName} (${first.unitCode})`;
+    : `${first.ingredientName} (${first.unitLabel})`;
 }
 const noteColumnWidth = 32;
 const noteFontSize = 12;
@@ -468,7 +476,7 @@ export function buildPurchaseOrderPdfDefinition(
                 lineChunks(line).map(({ note }, continuation) => [
                   continuation ? "..." : index + 1,
                   line.ingredientName,
-                  line.unitCode,
+                  line.unitLabel,
                   {
                     text: continuation
                       ? ""
@@ -509,7 +517,7 @@ export function buildPurchaseOrderPdfDefinition(
             body.push([
               continuation ? "..." : index + 1,
               detail,
-              line.unitCode,
+              line.unitLabel,
               {
                 text: continuation
                   ? ""
@@ -709,15 +717,28 @@ function addDetailSheet(
     activeLabel = groupLabel(lines, direction);
     room(
       bandHeight(activeLabel) +
-        (direction === "details_school"
-          ? wrappedRowHeight(lines[0]!.ingredientName, descriptionWidth, 14, 30)
-          : measuredSchoolRowHeight(
-              schoolLabel(lines[0]!),
-              sheet,
-              3,
-              3,
-              false,
-            )),
+        Math.max(
+          wrappedRowHeight(
+            lines[0]!.unitLabel,
+            sheet.getColumn(4).width!,
+            14,
+            28,
+          ),
+          direction === "details_school"
+            ? wrappedRowHeight(
+                lines[0]!.ingredientName,
+                descriptionWidth,
+                14,
+                30,
+              )
+            : measuredSchoolRowHeight(
+                schoolLabel(lines[0]!),
+                sheet,
+                3,
+                3,
+                false,
+              ),
+        ),
       false,
     );
     band(activeLabel);
@@ -728,6 +749,7 @@ function addDetailSheet(
           : schoolLabel(line);
       lineChunks(line).forEach(({ note }, continuation) => {
         const height = Math.max(
+          wrappedRowHeight(line.unitLabel, sheet.getColumn(4).width!, 14, 28),
           direction === "details_school"
             ? wrappedRowHeight(detail, descriptionWidth + 6, 14, 30)
             : measuredSchoolRowHeight(detail, sheet, 3, 3, false),
@@ -739,7 +761,7 @@ function addDetailSheet(
           continuation ? "..." : index + 1,
           continuation ? "" : line.ingredientDocumentCode,
           detail,
-          line.unitCode,
+          line.unitLabel,
           null,
           note,
         ];
@@ -874,7 +896,7 @@ function addSummarySheet(
         continuation ? "..." : index + 1,
         continuation ? "" : line.ingredientDocumentCode,
         line.ingredientName,
-        line.unitCode,
+        line.unitLabel,
         null,
         note,
       ];
@@ -882,6 +904,7 @@ function addSummarySheet(
       row.alignment = { vertical: "middle", wrapText: true };
       row.getCell(6).font = { name: "Times New Roman", size: noteFontSize };
       row.height = Math.max(
+        wrappedRowHeight(line.unitLabel, sheet.getColumn(4).width!, 14),
         wrappedRowHeight(line.ingredientName, descriptionWidth + 6, 14),
         noteRowHeight(note),
       );

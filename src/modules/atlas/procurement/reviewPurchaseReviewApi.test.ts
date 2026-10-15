@@ -1,5 +1,9 @@
 import { expect, it } from "vitest";
-import { createReviewPurchaseJourney } from "./reviewPurchaseReviewApi";
+import {
+  createReviewPurchaseJourney,
+  seedReviewPurchaseJourney,
+} from "./reviewPurchaseReviewApi";
+import { buildPurchaseOrderExportData } from "./purchaseOrderExports";
 import { confirmedNeedSaveV2Request } from "../planning-inputs/confirmed-needs/confirmedNeedApi";
 import {
   confirmedAllocationReadRequest,
@@ -12,6 +16,56 @@ import {
   purchaseOrdersReadRequest,
   releasePurchaseOrderRequest,
 } from "./schoolCateringProcurementApi";
+
+it.each([
+  ["v1-unit-91a0b1c14124", "v1-unit-91a0b1c14124", false],
+  ["kg", "v1-unit-91a0b1c14124", true],
+  ["v1-unit-91a0b1c14124", "Cái", true],
+] as const)(
+  "keeps release success separate from Unit export completeness for %s / %s",
+  async (code, name, complete) => {
+    const date = "2026-09-03";
+    const journey = await seedReviewPurchaseJourney("prepared", date, {
+      code,
+      name,
+    });
+    const draft = journey.inspect().orders[0]!;
+    const request = releasePurchaseOrderRequest(
+      "actor",
+      "corr",
+      draft.version,
+      draft.purchase_order_id,
+      draft.current_revision.purchase_order_revision_id,
+    );
+    const released = await journey.procurementApi.releasePurchaseOrder(request);
+    expect(released.kind).toBe("success");
+    expect(await journey.procurementApi.releasePurchaseOrder(request)).toEqual(
+      released,
+    );
+    const order = journey.inspect().orders[0]!;
+    expect(order.status).toBe("RELEASED_TO_SUPPLIER");
+    expect(order.document_number).toBeTruthy();
+    expect(order.lines[0]!.ordered_quantity).toBe(
+      draft.lines[0]!.ordered_quantity,
+    );
+    expect(order.lines[0]!.unit_code_snapshot).toBe(code);
+    expect(order.lines[0]!.unit_name_snapshot).toBe(name);
+    expect(order.document_snapshot_complete).toBe(complete);
+    expect(order.export_ready).toBe(complete);
+    expect(order.allowed_actions.export).toBe(complete);
+    if (complete)
+      expect(() => buildPurchaseOrderExportData(order)).not.toThrow();
+    else {
+      expect(order.blockers).toContain("PO_DOCUMENT_SNAPSHOT_INCOMPLETE");
+      expect(order.disabled_reasons).toContain(
+        "PO_DOCUMENT_SNAPSHOT_INCOMPLETE",
+      );
+      expect(() => buildPurchaseOrderExportData(order)).toThrow(
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+      );
+    }
+  },
+);
 
 it("keeps generated100 separate from saved120, retained72/48 and explicit75/50 through official release", async () => {
   const date = "2026-09-03";
@@ -34,6 +88,7 @@ it("keeps generated100 separate from saved120, retained72/48 and explicit75/50 t
   expect(confirmedAllocationFromResult(await read())!.rows[0]).toMatchObject({
     complete: false,
     family_quantity: null,
+    unit_name: before.need.lines[0]!.controlled_unit.name,
   });
   const saveNeed = async (quantity: string) => {
     const need = journey.inspect().need;
@@ -115,6 +170,9 @@ it("keeps generated100 separate from saved120, retained72/48 and explicit75/50 t
     journey.inspect().orders.map((po) => po.lines[0]!.ordered_quantity),
   ).toEqual(["75.000000", "50.000000"]);
   const first = journey.inspect().orders[0]!;
+  expect(first.lines[0]!.unit.unit_name).toBe(
+    before.need.lines[0]!.controlled_unit.name,
+  );
   await journey.procurementApi.releasePurchaseOrder(
     releasePurchaseOrderRequest(
       "actor",
@@ -128,6 +186,9 @@ it("keeps generated100 separate from saved120, retained72/48 and explicit75/50 t
     "RELEASED_TO_SUPPLIER",
     "DRAFT",
   ]);
+  expect(journey.inspect().orders[0]!.lines[0]!.unit_name_snapshot).toBe(
+    before.need.lines[0]!.controlled_unit.name,
+  );
   expect(
     await journey.purchaseReviewApi.getGeneratedReview(previewRequest),
   ).toEqual(preview);

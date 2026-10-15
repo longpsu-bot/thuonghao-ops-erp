@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../bridges/procurement";
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
 import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
@@ -28,8 +29,10 @@ function allocationIssue(row: AllocationFamilyRow, remainder: bigint | null) {
   if (row.state === "UNALLOCATED") return "Chưa phân bổ";
   if (row.state === "BALANCED") return "Đủ";
   if (remainder === null) return "Cần phân bổ lại";
-  if (remainder > 0n) return `Thiếu ${quantity(remainder)} ${row.unit_code}`;
-  if (remainder < 0n) return `Vượt ${quantity(-remainder)} ${row.unit_code}`;
+  if (remainder > 0n)
+    return `Thiếu ${quantity(remainder)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`;
+  if (remainder < 0n)
+    return `Vượt ${quantity(-remainder)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`;
   return "Cần phân bổ lại";
 }
 
@@ -278,7 +281,7 @@ export function ProcurementAllocationTable({
                         color="fg.muted"
                         ml="xs"
                       >
-                        {row.unit_code}
+                        {operatorUnitLabel(row.unit_name, row.unit_code)}
                       </Box>
                     </Text>
                   </Table.Cell>

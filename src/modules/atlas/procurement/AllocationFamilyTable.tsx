@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../master-data/unitDisplay";
 import type { AllocationFamilyRow } from "./schoolCateringProcurementModel";
 
 const QUANTITY_SCALE = 1_000_000n;
@@ -132,14 +133,15 @@ export function AllocationFamilyTable({
                   {row.complete === false || row.family_quantity === null
                     ? "—"
                     : quantity(row.family_quantity)}{" "}
-                  {row.unit_code}
+                  {operatorUnitLabel(row.unit_name, row.unit_code)}
                 </td>
                 <td>
-                  {displayQuantity(assigned)} {row.unit_code}
+                  {displayQuantity(assigned)}{" "}
+                  {operatorUnitLabel(row.unit_name, row.unit_code)}
                 </td>
                 <td>
                   {row.complete === false ? "—" : displayQuantity(difference)}{" "}
-                  {row.unit_code}
+                  {operatorUnitLabel(row.unit_name, row.unit_code)}
                 </td>
                 <td>{supplierLabel(row)}</td>
                 <td>

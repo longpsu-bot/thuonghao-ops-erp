@@ -34,6 +34,7 @@ import {
   type PurchaseReviewApi,
 } from "./purchaseReviewApi";
 import { releasePurchaseOrderRequest } from "./schoolCateringProcurementApi";
+import { humanUnitLabel } from "../master-data/unitDisplay";
 
 const clone = structuredClone;
 const scale = 1_000_000n;
@@ -77,10 +78,12 @@ type SavedAllocation = {
 export function createReviewPurchaseJourney(
   scenario: AtlasReviewScenario,
   serviceDate: string,
+  initialUnit?: { code: string; name: string },
 ) {
   let need = createReviewConfirmedNeedFixture(1);
   need.service_period = { period_start: serviceDate, period_end: serviceDate };
   const line = need.lines[0]!;
+  if (initialUnit) Object.assign(line.controlled_unit, initialUnit);
   Object.assign(line, {
     service_date: serviceDate,
     theoretical_quantity: "100.000000",
@@ -178,6 +181,7 @@ export function createReviewPurchaseJourney(
       ingredient_name: current.ingredient.name,
       unit_id: current.controlled_unit.id,
       unit_code: current.controlled_unit.code,
+      unit_name: current.controlled_unit.name,
       family: {
         service_date: serviceDate,
         delivery_location_id: current.delivery_location.id,
@@ -428,12 +432,23 @@ export function createReviewPurchaseJourney(
                 unit: {
                   unit_id: current.unit_id,
                   unit_code: current.unit_code,
+                  unit_name: current.unit_name,
                 },
                 service_date: serviceDate,
                 delivery_location: {
                   delivery_location_id: current.delivery_location_id,
                   location_name: current.location_name,
                 },
+                school_breakdown: [
+                  {
+                    school_id: current.school_id!,
+                    school_name: current.school_name!,
+                    school_display_order: 1,
+                    delivery_location_id: current.delivery_location_id,
+                    delivery_location_name: current.location_name,
+                    ordered_quantity: split.allocated_quantity,
+                  },
+                ],
                 source: {
                   family_id: current.family.family_id!,
                   family_revision_id: allocations.at(-1)!.revision_id,
@@ -516,15 +531,26 @@ export function createReviewPurchaseJourney(
         line.ingredient_document_code_snapshot = line.ingredient.document_code!;
         line.ingredient_name_snapshot = line.ingredient.ingredient_name;
         line.unit_code_snapshot = line.unit.unit_code;
+        line.unit_name_snapshot = line.unit.unit_name ?? null;
       }
-      po.document_snapshot_complete = true;
+      const complete = po.lines.every((line) =>
+        Boolean(
+          line.unit_code_snapshot?.trim() &&
+          humanUnitLabel(line.unit_name_snapshot, line.unit_code_snapshot),
+        ),
+      );
+      po.document_snapshot_complete = complete;
       po.allowed_actions = {
         release: false,
-        export: true,
+        export: complete,
         create_replacement: false,
       };
       po.release_eligible = false;
-      po.export_ready = true;
+      po.export_ready = complete;
+      if (!complete) {
+        po.blockers.push("PO_DOCUMENT_SNAPSHOT_INCOMPLETE");
+        po.disabled_reasons.push("PO_DOCUMENT_SNAPSHOT_INCOMPLETE");
+      }
       return remember(
         request,
         success({
@@ -580,8 +606,9 @@ export type ReviewPurchasePhase =
 export async function seedReviewPurchaseJourney(
   phase: ReviewPurchasePhase,
   date = "2026-09-03",
+  initialUnit?: { code: string; name: string },
 ) {
-  const journey = createReviewPurchaseJourney("ready", date);
+  const journey = createReviewPurchaseJourney("ready", date, initialUnit);
   const requireSuccess = (result: AtlasRpcResult) => {
     if (result.kind !== "success")
       throw new Error("Synthetic journey setup failed");

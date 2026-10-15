@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../../master-data/unitDisplay";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import { CompactTable, Panel } from "../../WorkbenchComponents";
@@ -635,7 +636,12 @@ export function ConfirmedNeedReviewWorkbench({
                   <small>{line.school.name}</small>
                   <small>{line.delivery_location.name}</small>
                 </td>
-                <td>{line.controlled_unit.code}</td>
+                <td>
+                  {operatorUnitLabel(
+                    line.controlled_unit.name,
+                    line.controlled_unit.code,
+                  )}
+                </td>
                 <td>{exactQuantityDisplay(line.theoretical_quantity)}</td>
                 <td>
                   <input

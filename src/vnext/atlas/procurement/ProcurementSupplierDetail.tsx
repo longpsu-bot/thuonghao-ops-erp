@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../bridges/procurement";
 import {
   useAtlasWorkbenchStatus,
   type AtlasModuleExitProps,
@@ -99,25 +100,25 @@ export function ProcurementSupplierDetail({
   const reconciliation =
     total === null || need === null || remainder === null
       ? "Chưa đủ dữ liệu để đối chiếu phân bổ."
-      : `${quantity(total)} / ${quantity(need)} ${row.unit_code} đã phân bổ · ${
+      : `${quantity(total)} / ${quantity(need)} ${operatorUnitLabel(row.unit_name, row.unit_code)} đã phân bổ · ${
           remainder === 0n
             ? "Đã đủ"
             : remainder > 0n
-              ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
-              : `Vượt ${quantity(-remainder)} ${row.unit_code}`
+              ? `Thiếu ${quantity(remainder)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`
+              : `Vượt ${quantity(-remainder)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`
         }`;
   const reconciliationQuantity =
     total === null || need === null
       ? null
-      : `${quantity(total)} / ${quantity(need)} ${row.unit_code}`;
+      : `${quantity(total)} / ${quantity(need)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`;
   const reconciliationOutcome =
     remainder === null
       ? null
       : remainder === 0n
         ? "Đã đủ"
         : remainder > 0n
-          ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
-          : `Vượt ${quantity(-remainder)} ${row.unit_code}`;
+          ? `Thiếu ${quantity(remainder)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`
+          : `Vượt ${quantity(-remainder)} ${operatorUnitLabel(row.unit_name, row.unit_code)}`;
   const locked = disabled || row.complete === false;
   // Zero participants are omitted by the command payload, not an override.
   // Invalid quantities remain in the comparison and keep the draft dirty.
@@ -226,7 +227,8 @@ export function ProcurementSupplierDetail({
           {row.eligible_suppliers.find(
             (supplier) => supplier.supplier_id === split.supplier_id,
           )?.supplier_name ?? "Nhà cung ứng không còn phù hợp"}{" "}
-          · {quantity(split.allocated_quantity)} {row.unit_code}
+          · {quantity(split.allocated_quantity)}{" "}
+          {operatorUnitLabel(row.unit_name, row.unit_code)}
         </Text>
       ))}
       <Button
@@ -335,8 +337,9 @@ export function ProcurementSupplierDetail({
               borderRadius="control"
             >
               ⚠ {split.supplier_name} không còn phù hợp (
-              {quantity(split.allocated_quantity)} {row.unit_code}). Cần chọn
-              nhà cung ứng thay thế; phần đã lưu không tự chuyển.
+              {quantity(split.allocated_quantity)}{" "}
+              {operatorUnitLabel(row.unit_name, row.unit_code)}). Cần chọn nhà
+              cung ứng thay thế; phần đã lưu không tự chuyển.
             </Box>
           ))}
         {draft.length === 0 && (
@@ -370,7 +373,7 @@ export function ProcurementSupplierDetail({
                   }
                   minW="var(--atlas-layout-zero, 0)"
                 />
-                <Text>{row.unit_code}</Text>
+                <Text>{operatorUnitLabel(row.unit_name, row.unit_code)}</Text>
                 {added.includes(split.supplier_id) && (
                   <Button
                     size="sm"

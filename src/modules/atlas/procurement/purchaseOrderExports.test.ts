@@ -10,6 +10,99 @@ import {
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("prints frozen human Unit names while retaining controlled identity and quantity", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    for (const line of order.lines) {
+      Object.assign(line, {
+        unit_name_snapshot: "Cái",
+        unit_code_snapshot: "v1-unit-91a0b1c14124",
+      });
+      Object.assign(line.unit, { unit_name: "Tên hiện tại đã đổi" });
+    }
+    const source = structuredClone(order);
+    const data = buildPurchaseOrderExportData(order);
+    expect(data.summaryLines[0]!.unitLabel).toBe("Cái");
+    expect(data.schoolLines.every((line) => line.unitLabel === "Cái")).toBe(
+      true,
+    );
+    expect(data.summaryLines[0]!.unitId).toBe(order.lines[0]!.unit.unit_id);
+    for (const mode of ["sum", "details_ing", "details_school"] as const) {
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      const labels: string[] = [];
+      book.worksheets[0]!.eachRow((row) => labels.push(row.getCell(4).text));
+      expect(labels).toContain("Cái");
+      expect(labels).not.toContain("v1-unit-91a0b1c14124");
+      const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order, mode));
+      expect(pdf).toContain('"Cái"');
+      expect(pdf).not.toContain("Tên hiện tại đã đổi");
+    }
+    expect(order).toEqual(source);
+  });
+  it("fails the existing official export gate for technical-only historical Unit evidence", () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    for (const line of order.lines) {
+      Object.assign(line, { unit_name_snapshot: null });
+      line.unit_code_snapshot = "v1-unit-91a0b1c14124";
+      Object.assign(line.unit, { unit_name: "Cái" });
+    }
+    expect(() => buildPurchaseOrderExportData(order)).toThrow(
+      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+    );
+  });
+  it.each([null, "\u00a0\ufeff"])(
+    "does not let a human Unit name replace missing controlled-code evidence %s",
+    (code) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      for (const line of order.lines) {
+        line.unit_name_snapshot = "Cái";
+        line.unit_code_snapshot = code;
+      }
+      expect(() => buildPurchaseOrderExportData(order)).toThrow(
+        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+      );
+    },
+  );
+  it("keeps legacy frozen kg readable without looking up the current Unit name", () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    for (const line of order.lines) {
+      Object.assign(line, { unit_name_snapshot: null });
+      line.unit_code_snapshot = "kg";
+      Object.assign(line.unit, { unit_name: "Kilogram hiện tại" });
+    }
+    expect(buildPurchaseOrderExportData(order).summaryLines[0]!.unitLabel).toBe(
+      "kg",
+    );
+  });
+  it.each(["sum", "details_ing", "details_school"] as const)(
+    "reserves two-line Unit height for frozen Kilogram in %s without shrinking text",
+    async (mode) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      for (const line of order.lines)
+        Object.assign(line, { unit_name_snapshot: "Kilogram" });
+      const book = new ExcelJS.Workbook();
+      await book.xlsx.load(await createPurchaseOrderXlsx(order, mode));
+      const unitRows: number[] = [];
+      const sheet = book.worksheets[0]!;
+      sheet.eachRow((row) => {
+        if (row.getCell(4).text !== "Kilogram") return;
+        unitRows.push(row.number);
+        expect(row.height).toBeGreaterThanOrEqual(42);
+        expect(row.getCell(4).font).toMatchObject({
+          name: "Times New Roman",
+          size: 14,
+        });
+        expect(row.getCell(4).alignment.wrapText).toBe(true);
+      });
+      expect(unitRows.length).toBeGreaterThan(0);
+      expect(sheet.getColumn(4).width).toBe(mode === "sum" ? 9.71 : 10);
+    },
+  );
   it("sizes long frozen supplier codes using a conservative header width", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
@@ -89,7 +182,7 @@ describe("released purchase-order exports", () => {
         {
           ingredientDocumentCode: "1082",
           ingredientName: "Tên A lúc phát hành",
-          unitCode: "kg",
+          unitLabel: "kg",
         },
       ],
     });
@@ -191,7 +284,7 @@ describe("released purchase-order exports", () => {
         {
           ingredientDocumentCode: "ITEM-NEW",
           ingredientName: "Tên mới được phát hành",
-          unitCode: "Hộp",
+          unitLabel: "Hộp",
         },
       ],
     });
@@ -433,7 +526,7 @@ describe("released purchase-order exports", () => {
         {
           ingredientName: "Gạo thơm",
           orderedQuantity: "100.000000",
-          unitCode: "kg",
+          unitLabel: "kg",
           supplierNote: null,
         },
       ],
@@ -443,7 +536,7 @@ describe("released purchase-order exports", () => {
           schoolDisplayOrder: 1,
           ingredientName: "Gạo thơm",
           orderedQuantity: "60.000000",
-          unitCode: "kg",
+          unitLabel: "kg",
           supplierNote: null,
         },
         {
@@ -451,7 +544,7 @@ describe("released purchase-order exports", () => {
           schoolDisplayOrder: 2,
           ingredientName: "Gạo thơm",
           orderedQuantity: "40.000000",
-          unitCode: "kg",
+          unitLabel: "kg",
           supplierNote: null,
         },
       ],

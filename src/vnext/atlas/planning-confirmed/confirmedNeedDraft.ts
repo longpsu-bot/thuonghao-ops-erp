@@ -1,3 +1,4 @@
+import { operatorUnitLabel } from "../bridges/confirmedNeed";
 import {
   confirmedNeedInputDisplay,
   confirmedNeedQuantityMatchesStep,
@@ -63,7 +64,7 @@ export function draftError(
   )
     return `Số lượng xác nhận phải theo bước ${exactQuantityDisplay(
       line.effective_policy.planning_step,
-    )} ${line.controlled_unit.code}.`;
+    )} ${operatorUnitLabel(line.controlled_unit.name, line.controlled_unit.code)}.`;
   const equalsProposal = exactDecimalEqual(
     normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
       draft.exact_quantity,

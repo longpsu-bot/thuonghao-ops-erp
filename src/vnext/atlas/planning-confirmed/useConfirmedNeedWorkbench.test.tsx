@@ -402,7 +402,7 @@ describe("Confirmed Need local draft and safety", () => {
           quantity_entered: true,
         }),
       );
-      expect(h.result.current.errors["line-0"]).toContain("bước 0,25 kg");
+      expect(h.result.current.errors["line-0"]).toContain("bước 0,25 Kilôgam");
       expect(h.result.current.canSave).toBe(false);
     },
   );
@@ -430,12 +430,13 @@ describe("Confirmed Need local draft and safety", () => {
         quantity_entered: true,
       }),
     );
-    expect(h.result.current.errors["line-0"]).toContain("bước 0,01 kg");
+    expect(h.result.current.errors["line-0"]).toContain("bước 0,01 Kilôgam");
     expect(h.result.current.canSave).toBe(false);
   });
   it("keeps COUNT human confirmation on H1A rather than the proposal step", async () => {
     const h = await ready();
     h.fixture.batch.lines[0]!.controlled_unit.code = "Chai";
+    h.fixture.batch.lines[0]!.controlled_unit.name = "Chai";
     h.fixture.batch.lines[0]!.proposed_confirmed_quantity = "18.000000";
     h.fixture.batch.lines[0]!.proposal_rounding_step = "6.000000";
     h.fixture.batch.lines[0]!.confirmed_quantity_after = "18.000000";

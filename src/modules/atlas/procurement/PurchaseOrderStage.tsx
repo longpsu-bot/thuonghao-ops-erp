@@ -1,3 +1,4 @@
+import { purchaseOrderUnitLabel } from "./procurementOperatorCopy";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   PurchaseOrdersData,
@@ -279,7 +280,7 @@ export function PurchaseOrderStage({
                       <td>{line.ingredient.ingredient_name}</td>
                       <td>{line.delivery_location.location_name}</td>
                       <td>{quantityLabel(line.ordered_quantity)}</td>
-                      <td>{line.unit.unit_code}</td>
+                      <td>{purchaseOrderUnitLabel(selected, line)}</td>
                     </tr>
                   ))}
                 </tbody>

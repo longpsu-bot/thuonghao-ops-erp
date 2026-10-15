@@ -1,3 +1,4 @@
+import { purchaseOrderUnitLabel } from "../bridges/procurement";
 import {
   Box,
   Button,
@@ -447,7 +448,8 @@ export function ProcurementOrdersStage({
                     </Text>
                     <Text textStyle="helper" color="fg.muted">
                       {line.delivery_location.location_name} ·{" "}
-                      {quantity(line.ordered_quantity)} {line.unit.unit_code}
+                      {quantity(line.ordered_quantity)}{" "}
+                      {purchaseOrderUnitLabel(selected, line)}
                     </Text>
                     {line.supplier_note && (
                       <Text
@@ -504,7 +506,9 @@ export function ProcurementOrdersStage({
                         <Table.Cell textAlign="end" whiteSpace="nowrap">
                           {quantity(line.ordered_quantity)}
                         </Table.Cell>
-                        <Table.Cell>{line.unit.unit_code}</Table.Cell>
+                        <Table.Cell>
+                          {purchaseOrderUnitLabel(selected, line)}
+                        </Table.Cell>
                         <Table.Cell
                           whiteSpace="pre-wrap"
                           overflowWrap="anywhere"

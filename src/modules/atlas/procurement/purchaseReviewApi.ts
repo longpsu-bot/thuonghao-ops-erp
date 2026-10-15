@@ -39,6 +39,7 @@ export type GeneratedPurchaseReviewRow = Pick<
   | "ingredient_name"
   | "unit_id"
   | "unit_code"
+  | "unit_name"
   | "family_quantity"
 > & {
   family_quantity: string;

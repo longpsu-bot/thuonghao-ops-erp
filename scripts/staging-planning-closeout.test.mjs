@@ -853,7 +853,7 @@ test("real Confirmed Need rows distinguish one nonzero edit from pending zero de
     'section[aria-label="Xác nhận nhu cầu"] table[aria-label="Nhu cầu xác nhận"] tbody tr:nth-child(1)';
   assert.match(
     document.querySelector(`${row} [data-field="delta"]`).textContent,
-    /\+0,01 kg/,
+    /\+0,01 Kilogram/,
   );
   assert.equal(
     await browserEvaluate(
