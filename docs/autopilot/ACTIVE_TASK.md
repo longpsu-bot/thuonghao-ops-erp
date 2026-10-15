@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-SAFE-FIXES-A-01
-Status: AUTHORIZED — PR A implementation; Draft PR only
+Status: IMPLEMENTED LOCALLY — Draft PR/review/CI pending; no merge or deployment authorized
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
@@ -26,7 +26,9 @@ A2 is ON HOLD pending Terra's exact Unit-label contract map and a separately bou
 - `src/vnext/atlas/AtlasVNextApp.tsx` and directly affected existing tests/review fixture.
 - `src/vnext/atlas/procurement/ProcurementOrdersStage.tsx`, directly required presentation components/caller release-message path and existing focused tests/review fixtures.
 - `src/modules/atlas/procurement/purchaseOrderExports.ts`, its existing tests and existing document/native-Excel QA helpers where needed for A4.
+- A4 technical extension after native diagnosis: existing `measure-atlas-school-row-font.ps1`, `timesNewRoman14Metrics.json` provenance/Normal-column calibration and `schoolRowMeasurement.test.ts`. Calibrate against the actual styled production workbook (Calibri 11 Normal), preserve the measured Times New Roman 14 glyph advances and existing algorithm/0.5pt printed-clearance gate. Do not mask the confirmed physical-width mismatch with column redistribution.
 - This baton and bounded validation/evidence documentation for PR A.
+- `docs/testing/atlas-school-row-measurement.md`: dated production-calibration correction link; retain historical 10 October certification.
 
 Reuse incumbent tokens/components, review/story fixtures and QA helpers. No new dependencies, framework, generator, role/capability, schema/migration, business arithmetic, lifecycle or status. PR B/C/D and Warehouse implementation are excluded. Any actual contract gap or larger reach must be reported before expanding.
 
@@ -39,3 +41,9 @@ Bounded local browser QA at 1280/1440/1920 checks no overlapping columns/actions
 ## Deferred Warehouse Product hard stop
 
 The prior [minimum Warehouse packet](../architecture/warehouse-receiving-minimum-design.md) remains READY FOR PRODUCT REVIEW. Its [decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) is PROPOSED with all four Product groups undecided. PR A does not approve those choices or authorize Warehouse implementation. Completed 108/109 and cutover read evidence remain historical and unchanged.
+
+## Local result and next boundary
+
+[PR A validation](../testing/atlas-operator-safe-fixes-a-01.md) records 188 focused passing tests, clean type checking and fixture browser QA at 1280/1440/1920 with no hosted request. Native PO-only printed acceptance passes 28 School rows; four workbooks pass 742 native text/metadata checks and retain source facts. The full combined print gate remains FAIL only at the unchanged pre-existing PXK 0.42pt right-clearance limitation, and the existing PO date-header clipping is recorded separately. No blanket full-page/combined-native PASS is claimed.
+
+A1/A3/A4 are ready for a fixed-head independent Draft review. A2 remains a separate follow-up after this PR is safely frozen, including the missing Draft School projection and future frozen human Unit labels; no A2/backend work is included here. The current Owner brief still forbids merge, deployment or hosted writes without separate permission.

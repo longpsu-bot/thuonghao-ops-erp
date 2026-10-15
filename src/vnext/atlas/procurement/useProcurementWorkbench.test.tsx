@@ -50,6 +50,33 @@ const splits = [
 ];
 
 describe("Procurement authoritative scope", () => {
+  it("reports only the selected supplier PO release after authoritative readback", async () => {
+    const h = setup("po_draft", { ownerStage: "orders" });
+    await ready(h.result);
+    vi.spyOn(
+      h.fixture.procurementApi,
+      "releasePurchaseOrder",
+    ).mockResolvedValue(
+      reviewSuccess({
+        purchase_order_id: "private-order",
+        document_number: "PO-20261012-ONE",
+      }),
+    );
+    await act(async () =>
+      h.result.current.orderAction(h.fixture.orders.purchase_orders[0]!),
+    );
+    expect(h.result.current.feedback?.message).toBe(
+      "Đã phát hành 1 đơn mua cho NCC An Phú · PO-20261012-ONE.",
+    );
+    expect(h.poRead).toHaveBeenCalledTimes(2);
+    h.poRead.mockResolvedValueOnce(reviewFailure("ACCESS_DENIED"));
+    await act(async () =>
+      h.result.current.orderAction(h.fixture.orders.purchase_orders[0]!),
+    );
+    expect(h.result.current.feedback?.kind).toBe("unknown");
+    expect(h.result.current.feedback?.message).not.toMatch(/Đã phát hành/);
+    expect(h.result.current.locked).toBe(true);
+  });
   it.each([
     ["2026-10-12", "2026-10-12"],
     ["2026-10-12", "2026-10-18"],

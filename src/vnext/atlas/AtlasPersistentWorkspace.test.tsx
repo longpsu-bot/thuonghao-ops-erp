@@ -61,6 +61,7 @@ it("returns to an already-open School workbench with its exact draft and input i
       />
     </AtlasVNextProvider>,
   );
+  await open("Trường học");
   const field = (
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ })
   )[0]!;
@@ -84,6 +85,7 @@ it("activates existing instances with no duplicate or initialization reads", asy
   const { apis } = show();
   const schools = vi.spyOn(apis.masterData, "getSchools");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
+  await open("Trường học");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await open("Phân bổ NCC");
   await waitFor(() => expect(allocation).toHaveBeenCalledOnce());
@@ -104,6 +106,7 @@ it("activates existing instances with no duplicate or initialization reads", asy
 
 it("blocks sign-out with multiple dirty owners and preserves every hidden draft", async () => {
   const { signOut } = show();
+  await open("Trường học");
   const school = (
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ })
   )[0]!;
@@ -136,6 +139,7 @@ it("blocks sign-out with multiple dirty owners and preserves every hidden draft"
 
 it("makes an inactive dirty owner visible before close, retains cancellation, and closes only that owner on approval", async () => {
   show();
+  await open("Trường học");
   const school = (
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ })
   )[0]!;
@@ -169,6 +173,7 @@ it("makes an inactive dirty owner visible before close, retains cancellation, an
 
 it("restores current active navigation when close focus cleanup completes after another owner opens", async () => {
   show();
+  await open("Trường học");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await open("Công thức");
   await screen.findByRole("button", { name: "Tạo món mới" });

@@ -1,0 +1,130 @@
+{
+  "status": "FAIL",
+  "scope": "Complete four-workbook printed School gate; PO-only acceptance is separate",
+  "minimumClearancePoints": 0.5,
+  "comparisons": [
+    {
+      "specimen": "atlas-operator-a4-baseline",
+      "failedRows": [
+        {
+          "file": "PO-School-measured-rows.xlsx",
+          "sheet": "02-09-2026 - Theo hàng",
+          "address": "C15",
+          "sourceText": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2) (Nấu tại: Công ty Thượng Hảo)",
+          "canonicalPrintedTextMatches": true,
+          "nativePdf": "PO-School-measured-rows-sheet-1.pdf",
+          "text": "CHUYÊN HÙNG VƯƠNG (Chiều\nMặn 2) (Nấu tại: Công ty Thượng\nHảo)",
+          "printedLineCount": 3,
+          "cellBounds": [58.584, 381.46, 263.16, 419.88],
+          "topClearancePoints": -2.720640000000003,
+          "bottomClearancePoints": -4.479349999999954,
+          "leftClearancePoints": 1.7039999999999935,
+          "rightClearancePoints": 15.353760000000023,
+          "page": 1,
+          "failedCriteria": ["top", "bottom"]
+        },
+        {
+          "file": "PO-School-measured-rows.xlsx",
+          "sheet": "02-09-2026 - Theo hàng",
+          "address": "C20",
+          "sourceText": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+          "canonicalPrintedTextMatches": true,
+          "nativePdf": "PO-School-measured-rows-sheet-1.pdf",
+          "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT\nNAM PHÂN HIỆU THƯỢNG HẢO\nPHÂN HIỆU THƯỢNG HẢO PHÂN\nHIỆU THƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO",
+          "printedLineCount": 7,
+          "cellBounds": [58.584, 562.73, 263.16, 672.19],
+          "topClearancePoints": 0.1593599999998787,
+          "bottomClearancePoints": -1.5993200000000343,
+          "leftClearancePoints": 1.7039999999999935,
+          "rightClearancePoints": 2.186399999999992,
+          "page": 1,
+          "failedCriteria": ["top", "bottom"]
+        },
+        {
+          "file": "PO-School-measured-rows.xlsx",
+          "sheet": "02-09-2026 - Theo hàng",
+          "address": "C22",
+          "sourceText": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+          "canonicalPrintedTextMatches": true,
+          "nativePdf": "PO-School-measured-rows-sheet-1.pdf",
+          "text": "TRƯỜNG ĐO CHIỀU CAO VIỆT\nNAM PHÂN HIỆU THƯỢNG HẢO\nPHÂN HIỆU THƯỢNG HẢO PHÂN\nHIỆU THƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO",
+          "printedLineCount": 10,
+          "cellBounds": [58.584, 253.27, 263.16, 405.72],
+          "topClearancePoints": -2.7206400000001167,
+          "bottomClearancePoints": -4.71935000000002,
+          "leftClearancePoints": 1.7039999999999935,
+          "rightClearancePoints": 2.186399999999992,
+          "page": 2,
+          "failedCriteria": ["top", "bottom"]
+        },
+        {
+          "file": "PO-School-measured-rows.xlsx",
+          "sheet": "02-09-2026 - Theo hàng",
+          "address": "C23",
+          "sourceText": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+          "canonicalPrintedTextMatches": false,
+          "nativePdf": "PO-School-measured-rows-sheet-1.pdf",
+          "failedCriteria": ["canonicalText"]
+        },
+        {
+          "file": "PO-School-measured-rows.xlsx",
+          "sheet": "02-09-2026 - Theo hàng",
+          "address": "C25",
+          "sourceText": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+          "canonicalPrintedTextMatches": true,
+          "nativePdf": "PO-School-measured-rows-sheet-1.pdf",
+          "text": "WWWWWWWWWWWWWWWW\nWWWWWWWWWWWWWWWW\nWWWWWWWWWWWWWWWW\nWWWWWWWWWWWWWWWW\nWWWWWWWWWWWWWWWW\nWWWWWWWWWWWWWWWW\nWWWWWWWWWWWWWWWW\nWWWWWWWWWWWWWWWW\nWWWWWWWWWWWW",
+          "printedLineCount": 9,
+          "cellBounds": [58.584, 253.27, 263.16, 391.54],
+          "topClearancePoints": -1.7606400000000804,
+          "bottomClearancePoints": -3.5193499999999744,
+          "leftClearancePoints": 1.7039999999999935,
+          "rightClearancePoints": 7.037759999999992,
+          "page": 3,
+          "failedCriteria": ["top", "bottom"]
+        },
+        {
+          "file": "Dispatch-long-school-header.xlsx",
+          "sheet": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PH",
+          "address": "A6",
+          "sourceText": "TRƯỜNG: TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+          "canonicalPrintedTextMatches": false,
+          "nativePdf": "Dispatch-long-school-header-sheet-1.pdf",
+          "text": "TRƯỜNG: TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG\nHẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO\nPHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO\nPHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+          "printedLineCount": 7,
+          "geometryMethod": "unbordered PXK header bounded horizontally by actual merged-column table borders and vertically by full neighboring header glyph blocks",
+          "cellBounds": [22.584, 118.1691, 572.64, 227.282],
+          "topClearancePoints": 3.962880000000041,
+          "bottomClearancePoints": 3.840000000000032,
+          "leftClearancePoints": 1.6799999999999997,
+          "rightClearancePoints": 0.4200000000004138,
+          "page": 1,
+          "failedCriteria": ["canonicalText", "right"]
+        }
+      ]
+    },
+    {
+      "specimen": "atlas-operator-a4-calibrated-final-v3",
+      "failedRows": [
+        {
+          "file": "Dispatch-long-school-header.xlsx",
+          "sheet": "TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PH",
+          "address": "A6",
+          "sourceText": "TRƯỜNG: TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO",
+          "canonicalPrintedTextMatches": true,
+          "nativePdf": "Dispatch-long-school-header-sheet-1.pdf",
+          "text": "TRƯỜNG: TRƯỜNG ĐO CHIỀU CAO VIỆT NAM PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG\nHẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO\nPHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO\nPHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU\nTHƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO PHÂN HIỆU THƯỢNG HẢO\nPHÂN HIỆU THƯỢNG HẢO",
+          "printedLineCount": 8,
+          "geometryMethod": "unbordered PXK header bounded horizontally by actual merged-column table borders and vertically by full neighboring header glyph blocks",
+          "cellBounds": [22.584, 118.1691, 572.64, 253.462],
+          "topClearancePoints": 9.482880000000023,
+          "bottomClearancePoints": 9.620000000000005,
+          "leftClearancePoints": 1.6799999999999997,
+          "rightClearancePoints": 0.4200000000004138,
+          "page": 1,
+          "failedCriteria": ["right"]
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,10 @@
 
 This is the numeric measurement provenance for the School bands and `Theo hàng` School cells in `TASK-ATLAS-DOCUMENT-SCHOOL-GROUPING-02`. Native workbook rendering and export semantic acceptance are recorded separately in the task's QA evidence.
 
+## Current correction — 15 October 2026
+
+The history below records the 10 October blank-probe certification. PR A's [production-workbook diagnosis and bounded validation](atlas-operator-safe-fixes-a-01.md) supersedes its Normal-column calibration for current exports: the styled production workbook uses Calibri 11/7px, while the former unstyled probe resolved to Arial 11/8px. Native C width was 210pt rather than the modeled 240pt. The metric file now records the production-bound calibration; the original Times New Roman 14 regular/bold glyph maps and fixed `28 + 16 × (lines − 1)` height rule remain unchanged. Native PO-only acceptance passes; the combined fixture gate retains the documented pre-existing PXK right-clearance failure. This correction does not rewrite the historical SHA/results below or claim arbitrary-label/other-environment guarantees.
+
 ## Measurement source
 
 On 10 October 2026, `scripts/measure-atlas-school-row-font.ps1` measured the installed **Times New Roman, 14 pt**, regular and bold, using Windows `System.Drawing.Graphics.MeasureString`. The bitmap resolution was 720 dpi; `GenericTypographic`, `MeasureTrailingSpaces`, `NoClip`, and `AntiAlias` retained advances without the ordinary `MeasureString` outer padding. Pixel advances were divided by ten to obtain points and rounded to six decimal places. No font binary is copied into the repository or exported workbooks.

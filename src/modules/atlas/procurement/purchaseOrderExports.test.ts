@@ -10,6 +10,72 @@ import {
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("retains all three Phú Hoà Đông branch labels, exact quantities and distinct hidden School identities", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const line = order.lines[0]!;
+    order.lines = [line];
+    line.ordered_quantity = "3.000000";
+    const base = line.school_breakdown[0]!;
+    line.school_breakdown = [1, 2, 3].map((branch) => ({
+      ...base,
+      school_id: `a4150000-0000-4000-8000-00000000000${branch}`,
+      school_name: `PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU ${branch}`,
+      school_display_order: branch,
+      ordered_quantity: "1.000000",
+      cooking_location_id: null,
+      cooking_location_name: null,
+      cooking_location_kind: null,
+      cooking_location_host_school_id: null,
+    }));
+    const before = structuredClone(order);
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order, "details_ing"));
+    const sheet = book.worksheets[0]!;
+    const printedRows: Array<{
+      text: string;
+      quantity: string;
+      school: string;
+      unit: string;
+    }> = [];
+    sheet.eachRow((row) => {
+      if (!row.getCell(3).text.startsWith("PHÚ HOÀ")) return;
+      printedRows.push({
+        text: row.getCell(3).text,
+        quantity: row.getCell(5).text,
+        school: row.getCell(10).text,
+        unit: row.getCell(9).text,
+      });
+      expect(row.getCell(3).alignment.wrapText).toBe(true);
+      expect(row.getCell(3).font).toMatchObject({
+        name: "Times New Roman",
+        size: 14,
+      });
+    });
+    expect(printedRows).toEqual([
+      {
+        text: "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+        quantity: "1",
+        school: "a4150000-0000-4000-8000-000000000001",
+        unit: line.unit.unit_id,
+      },
+      {
+        text: "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+        quantity: "1",
+        school: "a4150000-0000-4000-8000-000000000002",
+        unit: line.unit.unit_id,
+      },
+      {
+        text: "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+        quantity: "1",
+        school: "a4150000-0000-4000-8000-000000000003",
+        unit: line.unit.unit_id,
+      },
+    ]);
+    expect(sheet.getColumn(10).hidden).toBe(true);
+    expect(book.getWorksheet("_ATLAS_META")!.state).toBe("veryHidden");
+    expect(order).toEqual(before);
+  });
   it("sizes long frozen supplier codes using a conservative header width", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;

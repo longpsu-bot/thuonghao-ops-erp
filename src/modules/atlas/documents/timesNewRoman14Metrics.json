@@ -5,7 +5,7 @@
     "measurementApi": "System.Drawing.Graphics.MeasureString, GenericTypographic, MeasureTrailingSpaces, NoClip, AntiAlias",
     "measurementDpi": 720,
     "advanceUnit": "points",
-    "generatedDate": "2026-10-10",
+    "generatedDate": "2026-10-15",
     "fontFiles": {
       "regular": {
         "file": "times.ttf",
@@ -17,78 +17,97 @@
       }
     },
     "excelVersion": "16.0",
-    "excelBuild": "20430",
-    "normalFont": "Arial",
-    "normalFontSizePoints": 11.0,
+    "excelBuild": "19127",
+    "normalFont": "Calibri",
+    "normalFontSizePoints": 11,
     "normalDigitWidthsPixels96Dpi": [
-      8.156901, 8.156901, 8.156901, 8.156901, 8.156901, 8.156901, 8.156901,
-      8.156901, 8.156901, 8.156901
+      7.433594, 7.433594, 7.433594, 7.433594, 7.433594, 7.433594, 7.433594,
+      7.433594, 7.433594, 7.433594
     ],
-    "maximumDigitWidthPixels": 8.0,
+    "maximumDigitWidthPixels": 7,
     "columnDpi": 96,
     "columnWidthSamples": [
       {
         "width": 0.25,
-        "points": 1.5
+        "points": 1.5,
+        "predictedPoints": 1.5
       },
       {
         "width": 0.5,
-        "points": 3.0
+        "points": 2.25,
+        "predictedPoints": 2.25
       },
       {
         "width": 1,
-        "points": 6.0
+        "points": 5.25,
+        "predictedPoints": 5.25
       },
       {
         "width": 6,
-        "points": 36.0
+        "points": 31.5,
+        "predictedPoints": 31.5
       },
       {
         "width": 8.43,
-        "points": 50.25
+        "points": 44.25,
+        "predictedPoints": 44.25
       },
       {
         "width": 9,
-        "points": 54.0
+        "points": 48,
+        "predictedPoints": 47.25
       },
       {
         "width": 12,
-        "points": 72.0
+        "points": 63,
+        "predictedPoints": 63
       },
       {
         "width": 16,
-        "points": 96.0
+        "points": 84,
+        "predictedPoints": 84
       },
       {
         "width": 18,
-        "points": 108.0
+        "points": 94.5,
+        "predictedPoints": 94.5
       },
       {
         "width": 25,
-        "points": 150.0
+        "points": 131.25,
+        "predictedPoints": 131.25
       },
       {
         "width": 28,
-        "points": 168.0
+        "points": 147,
+        "predictedPoints": 147
       },
       {
         "width": 30,
-        "points": 180.0
+        "points": 157.5,
+        "predictedPoints": 157.5
       },
       {
         "width": 36,
-        "points": 216.0
+        "points": 189,
+        "predictedPoints": 189
       },
       {
         "width": 42,
-        "points": 252.0
+        "points": 220.5,
+        "predictedPoints": 220.5
       },
       {
         "width": 110,
-        "points": 660.0
+        "points": 577.5,
+        "predictedPoints": 577.5
       }
     ],
-    "widthSpecification": "https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.spreadsheet.column?view=openxml-3.0.1"
+    "columnCalibration": "Styled ExcelJS width probe; Normal font verified against read-only production export",
+    "calibrationWorkbookSha256": "b2ebf1fa590fee21abb058f62bcbac359fa388fed48fc64e2d4a3e0595c5e091",
+    "nativeWidthTolerancePoints": 0.76,
+    "widthSpecification": "https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.spreadsheet.column?view=openxml-3.0.1",
+    "nativeWidthMaxErrorPoints": 0.75
   },
   "regular": {
     "32": 3.5,
