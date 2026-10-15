@@ -482,3 +482,5 @@ Terra cleared c7bc64e; Root authorizes the bounded incumbent correction UI descr
 ## Task6 local UI image — awaiting bounded browser QA
 
 The [Task6 freeze ledger](../../autopilot/ACTIVE_TASK.md#task6-local-ui-freeze--browser-review-pending) records the authority-first bounded dialog, safe optional disclosures, same-owner recovery/focus, controlled pending PO guidance and six existing-review scenarios. Prior10-file287 PASS plus final changed dialog/fixture20 PASS are overlapping source images, not additive counts. Typecheck/boundary/format pass; Root browser/detector remain pending. No SQL bytes changed from67820cb2, no producer/native rerun or Task7 authority.
+
+Task6 follow-up is limited to the [authorized review-date repair](../../autopilot/ACTIVE_TASK.md#task6-bounded-review-date-repair--authority-before-fixture-edit). Runtime/UI5586b01 is Terra-cleared and browser functional10-case/detector0-finding evidence remains qualified to it; only correction_pending fixture ISO/document dates are aligned, with focused API-data RED/GREEN and one targeted browser confirmation before final Task6 clearance. No Task7 release.
