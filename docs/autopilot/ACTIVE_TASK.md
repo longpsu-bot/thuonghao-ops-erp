@@ -12,7 +12,7 @@ OPS v1 / Retool / Production: no writes or commitments
 
 The Product Owner's operator fixes brief C and subsequent instruction to proceed authorize investigation/design of the existing append-only post-handoff correction workflow. D-044 already accepts School Need correction after PO/PXK, complete affected supplier/date replacement, the existing zero cancellation-required guard and explicit PXK successor release. The [proposed C architecture](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) preserves that meaning; its new interface, continuity, locks and catalog reach remain PROPOSED technical design.
 
-Root released this documentation-only Draft after Terra's TEMP design review while independent B CI continues. This does not authorize C code, migrations, tests, configuration or an implementation plan. Human written-spec review under the architectural brainstorming gate and a new bounded implementation baton are required before implementation. Do not interpret another routine continue as authority to skip that gate.
+Root released this documentation-only Draft after Terra's TEMP design review while independent B CI continues. This does not authorize C code, migrations, tests, configuration or an implementation plan. Human written-spec review under the architectural brainstorming gate and a new bounded implementation baton are required before implementation. The user may approve the reviewed spec in ordinary language; no prescribed approval phrase or repeated confirmation is required.
 
 ## Exact document scope
 
@@ -30,7 +30,7 @@ The spec lists required authenticated public-path RED/GREEN, true lock-wait, imm
 
 ## Parallel Drafts and deferred work
 
-[B Draft PR #387](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/387) is frozen at `2f915590175582dffb5831c8629f7e97b48fb3d8`. Exact-head [Frontend 38687613166](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38687613166) and [Supabase Smoke 38687613193](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38687613193) passed. [Full Integration 38687678513](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38687678513) remains pending at handoff; do not assert a later result. Prior B failures remain documented in that branch. If B fails again, commit/clean this docs task and return for bounded B fix authority; do not mutate B while C edits are uncommitted.
+[B Draft PR #387](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/387) is frozen at `2f915590175582dffb5831c8629f7e97b48fb3d8`. Exact-head [Frontend 38687613166](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38687613166) and [Supabase Smoke 38687613193](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38687613193) passed. [Full Integration 38687678513](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38687678513) passed at the subsequent observed checkpoint. Prior B failures remain documented in that branch. If B fails again, commit/clean this docs task and return for bounded B fix authority; do not mutate B while C edits are uncommitted.
 
 PR #385/#386 remain separate operator Drafts; C assumes neither their schema nor B's batch API exists on main. Operator D remains deferred. The [Warehouse packet](../architecture/warehouse-receiving-minimum-design.md) remains READY FOR PRODUCT REVIEW with four UNDECIDED groups and no implementation approval. Existing 109 acceptance/read-gate reports remain historical; this task performs no repeat probes.
 
