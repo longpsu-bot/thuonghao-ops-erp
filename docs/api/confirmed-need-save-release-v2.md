@@ -102,3 +102,7 @@ allocation currentness is derived as stale.
 The amendment does not edit or supersede any PO/PXK, does not automatically save a
 new allocation, and does not change the historical WHOLESALE/supplier-direct guard.
 New supplier and dispatch commitments remain separate explicit commands.
+
+## PROPOSED — operator correction front door, 15 October 2026
+
+This is DESIGN_REVIEW_ONLY, not an implemented API amendment. The [proposed C architecture](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) describes a dedicated correction preview and atomic existing-reopen-plus-Save command for D-044's accepted post-handoff workflow. Closed targets, existing quantity/reason rules, capabilities/GLOBAL, append-only history, child rollback and exact replay remain mandatory. Ordinary released Save/editing guards and the Menu/Attendance/Pantry source-correction transport are unchanged. The proposed interfaces, private validation seam and narrow runtime EXECUTE require human written-spec review and a later implementation baton; no runtime grant or implementation is accepted here.

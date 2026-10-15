@@ -194,3 +194,7 @@ renaming or moving a current relationship never changes released evidence.
 Historical absent/null fields are retained without backfill. PO School sections
 stay separate; Dispatch packaging uses only captured membership and retains all
 School/source lineage. See [explicit independent facts](school-cooking-groups.md).
+
+## PROPOSED — correction continuity and PXK currentness, 15 October 2026
+
+This is DESIGN_REVIEW_ONLY. The [proposed C architecture](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) includes PXK's exact split-ID coverage joins, direct Handoff-current guards, fingerprint/currentness classification and reconciliation consumers. Prospective Preparation eligibility cannot certify an official PXK current while correction is pending. Official continuity requires current released Need, successful explicit successor Handoff and complete exact immutable source proof. Historical PXK snapshots/IDs/fingerprints remain untouched; changed facts still need explicit successor release. Current scope/capability, readiness and no-duplicate-current protections remain authoritative. No implementation or new release authority is accepted by this proposed pointer.

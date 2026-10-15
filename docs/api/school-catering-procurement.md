@@ -405,3 +405,7 @@ cache persists between requests, and reads create no supporting business facts.
 The hosted migration-105 baseline and local migration-106 regression are recorded
 in [the bounded read-performance task](../implementation-tasks/TASK-PROCUREMENT-POST-RELEASE-ALLOCATION-READ-01.md).
 Hosted post-fix acceptance remains subject to Product-approved deployment.
+
+## PROPOSED — exact correction continuity, 15 October 2026
+
+This is DESIGN_REVIEW_ONLY. The [proposed C architecture](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) separates prospective Preparation eligibility from official applicability after current released Need and explicit successor Handoff. It proposes preserving unchanged saved family/contribution/Supplier split identities only through complete exact immutable Need revision/decision and adjacent-edge proof. Raw projections/fingerprints and fresh writer source bindings stay raw; pending Handoff absence never establishes zero or cancellation-required. The retained-PH lock gap and every affected entry-point order/re-read are unresolved implementation proof obligations. Current explicit allocation Save, Preparation GLOBAL, complete PO replacement and cancellation guards remain authoritative; no code or new policy is approved by this pointer.
