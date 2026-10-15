@@ -707,6 +707,185 @@ begin
  end loop;
 end;
 $early_prefixes$;
+set role atlas_procurement_command_runtime;
+
+-- Backend-only resolved context: historical whole-batch evidence is resolved
+-- once per Handoff revision, never once per family/line in a bulk consumer.
+create function atlas_core.purchase_review_continuity_context(p_batch uuid)
+returns jsonb language sql stable security definer set search_path='' as $continuity_context$
+ with root as materialized(select atlas_core.purchase_review_correction_context(p_batch) facts)
+ select facts||jsonb_build_object('handoffs',coalesce((
+  select jsonb_agg(to_jsonb(hr)||jsonb_build_object(
+   'confirmed_need_batch_id',hb.confirmed_need_batch_id,'handoff_status',hb.handoff_status,
+   'membership',atlas_core.confirmed_need_handoff_membership(hr.purchase_handoff_revision_id))
+   order by hr.purchase_handoff_batch_id,hr.revision_number)
+  from atlas_planning.purchase_handoff_batches hb
+  join atlas_planning.purchase_handoff_revisions hr using(purchase_handoff_batch_id)
+  where facts->'batch_ids' @> jsonb_build_array(hb.confirmed_need_batch_id)),'[]'::jsonb))from root;
+$continuity_context$;
+revoke all on function atlas_core.purchase_review_continuity_context(uuid)
+ from public,anon,authenticated,service_role;
+
+-- Applicability is separate from every raw writer fingerprint. The optional
+-- context is private/backend generated; it is never accepted by a public RPC.
+create function atlas_core.purchase_review_family_continuity(p_family_revision uuid,p_mode text,p_context jsonb)
+returns jsonb language plpgsql stable security definer set search_path='' as $continuity$
+declare family record; revision record; source jsonb; sources jsonb; handoff jsonb;
+ anchor record; members jsonb; facts jsonb; digest text; expected jsonb;
+ actual jsonb; splits jsonb; contributions jsonb; latest jsonb; edge jsonb;
+ visited uuid[]; cursor_id uuid; count_edges integer:=0; chain_count integer:=0;
+ current_count integer; expected_revision integer; official boolean:=true; exact_current boolean:=true;
+ failure jsonb:=jsonb_build_object('applicable',false,'classification','SOURCE_UNAVAILABLE');
+begin
+ if p_mode is null or p_mode not in('PROSPECTIVE','OFFICIAL')
+  or p_context->>'available' is distinct from 'true' then return failure;end if;
+ select * into revision from atlas_procurement.school_catering_allocation_family_revisions
+  where family_revision_id=p_family_revision and is_current;
+ if not found then return failure;end if;
+ select * into strict family from atlas_procurement.school_catering_allocation_families
+  where family_id=revision.family_id;
+ select coalesce(jsonb_agg(s),'[]')into sources from jsonb_array_elements(p_context->'sources')s
+ where s->>'service_date'=family.service_date::text
+  and s->>'delivery_location_id'=family.delivery_location_id::text
+  and s->>'ingredient_id'=family.ingredient_id::text and s->>'unit_id'=family.unit_id::text;
+ if jsonb_array_length(sources)<>1 then return failure;end if;
+ source:=sources->0;
+ if p_mode='OFFICIAL'and source->>'batch_status' is distinct from 'RELEASED_FOR_PURCHASE_HANDOFF' then
+  return jsonb_build_object('applicable',false,'classification','CORRECTION_PENDING');end if;
+ if source->>'complete' is distinct from 'true'or source->>'family_quantity'is null then return failure;end if;
+ if (source->>'family_quantity')::numeric=0 then
+  return jsonb_build_object('applicable',false,'classification','AUTHORITATIVE_ZERO');end if;
+ if (source->>'family_quantity')::numeric is distinct from revision.family_quantity
+  or revision.unit_id is distinct from family.unit_id then return failure;end if;
+ select jsonb_agg(to_jsonb(s)order by s.supplier_split_id)into splits
+ from atlas_procurement.school_catering_allocation_supplier_splits s
+ where s.family_revision_id=p_family_revision;
+ if splits is null or(select sum((s->>'allocated_quantity')::numeric)
+  from jsonb_array_elements(splits)s)is distinct from revision.family_quantity then return failure;end if;
+ select jsonb_agg(to_jsonb(c)order by c.family_contribution_id)into contributions
+ from atlas_procurement.school_catering_allocation_family_contributions c
+ where c.family_revision_id=p_family_revision;
+ if contributions is null then return failure;end if;
+ if revision.source_kind='CONFIRMED_NEED'then
+  if revision.source_confirmed_need_batch_id::text is distinct from source->>'source_confirmed_need_batch_id'
+   or revision.source_fingerprint is distinct from source->>'source_fingerprint'then return failure;end if;
+  select jsonb_agg(jsonb_build_array(c->>'confirmed_need_line_revision_id',
+   c->>'confirmed_need_line_decision_id',(c->>'contribution_quantity')::numeric)
+   order by c->>'confirmed_need_line_revision_id')into expected from jsonb_array_elements(contributions)c;
+  select jsonb_agg(jsonb_build_array(c->>'confirmed_need_line_revision_id',
+   c->>'confirmed_need_line_decision_id',(c->>'contribution_quantity')::numeric)
+   order by c->>'confirmed_need_line_revision_id')into actual from jsonb_array_elements(source->'contributions')c;
+  if expected is distinct from actual then return failure;end if;
+  -- CN allocations must still have an explicit current released Handoff for
+  -- official use. Promotion/retention consumers decide when to use this proof.
+  select count(*)into current_count from jsonb_array_elements(p_context->'handoffs')h
+   where h->>'confirmed_need_batch_id'=source->>'source_confirmed_need_batch_id'
+    and h->>'is_current'='true'and h->>'revision_status'='RELEASED_TO_PROCUREMENT'
+    and h->>'handoff_status'='RELEASED_TO_PROCUREMENT';
+  official:=current_count=1;
+  if official then
+   select h into handoff from jsonb_array_elements(p_context->'handoffs')h
+    where h->>'confirmed_need_batch_id'=source->>'source_confirmed_need_batch_id'
+     and h->>'is_current'='true'and h->>'revision_status'='RELEASED_TO_PROCUREMENT'
+     and h->>'handoff_status'='RELEASED_TO_PROCUREMENT';
+   if handoff#>>'{membership,complete}'is distinct from 'true'then return failure;end if;
+   select jsonb_agg(m-array['line_sort_position','purchase_handoff_line_revision_id',
+    'purchase_handoff_revision_id','source_confirmed_need_batch_id','confirmed_need_snapshot_line_id',
+    'validation_attempt_id']order by m->>'confirmed_need_line_id')into facts
+   from jsonb_array_elements(handoff#>'{membership,members}')m
+   where m->>'service_date'=family.service_date::text and m->>'delivery_location_id'=family.delivery_location_id::text
+    and m->>'ingredient_id'=family.ingredient_id::text and m->>'controlled_unit_id'=family.unit_id::text;
+   digest:=encode(sha256(convert_to(jsonb_build_object('batch_id',
+    source->'source_confirmed_need_batch_id','facts',facts)::text,'UTF8')),'hex');
+   if digest is distinct from source->>'source_fingerprint'then return failure;end if;
+  end if;
+ else
+  -- The retained contributions must be the complete exact original PH family.
+  select jsonb_agg(jsonb_build_array(c->>'purchase_handoff_line_revision_id',
+   (c->>'contribution_quantity')::numeric)order by c->>'purchase_handoff_line_revision_id')
+  into expected from jsonb_array_elements(contributions)c;
+  select jsonb_agg(jsonb_build_array(m->>'purchase_handoff_line_revision_id',
+   (m->>'confirmed_quantity')::numeric)order by m->>'purchase_handoff_line_revision_id')into actual
+  from jsonb_array_elements(p_context->'handoffs')h
+  cross join lateral jsonb_array_elements(h#>'{membership,members}')m
+  where exists(select 1 from jsonb_array_elements(contributions)c
+   join atlas_planning.purchase_handoff_line_revisions lr
+    on lr.purchase_handoff_line_revision_id=(c->>'purchase_handoff_line_revision_id')::uuid
+   where lr.purchase_handoff_revision_id=(h->>'purchase_handoff_revision_id')::uuid)
+   and m->>'service_date'=family.service_date::text and m->>'delivery_location_id'=family.delivery_location_id::text
+   and m->>'ingredient_id'=family.ingredient_id::text and m->>'controlled_unit_id'=family.unit_id::text;
+  if expected is distinct from actual then return failure;end if;
+  for anchor in select distinct hr.purchase_handoff_revision_id,hr.purchase_handoff_batch_id,hb.confirmed_need_batch_id
+   from atlas_procurement.school_catering_allocation_family_contributions c
+   join atlas_planning.purchase_handoff_line_revisions lr using(purchase_handoff_line_revision_id)
+   join atlas_planning.purchase_handoff_revisions hr using(purchase_handoff_revision_id)
+   join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+   where c.family_revision_id=p_family_revision loop
+   if anchor.confirmed_need_batch_id::text is distinct from source->>'source_confirmed_need_batch_id'then return failure;end if;
+   select h into latest from jsonb_array_elements(p_context->'handoffs')h
+    where h->>'purchase_handoff_batch_id'=anchor.purchase_handoff_batch_id::text
+    order by(h->>'revision_number')::integer desc limit 1;
+   if latest is null then return failure;end if;
+   official:=official and latest->>'is_current'='true'and latest->>'revision_status'='RELEASED_TO_PROCUREMENT'
+    and latest->>'handoff_status'='RELEASED_TO_PROCUREMENT';
+   exact_current:=exact_current and latest->>'purchase_handoff_revision_id'=anchor.purchase_handoff_revision_id::text;
+   cursor_id:=(latest->>'purchase_handoff_revision_id')::uuid;
+   expected_revision:=(latest->>'revision_number')::integer;visited:='{}';
+   loop
+    if cursor_id is null or cursor_id=any(visited)then return failure;end if;
+    visited:=array_append(visited,cursor_id);
+    select h into edge from jsonb_array_elements(p_context->'handoffs')h
+     where h->>'purchase_handoff_revision_id'=cursor_id::text
+      and h->>'purchase_handoff_batch_id'=anchor.purchase_handoff_batch_id::text;
+    if edge is null or edge#>>'{membership,complete}'is distinct from 'true'
+     or(edge->>'revision_number')::integer is distinct from expected_revision then return failure;end if;
+    select jsonb_agg(m-array['line_sort_position','purchase_handoff_line_revision_id',
+     'purchase_handoff_revision_id','source_confirmed_need_batch_id','confirmed_need_snapshot_line_id',
+     'validation_attempt_id']order by m->>'confirmed_need_line_id')into facts
+    from jsonb_array_elements(edge#>'{membership,members}')m
+    where m->>'service_date'=family.service_date::text and m->>'delivery_location_id'=family.delivery_location_id::text
+     and m->>'ingredient_id'=family.ingredient_id::text and m->>'controlled_unit_id'=family.unit_id::text;
+    if facts is null then return failure;end if;
+    digest:=encode(sha256(convert_to(jsonb_build_object('batch_id',anchor.confirmed_need_batch_id,'facts',facts)::text,'UTF8')),'hex');
+    if digest is distinct from source->>'source_fingerprint'then return failure;end if;
+    count_edges:=count_edges+1;
+    exit when cursor_id=anchor.purchase_handoff_revision_id;
+    cursor_id:=(edge->>'predecessor_revision_id')::uuid;
+    expected_revision:=expected_revision-1;
+   end loop;
+   chain_count:=chain_count+1;
+  end loop;
+  if chain_count<>1 then return failure;end if;
+ end if;
+ if p_mode='OFFICIAL'and not coalesce(official,false)then
+  return jsonb_build_object('applicable',false,'classification','CORRECTION_PENDING');end if;
+ return jsonb_build_object('applicable',true,'classification',case when p_mode='PROSPECTIVE'
+  then 'PROSPECTIVE_UNCHANGED'when exact_current then 'EXACT_CURRENT'else 'OFFICIAL_CONTINUITY'end,
+  'proof',jsonb_build_object('family_revision_id',p_family_revision,'raw_source_fingerprint',revision.source_fingerprint,
+   'confirmed_source_fingerprint',source->'source_fingerprint','contributions',contributions,
+   'supplier_splits',splits,'checked_handoff_revisions',count_edges));
+end;
+$continuity$;
+revoke all on function atlas_core.purchase_review_family_continuity(uuid,text,jsonb)
+ from public,anon,authenticated,service_role;
+
+create function atlas_core.purchase_review_family_continuity(p_family_revision uuid,p_mode text)
+returns jsonb language plpgsql stable security definer set search_path='' as $continuity_entry$
+declare batch_id uuid;context jsonb;
+begin
+ select coalesce(r.source_confirmed_need_batch_id,hb.confirmed_need_batch_id)into batch_id
+ from atlas_procurement.school_catering_allocation_family_revisions r
+ left join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_revision_id=r.source_purchase_handoff_revision_id
+ left join atlas_planning.purchase_handoff_batches hb using(purchase_handoff_batch_id)
+ where r.family_revision_id=p_family_revision;
+ if batch_id is null then return jsonb_build_object('applicable',false,'classification','SOURCE_UNAVAILABLE');end if;
+ context:=atlas_core.purchase_review_continuity_context(batch_id);
+ return atlas_core.purchase_review_family_continuity(p_family_revision,p_mode,context);
+end;
+$continuity_entry$;
+revoke all on function atlas_core.purchase_review_family_continuity(uuid,text)
+ from public,anon,authenticated,service_role;
+reset role;
 set role atlas_owner;
 
 do $restore_schema$
