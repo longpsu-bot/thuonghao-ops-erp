@@ -33,6 +33,8 @@ TypeScript changes are limited to the existing Confirmed Need, Allocation, Gener
 
 Bounded validation documentation may use `docs/testing/atlas-operator-unit-labels-a2-01.md` and sanitized reports/selected PNGs under its existing artifact-folder pattern. No new generator or QA framework is needed.
 
+CI boundary follow-up permits `scripts/check-atlas-vnext-ui-boundary.mjs` and its existing test file to register only the dependency-free `master-data/unitDisplay` helper under the documented exact business-helper bridge pattern. Direct view imports, unreviewed siblings and legacy presentation remain denied; no global gate logic or wildcard allowance changes.
+
 ## Test-first sequence and acceptance
 
 1. Record this baton and the dated API amendment in an authority-only commit before code. Then write failing focused label tests: `Cái` alongside its unchanged technical code/UUID, human legacy `kg`, and controlled missing-label warning; preserve the Shopping List's existing code-first regressions.

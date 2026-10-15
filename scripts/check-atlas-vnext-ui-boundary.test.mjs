@@ -438,3 +438,23 @@ it("allows complete Confirmed Need read authority only through its business brid
     }),
   ).toHaveLength(1);
 });
+
+it("allows the reviewed pure Unit-label helper only through business bridges", () => {
+  const helper =
+    'export { operatorUnitLabel } from "@/modules/atlas/master-data/unitDisplay";';
+  for (const bridge of ["confirmedNeed", "procurement"]) {
+    expect(
+      checkSources({ [`src/vnext/atlas/bridges/${bridge}.ts`]: helper }),
+    ).toEqual([]);
+  }
+  expect(
+    checkSources({ "src/vnext/atlas/procurement/View.tsx": helper }),
+  ).toHaveLength(1);
+  for (const module of ["unitDisplayOther", "MasterDataWorkbench"]) {
+    expect(
+      checkSources({
+        "src/vnext/atlas/bridges/procurement.ts": `export * from "@/modules/atlas/master-data/${module}";`,
+      }),
+    ).toHaveLength(1);
+  }
+});

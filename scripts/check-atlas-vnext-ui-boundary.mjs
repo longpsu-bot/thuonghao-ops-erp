@@ -15,6 +15,7 @@ const approvedLegacyBusinessModules = [
   "src/modules/atlas/recipes/recipeWorkbook",
   "src/modules/atlas/master-data/masterDataApi",
   "src/modules/atlas/master-data/masterDataModel",
+  "src/modules/atlas/master-data/unitDisplay",
   "src/modules/atlas/dispatch/schoolFulfilmentReconciliationApi",
   "src/modules/atlas/dispatch/schoolFulfilmentReconciliationModel",
   "src/modules/atlas/dispatch/schoolDispatchReleaseApi",
