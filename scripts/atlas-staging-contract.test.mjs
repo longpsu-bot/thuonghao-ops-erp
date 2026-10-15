@@ -2579,3 +2579,27 @@ describe("Atlas staging hosted evidence", () => {
     }
   });
 });
+
+it("routes every Procurement PO boundary check through the include-expanding runner", () => {
+  const source = readFileSync(
+    "scripts/verify-local-school-catering-procurement.mjs",
+    "utf8",
+  );
+  const boundary = source.slice(
+    source.indexOf("function verifyPlanningCorrectionBoundaries()"),
+    source.indexOf("async function invoke("),
+  );
+  expect(boundary).toContain(
+    '"supabase/tests/school_catering_planning_correction.sql"',
+  );
+  expect(boundary).not.toContain(
+    '"supabase/tests/school_catering_purchase_orders.sql"',
+  );
+  expect(boundary).toMatch(
+    /runNodeScript\(\s*"\.\/test-local-purchase-review\.mjs",[\s\S]*?\["school_catering_purchase_orders\.sql"\]/,
+  );
+  expect(source).toMatch(
+    /function runNodeScript\(relativePath, label, environment = \{\}, args = \[\]\)/,
+  );
+  expect(source).toContain("...args");
+});

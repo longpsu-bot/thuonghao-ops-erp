@@ -66,3 +66,11 @@ Check TAP `not ok` and exact plan/count, not only process exit. The test sources
 The migration adds functions and replaces bounded read/command definitions; rollback requires a reviewed function-definition restoration or a forward correction. Do not drop historical business rows, reset a shared database or deploy a migration rollback automatically. Local fixtures roll back themselves, and all owned validation databases/volumes remain available for review.
 
 Keep the PR Draft pending independent fixed-SHA review and exact-head Frontend/Full Integration results. Atlas Staging remains109. PR385/386, historical108/109 proof, Shopping List import semantics and pending Warehouse choices are separate. No hosted acceptance, merge, deployment, real Supplier/PO commitment or staff assignment follows this local proof.
+
+## Full Integration caller correction
+
+[Full Integration 38686373393](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38686373393) at `34fd8db893aee99cc0bc5aaa236102036b1272ed` failed in `local:school-catering-procurement:verify`: its nested direct Supabase test-container call could not mount `../local/school_catering_purchase_orders_fixture.sql`. It ran 36 of the 155 planned assertions with zero business assertion failures before the missing-file exit. This was a newly omitted fixture caller, not a passing complete PO suite.
+
+All PO-suite invocations were traced. Top-level Full Integration already used the include-expanding runner; the nested verifier now uses that same existing runner for the exact PO suite. Its Planning correction suite retains the pinned CLI path. The existing Node-script invocation helper only gained optional script arguments; no new runner, dependency, timeout, fixture or business assertion was introduced.
+
+The focused caller-registration test failed before the correction, then all 117 contract tests passed (`atlas-b-po-caller-red.log` / `atlas-b-po-caller-green.log`, outside the repository). The earlier 282 frontend assertions remain historical evidence; this follow-up did not rerun UI or SQL suites because their sources were unchanged. New exact-head Full Integration remains pending.

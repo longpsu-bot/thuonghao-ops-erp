@@ -233,5 +233,24 @@
     "A2 unledgered default postgres and unrelated volumes preserved; no A2 snapshot field in B database",
     "No producer/export changes or native export re-certification"
   ],
-  "prior_connected_checkpoint_byte_image": "Working/applied checkpoint image; original recorded hash retained."
+  "prior_connected_checkpoint_byte_image": "Working/applied checkpoint image; original recorded hash retained.",
+  "ci_followup": {
+    "failed_run": "https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38686373393",
+    "failed_source_commit": "34fd8db893aee99cc0bc5aaa236102036b1272ed",
+    "failure": "local:school-catering-procurement:verify invoked the PO suite through the direct Supabase test container; ../local fixture was not mounted.36 of155 assertions ran with zero assertion failures before missing-file exit.",
+    "correction": "Only the omitted nested verifier caller now uses existing include-expanding test-local-purchase-review.mjs for the exact PO suite. Top-level Full registration was already correct; Planning correction remains on the pinned CLI.",
+    "red": {
+      "log": "atlas-b-po-caller-red.log",
+      "failed": 1,
+      "skipped": 116
+    },
+    "green": {
+      "log": "atlas-b-po-caller-green.log",
+      "test_files": 1,
+      "passed": 117,
+      "failed": 0
+    },
+    "runtime_sql_ui_and_155_po_assertions": "unchanged",
+    "full_ci": "New exact-head Full Integration pending; original failure retained rather than described as a passing complete suite."
+  }
 }
