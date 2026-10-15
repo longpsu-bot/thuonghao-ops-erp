@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-CONFIRMED-NEED-CORRECTION-C-01
-Status: TASK5_REVIEW_ONLY — three recovery findings repaired locally; fixed-SHA technical review pending. Task6–8 remain held.
+Status: TASK6_IMPLEMENTATION — Task5 fixed-SHA review cleared; bounded incumbent correction UI authorized. Tasks7–8 remain held.
 Navigator/reviewer: Terra, read-only
 Implementer/document author: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
@@ -208,3 +208,13 @@ Fresh proven-absent owned `atlas_c_correction_forward_06` replays109 original ma
 Postflight0 Actors/runs/batches/Need lines/receipts/PO/PXK, authenticated extensions USAGE false and exact global membership/attributes/config/schema ACL parity. All492 functions retain identical metadata/ACL/owners;491 bodies match preserved05 exactly, with only correct_confirmed_need changed at the two approved metadata sites and matching source/database bytes. Counts stay123 public APIs/369 private functions. Prior b4df real-wait reports remain historical evidence for unchanged business/fence logic, not new-hash race reruns. All owned databases/reports remain preserved. This checkpoint awaits Terra fixed-SHA review; no push, merge, manual deployment or hosted DB write, and no Task6–8 release.
 
 Root independently verified all11 final raw logs have one positive plan, sequential assertions1..N, no failures, matching current test/log SHA and exit0:1166/1166. Independent evidence `%TEMP%/atlas-root-c-task5-tap-plan-independent-check.json`; no additional rerun or broader acceptance is implied.
+
+## Task6 technical release — authority before UI
+
+Terra cleared Task5 fixed c7bc64e03bbd1cfa92e93fe439d0a3d797e8625b. Root releases Task6 only under the approved spec/plan and six-point UI outline. Preserve complete migration LF/applied hash67820cb240ff42fc96c45833c3a877e776093bc14490d58f35332f5977480d6d; no backend SQL edits, push, Task7 registration/scale/catalog, hosted actions, merge or manual deployment. Task5 evidence remains154 tracked frontend tests, fresh baseline30 and1166 exact affected SQL assertions with zero residue/global/schema parity.
+
+Allowed reach: existing ConfirmedNeedWorkbench/Table, one colocated CorrectionDialog/test, directly necessary Feedback/DirtyExit/controller/model/bridge/error-code copy and tests, existing review entry/fixtures/stories; controlled pending guidance in procurementOperatorCopy, active ProcurementOrdersStage/test and necessary legacy PurchaseOrderStage/model/test. No new dirty owner, framework, dependency, lifecycle or authority. Use incumbent v3/A+/Chakra tokens/components, Vietnamese operator copy and craft floor immediately before UI edits.
+
+TDD covers accessible released-row Điều chỉnh nhu cầu, exact string quantity/governed reason, server selected before/after/signed delta and complete family/all Schools despite selected School filter, explicit Lưu điều chỉnh and fresh readback; released inline editing remains disabled. Human labels/controlled unavailable copy only; optional Procurement/PO detail shapes are parsed safely and authorized-documents-only disclosure remains visible even empty. Selected line zero differs from authoritative whole-family zero; no automatic PO/PXK/cancellation.
+
+Reuse existing dirty/UNKNOWN/READBACK/stale recovery and thirteen persistent owners. Actual dialog return focus must wait for completed readback/exit and fall back to a stable review region when REOPENED unmounts the released trigger. Controlled PO_SOURCE_NOT_READY/CORRECTION_PENDING explains unavailable evidence and suppresses premature replacement guidance while backend actions remain false. Existing in-memory review route provides positive/shared/filter, line-zero/family-zero, missing authority, pending, UNKNOWN/exact retry/readback-failure cases. Focused UI/controller/feedback/legacy checks, boundary/typecheck/format only; freeze UI for Root's bounded1280/1440/1920 browser QA and one final Impeccable detector. No producer/native export changes or new agents.
