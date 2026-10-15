@@ -137,6 +137,7 @@ function createCrossStageJourney() {
   };
 
   const purchaseReviewApi: PurchaseReviewApi = {
+    applyAllocationBatch: async () => reviewSuccess({ success: true }),
     getGeneratedReview: async () => reviewSuccess({ success: true, rows: [] }),
     getConfirmedAllocations: async () => {
       const result = await procurementApi.getWorkbench({} as never);

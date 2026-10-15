@@ -1038,7 +1038,19 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(116);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(119);
+    for (const file of [
+      "operator_bulk_allocation.sql",
+      "operator_bulk_allocation_mixed.sql",
+      "operator_bulk_allocation_scale.sql",
+      "school_catering_purchase_orders.sql",
+    ]) {
+      expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+        command: "node",
+        args: ["scripts/test-local-purchase-review.mjs", file],
+      });
+    }
+
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [
@@ -2272,10 +2284,11 @@ describe("Atlas staging hosted evidence", () => {
       "get_school_fulfilment_reconciliation_workbench(request jsonb)";
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(121);
-    expect(authority.apiOwners).toHaveLength(121);
-    expect(authority.authenticatedApiSignatures).toHaveLength(118);
+    expect(authority.apiSignatures).toHaveLength(122);
+    expect(authority.apiOwners).toHaveLength(122);
+    expect(authority.authenticatedApiSignatures).toHaveLength(119);
     for (const name of [
+      "apply_supplier_allocation_batch",
       "get_cooking_groups",
       "upsert_cooking_group",
       "set_school_cooking_group",

@@ -669,8 +669,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  121,
-  'CAT-14 physical atlas_api function count is exactly one hundred twenty-one'
+  122,
+  'CAT-14 physical atlas_api function count is exactly one hundred twenty-two'
 );
 
 select is(
@@ -686,6 +686,7 @@ select is(
   array[
     'allocate_supplier_direct_fulfilment(request jsonb)',
     'apply_recipe_import(request jsonb)',
+    'apply_supplier_allocation_batch(request jsonb)',
     'apply_supplier_evidence_to_allocation(request jsonb)',
     'approve_attendance(request jsonb)',
     'approve_confirmed_needs(request jsonb)',
@@ -806,7 +807,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly one hundred twenty-one physical functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly one hundred twenty-two physical functions'
 );
 
 select is(
@@ -914,6 +915,7 @@ select is(
   array[
     'allocate_supplier_direct_fulfilment(request jsonb)=atlas_procurement_command_runtime',
     'apply_recipe_import(request jsonb)=atlas_master_data_command_runtime',
+    'apply_supplier_allocation_batch(request jsonb)=atlas_procurement_command_runtime',
     'apply_supplier_evidence_to_allocation(request jsonb)=atlas_evidence_command_runtime',
     'approve_attendance(request jsonb)=atlas_planning_command_runtime',
     'approve_confirmed_needs(request jsonb)=atlas_confirmed_need_review_runtime',
@@ -1051,6 +1053,7 @@ select is(
   array[
     'allocate_supplier_direct_fulfilment(request jsonb)',
     'apply_recipe_import(request jsonb)',
+    'apply_supplier_allocation_batch(request jsonb)',
     'apply_supplier_evidence_to_allocation(request jsonb)',
     'approve_attendance(request jsonb)',
     'approve_confirmed_needs(request jsonb)',
@@ -1168,7 +1171,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly one hundred eighteen functions'
+  'CAT-18 authenticated execute allowlist is exactly one hundred nineteen functions'
 );
 
 select ok(
@@ -1203,6 +1206,7 @@ select ok(
         values
           ('allocate_supplier_direct_fulfilment', 'request jsonb'),
           ('apply_recipe_import', 'request jsonb'),
+          ('apply_supplier_allocation_batch', 'request jsonb'),
           ('apply_supplier_evidence_to_allocation', 'request jsonb'),
           ('approve_attendance', 'request jsonb'),
           ('approve_confirmed_needs', 'request jsonb'),
@@ -1812,19 +1816,19 @@ select is(
     'policy_count', 674,
     'policy_catalog_md5', 'b20fe6da611858ba85a679a3e4be56cf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 349,
-    -- Migration 108 adds one private SECURITY INVOKER whole-PO predicate.
-    'private_function_catalog_md5', 'cbccd848f27a6d344eb6d1e1ff156bea',
+    'private_function_count', 351,
+    -- Bulk Allocation adds one invoker projection and one shared private command implementation.
+    'private_function_catalog_md5', 'a000a642f09d94cae2527a3c301daa3b',
     'trigger_count', 126,
     'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
-    -- Only read/Procurement runtimes can execute it; browser grants are unchanged.
-    'positive_target_grant_count', 1855,
-    'positive_target_grant_md5', '07c41179025e2bbdbf165e26a667ca44',
+    -- Exact five grants: private projection read/Procurement; private command owner; API owner/authenticated.
+    'positive_target_grant_count', 1860,
+    'positive_target_grant_md5', '76e4b1b23c5d3a04a4d3f142241a4ca8',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 121,
+    'api_function_count', 122,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 118,
+    'authenticated_execute_count', 119,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),

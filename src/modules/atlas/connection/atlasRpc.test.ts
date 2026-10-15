@@ -68,8 +68,8 @@ function edgeClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 118-function browser registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(118);
+  it("contains exactly the reviewed 119-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(119);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.get_confirmed_need_shopping_list_export",
       "atlas_api.record_wholesale_source",
@@ -181,6 +181,7 @@ describe("Atlas RPC transport", () => {
       "atlas_api.get_generated_purchase_review",
       "atlas_api.get_confirmed_supplier_allocation_workbench",
       "atlas_api.save_confirmed_supplier_allocation",
+      "atlas_api.apply_supplier_allocation_batch",
       "atlas_api.prepare_school_catering_purchase_orders",
       "atlas_api.get_pantry_source_workbench",
       "atlas_api.preview_pantry_source",
@@ -446,4 +447,32 @@ describe("Atlas RPC transport", () => {
       expect(result.error).not.toHaveProperty("upstream_body");
     }
   });
+});
+
+it("retains bounded bulk conflict data for the reviewed-family presentation mapper", async () => {
+  const conflicts = [
+    {
+      family: { service_date: "2026-09-10", ingredient_id: "rice" },
+      reason: "STALE_BULK_PROPOSAL",
+    },
+  ];
+  const fake = rpcClient({
+    data: {
+      success: false,
+      error_code: "STALE_BULK_PROPOSAL",
+      safe_message: "Reload",
+      conflicts,
+      raw_sql: "never",
+    },
+    error: null,
+  });
+  const result = await createAtlasRpcTransport(fake.client).invoke(
+    "atlas_api.apply_supplier_allocation_batch",
+    {},
+  );
+  expect(result.kind).toBe("backend_error");
+  if (result.kind === "backend_error") {
+    expect(result.error.conflicts).toEqual(conflicts);
+    expect(result.error).not.toHaveProperty("raw_sql");
+  }
 });

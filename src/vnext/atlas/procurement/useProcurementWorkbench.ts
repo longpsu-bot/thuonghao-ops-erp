@@ -7,6 +7,9 @@ import {
   confirmedAllocationFromResult,
   confirmedAllocationReadRequest,
   confirmedAllocationRequest,
+  supplierAllocationBatchRequest,
+  type SupplierAllocationBatchCandidate,
+  type SupplierAllocationBulkPreview,
   createPurchaseOrderDraftsRequest,
   createPurchaseOrderReplacementRequest,
   preparePurchaseOrdersRequest,
@@ -59,14 +62,21 @@ function stringList(value: unknown): string[] {
     ? value.filter((item): item is string => typeof item === "string")
     : [];
 }
-function feedbackFromResult(result: AtlasRpcResult): ProcurementFeedback {
+function feedbackFromResult(
+  result: AtlasRpcResult,
+  preview?: SupplierAllocationBulkPreview | null,
+): ProcurementFeedback {
   if (result.kind === "success")
     return {
       kind: "success",
-      message: procurementOperatorMessage(
-        result.response.safe_operator_message ?? "Đã hoàn tất thao tác.",
-        fallback,
-      ),
+      message:
+        result.response.contract_version === "SUPPLIER-ALLOCATION-BATCH.v1" &&
+        Number.isSafeInteger(result.response.applied_count)
+          ? `Đã lưu ${result.response.applied_count} nhóm phân bổ.`
+          : procurementOperatorMessage(
+              result.response.safe_operator_message ?? "Đã hoàn tất thao tác.",
+              fallback,
+            ),
       messages: procurementOperatorMessages(
         [
           ...stringList(result.response.warnings),
@@ -78,15 +88,51 @@ function feedbackFromResult(result: AtlasRpcResult): ProcurementFeedback {
     };
   if (result.kind === "backend_error")
     return {
-      kind: ["STALE_VERSION", "SOURCE_CHANGED", "PO_DRAFT_STALE"].includes(
-        result.error.error_code,
-      )
+      kind: [
+        "STALE_VERSION",
+        "SOURCE_CHANGED",
+        "PO_DRAFT_STALE",
+        "STALE_BULK_PROPOSAL",
+      ].includes(result.error.error_code)
         ? "stale"
         : result.error.retryable
           ? "retryable"
           : "blocked",
       message: procurementOperatorMessage(result.error.safe_message, fallback),
-      messages: [],
+      messages:
+        preview && Array.isArray(result.error.conflicts)
+          ? [
+              ...new Set(
+                result.error.conflicts.flatMap((value) => {
+                  if (
+                    !value ||
+                    typeof value !== "object" ||
+                    Array.isArray(value)
+                  )
+                    return [];
+                  const family = value.family;
+                  if (
+                    !family ||
+                    typeof family !== "object" ||
+                    Array.isArray(family)
+                  )
+                    return [];
+                  const row = preview.families.find(
+                    (r) =>
+                      r.service_date === family.service_date &&
+                      r.delivery_location_id === family.delivery_location_id &&
+                      r.ingredient_id === family.ingredient_id &&
+                      r.unit_id === family.unit_id,
+                  );
+                  return row
+                    ? [
+                        `${row.ingredient_name} · ${row.location_name} · ${row.service_date.split("-").reverse().join("/")}: ${value.reason === "STALE_BULK_PROPOSAL" ? "Đề xuất đã thay đổi; tải lại để xem và chọn lại." : "Chưa thể lưu nhóm này; kiểm tra lại dữ liệu hiện tại."}`,
+                      ]
+                    : [];
+                }),
+              ),
+            ]
+          : [],
     };
   return result.kind === "transport_error"
     ? uncertain()
@@ -129,6 +175,8 @@ export function useProcurementWorkbench({
   );
   const [allocation, setAllocation] =
     useState<ConfirmedAllocationWorkbench | null>(null);
+  const [bulkPreview, setBulkPreview] =
+    useState<SupplierAllocationBulkPreview | null>(null);
   const [orders, setOrders] = useState<PurchaseOrdersData | null>(null);
   const [current, setCurrent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -154,6 +202,7 @@ export function useProcurementWorkbench({
       if (operatorDateRangeError({ start: date, end: dateEnd })) return false;
       const ticket = ++generation.current;
       active.current = true;
+      setBulkPreview(null);
       setCurrent(false);
       setLoading(true);
       setReadError(null);
@@ -241,6 +290,7 @@ export function useProcurementWorkbench({
     clearRetry();
     recoveryStage.current = null;
     setCurrent(false);
+    setBulkPreview(null);
     setAllocation(null);
     setOrders(null);
     setFeedback(null);
@@ -327,7 +377,7 @@ export function useProcurementWorkbench({
       };
     }
     if (ticket !== generation.current) return;
-    const nextFeedback = feedbackFromResult(result);
+    const nextFeedback = feedbackFromResult(result, bulkPreview);
     setFeedback(nextFeedback);
     if (preparation && ["success", "unknown"].includes(nextFeedback.kind))
       recoveryStage.current = "orders";
@@ -354,6 +404,103 @@ export function useProcurementWorkbench({
     setBusy(false);
   };
 
+  const previewBulk = async () => {
+    if (!canStart() || stage !== "allocation" || bulkPreview) return;
+    const ticket = generation.current;
+    active.current = true;
+    setBusy(true);
+    setFeedback(null);
+    try {
+      const result = await purchaseReviewApi.getConfirmedAllocations(
+        confirmedAllocationReadRequest(
+          authSubject!,
+          correlation.current,
+          {
+            date_start: date,
+            date_end: dateEnd,
+            school_ids: schoolIds,
+            states: [],
+            search: null,
+          },
+          true,
+        ),
+      );
+      if (ticket !== generation.current) return;
+      const data = confirmedAllocationFromResult(result)?.bulk_preview;
+      if (
+        data &&
+        Array.isArray(data.families) &&
+        typeof data.allowed === "boolean" &&
+        [data.total_count, data.applicable_count, data.excluded_count].every(
+          (n) => Number.isSafeInteger(n) && n >= 0,
+        )
+      )
+        setBulkPreview(data);
+      else
+        setFeedback(
+          result.kind === "success"
+            ? {
+                kind: "blocked",
+                message: "Chưa tải được đề xuất. Hãy tải lại.",
+                messages: [],
+              }
+            : feedbackFromResult(result),
+        );
+    } catch {
+      if (ticket === generation.current)
+        setFeedback({
+          kind: "blocked",
+          message: "Chưa tải được đề xuất. Hãy thử lại.",
+          messages: [],
+        });
+    } finally {
+      if (ticket === generation.current) {
+        active.current = false;
+        setBusy(false);
+      }
+    }
+  };
+  const applyBulk = async (candidates: SupplierAllocationBatchCandidate[]) => {
+    if (
+      !canStart() ||
+      stage !== "allocation" ||
+      !bulkPreview?.allowed ||
+      !candidates.length
+    )
+      return;
+    if (
+      new Set(
+        candidates.map((c) =>
+          JSON.stringify([
+            c.family.service_date,
+            c.family.delivery_location_id,
+            c.family.ingredient_id,
+            c.family.unit_id,
+          ]),
+        ),
+      ).size !== candidates.length ||
+      candidates.some(
+        (c) =>
+          !bulkPreview.families.some(
+            (r) => JSON.stringify(r.candidate) === JSON.stringify(c),
+          ),
+      )
+    )
+      return;
+    const request = supplierAllocationBatchRequest(
+      authSubject!,
+      correlation.current,
+      { date_start: date, date_end: dateEnd, school_ids: schoolIds },
+      candidates,
+    );
+    await runCommand(
+      () => purchaseReviewApi.applyAllocationBatch(request),
+      "allocation",
+    );
+  };
+  const closeBulk = () => {
+    if (!busy && !locked) setBulkPreview(null);
+  };
   const save = async (
     candidate: AllocationFamilyRow,
     splits: SupplierSplitInput[],
@@ -549,6 +696,10 @@ export function useProcurementWorkbench({
     openOrders,
     reload,
     save,
+    bulkPreview,
+    previewBulk,
+    applyBulk,
+    closeBulk,
     prepare,
     orderAction,
     retry,

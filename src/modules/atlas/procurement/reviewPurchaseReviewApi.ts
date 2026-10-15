@@ -32,6 +32,7 @@ import {
   type ConfirmedAllocationWorkbench,
   type GeneratedPurchaseReview,
   type PurchaseReviewApi,
+  type SupplierAllocationBulkPreview,
 } from "./purchaseReviewApi";
 import { releasePurchaseOrderRequest } from "./schoolCateringProcurementApi";
 
@@ -258,6 +259,74 @@ export function createReviewPurchaseJourney(
       return remember(request, capture(await baseNeed.save(request)));
     },
   };
+  // The connected API never imports this synthetic single-family projection.
+  const bulkPreview = (): SupplierAllocationBulkPreview => {
+    const current = row();
+    const kind =
+      current.state === "UNALLOCATED" && current.recommendation
+        ? ("DEFAULT" as const)
+        : current.state === "STALE_REBALANCE_AVAILABLE" &&
+            current.rebalance_proposal
+          ? ("REBALANCE" as const)
+          : null;
+    const proposed =
+      kind === "DEFAULT"
+        ? [current.recommendation!]
+        : (current.rebalance_proposal ?? []);
+    const candidate = kind
+      ? {
+          family: {
+            service_date: current.service_date,
+            delivery_location_id: current.delivery_location_id,
+            ingredient_id: current.ingredient_id,
+            unit_id: current.unit_id,
+            source_kind: current.family.source_kind!,
+            expected_family_version: current.family.version,
+            expected_source_fingerprint: current.family.source_fingerprint,
+            ...(current.family.source_kind === "CONFIRMED_NEED"
+              ? {
+                  expected_source_batch_id: need.confirmed_need_batch_id,
+                  expected_source_batch_version: need.batch_version,
+                }
+              : {}),
+          },
+          proposal_kind: kind,
+          proposal_fingerprint: `review:${fingerprint()}:${current.family.version}:${kind}`,
+          proposed_splits: proposed.map((s) => ({
+            supplier_id: s.supplier_id,
+            allocated_quantity: s.allocated_quantity,
+            supplier_note:
+              current.splits.find((p) => p.supplier_id === s.supplier_id)
+                ?.supplier_note ?? null,
+          })),
+        }
+      : null;
+    return {
+      families: [
+        {
+          ...current,
+          schools: current.schools ?? [],
+          unit_label:
+            need.lines[0]!.controlled_unit.name ?? "Chưa có tên đơn vị",
+          decision_origin: current.splits.length ? "MANUAL" : null,
+          candidate,
+          exclusion_reason: candidate
+            ? null
+            : current.complete
+              ? "EXISTING_DECISION_PRESERVED"
+              : "CONFIRMED_NEED_INCOMPLETE",
+          purchase_order_impact: {
+            coverage: "AUTHORIZED_DOCUMENTS_ONLY",
+            documents: [],
+          },
+        },
+      ],
+      total_count: 1,
+      applicable_count: candidate ? 1 : 0,
+      excluded_count: candidate ? 0 : 1,
+      allowed: true,
+    };
+  };
   const purchaseReviewApi: PurchaseReviewApi = {
     async getGeneratedReview(request) {
       return (
@@ -303,7 +372,68 @@ export function createReviewPurchaseJourney(
             }
           : null,
       };
-      return unavailable() ?? success(data);
+      return (
+        unavailable() ??
+        success({
+          ...data,
+          ...(payload(request).include_bulk_preview
+            ? {
+                bulk_preview: visible
+                  ? bulkPreview()
+                  : {
+                      families: [],
+                      total_count: 0,
+                      applicable_count: 0,
+                      excluded_count: 0,
+                      allowed: true,
+                    },
+              }
+            : {}),
+        })
+      );
+    },
+    async applyAllocationBatch(request) {
+      const prior = replay(request);
+      if (prior) return prior;
+      if (unavailable()) return unavailable()!;
+      const candidates = request.payload.candidates;
+      const candidate = bulkPreview().families[0]?.candidate;
+      if (
+        candidates.length !== 1 ||
+        JSON.stringify(candidates[0]) !== JSON.stringify(candidate) ||
+        !candidate
+      )
+        return error("STALE_BULK_PROPOSAL");
+      if (candidate.family.source_kind !== "CONFIRMED_NEED")
+        return error("SOURCE_NOT_EDITABLE");
+      const family = candidate.family;
+      const result = await purchaseReviewApi.saveConfirmedAllocation(
+        confirmedAllocationRequest(
+          request.requested_by_auth_subject!,
+          request.correlation_id!,
+          family.expected_family_version,
+          {
+            service_date: family.service_date,
+            delivery_location_id: family.delivery_location_id,
+            ingredient_id: family.ingredient_id,
+            unit_id: family.unit_id,
+            expected_source_fingerprint: family.expected_source_fingerprint,
+            expected_source_batch_id: family.expected_source_batch_id!,
+            expected_source_batch_version:
+              family.expected_source_batch_version!,
+          },
+          candidate.proposed_splits,
+        ),
+      );
+      return result.kind !== "success"
+        ? result
+        : remember(
+            request,
+            success({
+              contract_version: "SUPPLIER-ALLOCATION-BATCH.v1",
+              applied_count: 1,
+            }),
+          );
     },
     async saveConfirmedAllocation(request) {
       const prior = replay(request);

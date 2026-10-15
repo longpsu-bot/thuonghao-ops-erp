@@ -3,6 +3,7 @@
 -- Reuse the guarded RMVP-05 source template, then create two independent daily
 -- Planning chains. Each has 4 Schools / 4 locations x 59 Ingredients = 236
 -- positive Confirmed Need lines. All business triggers remain enabled. The
+-- defaults remain unchanged; bounded Allocation tests can select a 50-School shape. The
 -- paired test supplies the human quantity decisions through public Save calls.
 \ir purchase_review_confirm_release_fixture.sql
 
@@ -26,7 +27,10 @@ create function pg_temp.seed_purchase_preparation_scale(
   p_code_prefix text,
   p_service_date date,
   p_master_seed text default null,
-  p_catalog_seed text default null
+  p_catalog_seed text default null,
+  p_school_count integer default 4,
+  p_ingredient_count integer default 59,
+  p_shared_location boolean default false
 ) returns uuid
 language plpgsql
 set search_path=''
@@ -57,6 +61,10 @@ begin
     or p_code_prefix is null or p_code_prefix = ''
     or p_service_date is null then
     raise exception 'Purchase Preparation scale fixture requires a seed, code prefix and service date.';
+  end if;
+
+  if p_school_count not between 1 and 50 or p_ingredient_count not between 1 and 59 then
+    raise exception 'Synthetic fixture counts must be 1-50 Schools and 1-59 Ingredients.';
   end if;
 
   if exists (
@@ -95,7 +103,7 @@ begin
       'address_text', v_catalog_code || ' synthetic address ' || source.location_number
     )
   )).*
-  from pg_catalog.generate_series(1, 4) source(location_number)
+  from pg_catalog.generate_series(1, p_school_count) source(location_number)
   cross join atlas_admin.delivery_locations template
   where template.delivery_location_id = 'b6500000-0000-0000-0000-000000000002';
 
@@ -107,11 +115,11 @@ begin
       'customer_id', v_customer_id,
       'school_code', v_catalog_code || '-school-' || source.school_number,
       'school_name', v_catalog_code || ' school ' || source.school_number,
-      'default_delivery_location_id', md5(v_master_seed || ':location:' || source.school_number)::uuid,
+      'default_delivery_location_id', md5(v_master_seed || ':location:' || case when p_shared_location then 1 else source.school_number end)::uuid,
       'display_order', 100 + source.school_number
     )
   )).*
-  from pg_catalog.generate_series(1, 4) source(school_number)
+  from pg_catalog.generate_series(1, p_school_count) source(school_number)
   cross join atlas_admin.schools template
   where template.school_id = 'b6500000-0000-0000-0000-000000000004';
 
@@ -126,7 +134,7 @@ begin
       'order_step', 0.1
     )
   )).*
-  from pg_catalog.generate_series(1, 59) source(ingredient_number)
+  from pg_catalog.generate_series(1, p_ingredient_count) source(ingredient_number)
   cross join atlas_admin.ingredients template
   where template.ingredient_id = 'b6500000-0000-0000-0000-000000000006';
 
@@ -159,7 +167,7 @@ begin
     date '2020-01-01',
     eligibility.priority,
     'Disposable Purchase Preparation scale fixture'
-  from pg_catalog.generate_series(1, 59) ingredient(ingredient_number)
+  from pg_catalog.generate_series(1, p_ingredient_count) ingredient(ingredient_number)
   cross join lateral (
     values
       (((ingredient.ingredient_number - 1) % 12) + 1, 1),
@@ -321,7 +329,7 @@ begin
       'pantry_need_batch_id', v_pantry_id,
       'service_date', p_service_date,
       'school_id', md5(v_master_seed || ':school:' || source.school_number)::uuid,
-      'delivery_location_id', md5(v_master_seed || ':location:' || source.school_number)::uuid,
+      'delivery_location_id', md5(v_master_seed || ':location:' || case when p_shared_location then 1 else source.school_number end)::uuid,
       'ingredient_id', md5(v_master_seed || ':ingredient:' || source.ingredient_number)::uuid,
       'requested_quantity', source.family_quantity,
       'note', p_code_prefix || ' family ' || source.line_number,
@@ -334,10 +342,10 @@ begin
   from (
     select
       line_number,
-      ((line_number - 1) / 59) + 1 as school_number,
-      ((line_number - 1) % 59) + 1 as ingredient_number,
+      ((line_number - 1) / p_ingredient_count) + 1 as school_number,
+      ((line_number - 1) % p_ingredient_count) + 1 as ingredient_number,
       (1 + (line_number % 20))::numeric + ((line_number % 10)::numeric / 10) as family_quantity
-    from pg_catalog.generate_series(1, 236) generated(line_number)
+    from pg_catalog.generate_series(1, p_school_count * p_ingredient_count) generated(line_number)
   ) source
   cross join atlas_planning.pantry_need_lines template
   where template.pantry_need_line_id = 'b6530000-0000-0000-0000-000000000004';
@@ -358,7 +366,7 @@ begin
       'approved_by_actor_id', v_actor_id,
       'approved_at', v_now,
       'source_signature', repeat('c', 64),
-      'line_count', 236,
+      'line_count', p_school_count * p_ingredient_count,
       'created_at', v_now
     )
   )).*
@@ -460,7 +468,7 @@ begin
       'input_snapshot_id', v_input_snapshot_id,
       'run_status', 'GENERATED',
       'version', 1,
-      'generated_line_count', 236,
+      'generated_line_count', p_school_count * p_ingredient_count,
       'generated_by_actor_id', v_actor_id,
       'generated_at', v_now,
       'validated_by_actor_id', null,
@@ -542,8 +550,8 @@ begin
       'need_generation_input_snapshot_id', v_input_snapshot_id,
       'released_by_actor_id', v_actor_id,
       'released_at', v_now,
-      'generated_line_count', 236,
-      'active_line_count', 236
+      'generated_line_count', p_school_count * p_ingredient_count,
+      'active_line_count', p_school_count * p_ingredient_count
     )
   )).*
   from atlas_planning.need_generation_release_snapshots template
@@ -666,9 +674,9 @@ begin
   set constraints all immediate;
 
   if (select count(*) from atlas_planning.confirmed_need_lines
-      where confirmed_need_batch_id = v_batch_id) <> 236
+      where confirmed_need_batch_id = v_batch_id) <> p_school_count * p_ingredient_count
     or (select count(*) from atlas_planning.confirmed_need_line_revision_contributions
-      where confirmed_need_batch_id = v_batch_id) <> 236
+      where confirmed_need_batch_id = v_batch_id) <> p_school_count * p_ingredient_count
     or exists (
       select 1
       from atlas_planning.confirmed_need_lines line
@@ -680,7 +688,7 @@ begin
       from atlas_procurement.school_catering_allocation_families family
       where family.service_date = p_service_date
     ) then
-    raise exception 'Scale fixture did not create exactly 236 undecided lines with zero persisted allocations.';
+    raise exception 'Scale fixture did not create the requested undecided lines with zero persisted allocations.';
   end if;
 
   if (select count(*) from atlas_admin.suppliers supplier
@@ -694,7 +702,7 @@ begin
       from atlas_admin.ingredients ingredient
       where ingredient.ingredient_id in (
         select md5(v_master_seed || ':ingredient:' || generated.ingredient_number)::uuid
-        from pg_catalog.generate_series(1, 59) generated(ingredient_number)
+        from pg_catalog.generate_series(1, p_ingredient_count) generated(ingredient_number)
       )
       group by ingredient.ingredient_id
       having (

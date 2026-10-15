@@ -12,6 +12,7 @@ import {
   createProcurementReviewFixture,
   reviewOrder,
   reviewFamily,
+  reviewBulkPreview,
   reviewSuccess,
 } from "./procurement/procurementReviewFixtures";
 import { Capacity } from "./AtlasWorkspaceCapacity.stories";
@@ -66,6 +67,7 @@ function Review() {
               : scenario === "stale"
                 ? "po_stale"
                 : "blocked",
+        applicationReviewNow.toISOString().slice(0, 10),
       );
       fixture.purchaseReview = procurement.purchaseReviewApi;
       fixture.procurement = procurement.procurementApi;
@@ -97,7 +99,10 @@ function Review() {
       }
     }
     if (params.get("scenario") === "unknown") {
-      const procurement = createProcurementReviewFixture("unknown");
+      const procurement = createProcurementReviewFixture(
+        "unknown",
+        applicationReviewNow.toISOString().slice(0, 10),
+      );
       fixture.purchaseReview = procurement.purchaseReviewApi;
       fixture.procurement = procurement.procurementApi;
     }
@@ -275,6 +280,7 @@ function Review() {
           date_start: string;
           date_end: string;
           school_ids: string[];
+          include_bulk_preview?: boolean;
         };
         const rows = datesIn(payload.date_start, payload.date_end)
           .map((date) => {
@@ -302,6 +308,9 @@ function Review() {
           date_start: payload.date_start,
           date_end: payload.date_end,
           rows,
+          ...(payload.include_bulk_preview
+            ? { bulk_preview: reviewBulkPreview(rows) }
+            : {}),
           preparation:
             payload.date_start === payload.date_end
               ? {
@@ -387,6 +396,41 @@ function Review() {
           date_end: payload.date_end,
         });
       };
+    }
+    const bulkScenario = params.get("bulk");
+    if (
+      bulkScenario &&
+      [
+        "normal",
+        "rebalance",
+        "blocked",
+        "unknown",
+        "retryable_failure",
+      ].includes(bulkScenario)
+    ) {
+      const procurement = createProcurementReviewFixture(
+        bulkScenario as
+          "normal" | "rebalance" | "blocked" | "unknown" | "retryable_failure",
+        applicationReviewNow.toISOString().slice(0, 10),
+      );
+      procurement.allocation.rows.forEach((row) => {
+        row.contributions = [
+          {
+            confirmed_need_line_revision_id: "review-contribution",
+            school_id: row.schools![0]!.school_id,
+            contribution_quantity: row.family_quantity!,
+          },
+        ];
+      });
+      if (bulkScenario === "normal")
+        procurement.allocation.preparation = {
+          ...procurement.allocation.preparation!,
+          ready: true,
+          allowed: true,
+          blockers: [],
+        };
+      fixture.purchaseReview = procurement.purchaseReviewApi;
+      fixture.procurement = procurement.procurementApi;
     }
     return fixture;
   }, []);

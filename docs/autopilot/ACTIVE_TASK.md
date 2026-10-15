@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-BULK-ALLOCATION-B-01
-Status: AUTHORITY PHASE — bounded design recorded for Root/Terra review; hold before SQL/runtime implementation.
+Status: IMPLEMENTED — Draft fixed-SHA review and exact-head CI pending; no merge, deployment or hosted write authorized.
 Navigator: Terra/read-only role
 Implementer: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
@@ -33,8 +33,8 @@ Phase one changes only this baton and `docs/api/school-catering-procurement.md`.
 
 After explicit Root coding release, expected reach is:
 
-- One Supabase CLI-created forward migration from the accepted main109 baseline: existing confirmed-allocation read extension, one new batch RPC, and only necessary private proposal/orchestration helpers. Identify it by generated version/file, not an assumed ordinal 110. No new derived-state table/status, existing-function retirement, source rewrite, historical correction, broad table grant or policy change. Exact hardened function ownership/EXECUTE changes must be reviewed against the catalog.
-- Existing Procurement `purchaseReviewApi.ts`, `schoolCateringProcurementModel.ts`, review simulator and directly affected API tests; active `useProcurementWorkbench.ts`, `ProcurementWorkbench.tsx`, `procurementAllocationPresentation.ts`, review fixtures/stories and focused tests. A small colocated bulk-review component/test is permitted if it keeps the existing workbench readable. Follow existing UI v3/A+, Chakra recipes and Vietnamese copy. Preserve legacy callers and single-family detail behavior.
+- One Supabase CLI-created forward migration from the accepted main 109 baseline: existing confirmed-allocation read extension, one new batch RPC, and only necessary private proposal/orchestration helpers. Identify it by generated version/file, not an assumed ordinal 110. No new derived-state table/status, existing-function retirement, source rewrite, historical correction, broad table grant or policy change. Exact hardened function ownership/EXECUTE changes must be reviewed against the catalog.
+- Existing Procurement `purchaseReviewApi.ts`, `schoolCateringProcurementModel.ts`, review simulator and directly affected API tests; active `useProcurementWorkbench.ts`, `ProcurementWorkbench.tsx`, `procurementAllocationPresentation.ts`, review fixtures/stories, the existing explicit `AtlasVNextApp.review.tsx` in-memory entry and focused tests. A small colocated bulk-review component/test is permitted if it keeps the existing workbench readable. Follow existing UI v3/A+, Chakra recipes and Vietnamese copy. Preserve legacy callers and single-family detail behavior.
 - Existing `supabase/tests/purchase_review_confirm_release.sql`, `school_catering_handoff_allocation.sql`, `procurement_supplier_line_note.sql`, `school_catering_purchase_orders.sql`, exact `atlas_current_platform_security_catalog.sql`, and the reusable purchase-preparation scale fixture where relevant. A bounded bulk-specific SQL test may isolate the matrix rather than duplicate fixtures. Existing local integration registration may add that exact test if necessary; no workflow/security-gate relaxation.
 - One bounded validation/rollback record and sanitized evidence under the existing `docs/testing/` artifact pattern. No new runner, framework or dependency.
 
@@ -42,13 +42,25 @@ Report before any additional API, lock-order/privilege reach or source-authority
 
 ## Test-first sequence and release gates
 
-1. Review the authority-only commit. Hold runtime edits until Root releases coding.
-2. Establish a fresh owned-disposable local main109 database. The existing owned local volume has ledger109 plus unledgered A2 DDL and is not a valid B baseline. Preserve all pre-existing volumes and frozen A2 evidence; never reset an unproven-disposable target.
+1. Authority-only commit `5e891db431fdc683a5674ecfdf45cb2777df7b93` was reviewed by Root and cleared by Terra; phase-two coding is released within this contract.
+2. Establish a fresh owned-disposable local main 109 database. The existing owned local volume has ledger109 plus unledgered A2 DDL and is not a valid B baseline. Preserve all pre-existing volumes and frozen A2 evidence; never reset an unproven-disposable target.
 3. Observe RED for public authenticated mixed-source atomic apply and preview. Prove both writers; exact default/unique priority/ties/ineligible/no eligible/zero; prior-ratio deterministic residual, scale and retained notes; whole-family School dedup; existing allowed/denied location-family scope; whole-PO nondisclosure; source/version/priority/eligibility races; exact/conflicting replay and all-or-nothing rollback with zero partial allocation facts/events.
 4. Prove UI/API selection-only payloads, exact request retry, UNKNOWN/readback failure lock, successful authoritative counts, dirty/date/context/focus guards and no write on preview/open. Exclude ignored `.superpowers` reference copies from local focused test collection without changing tracked discovery.
-5. Measure read/preview and one batch command on a local 50-School shared-family/mixed-source workload, with actual family/contribution counts and timings recorded under the unchanged authenticated 8-second budget. No timeout increase or claim of hosted scale certification. Verify exact catalog changes and unchanged unrelated PO/replay/currentness/Preparation tests.
+5. Measure read/preview and one batch command on a local 50-School current Confirmed Need workload (target 5 Ingredients / 250 families); mixed-source correctness is a separate small authenticated matrix, with actual family/contribution counts and timings recorded under the unchanged authenticated 8-second budget. No timeout increase or claim of hosted scale certification. Verify exact catalog changes and unchanged unrelated PO/replay/currentness/Preparation tests.
 6. Run focused tests/typecheck, affected format and exact-range whitespace checks; obtain fixed-SHA Terra audit and exact-head Frontend/local Full Integration CI while keeping Draft. No merge, deployment or hosted acceptance follows automatically.
 
 ## Design review questions
 
 The dated amendment proposes opt-in `include_bulk_preview`, a stateless canonical proposal digest and `apply_supplier_allocation_batch`. Verify the proposed combined Confirmed Need batch/lines → Supplier evidence → Handoff source → family ordering against every existing writer. Prefer internal existing public Save commands; any private resolved seam must consume complete canonical backend source evidence including overlapping batches and fresh revalidation after waits. Existing ownership/ACLs must support the private read/proposal reuse; stop on a real permission gap rather than broadening table access. These are technical review points, not new Product-policy choices.
+
+## Actual caller reach and isolated local baseline
+
+The first backend tests target the existing confirmed-allocation read (including its closed Handoff forwarding), both source-specific Save commands, canonical source/advice helpers and receipt rollback. Frontend reach is the active Allocation toolbar/controller, current Procurement API/model, review simulator and their focused tests; normal single-family/legacy behavior remains a regression gate. Preview-only Unit names come from authorized current Unit data with a controlled warning, without importing pending A2.
+
+Local isolation may create a new task-owned database `atlas_bulk_b_01` on the verified local `supabase_db_thuonghao-ops-erp` container, initialized from schema-only Supabase Auth support and all 109 accepted main migration files. This is schema-applied development validation, not a CLI-recorded 109-entry migration ledger; exact-head Full Integration must prove clean CLI migration application. It must start absent; never drop/reset the existing `postgres` database or any existing volume. This preserves the unledgered A2 development database and all unrelated state. Verify database/container identity and absence of the A2 snapshot column before tests.
+
+## Implemented handoff — 15 October 2026
+
+Authority commit `5e891db` was reviewed and released by Root/Terra before implementation. The [bounded validation record](../testing/atlas-operator-bulk-allocation-b-01.md) and [sanitized evidence](../testing/artifacts/atlas-operator-bulk-allocation-b-01/summary.json) cover the CLI-generated migration `20261015042701_operator_bulk_supplier_allocation.sql`, exact catalog/ACL posture, actual two-session wait,119 final-hash SQL assertions, 895 connected checkpoint regressions and 282 tracked-source frontend assertions. Local 50-School/250-family preview 4086.131ms and Apply 1826.887ms retain the 8-second budget. The existing in-memory browser entry passed nine behavioral checks across 1280/1440/1920. Typecheck, UI boundary and Impeccable scan passed.
+
+Next: preserve this source for independent fixed-SHA Terra review, create/push a Draft PR, and require exact-head Frontend plus manual local-only Full Integration CI. Keep Draft; user authorization explicitly excludes merge, deployment and hosted writes. GitHub CI results remain pending until actually observed. No additional native export or hosted acceptance run is needed for this B-only implementation. Warehouse Product choices and operator C/D remain deferred.

@@ -626,3 +626,125 @@ describe("Preparation and PO actions", () => {
     },
   );
 });
+
+describe("optional bulk preview and exact atomic Apply", () => {
+  it("opens a read-only preview on the selected date/School scope without writes", async () => {
+    const h = setup("normal");
+    await ready(h.result);
+    const apply = vi.spyOn(h.fixture.purchaseReviewApi, "applyAllocationBatch");
+    await act(async () => {
+      await h.result.current.previewBulk();
+    });
+    expect(h.read.mock.lastCall![0].payload).toMatchObject({
+      include_bulk_preview: true,
+      date_start: reviewDate,
+      date_end: reviewDate,
+      school_ids: [],
+    });
+    expect(h.result.current.bulkPreview?.applicable_count).toBe(1);
+    expect(apply).not.toHaveBeenCalled();
+    expect(h.save).not.toHaveBeenCalled();
+  });
+  it("submits one reviewed set then obtains one authoritative readback and closes preview", async () => {
+    const h = setup("normal");
+    await ready(h.result);
+    const apply = vi.spyOn(h.fixture.purchaseReviewApi, "applyAllocationBatch");
+    await act(async () => {
+      await h.result.current.previewBulk();
+    });
+    const candidates = h.result.current.bulkPreview!.families.flatMap((e) =>
+      e.candidate ? [e.candidate] : [],
+    );
+    const before = h.read.mock.calls.length;
+    await act(async () => {
+      await h.result.current.applyBulk(candidates);
+    });
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(h.save).not.toHaveBeenCalled();
+    expect(h.read).toHaveBeenCalledTimes(before + 1);
+    expect(h.result.current.bulkPreview).toBeNull();
+    expect(h.result.current.feedback?.message).toBe("Đã lưu 1 nhóm phân bổ.");
+  });
+  it("locks UNKNOWN bulk outcome without replaying independent family saves", async () => {
+    const h = setup("unknown");
+    await ready(h.result);
+    const apply = vi.spyOn(h.fixture.purchaseReviewApi, "applyAllocationBatch");
+    await act(async () => {
+      await h.result.current.previewBulk();
+    });
+    const candidates = h.result.current.bulkPreview!.families.flatMap((e) =>
+      e.candidate ? [e.candidate] : [],
+    );
+    await act(async () => {
+      await h.result.current.applyBulk(candidates);
+    });
+    expect(h.result.current.locked).toBe(true);
+    expect(h.result.current.feedback?.kind).toBe("unknown");
+    await act(async () => {
+      await h.result.current.applyBulk(candidates);
+    });
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(h.save).not.toHaveBeenCalled();
+  });
+  it("retries exactly the original reviewed request and locks on failed readback", async () => {
+    const h = setup("retryable_failure");
+    await ready(h.result);
+    const apply = vi.spyOn(h.fixture.purchaseReviewApi, "applyAllocationBatch");
+    await act(async () => {
+      await h.result.current.previewBulk();
+    });
+    const candidates = h.result.current.bulkPreview!.families.flatMap((e) =>
+      e.candidate ? [e.candidate] : [],
+    );
+    await act(async () => {
+      await h.result.current.applyBulk(candidates);
+    });
+    const first = structuredClone(apply.mock.calls[0]![0]);
+    h.fixture.commandResult = reviewSuccess({ applied_count: 1 });
+    h.read.mockResolvedValueOnce(reviewFailure("ACCESS_DENIED"));
+    await act(async () => {
+      await h.result.current.retry();
+    });
+    expect(apply.mock.calls[1]![0]).toEqual(first);
+    expect(h.result.current.locked).toBe(true);
+    expect(h.result.current.feedback?.kind).toBe("unknown");
+  });
+});
+
+it("discloses only conflicts mapped to the reviewed human family without leaking identifiers", async () => {
+  const h = setup("normal");
+  await ready(h.result);
+  await act(async () => {
+    await h.result.current.previewBulk();
+  });
+  const candidate = h.result.current.bulkPreview!.families[0]!.candidate!;
+  vi.spyOn(
+    h.fixture.purchaseReviewApi,
+    "applyAllocationBatch",
+  ).mockResolvedValue({
+    kind: "backend_error",
+    error: {
+      success: false,
+      error_code: "STALE_BULK_PROPOSAL",
+      safe_message: "Dữ liệu đã thay đổi",
+      conflicts: [
+        { family: candidate.family, reason: "STALE_BULK_PROPOSAL" },
+        {
+          family: { ingredient_id: "secret-hidden-family" },
+          reason: "INTERNAL_SECRET",
+        },
+      ],
+    },
+  });
+  await act(async () => {
+    await h.result.current.applyBulk([candidate]);
+  });
+  expect(h.result.current.feedback?.messages).toHaveLength(1);
+  expect(h.result.current.feedback?.messages[0]).toContain(
+    h.fixture.allocation.rows[0]!.ingredient_name,
+  );
+  expect(JSON.stringify(h.result.current.feedback)).not.toMatch(
+    /secret-hidden-family|INTERNAL_SECRET|private-fingerprint/,
+  );
+  expect(h.result.current.locked).toBe(true);
+});

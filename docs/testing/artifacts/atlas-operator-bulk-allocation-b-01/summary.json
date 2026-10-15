@@ -1,0 +1,231 @@
+{
+  "task": "ATLAS-OPERATOR-BULK-ALLOCATION-B-01",
+  "date": "2026-10-15",
+  "base_main": "d102b2f1b083005d6553867fa5ccdf8c988a0316",
+  "authority_commit": "5e891db431fdc683a5674ecfdf45cb2777df7b93",
+  "migration": {
+    "path": "supabase/migrations/20261015042701_operator_bulk_supplier_allocation.sql",
+    "sha256": "59361dd32f08916813ecb5f0219a272fe60d79a35298ee2efe9c99b16e3754c0",
+    "forward_apply": "COMMIT on reconstructed schema-applied main109; original main catalog30/30 before migration; no fabricated migration ledger"
+  },
+  "current_hash_sql": [
+    {
+      "log": "atlas-b-final-02-operator_bulk_allocation.sql.log",
+      "sha256": "9b128a34564a7c231351081c77b9d2208fef85ff4ac168e73c8c55de5d10f730",
+      "plan": 51,
+      "ok": 51,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-02-operator_bulk_allocation_mixed.sql.log",
+      "sha256": "2a13a5a9f37fd63f5012843a16f7e20475b8383b83fec1b4bce9cd4e69b35e52",
+      "plan": 23,
+      "ok": 23,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-02-operator_bulk_allocation_scale.sql.log",
+      "sha256": "78ff70240d0c0734df8b5e0e3a722974ff54b833840f1941a378ef036756e4eb",
+      "plan": 15,
+      "ok": 15,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-02-atlas_current_platform_security_catalog.sql.log",
+      "sha256": "c52400458d11896056a8458cd573df668102d3e613de1cb85730126a8a18dc21",
+      "plan": 30,
+      "ok": 30,
+      "not_ok": 0
+    }
+  ],
+  "current_hash_sql_assertions": 119,
+  "prior_connected_checkpoint_sha256": "4f9af12e759624a23a7451f7ebcf4748434696fe5f1bc2e610911737082459ba",
+  "prior_connected_regressions": [
+    {
+      "log": "atlas-b-final-atlas_backend_convergence_02b_allocation.sql.log",
+      "sha256": "31b7e867e20cbd504cfbeb70d87971cfcaf4077a373c5275b0f66a32698567e3",
+      "plan": 417,
+      "ok": 417,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-purchase_review_confirm_release.sql.log",
+      "sha256": "bdb22e527b123ca5d4f2ff8621422c347cd970a322df8b37bcd98565c1f9b2d4",
+      "plan": 193,
+      "ok": 193,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-school_catering_handoff_allocation.sql.log",
+      "sha256": "9a37f6db642f1583d6a3f1163345a186e9c0dc86c09e76f436e01d5871fedb9d",
+      "plan": 88,
+      "ok": 88,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-school_catering_purchase_orders.sql.log",
+      "sha256": "27ecec4fcdc503fc36c6301e0c4d25a08ab2264fde733484f455fff054d6e91c",
+      "plan": 155,
+      "ok": 155,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-procurement_supplier_line_note.sql.log",
+      "sha256": "968cb830bdef393ac144a8ade8f12f5c47bff428a81049f7c59bc1f0791d7a35",
+      "plan": 13,
+      "ok": 13,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-purchase_preparation_source_ambiguity.sql.log",
+      "sha256": "4cf2640ee085b96ef18f7b87067bd0f716bc34dd8dafaaa439cd76a6570097a2",
+      "plan": 9,
+      "ok": 9,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-purchase_preparation_release_projection.sql.log",
+      "sha256": "fc5f1ad508b8a4e5f19b908636130875f001ec44365ffc07194e18fc3b2d72ea",
+      "plan": 7,
+      "ok": 7,
+      "not_ok": 0
+    },
+    {
+      "log": "atlas-b-final-supplier_allocation_released_read.sql.log",
+      "sha256": "09ed179c9ac5fed98df5d2c57697bb7503b0c0883552f79a8ea46532ddf17c0c",
+      "plan": 13,
+      "ok": 13,
+      "not_ok": 0
+    }
+  ],
+  "prior_connected_assertions": 895,
+  "prior_checkpoint_delta": "Later changes only PO-impact frozen Supplier/current-revision membership and CRLF-safe read amendment; current matrix tests those changes. Shared command and lock/source binding unchanged.",
+  "frontend": {
+    "command": "pnpm exec vitest run scripts/atlas-staging-contract.test.mjs src/vnext/atlas/procurement/ProcurementWorkbench.test.tsx src/vnext/atlas/procurement/useProcurementWorkbench.test.tsx src/modules/atlas/procurement/purchaseReviewApi.test.ts src/modules/atlas/connection/atlasRpc.test.ts src/modules/atlas/procurement/reviewPurchaseReviewApi.test.ts src/modules/atlas/procurement/SchoolCateringProcurementWorkbench.test.tsx --exclude **/.superpowers/**",
+    "test_files": 7,
+    "tests": 282,
+    "passed": 282,
+    "log": "atlas-b-focused-final-green.log",
+    "qualification": "tracked-source collection only; ignored reference copies excluded via CLI"
+  },
+  "performance": {
+    "role": "authenticated",
+    "statement_timeout_ms": 8000,
+    "timing": "Separate top-level start statement, public RPC, separate end statement",
+    "samples": [
+      {
+        "operation": "preview",
+        "elapsed_ms": 4086.131,
+        "workload": "50 Schools / 250 families / CONFIRMED_NEED / one date"
+      },
+      {
+        "operation": "applied",
+        "elapsed_ms": 1826.887,
+        "workload": "50 Schools / 250 families / CONFIRMED_NEED / one date"
+      }
+    ],
+    "limits": "One local current CONFIRMED_NEED date, 50 Schools x5 Ingredients=250 whole families. Mixed-source correctness is a separate small matrix; no hosted-scale or multi-day certification."
+  },
+  "postflight": {
+    "receipts": 0,
+    "po_a2_snapshot_absent": true,
+    "procurement_authoring_membership": [
+      {
+        "set": false,
+        "role": "atlas_procurement_command_runtime",
+        "admin": true,
+        "member": "postgres",
+        "inherit": false
+      },
+      {
+        "set": false,
+        "role": "atlas_procurement_command_runtime",
+        "admin": false,
+        "member": "postgres",
+        "inherit": true
+      }
+    ],
+    "business_allocation_revision_rows": 0
+  },
+  "catalog": {
+    "rls_forced": 117,
+    "view_count": 2,
+    "rls_enabled": 117,
+    "table_count": 117,
+    "policy_count": 674,
+    "schema_count": 10,
+    "trigger_count": 126,
+    "capability_count": 31,
+    "view_catalog_md5": "b3f19bc684dec3a9203c4eb578336420",
+    "pa_06a_read_count": 4,
+    "table_catalog_md5": "67e6194797d937920fb91efd42d48269",
+    "anon_execute_count": 0,
+    "api_function_count": 122,
+    "pa_06a_write_count": 15,
+    "policy_catalog_md5": "b20fe6da611858ba85a679a3e4be56cf",
+    "database_role_count": 11,
+    "trigger_catalog_md5": "094482db23fd61e5aea7b636e5fd4d96",
+    "application_role_count": 0,
+    "private_function_count": 351,
+    "positive_target_grant_md5": "76e4b1b23c5d3a04a4d3f142241a4ca8",
+    "service_role_execute_count": 0,
+    "authenticated_execute_count": 119,
+    "positive_target_grant_count": 1860,
+    "private_function_catalog_md5": "a000a642f09d94cae2527a3c301daa3b",
+    "rmvp_05_unit_lock_grant_count": 1,
+    "rmvp_05_unit_lock_policy_count": 1
+  },
+  "browser": {
+    "manifest": "browser-manifest.json",
+    "retained_captures": [
+      "default-1280.jpg",
+      "rebalance-1440.jpg",
+      "blocked-1920.jpg"
+    ],
+    "other_captures": "Original manifest lists additional TEMP-only observations; only three selected captures retained here."
+  },
+  "red_evidence": [
+    {
+      "log": "atlas-b-preview-red.log",
+      "reason": "Optional preview absent on main109"
+    },
+    {
+      "log": "atlas-b-api-red.log",
+      "reason": "Two API feature tests failed before request/route implementation"
+    },
+    {
+      "log": "atlas-b-controller-red.log",
+      "reason": "Four new controller feature tests failed, 46 incumbent assertions passed"
+    },
+    {
+      "log": "atlas-b-review-ui-focused-red.log",
+      "reason": "Two new review UI tests failed missing bulk action"
+    },
+    {
+      "log": "atlas-b-ui-conflict-red.log",
+      "reason": "Conflict mapping failed with empty messages; fixed without disclosing unknown family keys"
+    },
+    {
+      "log": "atlas-b-ui-null-quantity-red.log",
+      "reason": "Null quantity lacked controlled unknown; fixed without fabricated zero"
+    },
+    {
+      "log": "atlas-b-scale-250-initial.log",
+      "reason": "Genuine250-family Apply exceeded8s before backend-resolved-source reuse; budget retained"
+    },
+    {
+      "log": "atlas-b-po-impact-red.log",
+      "reason": "Two of23 failed: stale historical-family membership and renamed released Supplier"
+    },
+    {
+      "log": "atlas-b-forward-02-full-migration.log",
+      "reason": "CRLF body amendment failed; complete migration rolled back; normalized exact body matching before green forward apply"
+    }
+  ],
+  "limits": [
+    "Draft only; fixed-head independent review and GitHub Frontend/Full Integration pending",
+    "No hosted execution/deployment/real commitments or staff grants",
+    "A2 unledgered default postgres and unrelated volumes preserved; no A2 snapshot field in B database",
+    "No producer/export changes or native export re-certification"
+  ]
+}
