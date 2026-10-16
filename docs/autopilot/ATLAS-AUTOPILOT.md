@@ -1,75 +1,67 @@
 # Atlas Autopilot Mandate
 
-Status: ACTIVE
-Approved by Product Owner: 14 October 2026
-Execution horizon: current Atlas cutover program through Warehouse design ready for Product approval.
+Status: **ACTIVE — DESIGN-ONLY PAUSE / OWNER-CONTROLLED**  
+Original approval: 14 October 2026.  
+**Product priority amendment: 16 October 2026.**  
+Current execution horizon: **ATLAS-UX-ART-DIRECTION-02 D1/D2 only**, with the production UI implementation gate held for Owner visual selection. The earlier Warehouse design horizon ended with merged PR #384; Warehouse Product decisions remain pending.
 
 ## Control plane
 
-GitHub repository longpsu-bot/thuonghao-ops-erp is the shared handoff surface between the OPS Product/Architecture conversation and the local Atlas implementation checkout.
+GitHub repository `longpsu-bot/thuonghao-ops-erp` is the shared handoff between OPS Product/Architecture and local Atlas implementation. **Do not rely on chat memory as task authority.** Read `docs/autopilot/ACTIVE_TASK.md` and the linked [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389) first.
 
-Do not rely on chat memory as implementation authority. Read repository authority first.
+At this checkpoint the active loop is deliberately shortened:
 
-Normal cycle:
+```text
+Owner design priority → verified checkout → skill/source audit
+→ rendered alternatives (2–3) → independent visual critique
+→ Owner selects a design → STOP until explicit selection
+```
 
-Terra navigation/investigation
-→ Product/Architecture decision
-→ Sol 6.1 implementation
-→ Terra read-only audit
-→ Product review
-→ exact-head CI
-→ merge
-→ Atlas Staging deploy/acceptance where applicable
-→ next ACTIVE_TASK
-
-If Terra or Sol 6.1 are unavailable by name, preserve the same role separation: navigator is read-only; implementer owns bounded code changes.
+After Owner visual selection, normal bounded implementation / read-only audit / targeted CI / Product review / merge may resume. **No automatic next-task promotion or backend/Staging deployment** under this design-only pause.
 
 ## Roles
 
-OPS Product/Architecture may sequence work, interpret approved contracts, review GitHub/Staging/v1/Retool, approve bounded implementation, merge green reviewed PRs, deploy approved forward migrations to Atlas Staging, run bounded acceptance, and advance routine tasks without repeated micro-approval.
+OPS Product/Architecture selects product priorities and can approve bounded routine GitHub changes within the standing safety rules. The navigator/Terra role remains **read-only for implementation work**; the implementer/Sol/Codex owns bounded design prototype and code writes in its separately verified worktree. The independent visual reviewer must examine **rendered** evidence, not only source/style tests. If preferred names/models are unavailable, preserve role separation.
 
-Terra is read-only. It may inspect repository, Supabase, Retool and evidence; trace contracts/call graphs; identify blast radius; challenge assumptions; and audit Sol output. Terra must not edit files, create migrations, push, deploy, or invent Product policy.
-
-Sol 6.1 is the preferred implementer. It may create a bounded task branch, edit code/migrations/tests/docs, run focused validation, push, and open a Draft PR. It must stop on a new business-policy choice, destructive migration need, materially broader architecture contradiction, material privilege broadening, or production-data correction.
+GitHub issue/PR comments do **not** by themselves launch Codex or interrupt an already-running local process. Do not claim automated execution without an actual connected runner confirmation.
 
 ## One staff member per operational task
 
-`ONE_STAFF_PER_OPERATIONAL_TASK` is the Product Owner's operating constraint recorded on 14 October 2026. Ordinary flows must work with one authorized Actor per task; that Actor may hold the existing task capabilities and explicit scopes for multiple Schools. Capability, relational scope, immutable evidence and audit attribution remain mandatory. This fact does not assign users, grant privileges or automatically grant GLOBAL scope, and does not waive already approved exception/override approvals, separation rules or staff-grant review gates. Do not invent a second-person or maker/checker step for an ordinary task.
+`ONE_STAFF_PER_OPERATIONAL_TASK` remains in force. An authorized Actor can perform a normal operation with existing capabilities and exact scopes; don't add a generic second-person approval flow. Capability, relational scope, immutable evidence, audit and approved exception overrides remain mandatory. This design task makes **no** staff grants or permission changes.
 
-## Hard Product stops
+## Hard Product stops (unchanged)
 
-Stop for explicit Product Owner approval before:
-
-1. introducing or changing business meaning where more than one reasonable policy exists;
-2. creating paid or Production infrastructure;
-3. first production write-ownership transfer from OPS v1 to Atlas;
-4. issuing irreversible real supplier PO/PXK commitments;
-5. destructive Production data correction/deletion;
-6. materially broadening operator/security authority;
-7. final Warehouse business-design approval before implementation.
-
-Routine GitHub, CI, Staging migration, rollback-only acceptance, documentation and bounded defect correction are within the standing mandate.
+Stop before:
+1. new/changed unresolved business policy;
+2. paid or Production infrastructure;
+3. first Production write-ownership transfer from OPS v1;
+4. irreversible real supplier PO/PXK commitments;
+5. destructive Production data correction;
+6. material authorization broadening;
+7. final Warehouse business design approval;
+8. **production implementation of the selected Atlas UI design until Owner selects among rendered alternatives.**
 
 ## Environment boundary
 
-Atlas Staging: rnzxmxiiqgtdevzregff — test/rehearsal target; controlled writes permitted under an approved task.
-OPS v1 Supabase: qnthofvccilhnefdcxnz — hard no-write from Atlas tasks.
-Retool — operational continuity/evidence only; no mutation unless separately authorized.
-Atlas Production — not yet an approved target. Creation is a hard stop.
+- Atlas Staging `rnzxmxiiqgtdevzregff`: **read-only for this active design phase**; prior approved bounded Staging processes remain historical evidence.
+- OPS v1 Supabase `qnthofvccilhnefdcxnz`: hard NO-WRITE.
+- Retool: continuity/workflow evidence; NO-WRITE.
+- Atlas Production: not an approved target. No creation.
 
-## Governing architecture
+## Architecture
 
-Use OPS_SYSTEM_MAP v1.0 and FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED.
+Use `OPS_SYSTEM_MAP v1.0` and **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED**. PostgreSQL still owns authority for business facts, calculations, state derivation, currentness, concurrency, permissions, idempotency and released document history. Design skills cannot override business contracts. Chakra UI v3 remains the existing presentation foundation; typography, tab geometry, composition and information hierarchy are open to ambitious Product-directed redesign.
 
-Do not add persisted lifecycle/status machinery where state is derivable. Do not create a second business authority merely to simplify a consumer.
+## Anti-overengineering rule
+
+- Do **not** run further Warehouse contracts/migrations, broad performance studies, 8-cycle Need correction probes, repeated full-repo CI, extra autonomous agent loops, synthetic load programs or new architecture layers solely to “move Autopilot forward”.
+- Do **not** merge/deploy/rescope Draft PRs #385–#388; preserve their state and existing evidence until separately integrated.
+- Read/use existing proofs instead of re-proving unchanged contracts. For **design-only** work, require real rendered comparison and focused checks—not a new certification infrastructure.
+- Keep one active task in `ACTIVE_TASK.md` and a single explicit next Product decision. No automatic endless backlog execution; wait for Owner selection after D2.
 
 ## Active-task protocol
 
-Before implementation, read:
-
-1. AGENTS.md
-2. docs/autopilot/ATLAS-AUTOPILOT.md
-3. docs/autopilot/ACTIVE_TASK.md
-4. the contracts/decisions named by the active task
-
-ACTIVE_TASK.md is the bounded implementation baton. Re-read it after main moves. Historical reports remain evidence, not current authority.
+1. Read `AGENTS.md`, this file, `docs/autopilot/ACTIVE_TASK.md`, relevant approved contracts and the current `origin/main`.
+2. Verify canonical workspace before implementation (`git rev-parse`, `git remote -v`, `git fetch origin`, `git status --short`, `pnpm ops:workspace`). Do not disturb dirty Codex checkouts.
+3. Execute **only D1/D2**, create Draft artifacts for review, then stop for Owner selection.
+4. Later task authorization requires an explicit update to this mandate/active baton, not extrapolation from an old roadmap.
