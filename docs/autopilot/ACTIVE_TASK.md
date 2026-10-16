@@ -1,7 +1,7 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-CONFIRMED-NEED-CORRECTION-C-01
-Status: BOUNDED_REMEDIATION_IN_PROGRESS — one reviewed helper trial, acceptance incomplete.
+Status: FAIL_STOP — preserved investigational Draft; no autoexecution.
 Navigator/reviewer: Terra, read-only
 Implementer/document author: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
