@@ -2,7 +2,15 @@
 
 The interface is **not complete across all workbenches**. [PR #392](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/392) implements Owner-selected C for the persistent workspace tabs and supplier-first PO workplane. It remains unmerged. This review also repairs four concrete UI/test seams: explicit bulk XLSX/PDF export, Supplier detail focus restoration, unavailable initial Procurement data displayed as successful zero, and the CI assertion for the tab's sloped pseudo-element boundary.
 
+## School follow-up — local PASS, normal CI pending
+
+The Owner explicitly reauthorized only the School harness diagnosis and actual mobile Cancel focus defect from `50005ac8`; #393 remains Draft/unmerged. Diagnostic splits measured School readiness at 2,062 ms, a redundant field role query at 438 ms, change/rerender at 213 ms, and cumulative later control queries/exit work exceeding the original 5 seconds. This does not prove an application hang or attribute the old 2.8-second coarse gap to one operation. Reuse the already-resolved field references, scope exact controls with explicit visibility, then observe `closed` and the existing native-exit event before actual dialog removal. The complete journey and all business assertions remain; there is no clean-Menu isolation, sleep or timeout increase.
+
+The target run passes both cases: School **3,640 ms**, new focus regression **313 ms**. The initial regression is genuine RED: owner Close was invoked while the ephemeral mobile Close button held focus. The only runtime change restores the persistent chooser before that unchanged callback. Root's [browser record](../testing/artifacts/atlas-ui392-ci-repair-01/school-followup-browser.json) confirms natural removal, retained 283 and chooser focus at 390px, unchanged desktop Close focus, and explicit School discard preserving the independent PXK draft. Browser captures remain unavailable; no screenshot/all-state certification is claimed. The final affected two-file suite passes **44/44** (School 3,891 ms), and TypeScript/UI boundary pass. Normal exact-head CI remains pending. [Sanitized evidence ledger](../testing/artifacts/atlas-ui392-ci-repair-01/summary.json). No Task B/#388 work, merge/deployment or automatic next task.
+
 ## Task A partial repair — School BLOCKED
+
+**Historical `50005ac8` checkpoint, superseded only by the explicitly authorized School follow-up above.** The failures and rejected strategies below are preserved; they do not describe the current local result.
 
 The Owner explicitly released `ATLAS-UI392-CI-REPAIR-01` in the thread despite policy PR #393 remaining Draft/unmerged. This is not a merge/adoption of that plan and does not activate Task B. The authorized repair is now **PARTIAL / BLOCKED** under its two-attempt same-root rule.
 

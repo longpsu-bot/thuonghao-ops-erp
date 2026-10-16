@@ -85,7 +85,7 @@ async function showSchool() {
     name: /Học sinh mặc định/,
   });
   await waitFor(() => expect(fields[0]).toBeEnabled());
-  return result;
+  return { ...result, schoolFields: fields };
 }
 async function nav(label: string) {
   const trigger = await within(screen.getByRole("banner")).findByLabelText(
@@ -353,33 +353,54 @@ it.each(modules)(
   20000,
 );
 it("blocks dirty sign-out without discarding and resolves School through its close guard", async () => {
-  const { signOut } = await showSchool();
-  const school = within(
-    screen.getByRole("tabpanel", { name: "Trường học", hidden: true }),
+  const { signOut, schoolFields: fields } = await showSchool();
+  const strip = within(
+    screen.getByRole("tablist", {
+      name: "Màn hình đang mở",
+      hidden: true,
+    }),
   );
-  const fields = await school.findAllByRole("textbox", {
-    name: /Học sinh mặc định/,
-  });
+  const close = strip.getByLabelText("Đóng Trường học", { selector: "button" });
+  expect(fields[0]).toBeVisible();
+  expect(close).toBeVisible();
   fireEvent.change(fields[0]!, { target: { value: "123" } });
   await clickSignOut();
   expect(signOut).not.toHaveBeenCalled();
   expect(
-    await screen.findByRole("button", { name: "Trường học — Chưa lưu" }),
+    screen.getByRole("button", { name: "Trường học — Chưa lưu", hidden: true }),
   ).toBeVisible();
   expect(
-    screen.queryByRole("button", { name: "Bỏ thay đổi" }),
+    screen.queryByRole("button", { name: "Bỏ thay đổi", hidden: true }),
   ).not.toBeInTheDocument();
   expect(fields[0]).toHaveValue("123");
-  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
-  );
+  fireEvent.click(close);
+  const dialog = await screen.findByRole("dialog", {
+    hidden: true,
+    name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+  });
+  expect(dialog).toBeVisible();
+  const cancel = within(dialog).getByRole("button", {
+    name: "Tiếp tục chỉnh sửa",
+    hidden: true,
+  });
+  expect(cancel).toBeVisible();
+  fireEvent.click(cancel);
   expect(fields[0]).toHaveValue("123");
-  await waitFor(() =>
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
+  await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+  fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
+  await waitFor(() => expect(dialog).not.toBeInTheDocument());
+  expect(close).toBeVisible();
+  fireEvent.click(close);
+  const discardDialog = await screen.findByRole("dialog", {
+    hidden: true,
+    name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+  });
+  const discard = within(discardDialog).getByRole("button", {
+    name: "Bỏ thay đổi",
+    hidden: true,
+  });
+  expect(discard).toBeVisible();
+  fireEvent.click(discard);
   await waitFor(() => expect(fields[0]!.isConnected).toBe(false));
   await clickSignOut();
   expect(signOut).toHaveBeenCalledOnce();

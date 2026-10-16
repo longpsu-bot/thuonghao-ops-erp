@@ -652,7 +652,7 @@ export function AtlasVNextShell({
                       minH="var(--atlas-layout-mobile-target, 44px)"
                       minW="var(--atlas-layout-mobile-target, 44px)"
                       onClick={() => {
-                        closeMenu(false);
+                        closeMenu();
                         onClose?.(id);
                       }}
                     >
