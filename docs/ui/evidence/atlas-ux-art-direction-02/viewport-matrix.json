@@ -1,0 +1,214 @@
+[
+  {
+    "view": "a",
+    "file": "a-1366x768.jpg",
+    "doc": [
+      1366,
+      768
+    ],
+    "heading": "Đơn mua",
+    "tabs": 13,
+    "viewport": [
+      1366,
+      768
+    ]
+  },
+  {
+    "view": "b",
+    "file": "b-1366x768.jpg",
+    "doc": [
+      1366,
+      768
+    ],
+    "heading": "Đơn mua",
+    "tabs": 13,
+    "viewport": [
+      1366,
+      768
+    ]
+  },
+  {
+    "view": "c",
+    "file": "c-1366x768.jpg",
+    "doc": [
+      1366,
+      768
+    ],
+    "heading": "Đơn mua",
+    "tabs": 13,
+    "viewport": [
+      1366,
+      768
+    ]
+  },
+  {
+    "view": "a",
+    "file": "a-1440x900.jpg",
+    "doc": [
+      1440,
+      900
+    ],
+    "heading": "Đơn mua",
+    "tabs": 13,
+    "viewport": [
+      1440,
+      900
+    ]
+  },
+  {
+    "view": "b",
+    "file": "b-1440x900.jpg",
+    "doc": [
+      1440,
+      900
+    ],
+    "heading": "Đơn mua",
+    "tabs": 13,
+    "viewport": [
+      1440,
+      900
+    ]
+  },
+  {
+    "view": "c",
+    "file": "c-1440x900.jpg",
+    "doc": [
+      1440,
+      900
+    ],
+    "heading": "Đơn mua",
+    "tabs": 13,
+    "viewport": [
+      1440,
+      900
+    ]
+  },
+  {
+    "view": "a",
+    "file": "a-1920x1080.jpg",
+    "doc": [
+      1920,
+      1080
+    ],
+    "heading": "Đơn mua",
+    "tabs": 13,
+    "viewport": [
+      1920,
+      1080
+    ]
+  },
+  {
+    "view": "b",
+    "file": "b-1920x1080.jpg",
+    "viewport": [
+      1920,
+      1080
+    ],
+    "doc": [
+      1920,
+      1080
+    ],
+    "tabs": 13,
+    "heading": "Đơn mua",
+    "capture": "viewport"
+  },
+  {
+    "view": "c",
+    "file": "c-1920x1080.jpg",
+    "viewport": [
+      1920,
+      1080
+    ],
+    "doc": [
+      1920,
+      1080
+    ],
+    "tabs": 13,
+    "heading": "Đơn mua",
+    "capture": "viewport"
+  },
+  {
+    "view": "a",
+    "file": "a-768x1024.jpg",
+    "capture": "viewport",
+    "doc": [
+      753,
+      1300
+    ],
+    "tabs": 13,
+    "viewport": [
+      768,
+      1024
+    ]
+  },
+  {
+    "view": "b",
+    "file": "b-768x1024.jpg",
+    "capture": "viewport",
+    "doc": [
+      753,
+      1512
+    ],
+    "tabs": 13,
+    "viewport": [
+      768,
+      1024
+    ]
+  },
+  {
+    "view": "c",
+    "file": "c-768x1024.jpg",
+    "capture": "viewport",
+    "doc": [
+      753,
+      1315
+    ],
+    "tabs": 13,
+    "viewport": [
+      768,
+      1024
+    ]
+  },
+  {
+    "view": "a",
+    "file": "a-390x844.jpg",
+    "capture": "viewport",
+    "doc": [
+      375,
+      2219
+    ],
+    "tabs": 13,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  {
+    "view": "b",
+    "file": "b-390x844.jpg",
+    "capture": "viewport",
+    "doc": [
+      375,
+      2022
+    ],
+    "tabs": 13,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  {
+    "view": "c",
+    "file": "c-390x844.jpg",
+    "capture": "viewport",
+    "doc": [
+      375,
+      1753
+    ],
+    "tabs": 13,
+    "viewport": [
+      390,
+      844
+    ]
+  }
+]

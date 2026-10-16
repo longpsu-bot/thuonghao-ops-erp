@@ -1,0 +1,40 @@
+[
+  {
+    "case": "empty",
+    "text": "Đơn mua\n\nKiểm tra và phát hành từng đơn cho nhà cung ứng.\n\nNgày giao\nLàm mới\nTất cả trạng thái\nBản nháp\nĐã phát hành\n0 đơn · 12/10/2026\nChưa có đơn mua trong ngày này\n\nSau khi xác nhận nhu cầu và phân bổ, chuẩn bị mua hàng để tạo bản nháp. Chưa có đơn không có nghĩa là nhu cầu bằng không.\n\nXem phân bổ NCC"
+  },
+  {
+    "case": "blocked",
+    "text": "Cá, hải sản · 1 nguyên liệu\nBản nháp\nBản nháp · Chưa cấp số\n12/10 · Thiếu dữ liệu trường\nBản nháp · Chưa cấp số\nThực phẩm An Phú\n\nGiao ngày 12/10/2026 · 3 trường\n\nBản nháp\nPhát hành cho NCC\nXuất Excel / PDF\n\nBản nháp để kiểm tra. Chỉ phát hành mới xác nhận đơn với nhà cung ứng; xuất tệp không phát hành đơn.\n\nNguyên liệu và nơi nhận\n3 dòng\nThịt heo nạc\n42,5 kg\nTrường Tiểu học Nguyễn Du\nBếp Nguyễn Du\n24,5 kg\nTrường Mầm non Hoa Sen\nBếp Hoa Sen\n18 kg\n\nGhi chú cho NCC: Giao trước 6 giờ 30; chia riêng từng bếp.\n\nTrứng gà\n360 quả\nTrường Tiểu học Nguyễn Du\nBếp Nguyễn Du\n240 quả\nTrường Mầm non Hoa Sen\nBếp Hoa Sen\n120 quả\nThịt gà phi lê\n28 kg\nTrường Tiểu học Lê Lợi\nBếp Lê Lợi\n28 kg\n\nKiểm tra số lượng, nơi nhận và ghi chú trước khi phát hành từng đơn."
+  },
+  {
+    "case": "busy",
+    "text": " Xanh\nCá, hải sản · 1 nguyên liệu\nBản nháp\nBản nháp · Chưa cấp số\n12/10 · Thiếu dữ liệu trường\nBản nháp · Chưa cấp số\nThực phẩm An Phú\n\nGiao ngày 12/10/2026 · 3 trường\n\nBản nháp\nĐang xử lý…\nXuất Excel / PDF\n\nBản nháp để kiểm tra. Chỉ phát hành mới xác nhận đơn với nhà cung ứng; xuất tệp không phát hành đơn.\n\nNguyên liệu và nơi nhận\n3 dòng\nThịt heo nạc\n42,5 kg\nTrường Tiểu học Nguyễn Du\nBếp Nguyễn Du\n24,5 kg\nTrường Mầm non Hoa Sen\nBếp Hoa Sen\n18 kg\n\nGhi chú cho NCC: Giao trước 6 giờ 30; chia riêng từng bếp.\n\nTrứng gà\n360 quả\nTrường Tiểu học Nguyễn Du\nBếp Nguyễn Du\n240 quả\nTrường Mầm non Hoa Sen\nBếp Hoa Sen\n120 quả\nThịt gà phi lê\n28 kg\nTrường Tiểu học Lê Lợi\nBếp Lê Lợi\n28 kg\n\nKiểm tra số lượng, nơi nhận và ghi chú trước khi phát hành từng đơn."
+  },
+  {
+    "case": "filtered-empty",
+    "result": "distinct empty explanation and clear-filter recovery verified"
+  },
+  {
+    "case": "missing-school",
+    "releaseEnabled": false,
+    "warning": "explicit unavailable School evidence; no inferred location-to-School mapping"
+  },
+  {
+    "case": "dirty-close-cancel",
+    "tabsRemain": 13
+  },
+  {
+    "case": "release-demo",
+    "detail": "Bản nháp · Chưa cấp số\nThực phẩm An Phú\n\nGiao ngày 12/10/2026 · 3 trường\n\nBản nháp\nPhát hành cho NCC\nXuất Excel / PDF\n\nBản nháp để kiểm tra. Chỉ phát hành mới xác nhận đơn với nhà "
+  },
+  {
+    "case": "global-blocked",
+    "releaseEnabled": false
+  },
+  {
+    "case": "keyboard-tabs",
+    "mode": "manual activation; End and ArrowRight move focus, Enter activates",
+    "poSelectionRetained": true
+  }
+]

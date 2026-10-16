@@ -4,11 +4,12 @@ model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
-Implement approved Atlas UI direction as a bounded production change.
+Follow the active task boundary. Under Issue #389, implement isolated D1/D2 design prototypes only; production presentation awaits Owner selection.
 
 Authority:
+- Issue #389 authorizes D1/D2 isolated alternatives only; no production implementation before Owner selection, no extra agents or repetitive critique/detector loops.
 - Obey root AGENTS.md and approved docs.
-- Read docs/ui/atlas-vnext-design-language-v1.md, relevant UI/decision docs, and src/vnext/atlas/system.ts before editing.
+- Read docs/ui/atlas-design-language-v3.md, relevant UI/decision docs, and src/vnext/atlas/system.ts before editing.
 - Use Chakra UI v3 patterns already present in src/vnext/atlas. Do not introduce Mantine into vNext.
 - Backend/API/Supabase contracts remain authoritative. Frontend changes must not reconstruct, weaken, or redefine business state.
 
@@ -22,7 +23,7 @@ Working mode:
 
 Implementation rules:
 - Prefer semantic tokens and sanctioned recipes; do not scatter raw colors, radii, shadows, or spacing through screens.
-- Keep the Soft Mineral visual language but do not make every workbench mechanically identical.
+- Use the current v3 visual language; geometry follows the operator task rather than one repeated workbench ratio.
 - Preserve table density and operator scanability.
 - Do not add decorative metrics, generic dashboard cards, gradients, glass, glow, or ornamental motion.
 - Preserve one dominant business action and clear secondary/utility hierarchy.

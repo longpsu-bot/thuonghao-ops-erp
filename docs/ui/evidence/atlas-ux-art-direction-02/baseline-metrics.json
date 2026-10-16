@@ -1,0 +1,33 @@
+{
+  "baseline": "3667966a3f6703a6585f07ba619969ec851ca7b8",
+  "route": "atlas-vnext-review.html?scenario=ready",
+  "synthetic": true,
+  "openTabs": [
+    "Trường học",
+    "Thực đơn",
+    "Sĩ số",
+    "Hàng đặt riêng",
+    "Xác nhận nhu cầu",
+    "Phân bổ NCC",
+    "Phiếu xuất kho",
+    "Đối chiếu PO / Phiếu xuất kho",
+    "Nguyên liệu",
+    "Nhà cung ứng",
+    "Công thức",
+    "Lệnh điều chỉnh",
+    "Đơn mua"
+  ],
+  "pageWidth": 1366,
+  "selectedPO": [
+    {
+      "listWidth": 833.265625,
+      "tableWidth": 1040,
+      "top": 407.6875
+    }
+  ],
+  "viewport": [
+    1366,
+    768
+  ],
+  "visibleFixtureDate": "Hôm nay: 07/09/2026"
+}
