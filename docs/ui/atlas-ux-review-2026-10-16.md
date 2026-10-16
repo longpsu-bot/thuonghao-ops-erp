@@ -15,9 +15,9 @@ Root opened all thirteen real registry owners in the current populated local rev
 | Phân bổ NCC                 | Compact C family directory and broad Supplier editor implemented; exact quantities, existing recommendations/rebalance and explicit Apply/Save retained. #387 bulk allocation remains parked. |
 | Đơn mua                     | C supplier rail/document workplane implemented; four export modes preserved. Both loaded-scope XLSX and PDF produce one ZIP of actual documents.                                              |
 | Phiếu xuất kho              | Inherited implementation inspected; export button labels shortened, producers and scope unchanged.                                                                                            |
-| Đối chiếu PO/Phiếu xuất kho | Inherited implementation/detail inspected; no redesign. |
+| Đối chiếu PO/Phiếu xuất kho | Inherited implementation/detail inspected; no redesign.                                                                                                                                       |
 | Trường học                  | Compact C School identity/paired default portions now implemented; same Cooking/Dispatch commands and five sort keys retained.                                                                |
-| Nguyên liệu | Compact C catalogue with broad editor/priorities implemented; fields, sort keys, lifecycle, Review and locks retained. |
+| Nguyên liệu                 | Compact C catalogue with broad editor/priorities implemented; fields, sort keys, lifecycle, Review and locks retained.                                                                        |
 | Nhà cung ứng                | Compact Supplier directory and broad existing detail implemented; all contact fields, sort keys, dirty Review and Close focus retained.                                                       |
 | Công thức                   | Inherited implementation inspected; no redesign.                                                                                                                                              |
 | Lệnh điều chỉnh             | Inherited implementation inspected; no redesign.                                                                                                                                              |
