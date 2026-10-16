@@ -109,7 +109,10 @@ const teacher = (name = "Trường Trung học Beta") =>
 describe("Chakra School default portions workbench", () => {
   it("keeps all five sort actions and the School order visible in the narrow composition", async () => {
     await renderReady(apiWith().api);
-    const toolbar = within(screen.getByLabelText("Sắp xếp thông tin trường"));
+    const sort = screen.getByRole("combobox", {
+      name: "Sắp xếp thông tin trường",
+    });
+    expect(sort).toBeVisible();
     for (const label of [
       "#",
       "Trường",
@@ -117,23 +120,20 @@ describe("Chakra School default portions workbench", () => {
       "Loại trường",
       "Trạng thái",
     ])
-      expect(
-        toolbar.getByRole("button", { name: `Sắp xếp theo ${label}` }),
-      ).toBeVisible();
-    const narrow = within(
-      screen.getByRole("group", { name: "Sắp xếp trên màn hình hẹp" }),
-    );
-    const sort = narrow.getByRole("button", { name: "Sắp xếp theo #" });
-    fireEvent.click(sort);
-    fireEvent.click(sort);
+      for (const direction of ["Tăng dần", "Giảm dần"])
+        expect(
+          within(sort).getByRole("option", { name: `${label} · ${direction}` }),
+        ).toBeInTheDocument();
+    fireEvent.change(sort, { target: { value: "order:ascending" } });
+    fireEvent.change(sort, { target: { value: "order:descending" } });
     const table = screen.getByRole("table", {
       name: "Sĩ số mặc định theo trường",
     });
     expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
       "Trường Trung học Beta",
     );
-    fireEvent.click(sort);
-    expect(sort).toHaveAttribute("aria-pressed", "false");
+    fireEvent.change(sort, { target: { value: "default" } });
+    expect(sort).toHaveValue("default");
     expect(within(table).getByText("#1")).toBeVisible();
   });
   it("retains secondary type/status sort cycles and exact unsaved School inputs", async () => {
@@ -143,20 +143,23 @@ describe("Chakra School default portions workbench", () => {
     const table = screen.getByRole("table", {
       name: "Sĩ số mặc định theo trường",
     });
-    for (const label of ["Loại trường", "Trạng thái"]) {
-      const button = screen.getByRole("button", {
-        name: `Sắp xếp theo ${label}`,
+    for (const [key, label] of [
+      ["type", "Loại trường"],
+      ["status", "Trạng thái"],
+    ]) {
+      const button = screen.getByRole("combobox", {
+        name: "Sắp xếp thông tin trường",
       });
-      fireEvent.click(button);
-      expect(button).toHaveAttribute("aria-pressed", "true");
-      fireEvent.click(button);
+      fireEvent.change(button, { target: { value: `${key}:ascending` } });
+      expect(button).toHaveValue(`${key}:ascending`);
+      fireEvent.change(button, { target: { value: `${key}:descending` } });
       expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
         label === "Loại trường"
           ? "Trường Trung học Beta"
           : "Trường Tiểu học Ánh Dương",
       );
-      fireEvent.click(button);
-      expect(button).toHaveAttribute("aria-pressed", "false");
+      fireEvent.change(button, { target: { value: "default" } });
+      expect(button).toHaveValue("default");
       expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
         "Trường Tiểu học Ánh Dương",
       );
@@ -286,6 +289,9 @@ describe("Chakra School default portions workbench", () => {
     sort.focus();
     await userEvent.keyboard("{Enter}");
     expect(schoolHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(
+      screen.getByRole("combobox", { name: "Sắp xếp thông tin trường" }),
+    ).toHaveValue("school:ascending");
     expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
       "Trường Tiểu học Ánh Dương",
     );

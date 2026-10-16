@@ -49,3 +49,7 @@ The Owner explicitly continued the same PR with compact Schools/default attendan
 ## Next bounded batch — Ingredients and Supplier Allocation
 
 Owner explicitly continued the same PR with compact Ingredient and allocation-family directories beside broad existing editors. [The review record](atlas-ux-review-2026-10-16.md#ingredientssupplier-allocation--next-authorized-batch) records preserved fields/sorts/identities, exact quantities, separate Apply/Save, dirty/UNKNOWN/focus semantics, final 1366/390 evidence and the unchanged-budget CI test-query correction. No controller/model/API/SQL/dependency changes or #387 integration. Final exact-head normal checks must pass before completion; no merge or manual deployment.
+
+## Next bounded batch — Recipes, Adjustments and compact sorting
+
+Owner continued the same PR with a full-width Recipe catalogue/responsive base rows and compact Adjustment ledger beside the existing editor. The [review record](atlas-ux-review-2026-10-16.md#recipes-adjustments-and-sort-controls--authorized-continuation) records preserved lifecycle/effective composition/history/Review/Save authority. One labelled framed sort select replaces standalone groups across the four previously refined directories, retaining all existing axes and default order. Other owners and parked backend work do not start automatically.

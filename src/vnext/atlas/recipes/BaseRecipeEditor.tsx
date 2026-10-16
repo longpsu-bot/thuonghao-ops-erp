@@ -1,3 +1,4 @@
+import { atlasVisuallyHidden } from "../AtlasTaskTabs";
 import {
   Box,
   Button,
@@ -92,7 +93,30 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
       >
         <Table.Root
           aria-label="Công thức gốc"
-          minW="var(--atlas-layout-recipe-table-min, 650px)"
+          minW="var(--atlas-layout-zero, 0)"
+          css={{
+            "@media (max-width: 47.99rem)": {
+              "& colgroup": { display: "none" },
+              "& tbody": { display: "block" },
+              "& tr": {
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+                paddingBlock: "var(--atlas-spacing-sm)",
+                borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+              },
+              "& td": {
+                display: "block",
+                minWidth: 0,
+                border: "none",
+                padding: "var(--atlas-spacing-xs)",
+              },
+              "& td:first-of-type, & td:nth-of-type(4)": {
+                gridColumn: "1 / -1",
+              },
+              "& td:first-of-type": { fontWeight: "semibold" },
+              "& td:nth-of-type(2)": { textAlign: "left" },
+            },
+          }}
           w="full"
           tableLayout="fixed"
         >
@@ -105,7 +129,9 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
               <Table.Column w="var(--atlas-recipe-action-width, 80px)" />
             )}
           </Table.ColumnGroup>
-          <Table.Header>
+          <Table.Header
+            css={{ "@media (max-width: 47.99rem)": atlasVisuallyHidden }}
+          >
             <Table.Row>
               {[
                 "Nguyên liệu",
@@ -141,6 +167,9 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                 <Table.Row key={line.id}>
                   <Table.Cell overflowWrap="anywhere">{name}</Table.Cell>
                   <Table.Cell textAlign="right">
+                    <Text hideFrom="md" textStyle="helper" color="fg.muted">
+                      Định lượng
+                    </Text>
                     {editable ? (
                       <Input
                         aria-label={`Định lượng ${name}`}
@@ -172,6 +201,9 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                     )}
                   </Table.Cell>
                   <Table.Cell>
+                    <Text hideFrom="md" textStyle="helper" color="fg.muted">
+                      Đơn vị
+                    </Text>
                     {unitLabel(line.unitId, c.catalog.units)}
                     {editable && !purchaseUnit && (
                       <Text
@@ -207,6 +239,9 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                       )}
                   </Table.Cell>
                   <Table.Cell>
+                    <Text hideFrom="md" textStyle="helper" color="fg.muted">
+                      Ghi chú
+                    </Text>
                     {editable ? (
                       <Input
                         aria-label={`Ghi chú ${name}`}

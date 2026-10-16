@@ -4,7 +4,7 @@ Status: **ACTIVE — OWNER-SELECTED C / BOUNDED FRONTEND IMPLEMENTATION**
 
 Original approval: 14 October 2026.  
 **Product priority amendment: 16 October 2026.**  
-Current execution horizon: **Owner-selected C workspace/PO and the explicitly authorized Schools/Suppliers plus Ingredients/Supplier Allocation frontend batches in PR #392**. D1/D2 selection is complete. No automatic promotion to other owners, backend or Warehouse work. The earlier Warehouse design horizon ended with merged PR #384; Warehouse Product decisions remain pending.
+Current execution horizon: **Owner-selected C workspace/PO and the explicitly authorized Schools/Suppliers plus Ingredients/Supplier Allocation and Recipes/Adjustments/compact sort-control frontend batches in PR #392**. D1/D2 selection is complete. No automatic promotion to other owners, backend or Warehouse work. The earlier Warehouse design horizon ended with merged PR #384; Warehouse Product decisions remain pending.
 
 ## Control plane
 

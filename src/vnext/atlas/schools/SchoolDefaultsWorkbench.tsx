@@ -1,3 +1,4 @@
+import { AtlasSortControl } from "../AtlasSortControl";
 import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
 import { SchoolDispatchGroupEditor } from "./SchoolDispatchGroupEditor";
 import { SchoolCookingGroupEditor } from "./SchoolCookingGroupEditor";
@@ -294,71 +295,20 @@ function SchoolDefaultsTable({
     setSort((current) => nextAtlasSort(current, key));
   return (
     <Box>
-      <Flex
-        px="md"
-        py="xs"
-        gap="xs"
-        align="center"
-        wrap="wrap"
-        aria-label="Sắp xếp thông tin trường"
-      >
-        <Text textStyle="helper" color="fg.muted">
-          Sắp xếp thêm:
-        </Text>
-        <Flex
-          role="group"
-          aria-label="Sắp xếp trên màn hình hẹp"
-          hideFrom="md"
-          gap="xs"
-          wrap="wrap"
-        >
-          {(
-            [
-              ["order", "#"],
-              ["school", "Trường"],
-              ["location", "Điểm giao"],
-            ] as const
-          ).map(([key, label]) => (
-            <Button
-              key={key}
-              size="sm"
-              variant="utility"
-              aria-label={`Sắp xếp theo ${label}`}
-              aria-pressed={sort.key === key}
-              onClick={() => onSort(key)}
-            >
-              {label}
-              {sort.key === key
-                ? sort.direction === "ascending"
-                  ? " · Tăng dần"
-                  : " · Giảm dần"
-                : ""}
-            </Button>
-          ))}
-        </Flex>
-        {(
+      <AtlasSortControl
+        label="Sắp xếp thông tin trường"
+        axes={
           [
+            ["order", "#"],
+            ["school", "Trường"],
+            ["location", "Điểm giao"],
             ["type", "Loại trường"],
             ["status", "Trạng thái"],
           ] as const
-        ).map(([key, label]) => (
-          <Button
-            key={key}
-            size="sm"
-            variant="utility"
-            aria-label={`Sắp xếp theo ${label}`}
-            aria-pressed={sort.key === key}
-            onClick={() => onSort(key)}
-          >
-            {label}
-            {sort.key === key
-              ? sort.direction === "ascending"
-                ? " · Tăng dần"
-                : " · Giảm dần"
-              : ""}
-          </Button>
-        ))}
-      </Flex>
+        }
+        value={sort}
+        onChange={setSort}
+      />
       <AtlasTableViewport
         label="Bảng sĩ số mặc định theo trường"
         maxH={{

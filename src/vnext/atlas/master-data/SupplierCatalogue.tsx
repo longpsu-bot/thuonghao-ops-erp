@@ -1,3 +1,4 @@
+import { AtlasSortControl } from "../AtlasSortControl";
 import { Badge, Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import type { SupplierMasterData } from "../bridges/ingredientSupplierMasterData";
@@ -47,40 +48,18 @@ export function SupplierCatalogue({
     setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      <Flex
-        px="md"
-        py="xs"
-        gap="xs"
-        align="center"
-        wrap="wrap"
-        aria-label="Sắp xếp nhà cung ứng"
-      >
-        <Text textStyle="helper" color="fg.muted">
-          Sắp xếp thêm:
-        </Text>
-        {(
+      <AtlasSortControl
+        label="Sắp xếp nhà cung ứng"
+        axes={
           [
+            ["supplier", "Nhà cung ứng"],
             ["status", "Trạng thái"],
             ["contact", "Người liên hệ"],
           ] as const
-        ).map(([key, label]) => (
-          <Button
-            key={key}
-            size="sm"
-            variant="utility"
-            aria-label={`Sắp xếp theo ${label}`}
-            aria-pressed={sort.key === key}
-            onClick={() => onSort(key)}
-          >
-            {label}
-            {sort.key === key
-              ? sort.direction === "ascending"
-                ? " · Tăng dần"
-                : " · Giảm dần"
-              : ""}
-          </Button>
-        ))}
-      </Flex>
+        }
+        value={sort}
+        onChange={setSort}
+      />
       <AtlasTableViewport
         label="Bảng danh mục nhà cung ứng"
         maxH={{

@@ -1,3 +1,4 @@
+import { AtlasSortControl } from "../AtlasSortControl";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
 import { AtlasTableViewport } from "../AtlasTableViewport";
@@ -6,7 +7,6 @@ import {
   atlasDefaultSort,
   compareAtlasBigInt,
   compareAtlasText,
-  nextAtlasSort,
   type AtlasSortState,
 } from "../atlasTableSort";
 import {
@@ -107,19 +107,11 @@ export function ProcurementAllocationTable({
             comparators[sort.key!](left, right) *
               (sort.direction === "ascending" ? 1 : -1) || byDate(left, right),
         );
-  const onSort = (key: SortKey) =>
-    setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      <Flex
-        role="group"
-        aria-label="Sắp xếp phân bổ nhà cung ứng"
-        px="md"
-        py="xs"
-        gap="xs"
-        wrap="wrap"
-      >
-        {(
+      <AtlasSortControl
+        label="Sắp xếp phân bổ nhà cung ứng"
+        axes={
           [
             ["school", "Trường / điểm giao"],
             ["ingredient", "Nguyên liệu"],
@@ -127,24 +119,10 @@ export function ProcurementAllocationTable({
             ["supplier", "Nhà cung ứng"],
             ["issue", "Tình trạng / vấn đề"],
           ] as const
-        ).map(([key, label]) => (
-          <Button
-            key={key}
-            size="sm"
-            variant="utility"
-            aria-label={`Sắp xếp theo ${label}`}
-            aria-pressed={sort.key === key}
-            onClick={() => onSort(key)}
-          >
-            {label}
-            {sort.key === key
-              ? sort.direction === "ascending"
-                ? " · Tăng dần"
-                : " · Giảm dần"
-              : ""}
-          </Button>
-        ))}
-      </Flex>
+        }
+        value={sort}
+        onChange={setSort}
+      />
       <AtlasTableViewport
         label="Bảng phân bổ nhà cung ứng"
         maxH={{

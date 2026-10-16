@@ -201,9 +201,11 @@ export function DishRecipeWorkbench(
       {!open && catalogueToolbar}
       {!open && <Box px="md">{feedback}</Box>}
       <Flex px="md" py="xs" justify="space-between" align="center">
-        <Text textStyle="helper" color="fg.muted">
-          {c.visibleDishes.length} món
-        </Text>
+        {!c.loading && !c.error && (
+          <Text textStyle="helper" color="fg.muted">
+            {c.visibleDishes.length} món
+          </Text>
+        )}
         <Button
           variant="secondary"
           size="sm"

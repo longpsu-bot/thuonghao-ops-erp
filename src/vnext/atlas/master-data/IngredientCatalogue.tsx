@@ -1,3 +1,4 @@
+import { AtlasSortControl } from "../AtlasSortControl";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { Fragment, useState } from "react";
 import type { IngredientMasterData } from "../bridges/ingredientSupplierMasterData";
@@ -5,7 +6,6 @@ import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   atlasDefaultSort,
   compareAtlasText,
-  nextAtlasSort,
   sortAtlasRows,
   type AtlasSortState,
 } from "../atlasTableSort";
@@ -55,8 +55,6 @@ export function IngredientCatalogue({
         )[0]?.supplier_name,
       ),
   });
-  const onSort = (key: SortKey) =>
-    setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
       {!countUnavailable && (
@@ -66,15 +64,9 @@ export function IngredientCatalogue({
             : `${ingredients.length} / ${totalCount} nguyên liệu`}
         </Text>
       )}
-      <Flex
-        role="group"
-        aria-label="Sắp xếp nguyên liệu"
-        px="md"
-        py="xs"
-        gap="xs"
-        wrap="wrap"
-      >
-        {(
+      <AtlasSortControl
+        label="Sắp xếp nguyên liệu"
+        axes={
           [
             ["ingredient", "Nguyên liệu"],
             ["status", "Trạng thái"],
@@ -82,24 +74,10 @@ export function IngredientCatalogue({
             ["type", "Loại / nhóm đặt hàng"],
             ["supplier", "Ưu tiên NCC"],
           ] as const
-        ).map(([key, label]) => (
-          <Button
-            key={key}
-            variant="utility"
-            size="sm"
-            aria-label={`Sắp xếp theo ${label}`}
-            aria-pressed={sort.key === key}
-            onClick={() => onSort(key)}
-          >
-            {label}
-            {sort.key === key
-              ? sort.direction === "ascending"
-                ? " · Tăng dần"
-                : " · Giảm dần"
-              : ""}
-          </Button>
-        ))}
-      </Flex>
+        }
+        value={sort}
+        onChange={setSort}
+      />
       <AtlasTableViewport
         label="Danh mục nguyên liệu"
         maxH={{

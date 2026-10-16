@@ -77,25 +77,28 @@ describe("Procurement allocation issue sorting", () => {
         />
       </AtlasVNextProvider>,
     );
-    const sorts = within(
-      screen.getByRole("group", { name: "Sắp xếp phân bổ nhà cung ứng" }),
-    );
-    for (const label of [
-      "Trường / điểm giao",
-      "Nguyên liệu",
-      "Nhu cầu",
-      "Nhà cung ứng",
-      "Tình trạng / vấn đề",
+    const sort = screen.getByRole("combobox", {
+      name: "Sắp xếp phân bổ nhà cung ứng",
+    });
+    for (const [key, label] of [
+      ["school", "Trường / điểm giao"],
+      ["ingredient", "Nguyên liệu"],
+      ["need", "Nhu cầu"],
+      ["supplier", "Nhà cung ứng"],
+      ["issue", "Tình trạng / vấn đề"],
     ]) {
-      const button = sorts.getByRole("button", {
-        name: `Sắp xếp theo ${label}`,
-      });
-      expect(button).toBeVisible();
-      fireEvent.click(button);
-      expect(button).toHaveAttribute("aria-pressed", "true");
-      fireEvent.click(button);
-      fireEvent.click(button);
-      expect(button).toHaveAttribute("aria-pressed", "false");
+      expect(sort).toBeVisible();
+      for (const direction of ["ascending", "descending"]) {
+        expect(
+          within(sort).getByRole("option", {
+            name: `${label} · ${direction === "ascending" ? "Tăng dần" : "Giảm dần"}`,
+          }),
+        ).toBeInTheDocument();
+        fireEvent.change(sort, { target: { value: `${key}:${direction}` } });
+        expect(sort).toHaveValue(`${key}:${direction}`);
+      }
+      fireEvent.change(sort, { target: { value: "default" } });
+      expect(sort).toHaveValue("default");
     }
     const family = screen.getByText("Bí đỏ").closest("tr")!;
     expect(family).toHaveTextContent("9007199254740993,000001");
@@ -130,7 +133,7 @@ describe("Procurement allocation issue sorting", () => {
       </AtlasVNextProvider>,
     );
     expect(
-      screen.getByRole("group", { name: "Sắp xếp phân bổ nhà cung ứng" }),
+      screen.getByRole("combobox", { name: "Sắp xếp phân bổ nhà cung ứng" }),
     ).toBeVisible();
     const dates = () =>
       within(screen.getByRole("table"))
@@ -151,8 +154,9 @@ describe("Procurement allocation issue sorting", () => {
         );
     expect(ingredients()).toEqual(["Bí đỏ", "Bí đỏ", "Gạo"]);
     expect(dates()).toEqual(["12/10/2026", "13/10/2026", "12/10/2026"]);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Sắp xếp theo Nguyên liệu" }),
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Sắp xếp phân bổ nhà cung ứng" }),
+      { target: { value: "ingredient:ascending" } },
     );
     expect(ingredients()).toEqual(["Bí đỏ", "Bí đỏ", "Gạo"]);
     expect(dates()).toEqual(["12/10/2026", "13/10/2026", "12/10/2026"]);
@@ -186,12 +190,12 @@ describe("Procurement allocation issue sorting", () => {
     );
 
     expect(visibleIssues()).toEqual(["Thiếu 1 kg", "Chưa phân bổ", "Đủ"]);
-    const sort = screen.getByRole("button", {
-      name: "Sắp xếp theo Tình trạng / vấn đề",
+    const sort = screen.getByRole("combobox", {
+      name: "Sắp xếp phân bổ nhà cung ứng",
     });
-    fireEvent.click(sort);
+    fireEvent.change(sort, { target: { value: "issue:ascending" } });
     expect(visibleIssues()).toEqual(["Chưa phân bổ", "Đủ", "Thiếu 1 kg"]);
-    fireEvent.click(sort);
+    fireEvent.change(sort, { target: { value: "issue:descending" } });
     expect(visibleIssues()).toEqual(["Thiếu 1 kg", "Đủ", "Chưa phân bổ"]);
   });
 

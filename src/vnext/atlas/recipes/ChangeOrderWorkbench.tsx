@@ -1,3 +1,4 @@
+import { atlasVisuallyHidden } from "../AtlasTaskTabs";
 import {
   Box,
   Button,
@@ -73,8 +74,11 @@ export function ChangeOrderWorkbench(
     selectedKey = c.draft?.adjustmentId ?? c.selected?.adjustment_id;
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   useEffect(() => {
-    if (open) detail.current?.focus();
-    else if (wasOpen.current) origin.current?.focus();
+    if (open) {
+      detail.current?.focus();
+      if (window.matchMedia?.("(max-width: 63.99rem)").matches)
+        detail.current?.scrollIntoView?.({ block: "start" });
+    } else if (wasOpen.current) origin.current?.focus();
     wasOpen.current = open;
   }, [open, selectedKey]);
   const rows = ledgerRows(c.data, query, temporal, scope);
@@ -165,27 +169,47 @@ export function ChangeOrderWorkbench(
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
-          lg: open ? "minmax(0, 62fr) minmax(0, 38fr)" : "minmax(0, 1fr)",
+          lg: open ? "minmax(260px, 340px) minmax(0, 1fr)" : "minmax(0, 1fr)",
         }}
         minW="var(--atlas-layout-zero, 0)"
       >
         <AtlasTableViewport
           label="Bảng lệnh điều chỉnh"
-          maxH={open ? "var(--atlas-layout-ledger-height, 65dvh)" : undefined}
+          maxH={{
+            base: open
+              ? "var(--atlas-adjustment-selected-ledger-height, 30dvh)"
+              : "var(--atlas-adjustment-ledger-height, 60dvh)",
+            lg: "var(--atlas-adjustment-ledger-height, calc(100dvh - 300px))",
+          }}
         >
           <Table.Root
             size="sm"
             aria-label="Lệnh điều chỉnh"
             tableLayout="fixed"
-            minW={{
-              base: "var(--atlas-layout-ledger-width, 700px)",
-              lg: "full",
-            }}
+            minW="var(--atlas-layout-zero, 0)"
             css={{
               "& th, & td": { whiteSpace: "normal", overflowWrap: "anywhere" },
+              "& colgroup": { display: "none" },
+              "& tbody": { display: "block" },
+              "& tr": {
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) auto",
+                padding: "var(--atlas-spacing-sm)",
+                borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+              },
+              "& td": {
+                display: "block",
+                border: "none",
+                padding: "var(--atlas-spacing-xs)",
+              },
+              "& td:first-of-type": { fontWeight: "semibold" },
+              "& td:nth-of-type(2)": { textAlign: "right" },
+              "& td:nth-of-type(3), & td:nth-of-type(4)": {
+                gridColumn: "1 / -1",
+              },
             }}
           >
-            <Table.Header>
+            <Table.Header css={atlasVisuallyHidden}>
               <Table.Row>
                 {[
                   "Lệnh",
