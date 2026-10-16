@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=extensions,public,pg_catalog;
-select plan(108);
+select plan(137);
 \ir ../local/confirmed_need_correction_fixture.sql
 
 -- These helpers only invoke existing public commands under the fixture JWT.
@@ -757,6 +757,74 @@ select is((select value->>'pending'from c_context where name='resolved-date-case
  'pending Nov2 cannot become official through a full multiday map');
 select is((select value->>'other_day'from c_context where name='resolved-date-cases'),'true',
  'same full multiday map preserves genuine current Nov3 without cross-day contamination');
+
+
+-- Exercise the stored algorithm on disposable rowsets; no production predicate is copied.
+create temporary table hp_target as select * from c_selected;
+do $hp_setup$
+declare relation text; definition text;
+begin
+ foreach relation in array array['confirmed_need_validation_attempts','confirmed_need_validation_lines',
+ 'confirmed_need_validation_issues','confirmed_need_lines','confirmed_need_line_revisions',
+ 'confirmed_need_line_decisions','planning_quantity_policy_revisions','confirmed_need_line_revision_contributions'] loop
+  execute format('create temporary table hp_%I as select * from atlas_planning.%I',relation,relation);
+ end loop;
+ definition:=pg_get_functiondef('atlas_core.confirmed_need_historical_validation_complete(uuid,uuid)'::regprocedure);
+ definition:=replace(definition,'atlas_core.confirmed_need_historical_validation_complete(',
+ 'pg_temp.hp_historical_complete(');
+ foreach relation in array array['confirmed_need_validation_attempts','confirmed_need_validation_lines',
+ 'confirmed_need_validation_issues','confirmed_need_lines','confirmed_need_line_revisions',
+ 'confirmed_need_line_decisions','planning_quantity_policy_revisions','confirmed_need_line_revision_contributions'] loop
+  definition:=replace(definition,'atlas_planning.'||relation,'pg_temp.hp_'||relation);
+ end loop;
+ execute definition;
+end;$hp_setup$;
+create temporary table hp_results(name text,actual boolean,expected boolean);
+do $hp_properties$
+declare property record; actual boolean; batch uuid; attempt uuid;
+begin
+ select confirmed_need_batch_id,attempt_id into strict batch,attempt from hp_target;
+ for property in select * from(values
+ ('captured historical attempt survives current pointer advancement','select 1',true),
+ ('missing attempt','delete from pg_temp.hp_confirmed_need_validation_attempts',false),
+ ('wrong batch','update pg_temp.hp_confirmed_need_validation_attempts set confirmed_need_batch_id=gen_random_uuid()',false),
+ ('blocked attempt','update pg_temp.hp_confirmed_need_validation_attempts set outcome=''BLOCKED''',false),
+ ('nonpositive line count','update pg_temp.hp_confirmed_need_validation_attempts set line_count=0',false),
+ ('duplicate observations','insert into pg_temp.hp_confirmed_need_validation_lines select * from pg_temp.hp_confirmed_need_validation_lines where confirmed_need_validation_attempt_id=(select attempt_id from hp_target) limit 1',false),
+ ('missing observation','delete from pg_temp.hp_confirmed_need_validation_lines where confirmed_need_line_id=(select confirmed_need_line_id from hp_target)',false),
+ ('NULL line identity','update pg_temp.hp_confirmed_need_validation_lines set confirmed_need_line_id=null',false),
+ ('missing revision','delete from pg_temp.hp_confirmed_need_line_revisions',false),
+ ('NULL revision','update pg_temp.hp_confirmed_need_validation_lines set current_confirmed_need_line_revision_id=null',false),
+ ('missing decision','delete from pg_temp.hp_confirmed_need_line_decisions',false),
+ ('NULL decision','update pg_temp.hp_confirmed_need_validation_lines set current_confirmed_need_line_decision_id=null',false),
+ ('missing policy','delete from pg_temp.hp_planning_quantity_policy_revisions',false),
+ ('NULL policy','update pg_temp.hp_confirmed_need_validation_lines set planning_quantity_policy_id=null',false),
+ ('missing stable line','delete from pg_temp.hp_confirmed_need_lines',false),
+ ('wrong source kind','update pg_temp.hp_confirmed_need_validation_attempts set source_kind=''OTHER''',false),
+ ('warning severity mismatch','update pg_temp.hp_confirmed_need_validation_attempts set warning_count=warning_count+1',false),
+ ('blocking severity mismatch','update pg_temp.hp_confirmed_need_validation_attempts set blocking_issue_count=1',false),
+ ('zero contributions preserve count zero and NULL sum','delete from pg_temp.hp_confirmed_need_line_revision_contributions',false),
+ ('all NULL contribution quantities','update pg_temp.hp_confirmed_need_line_revision_contributions set controlled_contribution_quantity=null',false),
+ ('duplicate contributions retain raw multiplicity','insert into pg_temp.hp_confirmed_need_line_revision_contributions select * from pg_temp.hp_confirmed_need_line_revision_contributions',false),
+ ('shared revision keys cannot hide different lines','update pg_temp.hp_confirmed_need_validation_lines set current_confirmed_need_line_revision_id=(select revision_id from hp_target)',false),
+ ('NULL observed member count','update pg_temp.hp_confirmed_need_validation_lines set observed_source_membership_count=null',false),
+ ('NULL source total','update pg_temp.hp_confirmed_need_validation_lines set source_membership_total=null',false),
+ ('exact captured quantity mismatch','update pg_temp.hp_confirmed_need_validation_lines set confirmed_quantity=confirmed_quantity+0.000001',false),
+ ('tick mismatch','update pg_temp.hp_confirmed_need_validation_lines set planning_tick_count=planning_tick_count+1',false),
+ ('revision cardinality mismatch','update pg_temp.hp_confirmed_need_validation_lines set observed_current_revision_count=2',false),
+ ('policy cardinality mismatch','update pg_temp.hp_confirmed_need_validation_lines set observed_eligible_policy_count=0',false),
+ ('current revision flag is not historical authority','update pg_temp.hp_confirmed_need_line_revisions set is_current=false',true)
+ )cases(name,mutation,expected) loop
+  begin
+   execute property.mutation;
+   actual:=pg_temp.hp_historical_complete(batch,attempt);
+   raise sqlstate 'PZ001';
+  exception when sqlstate 'PZ001' then null;
+  end;
+  insert into hp_results values(property.name,actual,property.expected);
+ end loop;
+end;$hp_properties$;
+select is(actual,expected,'historical rowset: '||name)from hp_results;
 
 select * from finish();
 rollback;

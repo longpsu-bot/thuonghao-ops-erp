@@ -18,6 +18,10 @@ Acceptance: meaningful old/new controlled-rowset property parity, genuine captur
 
 Standing Owner rules: delivery and measurable business value; bounded scope/acceptance/completion; mandatory failure stops; focused development separate from certification; preserve incomplete PRs/evidence; explicit PASS/FAIL/BLOCKED accountability. Security/Product hard stops remain. Keep #388 Draft, #385–#387 parked, Warehouse paused, hosted read-only and OPSv1/Retool NO-WRITE. No merge/deploy. Any later local combined UI preview must retain the compact C workbenches/new Need toolbar and both separate PR reviews; do not repoint PR #388 to the feature branch or overwrite #392 UI.
 
+### Bounded trial checkpoint — prior implementation properties
+
+The unchanged runtime `3669f274` passed 137 continuity assertions, including 29 controlled disposable-rowset cases over the stored historical predicate. Genuine captured history stays TRUE after current pointers advance; malformed/missing/cardinality/NULL/contribution cases fail closed. Existing public same-R/new-D guards remain. Raw output: local TEMP `atlas-c-bounded31-old-properties.log`. This establishes the old side only; candidate `dd3d3207` is unapplied, new-side/fresh application/strict acceptance have not started. No new database, lease or global DDL was started. Pause at this safe checkpoint for the consolidated PR #392 CI repair; preserve this local test work without claiming performance acceptance.
+
 ## Publication checkpoint — 16 October 2026
 
 Implemented Draft publication is explicitly user-authorized now; internal push holds below are historical. Acceptance is incomplete: final runtime 3669f274 has 455 focused SQL assertions PASS, strict29 completes 1/8 observed cycles before the second Preparation exceeds 20 seconds and0/20 final assertions. All data rolls back. Final waits, exports and broader regressions/remote Full remain deferred. dd3 is TEMP-only and unapplied; no further optimization/DB run. Do not mark all tasks complete or PR ready. [Current validation](../../testing/operator-confirmed-need-correction-c-01-validation.md).
