@@ -4,7 +4,9 @@ Status: **ACTIVE — OWNER-SELECTED C / BOUNDED FRONTEND IMPLEMENTATION**
 
 Original approval: 14 October 2026.  
 **Product priority amendment: 16 October 2026.**  
-Current execution horizon: **Owner-selected C workspace/PO and the explicitly authorized Schools/Suppliers plus Ingredients/Supplier Allocation and Recipes/Adjustments/compact sort-control frontend batches and compact ERP-density correction in PR #392**. D1/D2 selection is complete. No automatic promotion to other owners, backend or Warehouse work. The earlier Warehouse design horizon ended with merged PR #384; Warehouse Product decisions remain pending.
+Current execution horizon: **resolve the four Owner UI issues in PR #392, then bounded remediation of the approved Need correction in preserved Draft #388 after UX is stable**. The Owner's 16 October delivery directive supersedes the recording-only status and broad Need-remediation pause. #385–#387 stay parked; Warehouse stays paused. Hosted Atlas access remains read-only; OPSv1/Retool remain NO-WRITE. No merge or deployment.
+
+The six standing Owner delivery rules are delivery/value first; bounded scope/acceptance/completion; mandatory failure stops and escalation; focused development checks separated from release certification; preservation of unfinished PRs/evidence; and explicit PASS/FAIL/BLOCKED with actionable handoffs. [The active task](ACTIVE_TASK.md#product-priority-and-work-authorization) defines current acceptance. One consolidated diagnosis/correction is allowed; if the same acceptance failure recurs twice, stop with root cause and actionable FAIL rather than indefinite retries. These are delivery rules, not replacements for the existing security/Product hard stops.
 
 ## Control plane
 
@@ -18,7 +20,7 @@ Owner design priority → verified checkout → skill/source audit
 → Owner selects a design → STOP until explicit selection
 ```
 
-After Owner visual selection, normal bounded implementation / read-only audit / targeted CI / Product review / merge may resume. **No automatic next-task promotion or backend/Staging deployment** under this design-only pause.
+After Owner visual selection, normal bounded implementation / read-only audit / targeted CI / Product review / merge may resume. **No automatic unrelated task promotion or Staging deployment.** The four UI issues and bounded Need correction are explicitly authorized; they require no renewed design-selection ritual.
 
 ## Roles
 
@@ -41,7 +43,7 @@ Stop before:
 5. destructive Production data correction;
 6. material authorization broadening;
 7. final Warehouse business design approval;
-8. **production implementation of the selected Atlas UI design until Owner selects among rendered alternatives.**
+8. **production implementation of an unselected Atlas UI design.** Owner selected C; that selection gate is satisfied for the current bounded corrections, not unrelated design changes.
 
 ## Environment boundary
 
@@ -57,7 +59,7 @@ Use `OPS_SYSTEM_MAP v1.0` and **FACTS EXPLICIT — STATE DERIVED — SUPPORTING 
 ## Anti-overengineering rule
 
 - Do **not** run further Warehouse contracts/migrations, broad performance studies, 8-cycle Need correction probes, repeated full-repo CI, extra autonomous agent loops, synthetic load programs or new architecture layers solely to “move Autopilot forward”.
-- Do **not** merge/deploy/rescope Draft PRs #385–#388; preserve their state and existing evidence until separately integrated.
+- Do **not** merge/deploy Draft PRs #385–#388; preserve their state and existing evidence. #385–#387 remain parked; #388 alone has bounded remediation authority after stable UX.
 - Read/use existing proofs instead of re-proving unchanged contracts. For **design-only** work, require real rendered comparison and focused checks—not a new certification infrastructure.
 - Keep one active task in `ACTIVE_TASK.md` and a single explicit next Product decision. No automatic endless backlog execution; wait for Owner selection after D2.
 

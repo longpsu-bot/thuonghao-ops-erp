@@ -8,6 +8,19 @@ Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read
 
 ## Product priority and work authorization
 
+**16 October — bounded delivery supersession:** Owner explicitly authorizes resolution of the [four recorded UI issues](../ui/atlas-owner-review-issues-2026-10-16.md) in PR #392, followed by bounded remediation of the approved Need correction in Draft #388 after UX is stable. This supersedes the earlier recording-only status and broad Need-remediation pause, not the remaining safety stops. Keep #388 Draft and its unfinished work/evidence; #385–#387 remain parked. Warehouse stays paused, hosted Atlas access remains read-only, and OPSv1/Retool remain NO-WRITE. No merge or deployment.
+
+Standing Owner delivery rules:
+
+1. Prioritize delivery, operational readiness and measurable business value over endless optimization.
+2. Define scope, acceptance criteria and completion conditions for every bounded task.
+3. Stop repeated failures for root-cause analysis/escalation; no indefinite retry loop.
+4. Separate development from certification: fast focused checks during implementation, full certification at the appropriate release gate.
+5. Preserve unfinished PRs and evidence without merging, deploying or discarding them.
+6. Report explicit PASS/FAIL/BLOCKED outcomes and actionable handoffs.
+
+**Current UI acceptance:** actual fresh-login/default preview selects Weekly Menu; meaningful supported column headers replace the four standalone sorting selectors while preserving comparators/exact values/keyboard access/`aria-sort`; Pantry purpose removal and optional notes work across validation/Save under an explicit minimal compatibility amendment reviewed before SQL changes, retaining historical purpose/evidence; Confirmed Need summary/count/filter/actions form one compact aligned toolbar at 1344/1366 and 390 with all actions/scopes/guards retained. Use existing components and no new dependencies. Completion requires one consolidated diagnosis/correction, focused/static checks, independent review, browser evidence and normal exact-head CI. If the same acceptance failure recurs twice, stop with root cause and actionable FAIL rather than starting another cycle. Need correction then follows its approved design and a bounded remediation scope; this is not authority for general backend, certification or Warehouse work.
+
 **16 October — ERP-density course correction, same PR #392:** Owner explicitly prioritizes the compact OPSv1-like workbench pattern. Restore visible desktop columns/dense rows and catalogue-primary/task-sized detail geometry for the five recent lists; keep mobile stacking, 44px targets, Recipe chooser exception, C tabs and PO document workplane. Slim the existing labelled sort control without changing axes/comparators. No controller/model/API/backend/Warehouse changes or parked Draft integration.
 
 **16 October — Recipes, Adjustments and compact sort controls, same PR #392:** Owner authorizes the next C presentation batch. Preserve the existing recipe chooser, all quantities/Units/notes, effective composition, immutable Adjustment history, permissions, frozen Review and explicit Save. Replace standalone sort groups in Schools, Suppliers, Ingredients and Allocation with one labelled framed control using existing axes and ordering. No controller/model/API/schema/dependency changes; backend/Warehouse and #385–#388 remain parked.
@@ -29,7 +42,7 @@ Authoritative business and security boundaries remain unchanged: `OPS_SYSTEM_MAP
 - [#385](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/385): login/PO states/XLSX wrapping, Draft, review/integration later.
 - [#386](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/386): human Unit labels and draft School evidence, Draft, migration not deployed.
 - [#387](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/387): bulk supplier allocation, Draft, migration not deployed.
-- [#388](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/388): post-release Need correction, **INCOMPLETE Draft** with genuine 250-family multi-cycle performance failure. No forced success, CI weakening, merge, Staging deployment, additional performance cycle or runtime follow-up under this active design task.
+- [#388](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/388): post-release Need correction, **INCOMPLETE Draft** with genuine 250-family multi-cycle performance failure. No forced success, CI weakening, merge or Staging deployment. Bounded remediation after stable UX is now authorized by the delivery supersession above; preserve the Draft and prior evidence.
 - Older UI prototype Drafts remain archival references, not automatic implementation candidates.
 
 Do not reset/delete local worktrees, commits, stashes, branches or PRs. Before any integration of these branches, independently assess compatibility and exact-head tests. **Do not wait for them to merge before producing design alternatives.**
