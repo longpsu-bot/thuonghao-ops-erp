@@ -1,12 +1,14 @@
 # Atlas Autopilot — Active Task
 
 Task: **ATLAS-UX-ART-DIRECTION-02**  
-Status: **ACTIVE — DESIGN DISCOVERY / ALTERNATIVES ONLY**  
+Status: **ACTIVE — OWNER-SELECTED C / BOUNDED UI IMPLEMENTATION**  
 Product authorization: **16 October 2026** — Owner explicitly redirected priority from overextended Autopilot/backend work to Atlas UX/UI design.  
 Source: [approved GitHub Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389) and [execution brief](../implementation-tasks/TASK-ATLAS-UX-ART-DIRECTION-02.md).  
 Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read current `origin/main` before task execution.
 
 ## Product priority and work authorization
+
+**16 October 2026 — Owner selected C and explicitly authorized implementation.** The D1/D2 selection gate is satisfied by [Draft #391](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/391), head `6ac8f388ce14bc991058371e1232b094e733f6b3`. Implement only connected sloped tabs and supplier-rail PO presentation under the [bounded C scope](../ui/atlas-c-workspace-po-implementation.md). Preserve real thirteen-owner state, API clients, business guards, immutable documents and export semantics. Backend/Warehouse and #385–#388 remain parked. No merge or deployment is authorized.
 
 **Stop creating additional backend performance/certification, Warehouse, or general cutover work merely to advance Autopilot.** Concentrate on making Atlas genuinely legible, efficient, aesthetically polished and practical for staff. This transition **supersedes Issue #389's older “wait until all #385–#388 are closed” start condition**: the design phase may proceed NOW while those existing Drafts are preserved. It does **not** approve their merges, alter their source code, or claim their business behavior is deployed.
 
@@ -35,6 +37,7 @@ Do not reset/delete local worktrees, commits, stashes, branches or PRs. Before a
 ### Checkpoint D2 — visible, competing designs
 
 Create **2–3 materially different rendered, comparable prototypes** for:
+
 - The **connected angled/sloped-edge tab strip** inspired by the Owner's reference; active tab seamlessly joined to the white workplane, neutral inactive tabs, 13-workbench horizontal overflow, close/dirty/focus semantics retained.
 - **Supplier-first PO workbench:** compact scannable orders, truthful draft/released/export state, document numbers and next action; disclose long School breakdown, exact quantities/Units and notes in usable detail rather than concatenated cells.
 - Optionally show how the same design language improves Supplier Allocation while preserving the already-implemented backend supplier recommendation/explicit Save distinction.
