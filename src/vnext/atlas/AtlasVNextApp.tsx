@@ -78,8 +78,8 @@ const WorkbenchContent = memo(function WorkbenchContent({
 function ApplicationSession(props: AtlasVNextAppProps) {
   const prefix = useId();
   const [workspace, dispatch] = useReducer(atlasWorkspaceReducer, {
-    openIds: ["schools"],
-    activeId: "schools",
+    openIds: ["planning"],
+    activeId: "planning",
   });
   const currentWorkspace = useRef(workspace);
   useLayoutEffect(() => {
@@ -120,7 +120,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
   );
   if (!entries.current)
     entries.current = new Map([
-      ["schools", createEntry("schools", mountDate.current)],
+      ["planning", createEntry("planning", mountDate.current)],
     ]);
   const reportDate = useCallback((date: string) => {
     mountDate.current = date;

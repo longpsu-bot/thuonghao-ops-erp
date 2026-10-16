@@ -1,0 +1,40 @@
+{
+  "authorization": "Owner resumed bounded School-only follow-up after Task A stop",
+  "base": "50005ac8ebf64b776baa5977f06a8fb708899db9",
+  "before": {
+    "viewport": 390,
+    "dialogNaturallyRemoved": true,
+    "schoolDraft": "283",
+    "cancelFocus": "BODY"
+  },
+  "after": [
+    {
+      "flow": "mobile Cancel natural exit",
+      "dialogs": 0,
+      "focus": {
+        "label": null,
+        "tag": "BUTTON",
+        "text": "Đang mở: Trường học — Chưa lưu"
+      },
+      "value": "283",
+      "viewport": 390
+    },
+    {
+      "flow": "desktop Cancel natural exit",
+      "dialogs": 0,
+      "focus": {
+        "label": "Đóng Trường học",
+        "tag": "BUTTON"
+      },
+      "value": "283",
+      "viewport": 1366
+    },
+    {
+      "flow": "mobile blocked signout and explicit School discard",
+      "bothDirtyOwnersBlocked": true,
+      "schoolDraftBeforeDiscard": "283",
+      "schoolRemovedAfterExplicitDiscard": true,
+      "otherPxkDraftRetained": "Giữ ngày"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-16",
+  "route": "http://127.0.0.1:5177/atlas-vnext-review.html?scenario=range",
+  "data": "local review fixture only",
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "checks": [
+        "Ingredients catalogue and Allocation family table fit325px rails; prior1050px table overflow removed",
+        "Adjacent full-width editors; selected Allocation08/09/2026 identifiable within07–09Sep range",
+        "Ingredient Cá basa phi lê fields/actions retained",
+        "Supplier priority editor closes to exact origin row"
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "checks": [
+        "All5 sort actions visible for each catalogue",
+        "Ingredient editor usable after opening with fields/actions through vertical scroll",
+        "Allocation clean Close returns focus to exact08/09 origin action",
+        "Allocation reopen focuses heading at y190.58; editor fields and actions visible",
+        "Allocation60,000001+40 displays100,000001/100kg andVượt0,000001kg; Save disabled",
+        "Cancel dirty Close retains60,000001; restored60 without Save"
+      ]
+    }
+  ],
+  "finalScreenshots": [
+    "ingredients-after-1366x768.jpg",
+    "allocation-after-1366x768.jpg",
+    "ingredient-priorities-1366x768.jpg",
+    "ingredients-after-open-390x844.jpg",
+    "allocation-after-open-fixed-390x844.jpg"
+  ],
+  "excludedFirstPass": [
+    "allocation-after-open-390x844.jpg",
+    "allocation-mobile-edit-first-pass-390x844.jpg"
+  ],
+  "limits": [
+    "Local fixtures only; no hosted writes or release",
+    "Bounded desktop/mobile review, not exhaustive viewport/state certification",
+    "No production merge or deployment"
+  ]
+}

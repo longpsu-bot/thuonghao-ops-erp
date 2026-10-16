@@ -51,14 +51,58 @@ function visibleIssues() {
     .getAllByRole("row")
     .slice(1)
     .map((tableRow) =>
-      within(tableRow)
-        .getAllByRole("cell")[4]!
+      tableRow
+        .querySelector("[data-allocation-issue]")!
         .textContent!.replace("⚠", "")
         .trim(),
     );
 }
 
 describe("Procurement allocation issue sorting", () => {
+  it("keeps all five sort actions reachable, resets canonical order and returns the exact family", () => {
+    const first = row(
+      "first",
+      "Bí đỏ",
+      "UNALLOCATED",
+      "9007199254740993.000001",
+    );
+    const select = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementAllocationTable
+          rows={[first, row("second", "Gạo", "BALANCED", "2", "2")]}
+          selectedKey={null}
+          disabled={false}
+          onSelect={select}
+        />
+      </AtlasVNextProvider>,
+    );
+    for (const label of [
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+    ]) {
+      const button = screen.getByRole("button", {
+        name: `Sắp xếp theo ${label}`,
+      });
+      expect(button).toBeVisible();
+      for (const direction of ["ascending", "descending", "none"]) {
+        fireEvent.click(button);
+        expect(button.closest("th")).toHaveAttribute("aria-sort", direction);
+      }
+    }
+    const family = screen.getByText("Bí đỏ").closest("tr")!;
+    expect(family).toHaveTextContent("9007199254740993,000001");
+    expect(
+      family.querySelector("[data-allocation-quantity]"),
+    ).toHaveTextContent("9007199254740993,000001");
+    fireEvent.click(
+      within(family).getByRole("button", { name: /Phân bổ NCC Bí đỏ/ }),
+    );
+    expect(select.mock.lastCall![0]).toBe(first);
+  });
   it("keeps daily families separate and makes an explicit Ingredient sort primary across dates", () => {
     const first = {
       ...row("first", "Bí đỏ", "UNALLOCATED", "1"),
@@ -85,18 +129,25 @@ describe("Procurement allocation issue sorting", () => {
       </AtlasVNextProvider>,
     );
     expect(
-      screen.getByRole("columnheader", { name: "Ngày dùng" }),
-    ).toBeInTheDocument();
+      screen.getByRole("button", { name: "Sắp xếp theo Nguyên liệu" }),
+    ).toBeVisible();
     const dates = () =>
       within(screen.getByRole("table"))
         .getAllByRole("row")
         .slice(1)
-        .map((item) => within(item).getAllByRole("cell")[2]!.textContent);
+        .map((item) =>
+          item
+            .querySelector("[data-allocation-date]")!
+            .textContent!.replace("Ngày dùng ", ""),
+        );
     const ingredients = () =>
       within(screen.getByRole("table"))
         .getAllByRole("row")
         .slice(1)
-        .map((item) => within(item).getAllByRole("cell")[1]!.textContent);
+        .map(
+          (item) =>
+            item.querySelector("[data-allocation-ingredient]")!.textContent,
+        );
     expect(ingredients()).toEqual(["Bí đỏ", "Bí đỏ", "Gạo"]);
     expect(dates()).toEqual(["12/10/2026", "13/10/2026", "12/10/2026"]);
     fireEvent.click(
@@ -182,14 +233,16 @@ describe("Procurement allocation issue sorting", () => {
     expect(
       within(table)
         .getAllByRole("columnheader")
-        .slice(0, 2)
         .map((cell) => cell.textContent),
-    ).toEqual(["Trường / điểm giao", "Nguyên liệu"]);
-    expect(
-      within(table).getByRole("columnheader", {
-        name: "Trường / điểm giao",
-      }),
-    ).toHaveStyle({ position: "sticky", left: "var(--atlas-layout-zero, 0)" });
+    ).toEqual([
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+      "Thao tác",
+    ]);
+    expect(table).toHaveStyle({ minWidth: "var(--atlas-layout-zero, 0)" });
 
     const derivedRow = within(table).getByText("Gạo thơm").closest("tr")!;
     expect(derivedRow).toHaveTextContent("NCC An Phú");
@@ -258,8 +311,7 @@ describe("Procurement allocation issue sorting", () => {
       .slice(1);
     expect(
       bodyRows.map((tableRow) => {
-        const cells = within(tableRow).getAllByRole("cell");
-        return `${cells[0]!.textContent}|${cells[1]!.textContent}`;
+        return `${tableRow.querySelector("[data-allocation-recipient]")!.textContent}|${tableRow.querySelector("[data-allocation-ingredient]")!.textContent}`;
       }),
     ).toEqual(["Trường A|Bí đỏ", "Trường A|Gạo", "Trường B|Cà rốt"]);
   });

@@ -7,10 +7,9 @@ import {
   Field,
   NativeSelect,
   Stack,
-  Table,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   procurementOperatorMessages,
   type PurchaseOrdersData,
@@ -28,6 +27,7 @@ export type ProcurementExport = (
 export type ProcurementZipExport = (
   orders: SchoolCateringPurchaseOrder[],
   mode: ProcurementExportMode,
+  format?: "xlsx" | "pdf",
 ) => void | Promise<void>;
 const canExport = (order: SchoolCateringPurchaseOrder) =>
   ["RELEASED_TO_SUPPLIER", "SUPERSEDED"].includes(order.status) &&
@@ -75,23 +75,17 @@ export function ProcurementOrdersStage({
   onExportPdf?: ProcurementExport;
   onExportZip?: ProcurementZipExport;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null | undefined>(
+    undefined,
+  );
+  const detailId = useId();
+  const railButtons = useRef(new Map<string, HTMLButtonElement>());
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportMode, setExportMode] = useState<ProcurementExportMode>("all");
   const exportOrders = (data?.purchase_orders ?? []).filter(canExport);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const selected = data?.purchase_orders.find(
-    (order) => order.purchase_order_id === selectedId,
-  );
-  useEffect(() => {
-    if (!selected) setSelectedId(null);
-  }, [selected]);
-  useEffect(() => {
-    heading.current?.focus();
-    setExportError(null);
-  }, [selectedId]);
   const visible = (data?.purchase_orders ?? []).filter((order) =>
     [
       order.supplier.supplier_name,
@@ -99,18 +93,29 @@ export function ProcurementOrdersStage({
       ...order.lines.flatMap((line) => [
         line.ingredient.ingredient_name,
         line.delivery_location.location_name,
+        ...line.school_breakdown.map((school) => school.school_name),
       ]),
     ]
       .join(" ")
       .toLocaleLowerCase("vi")
       .includes(search.toLocaleLowerCase("vi")),
   );
-  const locations = (order: SchoolCateringPurchaseOrder) =>
-    [
-      ...new Set(
-        order.lines.map((line) => line.delivery_location.location_name),
-      ),
-    ].join(", ");
+  // undefined selects the first visible readback; null is an intentional Close.
+  const selected =
+    selectedId === undefined
+      ? visible[0]
+      : visible.find((order) => order.purchase_order_id === selectedId);
+  useEffect(() => {
+    if (
+      selectedId &&
+      !visible.some((order) => order.purchase_order_id === selectedId)
+    )
+      setSelectedId(undefined);
+  }, [data, search, selectedId]);
+  useEffect(() => {
+    if (selectedId) heading.current?.focus();
+    setExportError(null);
+  }, [selectedId]);
   const primary =
     selected?.status === "DRAFT"
       ? selected.commitment_state === "DRAFT_STALE"
@@ -144,12 +149,12 @@ export function ProcurementOrdersStage({
       setExporting(false);
     }
   };
-  const exportZip = async () => {
+  const exportZip = async (format: "xlsx" | "pdf") => {
     if (!onExportZip || !exportOrders.length || disabled || exporting) return;
     setExporting(true);
     setExportError(null);
     try {
-      await onExportZip(exportOrders, exportMode);
+      await onExportZip(exportOrders, exportMode, format);
     } catch {
       setExportError("Chưa xuất được chứng từ. Hãy thử xuất lại.");
     } finally {
@@ -168,19 +173,35 @@ export function ProcurementOrdersStage({
         "Đơn mua có điều kiện cần kiểm tra trước khi tiếp tục.",
       )
     : [];
+  if (!data) return null;
   return (
     <Box>
-      <Text px="md" py="sm" textStyle="helper" color="fg.muted">
-        {visible.length} đơn mua theo nhà cung cấp
-      </Text>
-      <AtlasWorkbar
-        px="md"
-        pb="sm"
-        aria-label="Xuất đơn mua trong phạm vi đã tải"
-      >
-        <Field.Root w="var(--atlas-export-mode-width, 230px)">
-          <Field.Label>Nội dung xuất PO</Field.Label>
-          <NativeSelect.Root disabled={disabled || exporting}>
+      <AtlasWorkbar px="md" py="xs" gap="sm" aria-label="Xuất đơn mua đã tải">
+        <Text
+          textStyle="helper"
+          color="fg.muted"
+          mr="var(--atlas-layout-auto, auto)"
+        >
+          {visible.length} đơn mua theo nhà cung cấp
+          <Text as="span" display="block" textStyle="helper">
+            Xuất các đơn đủ điều kiện trong dữ liệu đã tải, không giới hạn theo
+            tìm kiếm.
+          </Text>
+        </Text>
+        <Field.Root
+          disabled={disabled || exporting}
+          w={{ base: "full", md: "var(--atlas-layout-auto, auto)" }}
+          flexDirection="row"
+          alignItems="center"
+          gap="sm"
+        >
+          <Field.Label mb="var(--atlas-layout-zero, 0)" whiteSpace="nowrap">
+            Nội dung xuất PO
+          </Field.Label>
+          <NativeSelect.Root
+            disabled={disabled || exporting}
+            w="var(--atlas-export-mode-width, 190px)"
+          >
             <NativeSelect.Field
               value={exportMode}
               onChange={(event) =>
@@ -196,15 +217,23 @@ export function ProcurementOrdersStage({
           </NativeSelect.Root>
         </Field.Root>
         {onExportZip && (
-          <AtlasWorkbarActions>
-            <Button
-              variant="secondary"
-              loading={exporting}
-              disabled={disabled || !exportOrders.length}
-              onClick={() => void exportZip()}
-            >
-              Xuất ZIP PO · phạm vi đã tải
-            </Button>
+          <AtlasWorkbarActions
+            w={{ base: "full", md: "var(--atlas-layout-auto, auto)" }}
+            minW="var(--atlas-layout-zero, 0)"
+            flexDirection={{ base: "column", md: "row" }}
+            alignItems={{ base: "stretch", md: "center" }}
+          >
+            {(["xlsx", "pdf"] as const).map((format) => (
+              <Button
+                key={format}
+                variant="secondary"
+                loading={exporting}
+                disabled={disabled || exporting || !exportOrders.length}
+                onClick={() => void exportZip(format)}
+              >
+                Xuất {format.toUpperCase()}
+              </Button>
+            ))}
           </AtlasWorkbarActions>
         )}
       </AtlasWorkbar>
@@ -224,184 +253,238 @@ export function ProcurementOrdersStage({
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
-          xl: selected
-            ? "minmax(0, 62fr) minmax(320px, 38fr)"
-            : "minmax(0, 1fr)",
-          "2xl": selected
-            ? "minmax(0, 45fr) minmax(0, 55fr)"
-            : "minmax(0, 1fr)",
+          lg: "minmax(240px, 280px) minmax(0, 1fr)",
         }}
         minW="var(--atlas-layout-zero, 0)"
+        borderTopWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
       >
-        <Box minW="var(--atlas-layout-zero, 0)">
-          <Table.ScrollArea
-            maxH={{
-              base: "var(--atlas-layout-table-mobile-height, 50dvh)",
-              xl: "var(--atlas-layout-table-height, calc(100dvh - 360px))",
-            }}
-            overflow="auto"
-          >
-            <Table.Root
-              aria-label="Đơn mua"
-              size="sm"
-              stickyHeader
-              tableLayout="fixed"
-              w="var(--atlas-orders-table-width, 1040px)"
-              minW="var(--atlas-orders-table-width, 1040px)"
+        <Flex
+          as="nav"
+          aria-label="Đơn mua theo nhà cung cấp"
+          direction={{ base: "row", lg: "column" }}
+          overflow="auto"
+          maxH={{
+            lg: "var(--atlas-orders-workplane-height, calc(100dvh - 300px))",
+          }}
+          p="sm"
+          gap="xs"
+          minW="var(--atlas-layout-zero, 0)"
+          alignSelf="start"
+        >
+          {visible.map((order) => (
+            <Button
+              key={order.purchase_order_id}
+              ref={(node) => {
+                if (node)
+                  railButtons.current.set(order.purchase_order_id, node);
+                else railButtons.current.delete(order.purchase_order_id);
+              }}
+              variant="utility"
+              aria-label={`Xem đơn ${order.supplier.supplier_name} · ${dateLabel(order.service_date)} · ${order.document_number ?? stateLabel[order.commitment_state]}`}
+              aria-pressed={
+                selected?.purchase_order_id === order.purchase_order_id
+              }
+              aria-expanded={
+                selected?.purchase_order_id === order.purchase_order_id
+              }
+              aria-controls={detailId}
+              h="var(--atlas-layout-auto, auto)"
+              minH="var(--atlas-layout-mobile-target, 44px)"
+              minW={{
+                base: "var(--atlas-orders-rail-card-width, 230px)",
+                lg: "var(--atlas-layout-zero, 0)",
+              }}
+              w={{
+                base: "var(--atlas-orders-rail-card-width, 230px)",
+                lg: "full",
+              }}
+              flexShrink="var(--atlas-layout-zero, 0)"
+              whiteSpace="normal"
+              textAlign="left"
+              alignItems="stretch"
+              flexDirection="column"
+              gap="xs"
+              p="sm"
+              bg={
+                selected?.purchase_order_id === order.purchase_order_id
+                  ? "bg.selected"
+                  : "bg.workbench"
+              }
+              borderRadius="control"
+              borderWidth="var(--atlas-layout-edge, 1px)"
+              borderColor={
+                selected?.purchase_order_id === order.purchase_order_id
+                  ? "border.accent"
+                  : "border.subtle"
+              }
+              onClick={(event) => {
+                trigger.current = event.currentTarget;
+                setSelectedId(order.purchase_order_id);
+              }}
             >
-              <Table.ColumnGroup>
-                <Table.Column w="var(--atlas-orders-supplier-width, 180px)" />
-                <Table.Column w="var(--atlas-orders-date-width, 120px)" />
-                <Table.Column w="var(--atlas-orders-school-width, 220px)" />
-                <Table.Column w="var(--atlas-orders-lines-width, 90px)" />
-                <Table.Column w="var(--atlas-orders-state-width, 160px)" />
-                <Table.Column w="var(--atlas-orders-number-width, 150px)" />
-                <Table.Column w="var(--atlas-orders-action-width, 120px)" />
-              </Table.ColumnGroup>
-              <Table.Header>
-                <Table.Row>
-                  {[
-                    "Nhà cung cấp",
-                    "Ngày dùng",
-                    "Trường / điểm giao",
-                    "Số dòng",
-                    "Trạng thái",
-                    "Số đơn",
-                    "Thao tác",
-                  ].map((label) => (
-                    <Table.ColumnHeader key={label}>{label}</Table.ColumnHeader>
-                  ))}
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {visible.map((order) => (
-                  <Table.Row
-                    key={order.purchase_order_id}
-                    aria-selected={selectedId === order.purchase_order_id}
-                  >
-                    <Table.Cell
-                      position="relative"
-                      minW="var(--atlas-layout-order-supplier-width, 140px)"
-                    >
-                      {selectedId === order.purchase_order_id && (
-                        <Box data-selection-indicator="" aria-hidden="true" />
-                      )}
-                      <Text fontWeight="semibold">
-                        {order.supplier.supplier_name}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell whiteSpace="nowrap">
-                      {dateLabel(order.service_date)}
-                    </Table.Cell>
-                    <Table.Cell minW="var(--atlas-layout-order-location-width, 140px)">
-                      {locations(order)}
-                    </Table.Cell>
-                    <Table.Cell textAlign="end">
-                      {order.lines.length}
-                    </Table.Cell>
-                    <Table.Cell minW="var(--atlas-layout-order-state-width, 115px)">
-                      <Text
-                        color={
-                          [
-                            "DRAFT_STALE",
-                            "REPLACEMENT_REQUIRED",
-                            "CANCELLATION_REQUIRED",
-                          ].includes(order.commitment_state)
-                            ? "status.warning"
-                            : "fg.muted"
-                        }
-                        data-row-secondary=""
-                      >
-                        {[
-                          "DRAFT_STALE",
-                          "REPLACEMENT_REQUIRED",
-                          "CANCELLATION_REQUIRED",
-                        ].includes(order.commitment_state) && "⚠ "}
-                        {stateLabel[order.commitment_state]}
-                      </Text>
-                      {procurementOperatorMessages(
-                        order.warnings.filter(
-                          (code) =>
-                            order.purchase_order_id !== selectedId ||
-                            !hasDedicatedGuidance(order.commitment_state, code),
-                        ),
-                        "Có cảnh báo cần kiểm tra.",
-                      ).map((message) => (
-                        <Text
-                          key={message}
-                          textStyle="helper"
-                          color="status.warning"
-                        >
-                          ⚠ {message}
-                        </Text>
-                      ))}
-                    </Table.Cell>
-                    <Table.Cell>{order.document_number ?? "—"}</Table.Cell>
-                    <Table.Cell>
-                      <Button
-                        size="sm"
-                        variant="tertiary"
-                        aria-label={`Xem đơn ${order.supplier.supplier_name}`}
-                        aria-expanded={selectedId === order.purchase_order_id}
-                        onClick={(event) => {
-                          trigger.current = event.currentTarget;
-                          setSelectedId(order.purchase_order_id);
-                        }}
-                      >
-                        Xem đơn
-                      </Button>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table.Root>
-          </Table.ScrollArea>
+              <Text fontWeight="semibold" overflowWrap="anywhere">
+                {order.supplier.supplier_name}
+              </Text>
+              <Flex
+                justify="space-between"
+                gap="sm"
+                textStyle="helper"
+                fontWeight="normal"
+              >
+                <Text>{dateLabel(order.service_date)}</Text>
+                <Text>{order.lines.length} dòng</Text>
+              </Flex>
+              <Text
+                textStyle="helper"
+                fontWeight="normal"
+                color={
+                  [
+                    "DRAFT_STALE",
+                    "REPLACEMENT_REQUIRED",
+                    "CANCELLATION_REQUIRED",
+                  ].includes(order.commitment_state)
+                    ? "status.warning"
+                    : "fg.muted"
+                }
+              >
+                {stateLabel[order.commitment_state]}
+              </Text>
+              <Text
+                textStyle="helper"
+                fontWeight="normal"
+                color="fg.muted"
+                overflowWrap="anywhere"
+              >
+                {order.document_number ?? "Chưa cấp số đơn"}
+              </Text>
+              {procurementOperatorMessages(
+                order.warnings.filter(
+                  (code) =>
+                    order.purchase_order_id !== selected?.purchase_order_id ||
+                    !hasDedicatedGuidance(order.commitment_state, code),
+                ),
+                "Có cảnh báo cần kiểm tra.",
+              ).map((message) => (
+                <Text key={message} textStyle="helper" color="status.warning">
+                  ⚠ {message}
+                </Text>
+              ))}
+            </Button>
+          ))}
           {!visible.length && (
-            <Text p="lg" color="fg.muted">
-              Chưa có đơn mua trong phạm vi này.
+            <Text p="md" color="fg.muted">
+              {search.trim()
+                ? "Không có đơn mua khớp tìm kiếm trong phạm vi này."
+                : "Chưa có đơn mua trong phạm vi này."}
             </Text>
           )}
-        </Box>
-        {selected && (
+        </Flex>
+        {selected ? (
           <Flex
             as="aside"
+            id={detailId}
             role="region"
             aria-label={`Chi tiết đơn mua ${selected.supplier.supplier_name}`}
             direction="column"
-            bg="bg.subtle"
+            bg="bg.workbench"
             minW="var(--atlas-layout-zero, 0)"
             borderLeftWidth={{
               base: "var(--atlas-layout-zero, 0)",
-              xl: "var(--atlas-layout-edge, 1px)",
+              lg: "var(--atlas-layout-edge, 1px)",
             }}
             borderTopWidth={{
               base: "var(--atlas-layout-edge, 1px)",
-              xl: "var(--atlas-layout-zero, 0)",
+              lg: "var(--atlas-layout-zero, 0)",
             }}
             borderColor="border.subtle"
             maxH={{
-              base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
-              xl: "var(--atlas-layout-detail-height, calc(100dvh - 360px))",
+              lg: "var(--atlas-orders-workplane-height, calc(100dvh - 300px))",
             }}
           >
-            <Box p="md">
-              <Heading as="h2" ref={heading} tabIndex={-1} textStyle="section">
-                {selected.supplier.supplier_name}
-              </Heading>
-              <Text color="fg.muted" mt="xs">
-                Ngày dùng {dateLabel(selected.service_date)}
-              </Text>
-              {selected.document_number && (
-                <Text fontWeight="semibold" mt="xs">
-                  {selected.document_number}
-                </Text>
-              )}
+            <Box
+              px={{ base: "md", xl: "lg" }}
+              pt="md"
+              pb="sm"
+              flexShrink="var(--atlas-layout-zero, 0)"
+            >
+              <Flex justify="space-between" gap="md" align="start">
+                <Box minW="var(--atlas-layout-zero, 0)">
+                  <Text color="fg.muted" textStyle="helper" mb="xs">
+                    {selected.document_number ?? "Bản nháp · Chưa cấp số đơn"}
+                  </Text>
+                  <Heading
+                    as="h2"
+                    ref={heading}
+                    tabIndex={-1}
+                    textStyle="section"
+                    overflowWrap="anywhere"
+                  >
+                    {selected.supplier.supplier_name}
+                  </Heading>
+                  <Text color="fg.muted" textStyle="helper" mt="xs">
+                    Ngày dùng {dateLabel(selected.service_date)} ·{" "}
+                    {stateLabel[selected.commitment_state]}
+                  </Text>
+                </Box>
+                <Button
+                  variant="tertiary"
+                  flexShrink="var(--atlas-layout-zero, 0)"
+                  onClick={() => {
+                    setSelectedId(null);
+                    const origin = trigger.current?.isConnected
+                      ? trigger.current
+                      : railButtons.current.get(selected.purchase_order_id);
+                    origin?.focus();
+                  }}
+                >
+                  Đóng
+                </Button>
+              </Flex>
+              <Flex mt="sm" gap="sm" wrap="wrap">
+                {primary && (
+                  <Button
+                    variant="businessPrimary"
+                    disabled={disabled || !allowed}
+                    onClick={() => onAction(selected)}
+                  >
+                    {primary}
+                  </Button>
+                )}
+                {exportReady && (
+                  <Flex
+                    role="group"
+                    aria-label="Xuất đơn mua đang xem"
+                    gap="xs"
+                    wrap="wrap"
+                  >
+                    {onExportXlsx && (
+                      <Button
+                        variant="secondary"
+                        disabled={disabled || exporting}
+                        onClick={() => void exportOrder(onExportXlsx)}
+                      >
+                        Xuất XLSX
+                      </Button>
+                    )}
+                    {onExportPdf && (
+                      <Button
+                        variant="secondary"
+                        disabled={disabled || exporting}
+                        onClick={() => void exportOrder(onExportPdf)}
+                      >
+                        Xuất PDF
+                      </Button>
+                    )}
+                  </Flex>
+                )}
+              </Flex>
             </Box>
             <Stack
               gap="sm"
-              px="md"
+              px={{ base: "md", xl: "lg" }}
               pb="md"
-              overflowY="auto"
+              overflowY={{ lg: "auto" }}
               minH="var(--atlas-layout-zero, 0)"
               flex="1"
             >
@@ -427,31 +510,83 @@ export function ProcurementOrdersStage({
                   ⚠ {message}
                 </Text>
               ))}
+              {selected.lines.some((line) => !line.school_breakdown.length) && (
+                <Text color="fg.muted" textStyle="helper">
+                  Chưa có chi tiết trường nhận để đối chiếu cho một số dòng.
+                  Điểm giao không thay thế thông tin trường nhận.
+                </Text>
+              )}
+              <Heading as="h3" textStyle="body" fontWeight="semibold" pt="sm">
+                Nguyên liệu và nơi nhận
+              </Heading>
               <Stack
-                display={{ base: "flex", "2xl": "none" }}
-                gap="sm"
+                gap="var(--atlas-layout-zero, 0)"
                 aria-label="Dòng đơn mua"
               >
                 {selected.lines.map((line) => (
                   <Box
+                    as="section"
                     key={line.purchase_order_line_revision_id}
-                    bg="bg.workbench"
-                    borderWidth="var(--atlas-layout-edge, 1px)"
+                    py="md"
+                    borderTopWidth="var(--atlas-layout-edge, 1px)"
                     borderColor="border.subtle"
-                    borderRadius="control"
-                    p="sm"
                     minW="var(--atlas-layout-zero, 0)"
                   >
-                    <Text fontWeight="semibold">
-                      {line.ingredient.ingredient_name}
-                    </Text>
-                    <Text textStyle="helper" color="fg.muted">
-                      {line.delivery_location.location_name} ·{" "}
-                      {quantity(line.ordered_quantity)} {line.unit.unit_code}
-                    </Text>
+                    <Grid
+                      templateColumns={{
+                        base: "minmax(0, 1fr)",
+                        xl: "minmax(150px, .7fr) minmax(0, 1.3fr)",
+                      }}
+                      gap={{ base: "sm", xl: "lg" }}
+                      maxW="var(--atlas-orders-document-width, 1100px)"
+                    >
+                      <Box>
+                        <Text fontWeight="semibold">
+                          {line.ingredient.ingredient_name}
+                        </Text>
+                        <Text
+                          mt="xs"
+                          fontVariantNumeric="tabular-nums"
+                          fontWeight="semibold"
+                        >
+                          {quantity(line.ordered_quantity)}{" "}
+                          {line.unit.unit_code}
+                        </Text>
+                        <Text mt="xs" textStyle="helper" color="fg.muted">
+                          Điểm giao: {line.delivery_location.location_name}
+                        </Text>
+                      </Box>
+                      <Stack gap="sm">
+                        {line.school_breakdown.map((school) => (
+                          <Flex
+                            key={`${school.school_id}:${school.delivery_location_id}`}
+                            justify="space-between"
+                            align="start"
+                            gap="md"
+                          >
+                            <Box minW="var(--atlas-layout-zero, 0)">
+                              <Text>{school.school_name}</Text>
+                              <Text textStyle="helper" color="fg.muted">
+                                {school.delivery_location_name}
+                              </Text>
+                            </Box>
+                            <Text
+                              whiteSpace="nowrap"
+                              fontVariantNumeric="tabular-nums"
+                            >
+                              {quantity(school.ordered_quantity)}{" "}
+                              {line.unit.unit_code}
+                            </Text>
+                          </Flex>
+                        ))}
+                      </Stack>
+                    </Grid>
                     {line.supplier_note && (
                       <Text
-                        mt="xs"
+                        mt="sm"
+                        textStyle="helper"
+                        bg="bg.toolbar"
+                        p="sm"
                         whiteSpace="pre-wrap"
                         overflowWrap="anywhere"
                       >
@@ -464,109 +599,14 @@ export function ProcurementOrdersStage({
                   </Box>
                 ))}
               </Stack>
-              <Table.ScrollArea display={{ base: "none", "2xl": "block" }}>
-                <Table.Root
-                  aria-label={`Dòng đơn mua ${selected.supplier.supplier_name}`}
-                  size="sm"
-                  minW="var(--atlas-orders-detail-min-width, 650px)"
-                >
-                  <Table.ColumnGroup>
-                    <Table.Column w="var(--atlas-orders-ingredient-width, 140px)" />
-                    <Table.Column w="var(--atlas-orders-location-width, 130px)" />
-                    <Table.Column w="var(--atlas-orders-quantity-width, 90px)" />
-                    <Table.Column w="var(--atlas-orders-unit-width, 60px)" />
-                    <Table.Column w="var(--atlas-orders-note-width, 230px)" />
-                  </Table.ColumnGroup>
-                  <Table.Header>
-                    <Table.Row>
-                      {[
-                        "Nguyên liệu",
-                        "Điểm giao",
-                        "Số lượng",
-                        "Đơn vị",
-                        "Ghi chú",
-                      ].map((label) => (
-                        <Table.ColumnHeader key={label}>
-                          {label}
-                        </Table.ColumnHeader>
-                      ))}
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {selected.lines.map((line) => (
-                      <Table.Row key={line.purchase_order_line_revision_id}>
-                        <Table.Cell>
-                          {line.ingredient.ingredient_name}
-                        </Table.Cell>
-                        <Table.Cell>
-                          {line.delivery_location.location_name}
-                        </Table.Cell>
-                        <Table.Cell textAlign="end" whiteSpace="nowrap">
-                          {quantity(line.ordered_quantity)}
-                        </Table.Cell>
-                        <Table.Cell>{line.unit.unit_code}</Table.Cell>
-                        <Table.Cell
-                          whiteSpace="pre-wrap"
-                          overflowWrap="anywhere"
-                        >
-                          {line.supplier_note ?? ""}
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table.Root>
-              </Table.ScrollArea>
             </Stack>
-            <Flex
-              p="md"
-              gap="sm"
-              wrap="wrap"
-              justify="space-between"
-              borderTopWidth="var(--atlas-layout-edge, 1px)"
-              borderColor="border.subtle"
-              flexShrink="0"
-            >
-              <Button
-                onClick={() => {
-                  setSelectedId(null);
-                  trigger.current?.focus();
-                }}
-              >
-                Đóng
-              </Button>
-              {primary && (
-                <Button
-                  variant="businessPrimary"
-                  disabled={disabled || !allowed}
-                  onClick={() => onAction(selected)}
-                >
-                  {primary}
-                </Button>
-              )}
-              {exportReady && (
-                <Flex gap="xs">
-                  {onExportXlsx && (
-                    <Button
-                      variant="secondary"
-                      disabled={disabled || exporting}
-                      onClick={() => void exportOrder(onExportXlsx)}
-                    >
-                      Xuất Excel
-                    </Button>
-                  )}
-                  {onExportPdf && (
-                    <Button
-                      variant="secondary"
-                      disabled={disabled || exporting}
-                      onClick={() => void exportOrder(onExportPdf)}
-                    >
-                      Xuất PDF
-                    </Button>
-                  )}
-                </Flex>
-              )}
-            </Flex>
           </Flex>
+        ) : (
+          <Text p="lg" color="fg.muted">
+            {visible.length
+              ? "Chọn một đơn mua để xem nội dung và thao tác."
+              : "Các đơn đã phát hành vẫn được giữ trong lịch sử. Kiểm tra phạm vi ngày hoặc tìm kiếm; chưa có đơn không có nghĩa là nhu cầu bằng không."}
+          </Text>
         )}
       </Grid>
     </Box>

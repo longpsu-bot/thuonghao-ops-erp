@@ -322,9 +322,13 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
         </Text>
         {(props.onExportGroupedXlsx || props.onExportZip) && (
           <AtlasWorkbar
-            aria-label="Xuất phiếu trong phạm vi đã tải"
+            aria-label="Xuất phiếu đã tải"
             justifyContent="flex-end"
           >
+            <Text textStyle="helper" color="fg.muted" w="full">
+              Xuất các phiếu đủ điều kiện trong dữ liệu đã tải, không giới hạn
+              theo tìm kiếm.
+            </Text>
             {props.onExportZip && (
               <Field.Root
                 w={{
@@ -356,7 +360,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
                   }
                   onClick={() => void exportLoaded(false)}
                 >
-                  Xuất Excel · phạm vi đã tải
+                  Xuất XLSX
                 </Button>
               )}
               {props.onExportZip && (
@@ -366,7 +370,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
                   disabled={!c.canExportLoaded || !releasedDocuments.length}
                   onClick={() => void exportLoaded(true)}
                 >
-                  Xuất ZIP · phạm vi đã tải
+                  Xuất ZIP
                 </Button>
               )}
             </AtlasWorkbarActions>

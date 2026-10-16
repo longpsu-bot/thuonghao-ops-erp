@@ -1,0 +1,139 @@
+{
+  "task": "ATLAS-UI392-CI-REPAIR-01",
+  "status": "SCHOOL_FOLLOWUP_LOCAL_PASS_NORMAL_CI_PENDING",
+  "base_head": "0880db42666649dceb3698b1590af026ced5a5c0",
+  "authorization": "Explicit Owner thread exception: Task A only while recovery-policy PR393 stays Draft/unmerged. No policy merge/adoption or Task B activation.",
+  "runtime_changes": true,
+  "SQL_migration_sha256": "fae0c8c6248354652ee16f224162157958568c8ab15ce1cccf0fae77653e5758",
+  "passing_seams": {
+    "registry": "Actual pnpm certification entry retained; focused oracle PASS.",
+    "owner_navigation": "Tab aria-controls links exact labelled visible panel; selected state/canonical heading retained.",
+    "Need_to_allocation": "Exact selected date, no Need Save or Preparation; focused PASS.",
+    "date_propagation": "Planning through Need/Allocation/PXK/Reconciliation focused PASS.",
+    "PXK": "Both immediate and focus-settled Cancel PASS; actual closed/native exit/remounted date trigger/focus/date/note assertions retained.",
+    "focused_passes": 6,
+    "qualification": "Six cases passed in repair1 focused source image. School block subsequently restored only; no additional School run or full-suite claim on preservation head."
+  },
+  "Pantry": {
+    "database": "atlas_pantry_v4_forward_02",
+    "existing_runtime_fae_image_exact": true,
+    "exit_code": 0,
+    "plans": ["38"],
+    "passed": 38,
+    "exact38": true,
+    "failed": [],
+    "source_sha256": "85cf07266af28a2220dcf1895da8f9c017ba133d8d78eda61695f40e666fcb02",
+    "log_sha256": "a847b7bacfe005ec19c41af180b426092096d8ac8fb4604ab67ac2b9ec90abf3",
+    "global_schema_images_equal": true,
+    "functions_unchanged": true,
+    "before": {
+      "runs": 0,
+      "actors": 0,
+      "batches": 0,
+      "receipts": 0,
+      "authenticated_extensions_usage": false
+    },
+    "after": {
+      "runs": 0,
+      "actors": 0,
+      "batches": 0,
+      "receipts": 0,
+      "authenticated_extensions_usage": false
+    }
+  },
+  "School_stop": {
+    "runtime_hang_proven": false,
+    "test_budget_ms": 5000,
+    "repair1": "Scoped controls plus observed native exit; aggregate timeout5252ms.",
+    "diagnostic": "ready1759ms; beforeSignOut4594ms; afterSignOut4689ms; firstClose4937ms; timeout5290ms.",
+    "repair2": "Real Close of untouched initial Menu local to School case; exact tab linkage corrected after distinct hidden-name precondition failure; same-root timeout6274ms.",
+    "disposition": "Rejected isolation strategy preserved locally; restore only School-specific block exactly to0880. Passing global nav/Need/PXK/registry/UUID changes retained.",
+    "restored_block_sha256": "c5a5bc3d8c190a7e1c7603a6fec8c643eba4daa3c444864d87c4b7af1cd3815f",
+    "minimal_reproduction": "\"C:/Program Files/nodejs/node.exe\" node_modules/vitest/vitest.mjs run src/vnext/atlas/AtlasVNextApp.test.tsx -t \"blocks dirty sign-out\" --maxWorkers=1 --no-file-parallelism --exclude \"**/.superpowers/**\" --reporter=verbose",
+    "next_decision": "Further bounded School-only harness diagnosis versus an explicit test-only budget decision. No change to operational8s/20s/1s/disclosed nested5s limits. No third strategy/run authorized.",
+    "superseded_by": "Explicit Owner School-only follow-up from50005ac8; prior failures preserved, not erased."
+  },
+  "environment": "Installed Node24.18.0 matches repo; direct installed Vitest4.1.10/default fork executes. Initial UI imports are slow; no alternate pool/install/config change. PATH pnpm fallback11.25.0 differs packageManager11.7.0, so direct Node CLI used.",
+  "preserved_raw_evidence_sha256": {
+    "atlas-ui392-taskA-registry-red.log": "088b199ab7b793f0d5df5289cb4eb576fbc4d88a30bc117bd18b9756df136629",
+    "atlas-ui392-taskA-interactions-red.log": "fbd2640358e0d32a4fd0c687c0bd687bbd5658d9e63c8a31631be195e867f647",
+    "atlas-ui392-taskA-focused-green1.log": "df89640445fd86e41da882ea975fed401e2aa4602484e8522f569eaccddd2890",
+    "atlas-ui392-taskA-school-remaining-phase.log": "5085d6123218cf26bed46283f9fc0aeba21facefaa531bb10fdce0946588a295",
+    "atlas-ui392-taskA-school-repair2.log": "8ef46a19b63878346977155ae6a4864a36991f6e61a50ce17d6a2e6b6c50d5a4",
+    "atlas-ui392-taskA-school-repair2-linked.log": "1a4d090b15008e9b50fe866532767adb631efb5589f07f9268c3227f1ce8596f",
+    "atlas-ui392-taskA-pantry38.log": "a847b7bacfe005ec19c41af180b426092096d8ac8fb4604ab67ac2b9ec90abf3",
+    "atlas-ui392-taskA-rejected-School-repair2.tsx": "81e5b3db1e5498f2d333b590f186075ce2a20108c8c81eaa385ca99f116760e1",
+    "atlas-ui392-taskA-rejected-App-full-diff.patch": "af6aa4fe645d50156192b4349232b91904b6fe1e397fde93e86f8e5c1cf7bada",
+    "atlas-ui392-taskA-rejected-App-full-source.tsx": "49baa3530dac349a1dc90fb4ba73ea4d7ea5bdd51b50e5f011b82e2acd11541a"
+  },
+  "boundaries": "392 remains Draft; no ready/merge/deploy.388 exact11cda965 untouched/no commands.385-387/Warehouse parked; hosted read-only/OPSv1Retool no-write. Normal publication CI is verification, not a third local strategy or auto-promotion.",
+  "unresolved_operational_focus_risk": {
+    "classification": "Application/runtime UI focus gap; separate from unlocalized 5s test budget, no causal attribution.",
+    "viewport": 390,
+    "observation": "Root actual DOM: dirty School Cancel preserves283 and removes dialog but final focus is BODY; desktop returns to Close. Both dirty School/PXK signout guards retain values. No data/permission failure observed.",
+    "source_trace": "Mobile shell chooser closes/unmounts ephemeral Close control before owner onClose; SchoolDefaultsExitDialog has initialFocus but no finalFocus/persistent fallback; App fallback runs for approved closure, not Cancel.",
+    "status": "UNRESOLVED; not repaired/retested under School STOP; no Product release-readiness claim.",
+    "screenshot_limit": "Capture tool BLOCKED; browser DOM observations remain valid. No all-browser-PASS or screenshot proof claim.",
+    "superseded_by": "School_followup: Root confirms persistent chooser focus after natural mobile Cancel; desktop retained."
+  },
+  "previous_checkpoint_status": "PARTIAL_REPAIR_BLOCKED_SCHOOL_STOP",
+  "School_followup": {
+    "base_head": "50005ac8ebf64b776baa5977f06a8fb708899db9",
+    "authorization": "Explicit Owner School-only continuation; PR393 Draft/unmerged; no policy adoption/TaskB.",
+    "runtime_delta": "Exactly one mobile Shell closeMenu(false) -> closeMenu() call before unchanged owner onClose; no guard/model/API/SQL changes.",
+    "root_cause_limits": "Measured aggregate test query/visibility/native-exit cost; not an application hang or proof that earlier coarse2.8s was a single rerender.",
+    "diagnostic_ms": {
+      "school_ready": 2062,
+      "redundant_field_role_query": 438,
+      "change_rerender": 213,
+      "signout": 100,
+      "retained_assertions": 270,
+      "first_close_lookup": 14,
+      "first_close_click": 203,
+      "cancel_and_assertions": 1019,
+      "second_lookup": 298,
+      "second_click": 198,
+      "owner_removed_elapsed": 5615
+    },
+    "initial_red": "School unchanged5s timeout5614ms; minimal Shell origin regression fails: captured ephemeral Close instead of persistent chooser.",
+    "repair1": "Focus regression PASS; School test-source scope error: dirty-signout alert button wrongly looked up in tabstrip. No timeout result or runtime failure inferred.",
+    "repair2": {
+      "exit_code": 0,
+      "passed": 2,
+      "School_ms": 3640,
+      "focus_regression_ms": 313,
+      "test_budget_ms": 5000
+    },
+    "assertions": "Entire blocked signout, retained value, Cancel, actual dialog removal, second Close/explicit Discard, owner removal, final signout retained; initial Menu stays mounted; hidden queries have explicit visibility assertions.",
+    "native_exit": "Observe actual data-state closed; existing house animationcancel event; assert actual removal before next Close. No callback bypass/sleep/final focus forcing.",
+    "affected_suite": {
+      "exit_code": 0,
+      "files": 2,
+      "passed": 44,
+      "School_ms": 3891,
+      "focus_regression_ms": 70,
+      "wall_seconds": 120.18,
+      "tests_seconds": 97.68,
+      "imports_seconds": 18.75,
+      "qualification": "Nearest two affected files only; not full local certification."
+    },
+    "static": {
+      "typescript": "PASS",
+      "ui_boundary": "PASS",
+      "format": "PASS after final changed-file check"
+    },
+    "review": "Terra independent source/contract PASS; Root real browser390/1366 PASS; no tests executed by Terra.",
+    "browser_json_sha256": "5ac424a8f3873be73bccb2d2eacce9d4049908f81b4f4e4c742c789706edd59b",
+    "screenshot_limit": "Browser capture CDP times out; DOM interactions valid, no screenshot/all-state claim.",
+    "evidence_sha256": {
+      "atlas-ui392-school-followup-diagnosis-red.log": "5d528ad7045c0523a2064e870a853c91d7e9f8e62b7ffd120910a03dc647c18d",
+      "atlas-ui392-school-followup-repair1.log": "e206e4329e862ef26a8a3a9836e8dd5018ce87ecd9c893f2d44aef572042c0e6",
+      "atlas-ui392-school-followup-repair2.log": "32ba2fb1ea71db624fc43d6d6a982a276ee316213477e02efc1825c47dfcf8df",
+      "atlas-ui392-school-followup-nearest.log": "3f4dbe3e68508e59878b63b2781e09d0a21f181de634183ae5a9f262ade49330"
+    },
+    "production_source_sha256": "95605c4e4108162f426cf6a41a02476e3857d3a9197afe0c3a206d90fec8a48b",
+    "normal_CI": "Required automatic exact-head verification after reviewed push; no manual dispatch/retry or readiness claim before outcomes.",
+    "stop": "At most two same-root fresh repairs; correction complete, no further optimization/test strategy. TaskB388/no merge/deploy/Warehouse/parked drafts remain inactive.",
+    "original_browser_json_sha256": "bbeadf6343972a34a4ac3507929207a51418565fcf17635c85f07d4ac7bea4c2"
+  }
+}

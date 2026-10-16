@@ -83,9 +83,14 @@ export function IngredientSupplierWorkbench({
             : "Ưu tiên nhà cung ứng"
           : null;
   const rowTrigger = useRef<HTMLButtonElement | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   const wasDetailOpen = useRef(false);
   useEffect(() => {
-    if (wasDetailOpen.current && !detailOpen) rowTrigger.current?.focus();
+    if (wasDetailOpen.current && !detailOpen) {
+      const trigger = rowTrigger.current;
+      if (trigger?.isConnected && !trigger.disabled) trigger.focus();
+      else heading.current?.focus();
+    }
     wasDetailOpen.current = detailOpen;
   }, [detailOpen]);
   const statusLabel = {
@@ -121,6 +126,7 @@ export function IngredientSupplierWorkbench({
     >
       <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
         <AtlasTaskContext
+          headingRef={heading}
           ariaLabel="Ngữ cảnh công việc dữ liệu gốc"
           moduleLabel={label}
           jobLabel={c.job === "ingredients" ? "Nguyên liệu" : "Nhà cung ứng"}
@@ -178,7 +184,13 @@ export function IngredientSupplierWorkbench({
                   }}
                 />
               ) : (
-                <SupplierToolbar c={c} />
+                <SupplierToolbar
+                  c={c}
+                  onCreate={(trigger) => {
+                    rowTrigger.current = trigger;
+                    c.requestSupplier("NEW");
+                  }}
+                />
               )}
               {(c.notice || c.error) && (
                 <Box
@@ -219,7 +231,7 @@ export function IngredientSupplierWorkbench({
                 style={
                   {
                     "--atlas-master-detail-columns":
-                      "minmax(0, 62fr) minmax(320px, 38fr)",
+                      "minmax(0, 1fr) minmax(360px, 420px)",
                   } as CSSProperties
                 }
                 mt="sm"
@@ -234,8 +246,8 @@ export function IngredientSupplierWorkbench({
                 {c.job === "ingredients" ? (
                   <IngredientCatalogue
                     ingredients={c.visibleIngredients}
-                    totalCount={c.ingredients.length}
-                    countUnavailable={Boolean(c.error)}
+                    countUnavailable={Boolean(c.error) || c.loading}
+                    detailOpen={detailOpen}
                     selectedId={c.selectedIngredient?.ingredient_id}
                     onSelect={(id, trigger) => {
                       rowTrigger.current = trigger;
@@ -245,8 +257,13 @@ export function IngredientSupplierWorkbench({
                 ) : (
                   <SupplierCatalogue
                     suppliers={c.visibleSuppliers}
+                    unavailable={Boolean(c.error) || c.loading}
+                    detailOpen={detailOpen}
                     selectedId={c.selectedSupplier?.supplier_id}
-                    onSelect={c.requestSupplier}
+                    onSelect={(id, trigger) => {
+                      rowTrigger.current = trigger;
+                      c.requestSupplier(id);
+                    }}
                   />
                 )}
                 {detailLabel && (
@@ -417,8 +434,10 @@ function IngredientToolbar({
 }
 function SupplierToolbar({
   c,
+  onCreate,
 }: {
   c: ReturnType<typeof useIngredientSupplierWorkbench>;
+  onCreate: (trigger: HTMLButtonElement) => void;
 }) {
   return (
     <AtlasWorkbar
@@ -456,7 +475,7 @@ function SupplierToolbar({
             c.activeSurface || c.review ? "secondary" : "businessPrimary"
           }
           disabled={Boolean(c.lock)}
-          onClick={() => c.requestSupplier("NEW")}
+          onClick={(event) => onCreate(event.currentTarget)}
         >
           Tạo nhà cung ứng
         </Button>

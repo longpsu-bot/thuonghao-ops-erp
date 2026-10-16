@@ -63,6 +63,38 @@ const openFilters = () => {
     fireEvent.click(disclosure);
 };
 describe("Procurement vNext operator workbench", () => {
+  it("does not represent initial read failure as successful zero allocations", async () => {
+    show("read_failure");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Không tải được dữ liệu hiện tại",
+    );
+    expect(screen.queryByText(/Cần xử lý/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Không có nguyên liệu phù hợp trong phạm vi này."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tải lại dữ liệu hiện tại" }),
+    ).toBeEnabled();
+  });
+  it("keeps successful empty and local filtered-empty allocation states distinct from unavailable data", async () => {
+    const first = show("empty");
+    await waitFor(() => expect(first.read).toHaveBeenCalledOnce());
+    expect(await screen.findByText(/Cần xử lý 0/)).toHaveTextContent("Đã đủ 0");
+    expect(
+      screen.getByText("Không có nguyên liệu phù hợp trong phạm vi này."),
+    ).toBeVisible();
+    first.unmount();
+    show();
+    await action();
+    openFilters();
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "không khớp" },
+    });
+    expect(
+      screen.getByText("Không có nguyên liệu phù hợp trong phạm vi này."),
+    ).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
   it("opens and closes a clean derived default without any business command", async () => {
     const { fixture, save, read } = show();
     const prepare = vi.spyOn(
@@ -183,7 +215,7 @@ describe("Procurement vNext operator workbench", () => {
     );
     openFilters();
     fireEvent.click(
-      await screen.findByRole("button", { name: "Xem đơn NCC An Phú" }),
+      await screen.findByRole("button", { name: /^Xem đơn NCC An Phú/ }),
     );
     fireEvent.click(
       screen.getByRole("button", { name: "Mở lịch — Khoảng ngày dùng" }),
@@ -200,7 +232,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(
       screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất XLSX" }));
     expect(xlsx).toHaveBeenCalledWith(fixture.orders.purchase_orders[0], "all");
   });
   it("aggregates selected Supplier draft status and reports retained date/stage context", async () => {
@@ -281,7 +313,7 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("procurement-master-detail")).toHaveStyle({
-      "--atlas-attached-detail-width": "390px",
+      "--atlas-allocation-directory-width": "340px",
     });
   });
 
@@ -719,12 +751,9 @@ describe("Procurement vNext operator workbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-procurement-table-min, 1050px)",
+      minWidth: "var(--atlas-layout-zero, 0)",
       width: "100%",
       tableLayout: "fixed",
-      "--atlas-table-header-height": "38px",
-      "--atlas-table-row-height": "46px",
-      "--atlas-table-identity-width": "200px",
     });
     expect(
       within(table)

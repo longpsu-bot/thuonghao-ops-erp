@@ -121,7 +121,7 @@ describe("Planning sources Chakra workbench", () => {
     );
     expect(
       await screen.findByText(
-        "Chưa có mục đích đặt hàng đang dùng. Liên hệ người quản lý danh mục.",
+        "Chưa có phân loại nhập trực tiếp. Liên hệ người quản lý danh mục.",
       ),
     ).toBeVisible();
     expect(
@@ -1195,47 +1195,27 @@ it("keeps OPTIONAL Pantry notes optional", async () => {
   expect(screen.queryByText(/Nhập lý do/)).not.toBeInTheDocument();
 });
 
-it("labels REQUIRED Pantry content as a required reason", async () => {
-  await renderPantryNoteRule("REQUIRED", "");
-  const input = await screen.findByRole("textbox", { name: "Lý do dòng 1" });
-  expect(input).toBeRequired();
-  expect(input).toHaveAttribute("aria-invalid", "true");
-  await waitFor(() =>
-    expect(input).toHaveAccessibleErrorMessage("Nhập lý do cho mục đích này."),
-  );
-  expect(
-    input.closest("tr")!.querySelectorAll("[data-pantry-feedback]"),
-  ).toHaveLength(6);
-  fireEvent.change(screen.getByRole("textbox", { name: "Số lượng dòng 1" }), {
-    target: { value: "25.7" },
-  });
-  expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
-});
-
-it("disables an empty PROHIBITED Pantry note with neutral guidance", async () => {
-  await renderPantryNoteRule("PROHIBITED", "");
-  expect(
-    await screen.findByRole("textbox", { name: "Ghi chú dòng 1" }),
-  ).toBeDisabled();
-  expect(screen.getByText("Không áp dụng cho mục đích này.")).toBeVisible();
-});
-
-it("keeps existing PROHIBITED note content editable until explicitly cleared", async () => {
-  await renderPantryNoteRule("PROHIBITED", "Nội dung cần xóa");
-  const input = await screen.findByRole("textbox", {
-    name: "Ghi chú dòng 1",
-  });
-  expect(input).toBeEnabled();
-  expect(input).toHaveValue("Nội dung cần xóa");
-  await waitFor(() =>
-    expect(input).toHaveAccessibleErrorMessage(
-      "Mục đích này không cho phép ghi chú.",
-    ),
-  );
-  fireEvent.change(input, { target: { value: "" } });
-  expect(input).toBeDisabled();
-  expect(screen.getByText("Không áp dụng cho mục đích này.")).toBeVisible();
-});
+it.each(["REQUIRED", "PROHIBITED"] as const)(
+  "uses optional v4 notes even when historical Purpose was %s",
+  async (rule) => {
+    await renderPantryNoteRule(rule, "Nội dung giữ lại");
+    const input = await screen.findByRole("textbox", {
+      name: "Ghi chú dòng 1",
+    });
+    expect(input).not.toBeRequired();
+    expect(input).toBeEnabled();
+    expect(input).toHaveValue("Nội dung giữ lại");
+    expect(
+      screen.queryByRole("combobox", { name: /Mục đích/ }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(input, { target: { value: "" } });
+    expect(input).toBeEnabled();
+    fireEvent.change(screen.getByRole("textbox", { name: "Số lượng dòng 1" }), {
+      target: { value: "25.7" },
+    });
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
+  },
+);
 
 it.each([
   [stale, "Tải lại dữ liệu hiện tại"],

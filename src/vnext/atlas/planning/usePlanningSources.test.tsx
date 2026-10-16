@@ -453,7 +453,7 @@ describe("Planning source safety", () => {
     expect(result.current.attendanceRows[0].student_portions).toBe("100");
     expect(result.current.dirty).toBe(false);
   });
-  it("saves exact Pantry quantities and one School/date mode through v3", async () => {
+  it("saves and reads back exact Pantry quantities and one School/date mode through v4", async () => {
     const { result, fixture } = await setup();
     const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
     const preview = vi.spyOn(fixture.pantryApi, "preview");
@@ -482,7 +482,7 @@ describe("Planning source safety", () => {
     expect(preview).toHaveBeenCalled();
     expect(save).toHaveBeenCalledWith(
       expect.objectContaining({
-        contract_version: "PANTRY-02.v3",
+        contract_version: "PANTRY-02.v4",
         payload: expect.objectContaining({
           no_additions_confirmed: false,
           rows: expect.arrayContaining([
@@ -498,7 +498,21 @@ describe("Planning source safety", () => {
         }),
       }),
     );
-    expect(result.current.pantryRows).toEqual([]);
+    expect(result.current.pantryRows).toHaveLength(1);
+    expect(result.current.pantryRows[0]).toMatchObject({
+      school_id: "school-0",
+      service_date: reviewWeek,
+      ingredient_id: "ingredient-1",
+      requested_quantity: "123456789.123456",
+      note: "Bữa phụ",
+    });
+    expect(result.current.modes).toEqual([
+      {
+        school_id: "school-0",
+        service_date: reviewWeek,
+        direct_need_mode: "COMPLETE",
+      },
+    ]);
     expect(result.current.dirty).toBe(false);
   });
   it.each(["attendance", "pantry"])(

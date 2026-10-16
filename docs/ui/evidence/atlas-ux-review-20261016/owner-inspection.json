@@ -1,0 +1,235 @@
+[
+  {
+    "owner": "Thực đơn",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn"
+    ],
+    "width": 1366,
+    "alerts": []
+  },
+  {
+    "owner": "Sĩ số",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số"
+    ],
+    "width": 1366,
+    "alerts": []
+  },
+  {
+    "owner": "Hàng đặt riêng",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng"
+    ],
+    "width": 1366,
+    "alerts": [
+      "      - paragraph: Chưa có hàng đặt riêng trong ngày này. Chưa xác nhận cả tuần không có hàng đặt riêng."
+    ]
+  },
+  {
+    "owner": "Xác nhận nhu cầu",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu"
+    ],
+    "width": 1366,
+    "alerts": []
+  },
+  {
+    "owner": "Phân bổ NCC",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu",
+      "Phân bổ NCC"
+    ],
+    "width": 1366,
+    "alerts": [
+      "          - option \"Chưa phân bổ\""
+    ]
+  },
+  {
+    "owner": "Đơn mua",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu",
+      "Phân bổ NCC",
+      "Đơn mua",
+      "NCC An Phú"
+    ],
+    "width": 1366,
+    "alerts": [
+      "            - paragraph: Chưa cấp số đơn",
+      "          - paragraph: Bản nháp · Chưa cấp số đơn",
+      "          - paragraph: Chưa có chi tiết trường nhận để đối chiếu cho một số dòng. Điểm giao không thay thế thông tin trường nhận."
+    ]
+  },
+  {
+    "owner": "Phiếu xuất kho",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu",
+      "Phân bổ NCC",
+      "Đơn mua",
+      "NCC An Phú",
+      "Phiếu xuất kho"
+    ],
+    "width": 1366,
+    "alerts": [
+      "            - row \"Trường Tiểu học Nguyễn Du Bếp chính · 07/09/2026 3 nguyên liệu Chưa phát hành Cần phát hành Phát hành\":",
+      "              - cell \"Chưa phát hành\":",
+      "                - paragraph: Chưa phát hành"
+    ]
+  },
+  {
+    "owner": "Đối chiếu PO / Phiếu xuất kho",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu",
+      "Phân bổ NCC",
+      "Đơn mua",
+      "NCC An Phú",
+      "Phiếu xuất kho",
+      "Đối chiếu PO / Phiếu xuất kho"
+    ],
+    "width": 1366,
+    "alerts": [
+      "          - option \"Chưa có PO\"",
+      "          - option \"Chưa có PXK\""
+    ]
+  },
+  {
+    "owner": "Nguyên liệu",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu",
+      "Phân bổ NCC",
+      "Đơn mua",
+      "NCC An Phú",
+      "Phiếu xuất kho",
+      "Đối chiếu PO / Phiếu xuất kho",
+      "Nguyên liệu"
+    ],
+    "width": 1366,
+    "alerts": [
+      "              - row \"Nguyên liệu sơ chế 356 Đang dùng Gói Thịt cá Hàng ngày 1 Chưa có Xem / sửa Nguyên liệu sơ chế 356\":",
+      "                - cell \"Chưa có\":",
+      "                  - paragraph: Chưa có",
+      "              - row \"Nguyên liệu sơ chế 358 Đang dùng Kilôgam Rau củ Hàng ngày 0,5 Chưa có Xem / sửa Nguyên liệu sơ chế 358\":",
+      "                - cell \"Chưa có\":",
+      "                  - paragraph: Chưa có",
+      "              - row \"Nguyên liệu sơ chế 359 Đang dùng Gói Thịt cá Hàng đặt trước 1 Chưa có Xem / sửa Nguyên liệu sơ chế 359\":",
+      "                - cell \"Chưa có\":",
+      "                  - paragraph: Chưa có",
+      "              - row \"Nguyên liệu sơ chế 360 Đang dùng Gói Thực phẩm khô Hàng ngày 2,5 Chưa có Xem / sửa Nguyên liệu sơ chế 360\":",
+      "                - cell \"Chưa có\":",
+      "                  - paragraph: Chưa có"
+    ]
+  },
+  {
+    "owner": "Nhà cung ứng",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu",
+      "Phân bổ NCC",
+      "Đơn mua",
+      "NCC An Phú",
+      "Phiếu xuất kho",
+      "Đối chiếu PO / Phiếu xuất kho",
+      "Nguyên liệu",
+      "Nhà cung ứng"
+    ],
+    "width": 1366,
+    "alerts": []
+  },
+  {
+    "owner": "Công thức",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu",
+      "Phân bổ NCC",
+      "Đơn mua",
+      "NCC An Phú",
+      "Phiếu xuất kho",
+      "Đối chiếu PO / Phiếu xuất kho",
+      "Nguyên liệu",
+      "Nhà cung ứng",
+      "Công thức"
+    ],
+    "width": 1366,
+    "alerts": []
+  },
+  {
+    "owner": "Lệnh điều chỉnh",
+    "docHeight": 768,
+    "docWidth": 1366,
+    "headings": [
+      "Sĩ số mặc định",
+      "Thực đơn",
+      "Sĩ số",
+      "Hàng đặt riêng",
+      "Xác nhận nhu cầu",
+      "Phân bổ NCC",
+      "Đơn mua",
+      "NCC An Phú",
+      "Phiếu xuất kho",
+      "Đối chiếu PO / Phiếu xuất kho",
+      "Nguyên liệu",
+      "Nhà cung ứng",
+      "Công thức",
+      "Lệnh điều chỉnh"
+    ],
+    "width": 1366,
+    "alerts": []
+  }
+]

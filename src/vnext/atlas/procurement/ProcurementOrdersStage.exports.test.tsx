@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
@@ -12,6 +13,10 @@ import { ProcurementOrdersStage } from "./ProcurementOrdersStage";
 import { reviewOrder, reviewDate } from "./procurementReviewFixtures";
 
 afterEach(cleanup);
+const bulk = () =>
+  within(screen.getByRole("group", { name: "Xuất đơn mua đã tải" }));
+const selectedExports = () =>
+  within(screen.getByRole("region", { name: /^Chi tiết đơn mua/ }));
 describe("loaded PO presentation exports", () => {
   const data = () => ({
     success: true as const,
@@ -22,6 +27,79 @@ describe("loaded PO presentation exports", () => {
     procurement_current: true,
     warnings: [],
     blockers: [],
+  });
+  it.each(["all", "details_ing", "details_school", "sum"] as const)(
+    "sends %s mode to the actual PDF ZIP callback",
+    async (mode) => {
+      const orders = data(),
+        zip = vi.fn();
+      render(
+        <AtlasVNextProvider>
+          <ProcurementOrdersStage
+            data={orders}
+            disabled={false}
+            search=""
+            onAction={vi.fn()}
+            onExportZip={zip}
+          />
+        </AtlasVNextProvider>,
+      );
+      fireEvent.change(
+        screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
+        { target: { value: mode } },
+      );
+      fireEvent.click(bulk().getByRole("button", { name: "Xuất PDF" }));
+      await waitFor(() =>
+        expect(zip).toHaveBeenCalledWith(orders.purchase_orders, mode, "pdf"),
+      );
+    },
+  );
+  it("locks both formats during export and offers retry after a generation failure", async () => {
+    let reject!: (error: Error) => void;
+    const zip = vi.fn(
+      () =>
+        new Promise<void>((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={data()}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+          onExportZip={zip}
+        />
+      </AtlasVNextProvider>,
+    );
+    const xlsx = bulk().getByRole("button", { name: "Xuất XLSX" });
+    const pdf = bulk().getByRole("button", { name: "Xuất PDF" });
+    fireEvent.click(pdf);
+    expect(xlsx).toBeDisabled();
+    expect(pdf).toBeDisabled();
+    expect(
+      screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
+    ).toBeDisabled();
+    fireEvent.click(xlsx);
+    expect(zip).toHaveBeenCalledTimes(1);
+    reject(new Error("document generation failed"));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Chưa xuất được chứng từ",
+      ),
+    );
+    expect(xlsx).toBeEnabled();
+    expect(pdf).toBeEnabled();
+    zip.mockResolvedValueOnce(undefined);
+    fireEvent.click(xlsx);
+    await waitFor(() =>
+      expect(zip).toHaveBeenLastCalledWith(
+        data().purchase_orders,
+        "all",
+        "xlsx",
+      ),
+    );
   });
   it("passes the selected mode to immutable XLSX/PDF and ZIP callbacks", async () => {
     const orders = data();
@@ -45,23 +123,35 @@ describe("loaded PO presentation exports", () => {
       screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
       { target: { value: "details_ing" } },
     );
+    fireEvent.click(bulk().getByRole("button", { name: "Xuất XLSX" }));
+    expect(zip).toHaveBeenCalledWith(
+      orders.purchase_orders,
+      "details_ing",
+      "xlsx",
+    );
     fireEvent.click(
-      screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
     );
-    expect(zip).toHaveBeenCalledWith(orders.purchase_orders, "details_ing");
-    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xuất Excel" })).toBeEnabled(),
+      expect(
+        selectedExports().getByRole("button", { name: "Xuất XLSX" }),
+      ).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
+    fireEvent.click(
+      selectedExports().getByRole("button", { name: "Xuất XLSX" }),
+    );
     expect(xlsx).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xuất PDF" })).toBeEnabled(),
+      expect(
+        selectedExports().getByRole("button", { name: "Xuất PDF" }),
+      ).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xuất PDF" }));
+    fireEvent.click(
+      selectedExports().getByRole("button", { name: "Xuất PDF" }),
+    );
     expect(pdf).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
   });
-  it("includes loaded eligible orders despite local search and excludes denied/draft/unready rows", () => {
+  it("includes loaded eligible orders despite local search and excludes denied/draft/unready rows", async () => {
     const orders = data();
     const denied = reviewOrder("po_released");
     denied.purchase_order_id = "denied";
@@ -82,10 +172,21 @@ describe("loaded PO presentation exports", () => {
         />
       </AtlasVNextProvider>,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),
+    fireEvent.click(bulk().getByRole("button", { name: "Xuất XLSX" }));
+    expect(zip).toHaveBeenCalledWith(
+      [orders.purchase_orders[0]],
+      "all",
+      "xlsx",
     );
-    expect(zip).toHaveBeenCalledWith([orders.purchase_orders[0]], "all");
+    await waitFor(() =>
+      expect(bulk().getByRole("button", { name: "Xuất PDF" })).toBeEnabled(),
+    );
+    fireEvent.click(bulk().getByRole("button", { name: "Xuất PDF" }));
+    expect(zip).toHaveBeenLastCalledWith(
+      [orders.purchase_orders[0]],
+      "all",
+      "pdf",
+    );
   });
   it("blocks ZIP while the loaded scope is unavailable", () => {
     const zip = vi.fn();
@@ -100,10 +201,9 @@ describe("loaded PO presentation exports", () => {
         />
       </AtlasVNextProvider>,
     );
-    const button = screen.getByRole("button", {
-      name: "Xuất ZIP PO · phạm vi đã tải",
-    });
+    const button = bulk().getByRole("button", { name: "Xuất XLSX" });
     expect(button).toBeDisabled();
+    expect(bulk().getByRole("button", { name: "Xuất PDF" })).toBeDisabled();
     fireEvent.click(button);
     expect(zip).not.toHaveBeenCalled();
   });
@@ -127,7 +227,9 @@ describe("loaded PO presentation exports", () => {
         />
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    );
     expect(
       screen.getByText(
         /Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức\./,
@@ -135,14 +237,13 @@ describe("loaded PO presentation exports", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("Gạo thơm").length).toBeGreaterThan(0);
     expect(
-      screen.queryByRole("button", { name: "Xuất Excel" }),
+      selectedExports().queryByRole("button", { name: "Xuất XLSX" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Xuất PDF" }),
+      selectedExports().queryByRole("button", { name: "Xuất PDF" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),
-    ).toBeDisabled();
+    expect(bulk().getByRole("button", { name: "Xuất XLSX" })).toBeDisabled();
+    expect(bulk().getByRole("button", { name: "Xuất PDF" })).toBeDisabled();
     expect(
       screen.queryByText("PO_DOCUMENT_SNAPSHOT_INCOMPLETE"),
     ).not.toBeInTheDocument();

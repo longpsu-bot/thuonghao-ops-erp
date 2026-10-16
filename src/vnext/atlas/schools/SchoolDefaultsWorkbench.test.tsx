@@ -107,6 +107,82 @@ const teacher = (name = "Trường Trung học Beta") =>
   screen.getByLabelText(`Giáo viên mặc định — ${name}`);
 
 describe("Chakra School default portions workbench", () => {
+  it("keeps all five sort actions and the School order visible in the narrow composition", async () => {
+    await renderReady(apiWith().api);
+    for (const label of [
+      "#",
+      "Trường",
+      "Điểm giao",
+      "Loại trường",
+      "Trạng thái",
+    ])
+      expect(
+        screen.getByRole("button", { name: `Sắp xếp theo ${label}` }),
+      ).toBeVisible();
+    const sort = screen.getByRole("button", { name: "Sắp xếp theo #" });
+    fireEvent.click(sort);
+    fireEvent.click(sort);
+    const table = screen.getByRole("table", {
+      name: "Sĩ số mặc định theo trường",
+    });
+    expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+      "Trường Trung học Beta",
+    );
+    fireEvent.click(sort);
+    expect(sort.closest("th")).toHaveAttribute("aria-sort", "none");
+    expect(within(table).getByText("#1")).toBeVisible();
+  });
+  it("retains secondary type/status sort cycles and exact unsaved School inputs", async () => {
+    const connected = apiWith();
+    await renderReady(connected.api);
+    fireEvent.change(student(), { target: { value: "421" } });
+    const table = screen.getByRole("table", {
+      name: "Sĩ số mặc định theo trường",
+    });
+    for (const label of ["Loại trường", "Trạng thái"]) {
+      const button = screen.getByRole("button", {
+        name: `Sắp xếp theo ${label}`,
+      });
+      fireEvent.click(button);
+      expect(button.closest("th")).toHaveAttribute("aria-sort", "ascending");
+      fireEvent.click(button);
+      expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+        label === "Loại trường"
+          ? "Trường Trung học Beta"
+          : "Trường Tiểu học Ánh Dương",
+      );
+      fireEvent.click(button);
+      expect(button.closest("th")).toHaveAttribute("aria-sort", "none");
+      expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+        "Trường Tiểu học Ánh Dương",
+      );
+      expect(student()).toHaveValue("421");
+    }
+    expect(connected.getSchools).toHaveBeenCalledOnce();
+    expect(connected.updateSchoolDefaultsBulk).not.toHaveBeenCalled();
+  });
+  it("does not present an initial failed School read as an authoritative zero count", async () => {
+    const connected = apiWith({
+      reads: [
+        {
+          kind: "transport_error",
+          diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Offline." },
+        },
+      ],
+    });
+    render(
+      <AtlasVNextProvider>
+        <SchoolDefaultsWorkbench authSubject="operator-1" api={connected.api} />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("alert");
+    expect(
+      screen.queryByText(/0 trường · 0 đang hoạt động/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Chưa xác định số trường. Tải lại dữ liệu để kiểm tra."),
+    ).toBeVisible();
+  });
   it("reports exact local edits and reversion to the workspace", async () => {
     const report = vi.fn();
     render(
@@ -152,9 +228,8 @@ describe("Chakra School default portions workbench", () => {
       "Trường",
       "Loại trường",
       "Trạng thái",
+      "Sĩ số mặc địnhHọc sinh / Giáo viên",
       "Điểm giao",
-      "Học sinh mặc định",
-      "Giáo viên mặc định",
     ]);
     const rows = within(table).getAllByRole("row").slice(1);
     expect(within(rows[0]!).getAllByRole("cell")[0]).toHaveTextContent("1");
@@ -199,7 +274,7 @@ describe("Chakra School default portions workbench", () => {
     expect(table).toHaveAttribute("data-sticky-header");
     expect(table).toHaveStyle({
       tableLayout: "fixed",
-      minWidth: "var(--atlas-layout-school-table-min, 1154px)",
+      minWidth: "var(--atlas-layout-zero, 0)",
       width: "100%",
     });
 
@@ -285,7 +360,7 @@ describe("Chakra School default portions workbench", () => {
     const connected = apiWith();
     await renderReady(connected.api);
     const input = student();
-    const save = screen.getByRole("button", { name: "Lưu thay đổi" });
+    const save = screen.getByRole("button", { name: "Lưu sĩ số" });
 
     fireEvent.change(input, { target: { value: "0" } });
     expect(input).toHaveAttribute("aria-invalid", "false");
@@ -332,7 +407,7 @@ describe("Chakra School default portions workbench", () => {
     });
     expect(screen.getByText(/1 thay đổi ngoài bộ lọc/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
     await waitFor(() =>
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce(),
     );
@@ -376,7 +451,7 @@ describe("Chakra School default portions workbench", () => {
         name: "Thay đổi sĩ số mặc định",
       }),
     ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
 
     await waitFor(() =>
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce(),
@@ -430,7 +505,7 @@ describe("Chakra School default portions workbench", () => {
     } as unknown as SchoolMasterDataApi;
     await renderReady(api);
     fireEvent.change(student(), { target: { value: "421" } });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
     await waitFor(() => expect(getSchools).toHaveBeenCalledTimes(2));
     expect(student()).toBeDisabled();
 
@@ -466,7 +541,7 @@ describe("Chakra School default portions workbench", () => {
     fireEvent.change(teacher("Trường Tiểu học Ánh Dương"), {
       target: { value: "34" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
     await waitFor(() =>
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce(),
     );
@@ -553,7 +628,7 @@ describe("Chakra School default portions workbench", () => {
       await screen.findByText("Trường Tiểu học Ánh Dương"),
     ).toBeInTheDocument();
     fireEvent.change(student(), { target: { value: "421" } });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
 
     rendered.rerender(
       <AtlasVNextProvider>
@@ -634,11 +709,9 @@ describe("Chakra School default portions workbench", () => {
       const connected = apiWith({ reads: [success(), success()], write });
       await renderReady(connected.api);
       fireEvent.change(student(), { target: { value: "421" } });
-      fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+      fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
       expect(await screen.findByText(message)).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "Lưu thay đổi" }),
-      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Lưu sĩ số" })).toBeDisabled();
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce();
 
       fireEvent.click(screen.getByRole("button", { name: recoveryLabel }));
@@ -653,9 +726,7 @@ describe("Chakra School default portions workbench", () => {
       expect(screen.queryByText(message)).not.toBeInTheDocument();
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce();
       expect(student()).toHaveValue("421");
-      expect(
-        screen.getByRole("button", { name: "Lưu thay đổi" }),
-      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Lưu sĩ số" })).toBeEnabled();
     },
   );
 
@@ -672,7 +743,7 @@ describe("Chakra School default portions workbench", () => {
     });
     await renderReady(connected.api);
     fireEvent.change(student(), { target: { value: "421" } });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
     expect(
       await screen.findByText(
         "Đã gửi yêu cầu lưu nhưng chưa tải được kết quả. Hãy tải lại để kiểm tra.",
@@ -681,7 +752,7 @@ describe("Chakra School default portions workbench", () => {
     expect(
       screen.getByRole("button", { name: "Tải lại để xác nhận" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Lưu sĩ số" })).toBeDisabled();
     expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce();
   });
 
@@ -697,7 +768,7 @@ describe("Chakra School default portions workbench", () => {
     const connected = apiWith({ write: denied });
     await renderReady(connected.api);
     fireEvent.change(student(), { target: { value: "0" } });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
     expect(
       await screen.findByText("Bạn không có quyền thực hiện thao tác này."),
     ).toBeInTheDocument();

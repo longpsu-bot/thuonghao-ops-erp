@@ -2,7 +2,7 @@
 
 **Owner-approved:** 15 October 2026; **promoted to active priority:** 16 October 2026.  
 **Authority:** [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389), [ACTIVE_TASK](../autopilot/ACTIVE_TASK.md), design language v3, UI convergence, D-048 persistent workspace and Planning/Procurement business freeze.  
-**Execution limit:** D1 skills and diagnosis + D2 competing prototypes. Do not implement a final UI direction before Owner selects it.
+**Execution limit:** D1 skills and diagnosis + D2 competing prototypes completed. Owner selected C on 16 October 2026 and authorized only the bounded interface implementation recorded below.
 
 ## Business job to improve
 
@@ -21,12 +21,15 @@ Output a diagnosis tied to actual files and screenshots: tab shapes/hierarchy, P
 ## D2 — differentiated presentations (not production code)
 
 Produce **2–3 different complete alternatives** on real-looking Vietnamese content using isolated React/Chakra mockups. Every alternative must show both:
+
 - Connected, subtly angled workbench tabs: clear joined active plane, strong inactive separation, 13-tab horizontal navigation, explicit close, dirty/blocked status, focus and keyboard behavior, without persistent-navigation rewrites.
 - PO review redesigned for supplier-first scan, date/status/document/actions, and useful School/detail breakdown without clipping. Avoid 7 wide rigid columns, empty state confusion and treating export as issue/release.
 
 Show first at **1366×768**, then 1440×900, 1920×1080, 768 and 390 where applicable; populated, selected, busy, empty and blocked states must be credible. Contact sheet, trade-off comparison and one recommendation must be easy for Owner to review.
 
 **STOP for Product selection.** Only after this gate can a separate bounded code task replace `AtlasVNextShell.tsx` / `ProcurementOrdersStage.tsx` presentation; no unauthorized backend changes.
+
+**Selection recorded — 16 October 2026:** Owner chose C from [Draft #391](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/391) and explicitly requested interface implementation. The gate above is satisfied. Continue only with [the separate bounded C presentation scope](../ui/atlas-c-workspace-po-implementation.md); this does not release backend, Warehouse or parked operator-change work.
 
 ## Safety and progress discipline
 

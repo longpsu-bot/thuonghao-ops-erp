@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-16",
+  "scope": "Local fixture-backed Schools/Suppliers; backend and Warehouse paused",
+  "actualEvidence": {
+    "schoolsLaptop": "schools-after-1366x768.jpg",
+    "schoolsMobileFinal": "schools-final-390x844.jpg",
+    "suppliersLaptop": "suppliers-after-detail-1366x768.jpg",
+    "suppliersMobileOpen": "suppliers-after-open-390x844.jpg",
+    "shortLabels": "po-short-labels-390x844.jpg"
+  },
+  "checks": {
+    "schoolInputBeforeMobile": {
+      "left": 878.5,
+      "right": 1004.5,
+      "viewport": 390
+    },
+    "schoolInputAfterMobile": {
+      "left": 23,
+      "right": 175,
+      "viewport": 390
+    },
+    "schoolDraftFilter": "281 retained after filtering to Hoa Sen; hidden dirty count1; clear restored281",
+    "schoolCloseCancel": "unsaved dialog displayed; Continue editing retained281; restored original280 without Save",
+    "mobileSchoolSorting": "all5controls visible plus #1 order",
+    "supplierMobileOpen": "existing focus moved detail to top205; all editable fields and review reachable",
+    "supplierDirectoryLaptop": "table305 within320 directory",
+    "exportLabels": "PO XLSX/PDF and PXK XLSX/ZIP omit phrase; scope explanation and groups retained"
+  },
+  "limits": [
+    "Only actual1366 and390 evidence accepted; batch viewport overrides did not apply correctly, invalid matrix/tablet files excluded",
+    "Default application Schools fixture does not support Cooking/Dispatch APIs; those paths checked by source/focused tests, no full visual group matrix",
+    "Existing synthetic fixtures; no hosted writes or real supplier commitments",
+    "No claim every workbench/state/viewport is complete"
+  ]
+}

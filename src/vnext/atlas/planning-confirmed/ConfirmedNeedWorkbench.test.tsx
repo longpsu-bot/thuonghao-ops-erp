@@ -419,6 +419,9 @@ describe("Confirmed Need Chakra operator surface", () => {
       name: "Tiện ích nhu cầu xác nhận",
     });
     expect(
+      within(utilities).getByRole("group", { name: "Ngày trong khoảng" }),
+    ).toBeVisible();
+    expect(
       within(utilities).getByRole("button", { name: "Xuất Phiếu đi chợ" }),
     ).toHaveAttribute("data-atlas-action-priority", "tertiary");
     expect(

@@ -153,7 +153,6 @@ export function PlanningPantryStage({
           <Table.ColumnGroup>
             <Table.Column w="var(--atlas-pantry-school-column, 210px)" />
             <Table.Column w="var(--atlas-pantry-ingredient-column, 210px)" />
-            <Table.Column w="var(--atlas-pantry-purpose-column, 190px)" />
             <Table.Column w="var(--atlas-pantry-quantity-column, 130px)" />
             <Table.Column w="var(--atlas-pantry-note-column, 190px)" />
             <Table.Column w="var(--atlas-pantry-reference-column, 130px)" />
@@ -164,7 +163,6 @@ export function PlanningPantryStage({
               {[
                 "Trường / điểm giao",
                 "Nguyên liệu / Đơn vị",
-                "Mục đích",
                 "Số lượng",
                 "Ghi chú / Lý do",
                 "Tham chiếu",
@@ -180,7 +178,7 @@ export function PlanningPantryStage({
               .map((s) => (
                 <Fragment key={s.school_id}>
                   <Table.Row bg="bg.subtle">
-                    <Table.Cell colSpan={7}>
+                    <Table.Cell colSpan={6}>
                       <Flex align="center" gap="sm" wrap="wrap">
                         <Box>
                           <Text fontWeight="semibold">{s.school_name}</Text>
@@ -222,23 +220,12 @@ export function PlanningPantryStage({
                     .filter(({ r }) => r.school_id === s.school_id)
                     .map(({ r, index }) => {
                       const errors = c.pantryRowErrors[index];
-                      const purpose = c.pantryData?.purposes.find(
-                        (p) =>
-                          p.pantry_need_purpose_id === r.pantry_need_purpose_id,
-                      );
                       const unit = c.pantryData?.ingredients.find(
                         (i) => i.ingredient_id === r.ingredient_id,
                       )?.purchase_unit.unit_name;
                       const selectedSchool = c.pantryData?.schools.find(
                         (school) => school.school_id === r.school_id,
                       );
-                      const noteRequired = purpose?.note_rule === "REQUIRED";
-                      const noteProhibited =
-                        purpose?.note_rule === "PROHIBITED";
-                      const hasExistingNote = Boolean(r.note.trim());
-                      const noteDisabled =
-                        !c.canEdit || (noteProhibited && !hasExistingNote);
-                      const noteLabel = noteRequired ? "Lý do" : "Ghi chú";
                       return (
                         <Table.Row key={r.source_row_reference || index}>
                           <Table.Cell>
@@ -314,40 +301,6 @@ export function PlanningPantryStage({
                             </Field.Root>
                           </Table.Cell>
                           <Table.Cell>
-                            <Field.Root invalid={!!errors.purpose}>
-                              <NativeSelect.Root
-                                disabled={!c.canEdit}
-                                minW="var(--atlas-layout-purpose-width, 170px)"
-                              >
-                                <NativeSelect.Field
-                                  aria-label={`Mục đích dòng ${index + 1}`}
-                                  value={r.pantry_need_purpose_id}
-                                  onChange={(e) =>
-                                    c.editPantryRow(index, {
-                                      pantry_need_purpose_id: e.target.value,
-                                    })
-                                  }
-                                >
-                                  <option value="">Chọn mục đích</option>
-                                  {c.pantryData?.purposes
-                                    .filter(
-                                      (p) => p.purpose_status === "ACTIVE",
-                                    )
-                                    .map((p) => (
-                                      <option
-                                        key={p.pantry_need_purpose_id}
-                                        value={p.pantry_need_purpose_id}
-                                      >
-                                        {p.purpose_name_vi}
-                                      </option>
-                                    ))}
-                                </NativeSelect.Field>
-                                <NativeSelect.Indicator />
-                              </NativeSelect.Root>
-                              <PantryFeedback error={errors.purpose} />
-                            </Field.Root>
-                          </Table.Cell>
-                          <Table.Cell>
                             <Field.Root invalid={!!errors.quantity}>
                               <Input
                                 aria-label={`Số lượng dòng ${index + 1}`}
@@ -365,12 +318,11 @@ export function PlanningPantryStage({
                             </Field.Root>
                           </Table.Cell>
                           <Table.Cell>
-                            <Field.Root invalid={!!errors.note}>
+                            <Field.Root>
                               <Input
-                                aria-label={`${noteLabel} dòng ${index + 1}`}
+                                aria-label={`Ghi chú dòng ${index + 1}`}
                                 value={r.note}
-                                required={noteRequired}
-                                disabled={noteDisabled}
+                                disabled={!c.canEdit}
                                 minW="var(--atlas-layout-note-width, 150px)"
                                 onChange={(e) =>
                                   c.editPantryRow(index, {
@@ -378,14 +330,7 @@ export function PlanningPantryStage({
                                   })
                                 }
                               />
-                              <PantryFeedback
-                                error={errors.note}
-                                helper={
-                                  noteProhibited && !hasExistingNote
-                                    ? "Không áp dụng cho mục đích này."
-                                    : undefined
-                                }
-                              />
+                              <PantryFeedback helper="Không bắt buộc." />
                             </Field.Root>
                           </Table.Cell>
                           <Table.Cell>

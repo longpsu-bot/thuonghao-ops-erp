@@ -131,6 +131,49 @@ describe("Atlas v2 workspace shell", () => {
     expect(close).toHaveBeenCalledWith("recipes");
   });
 
+  it("restores the persistent narrow chooser before requesting guarded School close", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener() {},
+        removeEventListener() {},
+      }),
+    );
+    let origin: Element | null = null;
+    const close = vi.fn(() => {
+      origin = document.activeElement;
+    });
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell
+          activeModule="schools"
+          openIds={["schools"]}
+          statuses={{ schools: { unsaved: true, blocked: false } }}
+          onClose={close}
+        >
+          <h1>Schools</h1>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    const chooser = screen.getByRole("button", {
+      name: "Đang mở: Trường học — Chưa lưu",
+    });
+    fireEvent.click(chooser);
+    const panel = screen.getByRole("dialog", { name: "Màn hình đang mở" });
+    const ephemeralClose = within(panel).getByRole("button", {
+      name: "Đóng Trường học",
+    });
+    // Arrange the actual click origin; the assertion never forces final focus.
+    ephemeralClose.focus();
+    expect(ephemeralClose).toHaveFocus();
+    fireEvent.click(ephemeralClose);
+    expect(close).toHaveBeenCalledExactlyOnceWith("schools");
+    expect(panel).not.toBeInTheDocument();
+    expect(origin).toBe(chooser);
+    expect(chooser).toHaveFocus();
+  });
+
   it("keeps user/environment/sign-out in one compact utility and out of launcher", () => {
     const signOut = vi.fn();
     render(

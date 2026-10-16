@@ -1018,10 +1018,15 @@ export async function downloadPurchaseOrderPdf(
   );
 }
 
+export type PurchaseOrderZipFormat = "xlsx" | "pdf";
+
 export async function createPurchaseOrderZip(
   orders: SchoolCateringPurchaseOrder[],
   mode: PurchaseOrderWorkbookMode = "all",
+  format: PurchaseOrderZipFormat = "xlsx",
 ) {
+  if (format !== "xlsx" && format !== "pdf")
+    throw new Error("Unsupported PO ZIP format.");
   const ids = new Set<string>();
   const files = [];
   const ordered = [...orders].sort(
@@ -1036,8 +1041,11 @@ export async function createPurchaseOrderZip(
       throw new Error("Duplicate PO identity.");
     ids.add(order.purchase_order_id);
     files.push({
-      name: `${purchaseOrderFileStem(order)}-${index + 1}-${mode}.xlsx`,
-      bytes: await createPurchaseOrderXlsx(order, mode),
+      name: `${purchaseOrderFileStem(order)}-${index + 1}-${mode}.${format}`,
+      bytes:
+        format === "pdf"
+          ? await createPurchaseOrderPdf(order, mode)
+          : await createPurchaseOrderXlsx(order, mode),
     });
   }
   return createDocumentZip(files);
@@ -1046,10 +1054,11 @@ export async function createPurchaseOrderZip(
 export async function downloadPurchaseOrderZip(
   orders: SchoolCateringPurchaseOrder[],
   mode: PurchaseOrderWorkbookMode = "all",
+  format: PurchaseOrderZipFormat = "xlsx",
 ) {
   downloadBytes(
-    await createPurchaseOrderZip(orders, mode),
+    await createPurchaseOrderZip(orders, mode, format),
     "application/zip",
-    `PO-supplier-date-${mode}.zip`,
+    `PO-supplier-date-${mode}-${format}.zip`,
   );
 }

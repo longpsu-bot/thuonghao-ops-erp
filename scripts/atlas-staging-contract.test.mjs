@@ -1038,7 +1038,18 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(116);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(117);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "pnpm",
+      args: [
+        "exec",
+        "supabase",
+        "test",
+        "db",
+        "supabase/tests/pantry_v4_purpose_free.sql",
+        "--local",
+      ],
+    });
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [

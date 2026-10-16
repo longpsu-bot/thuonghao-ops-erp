@@ -51,7 +51,7 @@ const modules = [
   ["Phiếu xuất kho", "Phiếu xuất kho"],
   ["Đối chiếu PO / Phiếu xuất kho", "Đối chiếu PO / Phiếu xuất kho"],
 ];
-function show() {
+async function showMenu() {
   const apis = createAtlasApplicationFixture();
   const signOut = vi.fn();
   const result = render(
@@ -65,20 +65,74 @@ function show() {
       />
     </AtlasVNextProvider>,
   );
-  return { apis, signOut, ...result };
-}
-async function nav(label: string) {
-  fireEvent.click(await screen.findByRole("button", { name: "Chức năng" }));
-  fireEvent.click(await screen.findByRole("button", { name: label }));
+  const menu = await screen.findByRole("region", { name: "Thực đơn" });
   await waitFor(() =>
     expect(
-      document.querySelector('[role="dialog"][data-state="open"]'),
-    ).toBeNull(),
+      within(menu).getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    ).toBeEnabled(),
   );
+  return { apis, signOut, ...result };
+}
+async function showSchool() {
+  const result = await showMenu();
+  await nav("Trường học");
+  const panel = screen.getByRole("tabpanel", {
+    name: "Trường học",
+    hidden: true,
+  });
+  expect(panel).toBeVisible();
+  const fields = await within(panel).findAllByRole("textbox", {
+    name: /Học sinh mặc định/,
+  });
+  await waitFor(() => expect(fields[0]).toBeEnabled());
+  return { ...result, schoolFields: fields };
+}
+async function nav(label: string) {
+  const trigger = await within(screen.getByRole("banner")).findByLabelText(
+    "Chức năng",
+    { selector: "button" },
+  );
+  expect(trigger).toBeVisible();
+  fireEvent.click(trigger);
+  const launcher = await screen.findByRole("dialog", { name: "Chức năng" });
+  const destination = within(launcher).getByRole("button", {
+    name: label,
+    hidden: true,
+  });
+  expect(destination).toBeVisible();
+  fireEvent.click(destination);
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("dialog", { name: "Chức năng" }),
+    ).not.toBeInTheDocument(),
+  );
+  const panel = await screen.findByRole("tabpanel", {
+    name: label,
+    hidden: true,
+  });
+  const strip = screen.getByRole("tablist", {
+    name: "Màn hình đang mở",
+    hidden: true,
+  });
+  const tab = within(strip)
+    .getAllByRole("tab", { hidden: true })
+    .find((item) => item.getAttribute("aria-controls") === panel.id);
+  expect(tab).toBeDefined();
+  expect(tab).toHaveTextContent(label);
+  await waitFor(() => expect(tab).toHaveAttribute("aria-selected", "true"));
+  expect(panel).toBeVisible();
+  const heading = modules.find(([name]) => name === label)?.[1];
+  expect(
+    await within(panel).findByRole("heading", { level: 1, name: heading }),
+  ).toBeVisible();
+  return panel;
 }
 async function clickSignOut() {
   fireEvent.click(
-    screen.getByRole("button", { name: "Tài khoản và môi trường" }),
+    within(screen.getByRole("banner")).getByRole("button", {
+      name: "Tài khoản và môi trường",
+      hidden: true,
+    }),
   );
   const account = await screen.findByRole("dialog", {
     name: "Tài khoản và môi trường",
@@ -99,8 +153,34 @@ async function selectRange(start: string, end: string, label = "Khoảng ngày")
     );
 }
 
+it("opens Weekly Menu as the actual fresh-session workbench without initializing School editing", async () => {
+  const apis = createAtlasApplicationFixture();
+  const schools = vi.spyOn(apis.masterData, "getSchools");
+  render(
+    <AtlasVNextProvider>
+      <AtlasVNextApp
+        apis={apis}
+        authSubject="operator"
+        now={applicationReviewNow}
+        onSignOut={vi.fn()}
+      />
+    </AtlasVNextProvider>,
+  );
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Thực đơn" }),
+  ).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Thực đơn" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(
+    screen.queryByRole("tab", { name: "Trường học" }),
+  ).not.toBeInTheDocument();
+  expect(schools).not.toHaveBeenCalled();
+});
+
 it("carries the selected seven-day range from new Confirmed Need to Allocation and Orders without preparation", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   const orders = vi.spyOn(apis.procurement, "getPurchaseOrders");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
@@ -126,7 +206,7 @@ it("carries the selected seven-day range from new Confirmed Need to Allocation a
   expect(
     await screen.findByText("Chọn 1 ngày để chuẩn bị đơn mua."),
   ).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Xem đơn mua" }));
   await waitFor(() =>
     expect(orders).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -145,7 +225,7 @@ it("carries the selected seven-day range from new Confirmed Need to Allocation a
 }, 60000);
 
 it("preserves an existing Allocation range and unsaved split note when Confirmed Need requests another range", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   const save = vi.spyOn(apis.purchaseReview, "saveConfirmedAllocation");
   await nav("Phân bổ NCC");
@@ -187,20 +267,20 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
 }, 60000);
 
 it("preserves an existing Orders range and selected order when Allocation requests another range", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const orders = vi.spyOn(apis.procurement, "getPurchaseOrders");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
   await nav("Đơn mua");
-  await screen.findByRole("button", { name: "Xem đơn NCC An Phú" });
+  await screen.findByRole("button", { name: /^Xem đơn NCC An Phú/ });
   await selectRange("2026-09-07", "2026-09-09", "Khoảng ngày dùng");
   fireEvent.click(
-    await screen.findByRole("button", { name: "Xem đơn NCC An Phú" }),
+    await screen.findByRole("button", { name: /^Xem đơn NCC An Phú/ }),
   );
   const readsBeforeNavigation = orders.mock.calls.length;
   await nav("Phân bổ NCC");
   await screen.findByRole("button", { name: /Xem phân bổ Gạo thơm/ });
   await selectRange("2026-09-10", "2026-09-16");
-  fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Xem đơn mua" }));
   expect(
     await screen.findByText(
       /Đơn mua vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,
@@ -249,7 +329,7 @@ it("downloads the attendance template from its persistent owner without saving a
 it.each(modules)(
   "launches %s with one active heading",
   async (label, heading) => {
-    show();
+    await showSchool();
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
     await nav(label!);
     expect(
@@ -273,62 +353,98 @@ it.each(modules)(
   20000,
 );
 it("blocks dirty sign-out without discarding and resolves School through its close guard", async () => {
-  const { signOut } = show();
-  const fields = await screen.findAllByRole("textbox", {
-    name: /Học sinh mặc định/,
-  });
+  const { signOut, schoolFields: fields } = await showSchool();
+  const strip = within(
+    screen.getByRole("tablist", {
+      name: "Màn hình đang mở",
+      hidden: true,
+    }),
+  );
+  const close = strip.getByLabelText("Đóng Trường học", { selector: "button" });
+  expect(fields[0]).toBeVisible();
+  expect(close).toBeVisible();
   fireEvent.change(fields[0]!, { target: { value: "123" } });
   await clickSignOut();
   expect(signOut).not.toHaveBeenCalled();
   expect(
-    await screen.findByRole("button", { name: "Trường học — Chưa lưu" }),
+    screen.getByRole("button", { name: "Trường học — Chưa lưu", hidden: true }),
   ).toBeVisible();
   expect(
-    screen.queryByRole("button", { name: "Bỏ thay đổi" }),
+    screen.queryByRole("button", { name: "Bỏ thay đổi", hidden: true }),
   ).not.toBeInTheDocument();
   expect(fields[0]).toHaveValue("123");
-  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
-  );
+  fireEvent.click(close);
+  const dialog = await screen.findByRole("dialog", {
+    hidden: true,
+    name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+  });
+  expect(dialog).toBeVisible();
+  const cancel = within(dialog).getByRole("button", {
+    name: "Tiếp tục chỉnh sửa",
+    hidden: true,
+  });
+  expect(cancel).toBeVisible();
+  fireEvent.click(cancel);
   expect(fields[0]).toHaveValue("123");
-  await waitFor(() =>
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
+  await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+  fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
+  await waitFor(() => expect(dialog).not.toBeInTheDocument());
+  expect(close).toBeVisible();
+  fireEvent.click(close);
+  const discardDialog = await screen.findByRole("dialog", {
+    hidden: true,
+    name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+  });
+  const discard = within(discardDialog).getByRole("button", {
+    name: "Bỏ thay đổi",
+    hidden: true,
+  });
+  expect(discard).toBeVisible();
+  fireEvent.click(discard);
   await waitFor(() => expect(fields[0]!.isConnected).toBe(false));
   await clickSignOut();
   expect(signOut).toHaveBeenCalledOnce();
 });
 it("Confirmed Need continues to supplier allocation with no hidden write", async () => {
-  const { apis } = show();
+  const { apis } = await showMenu();
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
-  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
-  await nav("Thực đơn");
-  await nav("Xác nhận nhu cầu");
-  const proceed = await screen.findByRole("button", {
+  const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
+  const need = await nav("Xác nhận nhu cầu");
+  const proceed = await within(need).findByRole("button", {
     name: "Tiếp tục phân bổ NCC",
   });
   await waitFor(() => expect(proceed).toBeEnabled());
   fireEvent.click(proceed);
-  await waitFor(() => expect(allocation).toHaveBeenCalled());
-  expect(save).not.toHaveBeenCalled();
-  expect(screen.getByRole("tab", { name: /Phân bổ/ })).toHaveAttribute(
-    "aria-selected",
-    "true",
+  await waitFor(() =>
+    expect(allocation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          date_start: "2026-09-07",
+          date_end: "2026-09-07",
+        }),
+      }),
+    ),
   );
+  const destination = screen.getByRole("tabpanel", {
+    name: "Phân bổ NCC",
+    hidden: true,
+  });
+  expect(destination).toBeVisible();
+  expect(save).not.toHaveBeenCalled();
+  expect(prepare).not.toHaveBeenCalled();
+  expect(
+    screen.getByRole("tab", { name: /Phân bổ/, hidden: true }),
+  ).toHaveAttribute("aria-selected", "true");
 });
 
 it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK and Reconciliation", async () => {
-  const { apis } = show();
+  const { apis } = await showMenu();
   const confirmed = vi.spyOn(apis.confirmedNeed, "getReview");
   const procurement = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   const pxk = vi.spyOn(apis.schoolDispatch, "getWorkbench");
   const reconciliation = vi.spyOn(apis.reconciliation, "getWorkbench");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
-  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await nav("Thực đơn");
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   const date = await screen.findByRole("combobox", { name: "Ngày phục vụ" });
@@ -385,7 +501,7 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
 }, 60000);
 
 it("clean sign out runs immediately and a changed identity loses the prior draft", async () => {
-  const { apis, signOut, rerender } = show();
+  const { apis, signOut, rerender } = await showSchool();
   const fields = await screen.findAllByRole("textbox", {
     name: /Học sinh mặc định/,
   });
@@ -403,6 +519,10 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
       />
     </AtlasVNextProvider>,
   );
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Thực đơn" }),
+  ).toBeVisible();
+  await nav("Trường học");
   await waitFor(() =>
     expect(
       screen.getAllByRole("textbox", { name: /Học sinh mặc định/ })[0],
@@ -412,7 +532,7 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
 });
 
 it("uses the injected business date for Recipe's independent initial as-of context", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const effective = vi.spyOn(apis.recipe, "getEffectiveWorkbench");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await nav("Công thức");
