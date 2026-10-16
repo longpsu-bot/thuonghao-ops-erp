@@ -7,6 +7,9 @@ import type {
   MenuLine,
   AttendanceLine,
   PantryPreview,
+  PantryApi,
+  PantrySchoolDateMode,
+  JsonValue,
   PlanningCorrectionImpact,
   PlanningInputsApi,
 } from "../bridges/planning";
@@ -402,12 +405,128 @@ export function createPlanningReviewFixture() {
     },
     pantryApi: {
       getWorkbench: async () => success({ workbench: pantry }),
-      preview: async () => success({ preview: pantryPreview() }),
+      preview: async (
+        _subject: string,
+        _correlation: string,
+        week: string,
+        noAdditions: boolean,
+        rows: JsonValue[],
+        modes: PantrySchoolDateMode[] = [],
+      ) => {
+        // Synthetic review response echoes the submitted proposal; it does not
+        // certify a signature or simulate backend validation.
+        const submitted = structuredClone(rows).map((value) => {
+          const row = value as Record<string, JsonValue>;
+          const school = pantry.schools.find(
+            (item) => item.school_id === row.school_id,
+          );
+          const ingredient = pantry.ingredients.find(
+            (item) => item.ingredient_id === row.ingredient_id,
+          );
+          return {
+            ...row,
+            school_id: row.school_id,
+            service_date: row.service_date,
+            school_name: school?.school_name ?? "",
+            ingredient_name: ingredient?.ingredient_name ?? "",
+            delivery_location_name:
+              school?.default_delivery_location.location_name ?? "",
+            unit_name: ingredient?.purchase_unit.unit_name ?? "",
+          };
+        });
+        const preview = pantryPreview();
+        return success({
+          preview: {
+            ...preview,
+            week_start: week,
+            no_additions_confirmed: noAdditions,
+            canonical_rows: submitted,
+            school_date_modes: structuredClone(modes),
+            comparison: {
+              ...preview.comparison,
+              new_lines: submitted,
+              changed_school_dates: submitted.map((row) => ({
+                school_id: row.school_id,
+                service_date: row.service_date,
+              })),
+            },
+          },
+        });
+      },
       getCorrectionImpact: async () =>
         success({ impact: { ...safeImpact, source_kind: "PANTRY" } }),
       prepareCorrection: async () => success({}),
-      saveCompleted: async () =>
-        success({ authoritative_readback: { pantry } }),
+      saveCompleted: async (
+        request: Parameters<PantryApi["saveCompleted"]>[0],
+      ) => {
+        const at = `${request.payload.week_start}T00:00:00Z`;
+        const previous = pantry.batch;
+        pantry.batch = {
+          pantry_need_batch_id:
+            previous?.pantry_need_batch_id ?? "review-only-pantry-batch",
+          week_start: request.payload.week_start,
+          week_end: pantry.week_end,
+          pantry_need_batch_status: "APPROVED",
+          version: request.expected_version + 1,
+          source_type: "MANUAL_ATLAS",
+          source_name: "Nhập thủ công Atlas",
+          source_signature: request.payload.source_signature,
+          no_additions_confirmed: request.payload.no_additions_confirmed,
+          school_date_modes: structuredClone(request.payload.school_date_modes),
+          requesting_actor_id: "review-only-operator",
+          requesting_actor_name: "Dữ liệu xem thử, không ghi hệ thống",
+          creation_method: "MANUAL_ATLAS",
+          latest_approved_by_actor_id: null,
+          latest_approved_at: null,
+          latest_approval_snapshot_id: null,
+          created_at: previous?.created_at ?? at,
+          updated_at: at,
+          active_lines: request.payload.rows.map((value, index) => {
+            const row = value as Record<string, JsonValue>;
+            const text = (key: string) =>
+              typeof row[key] === "string" ? (row[key] as string) : "";
+            const school = pantry.schools.find(
+              (item) => item.school_id === text("school_id"),
+            );
+            const ingredient = pantry.ingredients.find(
+              (item) => item.ingredient_id === text("ingredient_id"),
+            );
+            return {
+              pantry_need_line_id: `review-only-pantry-line-${index}`,
+              service_date: text("service_date"),
+              school_id: text("school_id"),
+              school_code: school?.school_code ?? "",
+              school_name: school?.school_name ?? "",
+              ingredient_id: text("ingredient_id"),
+              ingredient_code: ingredient?.ingredient_code ?? "",
+              ingredient_name: ingredient?.ingredient_name ?? "",
+              delivery_location_id:
+                school?.default_delivery_location.delivery_location_id ?? "",
+              delivery_location_name:
+                school?.default_delivery_location.location_name ?? "",
+              unit_id: ingredient?.purchase_unit.unit_id ?? "",
+              unit_code: ingredient?.purchase_unit.unit_code ?? "",
+              unit_name: ingredient?.purchase_unit.unit_name ?? "",
+              pantry_need_purpose_id: "review-only-neutral-classification",
+              purpose_code: "direct_entry_unspecified",
+              purpose_name_vi: "Nhập trực tiếp — không chỉ định mục đích",
+              requested_quantity: text("requested_quantity"),
+              note: text("note"),
+              source_request_reference: text("source_request_reference"),
+              source_row_reference: text("source_row_reference"),
+              line_status: "ACTIVE",
+              updated_at: at,
+            };
+          }),
+          invalid_lines: [],
+          issues: { blockers: [], warnings: [] },
+          approval_history: previous?.approval_history ?? [],
+          change_history: previous?.change_history ?? [],
+        };
+        return success({
+          authoritative_readback: { pantry: structuredClone(pantry) },
+        });
+      },
     },
   };
 }

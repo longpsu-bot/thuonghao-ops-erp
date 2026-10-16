@@ -91,6 +91,43 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
     needs_review: "Cần rà soát",
     carried_forward: "Giữ nguyên",
   }[c.filter];
+  const dayControls = (
+    <>
+      {" "}
+      {c.days.map((day) => (
+        <Button
+          key={day.date}
+          size="sm"
+          variant={day.date === c.date ? "secondary" : "tertiary"}
+          aria-pressed={day.date === c.date}
+          disabled={
+            contextDisabled ||
+            Boolean(c.rangeError) ||
+            c.rangeBusy ||
+            (!day.preflight && !day.readError)
+          }
+          onClick={() => c.selectDay(day.date)}
+        >
+          {viDate(day.date).slice(0, 5)} ·{" "}
+          {day.dirty
+            ? "Chưa lưu"
+            : day.readError
+              ? "Lỗi tải"
+              : !day.preflight
+                ? "Đang tải"
+                : noDemand(day.preflight ?? null)
+                  ? "Không có nhu cầu"
+                  : day.preflight?.readiness_state === "BLOCKED"
+                    ? "Cần kiểm tra"
+                    : day.preflight?.downstream_currentness === "CURRENT"
+                      ? "Đã lập"
+                      : day.preflight?.downstream_currentness === "OUTDATED"
+                        ? "Cần cập nhật"
+                        : "Chưa lập"}
+        </Button>
+      ))}
+    </>
+  );
   return (
     <Box
       as="section"
@@ -247,48 +284,18 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               />
             </AtlasWorkbarActions>
           </AtlasWorkbar>
-          <Flex
-            role="group"
-            aria-label="Ngày trong khoảng"
-            gap="xs"
-            wrap="wrap"
-            px="md"
-            py="sm"
-          >
-            {c.days.map((day) => (
-              <Button
-                key={day.date}
-                size="sm"
-                variant={day.date === c.date ? "secondary" : "tertiary"}
-                aria-pressed={day.date === c.date}
-                disabled={
-                  contextDisabled ||
-                  Boolean(c.rangeError) ||
-                  c.rangeBusy ||
-                  (!day.preflight && !day.readError)
-                }
-                onClick={() => c.selectDay(day.date)}
-              >
-                {viDate(day.date).slice(0, 5)} ·{" "}
-                {day.dirty
-                  ? "Chưa lưu"
-                  : day.readError
-                    ? "Lỗi tải"
-                    : !day.preflight
-                      ? "Đang tải"
-                      : noDemand(day.preflight ?? null)
-                        ? "Không có nhu cầu"
-                        : day.preflight?.readiness_state === "BLOCKED"
-                          ? "Cần kiểm tra"
-                          : day.preflight?.downstream_currentness === "CURRENT"
-                            ? "Đã lập"
-                            : day.preflight?.downstream_currentness ===
-                                "OUTDATED"
-                              ? "Cần cập nhật"
-                              : "Chưa lập"}
-              </Button>
-            ))}
-          </Flex>
+          {!c.workbench && (
+            <Flex
+              role="group"
+              aria-label="Ngày trong khoảng"
+              px="md"
+              py="xs"
+              gap="xs"
+              wrap="wrap"
+            >
+              {dayControls}
+            </Flex>
+          )}
           <AtlasOperationStatus operation={c.operation} />
           <ConfirmedNeedCommandFeedback
             lock={c.lock}
@@ -329,12 +336,20 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 role="group"
                 aria-label="Tiện ích nhu cầu xác nhận"
                 px="md"
-                py="sm"
+                py="xs"
                 gap="sm"
-                justify="space-between"
+                justify="flex-start"
                 align="center"
                 wrap="wrap"
               >
+                <Flex
+                  role="group"
+                  aria-label="Ngày trong khoảng"
+                  gap="xs"
+                  wrap="wrap"
+                >
+                  {dayControls}
+                </Flex>
                 <Text textStyle="helper" color="fg.muted">
                   {c.workbench.line_counts.total} dòng ·{" "}
                   {c.workbench.line_counts.needs_review} cần rà soát ·{" "}

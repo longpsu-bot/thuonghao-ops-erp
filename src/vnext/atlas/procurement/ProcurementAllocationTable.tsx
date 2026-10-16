@@ -1,11 +1,14 @@
-import { atlasVisuallyHidden } from "../AtlasTaskTabs";
-import { AtlasSortControl } from "../AtlasSortControl";
+import {
+  AtlasSortableColumnHeader,
+  atlasNarrowSortableHeader,
+} from "../AtlasSortableColumnHeader";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { useState, type ReactNode } from "react";
 import {
   atlasDefaultSort,
+  nextAtlasSort,
   compareAtlasBigInt,
   compareAtlasText,
   type AtlasSortState,
@@ -110,23 +113,23 @@ export function ProcurementAllocationTable({
             comparators[sort.key!](left, right) *
               (sort.direction === "ascending" ? 1 : -1) || byDate(left, right),
         );
+  const onSort = (key: SortKey) =>
+    setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      <AtlasSortControl
-        tools={tools}
-        label="Sắp xếp phân bổ nhà cung ứng"
-        axes={
-          [
-            ["school", "Trường / điểm giao"],
-            ["ingredient", "Nguyên liệu"],
-            ["need", "Nhu cầu"],
-            ["supplier", "Nhà cung ứng"],
-            ["issue", "Tình trạng / vấn đề"],
-          ] as const
-        }
-        value={sort}
-        onChange={setSort}
-      />
+      {tools && (
+        <Flex
+          px="md"
+          py="xs"
+          gap="sm"
+          align="center"
+          wrap="wrap"
+          justify="space-between"
+          bg="bg.toolbar"
+        >
+          {tools}
+        </Flex>
+      )}
       <AtlasTableViewport
         label="Bảng phân bổ nhà cung ứng"
         maxH={{
@@ -154,7 +157,7 @@ export function ProcurementAllocationTable({
             "@media(max-width:47.99rem)": {
               "& colgroup": { display: "none" },
               "& tbody": { display: "block" },
-              "& tr": {
+              "& tbody tr": {
                 display: "grid",
                 gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
                 borderBottom: "1px solid var(--atlas-colors-border-subtle)",
@@ -178,41 +181,58 @@ export function ProcurementAllocationTable({
             <Table.Column />
             <Table.Column w="var(--atlas-allocation-action-width, 102px)" />
           </Table.ColumnGroup>
-          <Table.Header
-            css={{ "@media(max-width:47.99rem)": atlasVisuallyHidden }}
-          >
+          <Table.Header css={atlasNarrowSortableHeader}>
             <Table.Row>
-              {[
-                "Trường / điểm giao",
-                "Nguyên liệu",
-                ...(showServiceDate ? ["Ngày dùng"] : []),
-                "Nhu cầu",
-                "Nhà cung ứng",
-                "Tình trạng / vấn đề",
-                "Thao tác",
-              ].map((label) => (
-                <Table.ColumnHeader
-                  key={label}
-                  left={
-                    label === "Trường / điểm giao"
-                      ? "var(--atlas-layout-zero, 0)"
-                      : undefined
-                  }
-                  position={
-                    label === "Thao tác" || label === "Trường / điểm giao"
-                      ? { base: "static", md: "sticky" }
-                      : undefined
-                  }
-                  right={
-                    label === "Thao tác"
-                      ? "var(--atlas-layout-zero, 0)"
-                      : undefined
-                  }
-                  bg="bg.toolbar"
-                >
-                  {label}
-                </Table.ColumnHeader>
-              ))}
+              {(
+                [
+                  ["Trường / điểm giao", "school"],
+                  ["Nguyên liệu", "ingredient"],
+                  ...(showServiceDate ? [["Ngày dùng", null] as const] : []),
+                  ["Nhu cầu", "need"],
+                  ["Nhà cung ứng", "supplier"],
+                  ["Tình trạng / vấn đề", "issue"],
+                  ["Thao tác", null],
+                ] as const
+              ).map(([label, key]) =>
+                key ? (
+                  <AtlasSortableColumnHeader
+                    key={label}
+                    label={label}
+                    columnKey={key}
+                    sort={sort}
+                    onSort={onSort}
+                    textAlign={key === "need" ? "end" : "start"}
+                    position={
+                      key === "school"
+                        ? { base: "static", md: "sticky" }
+                        : undefined
+                    }
+                    left={
+                      key === "school"
+                        ? "var(--atlas-layout-zero, 0)"
+                        : undefined
+                    }
+                    bg="bg.toolbar"
+                  />
+                ) : (
+                  <Table.ColumnHeader
+                    key={label}
+                    position={
+                      label === "Thao tác"
+                        ? { base: "static", md: "sticky" }
+                        : undefined
+                    }
+                    right={
+                      label === "Thao tác"
+                        ? "var(--atlas-layout-zero, 0)"
+                        : undefined
+                    }
+                    bg="bg.toolbar"
+                  >
+                    {label}
+                  </Table.ColumnHeader>
+                ),
+              )}
             </Table.Row>
           </Table.Header>
           <Table.Body>

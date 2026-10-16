@@ -70,7 +70,8 @@ export type PantryDraftRow = {
 export function pantryRowsForWrite(rows: PantryDraftRow[]): JsonValue[] {
   return rows.map((row) => {
     const note = row.note.trim();
-    return { ...row, note: note === "" ? null : note } as JsonValue;
+    const { pantry_need_purpose_id: _historicalPurpose, ...purposeFree } = row;
+    return { ...purposeFree, note: note === "" ? null : note } as JsonValue;
   });
 }
 

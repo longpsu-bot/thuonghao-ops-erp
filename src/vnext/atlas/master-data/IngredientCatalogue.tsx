@@ -1,11 +1,14 @@
-import { atlasVisuallyHidden } from "../AtlasTaskTabs";
-import { AtlasSortControl } from "../AtlasSortControl";
+import {
+  AtlasSortableColumnHeader,
+  atlasNarrowSortableHeader,
+} from "../AtlasSortableColumnHeader";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { Fragment, useState } from "react";
 import type { IngredientMasterData } from "../bridges/ingredientSupplierMasterData";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   atlasDefaultSort,
+  nextAtlasSort,
   compareAtlasText,
   sortAtlasRows,
   type AtlasSortState,
@@ -54,22 +57,10 @@ export function IngredientCatalogue({
         )[0]?.supplier_name,
       ),
   });
+  const onSort = (key: SortKey) =>
+    setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      <AtlasSortControl
-        label="Sắp xếp nguyên liệu"
-        axes={
-          [
-            ["ingredient", "Nguyên liệu"],
-            ["status", "Trạng thái"],
-            ["unit", "Đơn vị mua"],
-            ["type", "Loại / nhóm đặt hàng"],
-            ["supplier", "Ưu tiên NCC"],
-          ] as const
-        }
-        value={sort}
-        onChange={setSort}
-      />
       <AtlasTableViewport
         label="Danh mục nguyên liệu"
         maxH={{
@@ -100,7 +91,7 @@ export function IngredientCatalogue({
               "@media(max-width: 47.99rem)": {
                 "& colgroup": { display: "none" },
                 "& tbody": { display: "block" },
-                "& tr": {
+                "& tbody tr": {
                   display: "grid",
                   gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
                   borderBottom: "1px solid var(--atlas-colors-border-subtle)",
@@ -119,37 +110,57 @@ export function IngredientCatalogue({
               <Table.Column w="var(--atlas-ingredient-supplier-width, 18%)" />
               <Table.Column w="var(--atlas-ingredient-action-width, 10%)" />
             </Table.ColumnGroup>
-            <Table.Header
-              css={{ "@media(max-width: 47.99rem)": atlasVisuallyHidden }}
-            >
+            <Table.Header css={atlasNarrowSortableHeader}>
               <Table.Row>
-                {[
-                  "Nguyên liệu",
-                  "Trạng thái",
-                  "Đơn vị mua",
-                  "Loại / nhóm đặt hàng",
-                  "Mức làm tròn",
-                  "Ưu tiên NCC",
-                  "Thao tác",
-                ].map((label) => (
-                  <Table.ColumnHeader
-                    key={label}
-                    left={
-                      label === "Nguyên liệu"
-                        ? "var(--atlas-layout-zero, 0)"
-                        : undefined
-                    }
-                    position={{ base: "static", md: "sticky" }}
-                    right={
-                      label === "Thao tác"
-                        ? "var(--atlas-layout-zero, 0)"
-                        : undefined
-                    }
-                    bg="bg.toolbar"
-                  >
-                    {label}
-                  </Table.ColumnHeader>
-                ))}
+                {(
+                  [
+                    ["Nguyên liệu", "ingredient"],
+                    ["Trạng thái", "status"],
+                    ["Đơn vị mua", "unit"],
+                    ["Loại / nhóm đặt hàng", "type"],
+                    ["Mức làm tròn", null],
+                    ["Ưu tiên NCC", "supplier"],
+                    ["Thao tác", null],
+                  ] as const
+                ).map(([label, key]) =>
+                  key ? (
+                    <AtlasSortableColumnHeader
+                      key={label}
+                      label={label}
+                      columnKey={key}
+                      sort={sort}
+                      onSort={onSort}
+                      position={
+                        key === "ingredient"
+                          ? { base: "static", md: "sticky" }
+                          : undefined
+                      }
+                      left={
+                        key === "ingredient"
+                          ? "var(--atlas-layout-zero, 0)"
+                          : undefined
+                      }
+                      bg="bg.toolbar"
+                    />
+                  ) : (
+                    <Table.ColumnHeader
+                      key={label}
+                      position={
+                        label === "Thao tác"
+                          ? { base: "static", md: "sticky" }
+                          : undefined
+                      }
+                      right={
+                        label === "Thao tác"
+                          ? "var(--atlas-layout-zero, 0)"
+                          : undefined
+                      }
+                      bg="bg.toolbar"
+                    >
+                      {label}
+                    </Table.ColumnHeader>
+                  ),
+                )}
               </Table.Row>
             </Table.Header>
             <Table.Body>

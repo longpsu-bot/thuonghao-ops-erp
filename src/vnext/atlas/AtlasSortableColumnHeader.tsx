@@ -58,3 +58,24 @@ export function AtlasSortableColumnHeader<Key extends string>({
     </Table.ColumnHeader>
   );
 }
+
+export const atlasNarrowSortableHeader = {
+  "@media(max-width:47.99rem)": {
+    display: "block",
+    width: "100%",
+    overflowX: "auto",
+    "& tr": { display: "flex", width: "max-content", minWidth: "100%" },
+    "& th": {
+      display: "block",
+      flexShrink: 0,
+      minWidth: "var(--atlas-layout-auto, auto)",
+      whiteSpace: "nowrap",
+    },
+    "& button": {
+      minHeight: "var(--atlas-layout-mobile-target, 44px)",
+      minWidth: "var(--atlas-layout-mobile-target, 44px)",
+      width: "auto",
+      whiteSpace: "nowrap",
+    },
+  },
+} as const;

@@ -47,7 +47,7 @@ export type PantryCompletionPayload = Record<string, JsonValue> & {
 };
 
 export type PantryCompletionCommandRequest = AtlasRpcRequest & {
-  contract_version: "PANTRY-02.v3";
+  contract_version: "PANTRY-02.v4";
   command_id: string;
   correlation_id: string;
   idempotency_key: string;
@@ -104,7 +104,7 @@ export function pantryCompletionRequest(
 ): PantryCompletionCommandRequest {
   const commandId = crypto.randomUUID();
   return {
-    contract_version: "PANTRY-02.v3",
+    contract_version: "PANTRY-02.v4",
     command_id: commandId,
     correlation_id: correlationId,
     idempotency_key: `pantry_saved:${commandId}`,
@@ -120,7 +120,17 @@ export function pantryCompletionRequest(
 export function createPantryApi(invoker: PantryRpcInvoker) {
   const correction = createPlanningCorrectionApi(invoker);
   return {
-    getCorrectionImpact: correction.impact,
+    getCorrectionImpact(...args: Parameters<typeof correction.impact>) {
+      const [subject, correlationId, kind, payload] = args;
+      return correction.impact(
+        subject,
+        correlationId,
+        kind,
+        kind === "PANTRY"
+          ? { ...payload, source_contract_version: "PANTRY-02.v4" }
+          : payload,
+      );
+    },
     prepareCorrection: correction.prepare,
     getWorkbench(
       authSubject: string,
@@ -151,7 +161,7 @@ export function createPantryApi(invoker: PantryRpcInvoker) {
           claimed_source_signature: claimedSourceSignature ?? null,
           school_date_modes: schoolDateModes as unknown as JsonValue,
         }),
-        contract_version: "PANTRY-02.v3",
+        contract_version: "PANTRY-02.v4",
       });
     },
     saveCompleted(request: PantryCompletionCommandRequest) {

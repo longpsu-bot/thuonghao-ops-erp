@@ -384,22 +384,10 @@ export function usePlanningSources({
         data?.attendance ?? null,
         data?.default_attendance_preview ?? [],
       ));
-  const pantryRowErrors = pantryRows.map((r) => {
-    const purpose = pantryData?.purposes.find(
-      (p) => p.pantry_need_purpose_id === r.pantry_need_purpose_id,
-    );
-    return {
-      ingredient: !r.ingredient_id ? "Chọn nguyên liệu." : "",
-      purpose: !r.pantry_need_purpose_id ? "Chọn mục đích." : "",
-      quantity: !r.requested_quantity.trim() ? "Nhập số lượng." : "",
-      note:
-        purpose?.note_rule === "REQUIRED" && !r.note.trim()
-          ? "Nhập lý do cho mục đích này."
-          : purpose?.note_rule === "PROHIBITED" && r.note.trim()
-            ? "Mục đích này không cho phép ghi chú."
-            : "",
-    };
-  });
+  const pantryRowErrors = pantryRows.map((r) => ({
+    ingredient: !r.ingredient_id ? "Chọn nguyên liệu." : "",
+    quantity: !r.requested_quantity.trim() ? "Nhập số lượng." : "",
+  }));
   const errors =
     job === "menu"
       ? importErrors

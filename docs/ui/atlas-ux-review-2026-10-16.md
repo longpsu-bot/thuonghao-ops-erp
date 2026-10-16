@@ -90,3 +90,44 @@ Final correction validation: **7 files / 147 PASS**, 75.51 seconds, excluding ig
 Root accepted the [settled final browser record](evidence/atlas-compact-erp-20261016/browser-checks.json) at actual 1366×768 and 390×844. Desktop School rows measure 58.5px, Supplier rows 49px and Ingredient rows about 52px; columns are 5/6/7 respectively. Allocation and Adjustment expose six desktop columns. Selected Ingredient actions fit inside their viewport; identity/actions remain pinned when local scrolling is needed. School and Allocation count/actions share the sort row. Ingredient's duplicate count is removed while the owner context retains full/filtered counts. Supplier person, phone and email are separate raw fields; no physical address is invented. The same eighteen axes (5/3/5/5), both directions and original order remain.
 
 Final captures: [Schools](evidence/atlas-compact-erp-20261016/schools-final-1366x768.jpg), [Suppliers](evidence/atlas-compact-erp-20261016/suppliers-final-1366x768.jpg), [Ingredients](evidence/atlas-compact-erp-20261016/ingredients-final-1366x768.jpg), [selected Ingredient](evidence/atlas-compact-erp-20261016/ingredient-selected-final-1366x768.jpg), [selected Allocation](evidence/atlas-compact-erp-20261016/allocation-selected-final-1366x768.jpg), [Adjustment/history](evidence/atlas-compact-erp-20261016/adjustment-selected-final-1366x768.jpg), [narrow Allocation](evidence/atlas-compact-erp-20261016/allocation-selected-final-390x844.jpg), [narrow Ingredient](evidence/atlas-compact-erp-20261016/ingredient-selected-final-390x844.jpg). Only these eight settled captures and the record are included; first-pass/cached-view/1280 images are excluded. Narrow document width remains 390px; the semantic quantity cell spans its 333px full row and wraps normally. The browser fixture uses 100 kg; very large exact digits are supported by the focused tests/source, not claimed as a separate browser case. Terra's single review and the one consolidated correction batch are complete. No further redesign starts automatically: this stops at the Owner review checkpoint after normal exact-head CI. Backend/Warehouse and #385–#388 remain parked.
+
+## Owner four-issue remediation — bounded continuation
+
+Owner authorized actual fresh-login Weekly Menu, meaningful column-header sorting,
+optional Pantry notes without a Purpose input, and the compact Confirmed Need
+utility toolbar. These supersede the preceding selector/recording-only decisions;
+existing comparators, eighteen supported axes, exact quantities, keyboard cycles,
+canonical reset, thirteen owners and dirty/UNKNOWN guards remain. Narrow headers
+form a local scroll strip with 44px targets. Root inspected actual 1366/390 views;
+the desktop Need utility row measures 52px. The [final browser record](evidence/atlas-owner-four-remediation-20261016/browser-checks.json) lists exactly seven included captures; initial narrow header and optional-note first-pass images are excluded. Final synthetic preview→Save retains the positive row and blank optional note; this is not hosted persistence proof. Pantry preview and synthetic Save
+readback echo the submitted rows/modes/zero flag rather than false empty success.
+
+The [v4 contract amendment](../api/pantry-02-source.md) adds one backend-owned
+neutral reference classification and two private pure normalizers, preserving
+legacy authored-purpose rules and all historical snapshots. The original v4
+request is the receipt identity; compatibility rows and canonical signature rows
+are separate. A pre-existing D-044 request-gate omission now delegates to the
+existing strict COMPLETE-aware proof under the same arguments. No other Need
+runtime, roles, capabilities, tables, RLS or lifecycle are changed.
+
+Clean local application: all 109 exact current-main migration blobs, then the
+complete migration atomically; SHA-256
+`fae0c8c6248354652ee16f224162157958568c8ab15ce1cccf0fae77653e5758`.
+All 400 existing core/API function metadata entries remain exact; seven intended
+bodies and two new private helper signatures differ. Global role configuration
+and exact schema ACL images match before/after. Private catalogue 349→351 and
+precise runtime target grants 1855→1859; API 121/browser allowlist 118 unchanged.
+
+Validation status is deliberately split: TypeScript and UI boundary **PASS**;
+local Vitest **BLOCKED** by worker startup (zero executed tests in both supported
+attempts); final local Pantry SQL **FAIL, 34/37**. The failed logs and authoring
+rollback remain preserved. Two proven test-source defects were corrected after
+that run without another local execution; normal Full CI must test them.
+Released-Need replay is not claimed locally. The legacy 46-assertion suite retains
+its historical transaction semantics, with only explicit neutral-catalog exposure
+oracles updated. No full local certification or hosted write was run. Exact-head
+normal CI remains the release gate; no merge/deployment is authorized.
+
+Warehouse and #385–#387 remain paused/preserved. Draft #388 remains incomplete;
+its separately authorized next step is one reviewed historical-helper trial and
+one unchanged strict eight-cycle acceptance attempt, with a stop on failure.

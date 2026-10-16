@@ -259,25 +259,22 @@ describe("IngredientSupplierWorkbench", () => {
       "Ưu tiên NCC",
       "Thao tác",
     ]);
-    const sort = screen.getByRole("combobox", { name: "Sắp xếp nguyên liệu" });
-    for (const [key, label] of [
-      ["ingredient", "Nguyên liệu"],
-      ["status", "Trạng thái"],
-      ["unit", "Đơn vị mua"],
-      ["type", "Loại / nhóm đặt hàng"],
-      ["supplier", "Ưu tiên NCC"],
+    for (const label of [
+      "Nguyên liệu",
+      "Trạng thái",
+      "Đơn vị mua",
+      "Loại / nhóm đặt hàng",
+      "Ưu tiên NCC",
     ]) {
-      for (const direction of ["ascending", "descending"]) {
-        expect(
-          within(sort).getByRole("option", {
-            name: `${label} · ${direction === "ascending" ? "Tăng dần" : "Giảm dần"}`,
-          }),
-        ).toBeInTheDocument();
-        fireEvent.change(sort, { target: { value: `${key}:${direction}` } });
-        expect(sort).toHaveValue(`${key}:${direction}`);
+      const button = screen.getByRole("button", {
+        name: `Sắp xếp theo ${label}`,
+      });
+      const header = button.closest("th")!;
+      expect(button).toBeVisible();
+      for (const direction of ["ascending", "descending", "none"]) {
+        fireEvent.click(button);
+        expect(header).toHaveAttribute("aria-sort", direction);
       }
-      fireEvent.change(sort, { target: { value: "default" } });
-      expect(sort).toHaveValue("default");
       expect(screen.getByLabelText("Tên nguyên liệu")).toHaveValue(
         "Bí mật chưa lưu",
       );
@@ -312,18 +309,23 @@ describe("IngredientSupplierWorkbench", () => {
     expect(first()).toHaveTextContent("Minh Tâm");
     expect(first()).toHaveTextContent("0901");
     expect(first()).toHaveTextContent("tam@example.test");
-    const sort = screen.getByRole("combobox", { name: "Sắp xếp nhà cung ứng" });
-    fireEvent.change(sort, { target: { value: "status:ascending" } });
-    fireEvent.change(sort, { target: { value: "status:descending" } });
+    const status = screen.getByRole("button", {
+      name: "Sắp xếp theo Trạng thái",
+    });
+    fireEvent.click(status);
+    fireEvent.click(status);
     expect(first()).toHaveTextContent("NCC Tạm dừng");
-    fireEvent.change(sort, { target: { value: "default" } });
+    fireEvent.click(status);
     expect(first()).toHaveTextContent("NCC Minh Tâm");
-    fireEvent.change(sort, { target: { value: "contact:ascending" } });
+    const contact = screen.getByRole("button", {
+      name: "Sắp xếp theo Người liên hệ",
+    });
+    fireEvent.click(contact);
     expect(first()).toHaveTextContent("NCC Đã nghỉ");
-    fireEvent.change(sort, { target: { value: "contact:descending" } });
+    fireEvent.click(contact);
     expect(first()).toHaveTextContent("NCC Minh Tâm");
-    fireEvent.change(sort, { target: { value: "default" } });
-    expect(sort).toHaveValue("default");
+    fireEvent.click(contact);
+    expect(contact.closest("th")).toHaveAttribute("aria-sort", "none");
     expect(api.getIngredientsAndSuppliers).toHaveBeenCalledOnce();
     expect(api.updateSupplier).not.toHaveBeenCalled();
   });

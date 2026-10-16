@@ -1,5 +1,4 @@
 import { atlasVisuallyHidden } from "../AtlasTaskTabs";
-import { AtlasSortControl } from "../AtlasSortControl";
 import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
 import { SchoolDispatchGroupEditor } from "./SchoolDispatchGroupEditor";
 import { SchoolCookingGroupEditor } from "./SchoolCookingGroupEditor";
@@ -20,7 +19,10 @@ import { useImperativeHandle, useState, type ReactNode } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
-import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
+import {
+  AtlasSortableColumnHeader,
+  atlasNarrowSortableHeader,
+} from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   atlasDefaultSort,
@@ -298,21 +300,19 @@ function SchoolDefaultsTable({
     setSort((current) => nextAtlasSort(current, key));
   return (
     <Box>
-      <AtlasSortControl
-        tools={tools}
-        label="Sắp xếp thông tin trường"
-        axes={
-          [
-            ["order", "#"],
-            ["school", "Trường"],
-            ["location", "Điểm giao"],
-            ["type", "Loại trường"],
-            ["status", "Trạng thái"],
-          ] as const
-        }
-        value={sort}
-        onChange={setSort}
-      />
+      {tools && (
+        <Flex
+          px="md"
+          py="xs"
+          gap="sm"
+          align="center"
+          wrap="wrap"
+          justify="space-between"
+          bg="bg.toolbar"
+        >
+          {tools}
+        </Flex>
+      )}
       <AtlasTableViewport
         label="Bảng sĩ số mặc định theo trường"
         maxH={{
@@ -344,13 +344,12 @@ function SchoolDefaultsTable({
           >
             <Table.Column w="var(--atlas-school-order-width, 44px)" />
             <Table.Column w="var(--atlas-school-identity-width, 25%)" />
-            <Table.Column w="var(--atlas-school-status-width, 160px)" />
+            <Table.Column w="var(--atlas-school-type-width, 100px)" />
+            <Table.Column w="var(--atlas-school-status-width, 130px)" />
             <Table.Column w="var(--atlas-school-defaults-width, 220px)" />
             <Table.Column />
           </Table.ColumnGroup>
-          <Table.Header
-            css={{ "@media(max-width:47.99rem)": atlasVisuallyHidden }}
-          >
+          <Table.Header css={atlasNarrowSortableHeader}>
             <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
               <AtlasSortableColumnHeader
                 label="#"
@@ -364,7 +363,18 @@ function SchoolDefaultsTable({
                 sort={sort}
                 onSort={onSort}
               />
-              <Table.ColumnHeader>Loại / trạng thái</Table.ColumnHeader>
+              <AtlasSortableColumnHeader
+                label="Loại trường"
+                columnKey="type"
+                sort={sort}
+                onSort={onSort}
+              />
+              <AtlasSortableColumnHeader
+                label="Trạng thái"
+                columnKey="status"
+                sort={sort}
+                onSort={onSort}
+              />
               <Table.ColumnHeader>
                 Sĩ số mặc định
                 <Text textStyle="helper" color="fg.muted">
@@ -429,22 +439,22 @@ function SchoolDefaultsTable({
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Flex gap="xs" align="center" wrap="wrap">
-                      <Text textStyle="helper" color="fg.muted">
-                        {school.school_type_name ?? "Chưa phân loại"}
-                      </Text>
-                      <Badge
-                        variant={
-                          school.school_status === "ACTIVE"
-                            ? "success"
-                            : "neutral"
-                        }
-                      >
-                        {school.school_status === "ACTIVE"
-                          ? "Đang hoạt động"
-                          : "Ngừng hoạt động"}
-                      </Badge>
-                    </Flex>
+                    <Text textStyle="helper" color="fg.muted">
+                      {school.school_type_name ?? "Chưa phân loại"}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Badge
+                      variant={
+                        school.school_status === "ACTIVE"
+                          ? "success"
+                          : "neutral"
+                      }
+                    >
+                      {school.school_status === "ACTIVE"
+                        ? "Đang hoạt động"
+                        : "Ngừng hoạt động"}
+                    </Badge>
                   </Table.Cell>
                   <Table.Cell verticalAlign="top">
                     <Grid templateColumns="repeat(2, minmax(0, 1fr))" gap="sm">

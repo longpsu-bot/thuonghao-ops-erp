@@ -482,7 +482,7 @@ describe("Planning source safety", () => {
     expect(preview).toHaveBeenCalled();
     expect(save).toHaveBeenCalledWith(
       expect.objectContaining({
-        contract_version: "PANTRY-02.v3",
+        contract_version: "PANTRY-02.v4",
         payload: expect.objectContaining({
           no_additions_confirmed: false,
           rows: expect.arrayContaining([

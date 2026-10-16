@@ -176,3 +176,48 @@ only makes the proposal eligible for the separate Planning correction-impact rea
 and may still return `save_allowed = false`. The `PANTRY-02.v1` compatibility
 preview retains its original lifecycle behavior and remains ineligible while the
 current batch is `APPROVED`.
+
+## Owner amendment — purpose-free direct entry (`PANTRY-02.v4`, 16 October 2026)
+
+Implementation status: in progress; not deployed or certified. The Owner explicitly
+removed the Purpose input and made Pantry line notes optional. This forward
+contract applies only to the existing `preview_pantry_source` and consequential
+`save_pantry` APIs. Reads and the authored-purpose v1/v2/v3 contracts remain
+callable with their existing validation and lifecycle rules.
+
+V4 rows contain only service date, School, Ingredient, exact quantity, optional
+note and source references. Purpose, Location, Unit, lifecycle and other derived
+fields are rejected. The backend inserts one fixed neutral reference classification
+meaning “direct entry / purpose not specified”, with `OPTIONAL` notes. It is
+technical metadata, not an operator-selected purpose. Blank or whitespace-only
+notes normalize to SQL NULL. The neutral row is visible in the existing reference
+catalog; legacy callers may explicitly select it, but existing Purpose rows and
+`REQUIRED` / `PROHIBITED` rules are unchanged.
+
+The original v4 command remains the receipt and idempotency identity. Separate
+normalized legacy-compatible rows feed the existing Save children; separately
+enriched canonical rows determine signatures. Neither normalization merges nor
+deduplicates rows. Preview, correction-impact dates and Save use the same
+normalization. Pantry correction proposals include the explicit closed
+`source_contract_version: "PANTRY-02.v4"` marker; other source kinds reject it.
+Existing exact source-impact comparisons and ADDITIVE / COMPLETE modes remain.
+
+No current line or immutable historical snapshot is backfilled. Explicitly saving
+legacy content may change its classification to the neutral reference; preview
+and signature expose that change and the existing correction gates still apply.
+Command correction/reopen reasons remain required where their existing contracts
+require them; optional line notes do not relax audit reasons. Capabilities, scope,
+School/date/Unit derivation, quantities, routing and composition are unchanged.
+
+Acceptance requires purpose-spoof rejection, optional blank-note Save, exact
+preview/impact/Save signature agreement, legacy note rules, unchanged history,
+stale signatures and exact replay/conflict after a later Source Save and Need
+release. No hosted write is authorized by this amendment.
+
+The compatibility test also exposed a pre-existing D-044 omission:
+`request_planning_input_need_generation` still used the three-source-only
+`rmvp_03b_bindings_current` check. The amendment replaces only that call with
+`direct_need_evaluation_ready` under the identical evaluation/date arguments.
+This existing helper retains exact current snapshot/version/member coverage and
+accepts only valid COMPLETE-only evidence when catering sources are absent.
+Authentication, locking, receipts and all other request logic are unchanged.

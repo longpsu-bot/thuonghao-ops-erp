@@ -1,0 +1,87 @@
+{
+  "source": "Local synthetic Atlas review; no hosted operations",
+  "firstPass": {
+    "freshReviewSelectedWorkbench": "Thực đơn",
+    "desktop": {
+      "viewport": [
+        1366,
+        768
+      ],
+      "schoolHeaderSortCycle": [
+        "ascending",
+        "descending",
+        "none"
+      ],
+      "schoolUnsavedValueRetained": "281",
+      "standaloneSortSelect": false,
+      "needToolbarHeight": 52,
+      "needActions": [
+        "Xem cách hình thành nhu cầu",
+        "Xuất Phiếu đi chợ",
+        "Nhập Phiếu đi chợ"
+      ]
+    },
+    "narrow": {
+      "viewport": [
+        390,
+        844
+      ],
+      "documentWidth": 390,
+      "keyboardHeaderSamples": [
+        "Schools: Điểm giao",
+        "Suppliers: Người liên hệ",
+        "Ingredients: Đơn vị mua",
+        "Allocation: Nhu cầu"
+      ],
+      "sampleHeaderDirection": "ascending",
+      "offscreenSchoolHeaderFocusedAndRevealed": true,
+      "schoolDraftRetained": true,
+      "needControlsReachable": true
+    },
+    "consolidatedCorrection": "Initial narrow # button30.28px width corrected to44x44 and confirmed in final pass."
+  },
+  "pantry": "Final synthetic preview→Save/readback confirmed with blank optional note and exact positive quantity. No hosted operation or signature certification.",
+  "finalConfirmation": {
+    "schoolMobileHeaderTarget": {
+      "width": 44,
+      "height": 44,
+      "documentWidth": 390
+    },
+    "pantry": {
+      "purposeInputs": 0,
+      "blankNote": {
+        "required": false,
+        "disabled": false,
+        "value": ""
+      },
+      "review": "School Lê Lợi /07Sep/Gạo thơm addition; exact2.500001kg; no falsezero",
+      "syntheticSaveRetainsRow": true,
+      "quantity": "2.500001",
+      "narrow": {
+        "viewport": [
+          390,
+          844
+        ],
+        "documentWidth": 390,
+        "noteKeyboardFocus": true,
+        "noteWidth": 203.359375,
+        "noteHeight": 44,
+        "localTableScroll": true
+      }
+    },
+    "visualVerdict": "PASS for the bounded four-item UI review; backend authority supported separately by SQL/CI; not all-state or hosted acceptance"
+  },
+  "finalScreenshots": [
+    "schools-header-sort-1366x768.png",
+    "schools-header-sort-final-390x844.png",
+    "need-toolbar-1366x768.png",
+    "need-toolbar-390x844.png",
+    "pantry-review-final-1366x768.png",
+    "pantry-saved-final-1366x768.png",
+    "pantry-saved-final-390x844.png"
+  ],
+  "excludedScreenshots": [
+    "schools-header-sort-390x844.png",
+    "pantry-optional-notes-1366x768.png"
+  ]
+}

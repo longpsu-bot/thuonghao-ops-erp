@@ -375,7 +375,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     const request = completed.mock.calls[0]?.[0];
     expect(preview.mock.calls[0]?.[4]?.[0]).toMatchObject({ note: null });
-    expect(request?.contract_version).toBe("PANTRY-02.v3");
+    expect(request?.contract_version).toBe("PANTRY-02.v4");
     expect(request?.payload.school_date_modes).toEqual([
       {
         school_id: "review-planning-school-1",
@@ -410,6 +410,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       source_row_reference: "row",
     } satisfies PantryDraftRow;
 
+    expect(pantryRowsForWrite([row])[0]).not.toHaveProperty(
+      "pantry_need_purpose_id",
+    );
     expect(pantryRowsForWrite([row])[0]).toMatchObject({
       note: "Yêu cầu bổ sung có chủ đích.",
     });

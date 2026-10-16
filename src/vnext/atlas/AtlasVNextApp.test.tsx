@@ -51,7 +51,7 @@ const modules = [
   ["Phiếu xuất kho", "Phiếu xuất kho"],
   ["Đối chiếu PO / Phiếu xuất kho", "Đối chiếu PO / Phiếu xuất kho"],
 ];
-function show() {
+async function showSchool() {
   const apis = createAtlasApplicationFixture();
   const signOut = vi.fn();
   const result = render(
@@ -65,6 +65,7 @@ function show() {
       />
     </AtlasVNextProvider>,
   );
+  await nav("Trường học");
   return { apis, signOut, ...result };
 }
 async function nav(label: string) {
@@ -99,8 +100,34 @@ async function selectRange(start: string, end: string, label = "Khoảng ngày")
     );
 }
 
+it("opens Weekly Menu as the actual fresh-session workbench without initializing School editing", async () => {
+  const apis = createAtlasApplicationFixture();
+  const schools = vi.spyOn(apis.masterData, "getSchools");
+  render(
+    <AtlasVNextProvider>
+      <AtlasVNextApp
+        apis={apis}
+        authSubject="operator"
+        now={applicationReviewNow}
+        onSignOut={vi.fn()}
+      />
+    </AtlasVNextProvider>,
+  );
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Thực đơn" }),
+  ).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Thực đơn" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(
+    screen.queryByRole("tab", { name: "Trường học" }),
+  ).not.toBeInTheDocument();
+  expect(schools).not.toHaveBeenCalled();
+});
+
 it("carries the selected seven-day range from new Confirmed Need to Allocation and Orders without preparation", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   const orders = vi.spyOn(apis.procurement, "getPurchaseOrders");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
@@ -145,7 +172,7 @@ it("carries the selected seven-day range from new Confirmed Need to Allocation a
 }, 60000);
 
 it("preserves an existing Allocation range and unsaved split note when Confirmed Need requests another range", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   const save = vi.spyOn(apis.purchaseReview, "saveConfirmedAllocation");
   await nav("Phân bổ NCC");
@@ -187,7 +214,7 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
 }, 60000);
 
 it("preserves an existing Orders range and selected order when Allocation requests another range", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const orders = vi.spyOn(apis.procurement, "getPurchaseOrders");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
   await nav("Đơn mua");
@@ -249,7 +276,7 @@ it("downloads the attendance template from its persistent owner without saving a
 it.each(modules)(
   "launches %s with one active heading",
   async (label, heading) => {
-    show();
+    await showSchool();
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
     await nav(label!);
     expect(
@@ -273,7 +300,7 @@ it.each(modules)(
   20000,
 );
 it("blocks dirty sign-out without discarding and resolves School through its close guard", async () => {
-  const { signOut } = show();
+  const { signOut } = await showSchool();
   const fields = await screen.findAllByRole("textbox", {
     name: /Học sinh mặc định/,
   });
@@ -302,7 +329,7 @@ it("blocks dirty sign-out without discarding and resolves School through its clo
   expect(signOut).toHaveBeenCalledOnce();
 });
 it("Confirmed Need continues to supplier allocation with no hidden write", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
@@ -322,7 +349,7 @@ it("Confirmed Need continues to supplier allocation with no hidden write", async
 });
 
 it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK and Reconciliation", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const confirmed = vi.spyOn(apis.confirmedNeed, "getReview");
   const procurement = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   const pxk = vi.spyOn(apis.schoolDispatch, "getWorkbench");
@@ -385,7 +412,7 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
 }, 60000);
 
 it("clean sign out runs immediately and a changed identity loses the prior draft", async () => {
-  const { apis, signOut, rerender } = show();
+  const { apis, signOut, rerender } = await showSchool();
   const fields = await screen.findAllByRole("textbox", {
     name: /Học sinh mặc định/,
   });
@@ -403,6 +430,10 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
       />
     </AtlasVNextProvider>,
   );
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Thực đơn" }),
+  ).toBeVisible();
+  await nav("Trường học");
   await waitFor(() =>
     expect(
       screen.getAllByRole("textbox", { name: /Học sinh mặc định/ })[0],
@@ -412,7 +443,7 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
 });
 
 it("uses the injected business date for Recipe's independent initial as-of context", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const effective = vi.spyOn(apis.recipe, "getEffectiveWorkbench");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await nav("Công thức");

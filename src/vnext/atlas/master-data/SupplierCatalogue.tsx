@@ -1,9 +1,10 @@
-import { atlasVisuallyHidden } from "../AtlasTaskTabs";
-import { AtlasSortControl } from "../AtlasSortControl";
 import { Badge, Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import type { SupplierMasterData } from "../bridges/ingredientSupplierMasterData";
-import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
+import {
+  AtlasSortableColumnHeader,
+  atlasNarrowSortableHeader,
+} from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   atlasDefaultSort,
@@ -49,18 +50,6 @@ export function SupplierCatalogue({
     setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      <AtlasSortControl
-        label="Sắp xếp nhà cung ứng"
-        axes={
-          [
-            ["supplier", "Nhà cung ứng"],
-            ["status", "Trạng thái"],
-            ["contact", "Người liên hệ"],
-          ] as const
-        }
-        value={sort}
-        onChange={setSort}
-      />
       <AtlasTableViewport
         label="Bảng danh mục nhà cung ứng"
         maxH={{
@@ -88,7 +77,7 @@ export function SupplierCatalogue({
             "@media(max-width: 47.99rem)": {
               "& colgroup": { display: "none" },
               "& tbody": { display: "block" },
-              "& tr": {
+              "& tbody tr": {
                 display: "grid",
                 gridTemplateColumns: "minmax(0, 1fr) auto",
                 borderBottom: "1px solid var(--atlas-colors-border-subtle)",
@@ -108,9 +97,7 @@ export function SupplierCatalogue({
             <Table.Column />
             <Table.Column w="var(--atlas-supplier-action-width, 96px)" />
           </Table.ColumnGroup>
-          <Table.Header
-            css={{ "@media(max-width:47.99rem)": atlasVisuallyHidden }}
-          >
+          <Table.Header css={atlasNarrowSortableHeader}>
             <Table.Row>
               <AtlasSortableColumnHeader
                 label="Nhà cung ứng"
@@ -121,8 +108,18 @@ export function SupplierCatalogue({
                 sort={sort}
                 onSort={onSort}
               />
-              <Table.ColumnHeader>Trạng thái</Table.ColumnHeader>
-              <Table.ColumnHeader>Người liên hệ</Table.ColumnHeader>
+              <AtlasSortableColumnHeader
+                label="Trạng thái"
+                columnKey="status"
+                sort={sort}
+                onSort={onSort}
+              />
+              <AtlasSortableColumnHeader
+                label="Người liên hệ"
+                columnKey="contact"
+                sort={sort}
+                onSort={onSort}
+              />
               <Table.ColumnHeader>Điện thoại</Table.ColumnHeader>
               <Table.ColumnHeader>Email</Table.ColumnHeader>
               <Table.ColumnHeader

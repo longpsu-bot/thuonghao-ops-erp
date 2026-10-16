@@ -10,6 +10,8 @@ Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read
 
 **16 October — bounded delivery supersession:** Owner explicitly authorizes resolution of the [four recorded UI issues](../ui/atlas-owner-review-issues-2026-10-16.md) in PR #392, followed by bounded remediation of the approved Need correction in Draft #388 after UX is stable. This supersedes the earlier recording-only status and broad Need-remediation pause, not the remaining safety stops. Keep #388 Draft and its unfinished work/evidence; #385–#387 remain parked. Warehouse stays paused, hosted Atlas access remains read-only, and OPSv1/Retool remain NO-WRITE. No merge or deployment.
 
+**Current checkpoint:** Four-issue source implementation is complete in unmerged PR #392; TypeScript/UI boundary pass and Root browser checks cover fresh Menu, header sorting and compact Need controls. Pantry v4 clean application is complete, with exact privilege restoration. Final local SQL is FAIL 34/37; two proven test-source corrections are not locally rerun, and normal CI is mandatory. Local Vitest is BLOCKED by worker startup. [Current evidence and limitations](../ui/atlas-ux-review-2026-10-16.md#owner-four-issue-remediation--bounded-continuation). Do not claim full acceptance or merge. Next is the one separately bounded #388 trial after publication; stop on its first strict scale failure.
+
 Standing Owner delivery rules:
 
 1. Prioritize delivery, operational readiness and measurable business value over endless optimization.
