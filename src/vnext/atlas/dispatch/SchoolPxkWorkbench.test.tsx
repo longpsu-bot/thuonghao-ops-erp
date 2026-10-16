@@ -232,9 +232,10 @@ describe("School PXK operator table and attached detail", () => {
         screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
         { target: { value: "Giữ ngày" } },
       );
-      fireEvent.click(
-        screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
-      );
+      const originalTrigger = screen.getByRole("button", {
+        name: "Mở lịch — Khoảng ngày",
+      });
+      fireEvent.click(originalTrigger);
       const rangeGrid = await screen.findByRole("grid");
       for (const date of ["2026-09-24", "2026-09-25"])
         fireEvent.click(
@@ -256,9 +257,18 @@ describe("School PXK operator table and attached detail", () => {
         await userEvent.click(cancel);
       }
       await waitFor(() =>
-        expect(
-          screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
-        ).toHaveTextContent("24/09/2026 — 24/09/2026"),
+        expect(dialog).toHaveAttribute("data-state", "closed"),
+      );
+      // Keep quick Cancel before trap focus; only complete the real closed-state exit.
+      fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
+      await waitFor(() => expect(dialog).not.toBeInTheDocument());
+      const restoredTrigger = screen.getByRole("button", {
+        name: "Mở lịch — Khoảng ngày",
+      });
+      expect(originalTrigger).not.toBeInTheDocument();
+      expect(restoredTrigger).not.toBe(originalTrigger);
+      await waitFor(() =>
+        expect(restoredTrigger).toHaveTextContent("24/09/2026 — 24/09/2026"),
       );
       expect(
         screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),

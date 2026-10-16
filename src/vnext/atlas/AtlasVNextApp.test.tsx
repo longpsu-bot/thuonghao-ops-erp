@@ -106,15 +106,26 @@ async function nav(label: string) {
       screen.queryByRole("dialog", { name: "Chức năng" }),
     ).not.toBeInTheDocument(),
   );
-  await waitFor(() =>
-    expect(
-      screen.getByRole("tab", { name: label, hidden: true }),
-    ).toHaveAttribute("aria-selected", "true"),
-  );
+  const panel = await screen.findByRole("tabpanel", {
+    name: label,
+    hidden: true,
+  });
+  const strip = screen.getByRole("tablist", {
+    name: "Màn hình đang mở",
+    hidden: true,
+  });
+  const tab = within(strip)
+    .getAllByRole("tab", { hidden: true })
+    .find((item) => item.getAttribute("aria-controls") === panel.id);
+  expect(tab).toBeDefined();
+  expect(tab).toHaveTextContent(label);
+  await waitFor(() => expect(tab).toHaveAttribute("aria-selected", "true"));
+  expect(panel).toBeVisible();
   const heading = modules.find(([name]) => name === label)?.[1];
   expect(
-    await screen.findByRole("heading", { level: 1, name: heading }),
+    await within(panel).findByRole("heading", { level: 1, name: heading }),
   ).toBeVisible();
+  return panel;
 }
 async function clickSignOut() {
   fireEvent.click(
@@ -377,19 +388,33 @@ it("Confirmed Need continues to supplier allocation with no hidden write", async
   const { apis } = await showMenu();
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
-  await nav("Thực đơn");
-  await nav("Xác nhận nhu cầu");
-  const proceed = await screen.findByRole("button", {
+  const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
+  const need = await nav("Xác nhận nhu cầu");
+  const proceed = await within(need).findByRole("button", {
     name: "Tiếp tục phân bổ NCC",
   });
   await waitFor(() => expect(proceed).toBeEnabled());
   fireEvent.click(proceed);
-  await waitFor(() => expect(allocation).toHaveBeenCalled());
-  expect(save).not.toHaveBeenCalled();
-  expect(screen.getByRole("tab", { name: /Phân bổ/ })).toHaveAttribute(
-    "aria-selected",
-    "true",
+  await waitFor(() =>
+    expect(allocation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          date_start: "2026-09-07",
+          date_end: "2026-09-07",
+        }),
+      }),
+    ),
   );
+  const destination = screen.getByRole("tabpanel", {
+    name: "Phân bổ NCC",
+    hidden: true,
+  });
+  expect(destination).toBeVisible();
+  expect(save).not.toHaveBeenCalled();
+  expect(prepare).not.toHaveBeenCalled();
+  expect(
+    screen.getByRole("tab", { name: /Phân bổ/, hidden: true }),
+  ).toHaveAttribute("aria-selected", "true");
 });
 
 it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK and Reconciliation", async () => {

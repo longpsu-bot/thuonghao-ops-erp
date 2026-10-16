@@ -1,7 +1,8 @@
 # Atlas Autopilot — Active Task
 
-Task: **ATLAS-UX-ART-DIRECTION-02**  
-Status: **FAIL_STOP — incomplete Drafts preserved; no autoexecution**
+Task: **ATLAS-UI392-CI-REPAIR-01 — Task A only**
+
+Status: **BLOCKED — Task A partial repair; School same-root stop**
 
 Product authorization: **16 October 2026** — Owner explicitly redirected priority from overextended Autopilot/backend work to Atlas UX/UI design.  
 Source: [approved GitHub Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389) and [execution brief](../implementation-tasks/TASK-ATLAS-UX-ART-DIRECTION-02.md).  
@@ -9,9 +10,19 @@ Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read
 
 ## Product priority and work authorization
 
+**Task A activation exception — 16 October 2026:** The Owner explicitly authorizes `ATLAS-UI392-CI-REPAIR-01` in this thread on the existing PR #392 branch, despite recovery-policy PR #393 (`dd6ca59f`) remaining Draft/unmerged. This is a bounded thread exception, not a claim that the policy was merged/adopted into main and not permission to merge/cherry-pick the whole plan. Read-only source: `origin/docs/atlas-autopilot-tiered-recovery-20261016:docs/autopilot/ATLAS-RECOVERY-392-388-2026-10-16.md`. Verified start `0880db42`, main `3667966a`, canonical user-authorized E: checkout; preserve all prior failures.
+
+Scope: reproduce/repair the pnpm registry oracle, exact Ingredient owner/status identity, School dirty sign-out/Close timing, Need→Allocation navigation/date/no-hidden-Save, prior PXK Cancel focus, and the authoritative Pantry fixture UUID so all 38 assertions run. Classify test-source, async/environment and proven runtime defects separately. Use focused tests first and deterministic observable state/events; no timeout increase, skip/xfail, dependency/framework, new migration or business/permission change. At most two bounded attempts for the same root failure, then STOP with minimal reproduction/decision. One consolidated source/evidence review, Root browser1366/390 and Terra review precede one coherent push/normal exact-head CI. No local full certification loop.
+
+Task B/#388 is NOT active: preserve exact `11cda965` and its runtime/evidence without commands, changes or integration. #385–#387/Warehouse remain parked; hosted Atlas read-only and OPSv1/Retool NO-WRITE. No merge/deployment. The historical STOP checkpoint below remains evidence; only this named Task A repair is superseded by explicit Owner authorization.
+
 **16 October — bounded delivery supersession:** Owner explicitly authorizes resolution of the [four recorded UI issues](../ui/atlas-owner-review-issues-2026-10-16.md) in PR #392, followed by bounded remediation of the approved Need correction in Draft #388 after UX is stable. This supersedes the earlier recording-only status and broad Need-remediation pause, not the remaining safety stops. Keep #388 Draft and its unfinished work/evidence; #385–#387 remain parked. Warehouse stays paused, hosted Atlas access remains read-only, and OPSv1/Retool remain NO-WRITE. No merge or deployment.
 
-**Current checkpoint: FAIL / STOP.** PR #392 code head `34c85ea8` failed its repeated acceptance gate: Frontend `38878470979` has four failures (3,037 passed; two skipped); Full Integration `38878471055` aborts on the malformed allocation-fixture UUID after 23/38 passing assertions. No released-Need replay or completed UI acceptance is claimed. The one separately bounded C trial is preserved in Draft #388 at `11cda965`: 588 focused PASS, strict31 first Preparation timeout, 0/8 cycles and 0/20 final assertions, full rollback; no demonstrated performance gain or combined integration. [Exact blockers and next-scope handoff](../ui/atlas-ux-review-2026-10-16.md#mandatory-stop--repeated-acceptance-failure). No further code/test repair, SQL execution, profile, retry or automatic next task. Preserve both Drafts and all evidence; no merge/deployment.
+**Current Task A checkpoint: PARTIAL / BLOCKED.** The registry pnpm oracle, exact panel-linked tab identity, Need date/no-hidden-Save/Preparation assertions, PXK closed/remounted-trigger focus assertions and Pantry UUID correction are retained. Six named focused cases passed on repair1; Pantry executes all 38 assertions and passes on the verified unchanged local runtime, with rollback/global-schema parity. School still exceeds its unchanged 5-second test budget after two bounded repair strategies; no runtime hang was established. The rejected School isolation source/diff and all phase logs are preserved with hashes; ONLY that School test block is restored exactly to `0880db42`. No third local strategy/run or full local certification. [Classification, minimal reproduction and decision](../ui/atlas-ux-review-2026-10-16.md#task-a-partial-repair--school-blocked).
+
+**Unresolved operational risk:** actual 390px School Cancel retains the draft/removes its dialog but leaves focus on BODY (desktop restores Close). The mobile chooser origin unmounts and no persistent Cancel fallback exists. This is separate from the unlocalized 5s harness timeout; no data/guard failure is observed. Record only: no new runtime repair/test is authorized. Browser screenshot capture is BLOCKED; DOM checks are qualified, not all PASS.
+
+Publish one partial preservation checkpoint to existing Draft #392 after review/static checks. Normal automatic CI must be observed and reported; it is not a third local strategy, a readiness claim or permission to resume automatically if a flaky run passes. The next decision is a bounded School-only harness investigation versus an explicit test-only budget decision; operational 8s/20s/1s and disclosed nested 5s limits are untouched. PR #393 remains Draft/unmerged. #388 `11cda965`, Task B, #385–#387 and Warehouse remain inactive/preserved. No merge/deploy.
 
 Standing Owner delivery rules:
 

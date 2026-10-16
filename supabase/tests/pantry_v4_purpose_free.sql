@@ -424,7 +424,7 @@ reset role;
 insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,document_code)
 values('a7200000-0000-4000-8000-000000000090','PANTRY-V4-SUPPLIER','Pantry v4 test Supplier','P4-SUPPLIER');
 insert into atlas_admin.supplier_eligibilities(supplier_id,ingredient_id,effective_from,priority,reason_note)
-values('a7200000-0000-4000-8000-000000000090','a7200000-0000-0000-000000000032','2020-01-01',1,'Local Pantry v4 release prerequisite');
+values('a7200000-0000-4000-8000-000000000090','a7200000-0000-0000-0000-000000000032','2020-01-01',1,'Local Pantry v4 release prerequisite');
 set constraints all immediate;
 set constraints all deferred;
 set local role authenticated;
