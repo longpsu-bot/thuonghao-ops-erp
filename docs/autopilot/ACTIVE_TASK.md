@@ -1,12 +1,16 @@
 # Atlas Autopilot — Active Task
 
 Task: ATLAS-OPERATOR-CONFIRMED-NEED-CORRECTION-C-01
-Status: TASK7_IMPLEMENTATION — Task6 cleared; genuine workload measurement, exact catalog and existing test-runner registration only. Task8/push remain held.
+Status: DRAFT_PUBLICATION — user-requested wrap/push; implemented C, eight-cycle acceptance incomplete.
 Navigator/reviewer: Terra, read-only
 Implementer/document author: Sol 6.1
 Starting main: d102b2f1b083005d6553867fa5ccdf8c988a0316
 Atlas Staging: rnzxmxiiqgtdevzregff — accepted migration 109; no hosted database action in this task
 OPS v1 / Retool / Production: no writes or commitments
+
+## Publication checkpoint — 16 October 2026
+
+The user explicitly requested wrap-up and push now, superseding internal Task8/push holds only. Publish the verified implemented checkpoint as existing Draft #388; no ready/merge/manual deployment/hosted DB action. Runtime 3669f274: 455 focused assertions PASS; strict29 observes 1/8 full cycles then the second Preparation exceeds 20 seconds, 0/20 final assertions, full rollback. Final waits, exports and broader regressions and exact-head Full remain incomplete/deferred. No command is in flight. Cancel the unapplied dd3 optimization; preserve TEMP only. [Validation checkpoint](../testing/operator-confirmed-need-correction-c-01-validation.md) is the current outcome; earlier gates/evidence below are historical and do not imply all tasks complete.
 
 ## Authority — 15 October 2026
 

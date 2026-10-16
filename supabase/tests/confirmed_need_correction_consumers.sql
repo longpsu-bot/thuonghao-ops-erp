@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=extensions,public,pg_catalog;
-select plan(47);
+select plan(58);
 \ir ../local/confirmed_need_correction_fixture.sql
 set local statement_timeout='8s';
 create function pg_temp.c_consumer_call(api text,request jsonb)returns jsonb language plpgsql as $$
@@ -124,6 +124,21 @@ select is((select count(*)from atlas_procurement.purchase_orders po join atlas_p
  where po.school_catering_service_date='2026-11-02'and po.supplier_id='c7100000-0000-4000-8000-000000000002'and r.is_current
  and atlas_core.school_catering_po_commitment_state(po.purchase_order_id,r.purchase_order_revision_id)='CURRENT'),1::bigint,
  'unaffected Supplier J official PO is current after explicit successor Handoff');
+
+select is((select value->>'applicable'from jsonb_each(
+ atlas_core.purchase_review_official_continuity_map(date '2026-11-02',date '2026-11-03'))proof
+ join c_consumer_before old on proof.key=old.revision->>'family_revision_id'
+ where old.family->>'service_date'='2026-11-02'
+ and old.family->>'ingredient_id'='b6500000-0000-0000-0000-000000000007'),'true',
+ 'range map explicitly proves the retained original J revision after real public successor Handoff');
+select is((select count(*)from jsonb_each(atlas_core.purchase_review_official_continuity_map(
+ date '2026-11-02',date '2026-11-03'))proof join atlas_procurement.school_catering_allocation_family_revisions r
+ on r.family_revision_id::text=proof.key join atlas_procurement.school_catering_allocation_families f using(family_id)
+ where r.is_current and f.service_date='2026-11-02'and proof.value->>'applicable'='true'),2::bigint,
+ 'range map contains applicable exact current I and retained J, not a constant empty map');
+select is(atlas_core.school_catering_po_date_readiness(date '2026-11-02','{}'::jsonb)->>'ready','false',
+ 'missing private proof fails closed for retained J while the fresh complete wrapper is ready');
+
 insert into c_results select 'consumer-replacement',pg_temp.c_consumer_call('create_school_catering_purchase_order_replacement',
  pg_temp.c_command('SCHOOL-CATERING-PROCUREMENT.v1','SCHOOL_CATERING_PO_REPLACEMENT_CREATED',po.version,
  jsonb_build_object('replaced_purchase_order_id',po.purchase_order_id,'expected_purchase_order_revision_id',rev.purchase_order_revision_id))),
@@ -139,6 +154,73 @@ insert into c_results select 'consumer-replacement-release',pg_temp.c_consumer_c
  where po.replaces_purchase_order_id is not null and rev.is_current;
 select is((select response->>'success'from c_results where name='consumer-replacement-release'),'true',
  'the same Actor explicitly releases the reviewed positive PO replacement');
+
+-- Instrument only this read after genuine public replacement/release; restore GUC.
+create temporary table c_date_tracking as select current_setting('track_functions') prior_tracking;
+set local track_functions='all';
+do $date_current_reuse$
+declare before_scalar bigint;after_scalar bigint;
+ before_resolved bigint;after_resolved bigint;answer boolean;
+begin
+ select calls into before_scalar from pg_stat_xact_user_functions
+ where funcid='atlas_core.school_catering_po_commitment_state(uuid,uuid)'::regprocedure;
+ select calls into before_resolved from pg_stat_xact_user_functions
+ where funcid='atlas_core.school_catering_po_commitment_state(uuid,uuid,jsonb)'::regprocedure;
+ answer:=atlas_core.school_catering_procurement_date_current(date '2026-11-02');
+ select calls into after_scalar from pg_stat_xact_user_functions
+ where funcid='atlas_core.school_catering_po_commitment_state(uuid,uuid)'::regprocedure;
+ select calls into after_resolved from pg_stat_xact_user_functions
+ where funcid='atlas_core.school_catering_po_commitment_state(uuid,uuid,jsonb)'::regprocedure;
+ insert into c_context values('date-current-reuse',jsonb_build_object('current',answer,
+ 'scalar_calls',coalesce(after_scalar,0)-coalesce(before_scalar,0),
+ 'resolved_calls',coalesce(after_resolved,0)-coalesce(before_resolved,0)));
+end;$date_current_reuse$;
+select format('set local track_functions=%L;',prior_tracking)from c_date_tracking\gexec
+select is((select value->>'current'from c_context where name='date-current-reuse'),'true',
+ 'whole official date is current after real explicit PO replacement release');
+select is((select value->>'scalar_calls'from c_context where name='date-current-reuse'),'0',
+ 'official date read shares its phase proof instead of rebuilding scalar commitment contexts');
+select ok((select(value->>'resolved_calls')::bigint>0 from c_context where name='date-current-reuse'),
+ 'official date still evaluates actual PO commitments through resolved predicates');
+
+-- Public read must keep complete official rows while using its existing full-range map.
+create temporary table c_public_tracking as select current_setting('track_functions') prior_tracking;
+set local track_functions='all';
+do $public_date_reuse$
+declare before_maps bigint;after_maps bigint;answer jsonb;missing boolean;
+begin
+ select calls into before_maps from pg_stat_xact_user_functions
+ where funcid='atlas_core.purchase_review_official_continuity_map(date,date)'::regprocedure;
+ answer:=pg_temp.c_consumer_call('get_school_catering_purchase_orders',
+ pg_temp.c_read('SCHOOL-CATERING-PROCUREMENT.v1',jsonb_build_object(
+ 'date_start','2026-11-02','date_end','2026-11-03','supplier_ids','[]'::jsonb,'statuses','[]'::jsonb,'search',null)));
+ select calls into after_maps from pg_stat_xact_user_functions
+ where funcid='atlas_core.purchase_review_official_continuity_map(date,date)'::regprocedure;
+ insert into c_results values('consumer-resolved-public-read',answer,'authenticated');
+ if to_regprocedure('atlas_core.school_catering_procurement_date_current(date,jsonb)')is not null then
+ missing:=atlas_core.school_catering_procurement_date_current(date '2026-11-02','{}'::jsonb);
+ end if;
+ insert into c_context values('public-date-reuse',jsonb_build_object(
+ 'map_calls',coalesce(after_maps,0)-coalesce(before_maps,0),'missing_proof',missing));
+end;$public_date_reuse$;
+select format('set local track_functions=%L;',prior_tracking)from c_public_tracking\gexec
+select ok((select response->>'success'='true'and response->>'procurement_current'='true'
+ from c_results where name='consumer-resolved-public-read'),
+ 'public multiday official read remains successful and current after explicit release');
+select is((select jsonb_array_length(response->'purchase_orders')from c_results
+ where name='consumer-resolved-public-read'),5,
+ 'public multiday official read retains all five roots including the superseded original');
+select is((select count(*)from c_results before_read cross join lateral jsonb_array_elements(before_read.response->'purchase_orders')old
+ where before_read.name='official-po-read'and exists(select from c_results after_read
+ cross join lateral jsonb_array_elements(after_read.response->'purchase_orders')current
+ where after_read.name='consumer-resolved-public-read'and current->'purchase_order_id'=old->'purchase_order_id'
+ and current->'lines'=old->'lines'and current->'supplier'=old->'supplier'and current->'document_number'=old->'document_number')),
+ 4::bigint,'resolved public read preserves all four original frozen line and Supplier snapshots');
+select is((select value->>'map_calls'from c_context where name='public-date-reuse'),'0',
+ 'public official read reuses its full-range map without redundant day-map reconstruction');
+select is((select value->>'missing_proof'from c_context where name='public-date-reuse'),'false',
+ 'resolved date current fails closed when retained official evidence is missing');
+
 select is((select count(*)from atlas_procurement.purchase_orders po join c_consumer_documents old using(purchase_order_id)
  where po.purchase_order_status='SUPERSEDED'and po.document_number is not distinct from old.document_number),1::bigint,
  'explicit replacement supersedes one old root while preserving its official number');

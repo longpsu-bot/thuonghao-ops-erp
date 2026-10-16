@@ -10,9 +10,13 @@
 
 **Spec:** `E:/Project/OPS ERP/thuonghao-ops-erp/docs/superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md`, human-approved design source `340721a49788163416176db816477168895f3442`.
 
+## Publication checkpoint — 16 October 2026
+
+Implemented Draft publication is explicitly user-authorized now; internal push holds below are historical. Acceptance is incomplete: final runtime 3669f274 has 455 focused SQL assertions PASS, strict29 completes 1/8 observed cycles before the second Preparation exceeds 20 seconds and0/20 final assertions. All data rolls back. Final waits, exports and broader regressions/remote Full remain deferred. dd3 is TEMP-only and unapplied; no further optimization/DB run. Do not mark all tasks complete or PR ready. [Current validation](../../testing/operator-confirmed-need-correction-c-01-validation.md).
+
 ## Global Constraints
 
-- Release scope: **TASK2_ONLY** after the authority amendment. Task1 is locally committed at `f452195156ad11d8f217fe4efd9770762cc12ff9`; Root/Terra reviewed the concrete fence/root/bridge design and released Task2 private proof, early fences, narrowly retained-RELEASED guard support and focused tests. Tasks3–8 remain technical checkpoints; no new public C APIs, atomic wrapper or UI implementation yet. Sol6.1 is sole implementer using executing-plans; no new agents or execution-mode question.
+- Historical initial release scope: **TASK2_ONLY** after the authority amendment. Task1 is locally committed at `f452195156ad11d8f217fe4efd9770762cc12ff9`; Root/Terra reviewed the concrete fence/root/bridge design and released Task2 private proof, early fences, narrowly retained-RELEASED guard support and focused tests. Tasks3–8 remain technical checkpoints; no new public C APIs, atomic wrapper or UI implementation yet. Sol6.1 is sole implementer using executing-plans; no new agents or execution-mode question.
 - Human approval15October: “if this mean PO/Dispatch can still re released after need correction then approve”. Valid affected positive POs use explicit complete replacements; Dispatch explicit successors; old released documents preserved. True zero and Supplier-transfer remnants retain existing cancellation-required frontier. No promise every zero/unsupported case can release, no automatic release chain/cancellation/supplemental policy.
 - Canonical checkout `E:/Project/OPS ERP/thuonghao-ops-erp`, existing C branch/PR388. Fresh origin/main at planning is `d102b2f1b083005d6553867fa5ccdf8c988a0316` (accepted 109); reverify before code. A2/B are separate frozen Drafts, not dependencies; no copied helpers/schema.
 - No merge, manual deployment or hosted database writes. Automatic Pages previews are separate. No Production/v1/Retool mutations, staff assignment/grants, Warehouse/operatorD or real commitments.

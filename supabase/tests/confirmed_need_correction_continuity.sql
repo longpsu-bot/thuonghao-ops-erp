@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=extensions,public,pg_catalog;
-select plan(72);
+select plan(108);
 \ir ../local/confirmed_need_correction_fixture.sql
 
 -- These helpers only invoke existing public commands under the fixture JWT.
@@ -34,6 +34,38 @@ create temporary table c_retained_families as
 select f.*,r.family_revision_id from atlas_procurement.school_catering_allocation_families f
 join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
 where r.is_current and f.service_date='2026-11-02';
+-- These compare captured public-history identities, not a copied projector loop.
+do $resolved_projection_probe$
+declare target record;current_facts jsonb;historical_facts jsonb;resolved_facts jsonb;
+ missing_error text;wrong_error text;
+begin
+ if to_regprocedure('atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)')is null then return;end if;
+ select * into strict target from c_selected;
+ current_facts:=atlas_core.rmvp_07_validated_facts_projection(target.confirmed_need_batch_id);
+ resolved_facts:=atlas_core.rmvp_07_validated_facts_projection(target.confirmed_need_batch_id,null::uuid,
+ atlas_core.rmvp_06_canonical_evaluation(target.confirmed_need_batch_id));
+ historical_facts:=atlas_core.rmvp_07_validated_facts_projection(target.confirmed_need_batch_id,target.attempt_id);
+ insert into c_context values('resolved-projection',jsonb_build_object(
+ 'current_exact',current_facts=resolved_facts,
+ 'current_cardinality',jsonb_array_length(resolved_facts->'ordered_lines'),
+ 'captured_members',(select count(*)from jsonb_array_elements(resolved_facts->'ordered_lines')item
+ join c_original old on item->>'confirmed_need_line_id'=old.confirmed_need_line_id::text
+ and item->>'current_confirmed_need_line_revision_id'=old.revision_id::text
+ and item->>'current_confirmed_need_line_decision_id'=old.decision_id::text
+ and(item->>'confirmed_quantity')::numeric=old.confirmed_quantity),
+ 'historical_exact',historical_facts=atlas_core.rmvp_07_validated_facts_projection(
+ target.confirmed_need_batch_id,target.attempt_id,'{"outcome":"BLOCKED","ordered_lines":[]}'::jsonb),
+ 'historical_fingerprint',atlas_core.rmvp_07_validated_facts_fingerprint(historical_facts)=
+ atlas_core.rmvp_07_validated_facts_fingerprint(atlas_core.rmvp_07_validated_facts_projection(
+ target.confirmed_need_batch_id,target.attempt_id,'{}'::jsonb))));
+ begin perform atlas_core.rmvp_07_validated_facts_projection(target.confirmed_need_batch_id,gen_random_uuid(),'{}'::jsonb);
+ exception when sqlstate '22023'then missing_error:=sqlstate;end;
+ begin perform atlas_core.rmvp_07_validated_facts_projection((select confirmed_need_batch_id
+ from atlas_planning.confirmed_need_batches where period_start='2026-11-03'and period_end=period_start),target.attempt_id,'{}'::jsonb);
+ exception when sqlstate '22023'then wrong_error:=sqlstate;end;
+ insert into c_context values('resolved-projection-errors',jsonb_build_object('missing',missing_error,'wrong_batch',wrong_error));
+end;$resolved_projection_probe$;
+
 create function pg_temp.c_family_proof(revision uuid,mode text)returns jsonb
 language plpgsql as $$declare answer jsonb;begin
  if to_regprocedure('atlas_core.purchase_review_family_continuity(uuid,text)')is null then return '{}'::jsonb;end if;
@@ -56,53 +88,140 @@ language plpgsql as $$declare answer jsonb;begin
  return answer;
 end;$$;
 do $edge_contexts$
-declare context jsonb;original jsonb;middle jsonb;last_edge jsonb;other jsonb;result jsonb;
+declare context jsonb;original jsonb;middle jsonb;last_edge jsonb;result jsonb;mutation jsonb;
+ family_key text;original_id text;original_key text;groups jsonb;members jsonb;foreign_members jsonb;null_error text;
  family_revision uuid:=(select family_revision_id from c_retained_families order by family_id limit 1);
 begin
- if to_regprocedure('atlas_core.purchase_review_continuity_context(uuid)')is null then
+ context:=atlas_core.purchase_review_continuity_context((select confirmed_need_batch_id from c_selected));
+ insert into c_context values('original-continuity-context',context);
+ if not context?'handoff_members'then
   insert into c_context select name,'{}'from unnest(array['ambiguous-source','missing-member',
-   'changed-decision','changed-school','predecessor-gap','predecessor-cycle','changed-then-reverted'])name;
+   'changed-decision','changed-school','predecessor-gap','predecessor-cycle','changed-then-reverted',
+   'missing-group','empty-group','duplicate-member','locator-swap','foreign-only','foreign-filter','null-group'])name;
   return;
  end if;
- execute 'select atlas_core.purchase_review_continuity_context($1)'into context
-  using(select confirmed_need_batch_id from c_selected);
- insert into c_context values('original-continuity-context',context);
  insert into c_context values('ambiguous-source',pg_temp.c_resolved_proof(family_revision,
   jsonb_set(context,'{sources}',(context->'sources')||(context->'sources'))));
  select h into original from jsonb_array_elements(context->'handoffs')h
- where h->>'is_current'='true' order by h->>'purchase_handoff_revision_id'limit 1;
- -- Negative resolved-context tests start with genuine public history; they do
- -- not fabricate accepted facts or claim a successful public successor journey.
- select jsonb_agg(m)into result from jsonb_array_elements(original#>'{membership,members}')m
- where m->>'ingredient_id'<>(select f.ingredient_id::text from c_retained_families f
-  where f.family_revision_id=family_revision);
+ where h->>'is_current'='true'order by h->>'purchase_handoff_revision_id'limit 1;
+ select jsonb_build_array(f.service_date::text,f.delivery_location_id::text,f.ingredient_id::text,f.unit_id::text)::text
+ into family_key from c_retained_families f where f.family_revision_id=family_revision;
+ original_id:=original->>'purchase_handoff_revision_id';original_key:=original->>'member_group_key';
+ groups:=context#>array['handoff_members',original_id,original_key];members:=groups->family_key;
+ -- Only consumed raw evidence is changed; no ignored legacy membership.members.
  insert into c_context values('missing-member',pg_temp.c_resolved_proof(family_revision,
-  jsonb_set(context,'{handoffs}',jsonb_build_array(jsonb_set(original,'{membership,members}',result)))));
- select jsonb_agg(jsonb_set(m,'{current_confirmed_need_line_decision_id}',to_jsonb(gen_random_uuid())))into result
- from jsonb_array_elements(original#>'{membership,members}')m;
+  jsonb_set(context,array['handoff_members',original_id,original_key,family_key],members-0)));
+ select jsonb_agg(jsonb_set(m,'{current_confirmed_need_line_decision_id}',to_jsonb(gen_random_uuid()))order by ordinality)
+ into result from jsonb_array_elements(members)with ordinality item(m,ordinality);
  insert into c_context values('changed-decision',pg_temp.c_resolved_proof(family_revision,
-  jsonb_set(context,'{handoffs}',jsonb_build_array(jsonb_set(original,'{membership,members}',result)))));
- select jsonb_agg(jsonb_set(m,'{school_id}',to_jsonb(gen_random_uuid())))into result
- from jsonb_array_elements(original#>'{membership,members}')m;
+  jsonb_set(context,array['handoff_members',original_id,original_key,family_key],result)));
+ select jsonb_agg(jsonb_set(m,'{school_id}',to_jsonb(gen_random_uuid()))order by ordinality)
+ into result from jsonb_array_elements(members)with ordinality item(m,ordinality);
  insert into c_context values('changed-school',pg_temp.c_resolved_proof(family_revision,
-  jsonb_set(context,'{handoffs}',jsonb_build_array(jsonb_set(original,'{membership,members}',result)))));
+  jsonb_set(context,array['handoff_members',original_id,original_key,family_key],result)));
  middle:=original||jsonb_build_object('purchase_handoff_revision_id',gen_random_uuid(),
   'predecessor_revision_id',original->'purchase_handoff_revision_id','revision_number',
-  (original->>'revision_number')::integer+2);
+  (original->>'revision_number')::integer+2,'member_group_key','gap');
+ mutation:=jsonb_set(context,'{handoff_members}',(context->'handoff_members')||jsonb_build_object(
+  middle->>'purchase_handoff_revision_id',jsonb_build_object('gap',groups)));
  insert into c_context values('predecessor-gap',pg_temp.c_resolved_proof(family_revision,
-  jsonb_set(context,'{handoffs}',jsonb_build_array(original,middle))));
+  jsonb_set(mutation,'{handoffs}',jsonb_build_array(original,middle))));
  middle:=middle||jsonb_build_object('predecessor_revision_id',middle->'purchase_handoff_revision_id');
  insert into c_context values('predecessor-cycle',pg_temp.c_resolved_proof(family_revision,
-  jsonb_set(context,'{handoffs}',jsonb_build_array(original,middle))));
- middle:=jsonb_set(original||jsonb_build_object('purchase_handoff_revision_id',gen_random_uuid(),
+  jsonb_set(mutation,'{handoffs}',jsonb_build_array(original,middle))));
+ middle:=original||jsonb_build_object('purchase_handoff_revision_id',gen_random_uuid(),
   'predecessor_revision_id',original->'purchase_handoff_revision_id','revision_number',
-  (original->>'revision_number')::integer+1),'{membership,members}',result);
+  (original->>'revision_number')::integer+1,'member_group_key','changed-middle');
  last_edge:=original||jsonb_build_object('purchase_handoff_revision_id',gen_random_uuid(),
   'predecessor_revision_id',middle->'purchase_handoff_revision_id','revision_number',
-  (original->>'revision_number')::integer+2);
- insert into c_context values('changed-then-reverted',pg_temp.c_resolved_proof(family_revision,
-  jsonb_set(context,'{handoffs}',jsonb_build_array(original,middle,last_edge))));
+  (original->>'revision_number')::integer+2,'member_group_key','reverted-last');
+ mutation:=jsonb_set(context,'{handoffs}',jsonb_build_array(original,middle,last_edge));
+ mutation:=jsonb_set(mutation,'{handoff_members}',(context->'handoff_members')||jsonb_build_object(
+  middle->>'purchase_handoff_revision_id',jsonb_build_object('changed-middle',jsonb_set(groups,array[family_key],result)),
+  last_edge->>'purchase_handoff_revision_id',jsonb_build_object('reverted-last',groups)));
+ insert into c_context values('changed-then-reverted',pg_temp.c_resolved_proof(family_revision,mutation));
+ insert into c_context values('locator-swap',pg_temp.c_resolved_proof(family_revision,
+  jsonb_set(mutation,'{handoffs}',jsonb_build_array(original,
+   middle||jsonb_build_object('member_group_key','reverted-last'),last_edge))));
+ insert into c_context values('missing-group',pg_temp.c_resolved_proof(family_revision,
+  context#-array['handoff_members',original_id,original_key,family_key]));
+ insert into c_context values('empty-group',pg_temp.c_resolved_proof(family_revision,
+  jsonb_set(context,array['handoff_members',original_id,original_key,family_key],'[]'::jsonb)));
+ insert into c_context values('duplicate-member',pg_temp.c_resolved_proof(family_revision,
+  jsonb_set(context,array['handoff_members',original_id,original_key,family_key],members||members)));
+ begin perform pg_temp.c_resolved_proof(family_revision,
+  jsonb_set(context,array['handoff_members',original_id,original_key,family_key],'null'::jsonb));
+ exception when sqlstate '22023'then null_error:=sqlstate;end;
+ insert into c_context values('null-group',jsonb_build_object('sqlstate',null_error));
+ select jsonb_agg(jsonb_set(m,'{delivery_location_id}','null'::jsonb)order by ordinality)
+ into foreign_members from jsonb_array_elements(members)with ordinality item(m,ordinality);
+ insert into c_context values('foreign-only',pg_temp.c_resolved_proof(family_revision,
+  jsonb_set(context,array['handoff_members',original_id,original_key,family_key],foreign_members)));
+ insert into c_context values('foreign-filter',jsonb_build_object('exact',pg_temp.c_resolved_proof(family_revision,
+  jsonb_set(context,array['handoff_members',original_id,original_key,family_key],members||foreign_members))
+  =pg_temp.c_resolved_proof(family_revision,context)));
 end;$edge_contexts$;
+-- Real public Handoff history is the old flat-filter oracle, not a copied producer.
+do $raw_group_parity$
+declare context jsonb;h jsonb;flat jsonb;g jsonb;expected jsonb;actual jsonb;key_row record;
+ expected_facts jsonb;actual_facts jsonb;raw_ok boolean:=true;facts_ok boolean:=true;ids_ok boolean:=true;
+ thin_ok boolean:=true;count_members integer:=0;school_count integer;group_count integer:=0;flat_count integer:=0;
+begin
+ select value into context from c_context where name='original-continuity-context';
+ if not context?'handoff_members'then return;end if;
+ for h in select value from jsonb_array_elements(context->'handoffs')loop
+  flat:=atlas_core.confirmed_need_handoff_membership((h->>'purchase_handoff_revision_id')::uuid);
+  thin_ok:=thin_ok and not(h->'membership'?'members')and h->'membership'=flat-'members';
+  g:=context#>array['handoff_members',h->>'purchase_handoff_revision_id',h->>'member_group_key'];
+  flat_count:=flat_count+jsonb_array_length(flat->'members');
+  select count(*)into count_members from jsonb_each(g)bucket cross join lateral jsonb_array_elements(bucket.value)m;
+  group_count:=group_count+count_members;
+  for key_row in select distinct m->>'service_date' service_date,m->>'delivery_location_id' location,
+   m->>'ingredient_id' ingredient,m->>'controlled_unit_id' unit
+   from jsonb_array_elements(flat->'members')m loop
+   select jsonb_agg(m order by ordinality)into expected
+   from jsonb_array_elements(flat->'members')with ordinality item(m,ordinality)
+   where m->>'service_date'=key_row.service_date and m->>'delivery_location_id'=key_row.location
+    and m->>'ingredient_id'=key_row.ingredient and m->>'controlled_unit_id'=key_row.unit;
+   select jsonb_agg(m order by ordinality)into actual from jsonb_array_elements(g->
+    jsonb_build_array(key_row.service_date,key_row.location,key_row.ingredient,key_row.unit)::text)
+    with ordinality item(m,ordinality)
+   where m->>'service_date'=key_row.service_date and m->>'delivery_location_id'=key_row.location
+    and m->>'ingredient_id'=key_row.ingredient and m->>'controlled_unit_id'=key_row.unit;
+   raw_ok:=raw_ok and expected is not distinct from actual;
+   select jsonb_agg(m-array['line_sort_position','purchase_handoff_line_revision_id',
+    'purchase_handoff_revision_id','source_confirmed_need_batch_id','confirmed_need_snapshot_line_id',
+    'validation_attempt_id']order by m->>'confirmed_need_line_id')into expected_facts from jsonb_array_elements(expected)m;
+   select jsonb_agg(m-array['line_sort_position','purchase_handoff_line_revision_id',
+    'purchase_handoff_revision_id','source_confirmed_need_batch_id','confirmed_need_snapshot_line_id',
+    'validation_attempt_id']order by m->>'confirmed_need_line_id')into actual_facts from jsonb_array_elements(actual)m;
+   facts_ok:=facts_ok and expected_facts is not distinct from actual_facts
+    and sha256(convert_to(expected_facts::text,'UTF8'))=sha256(convert_to(actual_facts::text,'UTF8'));
+   ids_ok:=ids_ok and(select jsonb_agg(jsonb_build_array(m->>'purchase_handoff_line_revision_id',m->>'confirmed_quantity')
+    order by m->>'purchase_handoff_line_revision_id')from jsonb_array_elements(expected)m)
+    is not distinct from(select jsonb_agg(jsonb_build_array(m->>'purchase_handoff_line_revision_id',m->>'confirmed_quantity')
+    order by m->>'purchase_handoff_line_revision_id')from jsonb_array_elements(actual)m);
+  end loop;
+ end loop;
+ select count(distinct m->>'school_id')into school_count from jsonb_each(context->'handoff_members')hr
+ cross join lateral jsonb_each(hr.value)entry cross join lateral jsonb_each(entry.value)bucket
+ cross join lateral jsonb_array_elements(bucket.value)m;
+ insert into c_context values('raw-group-parity',jsonb_build_object('raw',raw_ok,'facts_hash',facts_ok,'ph_ids_qty',ids_ok,
+ 'thin',thin_ok,'flat_count',flat_count,'group_count',group_count,'schools',school_count));
+end;$raw_group_parity$;
+select is((select value->>'thin'from c_context where name='raw-group-parity'),'true','thin metadata preserves complete membership without a second ignored raw array');
+select is((select value->>'raw'from c_context where name='raw-group-parity'),'true','each genuine whole-family ordered raw group equals the old four-field filter');
+select is((select value->>'facts_hash'from c_context where name='raw-group-parity'),'true','per-family normalized facts and exact hashes survive raw grouping');
+select is((select value->>'ph_ids_qty'from c_context where name='raw-group-parity'),'true','raw PH line identities and exact quantity strings remain equal');
+select ok((select value->>'flat_count'='4'and value->>'group_count'='4'from c_context where name='raw-group-parity'),'all four genuine historical members occur exactly once across groups');
+select is((select value->>'schools'from c_context where name='raw-group-parity'),'2','grouping preserves both real Schools without clipping a shared family');
+select is((select value->>'applicable'from c_context where name='missing-group'),'false','missing raw group is unavailable, never an empty authoritative family');
+select is((select value->>'applicable'from c_context where name='empty-group'),'false','empty raw group cannot prove retained positive contributions');
+select is((select value->>'sqlstate'from c_context where name='null-group'),'22023','JSON null retains invalid scalar-array error rather than becoming accepted evidence');
+select is((select value->>'applicable'from c_context where name='duplicate-member'),'false','duplicate raw members retain multiplicity and cannot match exact original PH quantity set');
+select is((select value->>'applicable'from c_context where name='locator-swap'),'false','changed middle cannot point to another PH identity reverted raw group');
+select is((select value->>'applicable'from c_context where name='foreign-only'),'false','NULL family field in a misplaced bucket cannot authorize the selected family');
+select is((select value->>'exact'from c_context where name='foreign-filter'),'true','original family filters ignore foreign NULL-field members while preserving exact original proof');
 select is((select value->>'applicable'from c_context where name='ambiguous-source'),'false',
  'duplicate authoritative source families cannot be treated as one whole family');
 select is((select value->>'applicable'from c_context where name='missing-member'),'false',
@@ -187,6 +306,18 @@ select ok((select value#>'{proof,supplier_splits}'=coalesce((select jsonb_agg(to
  where s.family_revision_id=(value#>>'{proof,family_revision_id}')::uuid),'[]'::jsonb)
  from c_context where name like 'prospective-%'and value->>'applicable'='true'),
  'proof preserves complete exact Supplier split facts, IDs, ratios, origins and notes');
+
+do $pending_phase_probe$
+declare proof jsonb;
+begin
+ if to_regprocedure('atlas_core.purchase_review_official_continuity_map(date,date)')is null then return;end if;
+ proof:=atlas_core.purchase_review_official_continuity_map(date '2026-11-02',date '2026-11-03');
+ insert into c_context values('phase-pending-evidence',jsonb_build_object(
+ 'keys_exact',(select jsonb_agg(key order by key)from jsonb_each(proof))=
+ (select jsonb_agg(family_revision_id::text order by family_revision_id::text)from c_retained_families),
+ 'count',(select count(*)from jsonb_each(proof)where value->>'classification'='CORRECTION_PENDING'
+ and value->>'applicable'='false')));
+end;$pending_phase_probe$;
 
 savepoint c_authoritative_zero;
 insert into c_results select 'zero-family-save',pg_temp.c_lifecycle_call('save_confirmed_needs',
@@ -497,5 +628,135 @@ select ok((select p.proowner='atlas_procurement_command_runtime'::regrole and p.
  and not exists(select 1 from aclexplode(p.proacl)acl where acl.grantee=0)
  from pg_proc p where p.oid='atlas_core.purchase_review_correction_roots(uuid)'::regprocedure),
  'pure root closure exposes only the exact Need runtime bridge with Procurement ownership');
+
+-- Phase-local maps are private backend evidence, never a public trusted input.
+select ok(coalesce((select p.proowner='atlas_procurement_command_runtime'::regrole and p.prosecdef
+ and p.provolatile='s'and p.proconfig @>array['search_path=""']
+ and has_function_privilege('atlas_read_runtime',p.oid,'EXECUTE')
+ and not exists(select 1 from unnest(array['authenticated','anon','service_role',
+ 'atlas_confirmed_need_review_runtime','atlas_need_generation_runtime','atlas_planning_command_runtime',
+ 'atlas_dispatch_command_runtime'])principal where has_function_privilege(principal,p.oid,'EXECUTE'))
+ and not exists(select 1 from aclexplode(p.proacl)a where a.grantee=0)
+ from pg_proc p where p.oid=to_regprocedure('atlas_core.purchase_review_official_continuity_map(date,date)')),false),
+ 'phase map exposes only the exact Read bridge under Procurement ownership');
+select ok(coalesce((select p.proowner='atlas_owner'::regrole and not p.prosecdef
+ and p.provolatile='s'and p.proconfig @>array['search_path=""']
+ and has_function_privilege('atlas_read_runtime',p.oid,'EXECUTE')
+ and has_function_privilege('atlas_procurement_command_runtime',p.oid,'EXECUTE')
+ and not exists(select 1 from unnest(array['authenticated','anon','service_role',
+ 'atlas_confirmed_need_review_runtime','atlas_need_generation_runtime','atlas_planning_command_runtime',
+ 'atlas_dispatch_command_runtime'])principal where has_function_privilege(principal,p.oid,'EXECUTE'))
+ and not exists(select 1 from aclexplode(p.proacl)a where a.grantee=0)
+ from pg_proc p where p.oid=to_regprocedure('atlas_core.school_catering_po_date_readiness(date,jsonb)')),false),
+ 'resolved readiness retains INVOKER ownership and exact Read plus Procurement execution');
+select ok(coalesce((select p.proowner='atlas_procurement_command_runtime'::regrole and p.prosecdef
+ and p.provolatile='s'and p.proconfig @>array['search_path=""']
+ and not exists(select 1 from unnest(array['authenticated','anon','service_role','atlas_read_runtime',
+ 'atlas_confirmed_need_review_runtime','atlas_need_generation_runtime','atlas_planning_command_runtime',
+ 'atlas_dispatch_command_runtime'])principal where has_function_privilege(principal,p.oid,'EXECUTE'))
+ and not exists(select 1 from aclexplode(p.proacl)a where a.grantee=0)
+ from pg_proc p where p.oid=to_regprocedure('atlas_core.purchase_review_po_coverage(date,jsonb)')),false),
+ 'resolved coverage is callable only by its Procurement owner');
+do $phase_probe$
+declare start_date date;end_date date;proof jsonb;daily jsonb;answer jsonb;
+begin
+ if to_regprocedure('atlas_core.purchase_review_official_continuity_map(date,date)')is null
+ or to_regprocedure('atlas_core.school_catering_po_date_readiness(date,jsonb)')is null
+ or to_regprocedure('atlas_core.purchase_review_po_coverage(date,jsonb)')is null then return;end if;
+ select min(service_date),max(service_date)into start_date,end_date from atlas_planning.confirmed_need_line_revisions
+ where is_current and confirmed_need_batch_id in(select confirmed_need_batch_id from c_selected);
+ -- Include the genuine second day, even when the selected batch is a daily batch.
+ end_date:=start_date+1;
+ proof:=atlas_core.purchase_review_official_continuity_map(start_date,end_date);
+ select coalesce(jsonb_object_agg(item.key,item.value),'{}'::jsonb)into daily
+ from generate_series(start_date,end_date,interval '1 day')day
+ cross join lateral jsonb_each(atlas_core.purchase_review_official_continuity_map(day::date,day::date))item;
+ answer:=jsonb_build_object('range_exact',proof=daily,
+ 'readiness_exact',atlas_core.school_catering_po_date_readiness(start_date)
+ =atlas_core.school_catering_po_date_readiness(start_date,proof),
+ 'coverage_exact',atlas_core.purchase_review_po_coverage(start_date)
+ is not distinct from atlas_core.purchase_review_po_coverage(start_date,proof),
+ 'empty',atlas_core.purchase_review_official_continuity_map(date '2040-01-01',date '2040-01-01')='{}'::jsonb,
+ 'null',atlas_core.purchase_review_official_continuity_map(null,null)='{}'::jsonb,
+ 'reversed',atlas_core.purchase_review_official_continuity_map(end_date,start_date)='{}'::jsonb,
+ 'pending_keys_exact',(select value->'keys_exact'from c_context where name='phase-pending-evidence'),
+ 'pending_count',(select value->'count'from c_context where name='phase-pending-evidence'),
+ 'other_day_ready',atlas_core.school_catering_po_date_readiness(end_date)->'ready',
+ 'other_day_families',atlas_core.school_catering_po_date_readiness(end_date)->'family_count',
+ 'pending_coverage',atlas_core.purchase_review_po_coverage(start_date),
+ 'other_day_coverage',atlas_core.purchase_review_po_coverage(end_date));
+ insert into c_context values('phase-local-proofs',answer);
+end;$phase_probe$;
+select is((select value->>'range_exact'from c_context where name='phase-local-proofs'),'true',
+ 'complete multiday phase map equals the union of exact per-day revision-keyed maps');
+select is((select value->>'readiness_exact'from c_context where name='phase-local-proofs'),'true',
+ 'pending full-universe readiness matches its fresh wrapper with the same backend range map');
+select is((select value->>'coverage_exact'from c_context where name='phase-local-proofs'),'true',
+ 'fresh PO coverage matches its resolved entry while querying current PO facts');
+select is((select value->>'empty'from c_context where name='phase-local-proofs'),'true',
+ 'empty source date has no fabricated applicability proof');
+select is((select value->>'null'from c_context where name='phase-local-proofs'),'true',
+ 'NULL private date bounds have no applicability evidence');
+select is((select value->>'reversed'from c_context where name='phase-local-proofs'),'true',
+ 'reversed private date bounds do not manufacture family proof');
+
+select is((select value->>'pending_keys_exact'from c_context where name='phase-local-proofs'),'true',
+ 'first correction map names exactly the two retained Nov2 PH revision identities');
+select is((select value->>'pending_count'from c_context where name='phase-local-proofs'),'2',
+ 'both known Nov2 families remain pending and false, never zero or silently omitted');
+select ok((select value->>'other_day_ready'='true'and value->>'other_day_families'='2'
+ from c_context where name='phase-local-proofs'),
+ 'genuine released Nov3 remains ready with exactly two raw-current whole families');
+select ok((select value->>'pending_coverage'='false'and value->>'other_day_coverage'='true'
+ from c_context where name='phase-local-proofs'),
+ 'pending Nov2 has no exact coverage while unchanged released Nov3 retains exact coverage');
+
+select ok(coalesce((select p.proowner='atlas_confirmed_need_review_runtime'::regrole and not p.prosecdef
+ and p.provolatile='s'and p.proconfig @>array['search_path=""']and p.pronargdefaults=0
+ and(select pronargdefaults=1 from pg_proc where oid='atlas_core.rmvp_07_validated_facts_projection(uuid,uuid)'::regprocedure)
+ and not exists(select 1 from pg_roles role where role.rolname like 'atlas\_%'escape '\'
+ and role.rolname<>'atlas_confirmed_need_review_runtime'and has_function_privilege(role.rolname,p.oid,'EXECUTE'))
+ and not exists(select 1 from unnest(array['authenticated','anon','service_role'])principal
+ where has_function_privilege(principal,p.oid,'EXECUTE'))
+ and not exists(select 1 from aclexplode(p.proacl)a where a.grantee=0)
+ from pg_proc p where p.oid=to_regprocedure('atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)')),false),
+ 'shared projection has no default or peer execution while old one-argument entry stays unambiguous');
+select is((select value->>'current_exact'from c_context where name='resolved-projection'),'true',
+ 'fresh one-argument projection equals same-statement backend canonical projection');
+select ok((select value->>'captured_members'='4'and value->>'current_cardinality'='4'
+ from c_context where name='resolved-projection'),
+ 'shared current projection retains all four captured exact School R/D quantities');
+select is((select value->>'historical_exact'from c_context where name='resolved-projection'),'true',
+ 'nonNULL historical attempt ignores supplied blocked empty current evidence');
+select is((select value->>'historical_fingerprint'from c_context where name='resolved-projection'),'true',
+ 'historical projection fingerprint stays exact when an unrelated evaluation is supplied');
+select is((select value->>'missing'from c_context where name='resolved-projection-errors'),'22023',
+ 'shared historical projector preserves unavailable-attempt error');
+select is((select value->>'wrong_batch'from c_context where name='resolved-projection-errors'),'22023',
+ 'shared historical projector cannot borrow another batch attempt');
+
+select ok(coalesce((select p.proowner='atlas_read_runtime'::regrole and p.prosecdef
+ and p.provolatile='s'and p.proconfig @>array['search_path=""']and p.pronargdefaults=0
+ and not exists(select 1 from pg_roles role where role.rolname like 'atlas\_%'escape '\'
+ and role.rolname<>'atlas_read_runtime'and has_function_privilege(role.rolname,p.oid,'EXECUTE'))
+ and not exists(select 1 from unnest(array['authenticated','anon','service_role'])principal
+ where has_function_privilege(principal,p.oid,'EXECUTE'))
+ and not exists(select 1 from aclexplode(p.proacl)a where a.grantee=0)
+ from pg_proc p where p.oid=to_regprocedure('atlas_core.school_catering_procurement_date_current(date,jsonb)')),false),
+ 'resolved official date has no default and only Read-owner execution');
+do $resolved_date_cases$
+begin
+ if to_regprocedure('atlas_core.school_catering_procurement_date_current(date,jsonb)')is null then return;end if;
+ insert into c_context values('resolved-date-cases',jsonb_build_object(
+ 'pending',atlas_core.school_catering_procurement_date_current(date '2026-11-02',
+ atlas_core.purchase_review_official_continuity_map(date '2026-11-02',date '2026-11-03')),
+ 'other_day',atlas_core.school_catering_procurement_date_current(date '2026-11-03',
+ atlas_core.purchase_review_official_continuity_map(date '2026-11-02',date '2026-11-03'))));
+end;$resolved_date_cases$;
+select is((select value->>'pending'from c_context where name='resolved-date-cases'),'false',
+ 'pending Nov2 cannot become official through a full multiday map');
+select is((select value->>'other_day'from c_context where name='resolved-date-cases'),'true',
+ 'same full multiday map preserves genuine current Nov3 without cross-day contamination');
+
 select * from finish();
 rollback;

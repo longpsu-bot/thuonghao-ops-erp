@@ -195,6 +195,8 @@ Historical absent/null fields are retained without backfill. PO School sections
 stay separate; Dispatch packaging uses only captured membership and retains all
 School/source lineage. See [explicit independent facts](school-cooking-groups.md).
 
-## PROPOSED — correction continuity and PXK currentness, 15 October 2026
+## Implemented Draft — operator C checkpoint, 16 October 2026
 
-This is DESIGN_REVIEW_ONLY. The [proposed C architecture](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) includes PXK's exact split-ID coverage joins, direct Handoff-current guards, fingerprint/currentness classification and reconciliation consumers. Prospective Preparation eligibility cannot certify an official PXK current while correction is pending. Official continuity requires current released Need, successful explicit successor Handoff and complete exact immutable source proof. Historical PXK snapshots/IDs/fingerprints remain untouched; changed facts still need explicit successor release. Current scope/capability, readiness and no-duplicate-current protections remain authoritative. No implementation or new release authority is accepted by this proposed pointer.
+The Draft routes canonical PXK preview/reconciliation/release through exact official family continuity while preserving full-School intervals, split IDs, R/D and exact current released PO provenance. Changed School lineage or PO provenance requires an explicit successor; old released snapshots remain readable. Pending/unavailable/true-zero evidence retains existing release blockers. No automatic dispatch or document mutation.
+
+Migration `20261015065552_operator_confirmed_need_correction.sql` is local Draft source, not hosted acceptance. The reviewed [C specification](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) and [validation report](../testing/operator-confirmed-need-correction-c-01-validation.md) record 455 focused assertions PASS and the unresolved250-family/eight-cycle performance failure. Final wait/export/broader-regression/remote Full checks remain incomplete; no readiness or deployment claim.
