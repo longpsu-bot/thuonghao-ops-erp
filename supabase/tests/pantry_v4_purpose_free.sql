@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path=extensions,public;
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
-select plan(37);
+select plan(38);
 
 select is(atlas_core.pantry_v4_rows('[]'), '[]'::jsonb,
   'v4 accepts an explicit empty row set without inventing demand');
@@ -419,6 +419,35 @@ insert into p4_results select 'confirm',atlas_api.save_confirmed_needs(request) 
 set constraints all immediate;
 set constraints all deferred;
 select is((select response->>'success' from p4_results where name='confirm'),'true','current Need is explicitly confirmed');
+reset role;
+-- Genuine confirmed allocation is a mandatory release prerequisite, not a test status shortcut.
+insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,document_code)
+values('a7200000-0000-4000-8000-000000000090','PANTRY-V4-SUPPLIER','Pantry v4 test Supplier','P4-SUPPLIER');
+insert into atlas_admin.supplier_eligibilities(supplier_id,ingredient_id,effective_from,priority,reason_note)
+values('a7200000-0000-4000-8000-000000000090','a7200000-0000-0000-000000000032','2020-01-01',1,'Local Pantry v4 release prerequisite');
+set constraints all immediate;
+set constraints all deferred;
+set local role authenticated;
+insert into p4_results values('allocation-read',atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_build_object(
+ 'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','requested_by_auth_subject','a7200000-0000-0000-0000-000000000110',
+ 'correlation_id',gen_random_uuid(),'payload',jsonb_build_object('date_start','2026-08-24','date_end','2026-08-24'))));
+insert into p4_results select 'allocation-save-'||ordinality,atlas_api.save_confirmed_supplier_allocation(
+ pg_temp.p4_request('allocation-'||ordinality,(row#>>'{family,version}')::bigint,jsonb_build_object(
+ 'family',jsonb_build_object('service_date',row->'service_date','delivery_location_id',row->'delivery_location_id',
+ 'ingredient_id',row->'ingredient_id','unit_id',row->'unit_id',
+ 'expected_source_fingerprint',row#>'{family,source_fingerprint}',
+ 'expected_source_batch_id',row->'source_confirmed_need_batch_id',
+ 'expected_source_batch_version',row->'source_confirmed_need_batch_version'),
+ 'splits',jsonb_build_array(jsonb_build_object('supplier_id','a7200000-0000-4000-8000-000000000090',
+ 'allocated_quantity',row->'family_quantity'))),'CONFIRMED-SUPPLIER-ALLOCATION.v1')
+ ||jsonb_build_object('reason_code','CONFIRMED_SUPPLIER_ALLOCATION_SAVED','reason_note',null))
+from p4_results cross join lateral jsonb_array_elements(response->'rows')with ordinality as item(row,ordinality)
+where name='allocation-read';
+set constraints all immediate;
+set constraints all deferred;
+select ok((select count(*)=1 and bool_and(response->>'success'='true')from p4_results where name like 'allocation-save-%'),
+ 'complete positive family is allocated through the public command before Need release');
+select diag(response::text)from p4_results where name like 'allocation-save-%'and response->>'success'<>'true';
 reset role;
 insert into p4_requests select 'release',pg_temp.p4_request('release',version,
 jsonb_build_object('confirmed_need_batch_id',confirmed_need_batch_id),'RMVP-07.v2')

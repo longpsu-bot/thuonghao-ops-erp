@@ -131,3 +131,7 @@ normal CI remains the release gate; no merge/deployment is authorized.
 Warehouse and #385–#387 remain paused/preserved. Draft #388 remains incomplete;
 its separately authorized next step is one reviewed historical-helper trial and
 one unchanged strict eight-cycle acceptance attempt, with a stop on failure.
+
+### Consolidated normal-CI repair
+
+Head `4600c347` failed normal Frontend CI (eight test failures) and Full Integration (36/37 Pantry assertions). The repair changes tests only: wait for the real Menu/School owner and launcher navigation, scope retained-owner queries, pin 117 registered commands including the new Pantry suite, and assert v4 optional notes and exact nonempty Save readback. Legacy v1–v3 SQL note rules remain covered. The public Pantry journey now performs the mandatory authenticated allocation read/Save with current source/version and deferred-guard flush before releasing Need; its plan is 38. No production or migration bytes changed. Original failed logs remain preserved. No further local Vitest or SQL run is claimed; normal exact-head CI is the acceptance gate.

@@ -51,7 +51,7 @@ const modules = [
   ["Phiếu xuất kho", "Phiếu xuất kho"],
   ["Đối chiếu PO / Phiếu xuất kho", "Đối chiếu PO / Phiếu xuất kho"],
 ];
-async function showSchool() {
+async function showMenu() {
   const apis = createAtlasApplicationFixture();
   const signOut = vi.fn();
   const result = render(
@@ -65,21 +65,63 @@ async function showSchool() {
       />
     </AtlasVNextProvider>,
   );
-  await nav("Trường học");
-  return { apis, signOut, ...result };
-}
-async function nav(label: string) {
-  fireEvent.click(await screen.findByRole("button", { name: "Chức năng" }));
-  fireEvent.click(await screen.findByRole("button", { name: label }));
+  const menu = await screen.findByRole("region", { name: "Thực đơn" });
   await waitFor(() =>
     expect(
-      document.querySelector('[role="dialog"][data-state="open"]'),
-    ).toBeNull(),
+      within(menu).getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    ).toBeEnabled(),
   );
+  return { apis, signOut, ...result };
+}
+async function showSchool() {
+  const result = await showMenu();
+  await nav("Trường học");
+  const panel = screen.getByRole("tabpanel", {
+    name: "Trường học",
+    hidden: true,
+  });
+  expect(panel).toBeVisible();
+  const fields = await within(panel).findAllByRole("textbox", {
+    name: /Học sinh mặc định/,
+  });
+  await waitFor(() => expect(fields[0]).toBeEnabled());
+  return result;
+}
+async function nav(label: string) {
+  const trigger = await within(screen.getByRole("banner")).findByLabelText(
+    "Chức năng",
+    { selector: "button" },
+  );
+  expect(trigger).toBeVisible();
+  fireEvent.click(trigger);
+  const launcher = await screen.findByRole("dialog", { name: "Chức năng" });
+  const destination = within(launcher).getByRole("button", {
+    name: label,
+    hidden: true,
+  });
+  expect(destination).toBeVisible();
+  fireEvent.click(destination);
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("dialog", { name: "Chức năng" }),
+    ).not.toBeInTheDocument(),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole("tab", { name: label, hidden: true }),
+    ).toHaveAttribute("aria-selected", "true"),
+  );
+  const heading = modules.find(([name]) => name === label)?.[1];
+  expect(
+    await screen.findByRole("heading", { level: 1, name: heading }),
+  ).toBeVisible();
 }
 async function clickSignOut() {
   fireEvent.click(
-    screen.getByRole("button", { name: "Tài khoản và môi trường" }),
+    within(screen.getByRole("banner")).getByRole("button", {
+      name: "Tài khoản và môi trường",
+      hidden: true,
+    }),
   );
   const account = await screen.findByRole("dialog", {
     name: "Tài khoản và môi trường",
@@ -301,7 +343,10 @@ it.each(modules)(
 );
 it("blocks dirty sign-out without discarding and resolves School through its close guard", async () => {
   const { signOut } = await showSchool();
-  const fields = await screen.findAllByRole("textbox", {
+  const school = within(
+    screen.getByRole("tabpanel", { name: "Trường học", hidden: true }),
+  );
+  const fields = await school.findAllByRole("textbox", {
     name: /Học sinh mặc định/,
   });
   fireEvent.change(fields[0]!, { target: { value: "123" } });
@@ -329,10 +374,9 @@ it("blocks dirty sign-out without discarding and resolves School through its clo
   expect(signOut).toHaveBeenCalledOnce();
 });
 it("Confirmed Need continues to supplier allocation with no hidden write", async () => {
-  const { apis } = await showSchool();
+  const { apis } = await showMenu();
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
-  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await nav("Thực đơn");
   await nav("Xác nhận nhu cầu");
   const proceed = await screen.findByRole("button", {
@@ -349,13 +393,12 @@ it("Confirmed Need continues to supplier allocation with no hidden write", async
 });
 
 it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK and Reconciliation", async () => {
-  const { apis } = await showSchool();
+  const { apis } = await showMenu();
   const confirmed = vi.spyOn(apis.confirmedNeed, "getReview");
   const procurement = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   const pxk = vi.spyOn(apis.schoolDispatch, "getWorkbench");
   const reconciliation = vi.spyOn(apis.reconciliation, "getWorkbench");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
-  await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await nav("Thực đơn");
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   const date = await screen.findByRole("combobox", { name: "Ngày phục vụ" });
