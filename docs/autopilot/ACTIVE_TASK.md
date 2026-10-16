@@ -8,6 +8,8 @@ Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read
 
 ## Product priority and work authorization
 
+**16 October — ERP-density course correction, same PR #392:** Owner explicitly prioritizes the compact OPSv1-like workbench pattern. Restore visible desktop columns/dense rows and catalogue-primary/task-sized detail geometry for the five recent lists; keep mobile stacking, 44px targets, Recipe chooser exception, C tabs and PO document workplane. Slim the existing labelled sort control without changing axes/comparators. No controller/model/API/backend/Warehouse changes or parked Draft integration.
+
 **16 October — Recipes, Adjustments and compact sort controls, same PR #392:** Owner authorizes the next C presentation batch. Preserve the existing recipe chooser, all quantities/Units/notes, effective composition, immutable Adjustment history, permissions, frozen Review and explicit Save. Replace standalone sort groups in Schools, Suppliers, Ingredients and Allocation with one labelled framed control using existing axes and ordering. No controller/model/API/schema/dependency changes; backend/Warehouse and #385–#388 remain parked.
 
 **16 October — Ingredients and Supplier Allocation, same PR #392:** Owner explicitly authorizes the next compact C catalogue/family-directory and broad existing-editor batch, including mobile sort reachability and unchanged exact quantity/recipient evidence. Preserve separate recommendation/rebalance Apply and explicit Save, lifecycle/priority Review, selection/focus, dirty and UNKNOWN locks. No controller/model/API/SQL/dependency changes or #387 integration. Backend/Warehouse and #385–#388 remain parked. Track final exact-head normal CI to completion.

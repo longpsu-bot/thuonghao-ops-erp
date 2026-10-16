@@ -759,7 +759,14 @@ describe("Procurement vNext operator workbench", () => {
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual(["Nhu cầu và phân bổ", "Thao tác"]);
+    ).toEqual([
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+      "Thao tác",
+    ]);
     expect(document.body).not.toHaveTextContent(
       /private-|fingerprint|UUID|phiên bản/i,
     );

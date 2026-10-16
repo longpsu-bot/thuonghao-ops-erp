@@ -527,76 +527,6 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               {controller.stage === "allocation" ? (
                 controller.allocation && (
                   <>
-                    <Flex
-                      px="md"
-                      py="sm"
-                      bg="bg.toolbar"
-                      borderYWidth="var(--atlas-layout-edge, 1px)"
-                      borderColor="border.subtle"
-                      align="center"
-                      justify="space-between"
-                      gap="sm"
-                      wrap="wrap"
-                    >
-                      <Text textStyle="helper" color="fg.muted">
-                        Cần xử lý{" "}
-                        {
-                          rows.filter(
-                            (row) =>
-                              row.state !== "BALANCED" &&
-                              !derivedDefaultAllocation(row),
-                          ).length
-                        }{" "}
-                        · Đã đủ{" "}
-                        {
-                          rows.filter(
-                            (row) =>
-                              row.state === "BALANCED" ||
-                              Boolean(derivedDefaultAllocation(row)),
-                          ).length
-                        }
-                      </Text>
-                      {canPrepare && (
-                        <Button
-                          variant="businessPrimary"
-                          onClick={() =>
-                            void controller.prepare(Boolean(selected))
-                          }
-                        >
-                          Tiếp tục lên đơn
-                        </Button>
-                      )}
-                      {multiDay && (
-                        <Text textStyle="helper" color="fg.muted">
-                          Chọn 1 ngày để chuẩn bị đơn mua.
-                        </Text>
-                      )}
-                      {props.ownerStage === "allocation" &&
-                        props.onOpenOrders && (
-                          <Button
-                            variant="secondary"
-                            disabled={
-                              Boolean(selected) ||
-                              controller.busy ||
-                              Boolean(controller.rangeError)
-                            }
-                            onClick={controller.openOrders}
-                          >
-                            Xem đơn mua
-                          </Button>
-                        )}
-                      {!selected &&
-                        !multiDay &&
-                        !(preparation?.ready && preparation.allowed) &&
-                        preparation && (
-                          <Text textStyle="helper" color="status.warning">
-                            {procurementOperatorMessages(
-                              preparation.blockers,
-                              "Hoàn tất phân bổ trước khi lên đơn.",
-                            ).join(" ")}
-                          </Text>
-                        )}
-                    </Flex>
                     {sourceMessages.map((message) => (
                       <Text
                         px="md"
@@ -620,11 +550,73 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                       templateColumns={{
                         base: "minmax(0, 1fr)",
                         lg: selected
-                          ? "minmax(280px, var(--atlas-allocation-directory-width)) minmax(0, 1fr)"
+                          ? "minmax(0, 1fr) minmax(360px, 420px)"
                           : "minmax(0, 1fr)",
                       }}
                     >
                       <ProcurementAllocationTable
+                        tools={
+                          <>
+                            <Text textStyle="helper" color="fg.muted">
+                              Cần xử lý{" "}
+                              {
+                                rows.filter(
+                                  (row) =>
+                                    row.state !== "BALANCED" &&
+                                    !derivedDefaultAllocation(row),
+                                ).length
+                              }{" "}
+                              · Đã đủ{" "}
+                              {
+                                rows.filter(
+                                  (row) =>
+                                    row.state === "BALANCED" ||
+                                    Boolean(derivedDefaultAllocation(row)),
+                                ).length
+                              }
+                            </Text>
+                            {canPrepare && (
+                              <Button
+                                variant="businessPrimary"
+                                onClick={() =>
+                                  void controller.prepare(Boolean(selected))
+                                }
+                              >
+                                Tiếp tục lên đơn
+                              </Button>
+                            )}
+                            {multiDay && (
+                              <Text textStyle="helper" color="fg.muted">
+                                Chọn 1 ngày để chuẩn bị đơn mua.
+                              </Text>
+                            )}
+                            {props.ownerStage === "allocation" &&
+                              props.onOpenOrders && (
+                                <Button
+                                  variant="secondary"
+                                  disabled={
+                                    Boolean(selected) ||
+                                    controller.busy ||
+                                    Boolean(controller.rangeError)
+                                  }
+                                  onClick={controller.openOrders}
+                                >
+                                  Xem đơn mua
+                                </Button>
+                              )}
+                            {!selected &&
+                              !multiDay &&
+                              !(preparation?.ready && preparation.allowed) &&
+                              preparation && (
+                                <Text textStyle="helper" color="status.warning">
+                                  {procurementOperatorMessages(
+                                    preparation.blockers,
+                                    "Hoàn tất phân bổ trước khi lên đơn.",
+                                  ).join(" ")}
+                                </Text>
+                              )}
+                          </>
+                        }
                         rows={visible}
                         showServiceDate={multiDay}
                         selectedKey={selected ? selectedKey : null}

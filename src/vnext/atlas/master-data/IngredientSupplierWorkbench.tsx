@@ -231,9 +231,7 @@ export function IngredientSupplierWorkbench({
                 style={
                   {
                     "--atlas-master-detail-columns":
-                      c.job === "suppliers"
-                        ? "minmax(260px, 320px) minmax(0, 1fr)"
-                        : "minmax(280px, 340px) minmax(0, 1fr)",
+                      "minmax(0, 1fr) minmax(360px, 420px)",
                   } as CSSProperties
                 }
                 mt="sm"
@@ -248,7 +246,6 @@ export function IngredientSupplierWorkbench({
                 {c.job === "ingredients" ? (
                   <IngredientCatalogue
                     ingredients={c.visibleIngredients}
-                    totalCount={c.ingredients.length}
                     countUnavailable={Boolean(c.error) || c.loading}
                     detailOpen={detailOpen}
                     selectedId={c.selectedIngredient?.ingredient_id}

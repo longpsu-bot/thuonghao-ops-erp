@@ -102,6 +102,9 @@ describe("Procurement allocation issue sorting", () => {
     }
     const family = screen.getByText("Bí đỏ").closest("tr")!;
     expect(family).toHaveTextContent("9007199254740993,000001");
+    expect(
+      family.querySelector("[data-allocation-quantity]"),
+    ).toHaveTextContent("9007199254740993,000001");
     fireEvent.click(
       within(family).getByRole("button", { name: /Phân bổ NCC Bí đỏ/ }),
     );
@@ -238,9 +241,15 @@ describe("Procurement allocation issue sorting", () => {
     expect(
       within(table)
         .getAllByRole("columnheader")
-        .slice(0, 2)
         .map((cell) => cell.textContent),
-    ).toEqual(["Nhu cầu và phân bổ", "Thao tác"]);
+    ).toEqual([
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+      "Thao tác",
+    ]);
     expect(table).toHaveStyle({ minWidth: "var(--atlas-layout-zero, 0)" });
 
     const derivedRow = within(table).getByText("Gạo thơm").closest("tr")!;

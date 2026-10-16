@@ -53,3 +53,7 @@ Owner explicitly continued the same PR with compact Ingredient and allocation-fa
 ## Next bounded batch — Recipes, Adjustments and compact sorting
 
 Owner continued the same PR with a full-width Recipe catalogue/responsive base rows and compact Adjustment ledger beside the existing editor. The [review record](atlas-ux-review-2026-10-16.md#recipes-adjustments-and-sort-controls--authorized-continuation) records preserved lifecycle/effective composition/history/Review/Save authority. One labelled framed sort select replaces standalone groups across the four previously refined directories, retaining all existing axes and default order. Other owners and parked backend work do not start automatically.
+
+## Owner clarification — compact ERP density
+
+The Owner redirected the latest lists toward OPSv1-like compact desktop tables rather than all-width stacked records. [The correction record](atlas-ux-review-2026-10-16.md#erp-density-correction--owner-steering) supersedes the recent desktop directory geometry while retaining mobile fallbacks, C tabs/PO, the Recipe chooser and all authoritative behavior. This remains the same bounded UI PR; no backend/Warehouse work resumes.

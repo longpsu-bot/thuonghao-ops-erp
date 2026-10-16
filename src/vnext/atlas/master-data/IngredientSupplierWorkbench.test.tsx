@@ -246,6 +246,19 @@ describe("IngredientSupplierWorkbench", () => {
     fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
       target: { value: "Bí mật chưa lưu" },
     });
+    expect(
+      within(screen.getByRole("table", { name: "Danh mục nguyên liệu" }))
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "Nguyên liệu",
+      "Trạng thái",
+      "Đơn vị mua",
+      "Loại / nhóm đặt hàng",
+      "Mức làm tròn",
+      "Ưu tiên NCC",
+      "Thao tác",
+    ]);
     const sort = screen.getByRole("combobox", { name: "Sắp xếp nguyên liệu" });
     for (const [key, label] of [
       ["ingredient", "Nguyên liệu"],
@@ -283,6 +296,18 @@ describe("IngredientSupplierWorkbench", () => {
     );
     await screen.findByRole("button", { name: "Xem / sửa NCC Minh Tâm" });
     const table = screen.getByRole("table", { name: "Danh mục nhà cung ứng" });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "Nhà cung ứng",
+      "Trạng thái",
+      "Người liên hệ",
+      "Điện thoại",
+      "Email",
+      "Thao tác",
+    ]);
     const first = () => within(table).getAllByRole("row")[1]!;
     expect(first()).toHaveTextContent("Minh Tâm");
     expect(first()).toHaveTextContent("0901");
@@ -438,7 +463,7 @@ describe("IngredientSupplierWorkbench", () => {
       expect.objectContaining({ unsaved: true, blocked: true }),
     );
   });
-  it("uses the locked Station context/detail geometry and returns focus to the exact Ingredient action", async () => {
+  it("keeps the catalogue primary beside a task-sized editor and returns focus to the exact Ingredient action", async () => {
     renderWorkbench();
     await ready();
     const context = screen.getByRole("region", {
@@ -462,7 +487,7 @@ describe("IngredientSupplierWorkbench", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("ingredient-supplier-master-detail")).toHaveStyle(
       {
-        "--atlas-master-detail-columns": "minmax(280px, 340px) minmax(0, 1fr)",
+        "--atlas-master-detail-columns": "minmax(0, 1fr) minmax(360px, 420px)",
       },
     );
     expect(
@@ -926,7 +951,11 @@ describe("IngredientSupplierWorkbench", () => {
     expect(
       await screen.findByText("Nguyên liệu sơ chế 360"),
     ).toBeInTheDocument();
-    expect(screen.getByText("360 nguyên liệu")).toBeVisible();
+    expect(
+      screen.getByLabelText(
+        "Tóm tắt công việc: 360 nguyên liệu · Tất cả trạng thái",
+      ),
+    ).toBeVisible();
     const region = screen.getByRole("region", {
       name: "Danh mục nguyên liệu",
     });
@@ -964,7 +993,11 @@ describe("IngredientSupplierWorkbench", () => {
     fireEvent.change(screen.getByLabelText("Tìm nguyên liệu"), {
       target: { value: "không tồn tại" },
     });
-    expect(screen.getByText("0 / 360 nguyên liệu")).toBeVisible();
+    expect(
+      screen.getByLabelText(
+        "Tóm tắt công việc: 0 / 360 nguyên liệu · Tất cả trạng thái",
+      ),
+    ).toBeVisible();
     expect(
       screen.getByText("Không có nguyên liệu phù hợp bộ lọc."),
     ).toBeVisible();

@@ -230,7 +230,13 @@ describe("Chakra School default portions workbench", () => {
       within(table)
         .getAllByRole("columnheader")
         .map((header) => header.textContent),
-    ).toEqual(["#", "Trường", "Sĩ số mặc định", "Điểm giao"]);
+    ).toEqual([
+      "#",
+      "Trường",
+      "Loại / trạng thái",
+      "Sĩ số mặc địnhHọc sinh / Giáo viên",
+      "Điểm giao",
+    ]);
     const rows = within(table).getAllByRole("row").slice(1);
     expect(within(rows[0]!).getAllByRole("cell")[0]).toHaveTextContent("1");
     expect(rows[0]).toHaveTextContent("Trường Tiểu học Ánh Dương");

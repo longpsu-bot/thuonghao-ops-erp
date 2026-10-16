@@ -1,3 +1,4 @@
+import { atlasVisuallyHidden } from "../AtlasTaskTabs";
 import { AtlasSortControl } from "../AtlasSortControl";
 import { Badge, Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { useState } from "react";
@@ -71,24 +72,66 @@ export function SupplierCatalogue({
       >
         <Table.Root
           aria-label="Danh mục nhà cung ứng"
-          minW="var(--atlas-layout-zero, 0)"
+          minW={{
+            base: "var(--atlas-layout-zero, 0)",
+            md: "var(--atlas-supplier-table-width, 860px)",
+          }}
           w="full"
           tableLayout="fixed"
           stickyHeader
+          size="sm"
+          css={{
+            "& th, & td": {
+              paddingBlock: "var(--atlas-spacing-xs)",
+              verticalAlign: "middle",
+            },
+            "@media(max-width: 47.99rem)": {
+              "& colgroup": { display: "none" },
+              "& tbody": { display: "block" },
+              "& tr": {
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) auto",
+                borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+              },
+              "& td": { display: "block", border: "none" },
+              "& td:first-of-type, & td:nth-of-type(3)": {
+                gridColumn: "1 / -1",
+              },
+            },
+          }}
         >
           <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-supplier-name-width, 30%)" />
+            <Table.Column w="var(--atlas-supplier-status-width, 20%)" />
             <Table.Column />
-            <Table.Column w="var(--atlas-supplier-action-width, 92px)" />
+            <Table.Column />
+            <Table.Column />
+            <Table.Column w="var(--atlas-supplier-action-width, 96px)" />
           </Table.ColumnGroup>
-          <Table.Header>
+          <Table.Header
+            css={{ "@media(max-width:47.99rem)": atlasVisuallyHidden }}
+          >
             <Table.Row>
               <AtlasSortableColumnHeader
                 label="Nhà cung ứng"
+                position={{ base: "static", md: "sticky" }}
+                left="var(--atlas-layout-zero, 0)"
+                bg="bg.toolbar"
                 columnKey="supplier"
                 sort={sort}
                 onSort={onSort}
               />
-              <Table.ColumnHeader>Thao tác</Table.ColumnHeader>
+              <Table.ColumnHeader>Trạng thái</Table.ColumnHeader>
+              <Table.ColumnHeader>Người liên hệ</Table.ColumnHeader>
+              <Table.ColumnHeader>Điện thoại</Table.ColumnHeader>
+              <Table.ColumnHeader>Email</Table.ColumnHeader>
+              <Table.ColumnHeader
+                position={{ base: "static", md: "sticky" }}
+                right="var(--atlas-layout-zero, 0)"
+                bg="bg.toolbar"
+              >
+                Thao tác
+              </Table.ColumnHeader>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -98,7 +141,11 @@ export function SupplierCatalogue({
                 aria-selected={item.supplier_id === selectedId}
               >
                 <Table.Cell
-                  position="relative"
+                  data-sticky-column=""
+                  position={{ base: "relative", md: "sticky" }}
+                  left="var(--atlas-layout-zero, 0)"
+                  bg="bg.workbench"
+                  zIndex="var(--atlas-layout-sticky-cell, 1)"
                   overflowWrap="anywhere"
                   verticalAlign="top"
                 >
@@ -106,20 +153,34 @@ export function SupplierCatalogue({
                     <Box data-selection-indicator aria-hidden="true" />
                   )}
                   <Text fontWeight="semibold">{item.supplier_name}</Text>
-                  <Badge my="xs" variant={status[item.supplier_status].variant}>
+                </Table.Cell>
+                <Table.Cell>
+                  <Badge variant={status[item.supplier_status].variant}>
                     {status[item.supplier_status].label}
                   </Badge>
-                  <Text textStyle="helper" color="fg.muted">
+                </Table.Cell>
+                <Table.Cell>
+                  <Text color="fg.muted">
                     {item.contact_name || "Chưa có người liên hệ"}
                   </Text>
-                  <Text textStyle="helper" color="fg.muted">
+                </Table.Cell>
+                <Table.Cell>
+                  <Text color="fg.muted">
                     {item.contact_phone || "Chưa có số điện thoại"}
                   </Text>
-                  <Text textStyle="helper" color="fg.muted">
+                </Table.Cell>
+                <Table.Cell overflowWrap="anywhere">
+                  <Text color="fg.muted">
                     {item.contact_email || "Chưa có email"}
                   </Text>
                 </Table.Cell>
-                <Table.Cell verticalAlign="top">
+                <Table.Cell
+                  data-sticky-column=""
+                  position={{ base: "static", md: "sticky" }}
+                  right="var(--atlas-layout-zero, 0)"
+                  bg="bg.workbench"
+                  zIndex="var(--atlas-layout-sticky-cell, 1)"
+                >
                   <Button
                     size="sm"
                     variant="tableAction"

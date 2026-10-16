@@ -169,7 +169,7 @@ export function ChangeOrderWorkbench(
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
-          lg: open ? "minmax(260px, 340px) minmax(0, 1fr)" : "minmax(0, 1fr)",
+          lg: open ? "minmax(0, 1fr) minmax(360px, 420px)" : "minmax(0, 1fr)",
         }}
         minW="var(--atlas-layout-zero, 0)"
       >
@@ -186,30 +186,38 @@ export function ChangeOrderWorkbench(
             size="sm"
             aria-label="Lệnh điều chỉnh"
             tableLayout="fixed"
-            minW="var(--atlas-layout-zero, 0)"
+            minW={{
+              base: "var(--atlas-layout-zero, 0)",
+              md: "var(--atlas-adjustment-table-width, 740px)",
+            }}
             css={{
-              "& th, & td": { whiteSpace: "normal", overflowWrap: "anywhere" },
-              "& colgroup": { display: "none" },
-              "& tbody": { display: "block" },
-              "& tr": {
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1fr) auto",
-                padding: "var(--atlas-spacing-sm)",
-                borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+              "& th, & td": {
+                whiteSpace: "normal",
+                overflowWrap: "anywhere",
+                paddingBlock: "var(--atlas-spacing-xs)",
+                verticalAlign: "middle",
               },
-              "& td": {
-                display: "block",
-                border: "none",
-                padding: "var(--atlas-spacing-xs)",
-              },
-              "& td:first-of-type": { fontWeight: "semibold" },
-              "& td:nth-of-type(2)": { textAlign: "right" },
-              "& td:nth-of-type(3), & td:nth-of-type(4)": {
-                gridColumn: "1 / -1",
+              "@media(max-width:47.99rem)": {
+                "& colgroup": { display: "none" },
+                "& tbody": { display: "block" },
+                "& tr": {
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 1fr) auto",
+                  padding: "var(--atlas-spacing-xs)",
+                  borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+                },
+                "& td": { display: "block", border: "none" },
+                "& td:first-of-type": { fontWeight: "semibold" },
+                "& td:nth-of-type(2)": { textAlign: "right" },
+                "& td:nth-of-type(3), & td:nth-of-type(4)": {
+                  gridColumn: "1 / -1",
+                },
               },
             }}
           >
-            <Table.Header css={atlasVisuallyHidden}>
+            <Table.Header
+              css={{ "@media(max-width:47.99rem)": atlasVisuallyHidden }}
+            >
               <Table.Row>
                 {[
                   "Lệnh",
@@ -221,6 +229,22 @@ export function ChangeOrderWorkbench(
                 ].map((label) => (
                   <Table.ColumnHeader
                     key={label}
+                    left={
+                      label === "Lệnh"
+                        ? "var(--atlas-layout-zero, 0)"
+                        : undefined
+                    }
+                    position={
+                      label === "Thao tác" || label === "Lệnh"
+                        ? { base: "static", md: "sticky" }
+                        : undefined
+                    }
+                    right={
+                      label === "Thao tác"
+                        ? "var(--atlas-layout-zero, 0)"
+                        : undefined
+                    }
+                    bg="bg.toolbar"
                     w={
                       label === "Thao tác"
                         ? "var(--atlas-layout-row-action, 58px)"
@@ -245,7 +269,13 @@ export function ChangeOrderWorkbench(
                       : undefined
                   }
                 >
-                  <Table.Cell position="relative">
+                  <Table.Cell
+                    data-sticky-column=""
+                    position={{ base: "relative", md: "sticky" }}
+                    left="var(--atlas-layout-zero, 0)"
+                    bg="bg.workbench"
+                    zIndex="var(--atlas-layout-sticky-cell, 1)"
+                  >
                     {c.selected?.adjustment_id === row.adjustment_id && (
                       <Box data-selection-indicator />
                     )}
@@ -260,7 +290,13 @@ export function ChangeOrderWorkbench(
                     )}
                   </Table.Cell>
                   <Table.Cell>{temporalLabels[row.temporal_state]}</Table.Cell>
-                  <Table.Cell>
+                  <Table.Cell
+                    data-sticky-column=""
+                    position={{ base: "static", md: "sticky" }}
+                    right="var(--atlas-layout-zero, 0)"
+                    bg="bg.workbench"
+                    zIndex="var(--atlas-layout-sticky-cell, 1)"
+                  >
                     <Button
                       variant="tertiary"
                       size="sm"

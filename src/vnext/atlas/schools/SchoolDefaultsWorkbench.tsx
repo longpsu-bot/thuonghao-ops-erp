@@ -1,3 +1,4 @@
+import { atlasVisuallyHidden } from "../AtlasTaskTabs";
 import { AtlasSortControl } from "../AtlasSortControl";
 import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
 import { SchoolDispatchGroupEditor } from "./SchoolDispatchGroupEditor";
@@ -15,7 +16,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { useImperativeHandle, useState } from "react";
+import { useImperativeHandle, useState, type ReactNode } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
@@ -58,6 +59,47 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   const activeCount = c.schools.filter(
     (school) => school.school_status === "ACTIVE",
   ).length;
+
+  const tableTools = (
+    <>
+      <Box aria-live="polite">
+        {c.schools.length === 0 && (c.loading || c.error) ? (
+          <Text textStyle="helper" color="fg.muted">
+            {c.loading
+              ? "Đang tải danh sách trường…"
+              : "Chưa xác định số trường. Tải lại dữ liệu để kiểm tra."}
+          </Text>
+        ) : (
+          <Text textStyle="helper" color="fg.muted">
+            {c.schools.length} trường · {activeCount} đang hoạt động ·{" "}
+            {c.dirtyCount} thay đổi chưa lưu
+            {c.hiddenDirtyCount > 0
+              ? ` · ${c.hiddenDirtyCount} thay đổi ngoài bộ lọc`
+              : ""}
+          </Text>
+        )}
+        {c.invalidDraftCount > 0 && (
+          <Text textStyle="helper" color="status.danger">
+            {c.invalidDraftCount} trường có dữ liệu chưa hợp lệ
+          </Text>
+        )}
+      </Box>
+      <Button
+        variant="businessPrimary"
+        loading={c.saving}
+        disabled={
+          c.loading ||
+          c.saving ||
+          Boolean(c.lock) ||
+          c.portionDirtyCount === 0 ||
+          c.invalidDraftCount > 0
+        }
+        onClick={() => void c.save()}
+      >
+        Lưu sĩ số
+      </Button>
+    </>
+  );
 
   return (
     <Box
@@ -171,51 +213,11 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         </Box>
       )}
 
-      <Flex
-        px="md"
-        py="sm"
-        align="center"
-        justify="space-between"
-        gap="sm"
-        wrap="wrap"
-      >
-        <Box aria-live="polite">
-          {c.schools.length === 0 && (c.loading || c.error) ? (
-            <Text textStyle="helper" color="fg.muted">
-              {c.loading
-                ? "Đang tải danh sách trường…"
-                : "Chưa xác định số trường. Tải lại dữ liệu để kiểm tra."}
-            </Text>
-          ) : (
-            <Text textStyle="helper" color="fg.muted">
-              {c.schools.length} trường · {activeCount} đang hoạt động ·{" "}
-              {c.dirtyCount} thay đổi chưa lưu
-              {c.hiddenDirtyCount > 0
-                ? ` · ${c.hiddenDirtyCount} thay đổi ngoài bộ lọc`
-                : ""}
-            </Text>
-          )}
-          {c.invalidDraftCount > 0 && (
-            <Text textStyle="helper" color="status.danger">
-              {c.invalidDraftCount} trường có dữ liệu chưa hợp lệ
-            </Text>
-          )}
-        </Box>
-        <Button
-          variant="businessPrimary"
-          loading={c.saving}
-          disabled={
-            c.loading ||
-            c.saving ||
-            Boolean(c.lock) ||
-            c.portionDirtyCount === 0 ||
-            c.invalidDraftCount > 0
-          }
-          onClick={() => void c.save()}
-        >
-          Lưu sĩ số
-        </Button>
-      </Flex>
+      {c.schools.length === 0 && (
+        <Flex px="md" py="xs" gap="sm" align="center" wrap="wrap">
+          {tableTools}
+        </Flex>
+      )}
 
       {c.cookingSupported && (
         <SchoolCookingGroupEditor
@@ -241,6 +243,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
 
       {c.schools.length > 0 && (
         <SchoolDefaultsTable
+          tools={tableTools}
           schools={c.visibleSchools}
           drafts={c.drafts}
           disabled={editingDisabled}
@@ -254,6 +257,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
 }
 
 function SchoolDefaultsTable({
+  tools,
   schools,
   drafts,
   disabled,
@@ -261,6 +265,7 @@ function SchoolDefaultsTable({
   cooking,
   dispatch,
 }: {
+  tools: ReactNode;
   schools: SchoolMasterData[];
   drafts: Record<string, { student: string; teacher: string }>;
   disabled: boolean;
@@ -274,8 +279,6 @@ function SchoolDefaultsTable({
 }) {
   type SortKey = "order" | "school" | "type" | "status" | "location";
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
-  if (!schools.length)
-    return <Text p="md">Không có trường phù hợp bộ lọc.</Text>;
   const sortedSchools = sortAtlasRows(schools, sort, {
     order: (left, right) =>
       compareAtlasNumber(left.display_order, right.display_order),
@@ -296,6 +299,7 @@ function SchoolDefaultsTable({
   return (
     <Box>
       <AtlasSortControl
+        tools={tools}
         label="Sắp xếp thông tin trường"
         axes={
           [
@@ -322,19 +326,31 @@ function SchoolDefaultsTable({
           data-sticky-header=""
           stickyHeader
           tableLayout="fixed"
-          minW="var(--atlas-layout-zero, 0)"
+          minW={{
+            base: "var(--atlas-layout-zero, 0)",
+            md: "var(--atlas-school-table-width, 1000px)",
+          }}
           w="full"
+          css={{
+            "& th, & td": {
+              paddingBlock: "var(--atlas-spacing-xs)",
+              verticalAlign: "middle",
+            },
+          }}
           display={{ base: "block", md: "table" }}
         >
           <Table.ColumnGroup
             display={{ base: "none", md: "table-column-group" }}
           >
             <Table.Column w="var(--atlas-school-order-width, 44px)" />
-            <Table.Column w="var(--atlas-school-identity-width, 30%)" />
+            <Table.Column w="var(--atlas-school-identity-width, 25%)" />
+            <Table.Column w="var(--atlas-school-status-width, 160px)" />
             <Table.Column w="var(--atlas-school-defaults-width, 220px)" />
             <Table.Column />
           </Table.ColumnGroup>
-          <Table.Header display={{ base: "none", md: "table-header-group" }}>
+          <Table.Header
+            css={{ "@media(max-width:47.99rem)": atlasVisuallyHidden }}
+          >
             <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
               <AtlasSortableColumnHeader
                 label="#"
@@ -348,7 +364,13 @@ function SchoolDefaultsTable({
                 sort={sort}
                 onSort={onSort}
               />
-              <Table.ColumnHeader>Sĩ số mặc định</Table.ColumnHeader>
+              <Table.ColumnHeader>Loại / trạng thái</Table.ColumnHeader>
+              <Table.ColumnHeader>
+                Sĩ số mặc định
+                <Text textStyle="helper" color="fg.muted">
+                  Học sinh / Giáo viên
+                </Text>
+              </Table.ColumnHeader>
               <AtlasSortableColumnHeader
                 label="Điểm giao"
                 columnKey="location"
@@ -405,7 +427,9 @@ function SchoolDefaultsTable({
                     >
                       {school.school_code} · {school.customer_name}
                     </Text>
-                    <Flex gap="xs" mt="xs" align="center" wrap="wrap">
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Flex gap="xs" align="center" wrap="wrap">
                       <Text textStyle="helper" color="fg.muted">
                         {school.school_type_name ?? "Chưa phân loại"}
                       </Text>
@@ -425,7 +449,13 @@ function SchoolDefaultsTable({
                   <Table.Cell verticalAlign="top">
                     <Grid templateColumns="repeat(2, minmax(0, 1fr))" gap="sm">
                       <Field.Root minW="var(--atlas-layout-zero, 0)">
-                        <Field.Label>Học sinh</Field.Label>
+                        <Field.Label
+                          css={{
+                            "@media(min-width:48rem)": atlasVisuallyHidden,
+                          }}
+                        >
+                          Học sinh
+                        </Field.Label>
                         <Input
                           type="text"
                           inputMode="numeric"
@@ -443,7 +473,13 @@ function SchoolDefaultsTable({
                         />
                       </Field.Root>
                       <Field.Root minW="var(--atlas-layout-zero, 0)">
-                        <Field.Label>Giáo viên</Field.Label>
+                        <Field.Label
+                          css={{
+                            "@media(min-width:48rem)": atlasVisuallyHidden,
+                          }}
+                        >
+                          Giáo viên
+                        </Field.Label>
                         <Input
                           type="text"
                           inputMode="numeric"
@@ -648,6 +684,7 @@ function SchoolDefaultsTable({
           </Table.Body>
         </Table.Root>
       </AtlasTableViewport>
+      {!schools.length && <Text p="md">Không có trường phù hợp bộ lọc.</Text>}
     </Box>
   );
 }

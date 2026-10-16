@@ -1,3 +1,4 @@
+import { atlasVisuallyHidden } from "../AtlasTaskTabs";
 import { AtlasSortControl } from "../AtlasSortControl";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { Fragment, useState } from "react";
@@ -19,14 +20,12 @@ const status = {
 
 export function IngredientCatalogue({
   ingredients,
-  totalCount,
   countUnavailable = false,
   selectedId,
   onSelect,
   detailOpen,
 }: {
   ingredients: IngredientMasterData[];
-  totalCount: number;
   countUnavailable?: boolean;
   selectedId?: string;
   detailOpen?: boolean;
@@ -57,13 +56,6 @@ export function IngredientCatalogue({
   });
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      {!countUnavailable && (
-        <Text px="md" py="xs" textStyle="helper" color="fg.muted">
-          {ingredients.length === totalCount
-            ? `${ingredients.length} nguyên liệu`
-            : `${ingredients.length} / ${totalCount} nguyên liệu`}
-        </Text>
-      )}
       <AtlasSortControl
         label="Sắp xếp nguyên liệu"
         axes={
@@ -92,21 +84,72 @@ export function IngredientCatalogue({
         ) : ingredients.length ? (
           <Table.Root
             aria-label="Danh mục nguyên liệu"
-            minW="var(--atlas-layout-zero, 0)"
+            minW={{
+              base: "var(--atlas-layout-zero, 0)",
+              md: "var(--atlas-ingredient-table-width, 900px)",
+            }}
             w="full"
             tableLayout="fixed"
             stickyHeader
+            size="sm"
+            css={{
+              "& th, & td": {
+                paddingBlock: "var(--atlas-spacing-xs)",
+                verticalAlign: "middle",
+              },
+              "@media(max-width: 47.99rem)": {
+                "& colgroup": { display: "none" },
+                "& tbody": { display: "block" },
+                "& tr": {
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+                  borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+                },
+                "& td": { display: "block", minWidth: 0, border: "none" },
+                "& td:first-of-type": { gridColumn: "1 / -1" },
+              },
+            }}
           >
             <Table.ColumnGroup>
-              <Table.Column />
-              <Table.Column w="var(--atlas-ingredient-action-width, 96px)" />
+              <Table.Column w="var(--atlas-ingredient-name-width, 22%)" />
+              <Table.Column w="var(--atlas-ingredient-status-width, 13%)" />
+              <Table.Column w="var(--atlas-ingredient-unit-width, 10%)" />
+              <Table.Column w="var(--atlas-ingredient-type-width, 17%)" />
+              <Table.Column w="var(--atlas-ingredient-step-width, 10%)" />
+              <Table.Column w="var(--atlas-ingredient-supplier-width, 18%)" />
+              <Table.Column w="var(--atlas-ingredient-action-width, 10%)" />
             </Table.ColumnGroup>
-            <Table.Header>
+            <Table.Header
+              css={{ "@media(max-width: 47.99rem)": atlasVisuallyHidden }}
+            >
               <Table.Row>
-                <Table.ColumnHeader>
-                  Nguyên liệu và thông tin mua
-                </Table.ColumnHeader>
-                <Table.ColumnHeader>Thao tác</Table.ColumnHeader>
+                {[
+                  "Nguyên liệu",
+                  "Trạng thái",
+                  "Đơn vị mua",
+                  "Loại / nhóm đặt hàng",
+                  "Mức làm tròn",
+                  "Ưu tiên NCC",
+                  "Thao tác",
+                ].map((label) => (
+                  <Table.ColumnHeader
+                    key={label}
+                    left={
+                      label === "Nguyên liệu"
+                        ? "var(--atlas-layout-zero, 0)"
+                        : undefined
+                    }
+                    position={{ base: "static", md: "sticky" }}
+                    right={
+                      label === "Thao tác"
+                        ? "var(--atlas-layout-zero, 0)"
+                        : undefined
+                    }
+                    bg="bg.toolbar"
+                  >
+                    {label}
+                  </Table.ColumnHeader>
+                ))}
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -118,7 +161,11 @@ export function IngredientCatalogue({
                 return (
                   <Table.Row key={item.ingredient_id} aria-selected={chosen}>
                     <Table.Cell
-                      position="relative"
+                      data-sticky-column=""
+                      position={{ base: "relative", md: "sticky" }}
+                      left="var(--atlas-layout-zero, 0)"
+                      bg="bg.workbench"
+                      zIndex="var(--atlas-layout-sticky-cell, 1)"
                       verticalAlign="top"
                       overflowWrap="anywhere"
                     >
@@ -126,67 +173,78 @@ export function IngredientCatalogue({
                         <Box data-selection-indicator aria-hidden="true" />
                       )}
                       <Text fontWeight="semibold">{item.ingredient_name}</Text>
-                      <Box mt="xs">
-                        <Text
-                          data-row-secondary={
-                            item.ingredient_status === "INACTIVE"
-                              ? undefined
-                              : ""
-                          }
-                          color={status[item.ingredient_status].color}
-                          fontWeight={
-                            item.ingredient_status === "INACTIVE"
-                              ? "semibold"
-                              : "normal"
-                          }
-                        >
-                          {status[item.ingredient_status].label}
-                        </Text>
-                      </Box>
-                      <Box mt="xs">
-                        <Text data-row-secondary="" color="fg.muted">
-                          Đơn vị mua: {item.purchase_unit_name ?? "—"}
-                        </Text>
-                      </Box>
-                      <Box mt="xs">
-                        <Text>{item.ingredient_type_name ?? "—"}</Text>
-                        <Text
-                          data-row-secondary
-                          textStyle="helper"
-                          color="fg.muted"
-                        >
-                          {item.ingredient_order_group_name ?? "—"}
-                        </Text>
-                      </Box>
-                      <Box mt="xs">
-                        <Text textStyle="quantityInline">
-                          Mức làm tròn:{" "}
-                          {item.order_step === null
-                            ? "—"
-                            : formatVietnameseDecimal(item.order_step)}
-                        </Text>
-                      </Box>
-                      <Box mt="xs">
-                        <Text data-row-secondary="" color="fg.muted">
-                          Ưu tiên NCC:{" "}
-                          {priorities.length
-                            ? priorities.slice(0, 2).map((priority, index) => (
-                                <Fragment key={priority.supplier_id}>
-                                  {index > 0 ? " · " : ""}
-                                  <Box as="span" fontWeight="semibold">
-                                    {priority.priority}
-                                  </Box>{" "}
-                                  {priority.supplier_name}
-                                </Fragment>
-                              ))
-                            : "Chưa có"}
-                          {priorities.length > 2
-                            ? ` · +${priorities.length - 2}`
-                            : ""}
-                        </Text>
-                      </Box>
                     </Table.Cell>
-                    <Table.Cell verticalAlign="top">
+                    <Table.Cell>
+                      <Text
+                        data-row-secondary={
+                          item.ingredient_status === "INACTIVE" ? undefined : ""
+                        }
+                        color={status[item.ingredient_status].color}
+                        fontWeight={
+                          item.ingredient_status === "INACTIVE"
+                            ? "semibold"
+                            : "normal"
+                        }
+                      >
+                        {status[item.ingredient_status].label}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text data-row-secondary="" color="fg.muted">
+                        <Box as="span" hideFrom="md">
+                          Đơn vị mua:{" "}
+                        </Box>{" "}
+                        {item.purchase_unit_name ?? "—"}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text>{item.ingredient_type_name ?? "—"}</Text>
+                      <Text
+                        data-row-secondary
+                        textStyle="helper"
+                        color="fg.muted"
+                      >
+                        {item.ingredient_order_group_name ?? "—"}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell textAlign={{ base: "left", md: "right" }}>
+                      <Text textStyle="quantityInline">
+                        <Box as="span" hideFrom="md">
+                          Mức làm tròn:{" "}
+                        </Box>{" "}
+                        {item.order_step === null
+                          ? "—"
+                          : formatVietnameseDecimal(item.order_step)}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text data-row-secondary="" color="fg.muted">
+                        <Box as="span" hideFrom="md">
+                          Ưu tiên NCC:{" "}
+                        </Box>{" "}
+                        {priorities.length
+                          ? priorities.slice(0, 2).map((priority, index) => (
+                              <Fragment key={priority.supplier_id}>
+                                {index > 0 ? " · " : ""}
+                                <Box as="span" fontWeight="semibold">
+                                  {priority.priority}
+                                </Box>{" "}
+                                {priority.supplier_name}
+                              </Fragment>
+                            ))
+                          : "Chưa có"}
+                        {priorities.length > 2
+                          ? ` · +${priorities.length - 2}`
+                          : ""}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell
+                      data-sticky-column=""
+                      position={{ base: "static", md: "sticky" }}
+                      right="var(--atlas-layout-zero, 0)"
+                      bg="bg.workbench"
+                      zIndex="var(--atlas-layout-sticky-cell, 1)"
+                    >
                       <Button
                         size="sm"
                         variant="tableAction"
