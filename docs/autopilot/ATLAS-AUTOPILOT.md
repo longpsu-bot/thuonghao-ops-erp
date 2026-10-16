@@ -1,10 +1,10 @@
 # Atlas Autopilot Mandate
 
-Status: **ACTIVE — OWNER-SELECTED C / BOUNDED FRONTEND IMPLEMENTATION**
+Status: **FAIL_STOP — incomplete UI and Need Drafts preserved**
 
 Original approval: 14 October 2026.  
 **Product priority amendment: 16 October 2026.**  
-Current execution horizon: **resolve the four Owner UI issues in PR #392, then bounded remediation of the approved Need correction in preserved Draft #388 after UX is stable**. The Owner's 16 October delivery directive supersedes the recording-only status and broad Need-remediation pause. #385–#387 stay parked; Warehouse stays paused. Hosted Atlas access remains read-only; OPSv1/Retool remain NO-WRITE. No merge or deployment.
+Current execution horizon: **STOP after repeated UI acceptance failure and the single failed C trial; no automatic continuation**. UI #392 code head `34c85ea8` has Frontend four failures and Full Integration setup abort (23/38 assertions). Draft #388 preservation `11cda965` has 588 focused PASS but strict31 0/8 cycles and 0/20 assertions. Neither is complete; combined integration was not performed. The earlier authorized delivery scope remains historical, not an instruction to restart. [Active handoff and exact blockers](ACTIVE_TASK.md#product-priority-and-work-authorization). #385–#387 and Warehouse remain parked; hosted Atlas read-only, OPSv1/Retool NO-WRITE. No new repair, profile, acceptance retry, merge or deployment without a bounded handoff.
 
 The six standing Owner delivery rules are delivery/value first; bounded scope/acceptance/completion; mandatory failure stops and escalation; focused development checks separated from release certification; preservation of unfinished PRs/evidence; and explicit PASS/FAIL/BLOCKED with actionable handoffs. [The active task](ACTIVE_TASK.md#product-priority-and-work-authorization) defines current acceptance. One consolidated diagnosis/correction is allowed; if the same acceptance failure recurs twice, stop with root cause and actionable FAIL rather than indefinite retries. These are delivery rules, not replacements for the existing security/Product hard stops.
 

@@ -1,7 +1,8 @@
 # Atlas Autopilot — Active Task
 
 Task: **ATLAS-UX-ART-DIRECTION-02**  
-Status: **ACTIVE — OWNER-SELECTED C / BOUNDED UI IMPLEMENTATION**  
+Status: **FAIL_STOP — incomplete Drafts preserved; no autoexecution**
+
 Product authorization: **16 October 2026** — Owner explicitly redirected priority from overextended Autopilot/backend work to Atlas UX/UI design.  
 Source: [approved GitHub Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389) and [execution brief](../implementation-tasks/TASK-ATLAS-UX-ART-DIRECTION-02.md).  
 Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read current `origin/main` before task execution.
@@ -10,7 +11,7 @@ Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read
 
 **16 October — bounded delivery supersession:** Owner explicitly authorizes resolution of the [four recorded UI issues](../ui/atlas-owner-review-issues-2026-10-16.md) in PR #392, followed by bounded remediation of the approved Need correction in Draft #388 after UX is stable. This supersedes the earlier recording-only status and broad Need-remediation pause, not the remaining safety stops. Keep #388 Draft and its unfinished work/evidence; #385–#387 remain parked. Warehouse stays paused, hosted Atlas access remains read-only, and OPSv1/Retool remain NO-WRITE. No merge or deployment.
 
-**Current checkpoint:** Four-issue implementation is published in unmerged PR #392. Head `4600c347` failed normal Frontend and Full CI; one consolidated test-only repair now addresses stale v4 expectations, fresh-Menu navigation synchronization and the missing genuine public allocation prerequisite (Pantry plan 38). Runtime migration bytes and guards remain unchanged. TypeScript/UI boundary pass; local Vitest remains blocked by worker startup, and no further local SQL rerun is claimed. Normal new-head CI must pass before acceptance. [Evidence and limitations](../ui/atlas-ux-review-2026-10-16.md#consolidated-normal-ci-repair). Draft #388 old-runtime rowset properties are preserved separately; its candidate is unapplied and its one trial resumes only after this repair is published. No merge/deployment.
+**Current checkpoint: FAIL / STOP.** PR #392 code head `34c85ea8` failed its repeated acceptance gate: Frontend `38878470979` has four failures (3,037 passed; two skipped); Full Integration `38878471055` aborts on the malformed allocation-fixture UUID after 23/38 passing assertions. No released-Need replay or completed UI acceptance is claimed. The one separately bounded C trial is preserved in Draft #388 at `11cda965`: 588 focused PASS, strict31 first Preparation timeout, 0/8 cycles and 0/20 final assertions, full rollback; no demonstrated performance gain or combined integration. [Exact blockers and next-scope handoff](../ui/atlas-ux-review-2026-10-16.md#mandatory-stop--repeated-acceptance-failure). No further code/test repair, SQL execution, profile, retry or automatic next task. Preserve both Drafts and all evidence; no merge/deployment.
 
 Standing Owner delivery rules:
 
