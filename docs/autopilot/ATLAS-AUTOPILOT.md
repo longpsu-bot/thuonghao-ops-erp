@@ -1,67 +1,51 @@
 # Atlas Autopilot Mandate
 
-Status: **ACTIVE — DESIGN-ONLY PAUSE / OWNER-CONTROLLED**  
-Original approval: 14 October 2026.  
-**Product priority amendment: 16 October 2026.**  
-Current execution horizon: **ATLAS-UX-ART-DIRECTION-02 D1/D2 only**, with the production UI implementation gate held for Owner visual selection. The earlier Warehouse design horizon ended with merged PR #384; Warehouse Product decisions remain pending.
+**Status:** ACTIVE — OWNER-CONTROLLED, TIERED BOUNDED RECOVERY.  
+**Owner amendment:** 16 October 2026, following PRs #392/#388 failed acceptance.  
+**Current control-plane task:** `ATLAS-UI392-CI-REPAIR-01` only. Full [execution plan](ATLAS-RECOVERY-392-388-2026-10-16.md); [active baton](ACTIVE_TASK.md); [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389).
 
-## Control plane
+This supersedes the merged 16 October D1/D2 design-only pause and the later PR #392 blanket FAIL/STOP instruction **only to the extent of this exact, bounded CI repair**. It does not retroactively convert failed evidence to PASS, authorize #388 SQL optimization, merge/deploy code, or launch a Codex process. If this document is still in an unmerged PR, agents following `main` must not pretend it is adopted.
 
-GitHub repository `longpsu-bot/thuonghao-ops-erp` is the shared handoff between OPS Product/Architecture and local Atlas implementation. **Do not rely on chat memory as task authority.** Read `docs/autopilot/ACTIVE_TASK.md` and the linked [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389) first.
-
-At this checkpoint the active loop is deliberately shortened:
+## Control loop
 
 ```text
-Owner design priority → verified checkout → skill/source audit
-→ rendered alternatives (2–3) → independent visual critique
-→ Owner selects a design → STOP until explicit selection
+Owner-approved bounded issue → verify true latest repo & actual checkout
+→ classify failure (fixture/oracle vs flaky harness vs app vs performance vs business safety)
+→ smallest permitted correction → focused evidence → normal exact-head CI
+→ independent review → PASS or documented FAIL/BLOCKED → STOP
 ```
 
-After Owner visual selection, normal bounded implementation / read-only audit / targeted CI / Product review / merge may resume. **No automatic next-task promotion or backend/Staging deployment** under this design-only pause.
+- **No endless automation:** one active task, one narrow change set, no speculative optimization ladder. Two repeats of the *same* failure after focused attempts → STOP and report. An unrelated/new failure can be classified but not used to widen scope silently.
+- **STOP is strategy-specific:** a known test fixture typo or stale assertion can be fixed within an Owner-approved recovery task. Do not use STOP to freeze harmless repair; do not classify a real regression as test fragility.
+- **Validation proportional to risk:** fast focused tests during development, mandatory complete operational safety/latency and exact-head GitHub CI for release, and separate multi-cycle stress/soak evidence. Eight-cycle history tests do **not** block independent UI PR #392. Existing tests are retained; no xfail/skip/threshold inflation to manufacture success.
+- **No early green:** 23/38 SQL assertions is incomplete; 588 focused SQL assertions do not certify #388 Preparation. Unknown results remain UNKNOWN until authoritative readback.
+- **One task at a time:** #392 CI recovery first; #388 transaction-wide Preparation diagnosis requires an explicit subsequent promotion to `ACTIVE_TASK.md`. Diagnostic approval is not authorization for optimization.
 
-## Roles
+## Governance and role separation
 
-OPS Product/Architecture selects product priorities and can approve bounded routine GitHub changes within the standing safety rules. The navigator/Terra role remains **read-only for implementation work**; the implementer/Sol/Codex owns bounded design prototype and code writes in its separately verified worktree. The independent visual reviewer must examine **rendered** evidence, not only source/style tests. If preferred names/models are unavailable, preserve role separation.
+GitHub `longpsu-bot/thuonghao-ops-erp` is the handoff. Read `AGENTS.md`, both control-plane docs, Issue #389 and current relevant contracts. The navigator/Terra role reviews and directs read-only; the implementer/Sol/Codex performs bounded writes only in a verified canonical checkout; an independent reviewer checks behavioral, visual, and contract evidence. Chat, comments, or GitHub PR creation alone do not start a local Codex session.
 
-GitHub issue/PR comments do **not** by themselves launch Codex or interrupt an already-running local process. Do not claim automated execution without an actual connected runner confirmation.
+Use `OPS_SYSTEM_MAP v1.0` and **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED**. PostgreSQL retains facts, derived state, calculations, authorization, concurrency, immutable released document history and idempotency; React coordinates presentation. Chakra v3 persists for 13 workbenches.
 
-## One staff member per operational task
+## Hard Product stops
 
-`ONE_STAFF_PER_OPERATIONAL_TASK` remains in force. An authorized Actor can perform a normal operation with existing capabilities and exact scopes; don't add a generic second-person approval flow. Capability, relational scope, immutable evidence, audit and approved exception overrides remain mandatory. This design task makes **no** staff grants or permission changes.
+Stop and require a new Owner decision before:
+1. changing an unresolved business policy, domain concept, command or calculation precedence;
+2. paid/production infrastructure, new deployments or first Production write-ownership transfer;
+3. irreversible supplier PO/PXK communication or real commitments;
+4. destructive Production data correction;
+5. material RLS/capability/authorization broadening;
+6. final Warehouse policy selection or Warehouse implementation;
+7. unapproved #388 runtime optimization, changes to public/Preparation/lock timeout ceilings, or waiver of historical proof;
+8. merging or deploying Drafts #385–#388 or #392 without their own acceptance and release review.
 
-## Hard Product stops (unchanged)
+`ONE_STAFF_PER_OPERATIONAL_TASK` remains in force: existing Actor capability suffices for normal work, without adding a generic second-person approval, while scopes/audit/immutable evidence remain mandatory.
 
-Stop before:
-1. new/changed unresolved business policy;
-2. paid or Production infrastructure;
-3. first Production write-ownership transfer from OPS v1;
-4. irreversible real supplier PO/PXK commitments;
-5. destructive Production data correction;
-6. material authorization broadening;
-7. final Warehouse business design approval;
-8. **production implementation of the selected Atlas UI design until Owner selects among rendered alternatives.**
+## Environment, preservation, and finish
 
-## Environment boundary
+- Atlas Staging `rnzxmxiiqgtdevzregff`: read-only in this task; last accepted migration 109. OPS v1 Supabase `qnthofvccilhnefdcxnz` and Retool: hard NO-WRITE. Atlas Production: no approved target.
+- PRs #385–#388 and Warehouse remain parked, not discarded. #392 remains Draft pending acceptance; do not merge, force-reset, overwrite existing worktrees or combine with #388.
+- Do not create test infrastructure, broad multi-agent loops, 8-cycle scale replays or all-repo certification simply to make Autopilot appear active.
+- Every task ends with head SHA, verification scope, source of failed/passed evidence, risk classification, PASS/FAIL/BLOCKED, and explicit next Product decision. Do not auto-promote queued work.
 
-- Atlas Staging `rnzxmxiiqgtdevzregff`: **read-only for this active design phase**; prior approved bounded Staging processes remain historical evidence.
-- OPS v1 Supabase `qnthofvccilhnefdcxnz`: hard NO-WRITE.
-- Retool: continuity/workflow evidence; NO-WRITE.
-- Atlas Production: not an approved target. No creation.
-
-## Architecture
-
-Use `OPS_SYSTEM_MAP v1.0` and **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED**. PostgreSQL still owns authority for business facts, calculations, state derivation, currentness, concurrency, permissions, idempotency and released document history. Design skills cannot override business contracts. Chakra UI v3 remains the existing presentation foundation; typography, tab geometry, composition and information hierarchy are open to ambitious Product-directed redesign.
-
-## Anti-overengineering rule
-
-- Do **not** run further Warehouse contracts/migrations, broad performance studies, 8-cycle Need correction probes, repeated full-repo CI, extra autonomous agent loops, synthetic load programs or new architecture layers solely to “move Autopilot forward”.
-- Do **not** merge/deploy/rescope Draft PRs #385–#388; preserve their state and existing evidence until separately integrated.
-- Read/use existing proofs instead of re-proving unchanged contracts. For **design-only** work, require real rendered comparison and focused checks—not a new certification infrastructure.
-- Keep one active task in `ACTIVE_TASK.md` and a single explicit next Product decision. No automatic endless backlog execution; wait for Owner selection after D2.
-
-## Active-task protocol
-
-1. Read `AGENTS.md`, this file, `docs/autopilot/ACTIVE_TASK.md`, relevant approved contracts and the current `origin/main`.
-2. Verify canonical workspace before implementation (`git rev-parse`, `git remote -v`, `git fetch origin`, `git status --short`, `pnpm ops:workspace`). Do not disturb dirty Codex checkouts.
-3. Execute **only D1/D2**, create Draft artifacts for review, then stop for Owner selection.
-4. Later task authorization requires an explicit update to this mandate/active baton, not extrapolation from an old roadmap.
+Historical visual D1/D2 art direction and Owner-selected C are preserved in [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389), [Draft #392](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/392) and older Git history; those artifacts no longer define the active execution horizon.
