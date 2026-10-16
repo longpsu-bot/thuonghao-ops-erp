@@ -34,6 +34,32 @@ const quantity = (name: string, value: string) =>
     target: { value },
   });
 describe("Supplier decisions", () => {
+  it.each([true, false])(
+    "brings the new editor into view only on narrow screens (%s)",
+    (narrow) => {
+      const original = HTMLElement.prototype.scrollIntoView;
+      const scroll = vi.fn();
+      HTMLElement.prototype.scrollIntoView = scroll;
+      vi.stubGlobal(
+        "matchMedia",
+        vi.fn(() => ({ matches: narrow })),
+      );
+      try {
+        const { onSave } = show();
+        expect(
+          screen.getByRole("heading", { level: 2, name: "Gạo thơm" }),
+        ).toHaveFocus();
+        if (narrow) expect(scroll).toHaveBeenCalledWith({ block: "start" });
+        else expect(scroll).not.toHaveBeenCalled();
+        expect(onSave).not.toHaveBeenCalled();
+      } finally {
+        if (original) HTMLElement.prototype.scrollIntoView = original;
+        else
+          delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
+        vi.unstubAllGlobals();
+      }
+    },
+  );
   it.each(["\u00a0", "\u2003", "\u000b"])(
     "preserves backend-significant note suffix %j",
     (suffix) => {

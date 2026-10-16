@@ -87,6 +87,8 @@ export function ProcurementSupplierDetail({
   const cancelButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     heading.current?.focus();
+    if (window.matchMedia?.("(max-width: 63.99rem)").matches)
+      heading.current?.scrollIntoView?.({ block: "start" });
   }, []);
   const total = sumExactQuantities(
     draft.map((split) => split.allocated_quantity),
@@ -278,6 +280,8 @@ export function ProcurementSupplierDetail({
         <Text color="fg.muted" textStyle="helper" mt="xs">
           {recipient.primary}
           {recipient.secondary ? ` · ${recipient.secondary}` : ""}
+          {" · "}
+          {row.service_date.split("-").reverse().join("/")}
         </Text>
       </Box>
       <Box

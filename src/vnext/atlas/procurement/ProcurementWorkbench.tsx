@@ -611,7 +611,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                       data-testid="procurement-master-detail"
                       style={
                         {
-                          "--atlas-attached-detail-width": "390px",
+                          "--atlas-allocation-directory-width": "340px",
                         } as CSSProperties
                       }
                       minW="var(--atlas-layout-zero, 0)"
@@ -619,8 +619,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                       p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
                       templateColumns={{
                         base: "minmax(0, 1fr)",
-                        xl: selected
-                          ? "minmax(0, 1fr) var(--atlas-attached-detail-width)"
+                        lg: selected
+                          ? "minmax(280px, var(--atlas-allocation-directory-width)) minmax(0, 1fr)"
                           : "minmax(0, 1fr)",
                       }}
                     >

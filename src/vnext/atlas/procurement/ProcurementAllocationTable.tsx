@@ -1,8 +1,7 @@
-import { Box, Button, Table, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
-import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import {
   atlasDefaultSort,
   compareAtlasBigInt,
@@ -112,105 +111,65 @@ export function ProcurementAllocationTable({
     setSort((current) => nextAtlasSort(current, key));
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
+      <Flex
+        role="group"
+        aria-label="Sắp xếp phân bổ nhà cung ứng"
+        px="md"
+        py="xs"
+        gap="xs"
+        wrap="wrap"
+      >
+        {(
+          [
+            ["school", "Trường / điểm giao"],
+            ["ingredient", "Nguyên liệu"],
+            ["need", "Nhu cầu"],
+            ["supplier", "Nhà cung ứng"],
+            ["issue", "Tình trạng / vấn đề"],
+          ] as const
+        ).map(([key, label]) => (
+          <Button
+            key={key}
+            size="sm"
+            variant="utility"
+            aria-label={`Sắp xếp theo ${label}`}
+            aria-pressed={sort.key === key}
+            onClick={() => onSort(key)}
+          >
+            {label}
+            {sort.key === key
+              ? sort.direction === "ascending"
+                ? " · Tăng dần"
+                : " · Giảm dần"
+              : ""}
+          </Button>
+        ))}
+      </Flex>
       <AtlasTableViewport
         label="Bảng phân bổ nhà cung ứng"
         maxH={{
-          base: "var(--atlas-layout-table-mobile-height, 50dvh)",
+          base: selectedKey
+            ? "var(--atlas-allocation-directory-selected-height, 35dvh)"
+            : "var(--atlas-layout-table-mobile-height, 50dvh)",
           lg: "var(--atlas-procurement-desktop-surface-max-height, calc(100dvh - 400px))",
         }}
       >
         <Table.Root
           aria-label="Phân bổ nhà cung ứng"
-          style={
-            {
-              "--atlas-table-header-height": "38px",
-              "--atlas-table-row-height": "46px",
-              "--atlas-table-identity-width": "200px",
-            } as CSSProperties
-          }
-          minW={
-            showServiceDate
-              ? "var(--atlas-layout-procurement-range-table-min, 1170px)"
-              : "var(--atlas-layout-procurement-table-min, 1050px)"
-          }
-          w={
-            showServiceDate
-              ? "var(--atlas-layout-procurement-range-table-width, 1170px)"
-              : "var(--atlas-layout-procurement-table-width, 1050px)"
-          }
+          minW="var(--atlas-layout-zero, 0)"
+          w="full"
           tableLayout="fixed"
           size="sm"
           stickyHeader
         >
           <Table.ColumnGroup>
-            <Table.Column w="var(--atlas-allocation-school-width, 230px)" />
-            <Table.Column w="var(--atlas-allocation-identity-width, 200px)" />
-            {showServiceDate && (
-              <Table.Column w="var(--atlas-allocation-date-width, 120px)" />
-            )}
-            <Table.Column w="var(--atlas-allocation-quantity-width, 130px)" />
-            <Table.Column w="var(--atlas-allocation-supplier-width, 190px)" />
-            <Table.Column w="var(--atlas-allocation-state-width, 170px)" />
-            <Table.Column w="var(--atlas-allocation-action-width, 130px)" />
+            <Table.Column />
+            <Table.Column w="var(--atlas-allocation-action-width, 102px)" />
           </Table.ColumnGroup>
           <Table.Header>
-            <Table.Row
-              h="var(--atlas-table-header-height)"
-              zIndex="var(--atlas-layout-sticky-header-z, 3)"
-            >
-              <AtlasSortableColumnHeader
-                label="Trường / điểm giao"
-                columnKey="school"
-                sort={sort}
-                onSort={onSort}
-                position="sticky"
-                left="var(--atlas-layout-zero, 0)"
-                zIndex="var(--atlas-layout-sticky-identity-header-z, 5)"
-                h="var(--atlas-table-header-height)"
-                py="var(--atlas-layout-zero, 0)"
-              />
-              <AtlasSortableColumnHeader
-                label="Nguyên liệu"
-                columnKey="ingredient"
-                sort={sort}
-                onSort={onSort}
-                h="var(--atlas-table-header-height)"
-                py="var(--atlas-layout-zero, 0)"
-              />
-              {showServiceDate && (
-                <Table.ColumnHeader>Ngày dùng</Table.ColumnHeader>
-              )}
-              <AtlasSortableColumnHeader
-                label="Nhu cầu"
-                columnKey="need"
-                sort={sort}
-                onSort={onSort}
-                textAlign="end"
-                h="var(--atlas-table-header-height)"
-                py="var(--atlas-layout-zero, 0)"
-              />
-              <AtlasSortableColumnHeader
-                label="Nhà cung ứng"
-                columnKey="supplier"
-                sort={sort}
-                onSort={onSort}
-                h="var(--atlas-table-header-height)"
-                py="var(--atlas-layout-zero, 0)"
-              />
-              <AtlasSortableColumnHeader
-                label="Tình trạng / vấn đề"
-                columnKey="issue"
-                sort={sort}
-                onSort={onSort}
-                h="var(--atlas-table-header-height)"
-                py="var(--atlas-layout-zero, 0)"
-              />
-              <Table.ColumnHeader
-                h="var(--atlas-table-header-height)"
-                py="var(--atlas-layout-zero, 0)"
-              >
-                Thao tác
-              </Table.ColumnHeader>
+            <Table.Row>
+              <Table.ColumnHeader>Nhu cầu và phân bổ</Table.ColumnHeader>
+              <Table.ColumnHeader>Thao tác</Table.ColumnHeader>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -235,21 +194,19 @@ export function ProcurementAllocationTable({
                   key={key}
                   aria-selected={selectedKey === key}
                   data-attention={attention || undefined}
-                  h="var(--atlas-table-row-height)"
                 >
                   <Table.Cell
-                    position="sticky"
-                    left="var(--atlas-layout-zero, 0)"
-                    zIndex="var(--atlas-layout-sticky-cell-z, 1)"
+                    position="relative"
                     style={{ background: "inherit" }}
-                    minW="var(--atlas-table-identity-width)"
-                    h="var(--atlas-table-row-height)"
-                    py="xs"
+                    verticalAlign="top"
+                    overflowWrap="anywhere"
                   >
                     {selectedKey === key && (
                       <Box data-selection-indicator="" aria-hidden="true" />
                     )}
-                    <Text fontWeight="semibold">{recipient.primary}</Text>
+                    <Text data-allocation-recipient fontWeight="semibold">
+                      {recipient.primary}
+                    </Text>
                     {recipient.secondary && (
                       <Text
                         data-row-secondary=""
@@ -259,18 +216,26 @@ export function ProcurementAllocationTable({
                         {recipient.secondary}
                       </Text>
                     )}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text fontWeight="medium">{row.ingredient_name}</Text>
-                  </Table.Cell>
-                  {showServiceDate && (
-                    <Table.Cell whiteSpace="nowrap">
-                      {row.service_date.split("-").reverse().join("/")}
-                    </Table.Cell>
-                  )}
-                  <Table.Cell textAlign="end" whiteSpace="nowrap">
-                    <Text textStyle="quantityInline">
-                      {quantity(need)}{" "}
+
+                    <Text
+                      data-allocation-ingredient
+                      fontWeight="semibold"
+                      mt="xs"
+                    >
+                      {row.ingredient_name}
+                    </Text>
+                    {showServiceDate && (
+                      <Text
+                        data-allocation-date
+                        textStyle="helper"
+                        color="fg.muted"
+                      >
+                        Ngày dùng{" "}
+                        {row.service_date.split("-").reverse().join("/")}
+                      </Text>
+                    )}
+                    <Text textStyle="quantityInline" mt="xs">
+                      Nhu cầu: {quantity(need)}{" "}
                       <Box
                         as="span"
                         textStyle="unitInline"
@@ -281,8 +246,6 @@ export function ProcurementAllocationTable({
                         {row.unit_code}
                       </Box>
                     </Text>
-                  </Table.Cell>
-                  <Table.Cell minW="var(--atlas-layout-supplier-cell-width, 125px)">
                     {row.splits.length ? (
                       row.splits.map((split) => split.supplier_name).join(", ")
                     ) : derived ? (
@@ -301,9 +264,9 @@ export function ProcurementAllocationTable({
                     ) : (
                       "—"
                     )}
-                  </Table.Cell>
-                  <Table.Cell minW="var(--atlas-layout-state-cell-width, 110px)">
                     <Text
+                      data-allocation-issue
+                      mt="xs"
                       color={
                         row.state === "BLOCKED"
                           ? "status.danger"
@@ -322,7 +285,7 @@ export function ProcurementAllocationTable({
                       {issue}
                     </Text>
                   </Table.Cell>
-                  <Table.Cell>
+                  <Table.Cell verticalAlign="top">
                     <Button
                       variant="tableAction"
                       size="sm"

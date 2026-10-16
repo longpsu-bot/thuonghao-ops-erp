@@ -22,6 +22,7 @@ export function IngredientPriorityEditor({
   }, [c.activeSurface]);
   if (c.activeSurface?.kind !== "priorities" || !c.selectedIngredient)
     return null;
+  const disabled = c.saving || c.loading || Boolean(c.lock);
   const activeSuppliers = c.suppliers.filter(
     (supplier) => supplier.supplier_status === "ACTIVE",
   );
@@ -96,6 +97,7 @@ export function IngredientPriorityEditor({
               borderColor="border.subtle"
             >
               <Field.Root
+                disabled={disabled}
                 invalid={
                   !row.supplierId ||
                   c.priorities.filter(
@@ -139,7 +141,7 @@ export function IngredientPriorityEditor({
                   Ngừng hợp tác
                 </Text>
               )}
-              <Field.Root mt="sm">
+              <Field.Root mt="sm" disabled={disabled}>
                 <Field.Label>Mức ưu tiên</Field.Label>
                 <Input
                   aria-label={`Mức ưu tiên ${index + 1}`}
@@ -160,6 +162,7 @@ export function IngredientPriorityEditor({
                 mt="sm"
                 size="sm"
                 variant="tertiary"
+                disabled={disabled}
                 aria-label={`Gỡ ${selected?.supplier_name ?? `nhà cung ứng ${index + 1}`}`}
                 onClick={() =>
                   c.setPriorities(
@@ -187,7 +190,9 @@ export function IngredientPriorityEditor({
         <Button
           variant="secondary"
           disabled={
-            c.priorities.length >= 6 || unusedActiveSuppliers.length === 0
+            disabled ||
+            c.priorities.length >= 6 ||
+            unusedActiveSuppliers.length === 0
           }
           onClick={add}
         >
@@ -196,7 +201,7 @@ export function IngredientPriorityEditor({
         <Button
           variant="businessPrimary"
           disabled={
-            !c.prioritiesDirty || c.priorityErrors.length > 0 || Boolean(c.lock)
+            disabled || !c.prioritiesDirty || c.priorityErrors.length > 0
           }
           onClick={c.openPriorityReview}
         >

@@ -313,7 +313,7 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("procurement-master-detail")).toHaveStyle({
-      "--atlas-attached-detail-width": "390px",
+      "--atlas-allocation-directory-width": "340px",
     });
   });
 
@@ -751,25 +751,15 @@ describe("Procurement vNext operator workbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-procurement-table-min, 1050px)",
+      minWidth: "var(--atlas-layout-zero, 0)",
       width: "100%",
       tableLayout: "fixed",
-      "--atlas-table-header-height": "38px",
-      "--atlas-table-row-height": "46px",
-      "--atlas-table-identity-width": "200px",
     });
     expect(
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual([
-      "Trường / điểm giao",
-      "Nguyên liệu",
-      "Nhu cầu",
-      "Nhà cung ứng",
-      "Tình trạng / vấn đề",
-      "Thao tác",
-    ]);
+    ).toEqual(["Nhu cầu và phân bổ", "Thao tác"]);
     expect(document.body).not.toHaveTextContent(
       /private-|fingerprint|UUID|phiên bản/i,
     );

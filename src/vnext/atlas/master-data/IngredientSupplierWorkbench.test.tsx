@@ -208,6 +208,67 @@ async function ready() {
 }
 
 describe("IngredientSupplierWorkbench", () => {
+  it("locks all Ingredient editor controls after an uncertain Save without changing the draft", async () => {
+    const api = createApi();
+    api.updateIngredient.mockResolvedValue({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Offline." },
+    });
+    renderWorkbench(api);
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: "Bí mật chưa xác nhận" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu nguyên liệu" }));
+    await screen.findByText(
+      "Atlas chưa thể xác nhận thao tác đã hoàn tất hay chưa.",
+    );
+    const detail = within(
+      screen.getByRole("complementary", { name: "Chi tiết nguyên liệu" }),
+    );
+    for (const input of [
+      ...detail.getAllByRole("textbox"),
+      ...detail.getAllByRole("combobox"),
+    ])
+      expect(input).toBeDisabled();
+    expect(detail.getByLabelText("Tên nguyên liệu")).toHaveValue(
+      "Bí mật chưa xác nhận",
+    );
+    expect(detail.getByRole("button", { name: "Ưu tiên NCC" })).toBeDisabled();
+    expect(api.updateIngredient).toHaveBeenCalledOnce();
+  });
+  it("keeps all five Ingredient sort actions reachable and retains unsaved edits across sorting", async () => {
+    renderWorkbench();
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: "Bí mật chưa lưu" },
+    });
+    const sorts = within(
+      screen.getByRole("group", { name: "Sắp xếp nguyên liệu" }),
+    );
+    for (const label of [
+      "Nguyên liệu",
+      "Trạng thái",
+      "Đơn vị mua",
+      "Loại / nhóm đặt hàng",
+      "Ưu tiên NCC",
+    ]) {
+      const button = sorts.getByRole("button", {
+        name: `Sắp xếp theo ${label}`,
+      });
+      fireEvent.click(button);
+      expect(button).toHaveAttribute("aria-pressed", "true");
+      fireEvent.click(button);
+      fireEvent.click(button);
+      expect(button).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByLabelText("Tên nguyên liệu")).toHaveValue(
+        "Bí mật chưa lưu",
+      );
+    }
+  });
   it("keeps all Supplier contact fields and cycles secondary sorts without reading or writing", async () => {
     const api = createApi();
     render(
@@ -405,7 +466,7 @@ describe("IngredientSupplierWorkbench", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("ingredient-supplier-master-detail")).toHaveStyle(
       {
-        "--atlas-master-detail-columns": "minmax(0, 62fr) minmax(320px, 38fr)",
+        "--atlas-master-detail-columns": "minmax(280px, 340px) minmax(0, 1fr)",
       },
     );
     expect(
@@ -879,12 +940,9 @@ describe("IngredientSupplierWorkbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-ingredient-table-min, 1050px)",
+      minWidth: "var(--atlas-layout-zero, 0)",
       width: "100%",
       tableLayout: "fixed",
-      "--atlas-table-header-height": "38px",
-      "--atlas-table-row-height": "42px",
-      "--atlas-table-identity-width": "220px",
     });
     expect(screen.getAllByRole("row")).toHaveLength(361);
     const actions = screen.getAllByRole("button", {

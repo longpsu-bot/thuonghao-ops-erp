@@ -45,3 +45,7 @@ Root confirmed separate controls and mobile stacking, Supplier focus returning t
 ## Next bounded batch — Schools, Suppliers and export labels
 
 The Owner explicitly continued the same PR with compact Schools/default attendance and Supplier catalog/detail, retaining current controllers, commands, identities and authority. The [review report](atlas-ux-review-2026-10-16.md#schoolssuppliers-follow-up-in-the-same-pr) records the concrete composition, 119 affected passes plus final School21/Supplier29/Save-caller1 checks (overlapping), actual 1366/390 evidence and excluded viewport attempt. Short PO/PXK buttons retain named bulk versus document groups and adjacent scope explanation; export semantics do not change. The App range-read CI race was reproduced and corrected by awaiting the existing control after readback. No other workbench redesign, backend or Warehouse work starts automatically.
+
+## Next bounded batch — Ingredients and Supplier Allocation
+
+Owner explicitly continued the same PR with compact Ingredient and allocation-family directories beside broad existing editors. [The review record](atlas-ux-review-2026-10-16.md#ingredientssupplier-allocation--next-authorized-batch) records preserved fields/sorts/identities, exact quantities, separate Apply/Save, dirty/UNKNOWN/focus semantics, final 1366/390 evidence and the unchanged-budget CI test-query correction. No controller/model/API/SQL/dependency changes or #387 integration. Final exact-head normal checks must pass before completion; no merge or manual deployment.

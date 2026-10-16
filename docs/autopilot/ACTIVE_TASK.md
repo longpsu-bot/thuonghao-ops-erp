@@ -8,6 +8,8 @@ Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read
 
 ## Product priority and work authorization
 
+**16 October — Ingredients and Supplier Allocation, same PR #392:** Owner explicitly authorizes the next compact C catalogue/family-directory and broad existing-editor batch, including mobile sort reachability and unchanged exact quantity/recipient evidence. Preserve separate recommendation/rebalance Apply and explicit Save, lifecycle/priority Review, selection/focus, dirty and UNKNOWN locks. No controller/model/API/SQL/dependency changes or #387 integration. Backend/Warehouse and #385–#388 remain parked. Track final exact-head normal CI to completion.
+
 **16 October — next bounded UI batch, same PR #392:** Owner authorizes Schools/default attendance and Supplier catalog/detail to adopt compact C composition at laptop and narrow widths, plus short PO/PXK export button labels with adjacent scope explanation. Preserve all identities, ordering, commands, permissions, drafts, recovery and export arrays; no controllers, API, schema, dependencies or Warehouse changes. Other owners remain outside this batch. Correct the reproduced App range-read test race without weakening its retained-range assertions.
 
 **16 October follow-up — same unmerged PR #392:** Owner requested explicit PO XLSX/PDF exports and a wider UI review. Bounded corrections include real PDF ZIP production, Supplier Close focus, unknown initial Procurement data versus successful empty data, the sloped-tab CI oracle, and current v3 UI-agent guidance. [Review and remaining work](../ui/atlas-ux-review-2026-10-16.md). This does not complete all workbench redesigns or resume parked backend/Warehouse work.

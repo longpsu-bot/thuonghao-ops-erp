@@ -233,7 +233,7 @@ export function IngredientSupplierWorkbench({
                     "--atlas-master-detail-columns":
                       c.job === "suppliers"
                         ? "minmax(260px, 320px) minmax(0, 1fr)"
-                        : "minmax(0, 62fr) minmax(320px, 38fr)",
+                        : "minmax(280px, 340px) minmax(0, 1fr)",
                   } as CSSProperties
                 }
                 mt="sm"
@@ -249,7 +249,8 @@ export function IngredientSupplierWorkbench({
                   <IngredientCatalogue
                     ingredients={c.visibleIngredients}
                     totalCount={c.ingredients.length}
-                    countUnavailable={Boolean(c.error)}
+                    countUnavailable={Boolean(c.error) || c.loading}
+                    detailOpen={detailOpen}
                     selectedId={c.selectedIngredient?.ingredient_id}
                     onSelect={(id, trigger) => {
                       rowTrigger.current = trigger;
