@@ -126,7 +126,7 @@ it("carries the selected seven-day range from new Confirmed Need to Allocation a
   expect(
     await screen.findByText("Chọn 1 ngày để chuẩn bị đơn mua."),
   ).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Xem đơn mua" }));
   await waitFor(() =>
     expect(orders).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -200,7 +200,7 @@ it("preserves an existing Orders range and selected order when Allocation reques
   await nav("Phân bổ NCC");
   await screen.findByRole("button", { name: /Xem phân bổ Gạo thơm/ });
   await selectRange("2026-09-10", "2026-09-16");
-  fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Xem đơn mua" }));
   expect(
     await screen.findByText(
       /Đơn mua vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,

@@ -231,7 +231,9 @@ export function IngredientSupplierWorkbench({
                 style={
                   {
                     "--atlas-master-detail-columns":
-                      "minmax(0, 62fr) minmax(320px, 38fr)",
+                      c.job === "suppliers"
+                        ? "minmax(260px, 320px) minmax(0, 1fr)"
+                        : "minmax(0, 62fr) minmax(320px, 38fr)",
                   } as CSSProperties
                 }
                 mt="sm"
@@ -257,6 +259,8 @@ export function IngredientSupplierWorkbench({
                 ) : (
                   <SupplierCatalogue
                     suppliers={c.visibleSuppliers}
+                    unavailable={Boolean(c.error) || c.loading}
+                    detailOpen={detailOpen}
                     selectedId={c.selectedSupplier?.supplier_id}
                     onSelect={(id, trigger) => {
                       rowTrigger.current = trigger;

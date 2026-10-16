@@ -8,6 +8,8 @@ Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read
 
 ## Product priority and work authorization
 
+**16 October — next bounded UI batch, same PR #392:** Owner authorizes Schools/default attendance and Supplier catalog/detail to adopt compact C composition at laptop and narrow widths, plus short PO/PXK export button labels with adjacent scope explanation. Preserve all identities, ordering, commands, permissions, drafts, recovery and export arrays; no controllers, API, schema, dependencies or Warehouse changes. Other owners remain outside this batch. Correct the reproduced App range-read test race without weakening its retained-range assertions.
+
 **16 October follow-up — same unmerged PR #392:** Owner requested explicit PO XLSX/PDF exports and a wider UI review. Bounded corrections include real PDF ZIP production, Supplier Close focus, unknown initial Procurement data versus successful empty data, the sloped-tab CI oracle, and current v3 UI-agent guidance. [Review and remaining work](../ui/atlas-ux-review-2026-10-16.md). This does not complete all workbench redesigns or resume parked backend/Warehouse work.
 
 **16 October 2026 — Owner selected C and explicitly authorized implementation.** The D1/D2 selection gate is satisfied by [Draft #391](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/391), head `6ac8f388ce14bc991058371e1232b094e733f6b3`. Implement only connected sloped tabs and supplier-rail PO presentation under the [bounded C scope](../ui/atlas-c-workspace-po-implementation.md). Preserve real thirteen-owner state, API clients, business guards, immutable documents and export semantics. Backend/Warehouse and #385–#388 remain parked. No merge or deployment is authorized.

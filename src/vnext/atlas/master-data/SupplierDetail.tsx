@@ -26,6 +26,7 @@ export function SupplierDetail({
     if (c.activeSurface?.kind === "supplier") panel.current?.focus();
   }, [c.activeSurface]);
   if (c.activeSurface?.kind !== "supplier") return null;
+  const disabled = c.saving || c.loading || Boolean(c.lock);
   const creating = c.activeSurface.id === "NEW";
   const item = c.selectedSupplier;
   return (
@@ -64,11 +65,21 @@ export function SupplierDetail({
           Đóng
         </Button>
       </Flex>
-      <Box px="md" pb="md" display="grid" gap="sm">
+      <Box
+        px="md"
+        pb="md"
+        display="grid"
+        gap="sm"
+        gridTemplateColumns={{
+          base: "minmax(0, 1fr)",
+          xl: "repeat(2, minmax(0, 1fr))",
+        }}
+      >
         <Field.Root required invalid={!c.supplierDraft.supplierName.trim()}>
           <Field.Label>Tên nhà cung ứng</Field.Label>
           <Input
             required
+            disabled={disabled}
             aria-invalid={!c.supplierDraft.supplierName.trim()}
             value={c.supplierDraft.supplierName}
             onChange={(e) => c.setSupplierField("supplierName", e.target.value)}
@@ -79,20 +90,23 @@ export function SupplierDetail({
           value={c.supplierDraft.documentCode}
           onChange={(value) => c.setSupplierField("documentCode", value)}
           maxLength={200}
-          disabled={c.saving || c.loading || Boolean(c.lock)}
+          disabled={disabled}
           helperText="Có thể để trống khi tạo nhà cung ứng. Cần bổ sung mã trước khi phát hành đơn mua hàng."
         />
         <SupplierField
+          disabled={disabled}
           label="Người liên hệ"
           value={c.supplierDraft.contactName}
           onChange={(value) => c.setSupplierField("contactName", value)}
         />
         <SupplierField
+          disabled={disabled}
           label="Điện thoại"
           value={c.supplierDraft.contactPhone}
           onChange={(value) => c.setSupplierField("contactPhone", value)}
         />
         <SupplierField
+          disabled={disabled}
           label="Email"
           value={c.supplierDraft.contactEmail}
           onChange={(value) => c.setSupplierField("contactEmail", value)}
@@ -101,7 +115,7 @@ export function SupplierDetail({
       <Flex mt="var(--atlas-layout-auto, auto)" p="md">
         <Button
           variant="businessPrimary"
-          disabled={!c.supplierDirty || !c.supplierValid || Boolean(c.lock)}
+          disabled={disabled || !c.supplierDirty || !c.supplierValid}
           onClick={c.openSupplierReview}
         >
           Xem thay đổi

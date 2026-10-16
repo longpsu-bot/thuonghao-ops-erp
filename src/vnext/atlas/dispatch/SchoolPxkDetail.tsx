@@ -92,7 +92,11 @@ function OfficialDocument({
           </Text>
         </Box>
         {document.export_ready && (
-          <Flex gap="xs">
+          <Flex
+            role="group"
+            aria-label={`Xuất phiếu ${document.document_number}`}
+            gap="xs"
+          >
             {exports.onExportXlsx && (
               <Button
                 size="sm"
@@ -100,7 +104,7 @@ function OfficialDocument({
                 disabled={exporting}
                 onClick={() => void run(exports.onExportXlsx!)}
               >
-                Xuất Excel
+                Xuất XLSX
               </Button>
             )}
             {exports.onExportPdf && (

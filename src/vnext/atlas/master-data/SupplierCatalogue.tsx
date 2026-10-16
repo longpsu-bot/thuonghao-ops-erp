@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Table, Text } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import type { SupplierMasterData } from "../bridges/ingredientSupplierMasterData";
 import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
@@ -21,13 +21,18 @@ export function SupplierCatalogue({
   suppliers,
   selectedId,
   onSelect,
+  unavailable,
+  detailOpen,
 }: {
   suppliers: SupplierMasterData[];
   selectedId?: string;
+  unavailable?: boolean;
+  detailOpen?: boolean;
   onSelect: (id: string, trigger: HTMLButtonElement) => void;
 }) {
   type SortKey = "supplier" | "status" | "contact";
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
+  if (!suppliers.length && unavailable) return null;
   if (!suppliers.length)
     return <Text p="md">Không có nhà cung ứng phù hợp tìm kiếm.</Text>;
   const sortedSuppliers = sortAtlasRows(suppliers, sort, {
@@ -41,86 +46,117 @@ export function SupplierCatalogue({
   const onSort = (key: SortKey) =>
     setSort((current) => nextAtlasSort(current, key));
   return (
-    <AtlasTableViewport
-      label="Bảng danh mục nhà cung ứng"
-      maxH="var(--atlas-layout-catalog-height, calc(100dvh - 290px))"
-    >
-      <Table.Root
-        aria-label="Danh mục nhà cung ứng"
-        minW="var(--atlas-layout-supplier-table-min, 1040px)"
-        w="var(--atlas-layout-supplier-table-width, 1040px)"
-        tableLayout="fixed"
-        stickyHeader
+    <Box minW="var(--atlas-layout-zero, 0)">
+      <Flex
+        px="md"
+        py="xs"
+        gap="xs"
+        align="center"
+        wrap="wrap"
+        aria-label="Sắp xếp nhà cung ứng"
       >
-        <Table.ColumnGroup>
-          <Table.Column w="var(--atlas-supplier-identity-width, 220px)" />
-          <Table.Column w="var(--atlas-supplier-state-width, 140px)" />
-          <Table.Column w="var(--atlas-supplier-contact-width, 170px)" />
-          <Table.Column w="var(--atlas-supplier-phone-width, 150px)" />
-          <Table.Column w="var(--atlas-supplier-email-width, 250px)" />
-          <Table.Column w="var(--atlas-supplier-action-width, 110px)" />
-        </Table.ColumnGroup>
-        <Table.Header>
-          <Table.Row>
-            <AtlasSortableColumnHeader
-              label="Nhà cung ứng"
-              columnKey="supplier"
-              sort={sort}
-              onSort={onSort}
-            />
-            <AtlasSortableColumnHeader
-              label="Trạng thái"
-              columnKey="status"
-              sort={sort}
-              onSort={onSort}
-            />
-            <AtlasSortableColumnHeader
-              label="Người liên hệ"
-              columnKey="contact"
-              sort={sort}
-              onSort={onSort}
-            />
-            <Table.ColumnHeader>Điện thoại</Table.ColumnHeader>
-            <Table.ColumnHeader>Email</Table.ColumnHeader>
-            <Table.ColumnHeader>Thao tác</Table.ColumnHeader>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {sortedSuppliers.map((item) => (
-            <Table.Row
-              key={item.supplier_id}
-              aria-selected={item.supplier_id === selectedId}
-            >
-              <Table.Cell position="relative">
-                {item.supplier_id === selectedId && (
-                  <Box data-selection-indicator aria-hidden="true" />
-                )}
-                <Text fontWeight="semibold">{item.supplier_name}</Text>
-              </Table.Cell>
-              <Table.Cell>
-                <Badge variant={status[item.supplier_status].variant}>
-                  {status[item.supplier_status].label}
-                </Badge>
-              </Table.Cell>
-              <Table.Cell>{item.contact_name || "—"}</Table.Cell>
-              <Table.Cell>{item.contact_phone || "—"}</Table.Cell>
-              <Table.Cell>{item.contact_email || "—"}</Table.Cell>
-              <Table.Cell>
-                <Button
-                  size="sm"
-                  variant="tableAction"
-                  aria-label={`Xem / sửa ${item.supplier_name}`}
-                  onClick={(event) =>
-                    onSelect(item.supplier_id, event.currentTarget)
-                  }
-                >
-                  Xem / sửa
-                </Button>
-              </Table.Cell>
+        <Text textStyle="helper" color="fg.muted">
+          Sắp xếp thêm:
+        </Text>
+        {(
+          [
+            ["status", "Trạng thái"],
+            ["contact", "Người liên hệ"],
+          ] as const
+        ).map(([key, label]) => (
+          <Button
+            key={key}
+            size="sm"
+            variant="utility"
+            aria-label={`Sắp xếp theo ${label}`}
+            aria-pressed={sort.key === key}
+            onClick={() => onSort(key)}
+          >
+            {label}
+            {sort.key === key
+              ? sort.direction === "ascending"
+                ? " · Tăng dần"
+                : " · Giảm dần"
+              : ""}
+          </Button>
+        ))}
+      </Flex>
+      <AtlasTableViewport
+        label="Bảng danh mục nhà cung ứng"
+        maxH={{
+          base: detailOpen
+            ? "var(--atlas-supplier-list-selected-height, 35dvh)"
+            : "var(--atlas-supplier-list-height, 60dvh)",
+          lg: "var(--atlas-layout-catalog-height, calc(100dvh - 290px))",
+        }}
+      >
+        <Table.Root
+          aria-label="Danh mục nhà cung ứng"
+          minW="var(--atlas-layout-zero, 0)"
+          w="full"
+          tableLayout="fixed"
+          stickyHeader
+        >
+          <Table.ColumnGroup>
+            <Table.Column />
+            <Table.Column w="var(--atlas-supplier-action-width, 92px)" />
+          </Table.ColumnGroup>
+          <Table.Header>
+            <Table.Row>
+              <AtlasSortableColumnHeader
+                label="Nhà cung ứng"
+                columnKey="supplier"
+                sort={sort}
+                onSort={onSort}
+              />
+              <Table.ColumnHeader>Thao tác</Table.ColumnHeader>
             </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root>
-    </AtlasTableViewport>
+          </Table.Header>
+          <Table.Body>
+            {sortedSuppliers.map((item) => (
+              <Table.Row
+                key={item.supplier_id}
+                aria-selected={item.supplier_id === selectedId}
+              >
+                <Table.Cell
+                  position="relative"
+                  overflowWrap="anywhere"
+                  verticalAlign="top"
+                >
+                  {item.supplier_id === selectedId && (
+                    <Box data-selection-indicator aria-hidden="true" />
+                  )}
+                  <Text fontWeight="semibold">{item.supplier_name}</Text>
+                  <Badge my="xs" variant={status[item.supplier_status].variant}>
+                    {status[item.supplier_status].label}
+                  </Badge>
+                  <Text textStyle="helper" color="fg.muted">
+                    {item.contact_name || "Chưa có người liên hệ"}
+                  </Text>
+                  <Text textStyle="helper" color="fg.muted">
+                    {item.contact_phone || "Chưa có số điện thoại"}
+                  </Text>
+                  <Text textStyle="helper" color="fg.muted">
+                    {item.contact_email || "Chưa có email"}
+                  </Text>
+                </Table.Cell>
+                <Table.Cell verticalAlign="top">
+                  <Button
+                    size="sm"
+                    variant="tableAction"
+                    aria-label={`Xem / sửa ${item.supplier_name}`}
+                    onClick={(event) =>
+                      onSelect(item.supplier_id, event.currentTarget)
+                    }
+                  >
+                    Xem / sửa
+                  </Button>
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table.Root>
+      </AtlasTableViewport>
+    </Box>
   );
 }

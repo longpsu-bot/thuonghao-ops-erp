@@ -176,18 +176,17 @@ export function ProcurementOrdersStage({
   if (!data) return null;
   return (
     <Box>
-      <AtlasWorkbar
-        px="md"
-        py="xs"
-        gap="sm"
-        aria-label="Xuất đơn mua trong phạm vi đã tải"
-      >
+      <AtlasWorkbar px="md" py="xs" gap="sm" aria-label="Xuất đơn mua đã tải">
         <Text
           textStyle="helper"
           color="fg.muted"
           mr="var(--atlas-layout-auto, auto)"
         >
           {visible.length} đơn mua theo nhà cung cấp
+          <Text as="span" display="block" textStyle="helper">
+            Xuất các đơn đủ điều kiện trong dữ liệu đã tải, không giới hạn theo
+            tìm kiếm.
+          </Text>
         </Text>
         <Field.Root
           disabled={disabled || exporting}
@@ -232,7 +231,7 @@ export function ProcurementOrdersStage({
                 disabled={disabled || exporting || !exportOrders.length}
                 onClick={() => void exportZip(format)}
               >
-                Xuất {format.toUpperCase()} · phạm vi đã tải
+                Xuất {format.toUpperCase()}
               </Button>
             ))}
           </AtlasWorkbarActions>
@@ -453,7 +452,12 @@ export function ProcurementOrdersStage({
                   </Button>
                 )}
                 {exportReady && (
-                  <Flex gap="xs" wrap="wrap">
+                  <Flex
+                    role="group"
+                    aria-label="Xuất đơn mua đang xem"
+                    gap="xs"
+                    wrap="wrap"
+                  >
                     {onExportXlsx && (
                       <Button
                         variant="secondary"

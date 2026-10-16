@@ -208,6 +208,103 @@ async function ready() {
 }
 
 describe("IngredientSupplierWorkbench", () => {
+  it("keeps all Supplier contact fields and cycles secondary sorts without reading or writing", async () => {
+    const api = createApi();
+    render(
+      <AtlasVNextProvider>
+        <IngredientSupplierWorkbench
+          authSubject="operator-1"
+          api={api}
+          ownerJob="suppliers"
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("button", { name: "Xem / sửa NCC Minh Tâm" });
+    const table = screen.getByRole("table", { name: "Danh mục nhà cung ứng" });
+    const first = () => within(table).getAllByRole("row")[1]!;
+    expect(first()).toHaveTextContent("Minh Tâm");
+    expect(first()).toHaveTextContent("0901");
+    expect(first()).toHaveTextContent("tam@example.test");
+    const status = screen.getByRole("button", {
+      name: "Sắp xếp theo Trạng thái",
+    });
+    fireEvent.click(status);
+    fireEvent.click(status);
+    expect(first()).toHaveTextContent("NCC Tạm dừng");
+    fireEvent.click(status);
+    expect(first()).toHaveTextContent("NCC Minh Tâm");
+    const contact = screen.getByRole("button", {
+      name: "Sắp xếp theo Người liên hệ",
+    });
+    fireEvent.click(contact);
+    expect(first()).toHaveTextContent("NCC Đã nghỉ");
+    fireEvent.click(contact);
+    expect(first()).toHaveTextContent("NCC Minh Tâm");
+    fireEvent.click(contact);
+    expect(contact).toHaveAttribute("aria-pressed", "false");
+    expect(api.getIngredientsAndSuppliers).toHaveBeenCalledOnce();
+    expect(api.updateSupplier).not.toHaveBeenCalled();
+  });
+  it("keeps every Supplier field locked after an uncertain Save", async () => {
+    const api = createApi();
+    api.updateSupplier.mockResolvedValue({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Offline." },
+    });
+    render(
+      <AtlasVNextProvider>
+        <IngredientSupplierWorkbench
+          authSubject="operator-1"
+          api={api}
+          ownerJob="suppliers"
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Xem / sửa NCC Minh Tâm" }),
+    );
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Tên nhà cung ứng" }),
+      { target: { value: "NCC Minh Tâm mới" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu nhà cung ứng" }));
+    await screen.findByText(
+      "Atlas chưa thể xác nhận thao tác đã hoàn tất hay chưa.",
+    );
+    const detail = screen.getByRole("complementary", {
+      name: "Chi tiết nhà cung ứng",
+    });
+    for (const input of within(detail).getAllByRole("textbox"))
+      expect(input).toBeDisabled();
+    expect(
+      within(detail).getByRole("button", { name: "Xem thay đổi" }),
+    ).toBeDisabled();
+    expect(api.updateSupplier).toHaveBeenCalledOnce();
+  });
+  it("does not label an initial failed Supplier read as a successful empty search", async () => {
+    const api = createApi();
+    api.getIngredientsAndSuppliers.mockResolvedValue({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Offline." },
+    });
+    render(
+      <AtlasVNextProvider>
+        <IngredientSupplierWorkbench
+          authSubject="operator-1"
+          api={api}
+          ownerJob="suppliers"
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("alert");
+    expect(
+      screen.queryByText("Không có nhà cung ứng phù hợp tìm kiếm."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Thử tải lại dữ liệu" }),
+    ).toBeEnabled();
+  });
   it.each(["row", "create", "filtered"] as const)(
     "restores Supplier focus after %s detail closes",
     async (origin) => {

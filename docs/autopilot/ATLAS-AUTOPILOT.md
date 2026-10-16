@@ -1,9 +1,10 @@
 # Atlas Autopilot Mandate
 
-Status: **ACTIVE — DESIGN-ONLY PAUSE / OWNER-CONTROLLED**  
+Status: **ACTIVE — OWNER-SELECTED C / BOUNDED FRONTEND IMPLEMENTATION**
+
 Original approval: 14 October 2026.  
 **Product priority amendment: 16 October 2026.**  
-Current execution horizon: **ATLAS-UX-ART-DIRECTION-02 D1/D2 only**, with the production UI implementation gate held for Owner visual selection. The earlier Warehouse design horizon ended with merged PR #384; Warehouse Product decisions remain pending.
+Current execution horizon: **Owner-selected C workspace/PO and the explicitly authorized Schools/Suppliers frontend follow-up in PR #392**. D1/D2 selection is complete. No automatic promotion to other owners, backend or Warehouse work. The earlier Warehouse design horizon ended with merged PR #384; Warehouse Product decisions remain pending.
 
 ## Control plane
 
@@ -32,6 +33,7 @@ GitHub issue/PR comments do **not** by themselves launch Codex or interrupt an a
 ## Hard Product stops (unchanged)
 
 Stop before:
+
 1. new/changed unresolved business policy;
 2. paid or Production infrastructure;
 3. first Production write-ownership transfer from OPS v1;

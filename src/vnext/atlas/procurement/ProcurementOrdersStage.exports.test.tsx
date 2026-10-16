@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
@@ -12,6 +13,10 @@ import { ProcurementOrdersStage } from "./ProcurementOrdersStage";
 import { reviewOrder, reviewDate } from "./procurementReviewFixtures";
 
 afterEach(cleanup);
+const bulk = () =>
+  within(screen.getByRole("group", { name: "Xuất đơn mua đã tải" }));
+const selectedExports = () =>
+  within(screen.getByRole("region", { name: /^Chi tiết đơn mua/ }));
 describe("loaded PO presentation exports", () => {
   const data = () => ({
     success: true as const,
@@ -43,9 +48,7 @@ describe("loaded PO presentation exports", () => {
         screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
         { target: { value: mode } },
       );
-      fireEvent.click(
-        screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
-      );
+      fireEvent.click(bulk().getByRole("button", { name: "Xuất PDF" }));
       await waitFor(() =>
         expect(zip).toHaveBeenCalledWith(orders.purchase_orders, mode, "pdf"),
       );
@@ -70,12 +73,8 @@ describe("loaded PO presentation exports", () => {
         />
       </AtlasVNextProvider>,
     );
-    const xlsx = screen.getByRole("button", {
-      name: "Xuất XLSX · phạm vi đã tải",
-    });
-    const pdf = screen.getByRole("button", {
-      name: "Xuất PDF · phạm vi đã tải",
-    });
+    const xlsx = bulk().getByRole("button", { name: "Xuất XLSX" });
+    const pdf = bulk().getByRole("button", { name: "Xuất PDF" });
     fireEvent.click(pdf);
     expect(xlsx).toBeDisabled();
     expect(pdf).toBeDisabled();
@@ -124,9 +123,7 @@ describe("loaded PO presentation exports", () => {
       screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
       { target: { value: "details_ing" } },
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xuất XLSX · phạm vi đã tải" }),
-    );
+    fireEvent.click(bulk().getByRole("button", { name: "Xuất XLSX" }));
     expect(zip).toHaveBeenCalledWith(
       orders.purchase_orders,
       "details_ing",
@@ -136,14 +133,22 @@ describe("loaded PO presentation exports", () => {
       screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
     );
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xuất XLSX" })).toBeEnabled(),
+      expect(
+        selectedExports().getByRole("button", { name: "Xuất XLSX" }),
+      ).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xuất XLSX" }));
+    fireEvent.click(
+      selectedExports().getByRole("button", { name: "Xuất XLSX" }),
+    );
     expect(xlsx).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xuất PDF" })).toBeEnabled(),
+      expect(
+        selectedExports().getByRole("button", { name: "Xuất PDF" }),
+      ).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xuất PDF" }));
+    fireEvent.click(
+      selectedExports().getByRole("button", { name: "Xuất PDF" }),
+    );
     expect(pdf).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
   });
   it("includes loaded eligible orders despite local search and excludes denied/draft/unready rows", async () => {
@@ -167,22 +172,16 @@ describe("loaded PO presentation exports", () => {
         />
       </AtlasVNextProvider>,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xuất XLSX · phạm vi đã tải" }),
-    );
+    fireEvent.click(bulk().getByRole("button", { name: "Xuất XLSX" }));
     expect(zip).toHaveBeenCalledWith(
       [orders.purchase_orders[0]],
       "all",
       "xlsx",
     );
     await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
-      ).toBeEnabled(),
+      expect(bulk().getByRole("button", { name: "Xuất PDF" })).toBeEnabled(),
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
-    );
+    fireEvent.click(bulk().getByRole("button", { name: "Xuất PDF" }));
     expect(zip).toHaveBeenLastCalledWith(
       [orders.purchase_orders[0]],
       "all",
@@ -202,13 +201,9 @@ describe("loaded PO presentation exports", () => {
         />
       </AtlasVNextProvider>,
     );
-    const button = screen.getByRole("button", {
-      name: "Xuất XLSX · phạm vi đã tải",
-    });
+    const button = bulk().getByRole("button", { name: "Xuất XLSX" });
     expect(button).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
-    ).toBeDisabled();
+    expect(bulk().getByRole("button", { name: "Xuất PDF" })).toBeDisabled();
     fireEvent.click(button);
     expect(zip).not.toHaveBeenCalled();
   });
@@ -242,17 +237,13 @@ describe("loaded PO presentation exports", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("Gạo thơm").length).toBeGreaterThan(0);
     expect(
-      screen.queryByRole("button", { name: "Xuất XLSX" }),
+      selectedExports().queryByRole("button", { name: "Xuất XLSX" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Xuất PDF" }),
+      selectedExports().queryByRole("button", { name: "Xuất PDF" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Xuất XLSX · phạm vi đã tải" }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
-    ).toBeDisabled();
+    expect(bulk().getByRole("button", { name: "Xuất XLSX" })).toBeDisabled();
+    expect(bulk().getByRole("button", { name: "Xuất PDF" })).toBeDisabled();
     expect(
       screen.queryByText("PO_DOCUMENT_SNAPSHOT_INCOMPLETE"),
     ).not.toBeInTheDocument();
