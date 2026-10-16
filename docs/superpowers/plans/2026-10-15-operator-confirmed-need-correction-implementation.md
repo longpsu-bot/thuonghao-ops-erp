@@ -10,6 +10,12 @@
 
 **Spec:** `E:/Project/OPS ERP/thuonghao-ops-erp/docs/superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md`, human-approved design source `340721a49788163416176db816477168895f3442`.
 
+## Bounded trial verdict — 16 October 2026
+
+**FAIL / STOP — investigational preservation only.** Candidate `dd3d3207` is applied in migration `f6d56125`; the one historical helper body changes, with all 497 metadata/ACL entries unchanged. Old/new 29 rowset properties agree and 588 focused assertions pass. The single unchanged strict31 run fails at the first Preparation 20-second limit: **0/8 completed cycles, 0/20 final assertions**, full rollback. The Handoff-lock interruption frame is not cost attribution; the bottleneck remains insufficiently isolated and no full-command performance gain is demonstrated. No further execution/profile/optimization or acceptance retry is authorized. Preserve Draft #388 against main, all earlier evidence/DBs and the candidate as investigational work. A future bounded transaction-wide Preparation repeated-call/lock-path diagnosis is an actionable handoff, not autoexecution. [Current validation](../../testing/operator-confirmed-need-correction-c-01-validation.md).
+
+UI #392 is separately preserved at `34c85ea87a61fdcfedf33d08e38a4715e9eaeea5`; combined integration is NOT performed. Only ConfirmedNeedWorkbench and ProcurementOrdersStage overlap in production. Preserve the compact UI/toolbar/PO exports and guards in any future approved semantic integration; no whole-file overwrite, PR-base change or migration reorder. #385–#387 remain parked, Warehouse paused, hosted read-only and OPSv1/Retool NO-WRITE. No merge/deployment.
+
 ## Owner bounded remediation — 16 October 2026
 
 The Owner now explicitly authorizes one delivery-focused Need correction trial after the UX checkpoint. Preserve PR #392 at `4600c3476fc98f607e60daf0ef4ce286bb5321ea` and work on the original Draft #388 branch from `49375b4e`. This supersedes the earlier dd3 cancellation for this trial only. Apply exactly reviewed helper candidate `dd3d320775996e0d3077b9e449abfda1979b3762fc97a07c02b5c59fde12c3d4` to `confirmed_need_historical_validation_complete(uuid,uuid)`; signature, Review owner, STABLE/SECDEF/empty path and ACL remain. No other runtime body or UI change.

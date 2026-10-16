@@ -36,41 +36,45 @@ set role atlas_confirmed_need_review_runtime;
 -- No whole-batch JSON projection is executed by the per-row integrity trigger.
 create function atlas_core.confirmed_need_historical_validation_complete(p_batch uuid,p_attempt uuid)
 returns boolean language sql stable security definer set search_path='' as $complete$
+with observations as materialized (
+ select * from atlas_planning.confirmed_need_validation_lines
+ where confirmed_need_validation_attempt_id=p_attempt
+), observation_counts as materialized (
+ select count(*) total_count,count(distinct confirmed_need_line_id) distinct_line_count
+ from observations
+), issue_counts as materialized (
+ select count(*)filter(where severity='BLOCKING') blocking_count,
+  count(*)filter(where severity='WARNING') warning_count
+ from atlas_planning.confirmed_need_validation_issues
+ where confirmed_need_validation_attempt_id=p_attempt
+), revision_keys as materialized (
+ select distinct current_confirmed_need_line_revision_id revision_id from observations
+ where current_confirmed_need_line_revision_id is not null
+), membership_totals as materialized (
+ select c.confirmed_need_line_revision_id revision_id,count(*) member_count,
+  sum(c.controlled_contribution_quantity) member_total
+ from revision_keys k
+ join atlas_planning.confirmed_need_line_revision_contributions c
+  on c.confirmed_need_line_revision_id=k.revision_id
+ group by c.confirmed_need_line_revision_id
+)
 select exists (
     select 1
     from atlas_planning.confirmed_need_validation_attempts attempt
+    cross join observation_counts counts cross join issue_counts issues
     where attempt.confirmed_need_validation_attempt_id = p_attempt
       and attempt.confirmed_need_batch_id = p_batch
       and attempt.source_kind = 'NEED_GENERATION'
       and attempt.outcome = 'VALIDATED'
       and attempt.blocking_issue_count = 0
       and attempt.line_count > 0
-      and attempt.line_count = (select count(distinct o.confirmed_need_line_id)
-       from atlas_planning.confirmed_need_validation_lines o
-       where o.confirmed_need_validation_attempt_id=p_attempt)
-      and attempt.line_count = (
-        select count(*)
-        from atlas_planning.confirmed_need_validation_lines observation
-        where observation.confirmed_need_validation_attempt_id
-          = p_attempt
-      )
-      and attempt.blocking_issue_count = (
-        select count(*)
-        from atlas_planning.confirmed_need_validation_issues issue
-        where issue.confirmed_need_validation_attempt_id
-          = p_attempt
-          and issue.severity = 'BLOCKING'
-      )
-      and attempt.warning_count = (
-        select count(*)
-        from atlas_planning.confirmed_need_validation_issues issue
-        where issue.confirmed_need_validation_attempt_id
-          = p_attempt
-          and issue.severity = 'WARNING'
-      )
+      and attempt.line_count = counts.distinct_line_count
+      and attempt.line_count = counts.total_count
+      and attempt.blocking_issue_count = issues.blocking_count
+      and attempt.warning_count = issues.warning_count
       and not exists (
         select 1
-        from atlas_planning.confirmed_need_validation_lines observation
+        from observations observation
         left join atlas_planning.confirmed_need_lines line
           on line.confirmed_need_line_id = observation.confirmed_need_line_id
          and line.confirmed_need_batch_id = observation.confirmed_need_batch_id
@@ -89,6 +93,8 @@ select exists (
             = observation.planning_quantity_policy_revision_id
          and policy_revision.planning_quantity_policy_id
             = observation.planning_quantity_policy_id
+        left join membership_totals membership
+          on membership.revision_id=revision.confirmed_need_line_revision_id
         where observation.confirmed_need_validation_attempt_id
           = p_attempt
           and (
@@ -137,18 +143,8 @@ select exists (
               is distinct from decision.planning_tick_count
             or observation.source_membership_total
               is distinct from revision.theoretical_quantity
-            or observation.observed_source_membership_count is distinct from (
-              select count(*)
-              from atlas_planning.confirmed_need_line_revision_contributions c
-              where c.confirmed_need_line_revision_id
-                = revision.confirmed_need_line_revision_id
-            )
-            or observation.source_membership_total is distinct from (
-              select sum(c.controlled_contribution_quantity)
-              from atlas_planning.confirmed_need_line_revision_contributions c
-              where c.confirmed_need_line_revision_id
-                = revision.confirmed_need_line_revision_id
-            )
+            or observation.observed_source_membership_count is distinct from coalesce(membership.member_count,0)
+            or observation.source_membership_total is distinct from membership.member_total
           )
       )
   );
