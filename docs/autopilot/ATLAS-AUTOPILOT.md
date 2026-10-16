@@ -1,12 +1,13 @@
 # Atlas Autopilot Mandate
 
 **Status:** ACTIVE — OWNER-CONTROLLED, TIERED BOUNDED RECOVERY.  
-**Owner amendment:** 16 October 2026, following PRs #392/#388 failed acceptance.  
-**Current control-plane checkpoint:** align these three governance documents in existing Draft #393, then resume the sole technical priority, `ATLAS-C388-PREPARATION-DIAG-01` — diagnosis only. Full [execution plan](ATLAS-RECOVERY-392-388-2026-10-16.md); [active baton](ACTIVE_TASK.md); [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389).
+**Owner amendment:** finish directive received 17 October 2026, superseding the 16 October diagnosis-only boundary.
+
+**Current control-plane checkpoint:** finish governance review in existing Draft #393, then the sole technical priority, `ATLAS-C388-PREPARATION-DIAG-01` — bounded diagnosis, one conditional SQL remediation and certification in existing #388. Full [execution plan](ATLAS-RECOVERY-392-388-2026-10-16.md); [active baton](ACTIVE_TASK.md); [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389).
 
 Task A is **PASS** at frozen #392 `6f9f288c76cfa48691fca2f4968ce03185502bb2`: Frontend [38921984408](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38921984408) and Supabase Smoke [38921984463](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38921984463) PASS; Full Integration SKIPPED. The UI remains Draft for Owner review on **17 October 2026**. No #392 changes, additional tests/certification, CI reruns, merge or deployment before that decision; these results do not certify #388.
 
-The Owner explicitly supersedes the old Task A active/Task B queued sequence with this bounded priority. Earlier failures remain historical evidence. Draft #393 is not merged into `main`: direct thread authorization covers the connected runner, not silent adoption by main-following automation. Diagnosis approval does not authorize #388 SQL optimization, change limits, merge/deploy code or launch a new process by itself.
+The Owner explicitly supersedes the old Task A active/Task B queued sequence and diagnosis-only boundary with this bounded priority. Earlier failures remain historical evidence. Draft #393 is not merged into `main`: direct thread authorization covers the connected runner, not silent adoption by main-following automation. One #388 SQL optimization is authorized only after reliable measured attribution, preserving contracts, locks, security, immutable documents and continuity. No changed limits, speculative optimization, automatic merge/deployment or next-task promotion is authorized.
 
 ## Control loop
 
@@ -21,7 +22,7 @@ Owner-approved bounded issue → verify true latest repo & actual checkout
 - **STOP is strategy-specific:** a known test fixture typo or stale assertion can be fixed within an Owner-approved recovery task. Do not use STOP to freeze harmless repair; do not classify a real regression as test fragility.
 - **Validation proportional to risk:** fast focused tests during development, mandatory complete operational safety/latency and exact-head GitHub CI for release, and separate multi-cycle stress/soak evidence. Eight-cycle history tests do **not** block independent UI PR #392. Existing tests are retained; no xfail/skip/threshold inflation to manufacture success.
 - **No early green:** 23/38 SQL assertions is incomplete; 588 focused SQL assertions do not certify #388 Preparation. Unknown results remain UNKNOWN until authoritative readback.
-- **One task at a time:** Task A is completed/frozen. Finish the #393 governance checkpoint, then only the explicitly promoted #388 transaction-wide Preparation diagnosis. At most one baseline and one controlled diagnostic; stop with evidence and one remediation proposal. No SQL implementation or other task is automatically promoted.
+- **One task at a time:** Task A is completed/frozen. Finish the #393 governance checkpoint, then only the explicitly promoted #388 transaction-wide Preparation task. At most one baseline and one controlled diagnostic; apply one bounded SQL remediation only if causally justified, then focused tests, operational acceptance and one final eight-cycle stress checkpoint. Report Tier 2 and Tier 3 separately, disclose skipped Full Integration and stop for Owner decisions. Unreliable attribution is BLOCKED; the same remediation failing twice without new causal evidence ends the strategy. No other task is automatically promoted.
 
 ## Governance and role separation
 
@@ -40,15 +41,15 @@ Stop and require a new Owner decision before:
 5. material RLS/capability/authorization broadening;
 6. final Warehouse policy selection or Warehouse implementation;
 7. unapproved #388 runtime optimization, changes to public/Preparation/lock timeout ceilings, or waiver of historical proof;
-8. merging or deploying Drafts #385–#388 or #392 without their own acceptance and release review.
+8. automatically merging, deploying or marking #388/#393 ready for release, touching frozen #392 before Owner review, or promoting another task; #385–#387 remain parked.
 
 `ONE_STAFF_PER_OPERATIONAL_TASK` remains in force: existing Actor capability suffices for normal work, without adding a generic second-person approval, while scopes/audit/immutable evidence remain mandatory.
 
 ## Environment, preservation, and finish
 
 - Atlas Staging `rnzxmxiiqgtdevzregff`: read-only in this task; last accepted migration 109. OPS v1 Supabase `qnthofvccilhnefdcxnz` and Retool: hard NO-WRITE. Atlas Production: no approved target.
-- #385–#387 and Warehouse remain parked, not discarded. #388 remains an investigational Draft with diagnosis-only authority; #392 remains a frozen Draft pending Owner acceptance on 17 October. Do not merge, force-reset, overwrite existing worktrees or combine their source.
-- Do not create test infrastructure, broad multi-agent loops, 8-cycle scale replays or all-repo certification simply to make Autopilot appear active.
+- #385–#387 and Warehouse remain parked, not discarded. #388 remains a Draft under the single conditional remediation authority above; #392 remains a frozen Draft pending Owner acceptance on 17 October. The date alone does not lift the freeze. Do not merge, force-reset, overwrite existing worktrees or combine their source. Owner-authorized isolated worktrees preserve existing dirty work.
+- Do not create test infrastructure, broad multi-agent loops, repeated eight-cycle profiling or all-repo certification simply to make Autopilot appear active. Preserve applied migrations and exact role/ACL/function-integrity evidence; no new lifecycle machinery, caches, triggers or schema layers are authorized.
 - Every task ends with head SHA, verification scope, source of failed/passed evidence, risk classification, PASS/FAIL/BLOCKED, and explicit next Product decision. Do not auto-promote queued work.
 
 Historical visual D1/D2 art direction and Owner-selected C are preserved in [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389), [Draft #392](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/392) and older Git history; those artifacts no longer define the active execution horizon.
