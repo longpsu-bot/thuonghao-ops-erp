@@ -1,48 +1,64 @@
 # Atlas Autopilot — Active Task
 
-Task: ATLAS-WAREHOUSE-RECEIVING-DESIGN-01
-Status: READY FOR PRODUCT REVIEW — awaiting Product choices and explicit design approval; no implementation authorized.
-Navigator: Terra/read-only role
-Implementer: Sol 6.1
-Starting main: f6686c7952024b499fcd3499cbcb38948ab15a5d
-Atlas Staging: rnzxmxiiqgtdevzregff — migration 109; no hosted action in this task
-OPS v1 / Retool / Production: no writes or commitments
+Task: **ATLAS-UX-ART-DIRECTION-02**  
+Status: **ACTIVE — DESIGN DISCOVERY / ALTERNATIVES ONLY**  
+Product authorization: **16 October 2026** — Owner explicitly redirected priority from overextended Autopilot/backend work to Atlas UX/UI design.  
+Source: [approved GitHub Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389) and [execution brief](../implementation-tasks/TASK-ATLAS-UX-ART-DIRECTION-02.md).  
+Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read current `origin/main` before task execution.
 
-## Previous read gate accepted — 14 October 2026
+## Product priority and work authorization
 
-[PR #383](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/383) merged at starting main with a tree identical to reviewed source `64491061df79bf9c8349d5f397d57c06a8fe9edb`. Source Frontend 38568664899 and Full Integration 38568760358 passed. Root's protected [actual HTTP read 38570792340](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/38570792340) passed against deployed business `8e68c2ce2cf766279d020210e9b53b457048db22` using verifier starting main: 236 distinct families, 4,973.201109 ms, full actual-row PostgreSQL MD5 `48e433c45fac665d873103542408a484`, unchanged source/receipt/audit fact digest `d55edbee74200aa3e02e8fc94ca8787d` (matching acceptance 105).
+**Stop creating additional backend performance/certification, Warehouse, or general cutover work merely to advance Autopilot.** Concentrate on making Atlas genuinely legible, efficient, aesthetically polished and practical for staff. This transition **supersedes Issue #389's older “wait until all #385–#388 are closed” start condition**: the design phase may proceed NOW while those existing Drafts are preserved. It does **not** approve their merges, alter their source code, or claim their business behavior is deployed.
 
-Root independently confirmed 36 probe-relation checks / zero probes, 17 real Draft POs and unchanged fingerprint `cefbff23b30cbc15dac0b890a956d884`. This is one successful hosted observation, not a load test or three-sample performance certification. Main Frontend 38570729098 and Full Integration 38570728987 were still running at handoff; no pass is asserted here. The formal A/B/C gate 38566354791 and 109's 48-case rollback acceptance remain complete; do not rerun them or rewrite historical 108/109 evidence.
+Authoritative business and security boundaries remain unchanged: `OPS_SYSTEM_MAP v1.0`, **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED**, Chakra UI v3, thirteen persistent workbench owners, current Planning/Procurement contracts and immutable released documents.
 
-## Authorized document packet
+### Current parallel work — PARKED, not discarded
 
-Prepare the smallest one-operator receiving design for Product review under the active Autopilot horizon. First record this baton and the completed read gate in a separate commit, before design files. Approved constraints and existing authority must be distinguished from proposed choices. All four Product groups remain explicitly UNDECIDED:
+- [#385](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/385): login/PO states/XLSX wrapping, Draft, review/integration later.
+- [#386](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/386): human Unit labels and draft School evidence, Draft, migration not deployed.
+- [#387](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/387): bulk supplier allocation, Draft, migration not deployed.
+- [#388](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/388): post-release Need correction, **INCOMPLETE Draft** with genuine 250-family multi-cycle performance failure. No forced success, CI weakening, merge, Staging deployment, additional performance cycle or runtime follow-up under this active design task.
+- Older UI prototype Drafts remain archival references, not automatic implementation candidates.
 
-1. First receiving site/job and physical receipt evidence versus stock creation.
-2. Procurement supplier-confirmation gap, exact current released revision, partial arrivals and superseded orders.
-3. Observed physical facts, quantity/Unit evidence and owning exception rules.
-4. Commit/correction boundary, capability and relational scope.
+Do not reset/delete local worktrees, commits, stashes, branches or PRs. Before any integration of these branches, independently assess compatibility and exact-head tests. **Do not wait for them to merge before producing design alternatives.**
 
-Offer concrete alternatives, consequences and questions without selecting business policy where operating facts are unknown. Ordinary work must be possible for one authorized Actor; capabilities, scope, audit and approved exception owners remain mandatory. `RELEASED_TO_SUPPLIER` does not establish supplier confirmation or `READY_FOR_WAREHOUSE_RECEIVING`. The in-memory prototype is exploratory evidence only, not connected authority or a lifecycle to copy.
+## Bounded execution: two design deliverables
 
-## Allowed files and checks
+### Checkpoint D1 — skills, genuine current UI review, and design diagnosis
 
-- This baton.
-- `docs/runbooks/school-fulfilment-cutover-readiness.md`: close the actual read gate.
-- `docs/testing/evidence/atlas-cutover-released-allocation-read-staging-109.json`: durable parsed report from Root's saved evidence.
-- `docs/architecture/warehouse-receiving-minimum-design.md`.
-- `docs/decisions/decision-atlas-warehouse-receiving-minimum.md`.
-- `docs/decisions/decision-register.md`: PROPOSED link only.
-- `docs/architecture/roadmap.md`: Warehouse design gate pointer only.
+1. Verify the canonical local checkout in accordance with `AGENTS.md` (remote, clean worktree, current main, `pnpm ops:workspace`). If no authenticated local Codex/desktop runner is available, stop at GitHub handoff; do not claim that local implementation began.
+2. Inspect the current Chakra application source and rendered populated workbenches, especially `src/vnext/atlas/AtlasVNextShell.tsx`, `src/vnext/atlas/procurement/ProcurementOrdersStage.tsx` and Procurement Allocation, plus existing UI agents and `.agents/skills`.
+3. Audit external design skills by reviewing source/license/scripts/security. Prefer Anthropic Frontend Design, Emil Design Engineering, Impeccable and Vercel Web Design Guidelines as distinct creative/finishing/review inputs. Anthropic Design Plugin is **Claude-only optional**, not a directly installed Codex feature. Never blindly execute install commands, add paid services or unreviewed dependencies. Record what is and is not actually available.
+4. Identify real shortcomings in visual hierarchy, dense layout, control alignment, crowded PO table, supplier detail, tab identity, weak visual rhythm and laptop viewport ergonomics. OPS v1 Retool is workflow vocabulary evidence only.
+5. Produce a concise design diagnosis and skill provenance. **No Supabase, Retool, hosted data, API, RLS, migrations, business logic or production UI mutation.**
 
-Read AGENTS, mandate, README, vision, business-rule/decision registers and the existing Warehouse receiving/stock-release contracts, PD-03 conformance review, ARCH-002, roadmap, School Procurement API and fixture prototype. Run focused formatting, whitespace and local-link validation only; no tests for prose and no new test framework.
+### Checkpoint D2 — visible, competing designs
 
-## Delivery and hard stop
+Create **2–3 materially different rendered, comparable prototypes** for:
+- The **connected angled/sloped-edge tab strip** inspired by the Owner's reference; active tab seamlessly joined to the white workplane, neutral inactive tabs, 13-workbench horizontal overflow, close/dirty/focus semantics retained.
+- **Supplier-first PO workbench:** compact scannable orders, truthful draft/released/export state, document numbers and next action; disclose long School breakdown, exact quantities/Units and notes in usable detail rather than concatenated cells.
+- Optionally show how the same design language improves Supplier Allocation while preserving the already-implemented backend supplier recommendation/explicit Save distinction.
 
-Fresh bounded branch from verified latest main, Draft PR and fixed-SHA Terra audit; Root owns routine integration. The packet may become READY FOR PRODUCT REVIEW, while every business choice remains PROPOSED. Final explicit Warehouse Product design approval is a HARD STOP before any implementation.
+Demonstrate populated Vietnamese operational examples and important states at **1366×768** first, then 1440, 1920, 768 and 390 widths where relevant. Provide screenshots/contact sheet and concise trade-offs. The alternatives should be genuinely different designs rather than trivial recolors.
 
-No lifecycle/status machinery, role grants, staff assignments, database/API/UI/prototype edits, hosted action, fixture creation, Production/v1/Retool write or real commitment is authorized. Preserve released history, existing drafts and exception ownership. No Warehouse backend or connected UI work follows automatically from merging this documentation.
+**HARD STOP:** Request Owner visual selection before any production UI implementation. The previous general plan approved a design phase, NOT a specific final layout.
 
-## Packet and focused verification
+## Do not overbuild or over-certify
 
-The [minimum design](../architecture/warehouse-receiving-minimum-design.md) and [PROPOSED decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) separate approved authority from historical Draft Warehouse contracts and in-memory prototype evidence. No Product option is selected. The [closed read gate](../runbooks/school-fulfilment-cutover-readiness.md) links the durable parsed report, which equals Root's saved report. Focused formatting, whitespace and local-link/anchor checks pass; no tests or hosted actions were needed for this prose-only task. Fixed-SHA Terra audit and PR CI remain integration gates, not Warehouse business-design approval.
+- One bounded design task; no Warehouse, backend, supplier commitments or unrelated cleanup.
+- No repetitive multi-agent audit loops, new “proof infrastructure”, synthetic 50-School database pipelines, redundant Full CI runs or new business state machinery during D1/D2.
+- Use existing fixtures and read-only evidence. A focused lint/format or static/preview smoke check is enough for a docs/prototype-only Draft.
+- Independent design critique should identify **visual defects**, not just repeat typecheck status. Involve visual designer before implementation.
+- Deliver one coherent Draft PR or evidence package for D1/D2, not numerous nested PRs. Do not merge a visual direction before Owner selection.
+
+## Current environment and the parked previous task
+
+Atlas Staging: `rnzxmxiiqgtdevzregff` — **read-only during this design task**, accepted migration 109.  
+OPS v1 Supabase: `qnthofvccilhnefdcxnz` — NO WRITES. Retool: NO WRITES.  
+Warehouse minimum receiving design [PR #384](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/384) merged 14 October; its [proposed design](../architecture/warehouse-receiving-minimum-design.md) and [proposed decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) remain **UNAPPROVED FOR IMPLEMENTATION**. Preserve its four unresolved Product groups; it is not the current active task.
+
+The historical 14 October Warehouse baton is preserved by Git history. This change updates only sequencing; it does not retroactively change that work's acceptance evidence.
+
+## Required handoff
+
+Return exact current baseline, verified canonical workspace, skill-source/provenance results, 2–3 visual directions, populated screenshots, top critical UX defects, conflicts/unknowns and a **STOP — AWAIT OWNER VISUAL SELECTION** verdict. Do not autonomously continue into a runtime implementation or another task.
