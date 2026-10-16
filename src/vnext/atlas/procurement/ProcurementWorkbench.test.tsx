@@ -183,7 +183,7 @@ describe("Procurement vNext operator workbench", () => {
     );
     openFilters();
     fireEvent.click(
-      await screen.findByRole("button", { name: "Xem đơn NCC An Phú" }),
+      await screen.findByRole("button", { name: /^Xem đơn NCC An Phú/ }),
     );
     fireEvent.click(
       screen.getByRole("button", { name: "Mở lịch — Khoảng ngày dùng" }),

@@ -2,7 +2,7 @@
 
 **Owner-approved:** 15 October 2026; **promoted to active priority:** 16 October 2026.  
 **Authority:** [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389), [ACTIVE_TASK](../autopilot/ACTIVE_TASK.md), design language v3, UI convergence, D-048 persistent workspace and Planning/Procurement business freeze.  
-**Execution limit:** D1 skills and diagnosis + D2 competing prototypes. Do not implement a final UI direction before Owner selects it.
+**Execution limit:** D1 skills and diagnosis + D2 competing prototypes completed. Owner selected C on 16 October 2026 and authorized only the bounded interface implementation recorded below.
 
 ## Business job to improve
 

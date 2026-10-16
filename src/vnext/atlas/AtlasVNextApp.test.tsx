@@ -191,10 +191,10 @@ it("preserves an existing Orders range and selected order when Allocation reques
   const orders = vi.spyOn(apis.procurement, "getPurchaseOrders");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
   await nav("Đơn mua");
-  await screen.findByRole("button", { name: "Xem đơn NCC An Phú" });
+  await screen.findByRole("button", { name: /^Xem đơn NCC An Phú/ });
   await selectRange("2026-09-07", "2026-09-09", "Khoảng ngày dùng");
   fireEvent.click(
-    await screen.findByRole("button", { name: "Xem đơn NCC An Phú" }),
+    await screen.findByRole("button", { name: /^Xem đơn NCC An Phú/ }),
   );
   const readsBeforeNavigation = orders.mock.calls.length;
   await nav("Phân bổ NCC");

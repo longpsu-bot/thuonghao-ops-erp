@@ -24,7 +24,7 @@ Authoritative business and security boundaries remain unchanged: `OPS_SYSTEM_MAP
 
 Do not reset/delete local worktrees, commits, stashes, branches or PRs. Before any integration of these branches, independently assess compatibility and exact-head tests. **Do not wait for them to merge before producing design alternatives.**
 
-## Bounded execution: two design deliverables
+## Completed discovery: two design deliverables
 
 ### Checkpoint D1 — skills, genuine current UI review, and design diagnosis
 
@@ -44,7 +44,7 @@ Create **2–3 materially different rendered, comparable prototypes** for:
 
 Demonstrate populated Vietnamese operational examples and important states at **1366×768** first, then 1440, 1920, 768 and 390 widths where relevant. Provide screenshots/contact sheet and concise trade-offs. The alternatives should be genuinely different designs rather than trivial recolors.
 
-**HARD STOP:** Request Owner visual selection before any production UI implementation. The previous general plan approved a design phase, NOT a specific final layout.
+**Selection gate satisfied:** Owner selected C on 16 October 2026. Only the bounded presentation implementation recorded above is authorized; no other design alternative, backend horizon or Warehouse work is opened.
 
 ## Do not overbuild or over-certify
 

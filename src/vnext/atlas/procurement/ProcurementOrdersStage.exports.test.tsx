@@ -49,7 +49,9 @@ describe("loaded PO presentation exports", () => {
       screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),
     );
     expect(zip).toHaveBeenCalledWith(orders.purchase_orders, "details_ing");
-    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    );
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Xuất Excel" })).toBeEnabled(),
     );
@@ -127,7 +129,9 @@ describe("loaded PO presentation exports", () => {
         />
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    );
     expect(
       screen.getByText(
         /Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức\./,

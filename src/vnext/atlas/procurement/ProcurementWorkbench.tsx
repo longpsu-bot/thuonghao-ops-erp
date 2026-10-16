@@ -303,7 +303,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               aria-label="Phạm vi mua hàng"
               bg="bg.toolbar"
               px={{ base: "sm", md: "md" }}
-              py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
+              py={{
+                base: "sm",
+                md:
+                  controller.stage === "orders"
+                    ? "xs"
+                    : "var(--atlas-workbar-y, 12px)",
+              }}
               gap="sm"
               borderBottomWidth="var(--atlas-layout-edge, 1px)"
               borderColor="border.default"
@@ -418,7 +424,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 </Field.Label>
                 <Input
                   aria-label="Tìm kiếm"
-                  placeholder="Nguyên liệu, trường, nhà cung ứng"
+                  placeholder={
+                    controller.stage === "orders"
+                      ? "Nhà cung ứng, số đơn, nguyên liệu, trường"
+                      : "Nguyên liệu, trường, nhà cung ứng"
+                  }
                   value={search}
                   disabled={Boolean(selected)}
                   onChange={(event) => setSearch(event.target.value)}

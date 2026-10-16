@@ -100,6 +100,10 @@ The [Untitled UI v7 Figma palette](https://www.figma.com/community/file/10295067
 
 [Carbon color usage](https://v10.carbondesignsystem.com/guidelines/color/usage/) informs neutral layering and semantic roles. [W3C CSS Color 4](https://www.w3.org/TR/css-color-4/#ok-lab) informs perceptual lightness/chroma construction. [W3C non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html) informs resting control and state boundaries. These are references, not Atlas Product authority.
 
+## Owner-selected C presentation — 16 October 2026
+
+Owner selection in #391 authorizes connected subtly sloped neutral desktop workspace tabs with an active white workplane, preserving the thirteen real persistent owners and narrow selector. Supplier PO presentation uses a compact identity rail and broad selected document, retaining dates, document numbers, derived states, current shaped evidence and all command/export guards. The [bounded C implementation record](atlas-c-workspace-po-implementation.md) supersedes prior tab and PO geometry only; tokens, provider, API contracts and business authority remain unchanged.
+
 ## Bounded implementation and certification plan
 
 The original #354 plan below records its eleven-owner baseline. Current #358 composition checks supersede that count with thirteen; historical captures remain unchanged.
