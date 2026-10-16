@@ -17,6 +17,7 @@ import * as purchaseReviewFactory from "./modules/atlas/procurement/purchaseRevi
 import * as procurementFactory from "./modules/atlas/procurement/schoolCateringProcurementApi";
 import * as schoolDispatchFactory from "./modules/atlas/dispatch/schoolDispatchReleaseApi";
 import * as reconciliationFactory from "./modules/atlas/dispatch/schoolFulfilmentReconciliationApi";
+import { downloadPurchaseOrderZip } from "./modules/atlas/procurement/purchaseOrderExports";
 const observed = vi.hoisted(() => ({
   props: null as AtlasVNextAppProps | null,
 }));
@@ -146,5 +147,8 @@ it("builds each reviewed API factory once, reuses its bundle, and supplies expor
     ),
   ).toBe(true);
   expect(rpc).not.toHaveBeenCalled();
+  expect(observed.props!.exporters!.procurementZip).toBe(
+    downloadPurchaseOrderZip,
+  );
   expect(observed.props!.userLabel).toBe("operator@example.test");
 });

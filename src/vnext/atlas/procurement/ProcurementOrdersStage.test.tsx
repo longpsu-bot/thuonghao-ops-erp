@@ -43,6 +43,24 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it("does not label unavailable PO data as zero documents or a successful empty scope", () => {
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={null}
+          disabled
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    expect(
+      screen.queryByText(/0 đơn mua|Chưa có đơn mua|nhu cầu bằng không/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Xuất/ }),
+    ).not.toBeInTheDocument();
+  });
   it("starts with a supplier rail and visible first document without a second click", () => {
     const fixture = createProcurementReviewFixture("po_draft");
     render(
@@ -340,7 +358,7 @@ describe("Supplier purchase orders", () => {
         within(detail).queryByRole("button", { name: "Phát hành cho NCC" }),
       ).not.toBeInTheDocument();
       fireEvent.click(
-        within(detail).getByRole("button", { name: "Xuất Excel" }),
+        within(detail).getByRole("button", { name: "Xuất XLSX" }),
       );
       expect(onExportXlsx).toHaveBeenCalledWith(
         fixture.orders.purchase_orders[0],
@@ -354,7 +372,7 @@ describe("Supplier purchase orders", () => {
   it("does not expose exports for drafts", () => {
     const { detail } = show();
     expect(
-      within(detail).queryByRole("button", { name: "Xuất Excel" }),
+      within(detail).queryByRole("button", { name: "Xuất XLSX" }),
     ).not.toBeInTheDocument();
   });
   it.each(["po_draft", "po_stale", "replacement_required"] as const)(

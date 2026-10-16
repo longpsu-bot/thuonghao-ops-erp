@@ -83,9 +83,14 @@ export function IngredientSupplierWorkbench({
             : "Ưu tiên nhà cung ứng"
           : null;
   const rowTrigger = useRef<HTMLButtonElement | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   const wasDetailOpen = useRef(false);
   useEffect(() => {
-    if (wasDetailOpen.current && !detailOpen) rowTrigger.current?.focus();
+    if (wasDetailOpen.current && !detailOpen) {
+      const trigger = rowTrigger.current;
+      if (trigger?.isConnected && !trigger.disabled) trigger.focus();
+      else heading.current?.focus();
+    }
     wasDetailOpen.current = detailOpen;
   }, [detailOpen]);
   const statusLabel = {
@@ -121,6 +126,7 @@ export function IngredientSupplierWorkbench({
     >
       <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
         <AtlasTaskContext
+          headingRef={heading}
           ariaLabel="Ngữ cảnh công việc dữ liệu gốc"
           moduleLabel={label}
           jobLabel={c.job === "ingredients" ? "Nguyên liệu" : "Nhà cung ứng"}
@@ -178,7 +184,13 @@ export function IngredientSupplierWorkbench({
                   }}
                 />
               ) : (
-                <SupplierToolbar c={c} />
+                <SupplierToolbar
+                  c={c}
+                  onCreate={(trigger) => {
+                    rowTrigger.current = trigger;
+                    c.requestSupplier("NEW");
+                  }}
+                />
               )}
               {(c.notice || c.error) && (
                 <Box
@@ -246,7 +258,10 @@ export function IngredientSupplierWorkbench({
                   <SupplierCatalogue
                     suppliers={c.visibleSuppliers}
                     selectedId={c.selectedSupplier?.supplier_id}
-                    onSelect={c.requestSupplier}
+                    onSelect={(id, trigger) => {
+                      rowTrigger.current = trigger;
+                      c.requestSupplier(id);
+                    }}
                   />
                 )}
                 {detailLabel && (
@@ -417,8 +432,10 @@ function IngredientToolbar({
 }
 function SupplierToolbar({
   c,
+  onCreate,
 }: {
   c: ReturnType<typeof useIngredientSupplierWorkbench>;
+  onCreate: (trigger: HTMLButtonElement) => void;
 }) {
   return (
     <AtlasWorkbar
@@ -456,7 +473,7 @@ function SupplierToolbar({
             c.activeSurface || c.review ? "secondary" : "businessPrimary"
           }
           disabled={Boolean(c.lock)}
-          onClick={() => c.requestSupplier("NEW")}
+          onClick={(event) => onCreate(event.currentTarget)}
         >
           Tạo nhà cung ứng
         </Button>

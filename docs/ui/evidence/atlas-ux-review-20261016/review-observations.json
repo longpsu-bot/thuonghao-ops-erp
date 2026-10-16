@@ -1,0 +1,28 @@
+{
+  "reviewDate": "2026-10-16",
+  "scope": "Current local fixture-backed Atlas interface; source review across all 13 owners",
+  "coverage": {
+    "laptop": "All 13 owners opened at1366x768; no document-wide horizontal overflow at inspection time",
+    "detail": [
+      "Confirmed Need",
+      "Allocation",
+      "Reconciliation",
+      "Ingredient",
+      "Supplier"
+    ],
+    "error": "Allocation initial-read failure reproduced false zero and successful empty claims; fixed DOM verified",
+    "supplierFocus": "Before Close returned BODY; after fix returns Xem / sửa NCC Minh Tâm button",
+    "poFormats": "Single and loaded-scope XLSX/PDF controls verified; actual archive bytes covered by focused producer tests",
+    "mobile": "Bulk format clipping reproduced and fixed; both321px buttons end at348px within390px viewport"
+  },
+  "evidence": {
+    "desktopSplit": "po-split-final-1366.jpg is actually1068x884; use1068 filename on publication",
+    "mobileSplit": "po-split-exports-mobile-fixed-390x844.jpg is final; initialmobileclippedframe is before fix"
+  },
+  "limits": [
+    "Existing synthetic fixtures; no hosted data/real supplier issuance",
+    "Not every state at every viewport for every owner",
+    "C redesign applies to shell/PO; other owners inherit existing designs",
+    "No full accessibility or native-print certificate"
+  ]
+}

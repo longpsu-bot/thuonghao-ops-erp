@@ -23,6 +23,85 @@ describe("loaded PO presentation exports", () => {
     warnings: [],
     blockers: [],
   });
+  it.each(["all", "details_ing", "details_school", "sum"] as const)(
+    "sends %s mode to the actual PDF ZIP callback",
+    async (mode) => {
+      const orders = data(),
+        zip = vi.fn();
+      render(
+        <AtlasVNextProvider>
+          <ProcurementOrdersStage
+            data={orders}
+            disabled={false}
+            search=""
+            onAction={vi.fn()}
+            onExportZip={zip}
+          />
+        </AtlasVNextProvider>,
+      );
+      fireEvent.change(
+        screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
+        { target: { value: mode } },
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
+      );
+      await waitFor(() =>
+        expect(zip).toHaveBeenCalledWith(orders.purchase_orders, mode, "pdf"),
+      );
+    },
+  );
+  it("locks both formats during export and offers retry after a generation failure", async () => {
+    let reject!: (error: Error) => void;
+    const zip = vi.fn(
+      () =>
+        new Promise<void>((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={data()}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+          onExportZip={zip}
+        />
+      </AtlasVNextProvider>,
+    );
+    const xlsx = screen.getByRole("button", {
+      name: "Xuất XLSX · phạm vi đã tải",
+    });
+    const pdf = screen.getByRole("button", {
+      name: "Xuất PDF · phạm vi đã tải",
+    });
+    fireEvent.click(pdf);
+    expect(xlsx).toBeDisabled();
+    expect(pdf).toBeDisabled();
+    expect(
+      screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
+    ).toBeDisabled();
+    fireEvent.click(xlsx);
+    expect(zip).toHaveBeenCalledTimes(1);
+    reject(new Error("document generation failed"));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Chưa xuất được chứng từ",
+      ),
+    );
+    expect(xlsx).toBeEnabled();
+    expect(pdf).toBeEnabled();
+    zip.mockResolvedValueOnce(undefined);
+    fireEvent.click(xlsx);
+    await waitFor(() =>
+      expect(zip).toHaveBeenLastCalledWith(
+        data().purchase_orders,
+        "all",
+        "xlsx",
+      ),
+    );
+  });
   it("passes the selected mode to immutable XLSX/PDF and ZIP callbacks", async () => {
     const orders = data();
     const xlsx = vi.fn(),
@@ -46,16 +125,20 @@ describe("loaded PO presentation exports", () => {
       { target: { value: "details_ing" } },
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),
+      screen.getByRole("button", { name: "Xuất XLSX · phạm vi đã tải" }),
     );
-    expect(zip).toHaveBeenCalledWith(orders.purchase_orders, "details_ing");
+    expect(zip).toHaveBeenCalledWith(
+      orders.purchase_orders,
+      "details_ing",
+      "xlsx",
+    );
     fireEvent.click(
       screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
     );
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xuất Excel" })).toBeEnabled(),
+      expect(screen.getByRole("button", { name: "Xuất XLSX" })).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất XLSX" }));
     expect(xlsx).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Xuất PDF" })).toBeEnabled(),
@@ -63,7 +146,7 @@ describe("loaded PO presentation exports", () => {
     fireEvent.click(screen.getByRole("button", { name: "Xuất PDF" }));
     expect(pdf).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
   });
-  it("includes loaded eligible orders despite local search and excludes denied/draft/unready rows", () => {
+  it("includes loaded eligible orders despite local search and excludes denied/draft/unready rows", async () => {
     const orders = data();
     const denied = reviewOrder("po_released");
     denied.purchase_order_id = "denied";
@@ -85,9 +168,26 @@ describe("loaded PO presentation exports", () => {
       </AtlasVNextProvider>,
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),
+      screen.getByRole("button", { name: "Xuất XLSX · phạm vi đã tải" }),
     );
-    expect(zip).toHaveBeenCalledWith([orders.purchase_orders[0]], "all");
+    expect(zip).toHaveBeenCalledWith(
+      [orders.purchase_orders[0]],
+      "all",
+      "xlsx",
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
+    );
+    expect(zip).toHaveBeenLastCalledWith(
+      [orders.purchase_orders[0]],
+      "all",
+      "pdf",
+    );
   });
   it("blocks ZIP while the loaded scope is unavailable", () => {
     const zip = vi.fn();
@@ -103,9 +203,12 @@ describe("loaded PO presentation exports", () => {
       </AtlasVNextProvider>,
     );
     const button = screen.getByRole("button", {
-      name: "Xuất ZIP PO · phạm vi đã tải",
+      name: "Xuất XLSX · phạm vi đã tải",
     });
     expect(button).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
+    ).toBeDisabled();
     fireEvent.click(button);
     expect(zip).not.toHaveBeenCalled();
   });
@@ -139,13 +242,16 @@ describe("loaded PO presentation exports", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("Gạo thơm").length).toBeGreaterThan(0);
     expect(
-      screen.queryByRole("button", { name: "Xuất Excel" }),
+      screen.queryByRole("button", { name: "Xuất XLSX" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Xuất PDF" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Xuất ZIP PO · phạm vi đã tải" }),
+      screen.getByRole("button", { name: "Xuất XLSX · phạm vi đã tải" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Xuất PDF · phạm vi đã tải" }),
     ).toBeDisabled();
     expect(
       screen.queryByText("PO_DOCUMENT_SNAPSHOT_INCOMPLETE"),

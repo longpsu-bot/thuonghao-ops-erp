@@ -208,6 +208,46 @@ async function ready() {
 }
 
 describe("IngredientSupplierWorkbench", () => {
+  it.each(["row", "create", "filtered"] as const)(
+    "restores Supplier focus after %s detail closes",
+    async (origin) => {
+      render(
+        <AtlasVNextProvider>
+          <IngredientSupplierWorkbench
+            authSubject="operator-1"
+            api={createApi()}
+            ownerJob="suppliers"
+          />
+        </AtlasVNextProvider>,
+      );
+      const row = await screen.findByRole("button", {
+        name: "Xem / sửa NCC Minh Tâm",
+      });
+      const create = screen.getByRole("button", { name: "Tạo nhà cung ứng" });
+      const trigger = origin === "create" ? create : row;
+      fireEvent.click(trigger);
+      const detail = screen.getByRole("complementary", {
+        name: "Chi tiết nhà cung ứng",
+      });
+      expect(detail).toHaveFocus();
+      if (origin === "filtered")
+        fireEvent.change(
+          screen.getByRole("textbox", { name: "Tìm nhà cung ứng" }),
+          { target: { value: "không khớp" } },
+        );
+      fireEvent.click(
+        within(detail).getByRole("button", { name: "Đóng chi tiết" }),
+      );
+      expect(
+        screen.queryByRole("complementary", { name: "Chi tiết nhà cung ứng" }),
+      ).not.toBeInTheDocument();
+      expect(
+        origin === "filtered"
+          ? screen.getByRole("heading", { level: 1, name: "Nhà cung ứng" })
+          : trigger,
+      ).toHaveFocus();
+    },
+  );
   it("reports untouched, edited, reverted and frozen Review state", async () => {
     const report = vi.fn();
     render(

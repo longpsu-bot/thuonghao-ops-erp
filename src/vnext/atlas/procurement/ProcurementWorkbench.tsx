@@ -525,128 +525,135 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               p="var(--atlas-layout-zero, 0)"
             >
               {controller.stage === "allocation" ? (
-                <>
-                  <Flex
-                    px="md"
-                    py="sm"
-                    bg="bg.toolbar"
-                    borderYWidth="var(--atlas-layout-edge, 1px)"
-                    borderColor="border.subtle"
-                    align="center"
-                    justify="space-between"
-                    gap="sm"
-                    wrap="wrap"
-                  >
-                    <Text textStyle="helper" color="fg.muted">
-                      Cần xử lý{" "}
-                      {
-                        rows.filter(
-                          (row) =>
-                            row.state !== "BALANCED" &&
-                            !derivedDefaultAllocation(row),
-                        ).length
-                      }{" "}
-                      · Đã đủ{" "}
-                      {
-                        rows.filter(
-                          (row) =>
-                            row.state === "BALANCED" ||
-                            Boolean(derivedDefaultAllocation(row)),
-                        ).length
-                      }
-                    </Text>
-                    {canPrepare && (
-                      <Button
-                        variant="businessPrimary"
-                        onClick={() =>
-                          void controller.prepare(Boolean(selected))
-                        }
-                      >
-                        Tiếp tục lên đơn
-                      </Button>
-                    )}
-                    {multiDay && (
+                controller.allocation && (
+                  <>
+                    <Flex
+                      px="md"
+                      py="sm"
+                      bg="bg.toolbar"
+                      borderYWidth="var(--atlas-layout-edge, 1px)"
+                      borderColor="border.subtle"
+                      align="center"
+                      justify="space-between"
+                      gap="sm"
+                      wrap="wrap"
+                    >
                       <Text textStyle="helper" color="fg.muted">
-                        Chọn 1 ngày để chuẩn bị đơn mua.
+                        Cần xử lý{" "}
+                        {
+                          rows.filter(
+                            (row) =>
+                              row.state !== "BALANCED" &&
+                              !derivedDefaultAllocation(row),
+                          ).length
+                        }{" "}
+                        · Đã đủ{" "}
+                        {
+                          rows.filter(
+                            (row) =>
+                              row.state === "BALANCED" ||
+                              Boolean(derivedDefaultAllocation(row)),
+                          ).length
+                        }
                       </Text>
-                    )}
-                    {props.ownerStage === "allocation" &&
-                      props.onOpenOrders && (
+                      {canPrepare && (
                         <Button
-                          variant="secondary"
-                          disabled={
-                            Boolean(selected) ||
-                            controller.busy ||
-                            Boolean(controller.rangeError)
+                          variant="businessPrimary"
+                          onClick={() =>
+                            void controller.prepare(Boolean(selected))
                           }
-                          onClick={controller.openOrders}
                         >
-                          Xem đơn mua
+                          Tiếp tục lên đơn
                         </Button>
                       )}
-                    {!selected &&
-                      !multiDay &&
-                      !(preparation?.ready && preparation.allowed) &&
-                      preparation && (
-                        <Text textStyle="helper" color="status.warning">
-                          {procurementOperatorMessages(
-                            preparation.blockers,
-                            "Hoàn tất phân bổ trước khi lên đơn.",
-                          ).join(" ")}
+                      {multiDay && (
+                        <Text textStyle="helper" color="fg.muted">
+                          Chọn 1 ngày để chuẩn bị đơn mua.
                         </Text>
                       )}
-                  </Flex>
-                  {sourceMessages.map((message) => (
-                    <Text px="md" pb="sm" key={message} color="status.warning">
-                      ⚠ {message}
-                    </Text>
-                  ))}
-                  <Grid
-                    data-testid="procurement-master-detail"
-                    style={
-                      {
-                        "--atlas-attached-detail-width": "390px",
-                      } as CSSProperties
-                    }
-                    minW="var(--atlas-layout-zero, 0)"
-                    gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
-                    p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
-                    templateColumns={{
-                      base: "minmax(0, 1fr)",
-                      xl: selected
-                        ? "minmax(0, 1fr) var(--atlas-attached-detail-width)"
-                        : "minmax(0, 1fr)",
-                    }}
-                  >
-                    <ProcurementAllocationTable
-                      rows={visible}
-                      showServiceDate={multiDay}
-                      selectedKey={selected ? selectedKey : null}
-                      disabled={
-                        controller.loading ||
-                        controller.busy ||
-                        Boolean(controller.rangeError)
+                      {props.ownerStage === "allocation" &&
+                        props.onOpenOrders && (
+                          <Button
+                            variant="secondary"
+                            disabled={
+                              Boolean(selected) ||
+                              controller.busy ||
+                              Boolean(controller.rangeError)
+                            }
+                            onClick={controller.openOrders}
+                          >
+                            Xem đơn mua
+                          </Button>
+                        )}
+                      {!selected &&
+                        !multiDay &&
+                        !(preparation?.ready && preparation.allowed) &&
+                        preparation && (
+                          <Text textStyle="helper" color="status.warning">
+                            {procurementOperatorMessages(
+                              preparation.blockers,
+                              "Hoàn tất phân bổ trước khi lên đơn.",
+                            ).join(" ")}
+                          </Text>
+                        )}
+                    </Flex>
+                    {sourceMessages.map((message) => (
+                      <Text
+                        px="md"
+                        pb="sm"
+                        key={message}
+                        color="status.warning"
+                      >
+                        ⚠ {message}
+                      </Text>
+                    ))}
+                    <Grid
+                      data-testid="procurement-master-detail"
+                      style={
+                        {
+                          "--atlas-attached-detail-width": "390px",
+                        } as CSSProperties
                       }
-                      onSelect={(row, trigger) => {
-                        rowTrigger.current = trigger;
-                        setSelectedKey(row.family.source_fingerprint);
+                      minW="var(--atlas-layout-zero, 0)"
+                      gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
+                      p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
+                      templateColumns={{
+                        base: "minmax(0, 1fr)",
+                        xl: selected
+                          ? "minmax(0, 1fr) var(--atlas-attached-detail-width)"
+                          : "minmax(0, 1fr)",
                       }}
-                    />
-                    {selected && (
-                      <ProcurementSupplierDetail
-                        exitRef={detailExit}
-                        onWorkspaceStatus={setDetailStatus}
-                        key={`${selected.family.source_fingerprint}:${controller.revision}`}
-                        row={selected}
-                        disabled={commandDisabled}
-                        onSave={(splits) =>
-                          void controller.save(selected, splits)
+                    >
+                      <ProcurementAllocationTable
+                        rows={visible}
+                        showServiceDate={multiDay}
+                        selectedKey={selected ? selectedKey : null}
+                        disabled={
+                          controller.loading ||
+                          controller.busy ||
+                          Boolean(controller.rangeError)
                         }
-                        onClose={closeDetail}
+                        onSelect={(row, trigger) => {
+                          rowTrigger.current = trigger;
+                          setSelectedKey(row.family.source_fingerprint);
+                        }}
                       />
-                    )}
-                  </Grid>
-                </>
+                      {selected && (
+                        <ProcurementSupplierDetail
+                          exitRef={detailExit}
+                          onWorkspaceStatus={setDetailStatus}
+                          key={`${selected.family.source_fingerprint}:${controller.revision}`}
+                          row={selected}
+                          disabled={commandDisabled}
+                          onSave={(splits) =>
+                            void controller.save(selected, splits)
+                          }
+                          onClose={closeDetail}
+                        />
+                      )}
+                    </Grid>
+                  </>
+                )
               ) : (
                 <ProcurementOrdersStage
                   data={controller.orders}

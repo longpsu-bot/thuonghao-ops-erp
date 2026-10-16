@@ -24,7 +24,7 @@ export function SupplierCatalogue({
 }: {
   suppliers: SupplierMasterData[];
   selectedId?: string;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, trigger: HTMLButtonElement) => void;
 }) {
   type SortKey = "supplier" | "status" | "contact";
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
@@ -110,7 +110,9 @@ export function SupplierCatalogue({
                   size="sm"
                   variant="tableAction"
                   aria-label={`Xem / sửa ${item.supplier_name}`}
-                  onClick={() => onSelect(item.supplier_id)}
+                  onClick={(event) =>
+                    onSelect(item.supplier_id, event.currentTarget)
+                  }
                 >
                   Xem / sửa
                 </Button>

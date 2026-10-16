@@ -27,6 +27,7 @@ export type ProcurementExport = (
 export type ProcurementZipExport = (
   orders: SchoolCateringPurchaseOrder[],
   mode: ProcurementExportMode,
+  format?: "xlsx" | "pdf",
 ) => void | Promise<void>;
 const canExport = (order: SchoolCateringPurchaseOrder) =>
   ["RELEASED_TO_SUPPLIER", "SUPERSEDED"].includes(order.status) &&
@@ -148,12 +149,12 @@ export function ProcurementOrdersStage({
       setExporting(false);
     }
   };
-  const exportZip = async () => {
+  const exportZip = async (format: "xlsx" | "pdf") => {
     if (!onExportZip || !exportOrders.length || disabled || exporting) return;
     setExporting(true);
     setExportError(null);
     try {
-      await onExportZip(exportOrders, exportMode);
+      await onExportZip(exportOrders, exportMode, format);
     } catch {
       setExportError("Chưa xuất được chứng từ. Hãy thử xuất lại.");
     } finally {
@@ -172,6 +173,7 @@ export function ProcurementOrdersStage({
         "Đơn mua có điều kiện cần kiểm tra trước khi tiếp tục.",
       )
     : [];
+  if (!data) return null;
   return (
     <Box>
       <AtlasWorkbar
@@ -188,6 +190,7 @@ export function ProcurementOrdersStage({
           {visible.length} đơn mua theo nhà cung cấp
         </Text>
         <Field.Root
+          disabled={disabled || exporting}
           w={{ base: "full", md: "var(--atlas-layout-auto, auto)" }}
           flexDirection="row"
           alignItems="center"
@@ -215,15 +218,23 @@ export function ProcurementOrdersStage({
           </NativeSelect.Root>
         </Field.Root>
         {onExportZip && (
-          <AtlasWorkbarActions>
-            <Button
-              variant="secondary"
-              loading={exporting}
-              disabled={disabled || !exportOrders.length}
-              onClick={() => void exportZip()}
-            >
-              Xuất ZIP PO · phạm vi đã tải
-            </Button>
+          <AtlasWorkbarActions
+            w={{ base: "full", md: "var(--atlas-layout-auto, auto)" }}
+            minW="var(--atlas-layout-zero, 0)"
+            flexDirection={{ base: "column", md: "row" }}
+            alignItems={{ base: "stretch", md: "center" }}
+          >
+            {(["xlsx", "pdf"] as const).map((format) => (
+              <Button
+                key={format}
+                variant="secondary"
+                loading={exporting}
+                disabled={disabled || exporting || !exportOrders.length}
+                onClick={() => void exportZip(format)}
+              >
+                Xuất {format.toUpperCase()} · phạm vi đã tải
+              </Button>
+            ))}
           </AtlasWorkbarActions>
         )}
       </AtlasWorkbar>
@@ -449,7 +460,7 @@ export function ProcurementOrdersStage({
                         disabled={disabled || exporting}
                         onClick={() => void exportOrder(onExportXlsx)}
                       >
-                        Xuất Excel
+                        Xuất XLSX
                       </Button>
                     )}
                     {onExportPdf && (
