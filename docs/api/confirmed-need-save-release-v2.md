@@ -102,3 +102,9 @@ allocation currentness is derived as stale.
 The amendment does not edit or supersede any PO/PXK, does not automatically save a
 new allocation, and does not change the historical WHOLESALE/supplier-direct guard.
 New supplier and dispatch commitments remain separate explicit commands.
+
+## Implemented Draft — operator C checkpoint, 16 October 2026
+
+The Draft implements `get_confirmed_need_correction_preview(jsonb)` and `correct_confirmed_need(jsonb)` under `CONFIRMED-NEED-CORRECTION.v1`. The server binds the exact released target and proposal; the atomic outer receipt wraps existing reopen+Save children with full rollback/exact replay. Existing quantity/reason, capability/GLOBAL and ordinary released-edit guards remain. No automatic downstream release or staff grant.
+
+Migration `20261015065552_operator_confirmed_need_correction.sql` is local Draft source, not hosted acceptance. The reviewed [C specification](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) and [validation report](../testing/operator-confirmed-need-correction-c-01-validation.md) record 455 focused assertions PASS and the unresolved250-family/eight-cycle performance failure. Final wait/export/broader-regression/remote Full checks remain incomplete; no readiness or deployment claim.

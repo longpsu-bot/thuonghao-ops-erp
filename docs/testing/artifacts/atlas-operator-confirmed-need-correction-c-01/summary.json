@@ -1,0 +1,125 @@
+{
+  "status": "IMPLEMENTED_DRAFT_ACCEPTANCE_INCOMPLETE",
+  "base_main": "d102b2f1b083005d6553867fa5ccdf8c988a0316",
+  "migration": "supabase/migrations/20261015065552_operator_confirmed_need_correction.sql",
+  "migration_LF_applied_sha256": "3669f2740ed4cf9cf273d13cd2c282f33435d03e1da87bb95af3756420340e76",
+  "crlf_pairs": 0,
+  "focused": {
+    "total": 455,
+    "suites": [
+      {
+        "suite": "confirmed_need_correction_consumers.sql",
+        "plan": 58,
+        "pass": 58,
+        "raw_log_sha256": "53f3ab360db2d5b74f4282a35a8aa78d93dedb1ecc5993f9bf44b352ce7dc685",
+        "source_sha256": "d40444e0a7b2eda896ea65c4342082a03c742c8624f8fbf1a8c6d8f61d8ce7b7"
+      },
+      {
+        "suite": "confirmed_need_correction_continuity.sql",
+        "plan": 108,
+        "pass": 108,
+        "raw_log_sha256": "caf39d195d337b4aea4b27a24e2a249a81a92cd28b6a38931253bad709337d71",
+        "source_sha256": "f20b93f75b6ff2eb6abf58107b7c07314a58840dc46e11c0d13b7b315757a567"
+      },
+      {
+        "suite": "confirmed_need_correction.sql",
+        "plan": 103,
+        "pass": 103,
+        "raw_log_sha256": "bea4209a7312c7c7a924d25569c1f8acc0e957a4d3ef829244208d7e068f4cb7",
+        "source_sha256": "02d497e43852e09cba903d078698df270ae0e071f9020f953125eb67c9efcb6a"
+      },
+      {
+        "suite": "atlas_current_platform_security_catalog.sql",
+        "plan": 31,
+        "pass": 31,
+        "raw_log_sha256": "244052ed598aadfc1b5048af52291f3ae8f53eced63a538abadf38d9a22abc9e",
+        "source_sha256": "497b3cb34713cb5e14620db2749595878fd7b1ad5531dbe18eb68c7a379937cd"
+      },
+      {
+        "suite": "school_catering_purchase_orders.sql",
+        "plan": 155,
+        "pass": 155,
+        "raw_log_sha256": "4feaed505c240178d53f45abaa54286a6193f970d07a5e597d4d55cec30f1746",
+        "source_sha256": "af696641994157a11061ac5201652dab98a170fa7b6057560780af1b123db815"
+      }
+    ]
+  },
+  "fresh_baseline": {
+    "git_blob_migrations": 109,
+    "tip": "20261014120320_atlas_pxk_exact_school_scope.sql",
+    "schema_applied_not_fabricated_cli_ledger": true,
+    "baseline_catalog_assertions": 30,
+    "whole_C_atomic_application_exit": 0,
+    "all497_function_metadata_unchanged_from_previous_checkpoint": true,
+    "exact_two_stored_body_delta": [
+      "purchase_review_continuity_context(uuid)",
+      "purchase_review_family_continuity(uuid,text,jsonb)"
+    ],
+    "global_roles_and_schema_acl_before_after_equal": true,
+    "postflight_business_residue": 0,
+    "proof_artifact_sha256": {
+      "atlas-c-forward15-main109-initialize.json": "d87aa78d4c48350a86f15ba9cd70198161f1ab5b37f366985b3808eefebc22f8",
+      "atlas-c-forward15-full-migration-proof.json": "acd5b659bc27af7b47def15a40fdda341df8683696ed3a14e747e0eafaa1b515",
+      "atlas-c-forward15-grouped-context-parity.json": "0303b89c64887afa9e4c57eb32bb45b2f61222ee43168bc48ce3eef40682565d",
+      "atlas-c-task7-scale16-clone-proof.json": "58415741e0eab78cc9facf9db9b8037c06a8e94d93b408d14dbf9352e818917a"
+    }
+  },
+  "strict_scale29": {
+    "accepted": false,
+    "workload": "50 Schools / distinct locations x5 Ingredients =250 whole families;8 required cycles",
+    "observed_completed_cycles_before_rollback": 1,
+    "final_assertions_completed": 0,
+    "planned_assertions": 20,
+    "failure": "second Preparation exceeded20s",
+    "exit_code": 3,
+    "expanded_fixture_sha256": "733d27ed53c30940a475371e9d45d2d8233581342c7519a486de079f5557d2c4",
+    "raw_log_sha256": "6f7274030274321d0b8d0a26ecbe0489f8b103be3f60d2e9cabde435b1c6928e",
+    "first_cycle_ms": {
+      "preparation": 17607.927,
+      "full_PO_read": 3251.795,
+      "full_50_School_PXK_read": 5488.783,
+      "explicit_PXK_successor": 1040.547
+    },
+    "rollback_postflight": {
+      "po": 0,
+      "pxk": 0,
+      "runs": 0,
+      "actors": 0,
+      "batches": 0,
+      "receipts": 0,
+      "authenticated_extensions_usage": false
+    },
+    "limits": "8s public calls;20s Preparation;1s entry lock;incumbent nested materializer5s disclosed;own guard flush included;one13-relation ANALYZE prerequisite;no per-edge statistics refresh/warmup discard"
+  },
+  "diagnostic30": {
+    "acceptance": false,
+    "valid_target_cost_diagnostic": true,
+    "target": "history-2-preparation",
+    "canceled20s": true,
+    "all24_pre_post_business_images_equal": true,
+    "source_LF_sha256": "232f116fdefd217545512b53a0a2a8e501e5aa5549ab2c1a712966ea7a89e97e",
+    "raw_log_sha256": "e7991d7181ad077ddbdc3e6d74d9199a78f224cabb7359fdb5a269128ca53b32",
+    "timing_limit": "completed counters overlap; interrupted calls omitted; not additive"
+  },
+  "not_completed_on_final_runtime": [
+    "eight-cycle performance acceptance",
+    "final six two-session lock-wait reruns",
+    "final official historical producer/export rerun",
+    "broader incumbent regression rerun",
+    "exact-head remote Full Integration"
+  ],
+  "historical_evidence": {
+    "UI": "Task6 source5586b01:10 unique functional checks;targeted pending-date61214daa;5 runtime detector targets exit0/no findings",
+    "waits": "Task4 six actual waits on b4df source only",
+    "exports": "initial678 source actual4oldPO+3oldPXK parser/XLSX/PDF proof only"
+  },
+  "unapplied_candidate": "dd3d3207 historical-complete setwise proposal remains TEMP only;excluded from runtime",
+  "publication_boundary": "Draft only;no merge/manual deployment/hosted DB write;Staging remains accepted109;automatic Pages previews separate",
+  "raw_evidence": "full raw local logs preserved;this portable manifest contains sanitized summaries/hashes only",
+  "wrap_checks": {
+    "runner_contract_tests": 139,
+    "passed": true,
+    "raw_log_sha256": "4681b96ec75d2d76d49cb82f2668e82a7ab0ce544f139190828402a61aba24aa",
+    "formatting_and_whitespace": true
+  }
+}

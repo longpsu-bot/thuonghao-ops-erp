@@ -1,6 +1,13 @@
+import {
+  createReviewConfirmedNeedApi,
+  createReviewConfirmedNeedFixture,
+} from "./reviewConfirmedNeedApi";
+import { confirmedNeedCorrectionPreviewFromResult } from "./confirmedNeedModel";
 import { describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import {
+  confirmedNeedCorrectionPreviewRequest,
+  confirmedNeedCorrectionCommandRequest,
   confirmedNeedApprovalRequest,
   confirmedNeedCommandRequest,
   confirmedNeedPreviewRequest,
@@ -270,5 +277,125 @@ describe("RMVP-06 validation registry", () => {
       "ZERO_CONFIRMED_QUANTITY",
       "UPSTREAM_WARNING_RETAINED",
     ]);
+  });
+});
+
+describe("released Need correction transport", () => {
+  const payload = {
+    need_generation_run_id: "run",
+    expected_need_generation_run_version: 3,
+    confirmed_need_batch_id: "batch",
+    expected_confirmed_need_batch_version: 6,
+    confirmed_need_line_id: "line",
+    expected_current_revision_id: "released-revision",
+    expected_current_decision_id: "released-decision",
+    proposed_confirmed_quantity: "99999999999999.123456",
+    reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT" as const,
+    reason_note: "Bếp điều chỉnh",
+  };
+  it("preserves exact decimals and closes both envelopes without browser child orchestration", async () => {
+    const invoke = vi.fn().mockResolvedValue(success),
+      api = createConfirmedNeedApi({ invoke });
+    const withExtra = { ...payload, ignored: "drop" };
+    const preview = confirmedNeedCorrectionPreviewRequest(
+      "subject",
+      "correlation",
+      withExtra,
+    );
+    expect(preview).toEqual({
+      contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+      requested_by_auth_subject: "subject",
+      correlation_id: "correlation",
+      payload,
+    });
+    await api.previewCorrection(preview);
+    const command = confirmedNeedCorrectionCommandRequest(
+      "subject",
+      "correlation",
+      payload,
+      "a".repeat(64),
+    );
+    expect(command.expected_version).toBe(
+      command.payload.expected_confirmed_need_batch_version,
+    );
+    expect(command.payload.proposed_confirmed_quantity).toBe(
+      "99999999999999.123456",
+    );
+    expect(command.reason_note).toBe(payload.reason_note);
+    const frozen = structuredClone(command);
+    await api.correct(command);
+    await api.correct(command);
+    expect(command).toEqual(frozen);
+    expect(invoke.mock.calls.map(([name]) => name)).toEqual([
+      "atlas_api.get_confirmed_need_correction_preview",
+      "atlas_api.correct_confirmed_need",
+      "atlas_api.correct_confirmed_need",
+    ]);
+  });
+  it.each([
+    { expected_current_revision_id: null },
+    { expected_current_decision_id: null },
+    { proposed_confirmed_quantity: 12.5 },
+    { proposed_confirmed_quantity: "1.1234567" },
+    { reason_note: " " },
+  ])("rejects invalid released target or quantity/reason %o", (change) => {
+    expect(() =>
+      confirmedNeedCorrectionPreviewRequest("subject", "correlation", {
+        ...payload,
+        ...change,
+      } as never),
+    ).toThrow();
+  });
+});
+
+describe("legacy review correction caller", () => {
+  it("implements the same exact methods and preserves other released line identities", async () => {
+    const state = createReviewConfirmedNeedFixture(2);
+    state.authoritative_batch_status = "RELEASED_FOR_PURCHASE_HANDOFF";
+    state.batch_status = "RELEASED_FOR_PURCHASE_HANDOFF";
+    state.lines.forEach((line, index) => {
+      line.current_decision_id = `released-decision-${index}`;
+      line.confirmed_quantity_after = line.proposed_confirmed_quantity;
+    });
+    const api = createReviewConfirmedNeedApi("ready", {
+        initialFixture: state,
+      }),
+      line = state.lines[0]!;
+    const request = confirmedNeedCorrectionPreviewRequest(
+      "actor",
+      "correlation",
+      {
+        need_generation_run_id: state.need_generation_source.run_id,
+        expected_need_generation_run_version:
+          state.need_generation_source.run_version,
+        confirmed_need_batch_id: state.confirmed_need_batch_id,
+        expected_confirmed_need_batch_version: state.batch_version,
+        confirmed_need_line_id: line.confirmed_need_line_id,
+        expected_current_revision_id: line.current_revision_id,
+        expected_current_decision_id: line.current_decision_id!,
+        proposed_confirmed_quantity: "12.500001",
+        reason_code: "OTHER",
+        reason_note: "Bếp yêu cầu",
+      },
+    );
+    const preview = confirmedNeedCorrectionPreviewFromResult(
+      await api.previewCorrection(request),
+      request.payload,
+    );
+    expect(preview).not.toBeNull();
+    const command = confirmedNeedCorrectionCommandRequest(
+        "actor",
+        "correlation",
+        preview!.target,
+        preview!.proposal_fingerprint,
+      ),
+      answer = await api.correct(command);
+    expect(await api.correct(command)).toEqual(answer);
+    expect(answer.kind).toBe("success");
+    if (answer.kind !== "success") throw Error();
+    const read = answer.response
+      .authoritative_readback as unknown as typeof state;
+    expect(read.lines[0]!.confirmed_quantity_after).toBe("12.500001");
+    expect(read.lines[1]).toEqual(state.lines[1]);
   });
 });

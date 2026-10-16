@@ -405,3 +405,9 @@ cache persists between requests, and reads create no supporting business facts.
 The hosted migration-105 baseline and local migration-106 regression are recorded
 in [the bounded read-performance task](../implementation-tasks/TASK-PROCUREMENT-POST-RELEASE-ALLOCATION-READ-01.md).
 Hosted post-fix acceptance remains subject to Product-approved deployment.
+
+## Implemented Draft — operator C checkpoint, 16 October 2026
+
+The Draft uses immutable complete-family R/D/Supplier evidence across every adjacent Handoff edge. Prospective Preparation eligibility is separate from OFFICIAL applicability after explicit Need/Handoff release. Raw fingerprints and Save bindings stay raw; currentness/whole-PO scope/complete replacement/cancellation guards remain. Pending or unavailable evidence is not zero. Unchanged proven families retain their allocation/contribution/split identities.
+
+Migration `20261015065552_operator_confirmed_need_correction.sql` is local Draft source, not hosted acceptance. The reviewed [C specification](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) and [validation report](../testing/operator-confirmed-need-correction-c-01-validation.md) record 455 focused assertions PASS and the unresolved250-family/eight-cycle performance failure. Final wait/export/broader-regression/remote Full checks remain incomplete; no readiness or deployment claim.

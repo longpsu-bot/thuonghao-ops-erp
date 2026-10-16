@@ -194,3 +194,9 @@ renaming or moving a current relationship never changes released evidence.
 Historical absent/null fields are retained without backfill. PO School sections
 stay separate; Dispatch packaging uses only captured membership and retains all
 School/source lineage. See [explicit independent facts](school-cooking-groups.md).
+
+## Implemented Draft — operator C checkpoint, 16 October 2026
+
+The Draft routes canonical PXK preview/reconciliation/release through exact official family continuity while preserving full-School intervals, split IDs, R/D and exact current released PO provenance. Changed School lineage or PO provenance requires an explicit successor; old released snapshots remain readable. Pending/unavailable/true-zero evidence retains existing release blockers. No automatic dispatch or document mutation.
+
+Migration `20261015065552_operator_confirmed_need_correction.sql` is local Draft source, not hosted acceptance. The reviewed [C specification](../superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md) and [validation report](../testing/operator-confirmed-need-correction-c-01-validation.md) record 455 focused assertions PASS and the unresolved250-family/eight-cycle performance failure. Final wait/export/broader-regression/remote Full checks remain incomplete; no readiness or deployment claim.

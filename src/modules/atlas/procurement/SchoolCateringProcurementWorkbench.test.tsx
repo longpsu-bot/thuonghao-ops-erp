@@ -1577,6 +1577,41 @@ describe("school-catering Procurement purchase-order stage", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("explains pending source on retained official legacy PO without instructing replacement", async () => {
+    const api = createReviewSchoolCateringProcurementApi(
+      "replacement_required",
+    );
+    const data = createReviewPurchaseOrdersFixture("replacement_required");
+    const order = data.purchase_orders[0]!;
+    order.blockers = ["PO_SOURCE_NOT_READY", "PO_REPLACEMENT_REQUIRED"];
+    order.disabled_reasons = ["PO_SOURCE_NOT_READY"];
+    order.allowed_actions.create_replacement = false;
+    vi.spyOn(api, "getPurchaseOrders").mockResolvedValue(reviewSuccess(data));
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
+    const detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    expect(detail).toHaveTextContent("Chưa đủ dữ liệu nguồn chính thức");
+    expect(detail).not.toHaveTextContent(
+      "Hãy tạo và kiểm tra một đơn thay thế đầy đủ",
+    );
+    expect(
+      within(detail).queryByRole("button", { name: "Tạo đơn thay thế" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(detail).getByRole("button", { name: "Xuất XLSX" }),
+    ).toBeEnabled();
+  });
   it("creates a complete replacement from the stale released root", async () => {
     const api = createReviewSchoolCateringProcurementApi(
       "replacement_required",

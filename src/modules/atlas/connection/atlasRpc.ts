@@ -120,6 +120,9 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.create_confirmed_needs_from_generation":
     "create_confirmed_needs_from_generation",
   "atlas_api.get_confirmed_need_review": "get_confirmed_need_review",
+  "atlas_api.get_confirmed_need_correction_preview":
+    "get_confirmed_need_correction_preview",
+  "atlas_api.correct_confirmed_need": "correct_confirmed_need",
   "atlas_api.preview_confirmed_need_confirmation":
     "preview_confirmed_need_confirmation",
   "atlas_api.confirm_need_quantities": "confirm_need_quantities",
@@ -207,6 +210,8 @@ export type AtlasSafeBackendError = {
   actual_version?: number;
   correlation_id?: string;
   command_id?: string;
+  receipt_id?: string;
+  idempotency_status?: string;
   write_certainty?: AtlasWriteCertainty;
 };
 
@@ -297,6 +302,8 @@ function safeBackendError(
     "read_name",
     "correlation_id",
     "command_id",
+    "receipt_id",
+    "idempotency_status",
   ] as const;
   for (const key of stringKeys) {
     if (typeof value[key] === "string") result[key] = value[key];

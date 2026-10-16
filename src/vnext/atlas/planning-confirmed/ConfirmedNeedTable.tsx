@@ -1,4 +1,11 @@
-import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Input,
+  NativeSelect,
+  Table,
+  Text,
+} from "@chakra-ui/react";
 import { useId, useState } from "react";
 import type { CSSProperties } from "react";
 import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
@@ -33,12 +40,16 @@ export function ConfirmedNeedTable({
   editable,
   compactEditing = false,
   onEdit,
+  onCorrect,
+  correctionDisabled = false,
 }: {
   lines: ConfirmedNeedLine[];
   drafts: Record<string, ConfirmedNeedDraftLine>;
   errors: Record<string, string>;
   editable: boolean;
   compactEditing?: boolean;
+  onCorrect?: (id: string, trigger: HTMLButtonElement) => void;
+  correctionDisabled?: boolean;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   type SortKey = "school" | "ingredient" | "proposal";
@@ -373,6 +384,24 @@ export function ConfirmedNeedTable({
                   minW="var(--atlas-layout-reason-width, 255px)"
                 >
                   <Box display="grid" gap="xs">
+                    {onCorrect &&
+                      line.current_revision_id &&
+                      line.current_decision_id && (
+                        <Button
+                          size="sm"
+                          variant="tertiary"
+                          disabled={correctionDisabled}
+                          aria-label={`Điều chỉnh nhu cầu ${line.ingredient.name} — ${line.school.name}`}
+                          onClick={(event) =>
+                            onCorrect(
+                              line.confirmed_need_line_id,
+                              event.currentTarget,
+                            )
+                          }
+                        >
+                          Điều chỉnh nhu cầu
+                        </Button>
+                      )}
                     {showReasonChrome ? (
                       <NativeSelect.Root disabled={!editable || historical}>
                         <NativeSelect.Field

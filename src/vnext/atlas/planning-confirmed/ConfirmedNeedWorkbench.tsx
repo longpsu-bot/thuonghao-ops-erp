@@ -26,6 +26,7 @@ import {
   type ConfirmedNeedWorkbenchProps,
 } from "./useConfirmedNeedWorkbench";
 import { noDemand, preflightMessage } from "./confirmedNeedAuthority";
+import { ConfirmedNeedCorrectionDialog } from "./ConfirmedNeedCorrectionDialog";
 import { ConfirmedNeedTable } from "./ConfirmedNeedTable";
 import { ConfirmedNeedDirtyExitDialog } from "./ConfirmedNeedDirtyExitDialog";
 import { ConfirmedNeedCommandFeedback } from "./ConfirmedNeedCommandFeedback";
@@ -37,6 +38,8 @@ import {
 const viDate = (date: string) => date.split("-").reverse().join("/");
 export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const c = useConfirmedNeedWorkbench(props);
+  const reviewRegion = useRef<HTMLDivElement>(null);
+  const correctionReturn = useRef<HTMLButtonElement | null>(null);
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [detailKey, setDetailKey] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -94,6 +97,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   return (
     <Box
       as="section"
+      role="region"
+      ref={reviewRegion}
+      tabIndex={-1}
       aria-label="Xác nhận nhu cầu"
       bg="bg.workbench"
       borderRadius="workbench"
@@ -494,6 +500,13 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   Nhu cầu đã chuyển sang mua hàng · chỉ đọc.
                 </Text>
               )}
+              {c.released && !c.correctionSourceCurrent && (
+                <Text px="md" pb="sm" color="status.warning">
+                  Chưa thể điều chỉnh vì dữ liệu nhu cầu nguồn chưa hiện hành
+                  hoặc chưa đủ. Tải lại và kiểm tra dữ liệu nguồn trước khi tiếp
+                  tục.
+                </Text>
+              )}
               <ConfirmedNeedTable
                 lines={c.visibleLines}
                 drafts={c.drafts}
@@ -501,6 +514,20 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 editable={c.editable}
                 compactEditing={c.dirty && !c.released}
                 onEdit={c.edit}
+                correctionDisabled={
+                  !c.correctionSourceCurrent ||
+                  contextDisabled ||
+                  c.allDirty ||
+                  Boolean(c.rangeError)
+                }
+                onCorrect={
+                  c.released
+                    ? (id, trigger) => {
+                        correctionReturn.current = trigger;
+                        c.openCorrection(id);
+                      }
+                    : undefined
+                }
               />
               <Flex
                 role="group"
@@ -561,6 +588,15 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               )}
             </>
           )}
+          <ConfirmedNeedCorrectionDialog
+            c={c}
+            returnFocusEl={() =>
+              correctionReturn.current?.isConnected &&
+              !correctionReturn.current.disabled
+                ? correctionReturn.current
+                : reviewRegion.current
+            }
+          />
           <ConfirmedNeedDirtyExitDialog
             open={Boolean(c.pendingTransition)}
             onCancel={() => {

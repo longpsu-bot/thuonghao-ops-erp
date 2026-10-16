@@ -7,6 +7,14 @@ import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import { useConfirmedNeedDraft } from "./useConfirmedNeedDraft";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  confirmedNeedCorrectionPreviewRequest,
+  confirmedNeedCorrectionCommandRequest,
+  confirmedNeedCorrectionPreviewFromResult,
+  confirmedNeedCorrectionOutcome,
+  confirmedNeedCorrectionMessage,
+  type ConfirmedNeedCorrectionPayload,
+  type ConfirmedNeedCorrectionCommandRequest,
+  type ConfirmedNeedCorrectionPreview,
   confirmedNeedReadbackFromResult,
   confirmedNeedResultHasUnknownWriteOutcome,
   confirmedNeedResultIsStale,
@@ -67,6 +75,24 @@ type Transition = {
   week?: string;
   schoolIds?: string[];
   refresh?: boolean;
+  closeCorrection?: boolean;
+  selectDay?: string;
+};
+type Correction = {
+  target: ConfirmedNeedCorrectionPayload;
+  quantity: string;
+  reason_code: ConfirmedNeedDraftLine["reason_code"];
+  reason_note: string;
+  status:
+    | "EDITING"
+    | "PREVIEWING"
+    | "SAVING"
+    | "UNKNOWN"
+    | "RETRYABLE"
+    | "READBACK"
+    | "STALE";
+  preview: ConfirmedNeedCorrectionPreview | null;
+  error: string | null;
 };
 type Lock = "unknown" | "stale" | "eligibility" | null;
 const readFailure = "Không thể tải dữ liệu hiện tại. Hãy thử tải lại.";
@@ -127,6 +153,34 @@ export function useConfirmedNeedWorkbench({
   const epoch = useRef(0);
   const inFlight = useRef(false);
   const saveNeedsReadback = useRef(false);
+  const [correction, setCorrection] = useState<Correction | null>(null);
+  const correctionRef = useRef(correction);
+  correctionRef.current = correction;
+  const correctionEpoch = useRef(0);
+  const correctionRequest =
+    useRef<ConfirmedNeedCorrectionCommandRequest | null>(null);
+  const correctionCommittedVersion = useRef<number | null>(null);
+  const correctionOriginalUnknown = useRef(false);
+  const correctionFocus = useRef<HTMLElement | null>(null);
+  const [correctionFocusPending, setCorrectionFocusPending] = useState(false);
+  const correctionDirty = Boolean(
+    correction &&
+    (correction.quantity !== correction.target.proposed_confirmed_quantity ||
+      correction.reason_code !== correction.target.reason_code ||
+      correction.reason_note.trim()),
+  );
+  useEffect(() => {
+    if (!correctionFocusPending || busy || rangeBusy || correction) return;
+    const node = correctionFocus.current;
+    if (
+      node?.isConnected &&
+      !(node instanceof HTMLButtonElement && node.disabled)
+    ) {
+      node.focus({ preventScroll: true });
+      setCorrectionFocusPending(false);
+    }
+  }, [correctionFocusPending, busy, rangeBusy, correction]);
+
   const {
     drafts,
     setDrafts,
@@ -154,6 +208,7 @@ export function useConfirmedNeedWorkbench({
       readError,
     };
   const allDirty =
+    correctionDirty ||
     dirty ||
     Object.entries(days.current).some(
       ([d, day]) => d !== date && dates.includes(d) && day.dirty,
@@ -161,6 +216,11 @@ export function useConfirmedNeedWorkbench({
   useEffect(() => {
     days.current = {};
     loadedDate.current = null;
+    correctionEpoch.current++;
+    setCorrection(null);
+    correctionRequest.current = null;
+    correctionCommittedVersion.current = null;
+    correctionOriginalUnknown.current = false;
   }, [authSubject, preflightApi, confirmedNeedApi]);
   const shoppingContext = useRef({
     range,
@@ -395,6 +455,7 @@ export function useConfirmedNeedWorkbench({
     current &&
     !rangeError &&
     !released &&
+    !correction &&
     workbench?.editing_allowed === true &&
     !busy &&
     !lock;
@@ -642,7 +703,394 @@ export function useConfirmedNeedWorkbench({
       }
     }
   };
+  const clearCorrection = () => {
+    correctionEpoch.current++;
+    setCorrection(null);
+    correctionRequest.current = null;
+    correctionCommittedVersion.current = null;
+    correctionOriginalUnknown.current = false;
+    setCorrectionFocusPending(true);
+  };
+  const openCorrection = (id: string, returnFocus?: HTMLElement) => {
+    if (
+      invalidRange.current ||
+      !released ||
+      !current ||
+      allDirty ||
+      busy ||
+      lock ||
+      inFlight.current ||
+      !workbench
+    )
+      return;
+    const line = workbench.lines.find((l) => l.confirmed_need_line_id === id);
+    const source = workbench.need_generation_source;
+    if (
+      !line?.current_revision_id ||
+      !line.current_decision_id ||
+      line.confirmed_quantity_after === null ||
+      !source?.run_id ||
+      !source.run_version
+    )
+      return;
+    correctionEpoch.current++;
+    correctionFocus.current = returnFocus ?? null;
+    setCorrectionFocusPending(false);
+    setCorrection({
+      target: {
+        need_generation_run_id: source.run_id,
+        expected_need_generation_run_version: source.run_version,
+        confirmed_need_batch_id: workbench.confirmed_need_batch_id,
+        expected_confirmed_need_batch_version: workbench.batch_version,
+        confirmed_need_line_id: id,
+        expected_current_revision_id: line.current_revision_id,
+        expected_current_decision_id: line.current_decision_id,
+        proposed_confirmed_quantity: line.confirmed_quantity_after,
+        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+        reason_note: "",
+      },
+      quantity: line.confirmed_quantity_after,
+      reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+      reason_note: "",
+      status: "EDITING",
+      preview: null,
+      error: null,
+    });
+  };
+  const updateCorrection = (
+    change: Partial<
+      Pick<Correction, "quantity" | "reason_code" | "reason_note">
+    >,
+  ) => {
+    if (
+      invalidRange.current ||
+      !correctionRef.current ||
+      inFlight.current ||
+      correctionRequest.current ||
+      lock
+    )
+      return;
+    correctionEpoch.current++;
+    setCorrection((v) =>
+      v
+        ? {
+            ...v,
+            ...change,
+            status: v.status === "STALE" ? "STALE" : "EDITING",
+            preview: null,
+            error: v.status === "STALE" ? v.error : null,
+          }
+        : v,
+    );
+  };
+  const previewCorrection = async () => {
+    const form = correctionRef.current;
+    if (
+      invalidRange.current ||
+      !form ||
+      !authSubject ||
+      inFlight.current ||
+      correctionRequest.current ||
+      lock ||
+      form.status === "STALE"
+    )
+      return;
+    const token = ++correctionEpoch.current,
+      context = epoch.current;
+    try {
+      const request = confirmedNeedCorrectionPreviewRequest(
+        authSubject,
+        correlation,
+        {
+          ...form.target,
+          proposed_confirmed_quantity: form.quantity,
+          reason_code: form.reason_code,
+          reason_note: form.reason_note,
+        },
+      );
+      setCorrection((v) =>
+        v ? { ...v, status: "PREVIEWING", preview: null, error: null } : v,
+      );
+      const result = await confirmedNeedApi.previewCorrection(request);
+      if (
+        invalidRange.current ||
+        token !== correctionEpoch.current ||
+        context !== epoch.current
+      )
+        return;
+      const preview = confirmedNeedCorrectionPreviewFromResult(
+        result,
+        request.payload,
+      );
+      setCorrection((v) =>
+        v
+          ? {
+              ...v,
+              status:
+                result.kind === "backend_error" &&
+                result.error.error_code.startsWith("STALE_")
+                  ? "STALE"
+                  : "EDITING",
+              preview,
+              error: preview
+                ? null
+                : result.kind === "success"
+                  ? readFailure
+                  : confirmedNeedCorrectionMessage(result),
+            }
+          : v,
+      );
+    } catch {
+      if (
+        !invalidRange.current &&
+        token === correctionEpoch.current &&
+        context === epoch.current
+      )
+        setCorrection((v) =>
+          v
+            ? {
+                ...v,
+                status: "EDITING",
+                preview: null,
+                error:
+                  "Chưa xem được ảnh hưởng. Kiểm tra số lượng, lý do và ghi chú rồi thử lại.",
+              }
+            : v,
+        );
+    }
+  };
+  const readCorrection = async (
+    request: {
+      payload: ConfirmedNeedCorrectionPayload;
+      expected_version: number;
+    },
+    context: number,
+  ) => {
+    if (invalidRange.current) throw new Error(readFailure);
+    if (!authSubject || !preflight) return false;
+    const fresh = await loadCompleteConfirmedNeedReview(
+      confirmedNeedApi,
+      authSubject,
+      request.payload.confirmed_need_batch_id,
+      date,
+    );
+    if (epoch.current !== context) return false;
+    if (invalidRange.current) throw new Error(readFailure);
+    if (
+      !validBatch(fresh, preflight, date) ||
+      fresh.batch_version <
+        (correctionCommittedVersion.current ?? request.expected_version)
+    )
+      throw new Error(readFailure);
+    if (correctionCommittedVersion.current === null) {
+      const line = fresh.lines.find(
+        (l) =>
+          l.confirmed_need_line_id === request.payload.confirmed_need_line_id,
+      );
+      if (!line?.current_revision_id || !line.current_decision_id)
+        throw new Error(readFailure);
+      adopt(fresh);
+      setLock(null);
+      setCorrection((v) =>
+        v
+          ? {
+              ...v,
+              status: "EDITING",
+              preview: null,
+              error: null,
+              target: {
+                ...v.target,
+                expected_confirmed_need_batch_version: fresh.batch_version,
+                need_generation_run_id: fresh.need_generation_source.run_id,
+                expected_need_generation_run_version:
+                  fresh.need_generation_source.run_version,
+                expected_current_revision_id: line.current_revision_id,
+                expected_current_decision_id: line.current_decision_id!,
+                proposed_confirmed_quantity: line.confirmed_quantity_after!,
+              },
+            }
+          : v,
+      );
+      return true;
+    }
+    adopt(fresh);
+    setPreflight((p) =>
+      p?.current_need
+        ? {
+            ...p,
+            current_need: {
+              ...p.current_need,
+              confirmed_need_batch_status: fresh.authoritative_batch_status,
+            },
+          }
+        : p,
+    );
+    setLock(null);
+    setReadError(null);
+    setNotice(
+      "Đã lưu điều chỉnh. Cần rà soát mua hàng và phiếu xuất trước khi phát hành tiếp.",
+    );
+    clearCorrection();
+    return true;
+  };
+  const executeCorrection = async (
+    request: ConfirmedNeedCorrectionCommandRequest,
+  ) => {
+    if (invalidRange.current || inFlight.current) return;
+    const context = epoch.current;
+    inFlight.current = true;
+    setBusy(true);
+    setNotice(null);
+    setCorrection((v) => (v ? { ...v, status: "SAVING", error: null } : v));
+    try {
+      const result = await confirmedNeedApi.correct(request);
+      if (context !== epoch.current) return;
+      const outcome = confirmedNeedCorrectionOutcome(result, request);
+      if (outcome.kind === "committed") {
+        correctionOriginalUnknown.current = false;
+        correctionCommittedVersion.current = outcome.version;
+        setCorrection((v) => (v ? { ...v, status: "READBACK" } : v));
+        try {
+          await readCorrection(request, context);
+        } catch {
+          if (context === epoch.current) {
+            setLock("unknown");
+            setCorrection((v) =>
+              v ? { ...v, status: "READBACK", error: readFailure } : v,
+            );
+          }
+        }
+      } else if (
+        outcome.kind === "unknown" ||
+        (correctionOriginalUnknown.current && !outcome.originalResolved)
+      ) {
+        // A denied or no-write retry does not resolve an earlier lost response.
+        correctionOriginalUnknown.current = true;
+        setLock("unknown");
+        setCorrection((v) =>
+          v
+            ? {
+                ...v,
+                status: "UNKNOWN",
+                error:
+                  outcome.kind === "unknown"
+                    ? "Chưa xác định được kết quả. Thử lại đúng yêu cầu đã gửi để xác nhận."
+                    : `${outcome.message} Kết quả yêu cầu ban đầu vẫn chưa xác định; cần xác nhận đúng yêu cầu đã gửi.`,
+              }
+            : v,
+        );
+      } else {
+        correctionOriginalUnknown.current = false;
+        setLock(null);
+        correctionCommittedVersion.current = null;
+        if (outcome.kind !== "retryable") correctionRequest.current = null;
+        setCorrection((v) =>
+          v
+            ? {
+                ...v,
+                status:
+                  outcome.kind === "stale"
+                    ? "STALE"
+                    : outcome.kind === "retryable"
+                      ? "RETRYABLE"
+                      : "EDITING",
+                preview: outcome.kind === "retryable" ? v.preview : null,
+                error: outcome.message,
+              }
+            : v,
+        );
+      }
+    } catch {
+      if (context === epoch.current) {
+        correctionOriginalUnknown.current = true;
+        setLock("unknown");
+        setCorrection((v) =>
+          v
+            ? {
+                ...v,
+                status: "UNKNOWN",
+                error:
+                  "Chưa xác định được kết quả. Thử lại đúng yêu cầu đã gửi để xác nhận.",
+              }
+            : v,
+        );
+      }
+    } finally {
+      if (context === epoch.current) {
+        inFlight.current = false;
+        setBusy(false);
+      }
+    }
+  };
+  const saveCorrection = async () => {
+    const form = correctionRef.current;
+    if (
+      invalidRange.current ||
+      !form?.preview?.allowed_actions.correct ||
+      !authSubject ||
+      inFlight.current ||
+      correctionRequest.current ||
+      lock ||
+      pendingTransition
+    )
+      return;
+    const request = confirmedNeedCorrectionCommandRequest(
+      authSubject,
+      correlation,
+      form.preview.target,
+      form.preview.proposal_fingerprint,
+    );
+    Object.freeze(request.payload);
+    Object.freeze(request);
+    correctionRequest.current = request;
+    await executeCorrection(request);
+  };
+  const retryCorrection = async () => {
+    if (invalidRange.current) return;
+    if (
+      correctionRequest.current &&
+      correctionCommittedVersion.current === null
+    )
+      await executeCorrection(correctionRequest.current);
+  };
+  const recoverCorrection = async () => {
+    const form = correctionRef.current;
+    if (invalidRange.current || !form || !authSubject || inFlight.current)
+      return;
+    if (
+      correctionRequest.current &&
+      correctionCommittedVersion.current === null
+    ) {
+      await retryCorrection();
+      return;
+    }
+    const request = correctionRequest.current ?? {
+      payload: form.target,
+      expected_version: form.target.expected_confirmed_need_batch_version,
+    };
+    const context = epoch.current;
+    inFlight.current = true;
+    setBusy(true);
+    try {
+      await readCorrection(request, context);
+    } catch {
+      if (context === epoch.current) {
+        setLock(
+          correctionCommittedVersion.current === null
+            ? "eligibility"
+            : "unknown",
+        );
+        setCorrection((v) => (v ? { ...v, error: readFailure } : v));
+      }
+    } finally {
+      if (context === epoch.current) {
+        inFlight.current = false;
+        setBusy(false);
+      }
+    }
+  };
   const applyTransition = (t: Transition) => {
+    if (correctionRef.current) clearCorrection();
     if (t.exit) {
       t.exit();
       return;
@@ -653,6 +1101,7 @@ export function useConfirmedNeedWorkbench({
       setRange(t.range);
       if (date < t.range.start || date > t.range.end) setDate(t.range.start);
     }
+    if (t.selectDay) setDate(t.selectDay);
     if (t.schoolIds) setSchoolIds(t.schoolIds);
     if (t.week) setDate(mondayOf(t.week));
     else if (t.date) {
@@ -663,24 +1112,28 @@ export function useConfirmedNeedWorkbench({
   };
   const transition = (t: Transition) => {
     if (
+      inFlight.current ||
       busy ||
       lock ||
       (invalidRange.current && (t.refresh || t.date || t.week))
     )
       return;
     const leavesDirty = t.range
-      ? Object.entries(days.current).some(
+      ? correctionDirty ||
+        Object.entries(days.current).some(
           ([day, state]) =>
             state.dirty && (day < t.range!.start || day > t.range!.end),
         )
-      : t.exit || t.date || t.week
-        ? allDirty
-        : dirty;
+      : t.selectDay
+        ? correctionDirty
+        : t.exit || t.date || t.week
+          ? allDirty
+          : dirty || correctionDirty;
     if (leavesDirty) setPendingTransition(t);
     else applyTransition(t);
   };
   const discardTransition = () => {
-    if (!pendingTransition) return;
+    if (!pendingTransition || busy || lock || inFlight.current) return;
     const shouldDiscard = (day: string) =>
       pendingTransition.range
         ? day < pendingTransition.range.start ||
@@ -701,6 +1154,7 @@ export function useConfirmedNeedWorkbench({
         );
         day.dirty = false;
       }
+    if (correctionRef.current) clearCorrection();
     const next = pendingTransition;
     setPendingTransition(null);
     applyTransition(next);
@@ -723,10 +1177,21 @@ export function useConfirmedNeedWorkbench({
         : days.current[day]),
     })),
     changeRange: (next: AtlasOperatorDateRange) => {
+      if (busy || lock || inFlight.current) return;
       const error = operatorDateRangeError(next);
       setRangeError(error);
       invalidRange.current = error;
       if (error) {
+        correctionEpoch.current++;
+        setCorrection((v) =>
+          v
+            ? {
+                ...v,
+                preview: null,
+                status: v.status === "PREVIEWING" ? "EDITING" : v.status,
+              }
+            : v,
+        );
         rangeEpoch.current++;
         setRangeBusy(false);
         return;
@@ -742,7 +1207,7 @@ export function useConfirmedNeedWorkbench({
         dates.includes(next) &&
         days.current[next]
       )
-        setDate(next);
+        transition({ selectDay: next });
     },
     shoppingRangeContext: {
       range,
@@ -799,6 +1264,7 @@ export function useConfirmedNeedWorkbench({
     dirty,
     errors,
     released,
+    correctionSourceCurrent: current,
     editable,
     canSave,
     canGenerate,
@@ -806,7 +1272,15 @@ export function useConfirmedNeedWorkbench({
     edit,
     save,
     generate,
-    recover,
+    recover: correction ? recoverCorrection : recover,
+    correction,
+    correctionDirty,
+    openCorrection,
+    updateCorrection,
+    previewCorrection,
+    saveCorrection,
+    retryCorrection,
+    closeCorrection: () => transition({ closeCorrection: true }),
     requestExit: (exit: () => void) => {
       if (busy || inFlight.current || lock) return;
       transition({ exit });

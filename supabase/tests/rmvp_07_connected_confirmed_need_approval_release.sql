@@ -252,7 +252,7 @@ select ok(
      and pg_get_functiondef(p.oid) like '%delivery_location_id%'
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_core'
-     and p.proname = 'rmvp_07_validated_facts_projection'),
+     and p.oid = 'atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)'::regprocedure),
   'RMVP07-24 projection includes version identity and stable operational identity'
 );
 select ok(
@@ -262,7 +262,7 @@ select ok(
      and pg_get_functiondef(p.oid) like '%current_confirmed_need_line_decision_id%'
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_core'
-     and p.proname = 'rmvp_07_validated_facts_projection'),
+     and p.oid = 'atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)'::regprocedure),
   'RMVP07-25 projection includes exact Ingredient Unit revision and decision identity'
 );
 select ok(
@@ -271,7 +271,7 @@ select ok(
      and pg_get_functiondef(p.oid) like '%planning_tick_count%'
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_core'
-     and p.proname = 'rmvp_07_validated_facts_projection'),
+     and p.oid = 'atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)'::regprocedure),
   'RMVP07-26 projection includes policy root revision and exact Planning ticks'
 );
 select ok(
@@ -280,7 +280,7 @@ select ok(
      and pg_get_functiondef(p.oid) like '%need_generation_release_snapshot_id%'
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_core'
-     and p.proname = 'rmvp_07_validated_facts_projection'),
+     and p.oid = 'atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)'::regprocedure),
   'RMVP07-27 projection includes exact Need Generation source authority'
 );
 select ok(
@@ -290,7 +290,7 @@ select ok(
      and pg_get_functiondef(p.oid) like '%source_membership_total%'
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_core'
-     and p.proname = 'rmvp_07_validated_facts_projection'),
+     and p.oid = 'atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)'::regprocedure),
   'RMVP07-28 projection includes exact quantities and membership totals'
 );
 select ok(
@@ -302,7 +302,7 @@ select ok(
      and pg_get_functiondef(p.oid) like '%ordered_source_members%'
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_core'
-     and p.proname = 'rmvp_07_validated_facts_projection'),
+     and p.oid = 'atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)'::regprocedure),
   'RMVP07-29 projection includes exact ordered contribution and source-line identities'
 );
 select ok(
@@ -312,7 +312,7 @@ select ok(
      and pg_get_functiondef(p.oid) like '%issue_code%'
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_core'
-     and p.proname = 'rmvp_07_validated_facts_projection'),
+     and p.oid = 'atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)'::regprocedure),
   'RMVP07-30 projection includes the closed ordered blocker and warning set'
 );
 select ok(

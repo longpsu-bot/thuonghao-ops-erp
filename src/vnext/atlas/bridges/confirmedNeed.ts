@@ -7,7 +7,10 @@ export type PreflightApi = Pick<
   "preflight"
 >;
 export type NeedGenerationApi = Pick<GenerationApi, "execute" | "getWorkbench">;
-export type ConfirmedNeedApi = Pick<ConfirmationApi, "getReview" | "save">;
+export type ConfirmedNeedApi = Pick<
+  ConfirmationApi,
+  "getReview" | "save" | "previewCorrection" | "correct"
+>;
 export { needGenerationExecutionRequest } from "../../../modules/atlas/planning-inputs/need-generation/needGenerationApi";
 export type {
   NeedGenerationFilters,
@@ -67,3 +70,18 @@ export {
   shoppingListRangeDates,
 } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";
 export type { ShoppingListRangeContext } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";
+
+export {
+  confirmedNeedCorrectionPreviewRequest,
+  confirmedNeedCorrectionCommandRequest,
+} from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";
+export type {
+  ConfirmedNeedCorrectionPayload,
+  ConfirmedNeedCorrectionCommandRequest,
+} from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";
+export {
+  confirmedNeedCorrectionPreviewFromResult,
+  confirmedNeedCorrectionOutcome,
+  confirmedNeedCorrectionMessage,
+} from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedModel";
+export type { ConfirmedNeedCorrectionPreview } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedModel";
