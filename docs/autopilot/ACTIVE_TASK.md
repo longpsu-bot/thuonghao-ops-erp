@@ -6,6 +6,8 @@ Product authorization: **16 October 2026** — Owner explicitly redirected prior
 Source: [approved GitHub Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389) and [execution brief](../implementation-tasks/TASK-ATLAS-UX-ART-DIRECTION-02.md).  
 Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read current `origin/main` before task execution.
 
+D1/D2 local package: [diagnosis and three working alternatives](../ui/atlas-ux-art-direction-02.md), based on main `3667966a3f6703a6585f07ba619969ec851ca7b8`. Isolated prototypes only; production direction awaits Owner selection. Existing backend Drafts remain parked.
+
 ## Product priority and work authorization
 
 **Stop creating additional backend performance/certification, Warehouse, or general cutover work merely to advance Autopilot.** Concentrate on making Atlas genuinely legible, efficient, aesthetically polished and practical for staff. This transition **supersedes Issue #389's older “wait until all #385–#388 are closed” start condition**: the design phase may proceed NOW while those existing Drafts are preserved. It does **not** approve their merges, alter their source code, or claim their business behavior is deployed.
@@ -35,6 +37,7 @@ Do not reset/delete local worktrees, commits, stashes, branches or PRs. Before a
 ### Checkpoint D2 — visible, competing designs
 
 Create **2–3 materially different rendered, comparable prototypes** for:
+
 - The **connected angled/sloped-edge tab strip** inspired by the Owner's reference; active tab seamlessly joined to the white workplane, neutral inactive tabs, 13-workbench horizontal overflow, close/dirty/focus semantics retained.
 - **Supplier-first PO workbench:** compact scannable orders, truthful draft/released/export state, document numbers and next action; disclose long School breakdown, exact quantities/Units and notes in usable detail rather than concatenated cells.
 - Optionally show how the same design language improves Supplier Allocation while preserving the already-implemented backend supplier recommendation/explicit Save distinction.
