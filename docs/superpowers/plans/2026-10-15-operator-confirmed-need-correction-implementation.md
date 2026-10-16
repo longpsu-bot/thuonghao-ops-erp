@@ -10,6 +10,14 @@
 
 **Spec:** `E:/Project/OPS ERP/thuonghao-ops-erp/docs/superpowers/specs/2026-10-15-operator-confirmed-need-correction-design.md`, human-approved design source `340721a49788163416176db816477168895f3442`.
 
+## Owner bounded remediation — 16 October 2026
+
+The Owner now explicitly authorizes one delivery-focused Need correction trial after the UX checkpoint. Preserve PR #392 at `4600c3476fc98f607e60daf0ef4ce286bb5321ea` and work on the original Draft #388 branch from `49375b4e`. This supersedes the earlier dd3 cancellation for this trial only. Apply exactly reviewed helper candidate `dd3d320775996e0d3077b9e449abfda1979b3762fc97a07c02b5c59fde12c3d4` to `confirmed_need_historical_validation_complete(uuid,uuid)`; signature, Review owner, STABLE/SECDEF/empty path and ACL remain. No other runtime body or UI change.
+
+Acceptance: meaningful old/new controlled-rowset property parity, genuine captured historical TRUE, unchanged current/history/02b/null/count/SUM semantics; fresh task-owned exact original 109 migrations plus the whole amended C file atomically, exact global/schema/function metadata parity and only one body delta; focused affected suites; then ONE unchanged genuine 250-family/eight-cycle/all-20 strict run at existing 8s/20s/1s entry and disclosed nested 5s limits, timed guards and one existing 13-relation ANALYZE prerequisite. No new profiling, fixture weakening, timeout increase or optimization chain. Stop at the first final scale failure and report PASS/FAIL with root cause and actionable handoff. At most two targeted repairs for the same development failure; repeated failure escalates.
+
+Standing Owner rules: delivery and measurable business value; bounded scope/acceptance/completion; mandatory failure stops; focused development separate from certification; preserve incomplete PRs/evidence; explicit PASS/FAIL/BLOCKED accountability. Security/Product hard stops remain. Keep #388 Draft, #385–#387 parked, Warehouse paused, hosted read-only and OPSv1/Retool NO-WRITE. No merge/deploy. Any later local combined UI preview must retain the compact C workbenches/new Need toolbar and both separate PR reviews; do not repoint PR #388 to the feature branch or overwrite #392 UI.
+
 ## Publication checkpoint — 16 October 2026
 
 Implemented Draft publication is explicitly user-authorized now; internal push holds below are historical. Acceptance is incomplete: final runtime 3669f274 has 455 focused SQL assertions PASS, strict29 completes 1/8 observed cycles before the second Preparation exceeds 20 seconds and0/20 final assertions. All data rolls back. Final waits, exports and broader regressions/remote Full remain deferred. dd3 is TEMP-only and unapplied; no further optimization/DB run. Do not mark all tasks complete or PR ready. [Current validation](../../testing/operator-confirmed-need-correction-c-01-validation.md).
