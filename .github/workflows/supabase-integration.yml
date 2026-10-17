@@ -159,6 +159,15 @@ on:
       - "pnpm-lock.yaml"
 
   workflow_dispatch:
+    inputs:
+      scope:
+        description: Full certification or one bounded C388 Preparation probe
+        type: choice
+        default: full-integration
+        options:
+          - full-integration
+          - c388-baseline
+          - c388-profile
 
 permissions:
   contents: read
@@ -296,7 +305,8 @@ jobs:
     name: Supabase Full Integration
     if: >-
       github.event_name == 'push' ||
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' &&
+      (inputs.scope == '' || inputs.scope == 'full-integration')) ||
       (github.event_name == 'pull_request' &&
       (github.event.action == 'ready_for_review' ||
       (github.event.action == 'synchronize' &&
@@ -327,3 +337,48 @@ jobs:
 
       - name: Run repository Supabase Full Integration certification
         run: pnpm certify:supabase:full-integration
+
+  c388-preparation:
+    name: C388 bounded Preparation diagnostic
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.scope == 'c388-baseline' || inputs.scope == 'c388-profile')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_TELEMETRY_DISABLED: "1"
+      C388_EVIDENCE_DIR: ${{ runner.temp }}/c388-preparation
+      C388_MODE: ${{ inputs.scope == 'c388-profile' && 'profile' || 'baseline' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: One bounded local Preparation probe
+        run: node scripts/diagnose-confirmed-need-preparation.mjs "$C388_MODE"
+      - name: Preserve sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c388-preparation-${{ github.sha }}-${{ inputs.scope }}
+          path: ${{ runner.temp }}/c388-preparation
+          retention-days: 7
+          if-no-files-found: error
+      - name: Stop disposable Supabase
+        if: always()
+        run: |
+          if [ -f "$C388_EVIDENCE_DIR/owns-stack" ]; then
+            pnpm exec supabase stop --no-backup
+          fi

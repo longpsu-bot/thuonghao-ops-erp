@@ -2,6 +2,14 @@
 
 Status: **FAIL — scale acceptance incomplete; execution stopped**. Preserve Draft #388 against main. The Owner authorized this single bounded trial after UX; it does not authorize readiness, merge, migration reorder, deployment or hosted writes. Staging remains on accepted migration 109.
 
+## GitHub Actions diagnosis continuation — 17 October 2026
+
+The Owner directs credential-dependent testing to GitHub Actions. Existing `Supabase Integration` manual dispatch now offers `c388-baseline` and `c388-profile`; its default remains unchanged Full Integration. These are diagnostic modes, not release certification or a replacement eight-cycle oracle. The three-document finish authority is recorded in Draft #393.
+
+Scope: the existing workflow, shared include-expanding SQL runner, one bounded diagnostic driver and its safety tests, and this report. No business SQL, applied migration, frontend, hosted data or acceptance threshold changes. Use the standard reduced Supabase startup to apply the exact 109-file main baseline, verify its catalog, apply complete C once, retain role/ACL/function/row-image evidence, and clone before fixture tests. The original 250-family prefix and first correction/allocation/Preparation stages retain 8s/20s/1s/disclosed nested5s limits, timed guard flushes and the once-only 13-relation statistics prerequisite. End under rollback after the first corrected Preparation; no successor or eight-cycle acceptance is claimed.
+
+Run one baseline and inspect its artifacts before deciding whether the single controlled profile is necessary. Profile instrumentation is session-only and begins after the original prefix; completed counters overlap/omit interrupted work, auto-explain adds overhead, and external 200ms wait samples can miss short waits. Failed setup/prefix is INVALID for target attribution and must be reported before any further attempt. No automatic rerun, profile, remediation or full certification follows. Exact-head CI, role/function manifests, original fixture hash, timings, rollback images and sanitized logs are retained as Actions artifacts. Runtime optimization remains conditional on reliable measured attribution; its separate one-change budget is untouched.
+
 ## Current trial
 
 - Whole C migration LF/applied SHA-256: `f6d56125f8fed25746aac02e7be7ad943f53d0e06679b1c9f471d79f47808eff` (0 CRLF). Only the reviewed `confirmed_need_historical_validation_complete(uuid,uuid)` body changes from preserved `3669f274`; candidate SHA `dd3d320775996e0d3077b9e449abfda1979b3762fc97a07c02b5c59fde12c3d4`.

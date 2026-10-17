@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 // A single rolled-back SQL session keeps shared fixtures out of durable local state.
 // Supabase's pgTAP container mounts test files but not their ../local includes.
-function expand(relativeFile) {
+export function expand(relativeFile) {
   const root = fileURLToPath(new URL("../", import.meta.url));
   const file = path.resolve(root, relativeFile);
   if (!file.startsWith(path.join(root, "supabase") + path.sep)) {

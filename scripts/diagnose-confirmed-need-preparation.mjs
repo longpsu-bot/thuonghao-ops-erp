@@ -1,0 +1,395 @@
+import { spawn, spawnSync, execFileSync } from "node:child_process";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { createHash } from "node:crypto";
+import {
+  expand,
+  completePurchaseReviewTap,
+} from "./test-local-purchase-review.mjs";
+import { redactAtlasStagingDiagnostic } from "./atlas-staging-contract.mjs";
+
+const container = "supabase_db_thuonghao-ops-erp";
+const correction =
+  "supabase/migrations/20261015065552_operator_confirmed_need_correction.sql";
+const fixture = "supabase/local/confirmed_need_correction_scale_fixture.sql";
+const hash = (value) => createHash("sha256").update(value).digest("hex");
+
+export function buildPreparationProbe(mode) {
+  if (!["baseline", "profile"].includes(mode))
+    throw new Error("Use baseline or profile.");
+  const original = expand(fixture);
+  const marker =
+    "\nselect format('set local statement_timeout=%L;select pg_temp.c_scale_history(%L,%s);',";
+  const end = original.indexOf(marker);
+  if (
+    end < 0 ||
+    original.indexOf(marker, end + 1) >= 0 ||
+    !original.slice(end).includes("generate_series(1,8)")
+  )
+    throw new Error(
+      "Original scale fixture boundary changed; review before probing.",
+    );
+  const stages = ["preview", "correct", "allocation-read", "allocation-save"]
+    .map(
+      (stage) =>
+        `set local statement_timeout='8s';\nselect pg_temp.c_scale_history('${stage}',1);`,
+    )
+    .join("\n");
+  const tracking =
+    mode === "profile"
+      ? `
+load 'auto_explain';
+set local track_functions='all';
+set local pg_stat_statements.track='all';
+set local auto_explain.log_min_duration='10ms';
+set local auto_explain.log_analyze=on;
+set local auto_explain.log_timing=off;
+set local auto_explain.log_buffers=on;
+set local auto_explain.log_nested_statements=on;
+set local auto_explain.log_parameter_max_length=0;
+set local auto_explain.log_format='json';
+select jsonb_build_object('C388_STATS_BEFORE',coalesce(jsonb_agg(to_jsonb(s)),'[]'))
+from extensions.pg_stat_statements s where dbid=(select oid from pg_database where datname=current_database());
+`
+      : "";
+  return {
+    fixtureSha256: hash(original),
+    sql: `begin;\nset search_path=extensions,public,pg_catalog;\n${original.slice(0, end)}\n${stages}\n${tracking}
+set local application_name='atlas_c388_target';
+set local statement_timeout='20s';
+\\timing on
+select pg_temp.c_scale_history('preparation',1);
+\\timing off
+select jsonb_build_object('C388_COMPLETED_MEASUREMENTS',jsonb_agg(to_jsonb(r)-'response' order by history_depth,name)) from c_scale_results r;
+rollback;\n`,
+  };
+}
+
+export function classifyPreparationProbe(status, output, invariant) {
+  if (!invariant) return "FAIL_RESIDUE_OR_INTEGRITY";
+  if (
+    !output.includes(
+      "C_SCALE_START history-1-preparation prepare_school_catering_purchase_orders depth 1",
+    )
+  )
+    return "INVALID_PREFIX";
+  if (status === 0 && output.includes("C_SCALE_END history-1-preparation ms"))
+    return "TARGET_COMPLETED";
+  if (
+    status !== 0 &&
+    output.includes("canceling statement due to statement timeout")
+  )
+    return "TARGET_TIMEOUT";
+  return "INCOMPLETE_TARGET";
+}
+
+// Metadata, source bodies and business row images are hashed; no credentials or rows are exported.
+const snapshotSql = `
+create function pg_temp.c388_rows() returns jsonb language plpgsql as $$
+declare r record; image jsonb; result jsonb:='[]'; begin
+ for r in select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
+ where n.nspname like 'atlas\\_%' escape '\\' and c.relkind in('r','p') order by 1,2 loop
+ execute format('select jsonb_build_object(''relation'',%L,''count'',count(*),''rows_md5'',md5(coalesce(jsonb_agg(to_jsonb(t) order by to_jsonb(t)::text)::text,''[]''))) from %I.%I t',r.nspname||'.'||r.relname,r.nspname,r.relname) into image;
+ result:=result||jsonb_build_array(image); end loop; return result; end; $$;
+select jsonb_build_object(
+ 'roles',(select jsonb_agg(jsonb_build_object('name',rolname,'super',rolsuper,'inherit',rolinherit,'create_role',rolcreaterole,'create_db',rolcreatedb,'login',rolcanlogin,'replication',rolreplication,'bypass',rolbypassrls,'limit',rolconnlimit,'config',rolconfig) order by rolname) from pg_roles),
+ 'memberships',(select jsonb_agg(jsonb_build_object('role',pg_get_userbyid(roleid),'member',pg_get_userbyid(member),'grantor',pg_get_userbyid(grantor),'admin',admin_option,'inherit',inherit_option,'set',set_option) order by roleid,member,grantor) from pg_auth_members),
+ 'schemas',(select jsonb_agg(jsonb_build_object('name',nspname,'owner',pg_get_userbyid(nspowner),'acl',nspacl::text) order by nspname) from pg_namespace where nspname like 'atlas\\_%' escape '\\'),
+ 'functions',(select jsonb_agg(jsonb_build_object('identity',p.oid::regprocedure::text,'owner',pg_get_userbyid(proowner),'acl',proacl::text,'config',proconfig,'definer',prosecdef,'volatile',provolatile,'source_md5',md5(pg_get_functiondef(p.oid))) order by p.oid::regprocedure::text) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname like 'atlas\\_%' escape '\\'),
+ 'rows',pg_temp.c388_rows(),
+ 'physical',(select jsonb_agg(to_jsonb(s) order by schemaname,relname) from pg_stat_user_tables s where schemaname like 'atlas\\_%' escape '\\'));
+`;
+
+async function main() {
+  const mode = process.argv[2];
+  const probe = buildPreparationProbe(mode);
+  const directory = process.env.C388_EVIDENCE_DIR;
+  if (
+    process.env.GITHUB_ACTIONS !== "true" ||
+    process.env.GITHUB_REPOSITORY !== "longpsu-bot/thuonghao-ops-erp" ||
+    process.env.GITHUB_EVENT_NAME !== "workflow_dispatch" ||
+    process.env.GITHUB_RUN_ATTEMPT !== "1" ||
+    !directory
+  )
+    throw new Error(
+      "This disposable bootstrap is restricted to a first-attempt manual repository Actions run.",
+    );
+  mkdirSync(directory, { recursive: true });
+  const save = (name, value) =>
+    writeFileSync(
+      path.join(directory, name),
+      redactAtlasStagingDiagnostic(
+        typeof value === "string" ? value : JSON.stringify(value, null, 2),
+      ),
+    );
+  const command = (program, args, input, timeout = 180000) =>
+    spawnSync(program, args, {
+      input,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+      timeout,
+    });
+  const psqlArgs = (database) => [
+    "exec",
+    "-i",
+    container,
+    "psql",
+    "-X",
+    "-qAt",
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-v",
+    "VERBOSITY=verbose",
+    "-U",
+    "postgres",
+    "-d",
+    database,
+  ];
+  const sql = (text, database = "postgres", name = "sql") => {
+    const result = command("docker", psqlArgs(database), text);
+    save(`${name}.log`, (result.stdout ?? "") + (result.stderr ?? ""));
+    if (result.status !== 0)
+      throw new Error(`${name} failed; see sanitized artifact.`);
+    return result.stdout.trim();
+  };
+  const snapshot = (database, name) => {
+    const value = JSON.parse(sql(snapshotSql, database, name));
+    save(`${name}.json`, value);
+    return value;
+  };
+  const summary = {
+    mode,
+    head: process.env.GITHUB_SHA,
+    accepted: false,
+    outcome: "BLOCKED_SETUP",
+    targetRuns: 0,
+    limits:
+      "8s public / 20s Preparation / 1s entry / unchanged disclosed nested5s; one13-relation ANALYZE",
+    limitations:
+      "SQL-local synthetic fixture; no HTTP/integration certification. Fresh runner cache/physical state differs from preserved host. Completed inclusive counters overlap and omit canceled/inlined work. Profile adds overhead; it is not acceptance.",
+  };
+  try {
+    const existing = command("docker", [
+      "ps",
+      "-aq",
+      "--filter",
+      "name=^/supabase_",
+    ]);
+    if (existing.status !== 0 || existing.stdout.trim())
+      throw new Error(
+        "Require a fresh runner with no existing Supabase containers.",
+      );
+    const entries = execFileSync(
+      "git",
+      ["ls-tree", "-r", "HEAD", "supabase/migrations"],
+      { encoding: "utf8" },
+    )
+      .trim()
+      .split("\n");
+    const base = entries.filter((entry) => !entry.endsWith(correction));
+    const mainEntries = execFileSync(
+      "git",
+      ["ls-tree", "-r", "origin/main", "supabase/migrations"],
+      { encoding: "utf8" },
+    )
+      .trim()
+      .split("\n");
+    if (
+      base.length !== 109 ||
+      JSON.stringify(base) !== JSON.stringify(mainEntries)
+    )
+      throw new Error("109-file exact main baseline manifest mismatch.");
+    const correctionBytes = execFileSync("git", ["show", `HEAD:${correction}`]);
+    if (hash(correctionBytes) !== hash(readFileSync(correction)))
+      throw new Error("Working C bytes differ from exact Git source.");
+    save("source-manifest.json", {
+      head: summary.head,
+      baseline: base,
+      correctionSha256: hash(correctionBytes),
+      fixtureSha256: probe.fixtureSha256,
+    });
+    const held = path.join(directory, "held-correction.sql");
+    save(
+      "owns-stack",
+      "Fresh runner checked; this run owns the local Supabase startup.\n",
+    );
+    renameSync(correction, held);
+    try {
+      const start = command(
+        "pnpm",
+        [
+          "exec",
+          "supabase",
+          "start",
+          "--exclude",
+          "edge-runtime,imgproxy,logflare,mailpit,postgres-meta,realtime,storage-api,studio,supavisor,vector",
+        ],
+        undefined,
+        600000,
+      );
+      save("supabase-start.log", (start.stdout ?? "") + (start.stderr ?? ""));
+      if (start.status !== 0)
+        throw new Error("Standard Supabase109 startup failed; no target run.");
+    } finally {
+      renameSync(held, correction);
+    }
+    const baselineTest = execFileSync(
+      "git",
+      [
+        "show",
+        "origin/main:supabase/tests/atlas_current_platform_security_catalog.sql",
+      ],
+      { encoding: "utf8" },
+    );
+    const baselineTap = sql(baselineTest, "postgres", "baseline-catalog");
+    if (!completePurchaseReviewTap(baselineTap, 0))
+      throw new Error("Baseline catalog incomplete or failing.");
+    const before = snapshot("postgres", "before-correction");
+    sql(correctionBytes, "postgres", "apply-whole-correction-once");
+    const after = snapshot("postgres", "after-correction");
+    for (const key of ["roles", "memberships", "schemas", "rows"]) {
+      if (JSON.stringify(before[key]) !== JSON.stringify(after[key]))
+        throw new Error(`C application changed protected ${key} image.`);
+    }
+    // Clone before catalog fixtures; quiesce only this new runner's disposable source DB.
+    const database = "atlas_c388_probe";
+    try {
+      sql(
+        "alter database postgres allow_connections false; select pg_terminate_backend(pid) from pg_stat_activity where datname='postgres';",
+        "template1",
+        "quiesce-owned-source",
+      );
+      sql(
+        `create database ${database} template postgres;`,
+        "template1",
+        "clone-owned-baseline",
+      );
+    } finally {
+      sql(
+        "alter database postgres allow_connections true;",
+        "template1",
+        "restore-owned-source-connectivity",
+      );
+    }
+    const tap = sql(
+      expand("supabase/tests/atlas_current_platform_security_catalog.sql"),
+      "postgres",
+      "current-catalog",
+    );
+    if (!completePurchaseReviewTap(tap, 0))
+      throw new Error("Current exact catalog incomplete or failing.");
+    const preflight = snapshot(database, "probe-preflight");
+    save("probe.sql", probe.sql);
+    const started = new Date().toISOString();
+    const began = performance.now();
+    let stdout = "",
+      stderr = "",
+      waits = "";
+    const observer = spawn("docker", psqlArgs("postgres"), {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    observer.stdout.on("data", (chunk) => {
+      waits += chunk;
+    });
+    observer.stderr.on("data", (chunk) => {
+      waits += chunk;
+    });
+    observer.stdin.on("error", () => {});
+    let observerError;
+    const observerExit = new Promise((resolve) => {
+      observer.once("error", (error) => {
+        observerError = error.message;
+        resolve(null);
+      });
+      observer.once("close", resolve);
+    });
+    const interval = setInterval(() => {
+      if (observer.stdin.destroyed || observer.stdin.writableEnded) return;
+      observer.stdin.write(
+        "select jsonb_build_object('at',clock_timestamp(),'pid',pid,'state',state,'wait_type',wait_event_type,'wait',wait_event,'blockers',pg_blocking_pids(pid)) from pg_stat_activity where datname='atlas_c388_probe' and application_name='atlas_c388_target';\n",
+      );
+    }, 200);
+    const child = spawn("docker", psqlArgs(database), {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.stdin.on("error", () => {});
+    let result;
+    try {
+      result = await new Promise((resolve, reject) => {
+        child.on("error", reject);
+        child.on("close", resolve);
+        child.stdin.end(probe.sql);
+      });
+      summary.totalPrefixAndTargetWallMs = performance.now() - began;
+    } finally {
+      clearInterval(interval);
+      observer.stdin.end();
+      summary.observerExitCode = await observerExit;
+      save("probe.log", stdout + stderr);
+      save("wait-samples.jsonl", waits);
+    }
+    summary.targetPsqlStatementMs =
+      Number(/Time:\s+([\d.]+)\s+ms/.exec(stdout)?.[1]) || null;
+    summary.targetRuns = stderr.includes("C_SCALE_START history-1-preparation")
+      ? 1
+      : 0;
+    const postflight = snapshot(database, "probe-postflight");
+    const invariant = [
+      "roles",
+      "memberships",
+      "schemas",
+      "functions",
+      "rows",
+    ].every(
+      (key) =>
+        JSON.stringify(preflight[key]) === JSON.stringify(postflight[key]),
+    );
+    summary.outcome = classifyPreparationProbe(
+      result,
+      stdout + stderr,
+      invariant,
+    );
+    summary.rollbackAndIntegrityVerified = invariant;
+    summary.waitSampleCount = waits
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith('{"at"')).length;
+    summary.waitSamplingAvailable =
+      summary.observerExitCode === 0 &&
+      !observerError &&
+      summary.waitSampleCount > 0;
+    summary.observerError = observerError;
+    summary.observer =
+      "External 200ms samples; waitSamplingAvailable=false means sampling failed or no target samples were observed, never proof of no waits. Scheduling/startup can miss short waits. Observer overhead is not subtracted.";
+    if (mode === "profile") {
+      sql(
+        "select jsonb_agg(to_jsonb(f)) from pg_stat_user_functions f where schemaname like 'atlas%'; select jsonb_agg(to_jsonb(s)) from extensions.pg_stat_statements s where dbid=(select oid from pg_database where datname=current_database());",
+        database,
+        "completed-function-and-statement-statistics",
+      );
+      const plans = command("docker", ["logs", "--since", started, container]);
+      save("server-plans.log", (plans.stdout ?? "") + (plans.stderr ?? ""));
+      summary.planCaptureExitCode = plans.status;
+      summary.planCaptureError = plans.error?.message;
+    }
+    if (summary.outcome !== "TARGET_COMPLETED") process.exitCode = 1;
+  } catch (error) {
+    summary.error = redactAtlasStagingDiagnostic(error.message);
+    process.exitCode = 1;
+  } finally {
+    save("summary.json", summary);
+    console.log(JSON.stringify(summary));
+  }
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+)
+  await main();
