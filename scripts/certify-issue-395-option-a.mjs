@@ -103,6 +103,7 @@ function run(name, text, db, assertions) {
   };
   save(`${name}-result.json`, item);
   console.log(JSON.stringify(item));
+  if (!item.pass) process.exitCode = 1;
   return item;
 }
 
@@ -123,14 +124,6 @@ if (mode === "baseline") {
     ["d037_confirmed_need_save_release_boundary", 37],
     ["issue_395_phase_context_parity", 9],
   ]) {
-    const recorded = path.join(directory, `${name}-result.json`);
-    if (existsSync(recorded)) {
-      const previous = JSON.parse(readFileSync(recorded));
-      if (previous.pass) {
-        results.push(previous);
-        continue;
-      }
-    }
     let text = expand(`supabase/tests/${name}.sql`);
     if (
       [

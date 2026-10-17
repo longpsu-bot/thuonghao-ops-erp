@@ -26,6 +26,10 @@ describe("bounded C388 Preparation evidence", () => {
       "case when stage='preparation'then'20s'else'8s'end",
     );
     expect(dual.sql.trimEnd()).toMatch(/rollback;$/);
+    for (const match of dual.sql.matchAll(/'([a-f0-9]{8}-[a-f0-9-]+)'/g))
+      expect(match[1]).toMatch(
+        /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/,
+      );
   });
   it("uses valid UUID literals in the original scale assertions", () => {
     const source = readFileSync(

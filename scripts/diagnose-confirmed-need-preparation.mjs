@@ -105,7 +105,7 @@ export function buildDualOperationalAcceptance() {
     `create function pg_temp.c395_depth_gate(depth integer) returns setof text language plpgsql as $c395$
 begin
  return next is((select count(*) from c_scale_results where history_depth=depth),10::bigint,'depth '||depth||': all ten complete public operations');
- return next is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where is_current and school_id='b6500000-0000-0000-0000-000000000004' and ingredient_id='b6500000-0000-0000-000000000006'),(100+depth)::numeric,'depth '||depth||': exact quantity');
+ return next is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where is_current and school_id='b6500000-0000-0000-0000-000000000004' and ingredient_id='b6500000-0000-0000-0000-000000000006'),(100+depth)::numeric,'depth '||depth||': exact quantity');
  return next is((select count(*) from atlas_planning.purchase_handoff_revisions),(depth+1)::bigint,'depth '||depth||': complete Handoff history');
  return next is((select count(*) from atlas_procurement.purchase_orders),(5+depth)::bigint,'depth '||depth||': complete supplier PO replacements');
  return next is((select count(*) from atlas_dispatch.school_dispatch_releases),(1+depth)::bigint,'depth '||depth||': explicit PXK successors');
