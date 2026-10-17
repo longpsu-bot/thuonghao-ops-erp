@@ -168,6 +168,7 @@ on:
           - full-integration
           - c388-baseline
           - c388-profile
+          - c388-certification
 
 permissions:
   contents: read
@@ -342,12 +343,13 @@ jobs:
     name: C388 bounded Preparation diagnostic
     if: >-
       github.event_name == 'workflow_dispatch' &&
-      (inputs.scope == 'c388-baseline' || inputs.scope == 'c388-profile')
+      (inputs.scope == 'c388-baseline' || inputs.scope == 'c388-profile' ||
+      inputs.scope == 'c388-certification')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       SUPABASE_TELEMETRY_DISABLED: "1"
-      C388_MODE: ${{ inputs.scope == 'c388-profile' && 'profile' || 'baseline' }}
+      C388_MODE: ${{ inputs.scope == 'c388-profile' && 'profile' || inputs.scope == 'c388-certification' && 'certification' || 'baseline' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

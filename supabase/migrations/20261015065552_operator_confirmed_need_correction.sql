@@ -47,16 +47,6 @@ with observations as materialized (
   count(*)filter(where severity='WARNING') warning_count
  from atlas_planning.confirmed_need_validation_issues
  where confirmed_need_validation_attempt_id=p_attempt
-), revision_keys as materialized (
- select distinct current_confirmed_need_line_revision_id revision_id from observations
- where current_confirmed_need_line_revision_id is not null
-), membership_totals as materialized (
- select c.confirmed_need_line_revision_id revision_id,count(*) member_count,
-  sum(c.controlled_contribution_quantity) member_total
- from revision_keys k
- join atlas_planning.confirmed_need_line_revision_contributions c
-  on c.confirmed_need_line_revision_id=k.revision_id
- group by c.confirmed_need_line_revision_id
 )
 select exists (
     select 1
@@ -93,8 +83,15 @@ select exists (
             = observation.planning_quantity_policy_revision_id
          and policy_revision.planning_quantity_policy_id
             = observation.planning_quantity_policy_id
-        left join membership_totals membership
-          on membership.revision_id=revision.confirmed_need_line_revision_id
+        -- The captured revision has an existing contribution index. Aggregate
+        -- that exact key, avoiding a 250-row totals rescan for each observation.
+        -- No members still means count 0 / sum NULL; raw multiplicity is retained.
+        left join lateral (
+          select count(*) member_count,
+            sum(c.controlled_contribution_quantity) member_total
+          from atlas_planning.confirmed_need_line_revision_contributions c
+          where c.confirmed_need_line_revision_id=revision.confirmed_need_line_revision_id
+        ) membership on true
         where observation.confirmed_need_validation_attempt_id
           = p_attempt
           and (

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import {
   buildPreparationProbe,
+  buildOperationalAcceptance,
   classifyPreparationProbe,
 } from "./diagnose-confirmed-need-preparation.mjs";
 
@@ -91,6 +92,48 @@ describe("bounded C388 Preparation evidence", () => {
         false,
       ),
     ).toBe("FAIL_RESIDUE_OR_INTEGRITY");
+  });
+
+  it("keeps a separately labelled complete one-cycle journey and the original eight-cycle oracle", () => {
+    const original = readFileSync(
+      "supabase/tests/confirmed_need_correction_scale.sql",
+      "utf8",
+    );
+    const fixture = readFileSync(
+      "supabase/local/confirmed_need_correction_scale_fixture.sql",
+      "utf8",
+    );
+    const operational = buildOperationalAcceptance();
+    expect(operational.sql).toContain("from generate_series(1,1)depth");
+    expect(operational.sql).not.toContain("from generate_series(1,8)depth");
+    expect(operational.sql).toContain("select plan(20)");
+    expect(operational.sql).toContain(
+      "'preparation','replacement','po-release','po-read','pxk-read','pxk-release'",
+    );
+    expect(operational.sql).toContain("all ten explicit public operations");
+    expect(operational.sql).toContain("exact final quantity101");
+    expect(operational.sql).toContain(
+      "case when stage='preparation'then'20s'else'8s'end",
+    );
+    expect(operational.sql).toContain("set local lock_timeout='1s'");
+    expect(operational.sql).toContain("set constraints all immediate;");
+    expect(operational.sql).toContain(
+      "'genuine public workload retains250 positive whole families'",
+    );
+    expect(operational.sql.trimEnd()).toMatch(/rollback;$/);
+    expect(fixture).toContain("from generate_series(1,8)depth");
+    expect(original).toContain("exact final quantity108");
+    expect(operational.originalSha256).not.toBe(operational.operationalSha256);
+    const runner = readFileSync(
+      "scripts/diagnose-confirmed-need-preparation.mjs",
+      "utf8",
+    );
+    expect(runner.indexOf("summary.operationalAcceptance = true")).toBeLessThan(
+      runner.indexOf("summary.historicalStressRuns = 1"),
+    );
+    expect(runner).toContain(
+      'runSuite("historical-stress", stress, "atlas_c388_stress")',
+    );
   });
 
   it("preserves full-integration defaults while allowing explicit bounded dispatch", () => {

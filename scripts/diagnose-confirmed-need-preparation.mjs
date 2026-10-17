@@ -15,6 +15,51 @@ const correction =
 const fixture = "supabase/local/confirmed_need_correction_scale_fixture.sql";
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 
+// Separate Tier 2 derivative; the original eight-cycle file is never edited.
+export function buildOperationalAcceptance() {
+  let sql = expand("supabase/tests/confirmed_need_correction_scale.sql");
+  const originalSha256 = hash(sql);
+  const replacements = [
+    ["from generate_series(1,8)depth", "from generate_series(1,1)depth"],
+    [
+      "9::bigint,\n 'eight public correction cycles append nine consecutive Handoff revisions'",
+      "2::bigint,\n 'one operational correction appends a second Handoff revision'",
+    ],
+    [
+      "8::bigint,\n 'all eight measured history depths completed'",
+      "1::bigint,\n 'one operational history depth completed'",
+    ],
+    [
+      "80::bigint,\n 'each history edge completed ten explicit public operations'",
+      "10::bigint,\n 'one operational edge completed all ten explicit public operations'",
+    ],
+    [
+      "13::bigint,\n 'five original complete Supplier POs plus eight explicit complete replacements are preserved'",
+      "6::bigint,\n 'five original complete Supplier POs plus one explicit complete replacement are preserved'",
+    ],
+    [
+      "9::bigint,\n 'only the selected School has one initial PXK and eight explicit successors'",
+      "2::bigint,\n 'only the selected School has one initial PXK and one explicit successor'",
+    ],
+    [
+      "108::numeric,\n 'eight selected-line corrections preserve exact final quantity108'",
+      "101::numeric,\n 'one selected-line correction preserves exact final quantity101'",
+    ],
+    [
+      "one selected School PXK; eight history edges",
+      "one selected School PXK; one operational history edge",
+    ],
+  ];
+  for (const [before, after] of replacements) {
+    if (sql.split(before).length !== 2)
+      throw new Error(
+        "Original scale oracle changed; review Tier 2 derivative.",
+      );
+    sql = sql.replace(before, after);
+  }
+  return { sql, originalSha256, operationalSha256: hash(sql) };
+}
+
 export function buildPreparationProbe(mode) {
   if (!["baseline", "profile"].includes(mode))
     throw new Error("Use baseline or profile.");
@@ -106,7 +151,9 @@ select jsonb_build_object(
 
 async function main() {
   const mode = process.argv[2];
-  const probe = buildPreparationProbe(mode);
+  const probe = buildPreparationProbe(
+    mode === "certification" ? "baseline" : mode,
+  );
   const directory = process.env.C388_EVIDENCE_DIR;
   if (
     process.env.GITHUB_ACTIONS !== "true" ||
@@ -281,6 +328,13 @@ async function main() {
         "clone-owned-baseline",
         "supabase_admin",
       );
+      if (mode === "certification")
+        sql(
+          "create database atlas_c388_stress template postgres;",
+          "template1",
+          "clone-pristine-stress",
+          "supabase_admin",
+        );
     } finally {
       sql(
         "alter database postgres allow_connections true;",
@@ -296,6 +350,96 @@ async function main() {
     );
     if (!completePurchaseReviewTap(tap, 0))
       throw new Error("Current exact catalog incomplete or failing.");
+    if (mode === "certification") {
+      delete summary.targetRuns;
+      summary.limitations =
+        "Bounded SQL-local synthetic acceptance only. Separate one-cycle operational and original eight-cycle stress oracles; neither proves hosted HTTP/browser, live competing-session waits, or combined UI integration.";
+      summary.fullIntegration =
+        "SKIPPED: bounded SQL acceptance only; no HTTP/browser/full integration certification.";
+      summary.suites = [];
+      const runSuite = (name, text, db) => {
+        const before = snapshot(db, `${name}-preflight`);
+        const began = performance.now();
+        const result = command("docker", psqlArgs(db), text, 600000);
+        save(`${name}.log`, (result.stdout ?? "") + (result.stderr ?? ""));
+        const after = snapshot(db, `${name}-postflight`);
+        const invariant = [
+          "roles",
+          "memberships",
+          "schemas",
+          "functions",
+          "rows",
+        ].every(
+          (key) => JSON.stringify(before[key]) === JSON.stringify(after[key]),
+        );
+        const complete = completePurchaseReviewTap(
+          result.stdout ?? "",
+          result.status,
+        );
+        const item = {
+          name,
+          sqlSha256: hash(text),
+          exitCode: result.status,
+          error: result.error?.message,
+          wallMs: performance.now() - began,
+          assertions: (result.stdout ?? "")
+            .split(/\r?\n/)
+            .filter((line) => /^ok\s+\d+\b/.test(line)).length,
+          completeSequentialTap: complete,
+          rollbackAndIntegrityVerified: invariant,
+          pass: complete && invariant,
+        };
+        summary.suites.push(item);
+        if (!item.pass)
+          throw new Error(`${name} failed or incomplete; no automatic retry.`);
+      };
+      summary.outcome = "FOCUSED_CHECKS_IN_PROGRESS";
+      for (const file of [
+        "confirmed_need_correction.sql",
+        "confirmed_need_correction_continuity.sql",
+        "confirmed_need_correction_consumers.sql",
+        "atlas_current_platform_security_catalog.sql",
+        "school_catering_purchase_orders.sql",
+        "rmvp_07_connected_confirmed_need_approval_release.sql",
+        "d037_confirmed_need_save_release_boundary.sql",
+      ]) {
+        let text = expand(`supabase/tests/${file}`);
+        if (
+          [
+            "rmvp_07_connected_confirmed_need_approval_release.sql",
+            "d037_confirmed_need_save_release_boundary.sql",
+          ].includes(file)
+        )
+          text = text.replace(
+            /^begin;/m,
+            `begin;\n${expand("supabase/local/pa_06b_synthetic_identity.sql")}\n${expand("supabase/local/rmvp_05_browser_fixture.sql")}\nset constraints all deferred;`,
+          );
+        runSuite(file.replace(".sql", ""), text, "postgres");
+      }
+      summary.focusedAssertions = summary.suites.reduce(
+        (sum, suite) => sum + suite.assertions,
+        0,
+      );
+      const operational = buildOperationalAcceptance();
+      save("operational.sql", operational.sql);
+      summary.originalStressSqlSha256 = operational.originalSha256;
+      summary.outcome = "OPERATIONAL_ACCEPTANCE_IN_PROGRESS";
+      summary.operationalRuns = 1;
+      runSuite("operational", operational.sql, database);
+      summary.operationalAcceptance = true;
+      summary.outcome = "HISTORICAL_STRESS_IN_PROGRESS";
+      summary.historicalStressRuns = 1;
+      // One deliberate Tier 3 attempt, exact original source and all 20 assertions.
+      const stress = expand(
+        "supabase/tests/confirmed_need_correction_scale.sql",
+      );
+      if (hash(stress) !== operational.originalSha256)
+        throw new Error("Original stress oracle changed during run.");
+      runSuite("historical-stress", stress, "atlas_c388_stress");
+      summary.historicalStress = true;
+      summary.outcome = "BOUNDED_SQL_ACCEPTANCE_PASS";
+      return;
+    }
     const preflight = snapshot(database, "probe-preflight");
     save("probe.sql", probe.sql);
     const started = new Date().toISOString();
@@ -402,6 +546,8 @@ async function main() {
     }
     if (summary.outcome !== "TARGET_COMPLETED") process.exitCode = 1;
   } catch (error) {
+    if (summary.outcome.endsWith("_IN_PROGRESS"))
+      summary.outcome = summary.outcome.replace("_IN_PROGRESS", "_FAIL");
     summary.error = redactAtlasStagingDiagnostic(error.message);
     process.exitCode = 1;
   } finally {
