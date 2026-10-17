@@ -41,7 +41,7 @@ select is((select count(*)from atlas_procurement.purchase_orders),13::bigint,
 select is((select count(*)from atlas_dispatch.school_dispatch_releases),9::bigint,
  'only the selected School has one initial PXK and eight explicit successors');
 select is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where is_current
- and school_id='b6500000-0000-0000-000000000004'and ingredient_id='b6500000-0000-0000-0000-000000000006'),108::numeric,
+ and school_id='b6500000-0000-0000-0000-000000000004'and ingredient_id='b6500000-0000-0000-0000-000000000006'),108::numeric,
  'eight selected-line corrections preserve exact final quantity108');
 select is((select count(*)from atlas_procurement.purchase_orders where purchase_order_status='RELEASED_TO_SUPPLIER'),5::bigint,
  'exactly five complete current Supplier commitments remain');

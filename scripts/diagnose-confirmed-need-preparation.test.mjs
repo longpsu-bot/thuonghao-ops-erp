@@ -9,6 +9,20 @@ import {
 } from "./diagnose-confirmed-need-preparation.mjs";
 
 describe("bounded C388 Preparation evidence", () => {
+  it("uses valid UUID literals in the original scale assertions", () => {
+    const source = readFileSync(
+      "supabase/tests/confirmed_need_correction_scale.sql",
+      "utf8",
+    );
+    const literals = [...source.matchAll(/'([a-f0-9]{8}-[a-f0-9-]+)'/g)].map(
+      (match) => match[1],
+    );
+    expect(literals.length).toBeGreaterThanOrEqual(2);
+    for (const literal of literals)
+      expect(literal).toMatch(
+        /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/,
+      );
+  });
   it("rejects local CLI execution before changing any migration or starting a database", () => {
     const migration =
       "supabase/migrations/20261015065552_operator_confirmed_need_correction.sql";

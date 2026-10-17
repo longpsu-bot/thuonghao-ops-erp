@@ -1,0 +1,287 @@
+{
+  "date": "2026-10-17",
+  "status": "PENDING_SQL_ACCEPTANCE",
+  "runtimeHead": "4832535fc059e03c5250e49ec2715de2cffd7e49",
+  "governance": {
+    "verdict": "PASS",
+    "head": "38ac6f14946c36cbe000cf6e913ab067f6e2f8c4",
+    "frontendCiRun": 38984128770
+  },
+  "frozen392": "6f9f288c76cfa48691fca2f4968ce03185502bb2",
+  "baseline": {
+    "run": 38990345000,
+    "summary": {
+      "mode": "baseline",
+      "head": "8e5d5abaee03d0b7ebb3dc887f2bf219f5f11b85",
+      "accepted": false,
+      "outcome": "TARGET_COMPLETED",
+      "targetRuns": 1,
+      "limits": "8s public / 20s Preparation / 1s entry / unchanged disclosed nested5s; one13-relation ANALYZE",
+      "limitations": "SQL-local synthetic fixture; no HTTP/integration certification. Fresh runner cache/physical state differs from preserved host. Completed inclusive counters overlap and omit canceled/inlined work. Profile adds overhead; it is not acceptance.",
+      "controlConnection": "Built-in supabase_admin for owned database clone/control and read-only observer/statistics. No role/grant changes.",
+      "probeConnection": "postgres transport/session; original public calls authenticated.",
+      "totalPrefixAndTargetWallMs": 72268.046421,
+      "observerExitCode": 0,
+      "targetPsqlStatementMs": 14718.027,
+      "rollbackAndIntegrityVerified": true,
+      "waitSampleCount": 73,
+      "waitSamplingAvailable": true,
+      "observer": "External 200ms samples; waitSamplingAvailable=false means sampling failed or no target samples were observed, never proof of no waits. Scheduling/startup can miss short waits. Observer overhead is not subtracted."
+    },
+    "integrity": {
+      "roles": {
+        "count": 42,
+        "beforeSha256": "9cc067c4651ab9f8cc6746e1146cc33b4c88f00f4e36dd9ac571636ae16690c1",
+        "afterSha256": "9cc067c4651ab9f8cc6746e1146cc33b4c88f00f4e36dd9ac571636ae16690c1",
+        "equal": true
+      },
+      "memberships": {
+        "count": 44,
+        "beforeSha256": "01dcddbe1ebbe1ce437838ee26b49dd7f786e6a59fcbb8431b7aea4346b0058c",
+        "afterSha256": "01dcddbe1ebbe1ce437838ee26b49dd7f786e6a59fcbb8431b7aea4346b0058c",
+        "equal": true
+      },
+      "schemas": {
+        "count": 10,
+        "beforeSha256": "6ab487a39f1226c9e2e59a8b65b0fe20687fd62e943d8d2a47971852c9db9209",
+        "afterSha256": "6ab487a39f1226c9e2e59a8b65b0fe20687fd62e943d8d2a47971852c9db9209",
+        "equal": true
+      },
+      "functions": {
+        "count": 497,
+        "beforeSha256": "547612d85a4373689f8e65214488c1df4711c49a9efc5cf1e7151ad802bbda21",
+        "afterSha256": "547612d85a4373689f8e65214488c1df4711c49a9efc5cf1e7151ad802bbda21",
+        "equal": true
+      },
+      "rows": {
+        "count": 117,
+        "beforeSha256": "0fbc0eb65858805e5e10f91331fea3154f24b66ca78bf80d2bf051892ff761f6",
+        "afterSha256": "0fbc0eb65858805e5e10f91331fea3154f24b66ca78bf80d2bf051892ff761f6",
+        "equal": true
+      }
+    }
+  },
+  "profile": {
+    "run": 38990710728,
+    "summary": {
+      "mode": "profile",
+      "head": "8e5d5abaee03d0b7ebb3dc887f2bf219f5f11b85",
+      "accepted": false,
+      "outcome": "TARGET_TIMEOUT",
+      "targetRuns": 1,
+      "limits": "8s public / 20s Preparation / 1s entry / unchanged disclosed nested5s; one13-relation ANALYZE",
+      "limitations": "SQL-local synthetic fixture; no HTTP/integration certification. Fresh runner cache/physical state differs from preserved host. Completed inclusive counters overlap and omit canceled/inlined work. Profile adds overhead; it is not acceptance.",
+      "controlConnection": "Built-in supabase_admin for owned database clone/control and read-only observer/statistics. No role/grant changes.",
+      "probeConnection": "Admin transport with postgres session/current identity throughout original fixture/public calls; administrator identity only while configuring/collecting session instrumentation outside target timing.",
+      "totalPrefixAndTargetWallMs": 100291.562786,
+      "observerExitCode": 0,
+      "targetPsqlStatementMs": 20021.963,
+      "rollbackAndIntegrityVerified": true,
+      "waitSampleCount": 100,
+      "waitSamplingAvailable": true,
+      "observer": "External 200ms samples; waitSamplingAvailable=false means sampling failed or no target samples were observed, never proof of no waits. Scheduling/startup can miss short waits. Observer overhead is not subtracted.",
+      "planCaptureExitCode": 0
+    },
+    "integrity": {
+      "roles": {
+        "count": 42,
+        "beforeSha256": "9cc067c4651ab9f8cc6746e1146cc33b4c88f00f4e36dd9ac571636ae16690c1",
+        "afterSha256": "9cc067c4651ab9f8cc6746e1146cc33b4c88f00f4e36dd9ac571636ae16690c1",
+        "equal": true
+      },
+      "memberships": {
+        "count": 44,
+        "beforeSha256": "01dcddbe1ebbe1ce437838ee26b49dd7f786e6a59fcbb8431b7aea4346b0058c",
+        "afterSha256": "01dcddbe1ebbe1ce437838ee26b49dd7f786e6a59fcbb8431b7aea4346b0058c",
+        "equal": true
+      },
+      "schemas": {
+        "count": 10,
+        "beforeSha256": "6ab487a39f1226c9e2e59a8b65b0fe20687fd62e943d8d2a47971852c9db9209",
+        "afterSha256": "6ab487a39f1226c9e2e59a8b65b0fe20687fd62e943d8d2a47971852c9db9209",
+        "equal": true
+      },
+      "functions": {
+        "count": 497,
+        "beforeSha256": "547612d85a4373689f8e65214488c1df4711c49a9efc5cf1e7151ad802bbda21",
+        "afterSha256": "547612d85a4373689f8e65214488c1df4711c49a9efc5cf1e7151ad802bbda21",
+        "equal": true
+      },
+      "rows": {
+        "count": 117,
+        "beforeSha256": "7747e37ea511f2af0ada9e6123899e63a37899ba8c3d8a964cafd73654594474",
+        "afterSha256": "7747e37ea511f2af0ada9e6123899e63a37899ba8c3d8a964cafd73654594474",
+        "equal": true
+      }
+    },
+    "historicalValidation": {
+      "calls": 265,
+      "totalExecMs": 6740.697521,
+      "completedPlans": 265,
+      "membershipCteRescansPerPlan": 250,
+      "averageRowsPerScan": {
+        "plans253": 126,
+        "plans12": 250
+      }
+    },
+    "retainedRelease": {
+      "calls": 253,
+      "totalExecMs": 7487.93297
+    },
+    "approvalConstraintFlushMs": 9071.158731,
+    "handoffSource": {
+      "completedCalls": 160,
+      "totalExecMs": 11.56332,
+      "keyShareQueries": [
+        {
+          "calls": 161,
+          "totalExecMs": 2.969128
+        },
+        {
+          "calls": 161,
+          "totalExecMs": 1.98964
+        }
+      ]
+    },
+    "limitations": [
+      "Nested inclusive costs overlap; never add them.",
+      "Canceled and inlined work can be absent from completed counters.",
+      "Profile prefix was already slower before instrumentation; runner variation and overhead are not isolated.",
+      "Fresh GitHub baseline does not reproduce the historical host timeout.",
+      "200ms samples can miss short waits."
+    ]
+  },
+  "optimization": {
+    "count": 1,
+    "function": "atlas_core.confirmed_need_historical_validation_complete(uuid,uuid)",
+    "change": "Replace repeated materialized contribution-total scans with an exact captured-revision lateral count(*)/sum aggregate using the existing index.",
+    "beforeWholeMigrationSha256": "f6d56125f8fed25746aac02e7be7ad943f53d0e06679b1c9f471d79f47808eff",
+    "afterWholeMigrationSha256": "7d5a0a96f141c23adad51781827051df04a1a545fc513617abf9eccd7f6302c3",
+    "allOtherMigrationBytesEqual": true,
+    "storedFunctionDifferences": [
+      {
+        "identity": "atlas_core.confirmed_need_historical_validation_complete(uuid,uuid)",
+        "beforeSourceMd5": "212dfee2a30985c1231cb45e08f08ca2",
+        "afterSourceMd5": "3792ec376eb66aae4546278343f67775"
+      }
+    ],
+    "all497FunctionMetadataEqual": true
+  },
+  "acceptance": {
+    "run": 38991440717,
+    "focused": "PENDING",
+    "operational": "PENDING",
+    "stress": "PENDING",
+    "fullIntegration": "SKIPPED",
+    "hostedHttpBrowser": "NOT_RUN",
+    "liveCompetingSessionWaits": "NOT_RERUN",
+    "combined392Integration": "NOT_RUN",
+    "firstCheckpoint": {
+      "run": 38991440717,
+      "summary": {
+        "mode": "certification",
+        "head": "4832535fc059e03c5250e49ec2715de2cffd7e49",
+        "accepted": false,
+        "outcome": "OPERATIONAL_ACCEPTANCE_FAIL",
+        "limits": "8s public / 20s Preparation / 1s entry / unchanged disclosed nested5s; one13-relation ANALYZE",
+        "limitations": "Bounded SQL-local synthetic acceptance only. Separate one-cycle operational and original eight-cycle stress oracles; neither proves hosted HTTP/browser, live competing-session waits, or combined UI integration.",
+        "controlConnection": "Built-in supabase_admin for owned database clone/control and read-only observer/statistics. No role/grant changes.",
+        "probeConnection": "postgres transport/session; original public calls authenticated.",
+        "fullIntegration": "SKIPPED: bounded SQL acceptance only; no HTTP/browser/full integration certification.",
+        "suites": [
+          {
+            "name": "confirmed_need_correction",
+            "sqlSha256": "3653718dff36a300e91ee228ea98c69d8a2b1a14faafafc39fe27c19c5d966ac",
+            "exitCode": 0,
+            "wallMs": 3292.849881999995,
+            "assertions": 103,
+            "completeSequentialTap": true,
+            "rollbackAndIntegrityVerified": true,
+            "pass": true
+          },
+          {
+            "name": "confirmed_need_correction_continuity",
+            "sqlSha256": "4c6e445109bace980513f24c50760e5d8b2ab062a8ab83eaaeb1cd8ac323bd3a",
+            "exitCode": 0,
+            "wallMs": 3120.002106999993,
+            "assertions": 137,
+            "completeSequentialTap": true,
+            "rollbackAndIntegrityVerified": true,
+            "pass": true
+          },
+          {
+            "name": "confirmed_need_correction_consumers",
+            "sqlSha256": "a72bb2c448fc6a93813b85f22ec1846a966e6f44b92eecf48e6b494d1b50a4d1",
+            "exitCode": 0,
+            "wallMs": 6205.357774000004,
+            "assertions": 58,
+            "completeSequentialTap": true,
+            "rollbackAndIntegrityVerified": true,
+            "pass": true
+          },
+          {
+            "name": "atlas_current_platform_security_catalog",
+            "sqlSha256": "497b3cb34713cb5e14620db2749595878fd7b1ad5531dbe18eb68c7a379937cd",
+            "exitCode": 0,
+            "wallMs": 435.0100000000093,
+            "assertions": 31,
+            "completeSequentialTap": true,
+            "rollbackAndIntegrityVerified": true,
+            "pass": true
+          },
+          {
+            "name": "school_catering_purchase_orders",
+            "sqlSha256": "af696641994157a11061ac5201652dab98a170fa7b6057560780af1b123db815",
+            "exitCode": 0,
+            "wallMs": 2981.4330199999968,
+            "assertions": 155,
+            "completeSequentialTap": true,
+            "rollbackAndIntegrityVerified": true,
+            "pass": true
+          },
+          {
+            "name": "rmvp_07_connected_confirmed_need_approval_release",
+            "sqlSha256": "02622ae1a8a8047a95f027b5bea93c0f6e4d47e744fdd79d5a8c21c96d959523",
+            "exitCode": 0,
+            "wallMs": 1160.0014599999995,
+            "assertions": 67,
+            "completeSequentialTap": true,
+            "rollbackAndIntegrityVerified": true,
+            "pass": true
+          },
+          {
+            "name": "d037_confirmed_need_save_release_boundary",
+            "sqlSha256": "ad0e4d498a7c8e9c1fa26efe61b6f260173fb40042ecc255a130222c2cdb0169",
+            "exitCode": 0,
+            "wallMs": 1053.1769059999788,
+            "assertions": 37,
+            "completeSequentialTap": true,
+            "rollbackAndIntegrityVerified": true,
+            "pass": true
+          },
+          {
+            "name": "operational",
+            "sqlSha256": "6f8ee2df01116cdeaf27dfce70d5acc0220df2e5b969af089e4e72e3fb436f37",
+            "exitCode": 3,
+            "wallMs": 104784.325525,
+            "assertions": 16,
+            "completeSequentialTap": false,
+            "rollbackAndIntegrityVerified": true,
+            "pass": false
+          }
+        ],
+        "focusedAssertions": 588,
+        "originalStressSqlSha256": "733d27ed53c30940a475371e9d45d2d8233581342c7519a486de079f5557d2c4",
+        "operationalRuns": 1,
+        "error": "operational failed or incomplete; no automatic retry."
+      },
+      "correctedPreparationFullResponseMs": 18147.626,
+      "allTenPublicStagesComplete": true,
+      "operationalVerdict": "INCOMPLETE:16/20 assertions before malformed School UUID parser error",
+      "stress": "NOT_STARTED",
+      "oracleBeforeParserFixSha256": "733d27ed53c30940a475371e9d45d2d8233581342c7519a486de079f5557d2c4"
+    },
+    "parserRepair": "One missing UUID group in the original School literal only; expected108/101 and all predicates/limits retained. Red/green UUID syntax regression. One acceptance retry; no repeated profile."
+  },
+  "localRunnerTests": 146
+}
