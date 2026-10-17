@@ -1,0 +1,288 @@
+{
+  "status": "INVESTIGATIONAL_DRAFT_ACCEPTANCE_FAILED_STOPPED",
+  "migration": "supabase/migrations/20261015065552_operator_confirmed_need_correction.sql",
+  "migration_LF_applied_sha256": "f6d56125f8fed25746aac02e7be7ad943f53d0e06679b1c9f471d79f47808eff",
+  "crlf_pairs": 0,
+  "reviewed_candidate_sha256": "dd3d320775996e0d3077b9e449abfda1979b3762fc97a07c02b5c59fde12c3d4",
+  "runtime_scope": "Only confirmed_need_historical_validation_complete(uuid,uuid) body differs from preserved3669;497 metadata/signature/default/owner/ACL entries unchanged. No demonstrated full-command performance gain.",
+  "focused": {
+    "total": 588,
+    "suites": [
+      {
+        "suite": "confirmed_need_correction.sql",
+        "exit_code": 0,
+        "plans": ["103"],
+        "ok": 103,
+        "sequential": true,
+        "failed": [],
+        "test_sha256": "02d497e43852e09cba903d078698df270ae0e071f9020f953125eb67c9efcb6a",
+        "log_sha256": "338838cc097cdfa2f050fc07624bb6b88444f8ecc35229b7a05afa25d93f5252"
+      },
+      {
+        "suite": "confirmed_need_correction_continuity.sql",
+        "exit_code": 0,
+        "plans": ["137"],
+        "ok": 137,
+        "sequential": true,
+        "failed": [],
+        "test_sha256": "bfe54183ab1d86f1ea480822b8668de17cc23ab7c27d8ba787e4e08b1866b4da",
+        "log_sha256": "aed7f526c509733a1f41ba4fd350cceca9321bf6f3b384ac88e6e3d295dd8140"
+      },
+      {
+        "suite": "confirmed_need_correction_consumers.sql",
+        "exit_code": 0,
+        "plans": ["58"],
+        "ok": 58,
+        "sequential": true,
+        "failed": [],
+        "test_sha256": "d40444e0a7b2eda896ea65c4342082a03c742c8624f8fbf1a8c6d8f61d8ce7b7",
+        "log_sha256": "006fd253605d521a55ee2db38d1c1a20add533fbd4088cbbbe3a8dd0e5d81dc5"
+      },
+      {
+        "suite": "atlas_current_platform_security_catalog.sql",
+        "exit_code": 0,
+        "plans": ["31"],
+        "ok": 31,
+        "sequential": true,
+        "failed": [],
+        "test_sha256": "497b3cb34713cb5e14620db2749595878fd7b1ad5531dbe18eb68c7a379937cd",
+        "log_sha256": "45d6307559c59489d72b79b08004de4063817636f38b3a153099f1d7d84e1ea3"
+      },
+      {
+        "suite": "school_catering_purchase_orders.sql",
+        "exit_code": 0,
+        "plans": ["155"],
+        "ok": 155,
+        "sequential": true,
+        "failed": [],
+        "test_sha256": "af696641994157a11061ac5201652dab98a170fa7b6057560780af1b123db815",
+        "log_sha256": "4ba72197ea1665ee199e23831893953b7d0c4db43beae428b77f0119c7c2a771"
+      },
+      {
+        "suite": "rmvp_07_connected_confirmed_need_approval_release.sql",
+        "exit_code": 0,
+        "plans": ["67"],
+        "ok": 67,
+        "sequential": true,
+        "failed": [],
+        "test_sha256": "9efcb33e48943a7c43b15b774eb71b5fe00bb95968cc73d28b57c3b3a281f0c9",
+        "log_sha256": "379245d6cfc1b3a31c0294e81eb3e07cdd90b714a37c7c5f86347bfafc72217c"
+      },
+      {
+        "suite": "d037_confirmed_need_save_release_boundary.sql",
+        "exit_code": 0,
+        "plans": ["37"],
+        "ok": 37,
+        "sequential": true,
+        "failed": [],
+        "test_sha256": "9de3402766d70b5fd2cbd4e7efde80995917293b7a6c38c3d24121b3d44fe4c9",
+        "log_sha256": "0c2c43afa2cb63c3000aaa9e913f3921ede03ee542e0f6c41f598523792d4562"
+      }
+    ]
+  },
+  "properties": {
+    "old_runtime_sha256": "3669f2740ed4cf9cf273d13cd2c282f33435d03e1da87bb95af3756420340e76",
+    "old_continuity_pass": 137,
+    "new_continuity_pass": 137,
+    "added_property_cases": 29,
+    "same_expected_outcomes_old_new": true,
+    "old_log_sha256": "57fde96aa0ee40dec3b4ec9b4c5ed87908d316098ab05ed5b32d9eea8bae47da",
+    "method": "Stored predicate mechanically redirected to disposable rowsets; no copied production algorithm or canonical immutable-row tampering."
+  },
+  "fresh_baseline": {
+    "database": "atlas_c_correction_forward_16",
+    "source_ref": "d102b2f1b083005d6553867fa5ccdf8c988a0316",
+    "current_main": "3667966a3f6703a6585f07ba619969ec851ca7b8",
+    "exact109_gitblob_manifests_identical": true,
+    "baseline_catalog_pass": 30,
+    "whole_C_atomic_once": true,
+    "global_roles_schema_acl_before_after_equal": true,
+    "all497_metadata_exact": true,
+    "exact_one_body_delta": [
+      "atlas_core.confirmed_need_historical_validation_complete(p_batch uuid, p_attempt uuid)"
+    ],
+    "pre_focused_scale_clone": "atlas_c_correction_scale_18",
+    "business_residue": 0,
+    "physical_state": "Pre-business-suite clone; relation-level live/dead/size snapshot retained locally, not a claim of global physical purity."
+  },
+  "strict_scale31": {
+    "accepted": false,
+    "workload": "50 Schools with distinct locations x5 Ingredients=250 whole families;8 required cycles;20 final assertions",
+    "completed_cycles": 0,
+    "final_assertions_completed": 0,
+    "planned_assertions": 20,
+    "exit_code": 3,
+    "failure": "First history-1 Preparation exceeded20s",
+    "interruption_frame": "school_catering_lock_handoff_source from createDrafts line129; not cost attribution",
+    "bottleneck_isolated": false,
+    "expanded_SQL_identical_to_preserved29": true,
+    "expanded_SQL_sha256": "733d27ed53c30940a475371e9d45d2d8233581342c7519a486de079f5557d2c4",
+    "raw_log_sha256": "13f560623d87f88a4d41e8355909f65035714148be83e8ee3e48ebe1c32dfbf4",
+    "baseline_full_read_ms": {
+      "PO": 1787.144,
+      "PXK_50_Schools": 3800.201
+    },
+    "first_history_ms": {
+      "preview": 250.6,
+      "correction": 1722.067,
+      "allocation_read": 2993.906,
+      "allocation_save": 242.79
+    },
+    "rollback_postflight": {
+      "po": 0,
+      "pxk": 0,
+      "runs": 0,
+      "actors": 0,
+      "batches": 0,
+      "receipts": 0,
+      "authenticated_extensions_usage": false
+    },
+    "limits": "Unchanged8s public/20s Preparation/1s entry lock; existing nested5s disclosed; own guard flush included; one fixed13-relation ANALYZE; no catch/extra refresh/warmup discard/retry/profile."
+  },
+  "evidence_artifact_sha256": {
+    "atlas-c-forward16-main109-initialize.json": "ed7c1c9a3434c912f2ee789a14698818aba501a683ecde493057162cf9d8379d",
+    "atlas-c-forward16-full-migration-proof.json": "0f8df884348556663f229fdaa611687cf397ca764f3fa222c516830f8d53c2d5",
+    "atlas-c-forward16-historical-parity.json": "d9be6fde5245be2a2de98b5320ea6ecd0cbe2271ab606aac0b94af112126f453",
+    "atlas-c-forward16-original-current-main109-parity.json": "066cf0e1043ca85e176fb7dabc9a13fa4a275e8d0f73d669e152a0a25f2d377f",
+    "atlas-c-task7-scale18-clone-proof.json": "a9824e181c67c72f61f756c62854424090fe43fcbde443def8cf4a79f91482c8",
+    "atlas-c-task7-bounded31-preflight.json": "b8d1ecb800fb31cb00aa7886590b8ac2afae6e0b73b333229faecf905cd71e86",
+    "atlas-c-task7-scale-bounded-acceptance31.json": "a6ff51aebefadb5d8ca33e4820321f774bda5d6deb603f0d521d6e60f1c8f814",
+    "atlas-c-task7-scale-bounded-acceptance31-postflight.json": "0fa06de3b8a0edc7da5d79d14ab2cb8800a330b096fef163b698bd5b16d26919"
+  },
+  "stop_and_next_scope": {
+    "execution_stopped": true,
+    "next_scope_not_authorized_for_autoexecution": "Bounded transaction-wide Preparation repeated-call/lock-path diagnosis; insufficient isolation to select another optimization.",
+    "combined_integration_performed": false,
+    "UI392_head": "34c85ea87a61fdcfedf33d08e38a4715e9eaeea5",
+    "production_overlap": [
+      "src/vnext/atlas/planning-confirmed/ConfirmedNeedWorkbench.tsx",
+      "src/vnext/atlas/procurement/ProcurementOrdersStage.tsx"
+    ],
+    "integration_constraints": "Preserve392 compact controls/PO rail/export/selection/Close and Pantryv4 marker; add C correction/pending guards semantically only after approved integration scope. PR388 stays Draft/main; no migration reorder/merge/deploy/hosted writes."
+  },
+  "historical_49375_checkpoint": {
+    "status": "IMPLEMENTED_DRAFT_ACCEPTANCE_INCOMPLETE",
+    "base_main": "d102b2f1b083005d6553867fa5ccdf8c988a0316",
+    "migration": "supabase/migrations/20261015065552_operator_confirmed_need_correction.sql",
+    "migration_LF_applied_sha256": "3669f2740ed4cf9cf273d13cd2c282f33435d03e1da87bb95af3756420340e76",
+    "crlf_pairs": 0,
+    "focused": {
+      "total": 455,
+      "suites": [
+        {
+          "suite": "confirmed_need_correction_consumers.sql",
+          "plan": 58,
+          "pass": 58,
+          "raw_log_sha256": "53f3ab360db2d5b74f4282a35a8aa78d93dedb1ecc5993f9bf44b352ce7dc685",
+          "source_sha256": "d40444e0a7b2eda896ea65c4342082a03c742c8624f8fbf1a8c6d8f61d8ce7b7"
+        },
+        {
+          "suite": "confirmed_need_correction_continuity.sql",
+          "plan": 108,
+          "pass": 108,
+          "raw_log_sha256": "caf39d195d337b4aea4b27a24e2a249a81a92cd28b6a38931253bad709337d71",
+          "source_sha256": "f20b93f75b6ff2eb6abf58107b7c07314a58840dc46e11c0d13b7b315757a567"
+        },
+        {
+          "suite": "confirmed_need_correction.sql",
+          "plan": 103,
+          "pass": 103,
+          "raw_log_sha256": "bea4209a7312c7c7a924d25569c1f8acc0e957a4d3ef829244208d7e068f4cb7",
+          "source_sha256": "02d497e43852e09cba903d078698df270ae0e071f9020f953125eb67c9efcb6a"
+        },
+        {
+          "suite": "atlas_current_platform_security_catalog.sql",
+          "plan": 31,
+          "pass": 31,
+          "raw_log_sha256": "244052ed598aadfc1b5048af52291f3ae8f53eced63a538abadf38d9a22abc9e",
+          "source_sha256": "497b3cb34713cb5e14620db2749595878fd7b1ad5531dbe18eb68c7a379937cd"
+        },
+        {
+          "suite": "school_catering_purchase_orders.sql",
+          "plan": 155,
+          "pass": 155,
+          "raw_log_sha256": "4feaed505c240178d53f45abaa54286a6193f970d07a5e597d4d55cec30f1746",
+          "source_sha256": "af696641994157a11061ac5201652dab98a170fa7b6057560780af1b123db815"
+        }
+      ]
+    },
+    "fresh_baseline": {
+      "git_blob_migrations": 109,
+      "tip": "20261014120320_atlas_pxk_exact_school_scope.sql",
+      "schema_applied_not_fabricated_cli_ledger": true,
+      "baseline_catalog_assertions": 30,
+      "whole_C_atomic_application_exit": 0,
+      "all497_function_metadata_unchanged_from_previous_checkpoint": true,
+      "exact_two_stored_body_delta": [
+        "purchase_review_continuity_context(uuid)",
+        "purchase_review_family_continuity(uuid,text,jsonb)"
+      ],
+      "global_roles_and_schema_acl_before_after_equal": true,
+      "postflight_business_residue": 0,
+      "proof_artifact_sha256": {
+        "atlas-c-forward15-main109-initialize.json": "d87aa78d4c48350a86f15ba9cd70198161f1ab5b37f366985b3808eefebc22f8",
+        "atlas-c-forward15-full-migration-proof.json": "acd5b659bc27af7b47def15a40fdda341df8683696ed3a14e747e0eafaa1b515",
+        "atlas-c-forward15-grouped-context-parity.json": "0303b89c64887afa9e4c57eb32bb45b2f61222ee43168bc48ce3eef40682565d",
+        "atlas-c-task7-scale16-clone-proof.json": "58415741e0eab78cc9facf9db9b8037c06a8e94d93b408d14dbf9352e818917a"
+      }
+    },
+    "strict_scale29": {
+      "accepted": false,
+      "workload": "50 Schools / distinct locations x5 Ingredients =250 whole families;8 required cycles",
+      "observed_completed_cycles_before_rollback": 1,
+      "final_assertions_completed": 0,
+      "planned_assertions": 20,
+      "failure": "second Preparation exceeded20s",
+      "exit_code": 3,
+      "expanded_fixture_sha256": "733d27ed53c30940a475371e9d45d2d8233581342c7519a486de079f5557d2c4",
+      "raw_log_sha256": "6f7274030274321d0b8d0a26ecbe0489f8b103be3f60d2e9cabde435b1c6928e",
+      "first_cycle_ms": {
+        "preparation": 17607.927,
+        "full_PO_read": 3251.795,
+        "full_50_School_PXK_read": 5488.783,
+        "explicit_PXK_successor": 1040.547
+      },
+      "rollback_postflight": {
+        "po": 0,
+        "pxk": 0,
+        "runs": 0,
+        "actors": 0,
+        "batches": 0,
+        "receipts": 0,
+        "authenticated_extensions_usage": false
+      },
+      "limits": "8s public calls;20s Preparation;1s entry lock;incumbent nested materializer5s disclosed;own guard flush included;one13-relation ANALYZE prerequisite;no per-edge statistics refresh/warmup discard"
+    },
+    "diagnostic30": {
+      "acceptance": false,
+      "valid_target_cost_diagnostic": true,
+      "target": "history-2-preparation",
+      "canceled20s": true,
+      "all24_pre_post_business_images_equal": true,
+      "source_LF_sha256": "232f116fdefd217545512b53a0a2a8e501e5aa5549ab2c1a712966ea7a89e97e",
+      "raw_log_sha256": "e7991d7181ad077ddbdc3e6d74d9199a78f224cabb7359fdb5a269128ca53b32",
+      "timing_limit": "completed counters overlap; interrupted calls omitted; not additive"
+    },
+    "not_completed_on_final_runtime": [
+      "eight-cycle performance acceptance",
+      "final six two-session lock-wait reruns",
+      "final official historical producer/export rerun",
+      "broader incumbent regression rerun",
+      "exact-head remote Full Integration"
+    ],
+    "historical_evidence": {
+      "UI": "Task6 source5586b01:10 unique functional checks;targeted pending-date61214daa;5 runtime detector targets exit0/no findings",
+      "waits": "Task4 six actual waits on b4df source only",
+      "exports": "initial678 source actual4oldPO+3oldPXK parser/XLSX/PDF proof only"
+    },
+    "unapplied_candidate": "dd3d3207 historical-complete setwise proposal remains TEMP only;excluded from runtime",
+    "publication_boundary": "Draft only;no merge/manual deployment/hosted DB write;Staging remains accepted109;automatic Pages previews separate",
+    "raw_evidence": "full raw local logs preserved;this portable manifest contains sanitized summaries/hashes only",
+    "wrap_checks": {
+      "runner_contract_tests": 139,
+      "passed": true,
+      "raw_log_sha256": "4681b96ec75d2d76d49cb82f2668e82a7ab0ce544f139190828402a61aba24aa",
+      "formatting_and_whitespace": true
+    }
+  }
+}

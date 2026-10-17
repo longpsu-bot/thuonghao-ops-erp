@@ -68,8 +68,8 @@ function edgeClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 118-function browser registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(118);
+  it("contains exactly the reviewed 120-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(120);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.get_confirmed_need_shopping_list_export",
       "atlas_api.record_wholesale_source",
@@ -160,6 +160,8 @@ describe("Atlas RPC transport", () => {
       "atlas_api.prepare_planning_source_correction",
       "atlas_api.create_confirmed_needs_from_generation",
       "atlas_api.get_confirmed_need_review",
+      "atlas_api.get_confirmed_need_correction_preview",
+      "atlas_api.correct_confirmed_need",
       "atlas_api.preview_confirmed_need_confirmation",
       "atlas_api.confirm_need_quantities",
       "atlas_api.validate_confirmed_needs",
@@ -290,6 +292,43 @@ describe("Atlas RPC transport", () => {
     }
   });
 
+  it("retains only string failed-receipt evidence without interpreting generic errors", async () => {
+    for (const typed of [true, false]) {
+      const fake = rpcClient({
+        data: {
+          success: false,
+          error_code: "UNIT_INACTIVE",
+          safe_message: "Rejected",
+          receipt_id: typed ? "11111111-1111-4111-8111-111111111111" : 12,
+          idempotency_status: typed
+            ? "FAILED_NON_RETRYABLE"
+            : { status: "FAILED_NON_RETRYABLE" },
+          private_internal: "hidden",
+        },
+        error: null,
+      });
+      const result = await createAtlasRpcTransport(fake.client).invoke(
+        "atlas_api.correct_confirmed_need",
+        {},
+      );
+      expect(result.kind).toBe("backend_error");
+      if (result.kind === "backend_error") {
+        expect(result.error).toMatchObject(
+          typed
+            ? {
+                receipt_id: "11111111-1111-4111-8111-111111111111",
+                idempotency_status: "FAILED_NON_RETRYABLE",
+              }
+            : {},
+        );
+        if (!typed) {
+          expect(result.error).not.toHaveProperty("receipt_id");
+          expect(result.error).not.toHaveProperty("idempotency_status");
+        }
+        expect(result.error).not.toHaveProperty("private_internal");
+      }
+    }
+  });
   it("preserves authoritative backend write certainty", async () => {
     const fake = rpcClient({
       data: {

@@ -1,3 +1,7 @@
+import type {
+  ConfirmedNeedCorrectionPayload,
+  ConfirmedNeedCorrectionCommandRequest,
+} from "./confirmedNeedApi";
 import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
 
 export type ConfirmedNeedIssue = {
@@ -526,4 +530,264 @@ export function confirmedNeedConfirmationStateLabel(
 
 export function jsonRecord(value: JsonValue | undefined) {
   return record(value);
+}
+
+export type ConfirmedNeedCorrectionPreview = {
+  proposal_fingerprint: string;
+  target: ConfirmedNeedCorrectionPayload;
+  quantity: { before: string; after: string; delta: string };
+  family: {
+    service_date: string;
+    delivery_location_id: string;
+    ingredient_id: string;
+    unit_id: string;
+    quantity_before: string;
+    quantity_after: string;
+    contributions: {
+      confirmed_need_batch_id: string;
+      confirmed_need_line_id: string;
+      revision_id: string;
+      decision_id: string;
+      school_id: string;
+      customer_id: string;
+      delivery_location_id: string;
+      quantity: string;
+      source_membership: JsonValue[];
+    }[];
+  };
+  display: {
+    ingredient_name: string;
+    delivery_location_name: string;
+    unit_name: string | null;
+    schools: {
+      confirmed_need_line_id: string;
+      school_id: string;
+      school_name: string;
+      customer_id: string;
+      customer_name: string;
+      delivery_location_id: string;
+    }[];
+  };
+  allowed_actions: { correct: boolean };
+  disabled_reasons: { correct: string | null };
+  procurement_details_coverage: "AUTHORIZED_DETAILS_ONLY";
+  procurement_details: JsonValue[];
+  purchase_order_coverage: "AUTHORIZED_DOCUMENTS_ONLY";
+  purchase_orders: JsonValue[];
+};
+export function confirmedNeedCorrectionPreviewFromResult(
+  result: AtlasRpcResult,
+  expected: ConfirmedNeedCorrectionPayload,
+): ConfirmedNeedCorrectionPreview | null {
+  if (result.kind !== "success") return null;
+  const value = result.response,
+    target = record(value.target),
+    quantity = record(value.quantity),
+    family = record(value.family),
+    display = record(value.display),
+    actions = record(value.allowed_actions),
+    disabled = record(value.disabled_reasons);
+  const text = (v: unknown): v is string =>
+    typeof v === "string" && v.trim().length > 0;
+  const decimal = (v: unknown) =>
+    typeof v === "string" && /^(0|[1-9][0-9]{0,13})\.[0-9]{6}$/.test(v);
+  if (
+    value.contract_version !== "CONFIRMED-NEED-CORRECTION.v1" ||
+    value.read_name !== "get_confirmed_need_correction_preview" ||
+    value.write_certainty !== "NO_WRITE" ||
+    typeof value.proposal_fingerprint !== "string" ||
+    !/^[0-9a-f]{64}$/.test(value.proposal_fingerprint) ||
+    !target ||
+    !Object.entries(expected).every(([key, v]) => target[key] === v) ||
+    !quantity ||
+    !decimal(quantity.before) ||
+    !decimal(quantity.after) ||
+    quantity.after !== expected.proposed_confirmed_quantity ||
+    typeof quantity.delta !== "string" ||
+    !/^-?(0|[1-9][0-9]{0,13})\.[0-9]{6}$/.test(quantity.delta) ||
+    !family ||
+    ![
+      family.service_date,
+      family.delivery_location_id,
+      family.ingredient_id,
+      family.unit_id,
+    ].every(text) ||
+    !decimal(family.quantity_before) ||
+    !decimal(family.quantity_after) ||
+    !Array.isArray(family.contributions) ||
+    !family.contributions.length ||
+    !display ||
+    !text(display.ingredient_name) ||
+    !text(display.delivery_location_name) ||
+    !(display.unit_name === null || text(display.unit_name)) ||
+    !Array.isArray(display.schools) ||
+    !actions ||
+    typeof actions.correct !== "boolean" ||
+    !disabled ||
+    !(disabled.correct === null || text(disabled.correct)) ||
+    value.procurement_details_coverage !== "AUTHORIZED_DETAILS_ONLY" ||
+    !Array.isArray(value.procurement_details) ||
+    value.purchase_order_coverage !== "AUTHORIZED_DOCUMENTS_ONLY" ||
+    !Array.isArray(value.purchase_orders)
+  )
+    return null;
+  const ids = new Set<string>();
+  for (const raw of family.contributions) {
+    const row = record(raw);
+    if (
+      !row ||
+      ![
+        row.confirmed_need_batch_id,
+        row.confirmed_need_line_id,
+        row.revision_id,
+        row.decision_id,
+        row.school_id,
+        row.customer_id,
+        row.delivery_location_id,
+      ].every(text) ||
+      !decimal(row.quantity) ||
+      !Array.isArray(row.source_membership) ||
+      ids.has(String(row.confirmed_need_line_id)) ||
+      row.delivery_location_id !== family.delivery_location_id
+    )
+      return null;
+    if (
+      row.confirmed_need_line_id === expected.confirmed_need_line_id &&
+      (row.confirmed_need_batch_id !== expected.confirmed_need_batch_id ||
+        row.revision_id !== expected.expected_current_revision_id ||
+        row.decision_id !== expected.expected_current_decision_id ||
+        row.quantity !== quantity.before)
+    )
+      return null;
+    ids.add(String(row.confirmed_need_line_id));
+    if (
+      !display.schools.some((raw) => {
+        const school = record(raw);
+        return (
+          school &&
+          school.confirmed_need_line_id === row.confirmed_need_line_id &&
+          school.school_id === row.school_id &&
+          school.customer_id === row.customer_id &&
+          school.delivery_location_id === row.delivery_location_id &&
+          text(school.school_name) &&
+          text(school.customer_name)
+        );
+      })
+    )
+      return null;
+  }
+  if (
+    display.schools.length !== ids.size ||
+    !ids.has(expected.confirmed_need_line_id)
+  )
+    return null;
+  return value as unknown as ConfirmedNeedCorrectionPreview;
+}
+export function confirmedNeedCorrectionMessage(
+  result: AtlasRpcResult | string,
+) {
+  const code =
+    typeof result === "string"
+      ? result
+      : result.kind === "backend_error"
+        ? result.error.error_code
+        : result.kind === "auth_error"
+          ? "SESSION_REQUIRED"
+          : "UNAVAILABLE";
+  if (code.startsWith("STALE_"))
+    return "Nhu cầu hoặc dữ liệu nguồn đã thay đổi. Tải lại rồi xem ảnh hưởng trước khi lưu.";
+  const messages: Record<string, string> = {
+    CAPABILITY_DENIED:
+      "Không có quyền thực hiện điều chỉnh này. Kiểm tra quyền theo nhiệm vụ trước khi tiếp tục.",
+    SCOPE_DENIED: "Nhu cầu này nằm ngoài phạm vi được phép điều chỉnh.",
+    CORRECTION_AUTHORITY_REQUIRED:
+      "Không có quyền lưu điều chỉnh. Cần đủ quyền theo nhiệm vụ và phạm vi được giao.",
+    SESSION_REQUIRED:
+      "Phiên làm việc đã hết. Đăng nhập lại để xác nhận đúng yêu cầu đã gửi.",
+    NO_APPLICABLE_CORRECTION:
+      "Số lượng không thay đổi. Nhập số lượng khác trước khi xem ảnh hưởng.",
+    QUANTITY_NOT_REPRESENTABLE:
+      "Số lượng chưa đúng độ chính xác cho phép. Kiểm tra lại giá trị đã nhập.",
+    VALIDATION_FAILED:
+      "Chưa đủ dữ liệu điều chỉnh hợp lệ. Kiểm tra số lượng, lý do và ghi chú.",
+    UNIT_INACTIVE:
+      "Đơn vị tính không còn hoạt động. Tải lại và kiểm tra dữ liệu trước khi tiếp tục.",
+    CONFIRMED_SOURCE_INCOMPLETE:
+      "Chưa đủ dữ liệu nhu cầu nguồn. Tải lại và kiểm tra các trường trong nhóm.",
+    CONFIRMED_SOURCE_AMBIGUOUS_OR_MISSING:
+      "Chưa xác định được nguồn nhu cầu đầy đủ. Tải lại và kiểm tra trước khi điều chỉnh.",
+    CORRECTION_NOT_APPLICABLE:
+      "Nhu cầu hiện không còn ở bước cho phép điều chỉnh này. Tải lại dữ liệu.",
+    RETRYABLE_CONCURRENCY_FAILURE:
+      "Dữ liệu đang được xử lý. Thử lại đúng yêu cầu đã gửi để xác nhận kết quả.",
+  };
+  return (
+    messages[code] ??
+    "Chưa thể xác nhận điều chỉnh. Giữ nguyên nội dung và tải lại để kiểm tra trước khi tiếp tục."
+  );
+}
+export type ConfirmedNeedCorrectionOutcome =
+  | { kind: "committed"; version: number }
+  | { kind: "unknown" }
+  | {
+      kind: "retryable" | "stale" | "rejected";
+      message: string;
+      originalResolved?: true;
+    };
+export function confirmedNeedCorrectionOutcome(
+  result: AtlasRpcResult,
+  request: ConfirmedNeedCorrectionCommandRequest,
+): ConfirmedNeedCorrectionOutcome {
+  if (result.kind === "success") {
+    const r = result.response;
+    if (
+      r.contract_version === "CONFIRMED-NEED-CORRECTION.v1" &&
+      r.command_name === "correct_confirmed_need" &&
+      r.command_id === request.command_id &&
+      r.confirmed_need_batch_id === request.payload.confirmed_need_batch_id &&
+      typeof r.receipt_id === "string" &&
+      r.receipt_id &&
+      r.idempotency_status === "COMPLETED" &&
+      typeof r.resulting_batch_version === "number" &&
+      Number.isSafeInteger(r.resulting_batch_version) &&
+      r.resulting_batch_version > request.expected_version &&
+      Array.isArray(r.child_command_ids) &&
+      r.child_command_ids.length === 2 &&
+      r.child_command_ids.every((v) => typeof v === "string" && v)
+    )
+      return { kind: "committed", version: r.resulting_batch_version };
+    return { kind: "unknown" };
+  }
+  if (result.kind === "transport_error") return { kind: "unknown" };
+  if (result.kind !== "backend_error")
+    return {
+      kind: "rejected",
+      message: confirmedNeedCorrectionMessage(result),
+    };
+  if (
+    !["NO_COMMITTED_CHANGE", "NO_BUSINESS_WRITE", "NO_WRITE"].includes(
+      result.error.write_certainty ?? "",
+    )
+  )
+    return { kind: "unknown" };
+  return {
+    kind: result.error.error_code.startsWith("STALE_")
+      ? "stale"
+      : result.error.retryable
+        ? "retryable"
+        : "rejected",
+    message: confirmedNeedCorrectionMessage(result),
+    ...(result.error.contract_version === "CONFIRMED-NEED-CORRECTION.v1" &&
+    result.error.command_name === "correct_confirmed_need" &&
+    result.error.command_id === request.command_id &&
+    typeof result.error.receipt_id === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      result.error.receipt_id,
+    ) &&
+    result.error.idempotency_status === "FAILED_NON_RETRYABLE" &&
+    result.error.write_certainty === "NO_COMMITTED_CHANGE" &&
+    result.error.retryable === false
+      ? { originalResolved: true as const }
+      : {}),
+  };
 }

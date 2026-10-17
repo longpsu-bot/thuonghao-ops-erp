@@ -253,6 +253,11 @@ describe("School PXK operator table and attached detail", () => {
         await userEvent.click(cancel);
       }
       await waitFor(() =>
+        expect(dialog).toHaveAttribute("data-state", "closed"),
+      );
+      fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
+      await waitFor(() => expect(dialog).not.toBeInTheDocument());
+      await waitFor(() =>
         expect(
           screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
         ).toHaveTextContent("24/09/2026 — 24/09/2026"),

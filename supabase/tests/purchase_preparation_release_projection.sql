@@ -39,8 +39,8 @@ declare definition text; body text; prior_sources jsonb; current_sources jsonb;
 begin
   definition:=pg_get_functiondef('atlas_core.purchase_review_confirmed_sources(date,date)'::regprocedure);
   definition:=replace(definition,
-    'atlas_core.rmvp_06_canonical_evaluation(b.confirmed_need_batch_id)->>''outcome'' outcome',
-    'atlas_core.rmvp_06_canonical_evaluation(b.confirmed_need_batch_id) evaluation');
+    'b.evaluation->>''outcome'' outcome',
+    'b.evaluation evaluation');
   definition:=replace(definition,'b.outcome','b.evaluation');
   definition:=replace(definition,'outcome=''VALIDATED''','evaluation->>''outcome''=''VALIDATED''');
   definition:=replace(definition,'unit_id,outcome','unit_id,evaluation->>''outcome''');
@@ -72,6 +72,19 @@ select is((select response->>'success' from projection_results where name='prepa
 select is((select calls from pg_stat_xact_user_functions
   where funcid='atlas_core.purchase_review_confirmed_sources(date,date)'::regprocedure),
   7::bigint,'preparation reconstructs current sources seven times instead of eleven');
+do $single_evaluation$
+declare before_calls bigint;after_calls bigint;
+begin
+ select coalesce(calls,0)into before_calls from pg_stat_xact_user_functions
+ where funcid='atlas_core.rmvp_06_canonical_evaluation(uuid,text)'::regprocedure;
+ perform value from atlas_core.purchase_review_confirmed_sources(date '2026-11-02',date '2026-11-02')source(value);
+ select coalesce(calls,0)into after_calls from pg_stat_xact_user_functions
+ where funcid='atlas_core.rmvp_06_canonical_evaluation(uuid,text)'::regprocedure;
+ perform set_config('atlas.test_direct_source_canonical_calls',(coalesce(after_calls,0)-coalesce(before_calls,0))::text,true);
+end;$single_evaluation$;
+select is(current_setting('atlas.test_direct_source_canonical_calls'),'1',
+ 'one known-batch source projection evaluates canonical authority exactly once');
+
 select diag((select jsonb_agg(jsonb_build_object('function',funcname,'calls',calls)
   order by funcname)::text from pg_stat_xact_user_functions where calls>0
   and funcname in ('purchase_review_confirmed_sources','rmvp_06_canonical_evaluation',

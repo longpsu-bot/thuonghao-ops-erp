@@ -3,7 +3,10 @@ import type {
   PurchaseOrdersData,
   SchoolCateringPurchaseOrder,
 } from "./schoolCateringProcurementModel";
-import { procurementOperatorMessages } from "./procurementOperatorCopy";
+import {
+  procurementOperatorMessages,
+  purchaseOrderSourcePending,
+} from "./procurementOperatorCopy";
 
 const purchaseOrderFallback =
   "Đơn mua chưa thể tiếp tục; hãy tải lại và kiểm tra thông tin hiện tại.";
@@ -25,16 +28,18 @@ function locationNames(order: SchoolCateringPurchaseOrder) {
 }
 
 function orderWarning(order: SchoolCateringPurchaseOrder) {
-  return order.commitment_state === "CANCELLATION_REQUIRED"
-    ? "Cần xử lý hủy"
-    : order.commitment_state === "REPLACEMENT_REQUIRED"
-      ? "Cần thay thế"
-      : order.stale
-        ? "Cần cập nhật"
-        : procurementOperatorMessages(
-            order.warnings,
-            "Có cảnh báo cần kiểm tra.",
-          ).join(", ");
+  return purchaseOrderSourcePending(order)
+    ? "Chờ dữ liệu nguồn"
+    : order.commitment_state === "CANCELLATION_REQUIRED"
+      ? "Cần xử lý hủy"
+      : order.commitment_state === "REPLACEMENT_REQUIRED"
+        ? "Cần thay thế"
+        : order.stale
+          ? "Cần cập nhật"
+          : procurementOperatorMessages(
+              order.warnings,
+              "Có cảnh báo cần kiểm tra.",
+            ).join(", ");
 }
 
 function statusLabel(order: SchoolCateringPurchaseOrder) {
@@ -245,12 +250,13 @@ export function PurchaseOrderStage({
                   trước khi phát hành.
                 </p>
               )}
-              {selected.commitment_state === "REPLACEMENT_REQUIRED" && (
-                <p className="procurement-inline-danger">
-                  Đơn đã phát hành không còn khớp phân bổ hiện tại. Hãy tạo và
-                  kiểm tra một đơn thay thế đầy đủ.
-                </p>
-              )}
+              {selected.commitment_state === "REPLACEMENT_REQUIRED" &&
+                !purchaseOrderSourcePending(selected) && (
+                  <p className="procurement-inline-danger">
+                    Đơn đã phát hành không còn khớp phân bổ hiện tại. Hãy tạo và
+                    kiểm tra một đơn thay thế đầy đủ.
+                  </p>
+                )}
               {selectedMessages.map((message) => (
                 <p className="procurement-inline-danger" key={message}>
                   {message}
