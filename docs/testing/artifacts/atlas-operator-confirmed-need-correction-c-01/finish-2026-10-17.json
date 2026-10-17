@@ -1,6 +1,6 @@
 {
   "date": "2026-10-17",
-  "status": "PENDING_SQL_ACCEPTANCE",
+  "status": "BLOCKED_RELEASE_HISTORICAL_STRESS_FAIL_STOPPED",
   "runtimeHead": "4832535fc059e03c5250e49ec2715de2cffd7e49",
   "governance": {
     "verdict": "PASS",
@@ -168,10 +168,10 @@
     "all497FunctionMetadataEqual": true
   },
   "acceptance": {
-    "run": 38991440717,
-    "focused": "PENDING",
-    "operational": "PENDING",
-    "stress": "PENDING",
+    "run": 38991932365,
+    "focused": "PASS588/588",
+    "operational": "PASS20/20",
+    "stress": "FAIL1/8cycles0/20assertions; second Preparation20s timeout",
     "fullIntegration": "SKIPPED",
     "hostedHttpBrowser": "NOT_RUN",
     "liveCompetingSessionWaits": "NOT_RERUN",
@@ -281,7 +281,277 @@
       "stress": "NOT_STARTED",
       "oracleBeforeParserFixSha256": "733d27ed53c30940a475371e9d45d2d8233581342c7519a486de079f5557d2c4"
     },
-    "parserRepair": "One missing UUID group in the original School literal only; expected108/101 and all predicates/limits retained. Red/green UUID syntax regression. One acceptance retry; no repeated profile."
+    "parserRepair": "One missing UUID group in the original School literal only; expected108/101 and all predicates/limits retained. Red/green UUID syntax regression. One acceptance retry; no repeated profile.",
+    "finalSummary": {
+      "mode": "certification",
+      "head": "eeada6609e3048fb906879d844aea60a1eacd459",
+      "accepted": false,
+      "outcome": "HISTORICAL_STRESS_FAIL",
+      "limits": "8s public / 20s Preparation / 1s entry / unchanged disclosed nested5s; one13-relation ANALYZE",
+      "limitations": "Bounded SQL-local synthetic acceptance only. Separate one-cycle operational and original eight-cycle stress oracles; neither proves hosted HTTP/browser, live competing-session waits, or combined UI integration.",
+      "controlConnection": "Built-in supabase_admin for owned database clone/control and read-only observer/statistics. No role/grant changes.",
+      "probeConnection": "postgres transport/session; original public calls authenticated.",
+      "fullIntegration": "SKIPPED: bounded SQL acceptance only; no HTTP/browser/full integration certification.",
+      "suites": [
+        {
+          "name": "confirmed_need_correction",
+          "sqlSha256": "3653718dff36a300e91ee228ea98c69d8a2b1a14faafafc39fe27c19c5d966ac",
+          "exitCode": 0,
+          "wallMs": 3002.068040000013,
+          "assertions": 103,
+          "completeSequentialTap": true,
+          "rollbackAndIntegrityVerified": true,
+          "pass": true
+        },
+        {
+          "name": "confirmed_need_correction_continuity",
+          "sqlSha256": "4c6e445109bace980513f24c50760e5d8b2ab062a8ab83eaaeb1cd8ac323bd3a",
+          "exitCode": 0,
+          "wallMs": 2855.6717089999875,
+          "assertions": 137,
+          "completeSequentialTap": true,
+          "rollbackAndIntegrityVerified": true,
+          "pass": true
+        },
+        {
+          "name": "confirmed_need_correction_consumers",
+          "sqlSha256": "a72bb2c448fc6a93813b85f22ec1846a966e6f44b92eecf48e6b494d1b50a4d1",
+          "exitCode": 0,
+          "wallMs": 5751.234734000012,
+          "assertions": 58,
+          "completeSequentialTap": true,
+          "rollbackAndIntegrityVerified": true,
+          "pass": true
+        },
+        {
+          "name": "atlas_current_platform_security_catalog",
+          "sqlSha256": "497b3cb34713cb5e14620db2749595878fd7b1ad5531dbe18eb68c7a379937cd",
+          "exitCode": 0,
+          "wallMs": 380.8336469999922,
+          "assertions": 31,
+          "completeSequentialTap": true,
+          "rollbackAndIntegrityVerified": true,
+          "pass": true
+        },
+        {
+          "name": "school_catering_purchase_orders",
+          "sqlSha256": "af696641994157a11061ac5201652dab98a170fa7b6057560780af1b123db815",
+          "exitCode": 0,
+          "wallMs": 2760.9877819999965,
+          "assertions": 155,
+          "completeSequentialTap": true,
+          "rollbackAndIntegrityVerified": true,
+          "pass": true
+        },
+        {
+          "name": "rmvp_07_connected_confirmed_need_approval_release",
+          "sqlSha256": "02622ae1a8a8047a95f027b5bea93c0f6e4d47e744fdd79d5a8c21c96d959523",
+          "exitCode": 0,
+          "wallMs": 1025.510785999999,
+          "assertions": 67,
+          "completeSequentialTap": true,
+          "rollbackAndIntegrityVerified": true,
+          "pass": true
+        },
+        {
+          "name": "d037_confirmed_need_save_release_boundary",
+          "sqlSha256": "ad0e4d498a7c8e9c1fa26efe61b6f260173fb40042ecc255a130222c2cdb0169",
+          "exitCode": 0,
+          "wallMs": 936.8023939999985,
+          "assertions": 37,
+          "completeSequentialTap": true,
+          "rollbackAndIntegrityVerified": true,
+          "pass": true
+        },
+        {
+          "name": "operational",
+          "sqlSha256": "b1dd92c2d1d7226efced70712f492ab29f853a7bda53faf5aefd780b1d2ced6f",
+          "exitCode": 0,
+          "wallMs": 94400.50349499998,
+          "assertions": 20,
+          "completeSequentialTap": true,
+          "rollbackAndIntegrityVerified": true,
+          "pass": true
+        },
+        {
+          "name": "historical-stress",
+          "sqlSha256": "be82e771b059fe78c2b6353642a820c8a824257c9fe441241fa92963751589cb",
+          "exitCode": 3,
+          "wallMs": 119594.966469,
+          "assertions": 0,
+          "completeSequentialTap": false,
+          "rollbackAndIntegrityVerified": true,
+          "pass": false
+        }
+      ],
+      "focusedAssertions": 588,
+      "originalStressSqlSha256": "be82e771b059fe78c2b6353642a820c8a824257c9fe441241fa92963751589cb",
+      "operationalRuns": 1,
+      "operationalAcceptance": true,
+      "historicalStressRuns": 1,
+      "error": "historical-stress failed or incomplete; no automatic retry."
+    },
+    "finalImages": [
+      {
+        "name": "confirmed_need_correction",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "338838cc097cdfa2f050fc07624bb6b88444f8ecc35229b7a05afa25d93f5252"
+      },
+      {
+        "name": "confirmed_need_correction_continuity",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "aed7f526c509733a1f41ba4fd350cceca9321bf6f3b384ac88e6e3d295dd8140"
+      },
+      {
+        "name": "confirmed_need_correction_consumers",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "006fd253605d521a55ee2db38d1c1a20add533fbd4088cbbbe3a8dd0e5d81dc5"
+      },
+      {
+        "name": "atlas_current_platform_security_catalog",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "9a0f442d1307f476e888b15eda3b012f07cee65c8fc5b94e4f00142c6448ee86"
+      },
+      {
+        "name": "school_catering_purchase_orders",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "5071b06a040f684827b38c1bd4b6418d660fb71460339e606c6bf82a86729da2"
+      },
+      {
+        "name": "rmvp_07_connected_confirmed_need_approval_release",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "3f79e406b4c710eeaf79ff43f88afe8d169f7ee3ee58c8863649762c62da23c5"
+      },
+      {
+        "name": "d037_confirmed_need_save_release_boundary",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "0c2c43afa2cb63c3000aaa9e913f3921ede03ee542e0f6c41f598523792d4562"
+      },
+      {
+        "name": "operational",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "bde85055f6455e208cae14f62a719bdaebe0433e8e354737e52328323e130638"
+      },
+      {
+        "name": "historical-stress",
+        "counts": {
+          "roles": 42,
+          "memberships": 44,
+          "schemas": 10,
+          "functions": 497,
+          "rows": 117
+        },
+        "beforeSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "afterSha256": "aab925342e3be53e2fff135782e83155adc57b1a65c95e2aafc56d603305df3e",
+        "equal": true,
+        "logSha256": "300fadbe3c1442f78b0266f263faa1c01d10254d279186676b695546a78ee9d7"
+      }
+    ]
   },
-  "localRunnerTests": 146
+  "localRunnerTests": 146,
+  "finalSqlSourceHead": "eeada6609e3048fb906879d844aea60a1eacd459",
+  "performance": {
+    "beforeFullHelperResponseMs": 14706.715,
+    "firstCandidateOperationalMs": 18147.626,
+    "finalCandidateOperationalMs": 17515.069,
+    "stressFirstCyclePreparationMs": 17538.672,
+    "stressSecondCyclePreparation": "20s statement timeout",
+    "demonstratedFullCommandSpeedup": false,
+    "limitation": "Independent runner variation is not isolated; no repeated profile or stress loop."
+  },
+  "frontendCi": {
+    "firstCandidate": {
+      "run": 38991442948,
+      "head": "4832535fc059e03c5250e49ec2715de2cffd7e49",
+      "verdict": "FAIL",
+      "testFilesPass": 219,
+      "assertionsPass": 3121,
+      "existingSkips": 2,
+      "error": "Unhandled Mantine transition timer after jsdom teardown: window is not defined"
+    },
+    "affectedIsolatedTest": {
+      "file": "src/modules/atlas/dispatch/SchoolFulfilmentReconciliationWorkbench.test.tsx",
+      "verdict": "PASS8/8",
+      "edited": false
+    },
+    "finalHeadResult": "Recorded on existing PR388 and Issue389 after this evidence commit."
+  },
+  "nextAction": "Owner decision required for any separately bounded second-history-depth projection/validation investigation; no further optimization/profile/stress authorized automatically.",
+  "integration": {
+    "githubMergeable": "CONFLICTING",
+    "resolution": "DEFERRED_AFTER_FAILED_ACCEPTANCE",
+    "combined392": "NOT_PERFORMED"
+  }
 }
