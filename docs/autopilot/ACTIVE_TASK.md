@@ -1,64 +1,33 @@
 # Atlas Autopilot — Active Task
 
-Task: **ATLAS-UX-ART-DIRECTION-02**  
-Status: **ACTIVE — DESIGN DISCOVERY / ALTERNATIVES ONLY**  
-Product authorization: **16 October 2026** — Owner explicitly redirected priority from overextended Autopilot/backend work to Atlas UX/UI design.  
-Source: [approved GitHub Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389) and [execution brief](../implementation-tasks/TASK-ATLAS-UX-ART-DIRECTION-02.md).  
-Starting main at transition: `d102b2f1b083005d6553867fa5ccdf8c988a0316`. Re-read current `origin/main` before task execution.
+**CURRENT AUTHORITATIVE OWNER DIRECTIVE — 18 October 2026**  
+**Execution specification:** [Issue #400 — Atlas UX revisions and traceable Need → new-number PO](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400).
 
-## Product priority and work authorization
+This file supersedes the **17 October #388 diagnosis/optimization baton** and older commands in [Issue #389](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389), [Issue #398](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/398) and the retained [16 October recovery runbook](ATLAS-RECOVERY-392-388-2026-10-16.md), but does not change historical evidence or retroactively waive failed acceptance tests. **#393 remains a Draft and is NOT adopted into main**; this direct Owner instruction must be passed to an already-connected Codex session. A GitHub update does not start a runner.
 
-**Stop creating additional backend performance/certification, Warehouse, or general cutover work merely to advance Autopilot.** Concentrate on making Atlas genuinely legible, efficient, aesthetically polished and practical for staff. This transition **supersedes Issue #389's older “wait until all #385–#388 are closed” start condition**: the design phase may proceed NOW while those existing Drafts are preserved. It does **not** approve their merges, alter their source code, or claim their business behavior is deployed.
+## Only active implementation task — A: #392 UX acceptance repairs
 
-Authoritative business and security boundaries remain unchanged: `OPS_SYSTEM_MAP v1.0`, **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED**, Chakra UI v3, thirteen persistent workbench owners, current Planning/Procurement contracts and immutable released documents.
+Review the Owner's actual local PRODUCT-REVIEW-PR392.md in the authorized session before implementation; disclose if not accessible. Start from verified Draft [#392](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/392) head `6f9f288c76cfa48691fca2f4968ce03185502bb2`, preserve unrelated changes/stashes, keep the PR Draft. The User reports three new acceptance defects:
 
-### Current parallel work — PARKED, not discarded
+1. **Allocation Discard loses keyboard focus:** restore focus to a persistent, still-mounted initiating control after dialog exit without fake focus forcing or changing dirty/UNKNOWN guards.
+2. **Mobile quantity is detached from identity:** ensure editing at 390 px always shows School/delivery, Ingredient, Unit, service date and relevant Supplier alongside the exact field/value; keep association after sort/filter/Save.
+3. **"Tiếp tục lên đơn" misstates a consequential action:** this is `controller.prepare(...)` in `ProcurementWorkbench.tsx`, not navigation. Present a clear **"Chuẩn bị đơn mua"** action and describe Planning release/Handoff/supplier support effects. It does NOT officially issue PO; `Phát hành đơn mua` remains separately authorized.
 
-- [#385](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/385): login/PO states/XLSX wrapping, Draft, review/integration later.
-- [#386](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/386): human Unit labels and draft School evidence, Draft, migration not deployed.
-- [#387](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/387): bulk supplier allocation, Draft, migration not deployed.
-- [#388](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/388): post-release Need correction, **INCOMPLETE Draft** with genuine 250-family multi-cycle performance failure. No forced success, CI weakening, merge, Staging deployment, additional performance cycle or runtime follow-up under this active design task.
-- Older UI prototype Drafts remain archival references, not automatic implementation candidates.
+The earlier seven Owner visual defects from [#392 review](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/392#issuecomment-6236435366) also remain applicable: 50-School picker, Pantry School selection, two Pantry source categories, clipped Allocation action, Schools management sub-jobs, row-delete affordances, Ingredient document-code copy. **Important supersessions**: [Pantry two distinct source categories](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/392#issuecomment-6236559983) and [no required Ingredient document code on supplier PO](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389#issuecomment-6236671930) are already Owner-approved business meanings. The present Pantry purpose-free v4 is incompatible and MUST NOT be deployed unchanged.
 
-Do not reset/delete local worktrees, commits, stashes, branches or PRs. Before any integration of these branches, independently assess compatibility and exact-head tests. **Do not wait for them to merge before producing design alternatives.**
+**A acceptance:** actual populated browser interactions/screens at 1366×768 and 390×844 (also 1440×900), focus, identity/quantity context, transparent Prepare versus official PO release; meaningful red→green regressions and exact-head frontend CI. A CI pass is not substitute for actual Product visual acceptance. Contract-dependent Pantry and PO code work is separately gated below.
 
-## Bounded execution: two design deliverables
+## Queued, NOT simultaneously active
 
-### Checkpoint D1 — skills, genuine current UI review, and design diagnosis
+- **B1: Pantry authoritative source separation** — separately persist `planning_identified_supplement` (Bổ sung) and `school_requested_supplement` (Đặt theo yêu cầu nhà trường) even for the same School/date/Ingredient, e.g., distinct 5+3 rows with exact 8 derived only under current family/composition rules. Purpose category is NOT the ADDITIVE/COMPLETE mode. Requires a compatible forward SQL/API/uniqueness design and DB Full Integration; do not deploy unapplied v4 as-is.
+- **B2: PO Ingredient outward document code optional** — remove visible Mã hàng and the ingredient-code release/export blocker across preliminary and official PO, XLSX/PDF/ZIP, preserving mandatory Supplier identity, hidden machine IDs and historical immutable snapshots. Separate bounded backend/document contract.
+- **C: Need amendment with traceable new-number PO** — **authoritative business result is APPROVED:** append Need quantity+reason+Actor+R/D history, review current complete supplier/date replacement Draft, explicitly release new official PO number and link/supersede prior PO without changing it, preserve audit even when Supplier presents old PO. Payment will be based on future actual **accepted receipts**, not PO quantity; Warehouse/payment work is not included. Current #398/#399 and #388/#396 approaches failed their release/performance gates; do NOT silently reuse or bypass D-037. Produce smallest exact contract bridge and implementation only when safe and fully authorized; new business authority/persistent proof requires Owner decision. No auto-start of C while A/B active.
+- **SOP:** Vietnamese exceptional-correction SOP is DRAFT; not executable cutover authority until separately approved.
 
-1. Verify the canonical local checkout in accordance with `AGENTS.md` (remote, clean worktree, current main, `pnpm ops:workspace`). If no authenticated local Codex/desktop runner is available, stop at GitHub handoff; do not claim that local implementation began.
-2. Inspect the current Chakra application source and rendered populated workbenches, especially `src/vnext/atlas/AtlasVNextShell.tsx`, `src/vnext/atlas/procurement/ProcurementOrdersStage.tsx` and Procurement Allocation, plus existing UI agents and `.agents/skills`.
-3. Audit external design skills by reviewing source/license/scripts/security. Prefer Anthropic Frontend Design, Emil Design Engineering, Impeccable and Vercel Web Design Guidelines as distinct creative/finishing/review inputs. Anthropic Design Plugin is **Claude-only optional**, not a directly installed Codex feature. Never blindly execute install commands, add paid services or unreviewed dependencies. Record what is and is not actually available.
-4. Identify real shortcomings in visual hierarchy, dense layout, control alignment, crowded PO table, supplier detail, tab identity, weak visual rhythm and laptop viewport ergonomics. OPS v1 Retool is workflow vocabulary evidence only.
-5. Produce a concise design diagnosis and skill provenance. **No Supabase, Retool, hosted data, API, RLS, migrations, business logic or production UI mutation.**
+## Hard limits and stop
 
-### Checkpoint D2 — visible, competing designs
+Use `OPS_SYSTEM_MAP v1.0` and **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED**. PostgreSQL owns exact arithmetic/quantity, authorization, transaction, receipt/replay, immutable released snapshots and source lineage; React coordinates presentation and local drafts only.
 
-Create **2–3 materially different rendered, comparable prototypes** for:
-- The **connected angled/sloped-edge tab strip** inspired by the Owner's reference; active tab seamlessly joined to the white workplane, neutral inactive tabs, 13-workbench horizontal overflow, close/dirty/focus semantics retained.
-- **Supplier-first PO workbench:** compact scannable orders, truthful draft/released/export state, document numbers and next action; disclose long School breakdown, exact quantities/Units and notes in usable detail rather than concatenated cells.
-- Optionally show how the same design language improves Supplier Allocation while preserving the already-implemented backend supplier recommendation/explicit Save distinction.
+No automatic merges, PR Ready promotion, hosted Atlas Staging/Production writes, OPS v1/Retool writes, released supplier commitments, Warehouse start, or #388/#396 optimization loops. Preserve existing branch heads and the user's original checkout/stash. One active task/PR at a time, focused tests first, appropriate DB security/concurrency/integration before release. Two same-root failed strategies → STOP with quantitative evidence; no threshold inflation or test skips. **Staging is at migration 109, Pantry v4/C unapplied.**
 
-Demonstrate populated Vietnamese operational examples and important states at **1366×768** first, then 1440, 1920, 768 and 390 widths where relevant. Provide screenshots/contact sheet and concise trade-offs. The alternatives should be genuinely different designs rather than trivial recolors.
-
-**HARD STOP:** Request Owner visual selection before any production UI implementation. The previous general plan approved a design phase, NOT a specific final layout.
-
-## Do not overbuild or over-certify
-
-- One bounded design task; no Warehouse, backend, supplier commitments or unrelated cleanup.
-- No repetitive multi-agent audit loops, new “proof infrastructure”, synthetic 50-School database pipelines, redundant Full CI runs or new business state machinery during D1/D2.
-- Use existing fixtures and read-only evidence. A focused lint/format or static/preview smoke check is enough for a docs/prototype-only Draft.
-- Independent design critique should identify **visual defects**, not just repeat typecheck status. Involve visual designer before implementation.
-- Deliver one coherent Draft PR or evidence package for D1/D2, not numerous nested PRs. Do not merge a visual direction before Owner selection.
-
-## Current environment and the parked previous task
-
-Atlas Staging: `rnzxmxiiqgtdevzregff` — **read-only during this design task**, accepted migration 109.  
-OPS v1 Supabase: `qnthofvccilhnefdcxnz` — NO WRITES. Retool: NO WRITES.  
-Warehouse minimum receiving design [PR #384](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/384) merged 14 October; its [proposed design](../architecture/warehouse-receiving-minimum-design.md) and [proposed decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) remain **UNAPPROVED FOR IMPLEMENTATION**. Preserve its four unresolved Product groups; it is not the current active task.
-
-The historical 14 October Warehouse baton is preserved by Git history. This change updates only sequencing; it does not retroactively change that work's acceptance evidence.
-
-## Required handoff
-
-Return exact current baseline, verified canonical workspace, skill-source/provenance results, 2–3 visual directions, populated screenshots, top critical UX defects, conflicts/unknowns and a **STOP — AWAIT OWNER VISUAL SELECTION** verdict. Do not autonomously continue into a runtime implementation or another task.
+Each checkpoint must report exact SHA, affected files, source/proof boundary, PASS/FAIL/BLOCKED for UX, Pantry, PO-code, Need correction separately, exact CI + Full Integration status and evidence limitations. Stop on unresolved Product contract/permission or unsafe lifecycle change. **Follow Issue #400 for the complete currently authorized sequence; do not infer missing permissions or silently execute later queued tasks.**
