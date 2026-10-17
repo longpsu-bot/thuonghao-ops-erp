@@ -60,6 +60,68 @@ export function buildOperationalAcceptance() {
   return { sql, originalSha256, operationalSha256: hash(sql) };
 }
 
+export function buildDualOperationalAcceptance() {
+  let { sql: text, originalSha256 } = buildOperationalAcceptance();
+  const replacements = [
+    ["from generate_series(1,1)depth", "from generate_series(1,2)depth"],
+    [
+      "2::bigint,\n 'one operational correction appends a second Handoff revision'",
+      "3::bigint,\n 'two operational corrections append two Handoff revisions'",
+    ],
+    [
+      "1::bigint,\n 'one operational history depth completed'",
+      "2::bigint,\n 'two operational history depths completed'",
+    ],
+    [
+      "10::bigint,\n 'one operational edge completed all ten explicit public operations'",
+      "20::bigint,\n 'two operational edges completed all twenty explicit public operations'",
+    ],
+    [
+      "6::bigint,\n 'five original complete Supplier POs plus one explicit complete replacement are preserved'",
+      "7::bigint,\n 'five original complete Supplier POs plus two explicit complete replacements are preserved'",
+    ],
+    [
+      "2::bigint,\n 'only the selected School has one initial PXK and one explicit successor'",
+      "3::bigint,\n 'only the selected School has one initial PXK and two explicit successors'",
+    ],
+    [
+      "101::numeric,\n 'one selected-line correction preserves exact final quantity101'",
+      "102::numeric,\n 'two selected-line corrections preserve exact final quantity102'",
+    ],
+  ];
+  for (const [before, after] of replacements) {
+    if (text.split(before).length !== 2)
+      throw new Error("Original operational derivative drifted.");
+    text = text.replace(before, after);
+  }
+  // Per-depth quantities and identities are checked before the next correction.
+  const marker =
+    "select format('set local statement_timeout=%L;select pg_temp.c_scale_history(%L,%s);',";
+  if (text.split(marker).length !== 2)
+    throw new Error("History boundary drifted.");
+  text = text.replace("select plan(20);", "select plan(36);");
+  text = text.replace(
+    marker,
+    `create function pg_temp.c395_depth_gate(depth integer) returns setof text language plpgsql as $c395$
+begin
+ return next is((select count(*) from c_scale_results where history_depth=depth),10::bigint,'depth '||depth||': all ten complete public operations');
+ return next is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where is_current and school_id='b6500000-0000-0000-0000-000000000004' and ingredient_id='b6500000-0000-0000-000000000006'),(100+depth)::numeric,'depth '||depth||': exact quantity');
+ return next is((select count(*) from atlas_planning.purchase_handoff_revisions),(depth+1)::bigint,'depth '||depth||': complete Handoff history');
+ return next is((select count(*) from atlas_procurement.purchase_orders),(5+depth)::bigint,'depth '||depth||': complete supplier PO replacements');
+ return next is((select count(*) from atlas_dispatch.school_dispatch_releases),(1+depth)::bigint,'depth '||depth||': explicit PXK successors');
+ return next is((select count(*) from c_scale_preserved),249::bigint,'depth '||depth||': retained families checked by Preparation');
+ return next is((select count(*) from c_scale_other_pos old join atlas_procurement.purchase_orders p using(purchase_order_id) join atlas_procurement.purchase_order_revisions r using(purchase_order_id) where r.is_current and to_jsonb(p)=old.root and to_jsonb(r)=old.revision),4::bigint,'depth '||depth||': four unrelated POs exact');
+ return next ok((select bool_and(invoked_as='authenticated' and response->>'success'='true' and elapsed_ms<case when api='prepare_school_catering_purchase_orders' then 20000 else 8000 end) from c_scale_results where history_depth=depth),'depth '||depth||': unchanged complete command budgets');
+end;$c395$;
+select format('set local statement_timeout=%L;select pg_temp.c_scale_history(%L,%s);',`,
+  );
+  text = text.replace(
+    "case when stage='preparation'then'20s'else'8s'end,stage,depth)",
+    "case when stage='preparation'then'20s'else'8s'end,stage,depth)||case when stage='pxk-release' then format('select * from pg_temp.c395_depth_gate(%s);',depth) else '' end",
+  );
+  return { sql: text, originalSha256, operationalSha256: hash(text) };
+}
+
 export function buildPreparationProbe(mode) {
   if (!["baseline", "profile"].includes(mode))
     throw new Error("Use baseline or profile.");
@@ -133,7 +195,7 @@ export function classifyPreparationProbe(status, output, invariant) {
 }
 
 // Metadata, source bodies and business row images are hashed; no credentials or rows are exported.
-const snapshotSql = `
+export const snapshotSql = `
 create function pg_temp.c388_rows() returns jsonb language plpgsql as $$
 declare r record; image jsonb; result jsonb:='[]'; begin
  for r in select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
@@ -152,7 +214,7 @@ select jsonb_build_object(
 async function main() {
   const mode = process.argv[2];
   const probe = buildPreparationProbe(
-    mode === "certification" ? "baseline" : mode,
+    ["certification", "option-a"].includes(mode) ? "baseline" : mode,
   );
   const directory = process.env.C388_EVIDENCE_DIR;
   if (
@@ -307,7 +369,66 @@ async function main() {
     if (!completePurchaseReviewTap(baselineTap, 0))
       throw new Error("Baseline catalog incomplete or failing.");
     const before = snapshot("postgres", "before-correction");
-    sql(correctionBytes, "postgres", "apply-whole-correction-once");
+    if (mode === "option-a") {
+      const pinned = execFileSync("git", [
+        "show",
+        "a443daf15dd9891611b387349268795efbce7d5c:" + correction,
+      ]);
+      if (
+        hash(pinned) !==
+        "7d5a0a96f141c23adad51781827051df04a1a545fc513617abf9eccd7f6302c3"
+      )
+        throw new Error("Pinned C evidence hash mismatch.");
+      sql(pinned, "postgres", "apply-pinned-c-once");
+      const original = snapshot("postgres", "pinned-c-before-option-a");
+      const source = correctionBytes.toString("utf8");
+      const marker =
+        "CREATE OR REPLACE FUNCTION atlas_core.purchase_review_continuity_context(p_batch uuid)";
+      const start = source.lastIndexOf(marker);
+      const end = source.indexOf("$function$;", start);
+      if (start < 0 || end < 0)
+        throw new Error("Exact allowlisted body boundary missing.");
+      sql(
+        source.slice(start, end + "$function$;".length),
+        "postgres",
+        "apply-option-a-body",
+        "supabase_admin",
+      );
+      const candidate = snapshot("postgres", "pinned-c-after-option-a");
+      const changed = candidate.functions.filter(
+        (value, index) =>
+          JSON.stringify(value) !== JSON.stringify(original.functions[index]),
+      );
+      const metadata = (functions) =>
+        functions.map(({ source_md5, ...value }) => value);
+      const exactParity =
+        ["roles", "memberships", "schemas", "rows"].every(
+          (key) =>
+            JSON.stringify(original[key]) === JSON.stringify(candidate[key]),
+        ) &&
+        original.functions.length === 497 &&
+        candidate.functions.length === 497 &&
+        JSON.stringify(metadata(original.functions)) ===
+          JSON.stringify(metadata(candidate.functions)) &&
+        changed.length === 1 &&
+        changed[0].identity ===
+          "atlas_core.purchase_review_continuity_context(uuid)";
+      save("option-a-allowlist-parity.json", {
+        exactParity,
+        changed,
+        functions: candidate.functions.length,
+        roles: candidate.roles.length,
+        memberships: candidate.memberships.length,
+        schemas: candidate.schemas.length,
+        relations: candidate.rows.length,
+      });
+      if (!exactParity)
+        throw new Error(
+          "Option A changed an unapproved definition, metadata or protected image.",
+        );
+    } else {
+      sql(correctionBytes, "postgres", "apply-whole-correction-once");
+    }
     const after = snapshot("postgres", "after-correction");
     for (const key of ["roles", "memberships", "schemas", "rows"]) {
       if (JSON.stringify(before[key]) !== JSON.stringify(after[key]))
@@ -328,7 +449,7 @@ async function main() {
         "clone-owned-baseline",
         "supabase_admin",
       );
-      if (mode === "certification")
+      if (["certification", "option-a"].includes(mode))
         sql(
           "create database atlas_c388_stress template postgres;",
           "template1",
@@ -350,7 +471,7 @@ async function main() {
     );
     if (!completePurchaseReviewTap(tap, 0))
       throw new Error("Current exact catalog incomplete or failing.");
-    if (mode === "certification") {
+    if (["certification", "option-a"].includes(mode)) {
       delete summary.targetRuns;
       summary.limitations =
         "Bounded SQL-local synthetic acceptance only. Separate one-cycle operational and original eight-cycle stress oracles; neither proves hosted HTTP/browser, live competing-session waits, or combined UI integration.";
@@ -402,6 +523,7 @@ async function main() {
         "school_catering_purchase_orders.sql",
         "rmvp_07_connected_confirmed_need_approval_release.sql",
         "d037_confirmed_need_save_release_boundary.sql",
+        ...(mode === "option-a" ? ["issue_395_phase_context_parity.sql"] : []),
       ]) {
         let text = expand(`supabase/tests/${file}`);
         if (
@@ -420,11 +542,15 @@ async function main() {
         (sum, suite) => sum + suite.assertions,
         0,
       );
-      const operational = buildOperationalAcceptance();
+      const operational =
+        mode === "option-a"
+          ? buildDualOperationalAcceptance()
+          : buildOperationalAcceptance();
       save("operational.sql", operational.sql);
       summary.originalStressSqlSha256 = operational.originalSha256;
       summary.outcome = "OPERATIONAL_ACCEPTANCE_IN_PROGRESS";
       summary.operationalRuns = 1;
+      summary.operationalCorrectionsRequired = mode === "option-a" ? 2 : 1;
       runSuite("operational", operational.sql, database);
       summary.operationalAcceptance = true;
       summary.outcome = "HISTORICAL_STRESS_IN_PROGRESS";

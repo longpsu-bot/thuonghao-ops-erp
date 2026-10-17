@@ -169,6 +169,7 @@ on:
           - c388-baseline
           - c388-profile
           - c388-certification
+          - c395-option-a
 
 permissions:
   contents: read
@@ -344,12 +345,12 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' &&
       (inputs.scope == 'c388-baseline' || inputs.scope == 'c388-profile' ||
-      inputs.scope == 'c388-certification')
+      inputs.scope == 'c388-certification' || inputs.scope == 'c395-option-a')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       SUPABASE_TELEMETRY_DISABLED: "1"
-      C388_MODE: ${{ inputs.scope == 'c388-profile' && 'profile' || inputs.scope == 'c388-certification' && 'certification' || 'baseline' }}
+      C388_MODE: ${{ inputs.scope == 'c388-profile' && 'profile' || inputs.scope == 'c388-certification' && 'certification' || inputs.scope == 'c395-option-a' && 'option-a' || 'baseline' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

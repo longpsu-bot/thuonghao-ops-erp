@@ -4122,6 +4122,8 @@ reset role;
 set role atlas_procurement_command_runtime;
 
 -- SOURCE-ONLY two existing definitions, identity-bound groups and original filters.
+-- Issue 395: one phase-local relational membership assembly. No proof survives
+-- this STABLE statement; all historical predicates and raw multiplicity remain.
 
 CREATE OR REPLACE FUNCTION atlas_core.purchase_review_continuity_context(p_batch uuid)
  RETURNS jsonb
@@ -4130,15 +4132,94 @@ CREATE OR REPLACE FUNCTION atlas_core.purchase_review_continuity_context(p_batch
  SET search_path TO ''
 AS $function$
  with root as materialized(select atlas_core.purchase_review_correction_context(p_batch) facts),
- handoff_evidence as materialized (
-  select to_jsonb(hr)||jsonb_build_object('confirmed_need_batch_id',hb.confirmed_need_batch_id,
-   'handoff_status',hb.handoff_status) metadata,
-   row_number()over(order by hr.purchase_handoff_batch_id,hr.revision_number)::text member_group_key,
-   atlas_core.confirmed_need_handoff_membership(hr.purchase_handoff_revision_id) membership
+ handoff_revisions as materialized (
+  select hr.*,hb.confirmed_need_batch_id,hb.handoff_status,
+   to_jsonb(hr)||jsonb_build_object('confirmed_need_batch_id',hb.confirmed_need_batch_id,
+    'handoff_status',hb.handoff_status) metadata,
+   row_number()over(order by hr.purchase_handoff_batch_id,hr.revision_number)::text member_group_key
   from root
   join atlas_planning.purchase_handoff_batches hb
    on facts->'batch_ids' @>jsonb_build_array(hb.confirmed_need_batch_id)
   join atlas_planning.purchase_handoff_revisions hr using(purchase_handoff_batch_id)
+ ), bindings as materialized (
+  select hr.purchase_handoff_revision_id,
+   lr.purchase_handoff_line_revision_id,lr.confirmed_need_line_revision_id,
+   lr.ingredient_id,lr.unit_id,lr.handoff_quantity,lr.service_date,lr.delivery_location_id,
+   hl.confirmed_need_line_id,hr.confirmed_need_batch_id,
+   hr.released_at,hr.released_by_actor_id,hr.revision_status,
+   sl.confirmed_need_snapshot_line_id,sl.approved_quantity,
+   s.confirmed_need_validation_attempt_id,s.confirmed_need_approval_snapshot_id
+  from handoff_revisions hr
+  join atlas_planning.purchase_handoff_line_revisions lr using(purchase_handoff_revision_id)
+  left join atlas_planning.purchase_handoff_lines hl
+   on hl.purchase_handoff_line_id=lr.purchase_handoff_line_id
+   and hl.purchase_handoff_batch_id=hr.purchase_handoff_batch_id
+  left join atlas_planning.purchase_demand_references d
+   on d.purchase_handoff_line_revision_id=lr.purchase_handoff_line_revision_id and d.source_kind='NEED_GENERATION'
+  left join atlas_planning.confirmed_need_snapshot_lines sl
+   on sl.confirmed_need_snapshot_line_id=d.confirmed_need_snapshot_line_id
+   and sl.confirmed_need_line_revision_id=lr.confirmed_need_line_revision_id
+   and sl.ingredient_id=lr.ingredient_id and sl.unit_id=lr.unit_id
+   and sl.approved_quantity=lr.handoff_quantity and d.approved_quantity=lr.handoff_quantity
+   and d.unit_id=lr.unit_id
+  left join atlas_planning.confirmed_need_approval_snapshots s
+   on s.confirmed_need_approval_snapshot_id=sl.confirmed_need_approval_snapshot_id
+   and s.confirmed_need_batch_id=hr.confirmed_need_batch_id and s.source_kind='NEED_GENERATION'
+ ), pairs as materialized (
+  select distinct confirmed_need_batch_id,confirmed_need_validation_attempt_id from bindings
+  where confirmed_need_batch_id is not null and confirmed_need_validation_attempt_id is not null
+ ), evidence as materialized (
+  select p.*,atlas_core.confirmed_need_historical_validation_evidence(
+   p.confirmed_need_batch_id,p.confirmed_need_validation_attempt_id) facts from pairs p
+ ), expanded_facts as materialized (
+  select e.confirmed_need_batch_id,e.confirmed_need_validation_attempt_id,f.value fact,
+   f.value->>'confirmed_need_line_id' line_id,
+   f.value->>'current_confirmed_need_line_revision_id' revision_id
+  from evidence e
+  cross join lateral jsonb_array_elements(coalesce(e.facts#>'{projection,ordered_lines}','[]'))f(value)
+ ), evidence_metadata as materialized (
+  select e.confirmed_need_batch_id,e.confirmed_need_validation_attempt_id,
+   e.facts->>'complete'='true' evidence_complete,
+   e.facts->'released_snapshot_ids' released_snapshot_ids
+  from evidence e
+ ), members as materialized (
+  select b.*,e.evidence_complete,
+   coalesce(e.released_snapshot_ids @> jsonb_build_array(b.confirmed_need_approval_snapshot_id),false) prior_release,
+   f.fact
+  from bindings b left join evidence_metadata e
+   on e.confirmed_need_batch_id=b.confirmed_need_batch_id
+   and e.confirmed_need_validation_attempt_id=b.confirmed_need_validation_attempt_id
+  left join expanded_facts f
+   on f.confirmed_need_batch_id=b.confirmed_need_batch_id
+   and f.confirmed_need_validation_attempt_id=b.confirmed_need_validation_attempt_id
+   and f.line_id=b.confirmed_need_line_id::text
+   and f.revision_id=b.confirmed_need_line_revision_id::text
+ ), member_results as materialized (
+  select purchase_handoff_revision_id,
+   count(*)>0 and count(*)=count(distinct purchase_handoff_line_revision_id)
+   and bool_and(coalesce(evidence_complete and prior_release
+    and released_at is not null and released_by_actor_id is not null
+    and revision_status in('RELEASED_TO_PROCUREMENT','INVALIDATED')
+    and confirmed_need_snapshot_line_id is not null
+    and fact->>'school_id' is not null and fact->>'customer_id' is not null
+    and fact->>'current_confirmed_need_line_decision_id' is not null
+    and fact->>'ingredient_id'=ingredient_id::text
+    and fact->>'controlled_unit_id'=unit_id::text
+    and fact->>'service_date'=service_date::text
+    and fact->>'delivery_location_id'=delivery_location_id::text
+    and (fact->>'confirmed_quantity')::numeric=handoff_quantity,false)) complete,
+   coalesce(jsonb_agg(fact||jsonb_build_object(
+    'purchase_handoff_line_revision_id',purchase_handoff_line_revision_id,
+    'purchase_handoff_revision_id',purchase_handoff_revision_id,'source_confirmed_need_batch_id',confirmed_need_batch_id,
+    'confirmed_need_snapshot_line_id',confirmed_need_snapshot_line_id,
+    'validation_attempt_id',confirmed_need_validation_attempt_id)
+    order by purchase_handoff_line_revision_id),'[]') facts
+  from members group by purchase_handoff_revision_id
+ ), handoff_evidence as materialized (
+  select hr.metadata,hr.member_group_key,
+   jsonb_build_object('complete',coalesce(m.complete,false),
+    'members',case when m.complete then m.facts else '[]'::jsonb end) membership
+  from handoff_revisions hr left join member_results m using(purchase_handoff_revision_id)
  ), raw_member_groups as materialized (
   select h.metadata->>'purchase_handoff_revision_id' handoff_revision_key,h.member_group_key,
    jsonb_build_array(m.member->>'service_date',m.member->>'delivery_location_id',

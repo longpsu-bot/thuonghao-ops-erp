@@ -5,10 +5,28 @@ import { spawnSync } from "node:child_process";
 import {
   buildPreparationProbe,
   buildOperationalAcceptance,
+  buildDualOperationalAcceptance,
   classifyPreparationProbe,
 } from "./diagnose-confirmed-need-preparation.mjs";
 
 describe("bounded C388 Preparation evidence", () => {
+  it("certifies both complete corrections and keeps the original stress oracle", () => {
+    const dual = buildDualOperationalAcceptance();
+    expect(dual.originalSha256).toBe(
+      "be82e771b059fe78c2b6353642a820c8a824257c9fe441241fa92963751589cb",
+    );
+    expect(dual.sql).toContain("from generate_series(1,2)depth");
+    expect(dual.sql).toContain("select plan(36)");
+    expect(dual.sql).toContain("102::numeric");
+    expect(dual.sql).toContain("(100+depth)::numeric");
+    expect(dual.sql).toContain("pg_temp.c395_depth_gate(%s)");
+    expect(dual.sql).toContain("language plpgsql as $c395$");
+    expect(dual.sql).toContain("set local lock_timeout='1s'");
+    expect(dual.sql).toContain(
+      "case when stage='preparation'then'20s'else'8s'end",
+    );
+    expect(dual.sql.trimEnd()).toMatch(/rollback;$/);
+  });
   it("uses valid UUID literals in the original scale assertions", () => {
     const source = readFileSync(
       "supabase/tests/confirmed_need_correction_scale.sql",
