@@ -347,7 +347,6 @@ jobs:
     timeout-minutes: 20
     env:
       SUPABASE_TELEMETRY_DISABLED: "1"
-      C388_EVIDENCE_DIR: ${{ runner.temp }}/c388-preparation
       C388_MODE: ${{ inputs.scope == 'c388-profile' && 'profile' || 'baseline' }}
     steps:
       - name: Check out repository
@@ -367,6 +366,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: One bounded local Preparation probe
+        env:
+          C388_EVIDENCE_DIR: ${{ runner.temp }}/c388-preparation
         run: node scripts/diagnose-confirmed-need-preparation.mjs "$C388_MODE"
       - name: Preserve sanitized evidence
         if: always()
@@ -378,6 +379,8 @@ jobs:
           if-no-files-found: error
       - name: Stop disposable Supabase
         if: always()
+        env:
+          C388_EVIDENCE_DIR: ${{ runner.temp }}/c388-preparation
         run: |
           if [ -f "$C388_EVIDENCE_DIR/owns-stack" ]; then
             pnpm exec supabase stop --no-backup
