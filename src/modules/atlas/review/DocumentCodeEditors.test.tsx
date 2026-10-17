@@ -68,7 +68,7 @@ it("authors an explicit Ingredient document code separately from its technical i
       name: `Xem / sửa ${ingredient.ingredient_name}`,
     }),
   );
-  const field = screen.getByLabelText("Mã hàng trên chứng từ");
+  const field = screen.getByLabelText("Mã nội bộ (không bắt buộc)");
   expect(field).toHaveValue("");
   fireEvent.change(field, { target: { value: " 1082 " } });
   expect(report).toHaveBeenLastCalledWith(
@@ -78,7 +78,9 @@ it("authors an explicit Ingredient document code separately from its technical i
   const review = screen.getByRole("complementary", {
     name: "Xem thay đổi nguyên liệu",
   });
-  expect(within(review).getByText("Mã hàng trên chứng từ")).toBeInTheDocument();
+  expect(
+    within(review).getByText("Mã nội bộ (không bắt buộc)"),
+  ).toBeInTheDocument();
   expect(within(review).getByText("1082")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Lưu nguyên liệu" }));
   await waitFor(() =>
@@ -166,7 +168,9 @@ it.each(["ingredient", "supplier"] as const)(
       }),
     );
     const label =
-      kind === "ingredient" ? "Mã hàng trên chứng từ" : "Mã NCC trên chứng từ";
+      kind === "ingredient"
+        ? "Mã nội bộ (không bắt buộc)"
+        : "Mã NCC trên chứng từ";
     const field = screen.getByLabelText(label);
     fireEvent.change(field, { target: { value: "1082" } });
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
@@ -204,7 +208,9 @@ it.each(["ingredient", "supplier"] as const)(
       }),
     );
     const label =
-      kind === "ingredient" ? "Mã hàng trên chứng từ" : "Mã NCC trên chứng từ";
+      kind === "ingredient"
+        ? "Mã nội bộ (không bắt buộc)"
+        : "Mã NCC trên chứng từ";
     fireEvent.change(screen.getByLabelText(label), {
       target: { value: "1082" },
     });
