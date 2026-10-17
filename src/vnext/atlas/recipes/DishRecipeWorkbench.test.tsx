@@ -418,7 +418,7 @@ describe("Công thức operator workbench", () => {
     fireEvent.change(screen.getByLabelText("Định lượng Hành lá"), {
       target: { value: "0,5" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Bỏ Bí đỏ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xóa dòng Bí đỏ" }));
     expect(write).not.toHaveBeenCalled();
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));

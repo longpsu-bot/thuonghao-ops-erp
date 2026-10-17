@@ -153,7 +153,7 @@ describe("Procurement vNext operator workbench", () => {
     });
     expect(screen.getByText("Chọn 1 ngày để chuẩn bị đơn mua.")).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
     expect(openOrders).toHaveBeenCalledExactlyOnceWith({
@@ -530,7 +530,7 @@ describe("Procurement vNext operator workbench", () => {
       screen.getByText("Cần quyền phát hành nhu cầu để lên đơn."),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();
   });
   it("protects the editing context until explicit dirty Close completes", async () => {
@@ -890,6 +890,38 @@ describe("Procurement vNext operator workbench", () => {
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("60");
   });
+  it("restores surviving Close and row controls after dirty Cancel and Discard settle", async () => {
+    show("manual_split");
+    const trigger = await action();
+    await userEvent.click(trigger);
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+      {
+        target: { value: "20" },
+      },
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    const cancelled = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(cancelled).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+    );
+    await waitFor(() => expect(cancelled).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Đóng" })).toHaveFocus();
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("20");
+    await userEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    const discarded = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(discarded).getByRole("button", { name: "Bỏ thay đổi và đóng" }),
+    );
+    await waitFor(() => expect(discarded).not.toBeInTheDocument());
+    await waitFor(() => expect(document.activeElement === trigger).toBe(true));
+    await userEvent.click(trigger);
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("60");
+  });
   it("requires explicit School Apply, supports search, and prevents zero-scope application", async () => {
     const { read } = show();
     await action();
@@ -977,22 +1009,32 @@ describe("Procurement vNext operator workbench", () => {
     expect(within(screen.getByRole("table")).getByText(label)).toBeVisible();
   });
   it("keeps preparation dominant only when ready and no detail is active", async () => {
-    show("ready");
+    const { fixture } = show("ready");
+    const prepare = vi.spyOn(
+      fixture.purchaseReviewApi,
+      "preparePurchaseOrders",
+    );
     const trigger = await action();
     expect(
-      screen.getByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+    ).toHaveAccessibleDescription(/đơn mua nháp/);
+    expect(prepare).not.toHaveBeenCalled();
     fireEvent.click(trigger);
     expect(
-      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
-    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục lên đơn" }));
+    expect(prepare).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị đơn mua" }));
     await waitFor(() =>
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
         "Đơn mua",
       ),
     );
+    expect(prepare).toHaveBeenCalledOnce();
   });
   it("unknown Save shows labeled recovery and disables routine refresh and mutation", async () => {
     const { save } = show("unknown");

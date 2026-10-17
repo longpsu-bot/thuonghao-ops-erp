@@ -7,10 +7,11 @@ import {
   Heading,
   Input,
   Icon,
+  IconButton,
   Table,
   Text,
 } from "@chakra-ui/react";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircle, Trash } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { ingredientLabel, unitLabel } from "../bridges/dishRecipe";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
@@ -257,10 +258,11 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                   </Table.Cell>
                   {editable && (
                     <Table.Cell>
-                      <Button
+                      <IconButton
                         size="sm"
                         variant="tertiary"
-                        aria-label={`Bỏ ${name}`}
+                        aria-label={`Xóa dòng ${name}`}
+                        title={`Xóa dòng ${name}`}
                         onClick={() =>
                           c.setRecipeDraft({
                             ...draft,
@@ -268,8 +270,8 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                           })
                         }
                       >
-                        Bỏ
-                      </Button>
+                        <Trash aria-hidden="true" />
+                      </IconButton>
                     </Table.Cell>
                   )}
                 </Table.Row>

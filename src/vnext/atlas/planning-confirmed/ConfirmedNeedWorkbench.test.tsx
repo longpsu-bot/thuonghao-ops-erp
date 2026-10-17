@@ -74,6 +74,20 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
+  it("keeps date, recipient, Ingredient, Unit and the saved quantity with an edited line after sort", async () => {
+    show();
+    const input = await quantity();
+    fireEvent.change(input, { target: { value: "12.500001" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sắp xếp theo Nguyên liệu" }),
+    );
+    const row = input.closest("tr")!;
+    expect(row).toHaveTextContent("07/09/2026");
+    expect(row).toHaveTextContent("Trường Nguyễn Du");
+    expect(row).toHaveTextContent("Gạo thơm");
+    expect(row).toHaveTextContent("Đã lưu: 10,25 kg");
+    expect(input).toHaveValue("12.500001");
+  });
   it("reports local quantities and unknown Save recovery to the workspace", async () => {
     const report = vi.fn();
     show("normal", { onWorkspaceStatus: report }, (f) => {
@@ -239,9 +253,9 @@ describe("Confirmed Need Chakra operator surface", () => {
         return `${cells[0]!.textContent}|${cells[1]!.textContent}`;
       }),
     ).toEqual([
-      "AN PHÚ (BD)|Bí đỏ",
-      "AN PHÚ (BD)PHÂN HIỆU 2|Gạo thơm",
-      "BÌNH MỸ - BÌNH DƯƠNGBINH MY - BINH DUONG|Cà rốt",
+      "AN PHÚ (BD)07/09/2026|Bí đỏ",
+      "AN PHÚ (BD)07/09/2026PHÂN HIỆU 2|Gạo thơm",
+      "BÌNH MỸ - BÌNH DƯƠNG07/09/2026BINH MY - BINH DUONG|Cà rốt",
     ]);
     expect(within(rows[0]!).getAllByText("AN PHÚ (BD)")).toHaveLength(1);
     expect(within(rows[1]!).getByText("PHÂN HIỆU 2")).toHaveAttribute(

@@ -576,14 +576,27 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                               }
                             </Text>
                             {canPrepare && (
-                              <Button
-                                variant="businessPrimary"
-                                onClick={() =>
-                                  void controller.prepare(Boolean(selected))
-                                }
-                              >
-                                Tiếp tục lên đơn
-                              </Button>
+                              <Box maxW="var(--atlas-layout-preparation-help-width, 520px)">
+                                <Button
+                                  variant="businessPrimary"
+                                  aria-describedby={`${ownerId}-preparation-help`}
+                                  onClick={() =>
+                                    void controller.prepare(Boolean(selected))
+                                  }
+                                >
+                                  Chuẩn bị đơn mua
+                                </Button>
+                                <Text
+                                  id={`${ownerId}-preparation-help`}
+                                  textStyle="helper"
+                                  color="fg.muted"
+                                  mt="xs"
+                                >
+                                  Có thể chốt nhu cầu, chuyển sang Thu mua và
+                                  tạo hoặc cập nhật đơn mua nháp. Chỉ Phát hành
+                                  đơn mua mới cam kết với nhà cung ứng.
+                                </Text>
+                              </Box>
                             )}
                             {multiDay && (
                               <Text textStyle="helper" color="fg.muted">
@@ -641,6 +654,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                             void controller.save(selected, splits)
                           }
                           onClose={closeDetail}
+                          returnFocusEl={() =>
+                            rowTrigger.current?.isConnected
+                              ? rowTrigger.current
+                              : heading.current
+                          }
                         />
                       )}
                     </Grid>

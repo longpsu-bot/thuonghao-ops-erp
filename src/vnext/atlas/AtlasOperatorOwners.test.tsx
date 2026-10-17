@@ -389,7 +389,7 @@ it.each([false, true])(
     show(apis, new Date(`${reviewDate}T03:00:00Z`));
     await open("Phân bổ NCC");
     const allocationOwner = owner("Phân bổ NCC");
-    await screen.findByRole("button", { name: "Tiếp tục lên đơn" });
+    await screen.findByRole("button", { name: "Chuẩn bị đơn mua" });
     await open("Đơn mua");
     await waitFor(() => expect(orders).toHaveBeenCalledOnce());
     const ordersOwner = owner("Đơn mua"),
@@ -402,7 +402,7 @@ it.each([false, true])(
     }
     await open("Phân bổ NCC");
     const proceed = await screen.findByRole("button", {
-      name: "Tiếp tục lên đơn",
+      name: "Chuẩn bị đơn mua",
     });
     await waitFor(() => expect(proceed).toBeEnabled());
     fireEvent.click(proceed);
