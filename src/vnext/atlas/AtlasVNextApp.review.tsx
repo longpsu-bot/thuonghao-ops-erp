@@ -23,7 +23,11 @@ import {
   pxkRow,
   pxkSuccess,
 } from "./dispatch/schoolPxkReviewFixtures";
-import { planningSnapshot, success } from "./planning/planningReviewFixtures";
+import {
+  createPlanningReviewFixture,
+  planningSnapshot,
+  success,
+} from "./planning/planningReviewFixtures";
 import planningSchoolEvidence from "../../../scripts/fixtures/atlas-planning-school-order-2026-10-11.json";
 import { ProcurementWorkbench } from "./procurement/ProcurementWorkbench";
 function Review() {
@@ -33,6 +37,23 @@ function Review() {
   );
   const apis = useMemo(() => {
     const fixture = createAtlasApplicationFixture();
+    if (params.get("scenario") === "ux400") {
+      // Local presentation fixture: 49 retained reference names plus one explicit
+      // synthetic School. No hosted read/write or connected lineage is claimed.
+      const planning = createPlanningReviewFixture();
+      const names = [
+        ...planningSchoolEvidence.schools.map((s) => s.school_name),
+        "Trường thử nghiệm số 50",
+      ];
+      planning.planning.schools = names.map((school_name, index) => ({
+        ...planning.planning.schools[0],
+        school_id: `school-${index}`,
+        school_name,
+        school_code: `TEST-${index + 1}`,
+        display_order: index + 1,
+      }));
+      fixture.planning = planning.api;
+    }
     const rangeReview = params.get("scenario") === "range";
     const scenario = rangeReview ? "ready" : params.get("scenario");
     if (

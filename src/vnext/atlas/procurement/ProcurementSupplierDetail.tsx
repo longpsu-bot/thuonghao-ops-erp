@@ -11,12 +11,13 @@ import {
   Heading,
   Input,
   Icon,
+  IconButton,
   NativeSelect,
   Stack,
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import { Info } from "@phosphor-icons/react";
+import { Info, Trash } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import type { CSSProperties } from "react";
 import {
@@ -46,6 +47,7 @@ export function ProcurementSupplierDetail({
   disabled,
   onSave,
   onClose,
+  returnFocusEl,
   exitRef,
   onWorkspaceStatus,
 }: AtlasModuleExitProps & {
@@ -53,6 +55,7 @@ export function ProcurementSupplierDetail({
   disabled: boolean;
   onSave: (splits: SupplierSplitInput[]) => void;
   onClose: () => void;
+  returnFocusEl?: () => HTMLElement | null;
 }) {
   const eligible = (id: string) =>
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
@@ -356,6 +359,20 @@ export function ProcurementSupplierDetail({
               <Field.Label overflowWrap="anywhere">
                 {supplier.supplier_name}
               </Field.Label>
+              <Text textStyle="helper" color="fg.muted">
+                {saved.some((value) => value.supplier_id === split.supplier_id)
+                  ? "Đã lưu"
+                  : derived?.supplier.supplier_id === split.supplier_id
+                    ? "Mặc định"
+                    : "Dòng mới"}
+                :{" "}
+                {quantity(
+                  baseline.find(
+                    (value) => value.supplier_id === split.supplier_id,
+                  )?.allocated_quantity ?? "0",
+                )}{" "}
+                {row.unit_code}
+              </Text>
               <Flex gap="xs" w="full" align="center">
                 <Input
                   aria-label={`Phân bổ ${supplier.supplier_name}`}
@@ -376,10 +393,11 @@ export function ProcurementSupplierDetail({
                 />
                 <Text>{row.unit_code}</Text>
                 {added.includes(split.supplier_id) && (
-                  <Button
+                  <IconButton
                     size="sm"
                     variant="tertiary"
                     aria-label={`Xóa ${supplier.supplier_name}`}
+                    title={`Xóa ${supplier.supplier_name}`}
                     disabled={locked}
                     onClick={() =>
                       setDraft((values) =>
@@ -393,8 +411,8 @@ export function ProcurementSupplierDetail({
                       lg: "compact",
                     }}
                   >
-                    Xóa
-                  </Button>
+                    <Trash aria-hidden="true" />
+                  </IconButton>
                 )}
               </Flex>
               {invalid && (
@@ -586,7 +604,11 @@ export function ProcurementSupplierDetail({
           if (!open) pendingExit.current = null;
         }}
         initialFocusEl={() => cancelButton.current}
-        finalFocusEl={() => closeButton.current}
+        finalFocusEl={() =>
+          closeButton.current?.isConnected
+            ? closeButton.current
+            : (returnFocusEl?.() ?? null)
+        }
         placement="center"
         motionPreset="none"
         lazyMount

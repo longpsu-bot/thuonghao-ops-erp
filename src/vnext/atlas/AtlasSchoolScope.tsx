@@ -48,6 +48,13 @@ export function AtlasSchoolScope({
     setOpen(false);
     trigger.current?.focus();
   };
+  const filtered = schools
+    .filter((school) =>
+      foldVietnameseSearch(school.school_name).includes(
+        foldVietnameseSearch(search),
+      ),
+    )
+    .sort(compareCanonicalSchools);
   return (
     <Popover.Root
       open={active && open}
@@ -89,6 +96,7 @@ export function AtlasSchoolScope({
           borderRadius="workbench"
           boxShadow="var(--atlas-layout-shadow, none)"
           w="var(--atlas-layout-school-width, min(360px, calc(100vw - 32px)))"
+          maxW="var(--atlas-layout-school-max-width, calc(100vw - 32px))"
           animation="var(--atlas-layout-motion, none)"
         >
           <Popover.Body>
@@ -138,34 +146,39 @@ export function AtlasSchoolScope({
                 overflowY="auto"
                 gap="xs"
               >
-                {schools
-                  .filter((school) =>
-                    foldVietnameseSearch(school.school_name).includes(
-                      foldVietnameseSearch(search),
-                    ),
-                  )
-                  .sort(compareCanonicalSchools)
-                  .map((school) => (
-                    <Checkbox.Root
-                      key={school.school_id}
-                      checked={draft.includes(school.school_id)}
-                      onCheckedChange={({ checked }) =>
-                        setDraft((ids) =>
-                          checked
-                            ? [...ids, school.school_id]
-                            : ids.filter((id) => id !== school.school_id),
-                        )
-                      }
+                {!filtered.length && (
+                  <Text role="status" color="fg.muted">
+                    Không tìm thấy trường phù hợp.
+                  </Text>
+                )}
+                {filtered.map((school) => (
+                  <Checkbox.Root
+                    key={school.school_id}
+                    flexShrink="0"
+                    w="full"
+                    alignItems="center"
+                    checked={draft.includes(school.school_id)}
+                    onCheckedChange={({ checked }) =>
+                      setDraft((ids) =>
+                        checked
+                          ? [...ids, school.school_id]
+                          : ids.filter((id) => id !== school.school_id),
+                      )
+                    }
+                  >
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control flexShrink="0">
+                      <Checkbox.Indicator />
+                    </Checkbox.Control>
+                    <Checkbox.Label
+                      textStyle="body"
+                      whiteSpace="normal"
+                      overflowWrap="anywhere"
                     >
-                      <Checkbox.HiddenInput />
-                      <Checkbox.Control>
-                        <Checkbox.Indicator />
-                      </Checkbox.Control>
-                      <Checkbox.Label textStyle="body">
-                        {school.school_name}
-                      </Checkbox.Label>
-                    </Checkbox.Root>
-                  ))}
+                      {school.school_name}
+                    </Checkbox.Label>
+                  </Checkbox.Root>
+                ))}
               </Stack>
               {!draft.length && (
                 <Text color="status.warning" textStyle="helper">

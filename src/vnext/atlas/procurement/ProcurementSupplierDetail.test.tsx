@@ -137,7 +137,7 @@ describe("Supplier decisions", () => {
     }
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
     expect(
-      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();
   });
 

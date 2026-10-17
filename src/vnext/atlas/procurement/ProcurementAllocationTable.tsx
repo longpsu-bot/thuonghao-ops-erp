@@ -143,7 +143,7 @@ export function ProcurementAllocationTable({
           aria-label="Phân bổ nhà cung ứng"
           minW={{
             base: "var(--atlas-layout-zero, 0)",
-            md: "var(--atlas-allocation-table-width, 960px)",
+            md: "var(--atlas-allocation-table-width, 1120px)",
           }}
           w="full"
           tableLayout="fixed"
@@ -171,15 +171,15 @@ export function ProcurementAllocationTable({
           }}
         >
           <Table.ColumnGroup>
-            <Table.Column w="var(--atlas-allocation-recipient-width, 20%)" />
-            <Table.Column w="var(--atlas-allocation-ingredient-width, 16%)" />
+            <Table.Column w="var(--atlas-allocation-recipient-width, 220px)" />
+            <Table.Column w="var(--atlas-allocation-ingredient-width, 180px)" />
             {showServiceDate && (
-              <Table.Column w="var(--atlas-allocation-date-width, 12%)" />
+              <Table.Column w="var(--atlas-allocation-date-width, 110px)" />
             )}
-            <Table.Column w="var(--atlas-allocation-need-width, 14%)" />
-            <Table.Column w="var(--atlas-allocation-supplier-width, 15%)" />
-            <Table.Column />
-            <Table.Column w="var(--atlas-allocation-action-width, 102px)" />
+            <Table.Column w="var(--atlas-allocation-need-width, 110px)" />
+            <Table.Column w="var(--atlas-allocation-supplier-width, 180px)" />
+            <Table.Column w="var(--atlas-allocation-issue-width, 170px)" />
+            <Table.Column w="var(--atlas-allocation-action-width, 148px)" />
           </Table.ColumnGroup>
           <Table.Header css={atlasNarrowSortableHeader}>
             <Table.Row>

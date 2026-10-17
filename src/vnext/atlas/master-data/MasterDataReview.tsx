@@ -145,7 +145,7 @@ function IngredientReviewTable({
           after: review.after.ingredientName,
         },
         {
-          label: "Mã hàng trên chứng từ",
+          label: "Mã nội bộ (không bắt buộc)",
           before: review.before?.documentCode,
           after: review.after.documentCode,
         },

@@ -127,7 +127,7 @@ export function ConfirmedNeedTable({
           } as CSSProperties
         }
         minW="var(--atlas-layout-confirmed-need-table-min, 1120px)"
-        w="var(--atlas-layout-confirmed-need-table-width, 1120px)"
+        w="full"
         tableLayout="fixed"
       >
         <Table.ColumnGroup>
@@ -247,6 +247,9 @@ export function ConfirmedNeedTable({
                   <Text data-role="recipient" fontWeight="semibold">
                     {line.school.name}
                   </Text>
+                  <Text textStyle="helper" color="fg.muted">
+                    {line.service_date.split("-").reverse().join("/")}
+                  </Text>
                   {!duplicateRecipient && (
                     <Text
                       data-row-secondary=""
@@ -301,6 +304,11 @@ export function ConfirmedNeedTable({
                         : undefined,
                   }}
                 >
+                  <Text textStyle="helper" color="fg.muted" mb="xs">
+                    {line.confirmed_quantity_after === null
+                      ? "Chưa lưu"
+                      : `Đã lưu: ${exactQuantityDisplay(line.confirmed_quantity_after)} ${line.controlled_unit.code}`}
+                  </Text>
                   <Box
                     display="grid"
                     gridTemplateColumns="minmax(0, 1fr) auto"
