@@ -3,7 +3,11 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(31);
+
+-- Operator correction C adds two authenticated APIs and twenty private proof,
+-- fence, proposal and resolved-consumer overloads. Exactly44 effective target
+-- EXECUTE rows are added (including owners); no relation/policy/role/cap delta.
 
 -- D-047 regeneration adds one invoker helper and three SELECT-only policies.
 -- Five private grants: legacy schema USAGE, three relation SELECTs, helper EXECUTE.
@@ -669,8 +673,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  121,
-  'CAT-14 physical atlas_api function count is exactly one hundred twenty-one'
+  123,
+  'CAT-14 physical atlas_api function count is exactly one hundred twenty-three'
 );
 
 select is(
@@ -699,6 +703,7 @@ select is(
     'confirm_successful_delivery(request jsonb)',
     'copy_dish_recipes(request jsonb)',
     'copy_recipe_version(request jsonb)',
+    'correct_confirmed_need(request jsonb)',
     'create_attendance_draft_from_defaults(request jsonb)',
     'create_confirmed_needs_from_generation(request jsonb)',
     'create_dish(request jsonb)',
@@ -715,6 +720,7 @@ select is(
     'evaluate_planning_input_readiness(request jsonb)',
     'execute_need_generation(request jsonb)',
     'get_command_audit_timeline(request jsonb)',
+    'get_confirmed_need_correction_preview(request jsonb)',
     'get_confirmed_need_review(request jsonb)',
     'get_confirmed_need_shopping_list_export(request jsonb)',
     'get_confirmed_supplier_allocation_workbench(request jsonb)',
@@ -806,7 +812,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly one hundred twenty-one physical functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly one hundred twenty-three physical functions'
 );
 
 select is(
@@ -927,6 +933,7 @@ select is(
     'confirm_successful_delivery(request jsonb)=atlas_dispatch_command_runtime',
     'copy_dish_recipes(request jsonb)=atlas_master_data_command_runtime',
     'copy_recipe_version(request jsonb)=atlas_master_data_command_runtime',
+    'correct_confirmed_need(request jsonb)=atlas_confirmed_need_review_runtime',
     'create_attendance_draft_from_defaults(request jsonb)=atlas_planning_command_runtime',
     'create_confirmed_needs_from_generation(request jsonb)=atlas_planning_materialization_runtime',
     'create_dish(request jsonb)=atlas_master_data_command_runtime',
@@ -943,6 +950,7 @@ select is(
     'evaluate_planning_input_readiness(request jsonb)=atlas_planning_command_runtime',
     'execute_need_generation(request jsonb)=atlas_need_generation_runtime',
     'get_command_audit_timeline(request jsonb)=atlas_read_runtime',
+    'get_confirmed_need_correction_preview(request jsonb)=atlas_confirmed_need_review_runtime',
     'get_confirmed_need_review(request jsonb)=atlas_confirmed_need_review_runtime',
     'get_confirmed_need_shopping_list_export(request jsonb)=atlas_confirmed_need_review_runtime',
     'get_confirmed_supplier_allocation_workbench(request jsonb)=atlas_read_runtime',
@@ -1064,6 +1072,7 @@ select is(
     'confirm_successful_delivery(request jsonb)',
     'copy_dish_recipes(request jsonb)',
     'copy_recipe_version(request jsonb)',
+    'correct_confirmed_need(request jsonb)',
     'create_attendance_draft_from_defaults(request jsonb)',
     'create_confirmed_needs_from_generation(request jsonb)',
     'create_dish(request jsonb)',
@@ -1080,6 +1089,7 @@ select is(
     'evaluate_planning_input_readiness(request jsonb)',
     'execute_need_generation(request jsonb)',
     'get_command_audit_timeline(request jsonb)',
+    'get_confirmed_need_correction_preview(request jsonb)',
     'get_confirmed_need_review(request jsonb)',
     'get_confirmed_need_shopping_list_export(request jsonb)',
     'get_confirmed_supplier_allocation_workbench(request jsonb)',
@@ -1168,7 +1178,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly one hundred eighteen functions'
+  'CAT-18 authenticated execute allowlist is exactly one hundred twenty functions'
 );
 
 select ok(
@@ -1216,6 +1226,7 @@ select ok(
           ('confirm_successful_delivery', 'request jsonb'),
           ('copy_dish_recipes', 'request jsonb'),
           ('copy_recipe_version', 'request jsonb'),
+          ('correct_confirmed_need', 'request jsonb'),
           ('create_attendance_draft_from_defaults', 'request jsonb'),
           ('create_confirmed_needs_from_generation', 'request jsonb'),
           ('create_dispatch_plan', 'request jsonb'),
@@ -1232,6 +1243,7 @@ select ok(
           ('evaluate_planning_input_readiness', 'request jsonb'),
           ('execute_need_generation', 'request jsonb'),
           ('get_command_audit_timeline', 'request jsonb'),
+          ('get_confirmed_need_correction_preview', 'request jsonb'),
           ('get_confirmed_need_review', 'request jsonb'),
           ('get_confirmed_need_shopping_list_export', 'request jsonb'),
           ('get_confirmed_supplier_allocation_workbench', 'request jsonb'),
@@ -1812,19 +1824,19 @@ select is(
     'policy_count', 674,
     'policy_catalog_md5', 'b20fe6da611858ba85a679a3e4be56cf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 349,
+    'private_function_count', 374,
     -- Migration 108 adds one private SECURITY INVOKER whole-PO predicate.
-    'private_function_catalog_md5', 'cbccd848f27a6d344eb6d1e1ff156bea',
+    'private_function_catalog_md5', '8041eb69b7f519d971b749cba091280b',
     'trigger_count', 126,
     'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
     -- Only read/Procurement runtimes can execute it; browser grants are unchanged.
-    'positive_target_grant_count', 1855,
-    'positive_target_grant_md5', '07c41179025e2bbdbf165e26a667ca44',
+    'positive_target_grant_count', 1906,
+    'positive_target_grant_md5', 'e75d736f80107c1980abc6b343d427c5',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 121,
+    'api_function_count', 123,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 118,
+    'authenticated_execute_count', 120,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),
@@ -1834,6 +1846,42 @@ select is(
 select ok((select proconfig @> array['search_path=""','join_collapse_limit=1']
   from pg_proc where oid='atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure),
   'D047 proof preserves its fixed search path and bounds only join planning');
+select ok((select count(*)=27 and bool_and(
+ not exists(select from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner)))a
+ where a.grantee=0 and a.privilege_type='EXECUTE')
+ and not has_function_privilege('anon',p.oid,'EXECUTE')
+ and not has_function_privilege('service_role',p.oid,'EXECUTE')
+ and has_function_privilege('authenticated',p.oid,'EXECUTE')=entry.browser_api)
+ from(values
+ ('atlas_core.confirmed_need_historical_validation_complete(uuid,uuid)',false),
+ ('atlas_core.confirmed_need_historical_validation_evidence(uuid,uuid)',false),
+ ('atlas_core.confirmed_need_retained_release_evidence(uuid)',false),
+ ('atlas_core.confirmed_need_correction_lock_days(date,date)',false),
+ ('atlas_core.purchase_review_correction_roots(uuid)',false),
+ ('atlas_core.purchase_review_official_continuity_map(date,date)',false),
+ ('atlas_core.school_catering_po_date_readiness(date,jsonb)',false),
+ ('atlas_core.purchase_review_po_coverage(date,jsonb)',false),
+ ('atlas_core.school_catering_procurement_date_current(date,jsonb)',false),
+ ('atlas_core.purchase_review_correction_context(uuid)',false),
+ ('atlas_core.confirmed_need_handoff_membership(uuid)',false),
+ ('atlas_core.confirmed_need_correction_lock_roots(uuid)',false),
+ ('atlas_core.purchase_review_continuity_context(uuid)',false),
+ ('atlas_core.purchase_review_family_continuity(uuid,text,jsonb)',false),
+ ('atlas_core.purchase_review_family_continuity(uuid,text)',false),
+ ('atlas_core.confirmed_need_correction_procurement_details(uuid,date,uuid,uuid,uuid)',false),
+ ('atlas_core.confirmed_need_correction_source_current(uuid)',false),
+ ('atlas_core.rmvp_05_canonical_preview(uuid,bigint,jsonb,boolean)',false),
+ ('atlas_core.rmvp_07_validated_facts_projection(uuid,uuid,jsonb)',false),
+ ('atlas_core.confirmed_need_correction_request_valid(jsonb,boolean)',false),
+ ('atlas_core.confirmed_need_correction_proposal(jsonb)',false),
+ ('atlas_core.school_catering_po_draft_is_stale(uuid,uuid,jsonb)',false),
+ ('atlas_core.school_catering_po_commitment_state(uuid,uuid,jsonb)',false),
+ ('atlas_core.school_dispatch_release_preview(date,uuid,uuid,jsonb)',false),
+ ('atlas_core.school_fulfilment_reconciliation_scope(date,uuid,uuid,jsonb)',false),
+ ('atlas_api.get_confirmed_need_correction_preview(jsonb)',true),
+ ('atlas_api.correct_confirmed_need(jsonb)',true))entry(signature,browser_api)
+ join pg_proc p on p.oid=entry.signature::regprocedure),
+ 'CAT-23 exact C private seams deny PUBLIC/browser/service; only two reviewed APIs allow authenticated');
 select * from finish();
 
 rollback;

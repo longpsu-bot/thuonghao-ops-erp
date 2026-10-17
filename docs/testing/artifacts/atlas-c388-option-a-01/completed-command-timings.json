@@ -1,0 +1,384 @@
+{
+  "operational": [
+    {
+      "name": "history-1-preview",
+      "depth": 1,
+      "stage": "preview",
+      "elapsedMs": 123.963,
+      "success": true
+    },
+    {
+      "name": "history-1-correct",
+      "depth": 1,
+      "stage": "correct",
+      "elapsedMs": 815.377,
+      "success": true
+    },
+    {
+      "name": "history-1-allocation-read",
+      "depth": 1,
+      "stage": "allocation-read",
+      "elapsedMs": 1321.974,
+      "success": true
+    },
+    {
+      "name": "history-1-allocation-save",
+      "depth": 1,
+      "stage": "allocation-save",
+      "elapsedMs": 111.506,
+      "success": true
+    },
+    {
+      "name": "history-1-preparation",
+      "depth": 1,
+      "stage": "preparation",
+      "elapsedMs": 10212.758,
+      "success": true
+    },
+    {
+      "name": "history-1-replacement",
+      "depth": 1,
+      "stage": "replacement",
+      "elapsedMs": 956.219,
+      "success": true
+    },
+    {
+      "name": "history-1-po-release",
+      "depth": 1,
+      "stage": "po-release",
+      "elapsedMs": 538.021,
+      "success": true
+    },
+    {
+      "name": "history-1-po-read",
+      "depth": 1,
+      "stage": "po-read",
+      "elapsedMs": 1610.118,
+      "success": true
+    },
+    {
+      "name": "history-1-pxk-read",
+      "depth": 1,
+      "stage": "pxk-read",
+      "elapsedMs": 2794.32,
+      "success": true
+    },
+    {
+      "name": "history-1-pxk-release",
+      "depth": 1,
+      "stage": "pxk-release",
+      "elapsedMs": 510,
+      "success": true
+    },
+    {
+      "name": "history-2-preview",
+      "depth": 2,
+      "stage": "preview",
+      "elapsedMs": 125.175,
+      "success": true
+    },
+    {
+      "name": "history-2-correct",
+      "depth": 2,
+      "stage": "correct",
+      "elapsedMs": 931.71,
+      "success": true
+    },
+    {
+      "name": "history-2-allocation-read",
+      "depth": 2,
+      "stage": "allocation-read",
+      "elapsedMs": 1632.799,
+      "success": true
+    },
+    {
+      "name": "history-2-allocation-save",
+      "depth": 2,
+      "stage": "allocation-save",
+      "elapsedMs": 110.542,
+      "success": true
+    },
+    {
+      "name": "history-2-preparation",
+      "depth": 2,
+      "stage": "preparation",
+      "elapsedMs": 15063.343,
+      "success": true
+    },
+    {
+      "name": "history-2-replacement",
+      "depth": 2,
+      "stage": "replacement",
+      "elapsedMs": 1219.03,
+      "success": true
+    },
+    {
+      "name": "history-2-po-release",
+      "depth": 2,
+      "stage": "po-release",
+      "elapsedMs": 667.975,
+      "success": true
+    },
+    {
+      "name": "history-2-po-read",
+      "depth": 2,
+      "stage": "po-read",
+      "elapsedMs": 1911.334,
+      "success": true
+    },
+    {
+      "name": "history-2-pxk-read",
+      "depth": 2,
+      "stage": "pxk-read",
+      "elapsedMs": 2938.117,
+      "success": true
+    },
+    {
+      "name": "history-2-pxk-release",
+      "depth": 2,
+      "stage": "pxk-release",
+      "elapsedMs": 648.712,
+      "success": true
+    }
+  ],
+  "stress": [
+    {
+      "name": "history-1-preview",
+      "depth": 1,
+      "stage": "preview",
+      "elapsedMs": 126.079,
+      "success": true
+    },
+    {
+      "name": "history-1-correct",
+      "depth": 1,
+      "stage": "correct",
+      "elapsedMs": 821.591,
+      "success": true
+    },
+    {
+      "name": "history-1-allocation-read",
+      "depth": 1,
+      "stage": "allocation-read",
+      "elapsedMs": 1340.745,
+      "success": true
+    },
+    {
+      "name": "history-1-allocation-save",
+      "depth": 1,
+      "stage": "allocation-save",
+      "elapsedMs": 111.5,
+      "success": true
+    },
+    {
+      "name": "history-1-preparation",
+      "depth": 1,
+      "stage": "preparation",
+      "elapsedMs": 10345.825,
+      "success": true
+    },
+    {
+      "name": "history-1-replacement",
+      "depth": 1,
+      "stage": "replacement",
+      "elapsedMs": 967.596,
+      "success": true
+    },
+    {
+      "name": "history-1-po-release",
+      "depth": 1,
+      "stage": "po-release",
+      "elapsedMs": 548.275,
+      "success": true
+    },
+    {
+      "name": "history-1-po-read",
+      "depth": 1,
+      "stage": "po-read",
+      "elapsedMs": 1568.464,
+      "success": true
+    },
+    {
+      "name": "history-1-pxk-read",
+      "depth": 1,
+      "stage": "pxk-read",
+      "elapsedMs": 2757.573,
+      "success": true
+    },
+    {
+      "name": "history-1-pxk-release",
+      "depth": 1,
+      "stage": "pxk-release",
+      "elapsedMs": 520.582,
+      "success": true
+    },
+    {
+      "name": "history-2-preview",
+      "depth": 2,
+      "stage": "preview",
+      "elapsedMs": 124.029,
+      "success": true
+    },
+    {
+      "name": "history-2-correct",
+      "depth": 2,
+      "stage": "correct",
+      "elapsedMs": 975.652,
+      "success": true
+    },
+    {
+      "name": "history-2-allocation-read",
+      "depth": 2,
+      "stage": "allocation-read",
+      "elapsedMs": 1638.399,
+      "success": true
+    },
+    {
+      "name": "history-2-allocation-save",
+      "depth": 2,
+      "stage": "allocation-save",
+      "elapsedMs": 111.939,
+      "success": true
+    },
+    {
+      "name": "history-2-preparation",
+      "depth": 2,
+      "stage": "preparation",
+      "elapsedMs": 14986.696,
+      "success": true
+    },
+    {
+      "name": "history-2-replacement",
+      "depth": 2,
+      "stage": "replacement",
+      "elapsedMs": 1262.936,
+      "success": true
+    },
+    {
+      "name": "history-2-po-release",
+      "depth": 2,
+      "stage": "po-release",
+      "elapsedMs": 673.828,
+      "success": true
+    },
+    {
+      "name": "history-2-po-read",
+      "depth": 2,
+      "stage": "po-read",
+      "elapsedMs": 1911.151,
+      "success": true
+    },
+    {
+      "name": "history-2-pxk-read",
+      "depth": 2,
+      "stage": "pxk-read",
+      "elapsedMs": 2931.629,
+      "success": true
+    },
+    {
+      "name": "history-2-pxk-release",
+      "depth": 2,
+      "stage": "pxk-release",
+      "elapsedMs": 652.482,
+      "success": true
+    },
+    {
+      "name": "history-3-preview",
+      "depth": 3,
+      "stage": "preview",
+      "elapsedMs": 123.575,
+      "success": true
+    },
+    {
+      "name": "history-3-correct",
+      "depth": 3,
+      "stage": "correct",
+      "elapsedMs": 1063.676,
+      "success": true
+    },
+    {
+      "name": "history-3-allocation-read",
+      "depth": 3,
+      "stage": "allocation-read",
+      "elapsedMs": 2072.567,
+      "success": true
+    },
+    {
+      "name": "history-3-allocation-save",
+      "depth": 3,
+      "stage": "allocation-save",
+      "elapsedMs": 115.607,
+      "success": true
+    },
+    {
+      "name": "history-3-preparation",
+      "depth": 3,
+      "stage": "preparation",
+      "elapsedMs": 19491.005,
+      "success": true
+    },
+    {
+      "name": "history-3-replacement",
+      "depth": 3,
+      "stage": "replacement",
+      "elapsedMs": 1628.887,
+      "success": true
+    },
+    {
+      "name": "history-3-po-release",
+      "depth": 3,
+      "stage": "po-release",
+      "elapsedMs": 858.284,
+      "success": true
+    },
+    {
+      "name": "history-3-po-read",
+      "depth": 3,
+      "stage": "po-read",
+      "elapsedMs": 2356.332,
+      "success": true
+    },
+    {
+      "name": "history-3-pxk-read",
+      "depth": 3,
+      "stage": "pxk-read",
+      "elapsedMs": 3336.378,
+      "success": true
+    },
+    {
+      "name": "history-3-pxk-release",
+      "depth": 3,
+      "stage": "pxk-release",
+      "elapsedMs": 838.756,
+      "success": true
+    },
+    {
+      "name": "history-4-preview",
+      "depth": 4,
+      "stage": "preview",
+      "elapsedMs": 134.02,
+      "success": true
+    },
+    {
+      "name": "history-4-correct",
+      "depth": 4,
+      "stage": "correct",
+      "elapsedMs": 1243.516,
+      "success": true
+    },
+    {
+      "name": "history-4-allocation-read",
+      "depth": 4,
+      "stage": "allocation-read",
+      "elapsedMs": 2470.927,
+      "success": true
+    },
+    {
+      "name": "history-4-allocation-save",
+      "depth": 4,
+      "stage": "allocation-save",
+      "elapsedMs": 117.631,
+      "success": true
+    }
+  ]
+}

@@ -3,10 +3,13 @@ import type {
   AtlasRpcRequest,
   AtlasRpcResult,
 } from "../../connection/atlasRpc";
+import { normalizeConfirmedNeedQuantity } from "./confirmedNeedModel";
 import type { ConfirmedNeedDraftLine } from "./confirmedNeedModel";
 
 export const CONFIRMED_NEED_RPC_FUNCTIONS = {
   getReview: "atlas_api.get_confirmed_need_review",
+  previewCorrection: "atlas_api.get_confirmed_need_correction_preview",
+  correct: "atlas_api.correct_confirmed_need",
   preview: "atlas_api.preview_confirmed_need_confirmation",
   confirm: "atlas_api.confirm_need_quantities",
   validate: "atlas_api.validate_confirmed_needs",
@@ -16,6 +19,125 @@ export const CONFIRMED_NEED_RPC_FUNCTIONS = {
   releaseV2: "atlas_api.release_confirmed_needs",
   releasePurchaseHandoff: "atlas_api.release_school_catering_purchase_handoff",
 } as const satisfies Record<string, AtlasRpcName>;
+
+export type ConfirmedNeedCorrectionPayload = {
+  need_generation_run_id: string;
+  expected_need_generation_run_version: number;
+  confirmed_need_batch_id: string;
+  expected_confirmed_need_batch_version: number;
+  confirmed_need_line_id: string;
+  expected_current_revision_id: string;
+  expected_current_decision_id: string;
+  proposed_confirmed_quantity: string;
+  reason_code: ConfirmedNeedDraftLine["reason_code"];
+  reason_note: string;
+};
+export type ConfirmedNeedCorrectionPreviewRequest = AtlasRpcRequest & {
+  contract_version: "CONFIRMED-NEED-CORRECTION.v1";
+  requested_by_auth_subject: string;
+  correlation_id: string;
+  payload: ConfirmedNeedCorrectionPayload;
+};
+export type ConfirmedNeedCorrectionCommandRequest =
+  ConfirmedNeedCorrectionPreviewRequest & {
+    command_id: string;
+    idempotency_key: string;
+    requested_at: string;
+    expected_version: number;
+    reason_code: "CONFIRMED_NEED_CORRECTION_SAVED";
+    reason_note: string;
+    payload: ConfirmedNeedCorrectionPayload & { proposal_fingerprint: string };
+  };
+export function confirmedNeedCorrectionPreviewRequest(
+  authSubject: string,
+  correlationId: string,
+  input: ConfirmedNeedCorrectionPayload,
+): ConfirmedNeedCorrectionPreviewRequest {
+  const {
+    need_generation_run_id,
+    expected_need_generation_run_version,
+    confirmed_need_batch_id,
+    expected_confirmed_need_batch_version,
+    confirmed_need_line_id,
+    expected_current_revision_id,
+    expected_current_decision_id,
+    reason_code,
+    reason_note,
+  } = input;
+  const quantity =
+    typeof input.proposed_confirmed_quantity === "string"
+      ? normalizeConfirmedNeedQuantity(input.proposed_confirmed_quantity)
+      : null;
+  if (
+    ![
+      authSubject,
+      correlationId,
+      need_generation_run_id,
+      confirmed_need_batch_id,
+      confirmed_need_line_id,
+      expected_current_revision_id,
+      expected_current_decision_id,
+      reason_note,
+    ].every((v) => typeof v === "string" && v.trim()) ||
+    ![
+      expected_need_generation_run_version,
+      expected_confirmed_need_batch_version,
+    ].every((v) => Number.isSafeInteger(v) && v > 0) ||
+    ![
+      "PROPOSAL_ACCEPTED",
+      "PLANNING_STEP_ADJUSTMENT",
+      "OPERATIONAL_QUANTITY_ADJUSTMENT",
+      "OTHER",
+    ].includes(reason_code) ||
+    !quantity
+  )
+    throw new Error(
+      "Thông tin điều chỉnh chưa đầy đủ hoặc số lượng không hợp lệ.",
+    );
+  const [integer, fraction = ""] = quantity.split(".");
+  return {
+    contract_version: "CONFIRMED-NEED-CORRECTION.v1",
+    requested_by_auth_subject: authSubject,
+    correlation_id: correlationId,
+    payload: {
+      need_generation_run_id,
+      expected_need_generation_run_version,
+      confirmed_need_batch_id,
+      expected_confirmed_need_batch_version,
+      confirmed_need_line_id,
+      expected_current_revision_id,
+      expected_current_decision_id,
+      proposed_confirmed_quantity: `${integer}.${fraction.padEnd(6, "0")}`,
+      reason_code,
+      reason_note,
+    },
+  };
+}
+export function confirmedNeedCorrectionCommandRequest(
+  authSubject: string,
+  correlationId: string,
+  payload: ConfirmedNeedCorrectionPayload,
+  fingerprint: string,
+): ConfirmedNeedCorrectionCommandRequest {
+  if (!/^[0-9a-f]{64}$/.test(fingerprint))
+    throw new Error("Cần xem lại đề xuất điều chỉnh hiện tại.");
+  const preview = confirmedNeedCorrectionPreviewRequest(
+      authSubject,
+      correlationId,
+      payload,
+    ),
+    command = crypto.randomUUID();
+  return {
+    ...preview,
+    command_id: command,
+    idempotency_key: `confirmed-need-correction:${command}`,
+    requested_at: new Date().toISOString(),
+    expected_version: preview.payload.expected_confirmed_need_batch_version,
+    reason_code: "CONFIRMED_NEED_CORRECTION_SAVED",
+    reason_note: preview.payload.reason_note,
+    payload: { ...preview.payload, proposal_fingerprint: fingerprint },
+  };
+}
 
 export type ConfirmedNeedFilters = {
   service_date: string | null;
@@ -364,6 +486,15 @@ export function confirmedNeedPurchaseHandoffRequest(
 
 export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
   return {
+    previewCorrection(request: ConfirmedNeedCorrectionPreviewRequest) {
+      return invoker.invoke(
+        CONFIRMED_NEED_RPC_FUNCTIONS.previewCorrection,
+        request,
+      );
+    },
+    correct(request: ConfirmedNeedCorrectionCommandRequest) {
+      return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.correct, request);
+    },
     getShoppingListExport(request: AtlasRpcRequest) {
       return invoker.invoke(
         "atlas_api.get_confirmed_need_shopping_list_export",

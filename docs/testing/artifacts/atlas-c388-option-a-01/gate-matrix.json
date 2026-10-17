@@ -1,0 +1,52 @@
+{
+  "verdict": "BLOCKED",
+  "reason": "TIER_3_HISTORICAL_STRESS_FAIL",
+  "runtimeHead": "aa3ae3053a50bf2bc7e8d5235e16457bde7bd811",
+  "focused": {
+    "pass": true,
+    "originalAssertions": 588,
+    "additionalAssertions": 9,
+    "totalAssertions": 597
+  },
+  "tier2": {
+    "pass": true,
+    "assertions": 36,
+    "quantities": [101, 102],
+    "preparationMs": [10212.758, 15063.343],
+    "unrelatedFamilies": 249,
+    "unrelatedSupplierPOs": 4
+  },
+  "tier3": {
+    "pass": false,
+    "attempts": 1,
+    "completeCycles": 3,
+    "requiredCycles": 8,
+    "failingCycle": 4,
+    "failingCommand": "prepare_school_catering_purchase_orders",
+    "timeoutMs": 20000,
+    "finalAssertions": 0,
+    "requiredFinalAssertions": 20,
+    "rollbackParity": true
+  },
+  "security": {
+    "pass": true,
+    "functions": 497,
+    "roles": 42,
+    "memberships": 44,
+    "schemas": 10,
+    "protectedRelationImages": 117
+  },
+  "concurrency": {
+    "pass": true,
+    "actualPublicHolderSchedules": 3,
+    "exactStoredResponseUnknownRecovery": true,
+    "scope": "small shared-location fixture; not exhaustive deadlock/scale concurrency"
+  },
+  "integration": {
+    "frontend": "FAIL at aa3ae30: one unhandled Mantine transition timer error; 3123 tests passed",
+    "smoke": "PASS at aa3ae30",
+    "fullIntegration": "SKIPPED",
+    "combined392": "NOT CERTIFIED"
+  },
+  "stop": "No SQL tuning, stress rerun, merge or backend deployment. Owner: separate Option B design or park C388."
+}

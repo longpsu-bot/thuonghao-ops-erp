@@ -335,6 +335,7 @@ export function reviewOrder(
 /** Explicit review snapshots only. No hosted adapter and no backend derivation. */
 export function createProcurementReviewFixture(
   scenario: ProcurementReviewScenario = "normal",
+  selectedDate?: string,
 ) {
   const serviceDate =
     scenario === "oct12_recommendations" ? oct12ReviewDate : reviewDate;
@@ -375,6 +376,20 @@ export function createProcurementReviewFixture(
         ? reviewFailure("RETRYABLE_CONCURRENCY_FAILURE", true)
         : reviewSuccess({ safe_operator_message: "Đã lưu theo yêu cầu." }),
   };
+  // Only the correction_pending review entry opts into a selected-day snapshot.
+  // Retain default fixtures and every non-date fact, including controlled IDs.
+  if (selectedDate && selectedDate !== serviceDate)
+    Object.assign(
+      fixture,
+      JSON.parse(
+        JSON.stringify(fixture)
+          .replaceAll(serviceDate, selectedDate)
+          .replaceAll(
+            serviceDate.replaceAll("-", ""),
+            selectedDate.replaceAll("-", ""),
+          ),
+      ),
+    );
   const command = async () => fixture.commandResult;
   let allocationReads = 0;
   const purchaseReviewApi: PurchaseReviewApi = {

@@ -1,0 +1,10 @@
+{
+  "name": "baseline-preparation",
+  "sqlSha256": "71406d40df9c7f9c573af45f388b7b64931e432e43cac23d6558ce2c1e60646a",
+  "exitCode": 3,
+  "wallMs": 8923.357699999999,
+  "assertions": 0,
+  "complete": false,
+  "rollbackAndCatalogParity": true,
+  "pass": false
+}

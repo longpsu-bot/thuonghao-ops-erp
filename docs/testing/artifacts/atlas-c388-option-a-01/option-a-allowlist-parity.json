@@ -1,0 +1,19 @@
+{
+  "exactParity": true,
+  "changed": [
+    {
+      "acl": "{atlas_procurement_command_runtime=X/atlas_procurement_command_runtime,atlas_read_runtime=X/atlas_procurement_command_runtime}",
+      "owner": "atlas_procurement_command_runtime",
+      "config": ["search_path=\"\""],
+      "definer": true,
+      "identity": "atlas_core.purchase_review_continuity_context(uuid)",
+      "volatile": "s",
+      "source_md5": "dedda1b719569e7af11f08708864958c"
+    }
+  ],
+  "functions": 497,
+  "roles": 42,
+  "memberships": 44,
+  "schemas": 10,
+  "relations": 117
+}

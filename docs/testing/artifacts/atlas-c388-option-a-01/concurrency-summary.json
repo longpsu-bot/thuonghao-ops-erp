@@ -1,0 +1,32 @@
+{
+  "cases": [
+    {
+      "name": "public PH allocation Save",
+      "actualLockWaitObserved": true,
+      "retryableRejection": "RETRYABLE_CONCURRENCY_FAILURE",
+      "exactRetrySuccess": true,
+      "rollbackParity": true,
+      "deadlockObserved": false
+    },
+    {
+      "name": "public correction including contributing CN Save",
+      "actualLockWaitObserved": true,
+      "retryableRejection": "RETRYABLE_CONCURRENCY_FAILURE",
+      "exactRetrySuccess": true,
+      "rollbackParity": true,
+      "deadlockObserved": false
+    },
+    {
+      "name": "overlapping public Preparation",
+      "actualLockWaitObserved": true,
+      "retryableRejection": "RETRYABLE_CONCURRENCY_FAILURE",
+      "exactRetrySuccess": true,
+      "rollbackParity": true,
+      "deadlockObserved": false
+    }
+  ],
+  "unknownRecovery": false,
+  "limitation": "Small shared-location fixture; lock/retry/rollback evidence, not a 250-family concurrency benchmark or proof of every possible deadlock schedule.",
+  "pass": false,
+  "error": "ERROR:  column \"status\" does not exist\nLINE 1: ...and_id='68e7c56b-6d4e-4173-b17e-aeda0f25b129' and status='CO...\n                                                             ^\n"
+}

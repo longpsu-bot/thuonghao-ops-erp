@@ -10,6 +10,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ProcurementOrdersStage } from "./ProcurementOrdersStage";
 import { createProcurementReviewFixture } from "./procurementReviewFixtures";
+import {
+  purchaseOrdersReadRequest,
+  purchaseOrdersFromResult,
+} from "../bridges/procurement";
 afterEach(cleanup);
 function show(
   scenario: Parameters<typeof createProcurementReviewFixture>[0] = "po_draft",
@@ -252,4 +256,108 @@ describe("Supplier purchase orders", () => {
       ).toBeDisabled();
     },
   );
+  it.each(["PO_SOURCE_NOT_READY", "CORRECTION_PENDING"])(
+    "keeps official export but suppresses premature replacement for %s",
+    (code) => {
+      const f = createProcurementReviewFixture("replacement_required");
+      const order = f.orders.purchase_orders[0]!;
+      order.blockers = [code, "PO_REPLACEMENT_REQUIRED"];
+      order.disabled_reasons = [code];
+      order.allowed_actions.create_replacement = false;
+      render(
+        <AtlasVNextProvider>
+          <ProcurementOrdersStage
+            data={f.orders}
+            disabled={false}
+            search=""
+            onAction={vi.fn()}
+            onExportXlsx={vi.fn()}
+          />
+        </AtlasVNextProvider>,
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Xem đơn NCC An Phú" }),
+      );
+      const detail = screen.getByRole("region", {
+        name: "Chi tiết đơn mua NCC An Phú",
+      });
+      expect(detail).toHaveTextContent("Chưa đủ dữ liệu nguồn chính thức");
+      expect(detail).not.toHaveTextContent(
+        "Tạo và kiểm tra đơn thay thế đầy đủ",
+      );
+      expect(
+        within(detail).queryByRole("button", { name: "Tạo đơn thay thế" }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(detail).getByRole("button", { name: "Xuất Excel" }),
+      ).toBeEnabled();
+      expect(detail).not.toHaveTextContent(code);
+    },
+  );
+  it("binds explicitly dated pending review API documents to the selected day without changing identities or quantities", async () => {
+    const original = createProcurementReviewFixture("replacement_required");
+    const fixture = createProcurementReviewFixture(
+      "replacement_required",
+      "2026-09-07",
+    );
+    const data = purchaseOrdersFromResult(
+      await fixture.procurementApi.getPurchaseOrders(
+        purchaseOrdersReadRequest("operator", "correlation", {
+          date_start: "2026-09-07",
+          date_end: "2026-09-07",
+          supplier_ids: [],
+          statuses: [],
+          search: null,
+        }),
+      ),
+    );
+    expect(data).toMatchObject({
+      date_start: "2026-09-07",
+      date_end: "2026-09-07",
+    });
+    expect(data?.purchase_orders[0]?.document_number).toBe("PO-20260907-ANPHU");
+    expect(
+      data?.purchase_orders.every(
+        (order) =>
+          order.service_date === "2026-09-07" &&
+          order.lines.every((line) => line.service_date === "2026-09-07"),
+      ),
+    ).toBe(true);
+    expect(
+      data?.purchase_orders.map((order) => [
+        order.purchase_order_id,
+        order.current_revision.purchase_order_revision_id,
+        order.supplier.supplier_id,
+        order.lines.map((line) => [
+          line.purchase_order_line_id,
+          line.ordered_quantity,
+          line.unit.unit_id,
+        ]),
+      ]),
+    ).toEqual(
+      original.orders.purchase_orders.map((order) => [
+        order.purchase_order_id,
+        order.current_revision.purchase_order_revision_id,
+        order.supplier.supplier_id,
+        order.lines.map((line) => [
+          line.purchase_order_line_id,
+          line.ordered_quantity,
+          line.unit.unit_id,
+        ]),
+      ]),
+    );
+    expect(fixture.allocation).toMatchObject({
+      date_start: "2026-09-07",
+      date_end: "2026-09-07",
+    });
+    expect(
+      fixture.allocation.rows.every(
+        (row) => row.family.service_date === "2026-09-07",
+      ),
+    ).toBe(true);
+    expect(original.orders.date_start).toBe("2026-09-10");
+    expect(original.orders.purchase_orders[0]?.document_number).toBe(
+      "PO-20260910-ANPHU",
+    );
+  });
 });

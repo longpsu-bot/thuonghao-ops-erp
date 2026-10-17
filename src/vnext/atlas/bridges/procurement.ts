@@ -29,6 +29,7 @@ export {
 export {
   procurementOperatorMessage,
   procurementOperatorMessages,
+  purchaseOrderSourcePending,
 } from "../../../modules/atlas/procurement/procurementOperatorCopy";
 export type {
   AtlasRpcResult,

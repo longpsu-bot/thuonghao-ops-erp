@@ -221,7 +221,7 @@ function Review() {
       >();
       const needFor = (date: string) => {
         if (!dailyNeed.has(date))
-          dailyNeed.set(date, createConfirmedNeedReviewFixture());
+          dailyNeed.set(date, createConfirmedNeedReviewFixture("normal", date));
         return dailyNeed.get(date)!;
       };
       const datedNeed = <T,>(value: T, date: string): T =>
@@ -253,6 +253,14 @@ function Review() {
           await needFor(date).confirmedNeedApi.save(request),
           date,
         );
+      };
+      fixture.confirmedNeed.previewCorrection = async (request) => {
+        const date = request.payload.confirmed_need_batch_id.slice(-10);
+        return needFor(date).confirmedNeedApi.previewCorrection(request);
+      };
+      fixture.confirmedNeed.correct = async (request) => {
+        const date = request.payload.confirmed_need_batch_id.slice(-10);
+        return needFor(date).confirmedNeedApi.correct(request);
       };
       fixture.needGeneration.getWorkbench = async (...args) =>
         datedNeed(
@@ -387,6 +395,38 @@ function Review() {
           date_end: payload.date_end,
         });
       };
+    }
+    const correctionScenarios = [
+      "correction_shared",
+      "correction_zero",
+      "correction_authority",
+      "correction_unknown",
+      "correction_readback",
+      "correction_pending",
+    ] as const;
+    const correctionScenario = correctionScenarios.find(
+      (value) => value === scenario,
+    );
+    if (correctionScenario) {
+      const need = createConfirmedNeedReviewFixture(
+        correctionScenario,
+        applicationReviewNow.toISOString().slice(0, 10),
+      );
+      fixture.planningReadiness = need.preflightApi;
+      fixture.needGeneration = need.needGenerationApi;
+      fixture.confirmedNeed = need.confirmedNeedApi;
+      if (correctionScenario === "correction_pending") {
+        const procurement = createProcurementReviewFixture(
+          "replacement_required",
+          applicationReviewNow.toISOString().slice(0, 10),
+        );
+        const order = procurement.orders.purchase_orders[0]!;
+        order.blockers = ["PO_SOURCE_NOT_READY", "PO_REPLACEMENT_REQUIRED"];
+        order.disabled_reasons = ["PO_SOURCE_NOT_READY"];
+        order.allowed_actions.create_replacement = false;
+        fixture.purchaseReview = procurement.purchaseReviewApi;
+        fixture.procurement = procurement.procurementApi;
+      }
     }
     return fixture;
   }, []);

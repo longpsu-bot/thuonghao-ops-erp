@@ -1,0 +1,191 @@
+[
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_api.create_school_catering_purchase_order_drafts(jsonb)",
+    "volatility": "v"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\"", "statement_timeout=20s"],
+    "definer": true,
+    "identity": "atlas_api.prepare_school_catering_purchase_orders(jsonb)",
+    "volatility": "v"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_api.release_confirmed_needs(jsonb)",
+    "volatility": "v"
+  },
+  {
+    "owner": "atlas_planning_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_api.release_school_catering_purchase_handoff(jsonb)",
+    "volatility": "v"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.confirmed_need_handoff_membership(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.confirmed_need_historical_validation_complete(uuid,uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.confirmed_need_historical_validation_evidence(uuid,uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.confirmed_need_retained_release_evidence(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_allocation_ready(uuid,jsonb)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_allocation_ready(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_confirmed_batch_sources(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_confirmed_source_universe(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_confirmed_sources(date,date)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_continuity_context(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_correction_context(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_correction_roots(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_family_continuity(uuid,text,jsonb)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_family_continuity(uuid,text)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_official_continuity_map(date,date)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_po_coverage(date,jsonb)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_po_coverage(date)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_preparation_allocation_ready(uuid,jsonb)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_preparation_allocation_ready(uuid)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_preparation_po_frontier(date)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_procurement_command_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_core.purchase_review_promote_allocations(uuid,uuid,uuid,uuid,uuid)",
+    "volatility": "v"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": false,
+    "identity": "atlas_core.rmvp_07_validation_evidence_complete(uuid,uuid,bigint)",
+    "volatility": "s"
+  },
+  {
+    "owner": "atlas_confirmed_need_review_runtime",
+    "config": ["search_path=\"\""],
+    "definer": true,
+    "identity": "atlas_planning.rmvp_07_approval_release_integrity()",
+    "volatility": "v"
+  }
+]

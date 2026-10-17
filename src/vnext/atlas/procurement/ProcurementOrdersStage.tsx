@@ -13,6 +13,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import {
   procurementOperatorMessages,
+  purchaseOrderSourcePending,
   type PurchaseOrdersData,
   type SchoolCateringPurchaseOrder,
 } from "../bridges/procurement";
@@ -119,7 +120,8 @@ export function ProcurementOrdersStage({
           ? "Phát hành cho NCC"
           : null
       : selected?.status === "RELEASED_TO_SUPPLIER" &&
-          selected.commitment_state === "REPLACEMENT_REQUIRED"
+          selected.commitment_state === "REPLACEMENT_REQUIRED" &&
+          !purchaseOrderSourcePending(selected)
         ? "Tạo đơn thay thế"
         : null;
   const allowed =
@@ -317,7 +319,9 @@ export function ProcurementOrdersStage({
                           "REPLACEMENT_REQUIRED",
                           "CANCELLATION_REQUIRED",
                         ].includes(order.commitment_state) && "⚠ "}
-                        {stateLabel[order.commitment_state]}
+                        {purchaseOrderSourcePending(order)
+                          ? "Chờ dữ liệu nguồn"
+                          : stateLabel[order.commitment_state]}
                       </Text>
                       {procurementOperatorMessages(
                         order.warnings.filter(
@@ -411,12 +415,13 @@ export function ProcurementOrdersStage({
                   hành.
                 </Text>
               )}
-              {selected.commitment_state === "REPLACEMENT_REQUIRED" && (
-                <Text color="status.warning">
-                  ⚠ Đơn đã phát hành được giữ nguyên. Tạo và kiểm tra đơn thay
-                  thế đầy đủ.
-                </Text>
-              )}
+              {selected.commitment_state === "REPLACEMENT_REQUIRED" &&
+                !purchaseOrderSourcePending(selected) && (
+                  <Text color="status.warning">
+                    ⚠ Đơn đã phát hành được giữ nguyên. Tạo và kiểm tra đơn thay
+                    thế đầy đủ.
+                  </Text>
+                )}
               {selected.commitment_state === "CANCELLATION_REQUIRED" && (
                 <Text color="status.warning">
                   ⚠ Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.

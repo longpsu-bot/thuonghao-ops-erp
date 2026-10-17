@@ -50,6 +50,67 @@ import {
 
 const stagingRef = APPROVED_ATLAS_STAGING_PROJECT_REF;
 const commitSha = "a".repeat(40);
+
+describe("local purchase-review TAP completeness", () => {
+  const assertions = (count) =>
+    Array.from({ length: count }, (_, n) => `ok ${n + 1} - assertion`).join(
+      "\n",
+    );
+  const leading = (count) => `1..${count}\n${assertions(count)}\n`;
+  it("exposes a pure validator without running the Docker CLI on import", async () => {
+    const source = readFileSync(
+      "scripts/test-local-purchase-review.mjs",
+      "utf8",
+    );
+    expect(source).toContain("export function completePurchaseReviewTap");
+    const { completePurchaseReviewTap } =
+      await import("./test-local-purchase-review.mjs");
+    expect(completePurchaseReviewTap("1..1\nok 1 - complete\n", 0)).toBe(true);
+  });
+  it.each([
+    ["leading92", leading(92)],
+    ["trailing no_plan92", `${assertions(92)}\n1..92\n`],
+    ["two incumbent complete streams", leading(31) + leading(11)],
+    ["mixed leading/trailing", leading(31) + assertions(11) + "\n1..11\n"],
+    [
+      "diagnostics and CRLF",
+      ("# diagnostic\n" + leading(2) + "Time: 1ms\n").replaceAll("\n", "\r\n"),
+    ],
+  ])("accepts %s", async (_, output) => {
+    const { completePurchaseReviewTap } =
+      await import("./test-local-purchase-review.mjs");
+    expect(completePurchaseReviewTap(output, 0)).toBe(true);
+  });
+  it.each([
+    ["84 of92", `1..92\n${assertions(84)}\n`],
+    ["trailing incomplete", `${assertions(92)}\n1..93\n`],
+    ["duplicate number", "1..2\nok 1 - a\nok 1 - b\n"],
+    ["gap", "1..2\nok 1 - a\nok 3 - b\n"],
+    ["extra assertion", leading(1) + "ok 2 - extra\n"],
+    ["incomplete second stream", leading(31) + "1..11\n" + assertions(10)],
+    ["empty second stream", leading(31) + "1..11\n"],
+    ["invalid trailing plan", leading(1) + "1..0\n"],
+    ["malformed trailing assertion", leading(1) + "ok x - malformed\n"],
+    ["planless", assertions(2)],
+    ["empty", ""],
+    ["plan only", "1..2\n"],
+    ["duplicate plan", "1..2\n1..2\nok 1 - a\nok 2 - b\n"],
+    ["not ok TODO", "1..1\nnot ok 1 - failure # TODO\n"],
+    ["bailout", leading(1) + "Bail out! aborted\n"],
+  ])("rejects %s", async (_, output) => {
+    const { completePurchaseReviewTap } =
+      await import("./test-local-purchase-review.mjs");
+    expect(completePurchaseReviewTap(output, 0)).toBe(false);
+  });
+  it.each([1, null])(
+    "rejects process status %s despite complete TAP",
+    async (status) => {
+      const { completePurchaseReviewTap } =
+        await import("./test-local-purchase-review.mjs");
+      expect(completePurchaseReviewTap(leading(2), status)).toBe(false);
+    },
+  );
+});
 const stagingIdentity = JSON.parse(
   readFileSync("supabase/packages/atlas-staging-identity.v1.json", "utf8"),
 );
@@ -1038,7 +1099,18 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(116);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(120);
+    for (const file of [
+      "confirmed_need_correction.sql",
+      "confirmed_need_correction_continuity.sql",
+      "confirmed_need_correction_consumers.sql",
+      "confirmed_need_correction_scale.sql",
+    ]) {
+      expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+        command: "node",
+        args: ["scripts/test-local-purchase-review.mjs", file],
+      });
+    }
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [
@@ -2272,9 +2344,9 @@ describe("Atlas staging hosted evidence", () => {
       "get_school_fulfilment_reconciliation_workbench(request jsonb)";
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(121);
-    expect(authority.apiOwners).toHaveLength(121);
-    expect(authority.authenticatedApiSignatures).toHaveLength(118);
+    expect(authority.apiSignatures).toHaveLength(123);
+    expect(authority.apiOwners).toHaveLength(123);
+    expect(authority.authenticatedApiSignatures).toHaveLength(120);
     for (const name of [
       "get_cooking_groups",
       "upsert_cooking_group",

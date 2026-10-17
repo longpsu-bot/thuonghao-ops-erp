@@ -20,16 +20,41 @@ export function createAtlasApplicationFixture(): AtlasVNextApis {
   const planning = createPlanningReviewFixture();
   const confirmed = createConfirmedNeedReviewFixture();
   const procurement = createProcurementReviewFixture("manual_split");
-  const preflightRead = confirmed.preflightApi.preflight;
-  confirmed.preflightApi.preflight = async (...args) =>
-    snapshotDate(await preflightRead(...args), applicationReviewDate, args[2]);
-  const confirmedRead = confirmed.confirmedNeedApi.getReview;
-  confirmed.confirmedNeedApi.getReview = async (...args) =>
-    snapshotDate(
-      await confirmedRead(...args),
-      applicationReviewDate,
-      args[3].service_date ?? applicationReviewDate,
-    );
+  const dailyNeed = new Map([[applicationReviewDate, confirmed]]);
+  const needFor = (date: string) => {
+    if (!dailyNeed.has(date))
+      dailyNeed.set(date, createConfirmedNeedReviewFixture("normal", date));
+    return dailyNeed.get(date)!;
+  };
+  const batchDate = (id: string) =>
+    /\d{4}-\d{2}-\d{2}$/.exec(id)?.[0] ?? applicationReviewDate;
+  const confirmedNeed = {
+    ...confirmed.confirmedNeedApi,
+    getReview: ((...args) =>
+      needFor(
+        args[3].service_date ?? applicationReviewDate,
+      ).confirmedNeedApi.getReview(
+        ...args,
+      )) as typeof confirmed.confirmedNeedApi.getReview,
+    save: ((request) =>
+      needFor(
+        batchDate(request.payload.confirmed_need_batch_id),
+      ).confirmedNeedApi.save(
+        request,
+      )) as typeof confirmed.confirmedNeedApi.save,
+    previewCorrection: ((request) =>
+      needFor(
+        batchDate(request.payload.confirmed_need_batch_id),
+      ).confirmedNeedApi.previewCorrection(
+        request,
+      )) as typeof confirmed.confirmedNeedApi.previewCorrection,
+    correct: ((request) =>
+      needFor(
+        batchDate(request.payload.confirmed_need_batch_id),
+      ).confirmedNeedApi.correct(
+        request,
+      )) as typeof confirmed.confirmedNeedApi.correct,
+  };
   return {
     masterData: {
       ...createIngredientSupplierReviewFixture(),
@@ -39,9 +64,11 @@ export function createAtlasApplicationFixture(): AtlasVNextApis {
     recipeAdjustment: createChangeOrderFixture("ACTIVE").api,
     planning: planning.api,
     pantry: planning.pantryApi,
-    planningReadiness: confirmed.preflightApi,
+    planningReadiness: {
+      preflight: (...args) => needFor(args[2]).preflightApi.preflight(...args),
+    },
     needGeneration: confirmed.needGenerationApi,
-    confirmedNeed: confirmed.confirmedNeedApi,
+    confirmedNeed,
     purchaseReview: procurement.purchaseReviewApi,
     procurement: procurement.procurementApi,
     schoolDispatch: createSchoolPxkReviewFixture("READY"),
@@ -58,9 +85,4 @@ export function createAtlasApplicationFixture(): AtlasVNextApis {
       },
     },
   };
-}
-
-// Date-stamped copies of explicit certified snapshots, with no business calculation.
-function snapshotDate<T>(snapshot: T, from: string, to: string): T {
-  return JSON.parse(JSON.stringify(snapshot).replaceAll(from, to)) as T;
 }
