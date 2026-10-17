@@ -48,6 +48,16 @@ describe("bounded C388 Preparation evidence", () => {
     );
     expect(sql).toContain("set local pg_stat_statements.track='all'");
     expect(sql).toContain("set local auto_explain.log_nested_statements=on");
+    expect(sql).toMatch(/^set session authorization postgres;\nbegin;/);
+    expect(sql.indexOf("reset session authorization;")).toBeGreaterThan(
+      sql.indexOf("select pg_temp.c_scale_history('allocation-save',1);"),
+    );
+    expect(
+      sql.lastIndexOf("set session authorization postgres;"),
+    ).toBeGreaterThan(sql.indexOf("set local auto_explain.log_format='json'"));
+    expect(sql.lastIndexOf("set session authorization postgres;")).toBeLessThan(
+      sql.indexOf("select pg_temp.c_scale_history('preparation',1);"),
+    );
     expect(sql).not.toMatch(
       /alter\s+(system|role)|pg_stat_statements_reset|pg_stat_reset/i,
     );

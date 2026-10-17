@@ -39,6 +39,7 @@ export function buildPreparationProbe(mode) {
   const tracking =
     mode === "profile"
       ? `
+reset session authorization;
 load 'auto_explain';
 set local track_functions='all';
 set local pg_stat_statements.track='all';
@@ -51,11 +52,13 @@ set local auto_explain.log_parameter_max_length=0;
 set local auto_explain.log_format='json';
 select jsonb_build_object('C388_STATS_BEFORE',coalesce(jsonb_agg(to_jsonb(s)),'[]'))
 from extensions.pg_stat_statements s where dbid=(select oid from pg_database where datname=current_database());
+set session authorization postgres;
 `
       : "";
   return {
     fixtureSha256: hash(original),
-    sql: `begin;\nset search_path=extensions,public,pg_catalog;\n${original.slice(0, end)}\n${stages}\n${tracking}
+    sql: `${mode === "profile" ? "set session authorization postgres;\n" : ""}begin;\nset search_path=extensions,public,pg_catalog;\n${original.slice(0, end)}\n${stages}\n${tracking}
+select jsonb_build_object('C388_TARGET_CALLER',current_user,'session_user',session_user);
 set local application_name='atlas_c388_target';
 set local statement_timeout='20s';
 \\timing on
@@ -130,7 +133,7 @@ async function main() {
       maxBuffer: 64 * 1024 * 1024,
       timeout,
     });
-  const psqlArgs = (database) => [
+  const psqlArgs = (database, user = "postgres") => [
     "exec",
     "-i",
     container,
@@ -142,12 +145,17 @@ async function main() {
     "-v",
     "VERBOSITY=verbose",
     "-U",
-    "postgres",
+    user,
     "-d",
     database,
   ];
-  const sql = (text, database = "postgres", name = "sql") => {
-    const result = command("docker", psqlArgs(database), text);
+  const sql = (
+    text,
+    database = "postgres",
+    name = "sql",
+    user = "postgres",
+  ) => {
+    const result = command("docker", psqlArgs(database, user), text);
     save(`${name}.log`, (result.stdout ?? "") + (result.stderr ?? ""));
     if (result.status !== 0)
       throw new Error(`${name} failed; see sanitized artifact.`);
@@ -168,6 +176,12 @@ async function main() {
       "8s public / 20s Preparation / 1s entry / unchanged disclosed nested5s; one13-relation ANALYZE",
     limitations:
       "SQL-local synthetic fixture; no HTTP/integration certification. Fresh runner cache/physical state differs from preserved host. Completed inclusive counters overlap and omit canceled/inlined work. Profile adds overhead; it is not acceptance.",
+    controlConnection:
+      "Built-in supabase_admin for owned database clone/control and read-only observer/statistics. No role/grant changes.",
+    probeConnection:
+      mode === "profile"
+        ? "Admin transport with postgres session/current identity throughout original fixture/public calls; administrator identity only while configuring/collecting session instrumentation outside target timing."
+        : "postgres transport/session; original public calls authenticated.",
   };
   try {
     const existing = command("docker", [
@@ -259,17 +273,20 @@ async function main() {
         "alter database postgres allow_connections false; select pg_terminate_backend(pid) from pg_stat_activity where datname='postgres';",
         "template1",
         "quiesce-owned-source",
+        "supabase_admin",
       );
       sql(
         `create database ${database} template postgres;`,
         "template1",
         "clone-owned-baseline",
+        "supabase_admin",
       );
     } finally {
       sql(
         "alter database postgres allow_connections true;",
         "template1",
         "restore-owned-source-connectivity",
+        "supabase_admin",
       );
     }
     const tap = sql(
@@ -286,7 +303,7 @@ async function main() {
     let stdout = "",
       stderr = "",
       waits = "";
-    const observer = spawn("docker", psqlArgs("postgres"), {
+    const observer = spawn("docker", psqlArgs("postgres", "supabase_admin"), {
       stdio: ["pipe", "pipe", "pipe"],
     });
     observer.stdout.on("data", (chunk) => {
@@ -310,9 +327,13 @@ async function main() {
         "select jsonb_build_object('at',clock_timestamp(),'pid',pid,'state',state,'wait_type',wait_event_type,'wait',wait_event,'blockers',pg_blocking_pids(pid)) from pg_stat_activity where datname='atlas_c388_probe' and application_name='atlas_c388_target';\n",
       );
     }, 200);
-    const child = spawn("docker", psqlArgs(database), {
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    const child = spawn(
+      "docker",
+      psqlArgs(database, mode === "profile" ? "supabase_admin" : "postgres"),
+      {
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
     child.stdout.on("data", (chunk) => {
       stdout += chunk;
     });
@@ -372,6 +393,7 @@ async function main() {
         "select jsonb_agg(to_jsonb(f)) from pg_stat_user_functions f where schemaname like 'atlas%'; select jsonb_agg(to_jsonb(s)) from extensions.pg_stat_statements s where dbid=(select oid from pg_database where datname=current_database());",
         database,
         "completed-function-and-statement-statistics",
+        "supabase_admin",
       );
       const plans = command("docker", ["logs", "--since", started, container]);
       save("server-plans.log", (plans.stdout ?? "") + (plans.stderr ?? ""));
