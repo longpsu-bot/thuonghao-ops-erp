@@ -18,6 +18,8 @@ are never backfilled, and the preview/readiness contract is unchanged.
 
 ## Boundary
 
+The [Issue 395 Option A evidence](../testing/issue-395-option-a-validation.md) preserves exact School scope, shared-PO dependency closure and immutable released PXK history. Its dual correction journeys pass, while historical soak remains blocking. No Dispatch contract or hosted rollout is authorized by that trial.
+
 This contract implements the minimum School/day `PHIẾU XUẤT KHO` capability. It is
 separate from the historical supplier-direct DispatchPlan/Trip pipeline and does not
 represent Warehouse stock movement.

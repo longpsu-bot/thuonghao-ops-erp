@@ -1,0 +1,120 @@
+{
+  "mode": "option-a",
+  "head": "aa3ae3053a50bf2bc7e8d5235e16457bde7bd811",
+  "accepted": false,
+  "outcome": "HISTORICAL_STRESS_FAIL",
+  "limits": "8s public / 20s Preparation / 1s entry / unchanged disclosed nested5s; one13-relation ANALYZE",
+  "limitations": "Bounded SQL-local synthetic acceptance only. Separate one-cycle operational and original eight-cycle stress oracles; neither proves hosted HTTP/browser, live competing-session waits, or combined UI integration.",
+  "controlConnection": "Built-in supabase_admin for owned database clone/control and read-only observer/statistics. No role/grant changes.",
+  "probeConnection": "postgres transport/session; original public calls authenticated.",
+  "fullIntegration": "SKIPPED: bounded SQL acceptance only; no HTTP/browser/full integration certification.",
+  "suites": [
+    {
+      "name": "confirmed_need_correction",
+      "sqlSha256": "3653718dff36a300e91ee228ea98c69d8a2b1a14faafafc39fe27c19c5d966ac",
+      "exitCode": 0,
+      "wallMs": 2052.220113999996,
+      "assertions": 103,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "confirmed_need_correction_continuity",
+      "sqlSha256": "4c6e445109bace980513f24c50760e5d8b2ab062a8ab83eaaeb1cd8ac323bd3a",
+      "exitCode": 0,
+      "wallMs": 1928.8409390000015,
+      "assertions": 137,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "confirmed_need_correction_consumers",
+      "sqlSha256": "a72bb2c448fc6a93813b85f22ec1846a966e6f44b92eecf48e6b494d1b50a4d1",
+      "exitCode": 0,
+      "wallMs": 3789.566015999997,
+      "assertions": 58,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "atlas_current_platform_security_catalog",
+      "sqlSha256": "497b3cb34713cb5e14620db2749595878fd7b1ad5531dbe18eb68c7a379937cd",
+      "exitCode": 0,
+      "wallMs": 280.8613939999923,
+      "assertions": 31,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "school_catering_purchase_orders",
+      "sqlSha256": "af696641994157a11061ac5201652dab98a170fa7b6057560780af1b123db815",
+      "exitCode": 0,
+      "wallMs": 1863.0947420000011,
+      "assertions": 155,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "rmvp_07_connected_confirmed_need_approval_release",
+      "sqlSha256": "02622ae1a8a8047a95f027b5bea93c0f6e4d47e744fdd79d5a8c21c96d959523",
+      "exitCode": 0,
+      "wallMs": 708.9831450000056,
+      "assertions": 67,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "d037_confirmed_need_save_release_boundary",
+      "sqlSha256": "ad0e4d498a7c8e9c1fa26efe61b6f260173fb40042ecc255a130222c2cdb0169",
+      "exitCode": 0,
+      "wallMs": 651.3195819999964,
+      "assertions": 37,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "issue_395_phase_context_parity",
+      "sqlSha256": "b9bb8d35d1c255a93789f7b9e6bc2bd9f6f2a245318b978cadb8ade0802811b8",
+      "exitCode": 0,
+      "wallMs": 1553.5725910000037,
+      "assertions": 9,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "operational",
+      "sqlSha256": "ee05e1dc7238adc6b352c4881d6915886eb445beff9f3b3d673bb4b11967e735",
+      "exitCode": 0,
+      "wallMs": 82767.82092400001,
+      "assertions": 36,
+      "completeSequentialTap": true,
+      "rollbackAndIntegrityVerified": true,
+      "pass": true
+    },
+    {
+      "name": "historical-stress",
+      "sqlSha256": "be82e771b059fe78c2b6353642a820c8a824257c9fe441241fa92963751589cb",
+      "exitCode": 3,
+      "wallMs": 138490.885471,
+      "assertions": 0,
+      "completeSequentialTap": false,
+      "rollbackAndIntegrityVerified": true,
+      "pass": false
+    }
+  ],
+  "focusedAssertions": 597,
+  "originalStressSqlSha256": "be82e771b059fe78c2b6353642a820c8a824257c9fe441241fa92963751589cb",
+  "operationalRuns": 1,
+  "operationalCorrectionsRequired": 2,
+  "operationalAcceptance": true,
+  "historicalStressRuns": 1,
+  "error": "historical-stress failed or incomplete; no automatic retry."
+}

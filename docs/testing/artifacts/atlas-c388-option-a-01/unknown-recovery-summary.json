@@ -1,0 +1,8 @@
+{
+  "cases": [],
+  "unknownRecovery": true,
+  "limitation": "Small shared-location fixture; lock/retry/rollback evidence, not a 250-family concurrency benchmark or proof of every possible deadlock schedule.",
+  "recoveredReceiptId": "fb902b1f-9540-4d92-8b19-83a34ba434fa",
+  "retainedOriginalCommandId": "98304c50-a9d2-4300-9653-edf4dfcd84cd",
+  "pass": true
+}

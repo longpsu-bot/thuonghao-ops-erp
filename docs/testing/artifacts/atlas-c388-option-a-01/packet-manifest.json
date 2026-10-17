@@ -1,0 +1,58 @@
+[
+  {
+    "file": "completed-command-timings.json",
+    "sha256": "4a274e7301349dda1bd6e70c3e70454fd9bb59c8fa10912c6e682c56b2ac0533"
+  },
+  {
+    "file": "concurrency-summary.json",
+    "sha256": "8e864a665080dcc1ad9312f41f50fbec9f02ec548be66599e8e1601fb5e4f23d"
+  },
+  {
+    "file": "function-inventory.json",
+    "sha256": "3bd6e72d2f21471af26b40849596805780936209094e2a55614c7f47674114c6"
+  },
+  {
+    "file": "gate-matrix.json",
+    "sha256": "f5d27c8d51981ff39866c4dca601d94cb315c621532b6e485634c22ef83468cb"
+  },
+  {
+    "file": "invalid-local-baseline-result.json",
+    "sha256": "39c83da076847736b9b09d6e580ed91211588045ef16815da32f15440ee91aa8"
+  },
+  {
+    "file": "invalid-oracle-attempt-summary.json",
+    "sha256": "ac6fda9af2a67085f49818ec21eb89a88bd721abe380240c9a342a8139154a81"
+  },
+  {
+    "file": "operational-measurements.json",
+    "sha256": "8dd76703656b147e2101d1645c3628548e8515f8a8e957e26960a930a68f2421"
+  },
+  {
+    "file": "option-a-allowlist-parity.json",
+    "sha256": "d3e5d59e55749b36fda9161d3ac2f7b9814de5875f38e735925c82dd5511307d"
+  },
+  {
+    "file": "raw-actions-manifest.json",
+    "sha256": "03264ba9cbdec77763064af3f48571cd6f3984db275a5256e19c1154fce27296"
+  },
+  {
+    "file": "source-manifest.json",
+    "sha256": "09dc9d4df339f029574409d9020c2d8894357e172258ac778d860c7a5bc1cd6f"
+  },
+  {
+    "file": "summary.json",
+    "sha256": "ad947f24256243e6f6c50cc130e7a21f5c5b2e8756373707aeefe6c146b3ba4e"
+  },
+  {
+    "file": "unknown-recovery-exact-replay.json",
+    "sha256": "20337c340e4378c655bf42e282aaa9b4c711271c9e319cdfae2b7412403b4ba1"
+  },
+  {
+    "file": "unknown-recovery-readback.json",
+    "sha256": "e21c748d26a9cd4af18f2325aacb12c16911983b63bc4101c21cfdf71e191a15"
+  },
+  {
+    "file": "unknown-recovery-summary.json",
+    "sha256": "c09c9b0732ebccb2295c07737999a23077c5fe52afb5b6b5a7684153b0a8ee55"
+  }
+]

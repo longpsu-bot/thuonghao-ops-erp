@@ -394,6 +394,8 @@ and [PostgREST timeout hoisting](https://docs.postgrest.org/en/stable/references
 
 ### Post-release allocation read performance (migration 106)
 
+The [Issue 395 Option A trial](../testing/issue-395-option-a-validation.md) changes only phase-local proof assembly in unapplied C, preserving supplier/date whole-document commitments and this contract's budgets. Dual 250-family journeys pass on the recorded runner; deeper historical soak fails. This is not the separate 236-family certification or hosted acceptance.
+
 The Supplier Allocation workbench retains its normal authenticated 8-second
 budget and the existing `CONFIRMED-SUPPLIER-ALLOCATION.v1` payload. Each read
 resolves its full current Confirmed Need source set once for presentation and

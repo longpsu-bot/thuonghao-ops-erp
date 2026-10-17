@@ -1,0 +1,4851 @@
+{
+  "workload": "50 Schools x5 Ingredients; one selected School PXK; one operational history edge",
+  "measurements": [
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-1",
+      "command_ms": 116.398,
+      "elapsed_ms": 118.801,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 2.403,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-10",
+      "command_ms": 112.084,
+      "elapsed_ms": 113.271,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.187,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-100",
+      "command_ms": 107.174,
+      "elapsed_ms": 108.295,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.121,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-101",
+      "command_ms": 107.418,
+      "elapsed_ms": 108.549,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.131,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-102",
+      "command_ms": 107.297,
+      "elapsed_ms": 108.412,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.115,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-103",
+      "command_ms": 106.879,
+      "elapsed_ms": 108.471,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.592,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-104",
+      "command_ms": 106.173,
+      "elapsed_ms": 107.3,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.127,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-105",
+      "command_ms": 105.218,
+      "elapsed_ms": 106.364,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.146,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-106",
+      "command_ms": 106.471,
+      "elapsed_ms": 107.627,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.156,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-107",
+      "command_ms": 105.152,
+      "elapsed_ms": 106.291,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.139,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-108",
+      "command_ms": 106.641,
+      "elapsed_ms": 107.774,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.133,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-109",
+      "command_ms": 106.199,
+      "elapsed_ms": 107.366,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.167,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-11",
+      "command_ms": 106.958,
+      "elapsed_ms": 108.108,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.15,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-110",
+      "command_ms": 106.859,
+      "elapsed_ms": 108.031,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.172,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-111",
+      "command_ms": 106.727,
+      "elapsed_ms": 107.921,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.194,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-112",
+      "command_ms": 107.282,
+      "elapsed_ms": 108.433,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.151,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-113",
+      "command_ms": 107.326,
+      "elapsed_ms": 108.477,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.151,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-114",
+      "command_ms": 106.556,
+      "elapsed_ms": 107.747,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.191,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-115",
+      "command_ms": 107.556,
+      "elapsed_ms": 108.703,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.147,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-116",
+      "command_ms": 107.955,
+      "elapsed_ms": 109.165,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.21,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-117",
+      "command_ms": 107.504,
+      "elapsed_ms": 108.674,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.17,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-118",
+      "command_ms": 108.018,
+      "elapsed_ms": 109.179,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.161,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-119",
+      "command_ms": 107.266,
+      "elapsed_ms": 108.48,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.214,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-12",
+      "command_ms": 107.341,
+      "elapsed_ms": 108.51,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.169,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-120",
+      "command_ms": 107.013,
+      "elapsed_ms": 108.167,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-121",
+      "command_ms": 106.66,
+      "elapsed_ms": 107.793,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.133,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-122",
+      "command_ms": 106.969,
+      "elapsed_ms": 108.123,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-123",
+      "command_ms": 107.492,
+      "elapsed_ms": 108.634,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.142,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-124",
+      "command_ms": 106.974,
+      "elapsed_ms": 108.112,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.138,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-125",
+      "command_ms": 107.759,
+      "elapsed_ms": 108.922,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.163,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-126",
+      "command_ms": 107.366,
+      "elapsed_ms": 108.554,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.188,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-127",
+      "command_ms": 106.43,
+      "elapsed_ms": 107.599,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.169,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-128",
+      "command_ms": 106.527,
+      "elapsed_ms": 107.687,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.16,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-129",
+      "command_ms": 105.558,
+      "elapsed_ms": 106.72,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.162,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-13",
+      "command_ms": 107.28,
+      "elapsed_ms": 108.44,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.16,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-130",
+      "command_ms": 105.799,
+      "elapsed_ms": 106.959,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.16,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-131",
+      "command_ms": 105.997,
+      "elapsed_ms": 107.154,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.157,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-132",
+      "command_ms": 106.615,
+      "elapsed_ms": 107.759,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.144,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-133",
+      "command_ms": 107.579,
+      "elapsed_ms": 108.722,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.143,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-134",
+      "command_ms": 106.185,
+      "elapsed_ms": 107.333,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.148,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-135",
+      "command_ms": 105.81,
+      "elapsed_ms": 106.953,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.143,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-136",
+      "command_ms": 106.243,
+      "elapsed_ms": 107.401,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.158,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-137",
+      "command_ms": 106.359,
+      "elapsed_ms": 107.524,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.165,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-138",
+      "command_ms": 106.299,
+      "elapsed_ms": 107.452,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.153,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-139",
+      "command_ms": 106.651,
+      "elapsed_ms": 107.794,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.143,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-14",
+      "command_ms": 106.414,
+      "elapsed_ms": 107.579,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.165,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-140",
+      "command_ms": 105.921,
+      "elapsed_ms": 107.08,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.159,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-141",
+      "command_ms": 107.518,
+      "elapsed_ms": 108.684,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.166,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-142",
+      "command_ms": 107.455,
+      "elapsed_ms": 108.613,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.158,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-143",
+      "command_ms": 107.199,
+      "elapsed_ms": 108.341,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.142,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-144",
+      "command_ms": 107.125,
+      "elapsed_ms": 108.283,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.158,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-145",
+      "command_ms": 106.427,
+      "elapsed_ms": 107.603,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.176,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-146",
+      "command_ms": 106.118,
+      "elapsed_ms": 107.259,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.141,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-147",
+      "command_ms": 106.52,
+      "elapsed_ms": 107.646,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.126,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-148",
+      "command_ms": 107.293,
+      "elapsed_ms": 108.434,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.141,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-149",
+      "command_ms": 107.213,
+      "elapsed_ms": 108.433,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.22,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-15",
+      "command_ms": 115.973,
+      "elapsed_ms": 117.142,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.169,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-150",
+      "command_ms": 105.743,
+      "elapsed_ms": 106.888,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.145,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-151",
+      "command_ms": 107.452,
+      "elapsed_ms": 108.604,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.152,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-152",
+      "command_ms": 107.019,
+      "elapsed_ms": 108.17,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.151,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-153",
+      "command_ms": 106.332,
+      "elapsed_ms": 107.496,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.164,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-154",
+      "command_ms": 106.921,
+      "elapsed_ms": 108.074,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.153,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-155",
+      "command_ms": 107.013,
+      "elapsed_ms": 108.167,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-156",
+      "command_ms": 106.867,
+      "elapsed_ms": 108.014,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.147,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-157",
+      "command_ms": 107.864,
+      "elapsed_ms": 109.024,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.16,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-158",
+      "command_ms": 106.768,
+      "elapsed_ms": 107.917,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.149,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-159",
+      "command_ms": 107.028,
+      "elapsed_ms": 108.194,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.166,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-16",
+      "command_ms": 105.814,
+      "elapsed_ms": 106.951,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.137,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-160",
+      "command_ms": 106.391,
+      "elapsed_ms": 107.567,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.176,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-161",
+      "command_ms": 108.612,
+      "elapsed_ms": 109.778,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.166,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-162",
+      "command_ms": 107.027,
+      "elapsed_ms": 108.202,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.175,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-163",
+      "command_ms": 106.649,
+      "elapsed_ms": 107.813,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.164,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-164",
+      "command_ms": 112.277,
+      "elapsed_ms": 113.678,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.401,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-165",
+      "command_ms": 127.121,
+      "elapsed_ms": 128.457,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.336,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-166",
+      "command_ms": 125.459,
+      "elapsed_ms": 126.648,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.189,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-167",
+      "command_ms": 108.197,
+      "elapsed_ms": 109.37,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.173,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-168",
+      "command_ms": 107.581,
+      "elapsed_ms": 108.723,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.142,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-169",
+      "command_ms": 106.937,
+      "elapsed_ms": 108.093,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.156,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-17",
+      "command_ms": 106.936,
+      "elapsed_ms": 108.103,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.167,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-170",
+      "command_ms": 105.412,
+      "elapsed_ms": 106.569,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.157,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-171",
+      "command_ms": 114.253,
+      "elapsed_ms": 115.514,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.261,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-172",
+      "command_ms": 106.946,
+      "elapsed_ms": 108.101,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.155,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-173",
+      "command_ms": 106.176,
+      "elapsed_ms": 107.316,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.14,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-174",
+      "command_ms": 106.002,
+      "elapsed_ms": 107.136,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.134,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-175",
+      "command_ms": 108.318,
+      "elapsed_ms": 109.484,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.166,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-176",
+      "command_ms": 106.994,
+      "elapsed_ms": 108.149,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.155,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-177",
+      "command_ms": 119.493,
+      "elapsed_ms": 120.639,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.146,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-178",
+      "command_ms": 107.367,
+      "elapsed_ms": 108.504,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.137,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-179",
+      "command_ms": 107.21,
+      "elapsed_ms": 109.053,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.843,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-18",
+      "command_ms": 107.163,
+      "elapsed_ms": 108.32,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.157,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-180",
+      "command_ms": 106.503,
+      "elapsed_ms": 107.644,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.141,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-181",
+      "command_ms": 112.854,
+      "elapsed_ms": 114.066,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.212,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-182",
+      "command_ms": 117.338,
+      "elapsed_ms": 118.517,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.179,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-183",
+      "command_ms": 107.052,
+      "elapsed_ms": 108.261,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.209,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-184",
+      "command_ms": 107.542,
+      "elapsed_ms": 108.727,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.185,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-185",
+      "command_ms": 106.537,
+      "elapsed_ms": 107.741,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.204,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-186",
+      "command_ms": 107.392,
+      "elapsed_ms": 108.543,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.151,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-187",
+      "command_ms": 107.635,
+      "elapsed_ms": 108.791,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.156,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-188",
+      "command_ms": 106.659,
+      "elapsed_ms": 107.833,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.174,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-189",
+      "command_ms": 108.813,
+      "elapsed_ms": 110.049,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.236,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-19",
+      "command_ms": 107.705,
+      "elapsed_ms": 108.864,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.159,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-190",
+      "command_ms": 106.602,
+      "elapsed_ms": 107.751,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.149,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-191",
+      "command_ms": 106.996,
+      "elapsed_ms": 108.144,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.148,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-192",
+      "command_ms": 107.874,
+      "elapsed_ms": 109.071,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.197,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-193",
+      "command_ms": 110.529,
+      "elapsed_ms": 111.686,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.157,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-194",
+      "command_ms": 106.944,
+      "elapsed_ms": 108.134,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.19,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-195",
+      "command_ms": 107.668,
+      "elapsed_ms": 108.842,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.174,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-196",
+      "command_ms": 106.736,
+      "elapsed_ms": 107.913,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.177,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-197",
+      "command_ms": 106.655,
+      "elapsed_ms": 107.782,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.127,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-198",
+      "command_ms": 107.072,
+      "elapsed_ms": 108.224,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.152,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-199",
+      "command_ms": 107.208,
+      "elapsed_ms": 108.362,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-2",
+      "command_ms": 106.688,
+      "elapsed_ms": 107.834,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.146,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-20",
+      "command_ms": 106.574,
+      "elapsed_ms": 107.719,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.145,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-200",
+      "command_ms": 108.13,
+      "elapsed_ms": 109.292,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.162,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-201",
+      "command_ms": 107.048,
+      "elapsed_ms": 108.231,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.183,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-202",
+      "command_ms": 106.864,
+      "elapsed_ms": 108.04,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.176,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-203",
+      "command_ms": 107.068,
+      "elapsed_ms": 108.22,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.152,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-204",
+      "command_ms": 108.103,
+      "elapsed_ms": 109.297,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.194,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-205",
+      "command_ms": 107.232,
+      "elapsed_ms": 108.469,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.237,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-206",
+      "command_ms": 108.663,
+      "elapsed_ms": 109.81,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.147,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-207",
+      "command_ms": 107.05,
+      "elapsed_ms": 108.195,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.145,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-208",
+      "command_ms": 108.089,
+      "elapsed_ms": 109.243,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-209",
+      "command_ms": 107.28,
+      "elapsed_ms": 108.457,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.177,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-21",
+      "command_ms": 107.563,
+      "elapsed_ms": 108.719,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.156,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-210",
+      "command_ms": 106.529,
+      "elapsed_ms": 107.687,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.158,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-211",
+      "command_ms": 106.474,
+      "elapsed_ms": 107.619,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.145,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-212",
+      "command_ms": 108.188,
+      "elapsed_ms": 109.34,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.152,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-213",
+      "command_ms": 106.856,
+      "elapsed_ms": 108.045,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.189,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-214",
+      "command_ms": 107.445,
+      "elapsed_ms": 108.621,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.176,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-215",
+      "command_ms": 107.769,
+      "elapsed_ms": 108.969,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.2,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-216",
+      "command_ms": 107.374,
+      "elapsed_ms": 108.549,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.175,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-217",
+      "command_ms": 108.208,
+      "elapsed_ms": 109.373,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.165,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-218",
+      "command_ms": 109.467,
+      "elapsed_ms": 110.631,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.164,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-219",
+      "command_ms": 107.659,
+      "elapsed_ms": 108.804,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.145,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-22",
+      "command_ms": 107.252,
+      "elapsed_ms": 108.475,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.223,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-220",
+      "command_ms": 108.118,
+      "elapsed_ms": 109.26,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.142,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-221",
+      "command_ms": 106.775,
+      "elapsed_ms": 107.941,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.166,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-222",
+      "command_ms": 106.508,
+      "elapsed_ms": 107.667,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.159,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-223",
+      "command_ms": 106.528,
+      "elapsed_ms": 107.669,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.141,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-224",
+      "command_ms": 106.862,
+      "elapsed_ms": 108.005,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.143,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-225",
+      "command_ms": 107.04,
+      "elapsed_ms": 108.226,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.186,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-226",
+      "command_ms": 108.198,
+      "elapsed_ms": 109.346,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.148,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-227",
+      "command_ms": 107.182,
+      "elapsed_ms": 108.316,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.134,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-228",
+      "command_ms": 107.134,
+      "elapsed_ms": 108.294,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.16,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-229",
+      "command_ms": 107.689,
+      "elapsed_ms": 108.841,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.152,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-23",
+      "command_ms": 110.544,
+      "elapsed_ms": 111.694,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.15,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-230",
+      "command_ms": 107.19,
+      "elapsed_ms": 108.377,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.187,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-231",
+      "command_ms": 107.717,
+      "elapsed_ms": 108.92,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.203,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-232",
+      "command_ms": 106.642,
+      "elapsed_ms": 107.8,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.158,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-233",
+      "command_ms": 109.244,
+      "elapsed_ms": 110.503,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.259,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-234",
+      "command_ms": 107.723,
+      "elapsed_ms": 108.893,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.17,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-235",
+      "command_ms": 107.709,
+      "elapsed_ms": 108.876,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.167,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-236",
+      "command_ms": 106.959,
+      "elapsed_ms": 108.124,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.165,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-237",
+      "command_ms": 107.519,
+      "elapsed_ms": 108.702,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.183,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-238",
+      "command_ms": 108.033,
+      "elapsed_ms": 109.219,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.186,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-239",
+      "command_ms": 114.692,
+      "elapsed_ms": 115.891,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.199,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-24",
+      "command_ms": 107.035,
+      "elapsed_ms": 108.189,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-240",
+      "command_ms": 106.199,
+      "elapsed_ms": 107.338,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.139,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-241",
+      "command_ms": 110.955,
+      "elapsed_ms": 112.182,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.227,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-242",
+      "command_ms": 109.924,
+      "elapsed_ms": 111.174,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.25,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-243",
+      "command_ms": 107.64,
+      "elapsed_ms": 108.836,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.196,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-244",
+      "command_ms": 107.2,
+      "elapsed_ms": 108.412,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.212,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-245",
+      "command_ms": 106.879,
+      "elapsed_ms": 108.053,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.174,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-246",
+      "command_ms": 107.063,
+      "elapsed_ms": 108.217,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-247",
+      "command_ms": 107,
+      "elapsed_ms": 108.142,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.142,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-248",
+      "command_ms": 106.234,
+      "elapsed_ms": 107.379,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.145,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-249",
+      "command_ms": 113.756,
+      "elapsed_ms": 114.941,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.185,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-25",
+      "command_ms": 106.555,
+      "elapsed_ms": 107.709,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-250",
+      "command_ms": 106.653,
+      "elapsed_ms": 107.781,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.128,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-26",
+      "command_ms": 107.344,
+      "elapsed_ms": 108.514,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.17,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-27",
+      "command_ms": 106.705,
+      "elapsed_ms": 107.862,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.157,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-28",
+      "command_ms": 106.046,
+      "elapsed_ms": 107.174,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.128,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-29",
+      "command_ms": 105.968,
+      "elapsed_ms": 107.139,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.171,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-3",
+      "command_ms": 106.635,
+      "elapsed_ms": 107.796,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.161,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-30",
+      "command_ms": 106.897,
+      "elapsed_ms": 108.045,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.148,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-31",
+      "command_ms": 107.168,
+      "elapsed_ms": 108.317,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.149,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-32",
+      "command_ms": 107.123,
+      "elapsed_ms": 108.273,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.15,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-33",
+      "command_ms": 106.333,
+      "elapsed_ms": 107.489,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.156,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-34",
+      "command_ms": 107.105,
+      "elapsed_ms": 108.269,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.164,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-35",
+      "command_ms": 106.086,
+      "elapsed_ms": 107.265,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.179,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-36",
+      "command_ms": 106.857,
+      "elapsed_ms": 108.012,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.155,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-37",
+      "command_ms": 106.25,
+      "elapsed_ms": 107.405,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.155,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-38",
+      "command_ms": 106.605,
+      "elapsed_ms": 107.81,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.205,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-39",
+      "command_ms": 108.652,
+      "elapsed_ms": 109.968,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.316,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-4",
+      "command_ms": 119.931,
+      "elapsed_ms": 121.119,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.188,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-40",
+      "command_ms": 107.156,
+      "elapsed_ms": 108.36,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.204,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-41",
+      "command_ms": 107.785,
+      "elapsed_ms": 108.995,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.21,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-42",
+      "command_ms": 106.711,
+      "elapsed_ms": 107.878,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.167,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-43",
+      "command_ms": 106.843,
+      "elapsed_ms": 107.994,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.151,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-44",
+      "command_ms": 106.347,
+      "elapsed_ms": 107.504,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.157,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-45",
+      "command_ms": 106.711,
+      "elapsed_ms": 107.882,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.171,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-46",
+      "command_ms": 105.548,
+      "elapsed_ms": 106.722,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.174,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-47",
+      "command_ms": 106.697,
+      "elapsed_ms": 107.863,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.166,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-48",
+      "command_ms": 106.905,
+      "elapsed_ms": 108.072,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.167,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-49",
+      "command_ms": 106.993,
+      "elapsed_ms": 108.183,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.19,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-5",
+      "command_ms": 107.055,
+      "elapsed_ms": 108.218,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.163,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-50",
+      "command_ms": 107.437,
+      "elapsed_ms": 108.58,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.143,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-51",
+      "command_ms": 107.015,
+      "elapsed_ms": 108.152,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.137,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-52",
+      "command_ms": 106.756,
+      "elapsed_ms": 107.899,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.143,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-53",
+      "command_ms": 106.677,
+      "elapsed_ms": 107.817,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.14,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-54",
+      "command_ms": 106.904,
+      "elapsed_ms": 108.08,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.176,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-55",
+      "command_ms": 108.103,
+      "elapsed_ms": 109.295,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.192,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-56",
+      "command_ms": 107.91,
+      "elapsed_ms": 109.102,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.192,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-57",
+      "command_ms": 106.861,
+      "elapsed_ms": 108.036,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.175,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-58",
+      "command_ms": 106.719,
+      "elapsed_ms": 107.891,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.172,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-59",
+      "command_ms": 106.76,
+      "elapsed_ms": 107.911,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.151,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-6",
+      "command_ms": 107.666,
+      "elapsed_ms": 108.827,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.161,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-60",
+      "command_ms": 106.44,
+      "elapsed_ms": 107.627,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.187,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-61",
+      "command_ms": 106.413,
+      "elapsed_ms": 107.581,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.168,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-62",
+      "command_ms": 107.625,
+      "elapsed_ms": 108.829,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.204,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-63",
+      "command_ms": 106.012,
+      "elapsed_ms": 107.183,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.171,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-64",
+      "command_ms": 106.583,
+      "elapsed_ms": 107.737,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-65",
+      "command_ms": 106.2,
+      "elapsed_ms": 107.362,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.162,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-66",
+      "command_ms": 106.965,
+      "elapsed_ms": 108.132,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.167,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-67",
+      "command_ms": 106.343,
+      "elapsed_ms": 107.512,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.169,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-68",
+      "command_ms": 108.118,
+      "elapsed_ms": 109.253,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.135,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-69",
+      "command_ms": 107.226,
+      "elapsed_ms": 108.388,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.162,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-7",
+      "command_ms": 107.984,
+      "elapsed_ms": 109.161,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.177,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-70",
+      "command_ms": 107.75,
+      "elapsed_ms": 108.9,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.15,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-71",
+      "command_ms": 108.694,
+      "elapsed_ms": 109.864,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.17,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-72",
+      "command_ms": 108.763,
+      "elapsed_ms": 109.951,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.188,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-73",
+      "command_ms": 108.014,
+      "elapsed_ms": 109.22,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.206,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-74",
+      "command_ms": 107.013,
+      "elapsed_ms": 108.265,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.252,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-75",
+      "command_ms": 107.802,
+      "elapsed_ms": 108.958,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.156,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-76",
+      "command_ms": 107.589,
+      "elapsed_ms": 108.74,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.151,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-77",
+      "command_ms": 108.123,
+      "elapsed_ms": 109.288,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.165,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-78",
+      "command_ms": 108.666,
+      "elapsed_ms": 109.829,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.163,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-79",
+      "command_ms": 107.527,
+      "elapsed_ms": 108.688,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.161,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-8",
+      "command_ms": 112.984,
+      "elapsed_ms": 114.142,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.158,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-80",
+      "command_ms": 107.667,
+      "elapsed_ms": 108.837,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.17,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-81",
+      "command_ms": 108.562,
+      "elapsed_ms": 109.723,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.161,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-82",
+      "command_ms": 108.505,
+      "elapsed_ms": 109.683,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.178,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-83",
+      "command_ms": 107.707,
+      "elapsed_ms": 108.855,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.148,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-84",
+      "command_ms": 139.318,
+      "elapsed_ms": 140.494,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.176,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-85",
+      "command_ms": 106.412,
+      "elapsed_ms": 107.561,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.149,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-86",
+      "command_ms": 108.236,
+      "elapsed_ms": 109.38,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.144,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-87",
+      "command_ms": 107.959,
+      "elapsed_ms": 109.159,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.2,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-88",
+      "command_ms": 107.182,
+      "elapsed_ms": 108.326,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.144,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-89",
+      "command_ms": 108.091,
+      "elapsed_ms": 109.291,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.2,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-9",
+      "command_ms": 107.18,
+      "elapsed_ms": 108.332,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.152,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-90",
+      "command_ms": 107.62,
+      "elapsed_ms": 108.774,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.154,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-91",
+      "command_ms": 106.253,
+      "elapsed_ms": 107.408,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.155,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-92",
+      "command_ms": 105.653,
+      "elapsed_ms": 106.792,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.139,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-93",
+      "command_ms": 107.226,
+      "elapsed_ms": 108.397,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.171,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-94",
+      "command_ms": 108.282,
+      "elapsed_ms": 109.453,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.171,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-95",
+      "command_ms": 107.454,
+      "elapsed_ms": 108.644,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.19,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-96",
+      "command_ms": 107.502,
+      "elapsed_ms": 108.698,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.196,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-97",
+      "command_ms": 108.1,
+      "elapsed_ms": 109.279,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.179,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-98",
+      "command_ms": 107.837,
+      "elapsed_ms": 109.01,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.173,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "allocation-99",
+      "command_ms": 108.048,
+      "elapsed_ms": 109.261,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.213,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_confirmed_supplier_allocation_workbench",
+      "name": "allocation-read",
+      "command_ms": 465.98,
+      "elapsed_ms": 466.013,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.033,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "execute_need_generation",
+      "name": "generation",
+      "command_ms": 646.53,
+      "elapsed_ms": 646.551,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.021,
+      "settings_after": {
+        "lock_timeout": "5s",
+        "statement_timeout": "2min"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_catering_purchase_handoff",
+      "name": "handoff",
+      "command_ms": 579.242,
+      "elapsed_ms": 766.145,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 186.903,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_confirmed_needs",
+      "name": "need-release-v2",
+      "command_ms": 2351.573,
+      "elapsed_ms": 2351.599,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.026,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_needs",
+      "name": "need-save",
+      "command_ms": 656.643,
+      "elapsed_ms": 656.662,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.019,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_school_catering_purchase_orders",
+      "name": "official-po-read-cold",
+      "command_ms": 740.185,
+      "elapsed_ms": 740.222,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.037,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_school_dispatch_release_workbench",
+      "name": "official-pxk-read-cold",
+      "command_ms": 1745.777,
+      "elapsed_ms": 1745.818,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.041,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_catering_purchase_order",
+      "name": "po-release-1",
+      "command_ms": 107.688,
+      "elapsed_ms": 107.977,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.289,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_catering_purchase_order",
+      "name": "po-release-2",
+      "command_ms": 102.027,
+      "elapsed_ms": 102.293,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.266,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_catering_purchase_order",
+      "name": "po-release-3",
+      "command_ms": 101.531,
+      "elapsed_ms": 101.793,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.262,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_catering_purchase_order",
+      "name": "po-release-4",
+      "command_ms": 101.974,
+      "elapsed_ms": 102.261,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.287,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_catering_purchase_order",
+      "name": "po-release-5",
+      "command_ms": 100.48,
+      "elapsed_ms": 100.75,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.27,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "prepare_school_catering_purchase_orders",
+      "name": "preparation",
+      "command_ms": 315.898,
+      "elapsed_ms": 317.206,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 1.308,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "20s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "20s"
+      }
+    },
+    {
+      "api": "release_school_dispatch_document",
+      "name": "pxk-release-cold",
+      "command_ms": 62.504,
+      "elapsed_ms": 62.538,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 0.034,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_pantry",
+      "name": "source-save",
+      "command_ms": 1279.823,
+      "elapsed_ms": 2205.139,
+      "invoked_as": "authenticated",
+      "history_depth": 0,
+      "guard_flush_ms": 925.316,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_confirmed_supplier_allocation_workbench",
+      "name": "history-1-allocation-read",
+      "command_ms": 1321.934,
+      "elapsed_ms": 1321.974,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 0.04,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "history-1-allocation-save",
+      "command_ms": 110.093,
+      "elapsed_ms": 111.506,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 1.413,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "correct_confirmed_need",
+      "name": "history-1-correct",
+      "command_ms": 815.352,
+      "elapsed_ms": 815.377,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 0.025,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_school_catering_purchase_orders",
+      "name": "history-1-po-read",
+      "command_ms": 1610.077,
+      "elapsed_ms": 1610.118,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 0.041,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_catering_purchase_order",
+      "name": "history-1-po-release",
+      "command_ms": 537.734,
+      "elapsed_ms": 538.021,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 0.287,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "prepare_school_catering_purchase_orders",
+      "name": "history-1-preparation",
+      "command_ms": 10211.485,
+      "elapsed_ms": 10212.758,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 1.273,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "20s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "20s"
+      }
+    },
+    {
+      "api": "get_confirmed_need_correction_preview",
+      "name": "history-1-preview",
+      "command_ms": 123.928,
+      "elapsed_ms": 123.963,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 0.035,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_school_dispatch_release_workbench",
+      "name": "history-1-pxk-read",
+      "command_ms": 2794.277,
+      "elapsed_ms": 2794.32,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 0.043,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_dispatch_document",
+      "name": "history-1-pxk-release",
+      "command_ms": 509.966,
+      "elapsed_ms": 510,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 0.034,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "create_school_catering_purchase_order_replacement",
+      "name": "history-1-replacement",
+      "command_ms": 955.973,
+      "elapsed_ms": 956.219,
+      "invoked_as": "authenticated",
+      "history_depth": 1,
+      "guard_flush_ms": 0.246,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_confirmed_supplier_allocation_workbench",
+      "name": "history-2-allocation-read",
+      "command_ms": 1632.756,
+      "elapsed_ms": 1632.799,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 0.043,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "save_confirmed_supplier_allocation",
+      "name": "history-2-allocation-save",
+      "command_ms": 109.034,
+      "elapsed_ms": 110.542,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 1.508,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "correct_confirmed_need",
+      "name": "history-2-correct",
+      "command_ms": 931.682,
+      "elapsed_ms": 931.71,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 0.028,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_school_catering_purchase_orders",
+      "name": "history-2-po-read",
+      "command_ms": 1911.29,
+      "elapsed_ms": 1911.334,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 0.044,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_catering_purchase_order",
+      "name": "history-2-po-release",
+      "command_ms": 667.704,
+      "elapsed_ms": 667.975,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 0.271,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "prepare_school_catering_purchase_orders",
+      "name": "history-2-preparation",
+      "command_ms": 15062.175,
+      "elapsed_ms": 15063.343,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 1.168,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "20s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "20s"
+      }
+    },
+    {
+      "api": "get_confirmed_need_correction_preview",
+      "name": "history-2-preview",
+      "command_ms": 125.136,
+      "elapsed_ms": 125.175,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 0.039,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "get_school_dispatch_release_workbench",
+      "name": "history-2-pxk-read",
+      "command_ms": 2938.074,
+      "elapsed_ms": 2938.117,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 0.043,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "release_school_dispatch_document",
+      "name": "history-2-pxk-release",
+      "command_ms": 648.676,
+      "elapsed_ms": 648.712,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 0.036,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    },
+    {
+      "api": "create_school_catering_purchase_order_replacement",
+      "name": "history-2-replacement",
+      "command_ms": 1218.766,
+      "elapsed_ms": 1219.03,
+      "invoked_as": "authenticated",
+      "history_depth": 2,
+      "guard_flush_ms": 0.264,
+      "settings_after": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      },
+      "settings_before": {
+        "lock_timeout": "1s",
+        "statement_timeout": "8s"
+      }
+    }
+  ],
+  "local_sql_only_not_hosted_http": true
+}
