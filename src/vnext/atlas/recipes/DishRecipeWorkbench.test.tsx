@@ -413,7 +413,9 @@ describe("Công thức operator workbench", () => {
     );
     expect(
       screen.getByLabelText("Định lượng Hành lá"),
-    ).toHaveAccessibleDescription("Nhập định lượng hợp lệ.");
+    ).toHaveAccessibleDescription(
+      "Canh bí đỏ thịt bằm · Hành lá 12/09/2026 · Công thức gốc · Khối nhỏ · Kilôgam Nhập định lượng hợp lệ.",
+    );
     expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Định lượng Hành lá"), {
       target: { value: "0,5" },

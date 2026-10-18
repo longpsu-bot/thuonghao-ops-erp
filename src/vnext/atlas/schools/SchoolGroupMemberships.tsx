@@ -155,6 +155,7 @@ export function SchoolGroupMemberships({
                 )}
               </Box>
               <Field.Root
+                disabled={disabled || school.school_status !== "ACTIVE"}
                 w={{
                   base: "full",
                   md: "var(--atlas-group-assignment-width, 250px)",

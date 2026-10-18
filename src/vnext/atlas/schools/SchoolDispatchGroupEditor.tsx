@@ -58,7 +58,7 @@ export function SchoolDispatchGroupEditor({
               md: "repeat(3, minmax(0, 1fr))",
             }}
           >
-            <Field.Root>
+            <Field.Root disabled={disabled || c.dispatchGroupDirty}>
               <Field.Label>Nhóm phiếu xuất kho</Field.Label>
               <NativeSelect.Root disabled={disabled || c.dispatchGroupDirty}>
                 <NativeSelect.Field
@@ -95,7 +95,7 @@ export function SchoolDispatchGroupEditor({
                 }
               />
             </Field.Root>
-            <Field.Root>
+            <Field.Root disabled={disabled}>
               <Field.Label>Trạng thái nhóm phiếu xuất kho</Field.Label>
               <NativeSelect.Root disabled={disabled}>
                 <NativeSelect.Field

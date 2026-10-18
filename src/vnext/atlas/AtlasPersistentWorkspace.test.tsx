@@ -70,8 +70,11 @@ it("returns to an already-open School workbench with its exact draft and input i
   await open("Phiếu xuất kho");
   await screen.findByRole("heading", { name: "Phiếu xuất kho" });
   expect(field.isConnected).toBe(true);
-  expect(field.closest('[role="tabpanel"]')).toHaveAttribute("hidden");
-  expect(field.closest('[role="tabpanel"]')).toHaveAttribute("inert");
+  const schoolOwner = field.closest(
+    '[role="tabpanel"][aria-label="Trường học"]',
+  );
+  expect(schoolOwner).toHaveAttribute("hidden");
+  expect(schoolOwner).toHaveAttribute("inert");
   await open("Trường học");
   await waitFor(() =>
     expect(
@@ -144,7 +147,9 @@ it("makes an inactive dirty owner visible before close, retains cancellation, an
   fireEvent.change(school, { target: { value: "123" } });
   await open("Phiếu xuất kho");
   fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
-  expect(school.closest('[role="tabpanel"]')).not.toHaveAttribute("hidden");
+  expect(
+    school.closest('[role="tabpanel"][aria-label="Trường học"]'),
+  ).not.toHaveAttribute("hidden");
   const cancelledDialog = await screen.findByRole("dialog");
   fireEvent.click(
     await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),

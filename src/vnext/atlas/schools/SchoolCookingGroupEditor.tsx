@@ -58,7 +58,7 @@ export function SchoolCookingGroupEditor({
               md: "repeat(3, minmax(0, 1fr))",
             }}
           >
-            <Field.Root>
+            <Field.Root disabled={disabled || c.groupDirty}>
               <Field.Label>Nơi nấu</Field.Label>
               <NativeSelect.Root disabled={disabled || c.groupDirty}>
                 <NativeSelect.Field
@@ -91,7 +91,7 @@ export function SchoolCookingGroupEditor({
                 onChange={(event) => c.editGroup("name", event.target.value)}
               />
             </Field.Root>
-            <Field.Root>
+            <Field.Root disabled={disabled}>
               <Field.Label>Trạng thái nơi nấu</Field.Label>
               <NativeSelect.Root disabled={disabled}>
                 <NativeSelect.Field
@@ -107,7 +107,7 @@ export function SchoolCookingGroupEditor({
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
             </Field.Root>
-            <Field.Root required>
+            <Field.Root required disabled={disabled}>
               <Field.Label>Loại nơi nấu</Field.Label>
               <NativeSelect.Root disabled={disabled}>
                 <NativeSelect.Field
@@ -125,7 +125,7 @@ export function SchoolCookingGroupEditor({
               </NativeSelect.Root>
             </Field.Root>
             {c.groupEditor.location_kind === "SCHOOL" && (
-              <Field.Root required>
+              <Field.Root required disabled={disabled}>
                 <Field.Label>Trường đặt bếp</Field.Label>
                 <NativeSelect.Root disabled={disabled}>
                   <NativeSelect.Field

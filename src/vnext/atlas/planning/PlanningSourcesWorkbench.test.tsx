@@ -1031,7 +1031,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(
       within(
         screen.getByRole("textbox", { name: "Số lượng dòng 1" }).closest("td")!,
-      ).getByText("kg"),
+      ).getByText("KG"),
     ).toBeVisible();
     expect(screen.getAllByText("Bếp Trường Nguyễn Du")[0]).toBeVisible();
     fireEvent.click(

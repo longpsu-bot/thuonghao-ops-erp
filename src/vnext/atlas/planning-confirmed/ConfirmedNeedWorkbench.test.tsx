@@ -468,7 +468,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(
       screen.getByRole("region", { name: "Bảng xác nhận nhu cầu" }),
     ).toHaveStyle({
-      "--atlas-confirmed-need-table-mobile-max-height": "28dvh",
+      "--atlas-confirmed-need-table-mobile-max-height": "max(280px, 40dvh)",
     });
     expect(input.closest('[data-field="confirmation"]')).toHaveAttribute(
       "data-adjustment-state",
@@ -819,9 +819,20 @@ describe("Confirmed Need Chakra operator surface", () => {
     const input = await quantity();
     fireEvent.change(input, { target: { value: "10,123" } });
     expect(input).toHaveAttribute("aria-invalid", "true");
-    expect(
-      document.getElementById(input.getAttribute("aria-describedby")!),
-    ).toHaveTextContent("Số lượng xác nhận phải theo bước 0,25 kg.");
+    const descriptions = input
+      .getAttribute("aria-describedby")!
+      .split(/\s+/)
+      .map((id) => document.getElementById(id));
+    expect(descriptions).toHaveLength(2);
+    descriptions.forEach((description) =>
+      expect(description).toBeInTheDocument(),
+    );
+    expect(descriptions[1]!.textContent).toBe(
+      "Số lượng xác nhận phải theo bước 0,25 kg.",
+    );
+    expect(input).toHaveAccessibleDescription(
+      /Trường Nguyễn Du.*Gạo thơm.*Số lượng xác nhận phải theo bước 0,25 kg\.$/,
+    );
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),

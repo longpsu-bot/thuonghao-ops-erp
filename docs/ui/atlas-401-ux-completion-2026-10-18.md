@@ -54,11 +54,19 @@ The selected interaction run recorded **5 PASS / 3 FAIL / 100 not selected**. Bo
 
 `pnpm build:review` passed, including `tsc -b` and the normal application bundle. The existing script's name does not make its `index.html` production entry a visual fixture: fixture-browser evidence must use the explicit review HTML. UI boundary and diff whitespace checks passed. Large-bundle warnings were retained without expanding into performance optimization.
 
+The first normal completion CI, [39091541248](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/39091541248) at `9ad9e5549621c65364baf8b539bada79e3723606`, recorded **3042 PASS / 8 FAIL / 2 existing SKIPPED**. Installation, formatting, boundary and typecheck passed; build was not reached. All three chooser tests passed, including multi-character typing and catalog updates. This does not erase local failures or substitute for Chrome acceptance.
+
+Three CI failures exposed a real School UI lock regression: Chakra NativeSelect reads `field?.disabled ?? props.disabled`, so an enabled enclosing Field overrode a disabled NativeSelect Root. The correction places the existing disabled condition on Field.Root for membership and group metadata; native Pantry fields also receive their explicit disabled condition. Backend/controller guards were not changed. The five remaining failures concerned the newly nested School panel (tests now target the exact outer owner for hidden/inert), displayed `KG` Unit, intended taller mobile viewport, multiple accessible-description IDs, and the Recipe description's added identity context. Their assertions retain the original consequences, exact errors and association checks.
+
+All **14 School Cooking/Dispatch tests passed locally after the disabled-context correction**, including UNKNOWN/readback locks, exact replay, denied authority, nullable removal, optimistic versions and dirty exit. Independent read-only review of the CI repair found no blockers or weakened assertions.
+
+The four focused post-CI assertion checks also passed (69 not selected): exact outer-owner persistence, Confirmed Need adjustment styling, invalid-quantity description/Save guards and Recipe add/validation/removal. The Pantry Unit oracle correction is verified by the next normal CI; its unchanged local timeout strategy was not resumed.
+
 No new Supabase Full Integration is required for this strictly frontend-only delta. That boundary does not certify inherited #392 Pantry v4 or future B1/B2/C releases.
 
 ## Browser and independent review
 
-Chrome could list the preview tab, but binding it timed out on `Emulation.setFocusEmulationEnabled`, before page inspection. The prior cold development preview was also blank and evaluation timed out. The user was asked to reconnect the extension; implementation continued independently. These failures cannot establish actual Ingredient typing, viewport control or operator acceptance.
+Chrome could list the preview tab, but binding it timed out on `Emulation.setFocusEmulationEnabled`, before page inspection. The prior cold development preview was also blank and evaluation timed out. The user was asked to reconnect the extension; implementation continued independently. After compiling the explicit review fixture, one 1366×768 viewport/navigation diagnostic ended with the native browser connection closed. Chrome then disappeared from inventory. A reset was attempted but could not be confirmed because Chrome was unavailable. These failures cannot establish actual Ingredient typing, viewport control or operator acceptance.
 
 Required **1366×768 / 1440×900 / 390×844 DOM dimensions plus screenshot pixels** are not certified by this checkpoint. No screenshot has been relabelled, CSS-simulated, or used as proof of an unverified size. A new completion contact sheet cannot be honestly supplied while the current UI cannot be captured. Previously retained rendered evidence is baseline evidence only.
 
@@ -87,7 +95,16 @@ Presentation and controllers:
 
 Focused regression coverage:
 
-- Pantry chooser/category design, Planning Sources workbench/controller, Confirmed Need workbench, Supplier detail, Dish Recipe workbench, School Cooking groups and School Dispatch groups test files.
+- `src/vnext/atlas/AtlasPersistentWorkspace.test.tsx`
+- `src/vnext/atlas/planning/PantryIngredientChooser.test.tsx`
+- `src/vnext/atlas/planning/PantryCategoryDesignReview.test.tsx`
+- `src/vnext/atlas/planning/PlanningSourcesWorkbench.test.tsx`
+- `src/vnext/atlas/planning/usePlanningSources.test.tsx`
+- `src/vnext/atlas/planning-confirmed/ConfirmedNeedWorkbench.test.tsx`
+- `src/vnext/atlas/procurement/ProcurementSupplierDetail.test.tsx`
+- `src/vnext/atlas/recipes/DishRecipeWorkbench.test.tsx`
+- `src/vnext/atlas/schools/SchoolCookingGroups.test.tsx`
+- `src/vnext/atlas/schools/SchoolDispatchGroups.test.tsx`
 - This report supplements the retained `atlas-400-partial-ux-checkpoint-2026-10-18.md`; it does not replace its evidence.
 
 ## Security, release and rollback
