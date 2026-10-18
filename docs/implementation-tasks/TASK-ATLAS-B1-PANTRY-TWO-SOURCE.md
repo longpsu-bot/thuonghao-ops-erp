@@ -1,5 +1,9 @@
 # ATLAS B1 — Pantry two-source contract delta and execution record
 
+**Current Product amendment:** the [18 October Product-model closeout](TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md)
+supersedes earlier operator labels/COMPLETE instructions below. This ledger retains
+the prior implementation and its source-qualified validation history.
+
 Status: implementation authorized; validation pending. Starting SHA:
 `4419033c2e4637fefb651d4ba395f4993a4e3599` (#401). Base branch:
 `codex/atlas-400-ux-closeout`. B1 branch: `codex/atlas-b1-pantry-two-source`.

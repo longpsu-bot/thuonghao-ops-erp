@@ -1,5 +1,16 @@
 # School-Catering Procurement API Contract
 
+## B1 three-source coverage clarification — 18 October 2026
+
+The [approved B1 model](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md)
+does not change Procurement arithmetic or commitment semantics. Confirmed-source
+allocations consume final authorized Confirmed Need, then promote through the
+real Handoff into exact Supplier splits and released PO lines. R20+B5+H3 yields28
+when accepted unchanged; an explicit reasoned confirmation30 yields30, retaining
+the original three contributions and separate human +2 decision. A Pantry-only
+Ingredient B5+H3 yields8 without a fabricated Recipe contribution. Shared-location
+School and supplier coverage reconcile independently; R+B is never a new source.
+
 ## PROCUREMENT-SUPPLIER-LINE-NOTE-01 amendment
 
 Both existing supplier-allocation commands accept an optional `supplier_note` on each

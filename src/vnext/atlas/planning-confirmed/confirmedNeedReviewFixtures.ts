@@ -247,6 +247,14 @@ export function reviewNeed(): NeedGenerationWorkbenchData {
         total_theoretical_quantity: 10.25,
         recipe_derived_quantity: 8.25,
         pantry_direct_quantity: 2,
+        source_breakdown: {
+          recipe_derived_quantity: "8.25",
+          planning_supplement_quantity: "2",
+          recipe_associated_quantity: "10.25",
+          special_order_quantity: "0",
+          unclassified_direct_quantity: "0",
+          total_theoretical_quantity: "10.25",
+        },
         active_contribution_count: 2,
         removed_contribution_count: 0,
         warning_count: 0,
@@ -358,6 +366,14 @@ export function createConfirmedNeedReviewFixture(
       total_theoretical_quantity: 12,
       recipe_derived_quantity: 10,
       pantry_direct_quantity: 2,
+      source_breakdown: {
+        recipe_derived_quantity: "10",
+        planning_supplement_quantity: "2",
+        recipe_associated_quantity: "12",
+        special_order_quantity: "0",
+        unclassified_direct_quantity: "0",
+        total_theoretical_quantity: "12",
+      },
     };
   }
   if (scenario === "certified_shape") {
@@ -553,6 +569,7 @@ export function createConfirmedNeedReviewFixture(
                   theoretical_need_line_id: "atomic-private",
                   contribution_family: "RECIPE_DERIVED",
                   theoretical_quantity: 8.25,
+                  exact_theoretical_quantity: "8.25",
                   unit_id: "unit-kg",
                   unit_name: "kg",
                   disposition: "ACTIVE",
@@ -563,6 +580,8 @@ export function createConfirmedNeedReviewFixture(
                   theoretical_need_line_id: "atomic-private-2",
                   contribution_family: "PANTRY_DIRECT",
                   theoretical_quantity: 2,
+                  exact_theoretical_quantity: "2",
+                  pantry_purpose_code: "planning_identified_supplement",
                   unit_id: "unit-kg",
                   unit_name: "kg",
                   disposition: "ACTIVE",

@@ -19,7 +19,7 @@ import {
 
 const categories = [
   { id: "planning_identified_supplement", name: "Bổ sung" },
-  { id: "school_requested_supplement", name: "Đặt theo yêu cầu nhà trường" },
+  { id: "school_requested_supplement", name: "Hàng đặt riêng" },
 ] as const;
 type ExampleLine = {
   id: string;
@@ -54,7 +54,6 @@ export function PantryCategoryDesignReview() {
   const [category, setCategory] = useState<ExampleLine["category"]>(
     categories[0].id,
   );
-  const [mode, setMode] = useState("ADDITIVE");
   const [review, setReview] = useState(false);
   const [lines, setLines] = useState<ExampleLine[]>([
     {
@@ -120,7 +119,7 @@ export function PantryCategoryDesignReview() {
         <Field.Root
           w={{ base: "full", md: "var(--atlas-design-category-width, 290px)" }}
         >
-          <Field.Label>Nguồn của các dòng mới</Field.Label>
+          <Field.Label>Nguồn của dòng mới</Field.Label>
           <NativeSelect.Root disabled={review}>
             <NativeSelect.Field
               value={category}
@@ -155,21 +154,6 @@ export function PantryCategoryDesignReview() {
         >
           + Thêm dòng minh họa
         </Button>
-        <Field.Root
-          w={{ base: "full", md: "var(--atlas-design-mode-width, 230px)" }}
-        >
-          <Field.Label>Cách kết hợp nhu cầu (ví dụ)</Field.Label>
-          <NativeSelect.Root disabled={review}>
-            <NativeSelect.Field
-              value={mode}
-              onChange={(e) => setMode(e.target.value)}
-            >
-              <option value="ADDITIVE">Cộng với thực đơn</option>
-              <option value="COMPLETE">Danh sách đầy đủ</option>
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
       </Flex>
       <Text textStyle="helper" color="fg.muted">
         Nguồn được chọn một lần cho các dòng thêm mới; đổi lựa chọn không chuyển

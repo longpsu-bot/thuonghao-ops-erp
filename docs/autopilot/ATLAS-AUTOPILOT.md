@@ -1,5 +1,10 @@
 # Atlas Autopilot Mandate
 
+**18 October Product-model closeout:** the [active B1 amendment](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md)
+on existing #402 supersedes older Pantry operator labels/COMPLETE instructions.
+Only bounded source-read/presentation/coverage work is active. Historical
+reconciliation is a separately reported gate; no hosted write, B2/C or promotion.
+
 **18 October B1-only supersession:** The latest explicit Owner brief activates
 the bounded Pantry two-source implementation under [ACTIVE_TASK.md](ACTIVE_TASK.md)
 and its linked contract delta. Older UI-only/queued statements below remain

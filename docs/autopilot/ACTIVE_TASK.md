@@ -1,5 +1,11 @@
 # Atlas Autopilot — Active Task
 
+**18 October Product-model closeout:** continue existing #402 from `7f1343a`
+under the [latest Owner-approved bounded contract](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md).
+This amends current Pantry labels, source disclosure and coverage evidence only.
+Preserve historical COMPLETE; report current scopes requiring reconciliation.
+No B2/C, hosted mutation, merge, deployment or automatic next task.
+
 **18 October B1 authorization supersession (this stacked Draft only):** The Owner
 explicitly authorizes `ATLAS-B1-PANTRY-TWO-SOURCE` from verified #401 head
 `4419033c2e4637fefb651d4ba395f4993a4e3599`, targeting its existing branch. Execute

@@ -56,7 +56,7 @@ export function PlanningPantryStage({
   );
   const categoryLabels: Record<string, string> = {
     planning_identified_supplement: "Bổ sung",
-    school_requested_supplement: "Đặt theo yêu cầu nhà trường",
+    school_requested_supplement: "Hàng đặt riêng",
   };
   const creationPurposes = (c.pantryData?.purposes ?? []).filter(
     (purpose) =>
@@ -120,7 +120,7 @@ export function PlanningPantryStage({
     )?.direct_need_mode ?? "ADDITIVE";
   const modeLabels = {
     ADDITIVE: "Cộng với thực đơn",
-    COMPLETE: "Danh sách đầy đủ",
+    COMPLETE: "Danh sách đầy đủ (lịch sử)",
   };
   return (
     <>

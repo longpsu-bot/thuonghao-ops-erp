@@ -1,5 +1,15 @@
 # School Dispatch Release API Contract
 
+## B1 final-confirmation coverage clarification — 18 October 2026
+
+School PXK uses the existing exact Confirmed Need → allocation → released PO
+lineage, including both Pantry purposes. Under the [B1 model](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md),
+R20/B5/H3 accepted unchanged releases28; a valid human confirmation30 releases30
+with original theoretical28/source membership still readable. Pantry-only B5/H3
+releases8. These are frozen official School/location quantities, reconciled to
+exact Supplier split coverage. No React quantity calculation, numbering,
+grouping, source fingerprint, snapshot, scope or successor rule changes.
+
 **Contract:** `SCHOOL-DISPATCH-RELEASE.v1`
 
 **Decision:** [D-044](../decisions/decision-ops-v1-school-fulfilment-closeout.md)

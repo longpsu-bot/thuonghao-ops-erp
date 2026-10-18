@@ -1029,7 +1029,7 @@ describe("Planning sources Chakra workbench", () => {
     ).toBeVisible();
     expect(within(table).getByText("Bổ sung", { exact: true })).toBeVisible();
     expect(
-      within(table).getByText("Đặt theo yêu cầu nhà trường", { exact: true }),
+      within(table).getByText("Hàng đặt riêng", { exact: true }),
     ).toBeVisible();
     expect(
       screen.getByRole("textbox", { name: "Số lượng dòng 1" }),
@@ -1327,7 +1327,7 @@ describe("Planning sources Chakra workbench", () => {
     ).not.toBeInTheDocument();
     expect(
       within(screen.getByRole("table", { name: "Hàng đặt riêng" })).getByText(
-        "Danh sách đầy đủ",
+        "Danh sách đầy đủ (lịch sử)",
       ),
     ).toBeVisible();
     expect(

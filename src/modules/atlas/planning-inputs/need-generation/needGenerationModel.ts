@@ -13,6 +13,7 @@ export type NeedGenerationIssue = {
 };
 
 export type NeedGenerationGroup = {
+  source_breakdown?: NeedGenerationSourceBreakdown;
   service_date: string;
   customer_id: string;
   school_id: string;
@@ -31,7 +32,47 @@ export type NeedGenerationGroup = {
   warning_count: number;
 };
 
+export type NeedGenerationSourceBreakdown = {
+  recipe_derived_quantity: string;
+  planning_supplement_quantity: string;
+  recipe_associated_quantity: string;
+  special_order_quantity: string;
+  unclassified_direct_quantity: string;
+  total_theoretical_quantity: string;
+};
+
+export function needGenerationSourceBreakdown(
+  value: unknown,
+): NeedGenerationSourceBreakdown | null {
+  const source = record(value);
+  const fields = [
+    "recipe_derived_quantity",
+    "planning_supplement_quantity",
+    "recipe_associated_quantity",
+    "special_order_quantity",
+    "unclassified_direct_quantity",
+    "total_theoretical_quantity",
+  ] as const;
+  return source &&
+    fields.every(
+      (field) =>
+        typeof source[field] === "string" &&
+        /^\d+(?:\.\d{1,6})?$/.test(source[field] as string),
+    )
+    ? (source as unknown as NeedGenerationSourceBreakdown)
+    : null;
+}
+
 export type NeedGenerationDetail = {
+  exact_theoretical_quantity?: string;
+  pantry_purpose_code?: string;
+  pantry_need_line_id?: string;
+  pantry_need_approval_snapshot_id?: string;
+  pantry_need_purpose_id?: string;
+  recipe_version_id?: string;
+  recipe_line_id?: string;
+  recipe_line_revision_id?: string;
+  need_generation_recipe_line_use_id?: string;
   theoretical_need_line_id: string;
   contribution_family: "RECIPE_DERIVED" | "PANTRY_DIRECT";
   theoretical_quantity: number;

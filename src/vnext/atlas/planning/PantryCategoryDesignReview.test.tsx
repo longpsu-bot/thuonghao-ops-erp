@@ -18,7 +18,7 @@ it("isolates the two-category design, preserves separate 5/3 lines, inherits cre
   );
   const supplement = screen.getByRole("region", { name: "Bổ sung" });
   const requested = screen.getByRole("region", {
-    name: "Đặt theo yêu cầu nhà trường",
+    name: "Hàng đặt riêng",
   });
   expect(
     within(supplement).getByRole("textbox", { name: /Số lượng minh họa/ }),
@@ -29,7 +29,7 @@ it("isolates the two-category design, preserves separate 5/3 lines, inherits cre
   fireEvent.change(screen.getByLabelText("Trường thêm hàng"), {
     target: { value: "school-1" },
   });
-  fireEvent.change(screen.getByLabelText("Nguồn của các dòng mới"), {
+  fireEvent.change(screen.getByLabelText("Nguồn của dòng mới"), {
     target: { value: "school_requested_supplement" },
   });
   fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng minh họa" }));
@@ -43,4 +43,7 @@ it("isolates the two-category design, preserves separate 5/3 lines, inherits cre
     screen.getByRole("button", { name: "Lưu hai nguồn · chưa khả dụng" }),
   ).toBeDisabled();
   expect(screen.getByRole("note")).toHaveTextContent("Không lưu");
+  expect(
+    screen.queryByRole("combobox", { name: "Cách kết hợp nhu cầu (ví dụ)" }),
+  ).not.toBeInTheDocument();
 });

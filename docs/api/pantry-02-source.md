@@ -1,5 +1,15 @@
 # PANTRY-02 Pantry Source API Contract
 
+**Current operator model — 18 October Owner amendment:** exactly two creation
+choices, Bổ sung (`planning_identified_supplement`) and Hàng đặt riêng
+(`school_requested_supplement`). The second label supersedes earlier wording
+below; UUIDs/codes and immutable snapshots stay unchanged. New scopes are ADDITIVE.
+COMPLETE is historical compatibility, never an advanced/new-line option. Existing
+current bindings are not auto-flipped; the [closeout audit](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md)
+records the two effective Staging scopes needing controlled reconciliation.
+R+B is a derived operational subtotal; H remains separate, and the final human
+Confirmed Need quantity owns PO/PXK coverage. No Recipe/BOM change is implied.
+
 ## B1 two-source forward amendment — 18 October 2026
 
 The connected #401 Pantry workbench now uses the existing authored-purpose

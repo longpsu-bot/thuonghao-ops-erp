@@ -74,6 +74,79 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
+  it("distinguishes recipe-associated need and special orders from a final human quantity", async () => {
+    show("normal", {}, (f) => {
+      f.batch.lines[0]!.theoretical_quantity = "28";
+      f.batch.lines[0]!.confirmed_quantity_after = "30";
+      Object.assign(f.need.grouped_requirements[0]!, {
+        total_theoretical_quantity: 28,
+        recipe_derived_quantity: 20,
+        pantry_direct_quantity: 8,
+        source_breakdown: {
+          recipe_derived_quantity: "20.000000",
+          planning_supplement_quantity: "5.000000",
+          recipe_associated_quantity: "25.000000",
+          special_order_quantity: "3.000000",
+          unclassified_direct_quantity: "0",
+          total_theoretical_quantity: "28.000000",
+        },
+      });
+      const original = f.needGenerationApi.getWorkbench.bind(
+        f.needGenerationApi,
+      );
+      f.needGenerationApi.getWorkbench = async (...args) => {
+        if (args[5]?.contribution_family)
+          Object.assign(f.need.grouped_requirements[0]!.source_breakdown!, {
+            recipe_derived_quantity: "0",
+            recipe_associated_quantity: "5",
+            total_theoretical_quantity: "8",
+          });
+        return original(...args);
+      };
+    });
+    await quantity();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
+    );
+    const evidence = within(
+      await screen.findByRole("table", { name: "Cách hình thành nhu cầu" }),
+    );
+    expect(evidence.getByText("Từ công thức: 20 kg")).toBeVisible();
+    expect(evidence.getByText("Bổ sung: 5 kg")).toBeVisible();
+    expect(evidence.getByText("Công thức + Bổ sung: 25 kg")).toBeVisible();
+    expect(evidence.getByText("Hàng đặt riêng: 3 kg")).toBeVisible();
+    expect(
+      within(
+        screen.getByRole("table", { name: "Cách hình thành nhu cầu" }),
+      ).getByText("Nhu cầu lý thuyết: 28 kg"),
+    ).toBeVisible();
+    expect(evidence.getByText("Đã xác nhận: 30 kg")).toBeVisible();
+    expect(evidence.queryByText("Bổ sung: 8 kg")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Nguồn đóng góp" }), {
+      target: { value: "PANTRY_DIRECT" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng chi tiết" }));
+    expect(await screen.findByText("Tổng nguồn đã lọc: 8 kg")).toBeVisible();
+    expect(
+      within(
+        screen.getByRole("table", { name: "Cách hình thành nhu cầu" }),
+      ).getByText("Nhu cầu lý thuyết: 28 kg"),
+    ).toBeVisible();
+  });
+  it("does not invent a purpose breakdown when old source reads lack it", async () => {
+    show("normal", {}, (f) => {
+      delete f.need.grouped_requirements[0]!.source_breakdown;
+    });
+    await quantity();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
+    );
+    const evidence = within(
+      await screen.findByRole("table", { name: "Cách hình thành nhu cầu" }),
+    );
+    expect(evidence.getByText("Chưa có phân tách nguồn.")).toBeVisible();
+    expect(evidence.queryByText(/^Bổ sung:/)).not.toBeInTheDocument();
+  });
   it("keeps date, recipient, Ingredient, Unit and the saved quantity with an edited line after sort", async () => {
     show();
     const input = await quantity();
