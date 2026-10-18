@@ -18,7 +18,8 @@ import {
   Textarea,
 } from "@chakra-ui/react";
 import { Info, Trash } from "@phosphor-icons/react";
-import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
+import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import type { CSSProperties } from "react";
 import {
   procurementOperatorMessages,
@@ -57,6 +58,7 @@ export function ProcurementSupplierDetail({
   onClose: () => void;
   returnFocusEl?: () => HTMLElement | null;
 }) {
+  const quantityContextId = useId();
   const eligible = (id: string) =>
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
   const saved = row.splits.filter((split) => eligible(split.supplier_id));
@@ -359,6 +361,15 @@ export function ProcurementSupplierDetail({
               <Field.Label overflowWrap="anywhere">
                 {supplier.supplier_name}
               </Field.Label>
+              <AtlasQuantityContext
+                id={`${quantityContextId}-${split.supplier_id}`}
+                recipient={recipient.primary}
+                location={recipient.secondary ?? undefined}
+                ingredient={row.ingredient_name}
+                date={row.service_date}
+                unit={row.unit_code}
+                source={supplier.supplier_name}
+              />
               <Text textStyle="helper" color="fg.muted">
                 {saved.some((value) => value.supplier_id === split.supplier_id)
                   ? "Đã lưu"
@@ -376,6 +387,7 @@ export function ProcurementSupplierDetail({
               <Flex gap="xs" w="full" align="center">
                 <Input
                   aria-label={`Phân bổ ${supplier.supplier_name}`}
+                  aria-describedby={`${quantityContextId}-${split.supplier_id}`}
                   aria-invalid={invalid}
                   inputMode="decimal"
                   value={split.allocated_quantity}

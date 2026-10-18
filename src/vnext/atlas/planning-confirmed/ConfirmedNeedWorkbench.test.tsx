@@ -87,6 +87,8 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(row).toHaveTextContent("Gạo thơm");
     expect(row).toHaveTextContent("Đã lưu: 10,25 kg");
     expect(input).toHaveValue("12.500001");
+    expect(input).toHaveAccessibleDescription(/Trường Nguyễn Du.*Gạo thơm/);
+    expect(input).toHaveAccessibleDescription(/07\/09\/2026/);
   });
   it("reports local quantities and unknown Save recovery to the workspace", async () => {
     const report = vi.fn();

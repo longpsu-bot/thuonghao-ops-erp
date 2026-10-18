@@ -11,27 +11,32 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import type { SchoolDefaultsController } from "./useSchoolDefaultsWorkbench";
+import { SchoolGroupMemberships } from "./SchoolGroupMemberships";
 
 export function SchoolDispatchGroupEditor({
   controller: c,
   disabled,
+  embedded = false,
 }: {
   controller: SchoolDefaultsController;
   disabled: boolean;
+  embedded?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <Box px="md" pb="sm">
-      <Button
-        variant="outline"
-        size="sm"
-        aria-expanded={open}
-        aria-controls="school-dispatch-group-editor"
-        onClick={() => setOpen((current) => !current)}
-      >
-        Quản lý nhóm Dispatch
-      </Button>
-      {open && (
+      {!embedded && (
+        <Button
+          variant="outline"
+          size="sm"
+          aria-expanded={open}
+          aria-controls="school-dispatch-group-editor"
+          onClick={() => setOpen((current) => !current)}
+        >
+          Quản lý nhóm phiếu xuất kho
+        </Button>
+      )}
+      {(embedded || open) && (
         <Box
           id="school-dispatch-group-editor"
           mt="sm"
@@ -40,11 +45,11 @@ export function SchoolDispatchGroupEditor({
           borderRadius="workbench"
         >
           <Heading as="h2" textStyle="section">
-            Nhóm Dispatch
+            Nhóm phiếu xuất kho
           </Heading>
           <Text textStyle="helper" color="fg.muted" mb="sm">
-            Nhóm Dispatch được chọn tại từng trường. Ngừng hoạt động yêu cầu bỏ
-            hoặc đổi các trường đang được gán.
+            Chọn nhóm để xem các trường đóng góp vào cách đóng gói phiếu. Nhóm
+            phiếu không thay đổi nơi nấu.
           </Text>
           <Grid
             gap="sm"
@@ -54,10 +59,10 @@ export function SchoolDispatchGroupEditor({
             }}
           >
             <Field.Root>
-              <Field.Label>Nhóm Dispatch</Field.Label>
+              <Field.Label>Nhóm phiếu xuất kho</Field.Label>
               <NativeSelect.Root disabled={disabled || c.dispatchGroupDirty}>
                 <NativeSelect.Field
-                  aria-label="Nhóm Dispatch"
+                  aria-label="Nhóm phiếu xuất kho"
                   value={c.dispatchGroupEditor.id}
                   onChange={(event) =>
                     c.selectDispatchGroup(event.target.value)
@@ -70,6 +75,7 @@ export function SchoolDispatchGroupEditor({
                       value={group.dispatch_group_id}
                     >
                       {group.dispatch_group_name}
+                      {` · ${c.schools.filter((s) => s.dispatch_group_id === group.dispatch_group_id).length} trường`}
                       {group.active ? "" : " · Ngừng hoạt động"}
                     </option>
                   ))}
@@ -78,9 +84,9 @@ export function SchoolDispatchGroupEditor({
               </NativeSelect.Root>
             </Field.Root>
             <Field.Root required>
-              <Field.Label>Tên nhóm Dispatch</Field.Label>
+              <Field.Label>Tên nhóm phiếu xuất kho</Field.Label>
               <Input
-                aria-label="Tên nhóm Dispatch"
+                aria-label="Tên nhóm phiếu xuất kho"
                 maxLength={200}
                 value={c.dispatchGroupEditor.name}
                 disabled={disabled}
@@ -90,10 +96,10 @@ export function SchoolDispatchGroupEditor({
               />
             </Field.Root>
             <Field.Root>
-              <Field.Label>Trạng thái nhóm Dispatch</Field.Label>
+              <Field.Label>Trạng thái nhóm phiếu xuất kho</Field.Label>
               <NativeSelect.Root disabled={disabled}>
                 <NativeSelect.Field
-                  aria-label="Trạng thái nhóm Dispatch"
+                  aria-label="Trạng thái nhóm phiếu xuất kho"
                   value={c.dispatchGroupEditor.active ? "ACTIVE" : "INACTIVE"}
                   onChange={(event) =>
                     c.editDispatchGroup(
@@ -120,7 +126,7 @@ export function SchoolDispatchGroupEditor({
               }
               onClick={() => void c.saveDispatchGroup()}
             >
-              Lưu nhóm Dispatch
+              Lưu nhóm phiếu xuất kho
             </Button>
             {c.dispatchGroupDirty && (
               <Button
@@ -129,11 +135,18 @@ export function SchoolDispatchGroupEditor({
                 disabled={disabled}
                 onClick={() => c.selectDispatchGroup(c.dispatchGroupEditor.id)}
               >
-                Bỏ thay đổi nhóm Dispatch
+                Bỏ thay đổi nhóm phiếu xuất kho
               </Button>
             )}
           </Flex>
         </Box>
+      )}
+      {embedded && (
+        <SchoolGroupMemberships
+          controller={c}
+          kind="dispatch"
+          disabled={disabled}
+        />
       )}
     </Box>
   );

@@ -343,7 +343,7 @@ describe("Planning source safety", () => {
     expect(result.current.locked).toBe(true);
   });
   it.each(["pantry"])(
-    "protects all context transitions for dirty %s drafts",
+    "protects dataset replacement and owner exit for dirty %s drafts",
     async (job) => {
       const { result } = await setup();
       act(() => result.current.transition({ job }));
@@ -351,8 +351,6 @@ describe("Planning source safety", () => {
       for (const next of [
         { job: "attendance" },
         { week: "2026-09-14" },
-        { date: "2026-09-08" },
-        { schoolIds: ["school-1"] },
         { refresh: true },
       ]) {
         act(() => result.current.transition(next));
@@ -363,6 +361,31 @@ describe("Planning source safety", () => {
       }
     },
   );
+  it("retains exact unsaved Pantry rows while School and day filters change", async () => {
+    const { result } = await setup();
+    act(() => result.current.transition({ job: "pantry" }));
+    act(() => result.current.addPantryRow("school-0"));
+    act(() =>
+      result.current.editPantryRow(0, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "123456789.123456",
+      }),
+    );
+    const rows = result.current.pantryRows;
+    act(() => result.current.transition({ schoolIds: ["school-1"] }));
+    expect(result.current.pending).toBeNull();
+    expect(result.current.schoolIds).toEqual(["school-1"]);
+    act(() => result.current.transition({ date: "2026-09-08" }));
+    expect(result.current.date).toBe("2026-09-08");
+    expect(result.current.pantryRows).toEqual(rows);
+    expect(result.current.dirty).toBe(true);
+    act(() => result.current.transition({ schoolIds: [], date: reviewWeek }));
+    expect(result.current.pantryRows[0]).toMatchObject({
+      school_id: "school-0",
+      service_date: reviewWeek,
+      requested_quantity: "123456789.123456",
+    });
+  });
   it("ends Menu synchronization without a local dirty candidate", async () => {
     const { result } = await setup();
     await act(() => result.current.syncGoogle("google-1"));

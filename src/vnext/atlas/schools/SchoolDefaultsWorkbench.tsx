@@ -1,4 +1,8 @@
 import { atlasVisuallyHidden } from "../AtlasTaskTabs";
+import {
+  atlasSecondaryTabList,
+  atlasSecondaryTabTrigger,
+} from "../AtlasTaskTabs";
 import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
 import { SchoolDispatchGroupEditor } from "./SchoolDispatchGroupEditor";
 import { SchoolCookingGroupEditor } from "./SchoolCookingGroupEditor";
@@ -14,6 +18,7 @@ import {
   NativeSelect,
   Table,
   Text,
+  Tabs,
 } from "@chakra-ui/react";
 import { useImperativeHandle, useState, type ReactNode } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
@@ -42,6 +47,13 @@ import {
 
 export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   const c = useSchoolDefaultsWorkbench(props);
+  const [view, setView] = useState("defaults");
+  const viewTitle =
+    view === "cooking"
+      ? "Nơi nấu"
+      : view === "dispatch"
+        ? "Nhóm phiếu xuất kho"
+        : "Sĩ số mặc định";
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: c.dirtyCount > 0,
     blocked: c.saving || c.loading || Boolean(c.lock),
@@ -106,7 +118,9 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   return (
     <Box
       as="section"
-      aria-label="Sĩ số mặc định"
+      aria-label={
+        view === "defaults" ? viewTitle : `Thiết lập trường · ${viewTitle}`
+      }
       bg="bg.workbench"
       borderRadius="workbench"
       borderWidth="var(--atlas-layout-edge, 1px)"
@@ -123,137 +137,159 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
           Trường học
         </Text>
         <Heading as="h1" textStyle="workbenchTitle">
-          Sĩ số mặc định
+          {viewTitle}
         </Heading>
       </Box>
-
-      <AtlasWorkbar
-        display="grid"
-        aria-label="Bộ lọc trường học"
-        bg="bg.toolbar"
-        p="md"
-        gap="sm"
-        alignItems="end"
-        templateColumns={{
-          base: "minmax(0, 1fr) auto",
-          lg: "minmax(240px, 1.4fr) minmax(180px, 1fr) auto",
-        }}
-      >
-        <Field.Root gridColumn={{ base: "1 / -1", lg: "auto" }}>
-          <Field.Label>Tìm trường</Field.Label>
-          <Input
-            aria-label="Tìm trường"
-            placeholder="Tên, mã, loại, khách hàng hoặc điểm giao"
-            value={c.query}
-            onChange={(event) => c.setQuery(event.target.value)}
-          />
-        </Field.Root>
-        <Field.Root>
-          <Field.Label>Loại trường</Field.Label>
-          <NativeSelect.Root>
-            <NativeSelect.Field
-              aria-label="Loại trường"
-              value={c.schoolType}
-              onChange={(event) => c.setSchoolType(event.target.value)}
-            >
-              <option value="ALL">Tất cả</option>
-              {c.schoolTypes.map((type) => (
-                <option value={type} key={type}>
-                  {type}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
-        <AtlasWorkbarActions>
-          <AtlasRefreshButton
-            loading={c.loading}
-            disabled={c.saving || c.lock === "unknown" || c.lock === "readback"}
-            onClick={() => void c.refresh()}
-          />
-        </AtlasWorkbarActions>
-      </AtlasWorkbar>
-
-      {(c.notice || c.error) && (
-        <Box
-          role={c.lock || c.error ? "alert" : "status"}
-          aria-live="polite"
-          px="md"
-          pt="sm"
-        >
-          <Text
-            color={
-              c.lock
-                ? "status.warning"
-                : c.error
-                  ? "status.danger"
-                  : "status.success"
-            }
-          >
-            {c.notice ?? c.error}
-          </Text>
-          {(c.lock || c.error) && (
-            <Button
-              mt="xs"
-              size="sm"
-              loading={c.loading || c.saving}
-              disabled={c.loading || c.saving}
-              onClick={() => void c.refresh()}
-            >
-              {c.confirmGroupSave
-                ? "Xác nhận lần lưu nơi nấu"
-                : c.confirmDispatchGroupSave
-                  ? "Xác nhận lần lưu nhóm Dispatch"
-                  : c.lock === "unknown" || c.lock === "readback"
-                    ? "Tải lại để xác nhận"
-                    : c.lock === "stale"
-                      ? "Tải lại dữ liệu hiện tại"
-                      : "Thử tải lại dữ liệu"}
-            </Button>
+      <Tabs.Root value={view} onValueChange={({ value }) => setView(value)}>
+        <Tabs.List aria-label="Thiết lập trường học" {...atlasSecondaryTabList}>
+          <Tabs.Trigger value="defaults" {...atlasSecondaryTabTrigger}>
+            Sĩ số mặc định
+          </Tabs.Trigger>
+          {c.cookingSupported && (
+            <Tabs.Trigger value="cooking" {...atlasSecondaryTabTrigger}>
+              Nơi nấu
+            </Tabs.Trigger>
           )}
-        </Box>
-      )}
+          {c.dispatchSupported && (
+            <Tabs.Trigger value="dispatch" {...atlasSecondaryTabTrigger}>
+              Nhóm phiếu xuất kho
+            </Tabs.Trigger>
+          )}
+        </Tabs.List>
+        <Tabs.Content value={view} p="var(--atlas-layout-zero, 0)">
+          {view === "defaults" && (
+            <AtlasWorkbar
+              display="grid"
+              aria-label="Bộ lọc trường học"
+              bg="bg.toolbar"
+              p="md"
+              gap="sm"
+              alignItems="end"
+              templateColumns={{
+                base: "minmax(0, 1fr) auto",
+                lg: "minmax(240px, 1.4fr) minmax(180px, 1fr) auto",
+              }}
+            >
+              <Field.Root gridColumn={{ base: "1 / -1", lg: "auto" }}>
+                <Field.Label>Tìm trường</Field.Label>
+                <Input
+                  aria-label="Tìm trường"
+                  placeholder="Tên, mã, loại, khách hàng hoặc điểm giao"
+                  value={c.query}
+                  onChange={(event) => c.setQuery(event.target.value)}
+                />
+              </Field.Root>
+              <Field.Root>
+                <Field.Label>Loại trường</Field.Label>
+                <NativeSelect.Root>
+                  <NativeSelect.Field
+                    aria-label="Loại trường"
+                    value={c.schoolType}
+                    onChange={(event) => c.setSchoolType(event.target.value)}
+                  >
+                    <option value="ALL">Tất cả</option>
+                    {c.schoolTypes.map((type) => (
+                      <option value={type} key={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Field.Root>
+              <AtlasWorkbarActions>
+                <AtlasRefreshButton
+                  loading={c.loading}
+                  disabled={
+                    c.saving || c.lock === "unknown" || c.lock === "readback"
+                  }
+                  onClick={() => void c.refresh()}
+                />
+              </AtlasWorkbarActions>
+            </AtlasWorkbar>
+          )}
 
-      {c.schools.length === 0 && (
-        <Flex px="md" py="xs" gap="sm" align="center" wrap="wrap">
-          {tableTools}
-        </Flex>
-      )}
+          {(c.notice || c.error) && (
+            <Box
+              role={c.lock || c.error ? "alert" : "status"}
+              aria-live="polite"
+              px="md"
+              pt="sm"
+            >
+              <Text
+                color={
+                  c.lock
+                    ? "status.warning"
+                    : c.error
+                      ? "status.danger"
+                      : "status.success"
+                }
+              >
+                {c.notice ?? c.error}
+              </Text>
+              {(c.lock || c.error) && (
+                <Button
+                  mt="xs"
+                  size="sm"
+                  loading={c.loading || c.saving}
+                  disabled={c.loading || c.saving}
+                  onClick={() => void c.refresh()}
+                >
+                  {c.confirmGroupSave
+                    ? "Xác nhận lần lưu nơi nấu"
+                    : c.confirmDispatchGroupSave
+                      ? "Xác nhận lần lưu nhóm phiếu xuất kho"
+                      : c.lock === "unknown" || c.lock === "readback"
+                        ? "Tải lại để xác nhận"
+                        : c.lock === "stale"
+                          ? "Tải lại dữ liệu hiện tại"
+                          : "Thử tải lại dữ liệu"}
+                </Button>
+              )}
+            </Box>
+          )}
 
-      {c.cookingSupported && (
-        <SchoolCookingGroupEditor
-          controller={c}
-          disabled={editingDisabled || Boolean(c.lock)}
-        />
-      )}
+          {view === "defaults" && c.schools.length === 0 && (
+            <Flex px="md" py="xs" gap="sm" align="center" wrap="wrap">
+              {tableTools}
+            </Flex>
+          )}
 
-      {c.dispatchSupported && (
-        <SchoolDispatchGroupEditor
-          controller={c}
-          disabled={editingDisabled || Boolean(c.lock)}
-        />
-      )}
-      {c.loading && c.schools.length === 0 && (
-        <Text role="status" p="md">
-          Đang tải dữ liệu trường học…
-        </Text>
-      )}
-      {!c.loading && !c.error && c.schools.length === 0 && (
-        <Text p="md">Chưa có trường học.</Text>
-      )}
+          {view === "cooking" && c.cookingSupported && (
+            <SchoolCookingGroupEditor
+              embedded
+              controller={c}
+              disabled={editingDisabled || Boolean(c.lock)}
+            />
+          )}
 
-      {c.schools.length > 0 && (
-        <SchoolDefaultsTable
-          tools={tableTools}
-          schools={c.visibleSchools}
-          drafts={c.drafts}
-          disabled={editingDisabled}
-          onEdit={c.edit}
-          cooking={c.cookingSupported ? c : undefined}
-          dispatch={c.dispatchSupported ? c : undefined}
-        />
-      )}
+          {view === "dispatch" && c.dispatchSupported && (
+            <SchoolDispatchGroupEditor
+              embedded
+              controller={c}
+              disabled={editingDisabled || Boolean(c.lock)}
+            />
+          )}
+          {c.loading && c.schools.length === 0 && (
+            <Text role="status" p="md">
+              Đang tải dữ liệu trường học…
+            </Text>
+          )}
+          {!c.loading && !c.error && c.schools.length === 0 && (
+            <Text p="md">Chưa có trường học.</Text>
+          )}
+
+          {view === "defaults" && c.schools.length > 0 && (
+            <SchoolDefaultsTable
+              tools={tableTools}
+              schools={c.visibleSchools}
+              drafts={c.drafts}
+              disabled={editingDisabled}
+              onEdit={c.edit}
+            />
+          )}
+        </Tabs.Content>
+      </Tabs.Root>
     </Box>
   );
 }

@@ -458,6 +458,28 @@ export function usePlanningSources({
   const transition = (next: PlanningTransition) => {
     if (fixedJob && next.job && next.job !== fixedJob) return;
     if (writeBusy.current) return;
+    // School/day are view filters over the same Pantry week, not replacement
+    // intent. Retain every authored row, source reference and exact quantity.
+    if (
+      job === "pantry" &&
+      !next.exit &&
+      !next.week &&
+      !next.job &&
+      !next.refresh &&
+      next.noAdditions === undefined &&
+      (next.schoolIds || next.date)
+    ) {
+      clearReview();
+      if (next.schoolIds && authority && !readError)
+        setSchoolIds(normalizePlanningSchoolScope(next.schoolIds, schools));
+      if (
+        next.date &&
+        next.date >= week &&
+        next.date <= (authority?.week_end ?? week)
+      )
+        setDate(next.date);
+      return;
+    }
     if (dirty) setPending(next);
     else applyTransition(next);
   };

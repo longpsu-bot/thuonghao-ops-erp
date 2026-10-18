@@ -12,6 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { WarningCircle, Trash } from "@phosphor-icons/react";
+import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import { useId, useState } from "react";
 import { ingredientLabel, unitLabel } from "../bridges/dishRecipe";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
@@ -70,6 +71,17 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
       {editable ? (
         <Field.Root mt="sm" invalid={!basisValid}>
           <Field.Label>Số suất áp dụng cho định lượng</Field.Label>
+          <AtlasQuantityContext
+            recipient={c.dish?.dish_name}
+            date={c.date}
+            source="Công thức gốc · Số suất áp dụng"
+            unit="suất"
+          />
+          <Text textStyle="helper" color="fg.muted">
+            {c.effective
+              ? `Đã lưu: ${c.effective.base_authoring.basis_portions} suất`
+              : "Chưa lưu"}
+          </Text>
           <Input
             value={draft.basis}
             inputMode="numeric"
@@ -116,6 +128,7 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
               },
               "& td:first-of-type": { fontWeight: "semibold" },
               "& td:nth-of-type(2)": { textAlign: "left" },
+              "& tbody td:nth-of-type(2)": { gridColumn: "1 / -1" },
             },
           }}
           w="full"
@@ -164,10 +177,33 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                   u.unit_id === ingredient?.purchase_unit_id &&
                   u.unit_status === "ACTIVE",
               );
+              const original = c.effective?.base_authoring.composition.find(
+                (item) => item.recipe_line_id === line.id,
+              );
+              const scopeName = c.catalog.school_types.find(
+                (scope) => scope.school_type_id === c.context?.schoolTypeId,
+              )?.school_type_name;
               return (
                 <Table.Row key={line.id}>
                   <Table.Cell overflowWrap="anywhere">{name}</Table.Cell>
                   <Table.Cell textAlign="right">
+                    <AtlasQuantityContext
+                      id={`${errorPrefix}-context-${line.id}`}
+                      recipient={c.dish?.dish_name}
+                      ingredient={name}
+                      unit={unitLabel(line.unitId, c.catalog.units)}
+                      date={c.date}
+                      source={
+                        scopeName
+                          ? `Công thức gốc · ${scopeName}`
+                          : "Công thức gốc"
+                      }
+                    />
+                    <Text textStyle="helper" color="fg.muted" mb="xs">
+                      {original
+                        ? `Đã lưu: ${String(original.quantity_per_basis).replace(".", ",")} ${unitLabel(original.unit_id, c.catalog.units)}`
+                        : "Dòng mới · chưa lưu"}
+                    </Text>
                     <Text hideFrom="md" textStyle="helper" color="fg.muted">
                       Định lượng
                     </Text>
@@ -175,14 +211,13 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                       <Input
                         aria-label={`Định lượng ${name}`}
                         aria-invalid={parseQuantity(line.quantity) === null}
-                        aria-describedby={
-                          parseQuantity(line.quantity) === null
-                            ? `${errorPrefix}-${line.id}`
-                            : undefined
-                        }
+                        aria-describedby={`${errorPrefix}-context-${line.id}${parseQuantity(line.quantity) === null ? ` ${errorPrefix}-${line.id}` : ""}`}
                         value={line.quantity}
                         inputMode="decimal"
-                        w="var(--atlas-layout-quantity-width, 86px)"
+                        w={{
+                          base: "full",
+                          md: "var(--atlas-layout-quantity-width, 86px)",
+                        }}
                         textAlign="right"
                         onChange={(e) =>
                           update(line.id, { quantity: e.target.value })

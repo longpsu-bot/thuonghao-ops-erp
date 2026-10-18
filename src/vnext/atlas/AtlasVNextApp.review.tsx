@@ -30,6 +30,8 @@ import {
 } from "./planning/planningReviewFixtures";
 import planningSchoolEvidence from "../../../scripts/fixtures/atlas-planning-school-order-2026-10-11.json";
 import { ProcurementWorkbench } from "./procurement/ProcurementWorkbench";
+import { PantryCategoryDesignReview } from "./planning/PantryCategoryDesignReview";
+import { schoolDefaultsFixtureSchools } from "./schools/schoolDefaultsReviewFixtures";
 function Review() {
   const params = new URLSearchParams(window.location.search);
   const [signedIn, setSignedIn] = useState(
@@ -37,7 +39,7 @@ function Review() {
   );
   const apis = useMemo(() => {
     const fixture = createAtlasApplicationFixture();
-    if (params.get("scenario") === "ux400") {
+    if (["ux400", "ux401"].includes(params.get("scenario") ?? "")) {
       // Local presentation fixture: 49 retained reference names plus one explicit
       // synthetic School. No hosted read/write or connected lineage is claimed.
       const planning = createPlanningReviewFixture();
@@ -53,6 +55,105 @@ function Review() {
         display_order: index + 1,
       }));
       fixture.planning = planning.api;
+      if (params.get("scenario") === "ux401") {
+        planning.pantry.schools = planning.planning.schools.map((school) => ({
+          ...planning.pantry.schools[0]!,
+          ...school,
+          customer_name: school.school_name,
+          default_delivery_location: {
+            ...planning.pantry.schools[0]!.default_delivery_location!,
+            delivery_location_id: `location-${school.school_id}`,
+            location_name: `Bếp ${school.school_name}`,
+          },
+        }));
+        planning.pantry.ingredients = Array.from(
+          { length: 403 },
+          (_, index) => ({
+            ...planning.pantry.ingredients[0]!,
+            ingredient_id:
+              index === 0 ? "ingredient-1" : `ingredient-${index + 1}`,
+            ingredient_code: index === 0 ? "GAO" : `MH-${index + 1}`,
+            ingredient_name:
+              index === 0
+                ? "Gạo thơm"
+                : index >= 400
+                  ? "Rau muống"
+                  : `Nguyên liệu minh họa ${index}`,
+            ingredient_status: index === 402 ? "INACTIVE" : "ACTIVE",
+          }),
+        );
+        fixture.pantry = planning.pantryApi;
+        const schools = planning.planning.schools.map((school, index) => ({
+          ...schoolDefaultsFixtureSchools[0]!,
+          ...school,
+          version: 3,
+          cooking_group_id:
+            index < 8
+              ? "ux-cooking-school"
+              : index < 20
+                ? "ux-cooking-company"
+                : null,
+          cooking_group_name:
+            index < 8
+              ? `Bếp ${names[0]}`
+              : index < 20
+                ? "Bếp Công ty Thượng Hảo"
+                : null,
+          dispatch_group_id: index < 12 ? "ux-dispatch" : null,
+          dispatch_group_name: index < 12 ? "Cụm giao sáng" : null,
+        }));
+        fixture.masterData.getSchools = async () =>
+          reviewSuccess({ success: true, schools: structuredClone(schools) });
+        fixture.masterData.getCookingGroups = async () =>
+          reviewSuccess({
+            success: true,
+            cooking_groups: [
+              {
+                cooking_group_id: "ux-cooking-school",
+                cooking_group_name: `Bếp ${names[0]}`,
+                location_kind: "SCHOOL",
+                host_school_id: "school-0",
+                active: true,
+                version: 2,
+              },
+              {
+                cooking_group_id: "ux-cooking-company",
+                cooking_group_name: "Bếp Công ty Thượng Hảo",
+                location_kind: "COMPANY",
+                host_school_id: null,
+                active: true,
+                version: 1,
+              },
+            ],
+          });
+        fixture.masterData.getDispatchGroups = async () =>
+          reviewSuccess({
+            success: true,
+            dispatch_groups: [
+              {
+                dispatch_group_id: "ux-dispatch",
+                dispatch_group_name: "Cụm giao sáng",
+                active: true,
+                version: 4,
+              },
+            ],
+          });
+        const reviewReadOnly = async () => ({
+          kind: "backend_error" as const,
+          error: {
+            success: false as const,
+            error_code: "CAPABILITY_DENIED",
+            safe_message:
+              "Minh họa giao diện · Không lưu thay đổi nhóm trong ví dụ này.",
+          },
+        });
+        fixture.masterData.upsertCookingGroup = reviewReadOnly;
+        fixture.masterData.setSchoolCookingGroup = reviewReadOnly;
+        fixture.masterData.upsertDispatchGroup = reviewReadOnly;
+        fixture.masterData.setSchoolDispatchGroup = reviewReadOnly;
+        // Review-only reads expose group management. Existing command tests own
+        // persistence evidence; this fixture does not simulate backend writes.
+      }
     }
     const rangeReview = params.get("scenario") === "range";
     const scenario = rangeReview ? "ready" : params.get("scenario");
@@ -436,7 +537,7 @@ function Review() {
           authSubject="fixture-operator"
           userLabel="vanhanh@example.test"
           environmentLabel={
-            params.get("scenario") === "planningMaster"
+            ["planningMaster", "ux401"].includes(params.get("scenario") ?? "")
               ? "LOCAL_FIXTURE"
               : "Local"
           }
@@ -485,6 +586,11 @@ function Review() {
 createRoot(document.getElementById("root")!).render(
   new URLSearchParams(window.location.search).has("capacity") ? (
     <Capacity />
+  ) : new URLSearchParams(window.location.search).get("scenario") ===
+    "pantry-categories" ? (
+    <AtlasVNextProvider>
+      <PantryCategoryDesignReview />
+    </AtlasVNextProvider>
   ) : (
     <Review />
   ),

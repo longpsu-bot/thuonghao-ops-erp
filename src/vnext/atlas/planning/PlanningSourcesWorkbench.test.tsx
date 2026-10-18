@@ -39,8 +39,12 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-async function show() {
+async function show(schoolCount?: number) {
   const fixture = createPlanningReviewFixture();
+  if (schoolCount) {
+    fixture.planning.schools = fixture.planning.schools.slice(0, schoolCount);
+    fixture.pantry.schools = fixture.pantry.schools.slice(0, schoolCount);
+  }
   const read = vi.spyOn(fixture.api, "getWorkbench");
   render(
     <AtlasVNextProvider>
@@ -992,7 +996,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(screen.getByText(/chưa nhận diện được trường/)).toBeVisible();
   });
   it("groups pantry mode by School/date and derives unit and delivery location", async () => {
-    await show();
+    await show(2);
     fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     const pantryTable = await screen.findByRole("table", {
       name: "Hàng đặt riêng",
@@ -1003,7 +1007,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(pantryViewport).toHaveAttribute("tabindex", "0");
     expect(pantryViewport).toContainElement(pantryTable);
     expect(pantryTable).toHaveStyle({
-      minWidth: "var(--atlas-pantry-table-width, 1156px)",
+      minWidth: "var(--atlas-layout-zero, 0)",
       width: "100%",
       tableLayout: "fixed",
     });
@@ -1018,11 +1022,17 @@ describe("Planning sources Chakra workbench", () => {
         name: "Cách kết hợp Trường Nguyễn Du",
       }),
     ).toHaveLength(1);
-    fireEvent.change(
-      screen.getAllByRole("combobox", { name: /Nguyên liệu dòng/ })[0],
-      { target: { value: "ingredient-1" } },
-    );
-    expect(screen.getByText("kg")).toBeVisible();
+    const ingredient = screen.getAllByRole("combobox", {
+      name: /Nguyên liệu dòng/,
+    })[0];
+    fireEvent.focus(ingredient);
+    fireEvent.change(ingredient, { target: { value: "Gạo thơm" } });
+    fireEvent.click(await screen.findByRole("option", { name: /Gạo thơm/ }));
+    expect(
+      within(
+        screen.getByRole("textbox", { name: "Số lượng dòng 1" }).closest("td")!,
+      ).getByText("kg"),
+    ).toBeVisible();
     expect(screen.getAllByText("Bếp Trường Nguyễn Du")[0]).toBeVisible();
     fireEvent.click(
       screen.getByRole("checkbox", {
@@ -1031,8 +1041,9 @@ describe("Planning sources Chakra workbench", () => {
     );
     expect(await screen.findByRole("dialog")).toBeVisible();
   });
-  it("keeps Pantry School edits local and sends the selected School to Preview", async () => {
+  it("keeps Pantry School read-only and retains its exact draft through School filtering and Preview", async () => {
     const fixture = createPlanningStoryFixture("pantry_review");
+    fixture.pantry.schools = fixture.pantry.schools.slice(0, 2);
     const read = vi.spyOn(fixture.pantryApi, "getWorkbench");
     const preview = vi.spyOn(fixture.pantryApi, "preview");
     const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
@@ -1046,25 +1057,40 @@ describe("Planning sources Chakra workbench", () => {
         />
       </AtlasVNextProvider>,
     );
-    const school = await screen.findByRole("combobox", {
-      name: "Trường dòng 1",
+    const quantity = await screen.findByRole("textbox", {
+      name: "Số lượng dòng 1",
     });
-    expect(school).toHaveValue("school-0");
     expect(
-      within(school.closest("tr")!).getByText("Bếp Trường Nguyễn Du"),
-    ).toBeVisible();
+      screen.queryByRole("combobox", { name: "Trường dòng 1" }),
+    ).not.toBeInTheDocument();
+    expect(quantity.closest("tr")).toHaveTextContent("Bếp Trường Nguyễn Du");
 
     const readsBefore = read.mock.calls.length;
-    fireEvent.change(school, { target: { value: "school-1" } });
+    fireEvent.change(quantity, { target: { value: "26.000001" } });
+    openFilters();
+    fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
+    const picker = await screen.findByRole("dialog", {
+      name: "Trường / điểm giao",
+    });
+    fireEvent.click(
+      within(picker).getByRole("button", { name: "Bỏ chọn tất cả" }),
+    );
+    fireEvent.click(
+      within(picker).getByRole("checkbox", { name: "Trường Lê Lợi" }),
+    );
+    await waitFor(() =>
+      expect(
+        within(picker).getByRole("button", { name: "Áp dụng" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(within(picker).getByRole("button", { name: "Áp dụng" }));
     expect(read).toHaveBeenCalledTimes(readsBefore);
     expect(preview).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
-    const regroupedSchool = screen.getByRole("combobox", {
-      name: "Trường dòng 1",
-    });
     expect(
-      within(regroupedSchool.closest("tr")!).getByText("Bếp Trường Lê Lợi"),
-    ).toBeVisible();
+      screen.queryByRole("textbox", { name: "Số lượng dòng 1" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/dòng ngoài bộ lọc vẫn được giữ/)).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
@@ -1075,18 +1101,20 @@ describe("Planning sources Chakra workbench", () => {
       expect.arrayContaining([
         expect.objectContaining({
           source_row_reference: "fixture:1",
-          school_id: "school-1",
+          school_id: "school-0",
+          requested_quantity: "26.000001",
         }),
       ]),
     );
     expect(
       within(
         await screen.findByRole("table", { name: "So sánh thay đổi" }),
-      ).getByText("Trường Lê Lợi"),
+      ).getByText("Trường Nguyễn Du"),
     ).toBeVisible();
   });
-  it("regroups a Pantry line under the destination School mode", async () => {
+  it("uses a single selected School when adding and preserves independent composition modes", async () => {
     const fixture = createPlanningStoryFixture("pantry_review");
+    fixture.pantry.schools = fixture.pantry.schools.slice(0, 2);
     fixture.pantry.batch!.school_date_modes = [
       {
         school_id: "school-0",
@@ -1109,20 +1137,52 @@ describe("Planning sources Chakra workbench", () => {
         />
       </AtlasVNextProvider>,
     );
-    fireEvent.change(
-      await screen.findByRole("combobox", { name: "Trường dòng 1" }),
-      { target: { value: "school-1" } },
+    await screen.findByRole("textbox", { name: "Số lượng dòng 1" });
+    openFilters();
+    fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
+    const picker = await screen.findByRole("dialog", {
+      name: "Trường / điểm giao",
+    });
+    fireEvent.click(
+      within(picker).getByRole("button", { name: "Bỏ chọn tất cả" }),
     );
+    fireEvent.click(
+      within(picker).getByRole("checkbox", { name: "Trường Lê Lợi" }),
+    );
+    await waitFor(() =>
+      expect(
+        within(picker).getByRole("button", { name: "Áp dụng" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(within(picker).getByRole("button", { name: "Áp dụng" }));
+    expect(
+      screen.queryByRole("combobox", { name: "Trường cần thêm hàng" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
+    expect(
+      screen.getByRole("textbox", { name: "Số lượng dòng 3" }).closest("tr"),
+    ).toHaveTextContent("Bếp Trường Lê Lợi");
     expect(
       screen.getByRole("combobox", {
         name: "Cách kết hợp Trường Lê Lợi",
       }),
     ).toHaveValue("ADDITIVE");
+    fireEvent.click(screen.getByRole("button", { name: "Trường Lê Lợi" }));
+    const restoredPicker = await screen.findByRole("dialog", {
+      name: "Trường / điểm giao",
+    });
+    fireEvent.click(
+      within(restoredPicker).getByRole("button", { name: "Chọn tất cả" }),
+    );
+    fireEvent.click(
+      within(restoredPicker).getByRole("button", { name: "Áp dụng" }),
+    );
     expect(
-      screen.queryByRole("combobox", {
-        name: "Cách kết hợp Trường Nguyễn Du",
-      }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("combobox", { name: "Cách kết hợp Trường Nguyễn Du" }),
+    ).toHaveValue("COMPLETE");
+    expect(
+      screen.getByRole("textbox", { name: "Số lượng dòng 3" }).closest("tr"),
+    ).toHaveTextContent("Bếp Trường Lê Lợi");
   });
 });
 

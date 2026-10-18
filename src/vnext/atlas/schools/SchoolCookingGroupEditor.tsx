@@ -11,27 +11,32 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import type { SchoolDefaultsController } from "./useSchoolDefaultsWorkbench";
+import { SchoolGroupMemberships } from "./SchoolGroupMemberships";
 
 export function SchoolCookingGroupEditor({
   controller: c,
   disabled,
+  embedded = false,
 }: {
   controller: SchoolDefaultsController;
   disabled: boolean;
+  embedded?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <Box px="md" pb="sm">
-      <Button
-        variant="outline"
-        size="sm"
-        aria-expanded={open}
-        aria-controls="school-cooking-group-editor"
-        onClick={() => setOpen((current) => !current)}
-      >
-        Quản lý nơi nấu
-      </Button>
-      {open && (
+      {!embedded && (
+        <Button
+          variant="outline"
+          size="sm"
+          aria-expanded={open}
+          aria-controls="school-cooking-group-editor"
+          onClick={() => setOpen((current) => !current)}
+        >
+          Quản lý nơi nấu
+        </Button>
+      )}
+      {(embedded || open) && (
         <Box
           id="school-cooking-group-editor"
           mt="sm"
@@ -43,8 +48,8 @@ export function SchoolCookingGroupEditor({
             Nơi nấu
           </Heading>
           <Text textStyle="helper" color="fg.muted" mb="sm">
-            Nơi nấu được chọn tại từng trường. Ngừng hoạt động yêu cầu bỏ hoặc
-            đổi các trường đang được gán.
+            Chọn nơi nấu để quản lý trường thành viên. Nơi đặt bếp và nhóm phiếu
+            xuất kho được quản lý riêng.
           </Text>
           <Grid
             gap="sm"
@@ -68,6 +73,7 @@ export function SchoolCookingGroupEditor({
                       value={group.cooking_group_id}
                     >
                       {group.cooking_group_name}
+                      {` · ${c.schools.filter((s) => s.cooking_group_id === group.cooking_group_id).length} trường`}
                       {group.active ? "" : " · Ngừng hoạt động"}
                     </option>
                   ))}
@@ -175,6 +181,13 @@ export function SchoolCookingGroupEditor({
             )}
           </Flex>
         </Box>
+      )}
+      {embedded && (
+        <SchoolGroupMemberships
+          controller={c}
+          kind="cooking"
+          disabled={disabled}
+        />
       )}
     </Box>
   );

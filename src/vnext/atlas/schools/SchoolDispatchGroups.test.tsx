@@ -94,15 +94,39 @@ function setup(
   return { api, report, exitRef };
 }
 
+async function membership(kind: "cooking" | "dispatch") {
+  const title = kind === "cooking" ? "Nấu tại" : "Nhóm phiếu xuất kho";
+  fireEvent.click(
+    await screen.findByRole("tab", {
+      name: kind === "cooking" ? "Nơi nấu" : title,
+    }),
+  );
+  const group = await screen.findByRole("combobox", {
+    name: kind === "cooking" ? "Nơi nấu" : title,
+  });
+  await waitFor(() =>
+    expect(group).toHaveTextContent(
+      kind === "cooking" ? "Bếp X" : "Dispatch X",
+    ),
+  );
+  const id = kind === "cooking" ? "group-x" : "dispatch-x";
+  if ((group as HTMLSelectElement).value !== id)
+    fireEvent.change(group, { target: { value: id } });
+  fireEvent.change(screen.getByLabelText(`Danh sách trường — ${title}`), {
+    target: { value: "ALL" },
+  });
+  const select = await screen.findByLabelText(
+    `${title} — ${school.school_name}`,
+  );
+  expect(select).toBeVisible();
+  return select;
+}
+
 it("saves cooking and Dispatch independently and uses each authoritative School version", async () => {
   const { api, report } = setup();
-  const cooking = await screen.findByLabelText(
-    `Nấu tại — ${school.school_name}`,
-  );
-  const dispatch = screen.getByLabelText(
-    `Nhóm Dispatch — ${school.school_name}`,
-  );
+  const cooking = await membership("cooking");
   fireEvent.change(cooking, { target: { value: "group-x" } });
+  const dispatch = await membership("dispatch");
   fireEvent.change(dispatch, { target: { value: "dispatch-x" } });
   api.getSchools.mockResolvedValue({
     kind: "success",
@@ -118,11 +142,13 @@ it("saves cooking and Dispatch independently and uses each authoritative School 
       ],
     },
   });
+  await membership("cooking");
   fireEvent.click(screen.getByLabelText(`Lưu Nấu tại — ${school.school_name}`));
   await waitFor(() => expect(api.getSchools).toHaveBeenCalledTimes(2));
-  await waitFor(() => expect(dispatch).not.toBeDisabled());
+  const retainedDispatch = await membership("dispatch");
+  await waitFor(() => expect(retainedDispatch).not.toBeDisabled());
   expect(api.setSchoolDispatchGroup).not.toHaveBeenCalled();
-  expect(dispatch).toHaveValue("dispatch-x");
+  expect(retainedDispatch).toHaveValue("dispatch-x");
   expect(report).toHaveBeenLastCalledWith(
     expect.objectContaining({ unsaved: true }),
   );
@@ -143,7 +169,7 @@ it("saves cooking and Dispatch independently and uses each authoritative School 
     },
   });
   fireEvent.click(
-    screen.getByLabelText(`Lưu Nhóm Dispatch — ${school.school_name}`),
+    screen.getByLabelText(`Lưu Nhóm phiếu xuất kho — ${school.school_name}`),
   );
   await waitFor(() =>
     expect(api.setSchoolDispatchGroup).toHaveBeenCalledWith(
@@ -162,7 +188,7 @@ it("saves cooking and Dispatch independently and uses each authoritative School 
       expect.objectContaining({ unsaved: false, blocked: false }),
     ),
   );
-  expect(cooking).toHaveValue("group-x");
+  expect(await membership("cooking")).toHaveValue("group-x");
   expect(api.setSchoolCookingGroup).toHaveBeenCalledOnce();
   expect(api.updateSchoolDefaultsBulk).not.toHaveBeenCalled();
 });
@@ -171,26 +197,29 @@ it("preserves uncertain Dispatch assignments and cooking drafts until readback",
     kind: "transport_error",
     diagnostic: { code: "NETWORK_FAILURE", safeMessage: "offline" },
   });
-  const dispatch = await screen.findByLabelText(
-    `Nhóm Dispatch — ${school.school_name}`,
-  );
-  const cooking = screen.getByLabelText(`Nấu tại — ${school.school_name}`);
+  const dispatch = await membership("dispatch");
   fireEvent.change(dispatch, { target: { value: "dispatch-x" } });
+  const cooking = await membership("cooking");
   fireEvent.change(cooking, { target: { value: "group-x" } });
+  const pendingDispatch = await membership("dispatch");
   fireEvent.click(
-    screen.getByLabelText(`Lưu Nhóm Dispatch — ${school.school_name}`),
+    screen.getByLabelText(`Lưu Nhóm phiếu xuất kho — ${school.school_name}`),
   );
   await screen.findByText(
     "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
   );
-  expect(dispatch).toBeDisabled();
-  expect(cooking).toBeDisabled();
+  expect(pendingDispatch).toBeDisabled();
+  expect(await membership("cooking")).toBeDisabled();
+  await membership("dispatch");
   fireEvent.click(
     screen.getByText("Tải lại để xác nhận", { selector: "button" }),
   );
-  await waitFor(() => expect(dispatch).not.toBeDisabled());
-  expect(dispatch).toHaveValue("dispatch-x");
-  expect(cooking).toHaveValue("group-x");
+  const currentDispatch = screen.getByLabelText(
+    `Nhóm phiếu xuất kho — ${school.school_name}`,
+  );
+  await waitFor(() => expect(currentDispatch).not.toBeDisabled());
+  expect(currentDispatch).toHaveValue("dispatch-x");
+  expect(await membership("cooking")).toHaveValue("group-x");
   expect(api.setSchoolDispatchGroup).toHaveBeenCalledOnce();
   expect(api.setSchoolCookingGroup).not.toHaveBeenCalled();
 });
@@ -200,24 +229,28 @@ it("replays the exact uncertain Dispatch creation command and never adopts a sam
     diagnostic: { code: "NETWORK_FAILURE", safeMessage: "offline" },
   });
   fireEvent.click(
-    await screen.findByText("Quản lý nhóm Dispatch", { selector: "button" }),
+    await screen.findByRole("tab", { name: "Nhóm phiếu xuất kho" }),
   );
-  fireEvent.change(screen.getByLabelText("Tên nhóm Dispatch"), {
+  const name = await screen.findByLabelText("Tên nhóm phiếu xuất kho");
+  await waitFor(() => expect(name).toBeEnabled());
+  fireEvent.change(name, {
     target: { value: "Dispatch X" },
   });
   fireEvent.click(
-    screen.getByText("Lưu nhóm Dispatch", { selector: "button" }),
+    screen.getByText("Lưu nhóm phiếu xuất kho", { selector: "button" }),
   );
   await screen.findByText(
     "Atlas chưa thể xác nhận lần lưu đã hoàn tất hay chưa.",
   );
   const request = api.upsertDispatchGroup.mock.calls[0]![0];
   fireEvent.click(
-    screen.getByText("Xác nhận lần lưu nhóm Dispatch", { selector: "button" }),
+    screen.getByText("Xác nhận lần lưu nhóm phiếu xuất kho", {
+      selector: "button",
+    }),
   );
   await waitFor(() => expect(api.upsertDispatchGroup).toHaveBeenCalledTimes(2));
   expect(api.upsertDispatchGroup.mock.calls[1]![0]).toBe(request);
-  expect(screen.getByLabelText("Tên nhóm Dispatch")).toBeDisabled();
+  expect(screen.getByLabelText("Tên nhóm phiếu xuất kho")).toBeDisabled();
   expect(report).toHaveBeenLastCalledWith(
     expect.objectContaining({ unsaved: true, blocked: true }),
   );
@@ -225,14 +258,10 @@ it("replays the exact uncertain Dispatch creation command and never adopts a sam
 });
 it("uses the existing dirty exit guard for Dispatch maintenance and membership drafts", async () => {
   const { exitRef, report } = setup();
-  const dispatch = await screen.findByLabelText(
-    `Nhóm Dispatch — ${school.school_name}`,
-  );
+  const dispatch = await membership("dispatch");
   fireEvent.change(dispatch, { target: { value: "dispatch-x" } });
-  fireEvent.click(
-    screen.getByText("Quản lý nhóm Dispatch", { selector: "button" }),
-  );
-  fireEvent.change(screen.getByLabelText("Tên nhóm Dispatch"), {
+  fireEvent.click(screen.getByRole("tab", { name: "Nhóm phiếu xuất kho" }));
+  fireEvent.change(screen.getByLabelText("Tên nhóm phiếu xuất kho"), {
     target: { value: "Unsaved" },
   });
   const next = vi.fn();
@@ -242,9 +271,9 @@ it("uses the existing dirty exit guard for Dispatch maintenance and membership d
     await screen.findByText("Bỏ thay đổi", { selector: "button" }),
   );
   expect(next).toHaveBeenCalledOnce();
-  expect(dispatch).toHaveValue("");
-  expect(screen.getByLabelText("Tên nhóm Dispatch")).toHaveValue("");
+  expect(screen.getByLabelText("Tên nhóm phiếu xuất kho")).toHaveValue("");
   expect(report).toHaveBeenLastCalledWith(
     expect.objectContaining({ unsaved: false }),
   );
+  expect(await membership("dispatch")).toHaveValue("");
 });

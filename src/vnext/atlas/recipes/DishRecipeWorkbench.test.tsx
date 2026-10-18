@@ -430,6 +430,9 @@ describe("Công thức operator workbench", () => {
   it("requires dirty confirmation and cancel preserves the exact quantity draft", async () => {
     await setup();
     await select();
+    expect(
+      screen.getByLabelText("Định lượng Bí đỏ"),
+    ).toHaveAccessibleDescription(/Bí đỏ/);
     fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
       target: { value: "2,25" },
     });
