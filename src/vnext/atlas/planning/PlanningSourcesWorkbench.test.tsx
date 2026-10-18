@@ -1025,7 +1025,7 @@ describe("Planning sources Chakra workbench", () => {
     );
     const table = await screen.findByRole("table", { name: "Hàng đặt riêng" });
     expect(
-      await screen.findByRole("combobox", { name: "Nguồn của các dòng mới" }),
+      await screen.findByRole("combobox", { name: "Nguồn của dòng mới" }),
     ).toBeVisible();
     expect(within(table).getByText("Bổ sung", { exact: true })).toBeVisible();
     expect(
@@ -1041,7 +1041,7 @@ describe("Planning sources Chakra workbench", () => {
       within(table).queryByRole("combobox", { name: /Nguồn/ }),
     ).not.toBeInTheDocument();
   });
-  it("offers one toolbar demand mode before the first Pantry line and guards an empty target", async () => {
+  it("offers only source category and previews a new School/date as ADDITIVE", async () => {
     const fixture = createPlanningReviewFixture();
     fixture.pantry.schools = fixture.pantry.schools.slice(0, 2);
     const preview = vi.spyOn(fixture.pantryApi, "preview");
@@ -1059,25 +1059,31 @@ describe("Planning sources Chakra workbench", () => {
     const school = await screen.findByRole("combobox", {
       name: "Trường cần thêm hàng",
     });
-    const mode = screen.getByRole("combobox", { name: "Cách tính nhu cầu" });
+    const category = screen.getByRole("combobox", {
+      name: "Nguồn của dòng mới",
+    });
     const add = screen.getByRole("button", { name: "+ Thêm dòng" });
-    expect(mode).toBeDisabled();
+    expect(
+      screen.queryByRole("combobox", { name: "Cách tính nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(category).toBeDisabled();
     expect(add).toBeDisabled();
     expect(
-      school.compareDocumentPosition(mode) & Node.DOCUMENT_POSITION_FOLLOWING,
+      school.compareDocumentPosition(category) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      mode.compareDocumentPosition(add) & Node.DOCUMENT_POSITION_FOLLOWING,
+      category.compareDocumentPosition(add) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     fireEvent.focus(school);
     fireEvent.change(school, { target: { value: "nguyen du" } });
     fireEvent.click(
       await screen.findByRole("option", { name: /Trường Nguyễn Du/ }),
     );
-    expect(mode).toBeEnabled();
-    expect(mode).toHaveValue("ADDITIVE");
-    fireEvent.change(mode, { target: { value: "COMPLETE" } });
-    expect(mode).toHaveValue("COMPLETE");
+    expect(category).toBeEnabled();
+    fireEvent.change(category, {
+      target: { value: "school_requested_supplement" },
+    });
     expect(
       screen.queryByRole("textbox", { name: "Số lượng dòng 1" }),
     ).not.toBeInTheDocument();
@@ -1085,14 +1091,38 @@ describe("Planning sources Chakra workbench", () => {
     expect(
       await screen.findByRole("textbox", { name: "Số lượng dòng 1" }),
     ).toBeVisible();
-    expect(mode).toHaveValue("COMPLETE");
+    expect(category).toHaveValue("school_requested_supplement");
     const table = screen.getByRole("table", { name: "Hàng đặt riêng" });
     expect(
       within(table).queryByRole("combobox", { name: /Cách/ }),
     ).not.toBeInTheDocument();
-    expect(within(table).getByText("Danh sách đầy đủ")).toBeVisible();
+    expect(within(table).getByText("Cộng với thực đơn")).toBeVisible();
     expect(preview).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
+    const ingredient = screen.getByRole("combobox", {
+      name: "Nguyên liệu dòng 1",
+    });
+    fireEvent.focus(ingredient);
+    fireEvent.change(ingredient, { target: { value: "gao" } });
+    fireEvent.click(await screen.findByRole("option", { name: /Gạo thơm/ }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Số lượng dòng 1" }), {
+      target: { value: "5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
+    expect(preview.mock.calls[0]?.[4]).toEqual([
+      expect.objectContaining({
+        pantry_need_purpose_id: "purpose-2",
+        requested_quantity: "5",
+      }),
+    ]);
+    expect(preview.mock.calls[0]?.[5]).toEqual([
+      {
+        school_id: "school-0",
+        service_date: reviewWeek,
+        direct_need_mode: "ADDITIVE",
+      },
+    ]);
   });
   it("groups pantry mode by School/date and derives unit and delivery location", async () => {
     await show(2);
@@ -1122,10 +1152,10 @@ describe("Planning sources Chakra workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
     fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
     expect(
-      screen.getAllByRole("combobox", {
+      screen.queryByRole("combobox", {
         name: "Cách tính nhu cầu",
       }),
-    ).toHaveLength(1);
+    ).not.toBeInTheDocument();
     expect(
       within(pantryTable).queryByRole("combobox", { name: /Cách/ }),
     ).not.toBeInTheDocument();
@@ -1270,10 +1300,10 @@ describe("Planning sources Chakra workbench", () => {
       screen.getByRole("textbox", { name: "Số lượng dòng 3" }).closest("tr"),
     ).toHaveTextContent("Bếp Trường Lê Lợi");
     expect(
-      screen.getByRole("combobox", {
-        name: "Cách tính nhu cầu",
-      }),
-    ).toHaveValue("ADDITIVE");
+      within(screen.getByRole("table", { name: "Hàng đặt riêng" })).getByText(
+        "Cộng với thực đơn",
+      ),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Trường Lê Lợi" }));
     const restoredPicker = await screen.findByRole("dialog", {
       name: "Trường / điểm giao",
@@ -1293,8 +1323,8 @@ describe("Planning sources Chakra workbench", () => {
       await screen.findByRole("option", { name: /Trường Nguyễn Du/ }),
     );
     expect(
-      screen.getByRole("combobox", { name: "Cách tính nhu cầu" }),
-    ).toHaveValue("COMPLETE");
+      screen.queryByRole("combobox", { name: "Cách tính nhu cầu" }),
+    ).not.toBeInTheDocument();
     expect(
       within(screen.getByRole("table", { name: "Hàng đặt riêng" })).getByText(
         "Danh sách đầy đủ",

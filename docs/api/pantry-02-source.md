@@ -24,6 +24,13 @@ and inactive historical references, display their actual saved classification.
 Notes remain optional for the existing Foundation package's two OPTIONAL
 categories; no migration rewrites catalog policies or historical note evidence.
 
+The Owner's 18 October UI simplification keeps only `Nguồn của dòng mới` in the
+creation toolbar. Newly represented School/date rows use the existing ADDITIVE
+default; the UI does not offer a calculation-mode selector. Saved School/date
+modes, including COMPLETE, remain unchanged and are displayed as read-only facts.
+Choosing a source category never changes an existing calculation mode. This is
+the connected vnext interaction policy; the D-044 backend contracts remain valid.
+
 Exact v3 retries use the existing receipt-first v4 authorization boundary before
 mutable impact checks. New intents still require the same consequential correction
 guards, source signature and expected version. The separate School/date modes

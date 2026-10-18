@@ -24,6 +24,12 @@ The UI offers only the two approved active Purpose codes for creation, resolves
 their reference IDs from authoritative readback, and inherits the selection once
 per Add. PostgreSQL validates reference identity/status/note rules and derives
 Location/Unit. The browser supplies no Purpose metadata or derived quantities.
+The Owner's subsequent 18 October UI instruction keeps only `Nguồn của dòng mới`
+in the creation toolbar. New School/date scopes use the existing ADDITIVE default;
+persisted modes, including COMPLETE, remain unchanged and visible as read-only
+facts. Category selection never reclassifies a saved mode. This explicitly
+supersedes the earlier School → calculation selector → source selector → Add
+creation layout, without changing D-044 backend behavior or historical evidence.
 Unknown/inactive references and same-Purpose duplicate grain fail closed.
 Existing rows keep their persisted Purpose, including the v4 neutral category;
 changing the Add selector never reclassifies an existing row. Catalog note rules
@@ -66,8 +72,8 @@ be destructive and is prohibited. Disposable test rollback discards only B1 data
    fixture nonpersistent. Preserve search, exact quantities, focus and dirty/UNKNOWN.
 4. Register the actual new SQL suite and catalog expectations; update Pantry API
    and architecture docs. Check formatting, UI boundary, TypeScript and build.
-   Use real browser acceptance at 1366×768, 1440×900 and 390×844 with original PNG
-   dimensions. Distinguish local authenticated persistence from mock fixtures.
+   Use real browser acceptance at 1366×768, 1440×900 and 390×844 with original
+   screenshot dimensions. Distinguish local authenticated persistence from mocks.
 5. Review the whole bounded diff, commit/push one stacked Draft targeting #401,
    and run exact-head Frontend CI, Supabase Smoke and Full Integration. Record
    actual results, failures and skipped gates. Stop for Product review.
@@ -135,3 +141,35 @@ relations/helpers, hardened function ownership and schema leases, and atomic rol
   command. No viewport, screenshot, rendered UX or connected persistence result
   was obtained. The B1-only Vite process was stopped; other applications and
   Docker projects were preserved.
+- Validation continuation completed real browser v3 Save/readback against the
+  isolated local stack with 50 active School/customer pairs and 403 Ingredients,
+  plus exact 1366×768, 1440×900 and 390×844 app viewports. Separate authenticated
+  browser sessions proved stale-Save locking/recovery; concurrent authenticated
+  HTTP requests produced one commit and one STALE_VERSION, with exact retry and
+  idempotency-conflict checks. The Owner then requested the single source selector
+  and explicitly chose ADDITIVE for new School/date scopes. That bounded UI delta
+  requires refreshed focused, rendered and final-head evidence in the PR/handoff.
+- Local Vitest discovery included preserved worktrees under `.worktrees` in the
+  earlier 168-test invocation. That count was not confined to canonical source.
+  Continuation checks use `--dir src`; clean-checkout GitHub CI was unaffected.
+- The final single-selector browser journey saved and refreshed two new sources
+  on 20/10/2026: Planning 5 and School 3, automatically ADDITIVE. An independent
+  authenticated public workbench read confirmed both, alongside the unchanged
+  19/10 COMPLETE facts and original source IDs. Immutable first-approval evidence
+  remained 5/3 after concurrent edits, mobile correction and the new date's Save.
+- Final app browsing contexts measured exactly 1440×900, 1366×768 and 390×844,
+  with no horizontal document overflow and one source selector / zero calculation
+  selectors. A borderless test host framed the unchanged connected app at exact
+  CSS dimensions because Windows rounded the outer browser by one pixel. Raw
+  JPEG captures cover the entire app viewport; no transforms or image processing.
+  Separate app and outer dimensions are retained in the external evidence.
+- Final focused UI checkpoint: three changed cases passed; the existing multi-
+  School journey reached its unchanged 5-second timeout, including when isolated.
+  The host again fell to 40 MB free RAM. No timeout, journey or assertion was
+  weakened. Formatting, UI boundary and diff whitespace passed. Clean-runner
+  exact-head Frontend CI must adjudicate the timeout before a PASS verdict.
+- Read-only review of the single-selector delta found no concrete issue. Only
+  the B1 Vite/test-host processes and four B1 containers were stopped after browser
+  proof; their volumes, other projects, worktrees and stashes remain preserved.
+  Final exact-SHA CI results and the completion verdict are pinned in the Draft
+  PR and external handoff, superseding earlier blocked checkpoints above.

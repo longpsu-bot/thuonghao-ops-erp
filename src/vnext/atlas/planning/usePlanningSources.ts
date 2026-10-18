@@ -1070,8 +1070,8 @@ export function usePlanningSources({
     menuRows,
     attendanceRows,
     pantryRows,
-    // The toolbar can choose a mode before a line exists. Preview/Save and
-    // dirty comparison still use the row-scoped effectiveModes projection.
+    // Retain saved School/date modes. Preview/Save use effectiveModes, whose
+    // existing default for newly represented School/date rows is ADDITIVE.
     modes,
     noAdditions,
     menuSource,

@@ -145,33 +145,10 @@ export function PlanningPantryStage({
         )}
         <Field.Root
           disabled={!c.canEdit || c.noAdditions || !targetSchoolId}
-          w={{ base: "full", md: "var(--atlas-layout-mode-width, 230px)" }}
-          gap="xs"
-        >
-          <Field.Label>Cách tính nhu cầu</Field.Label>
-          <NativeSelect.Root>
-            <NativeSelect.Field
-              value={schoolMode(targetSchoolId)}
-              onChange={(event) => {
-                if (targetSchoolId)
-                  c.setMode(
-                    targetSchoolId,
-                    event.target.value === "COMPLETE" ? "COMPLETE" : "ADDITIVE",
-                  );
-              }}
-            >
-              <option value="ADDITIVE">{modeLabels.ADDITIVE}</option>
-              <option value="COMPLETE">{modeLabels.COMPLETE}</option>
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
-        <Field.Root
-          disabled={!c.canEdit || c.noAdditions || !targetSchoolId}
           w={{ base: "full", md: "var(--atlas-layout-source-width, 270px)" }}
           gap="xs"
         >
-          <Field.Label>Nguồn của các dòng mới</Field.Label>
+          <Field.Label>Nguồn của dòng mới</Field.Label>
           <NativeSelect.Root>
             <NativeSelect.Field
               value={addCategory}
