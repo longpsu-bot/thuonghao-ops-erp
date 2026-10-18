@@ -13,6 +13,7 @@ import {
 import { Fragment, useId, useRef, useState } from "react";
 import { Trash } from "@phosphor-icons/react";
 import { PantryIngredientChooser } from "./PantryIngredientChooser";
+import { PantrySchoolChooser } from "./PantrySchoolChooser";
 import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
@@ -52,7 +53,7 @@ export function PlanningPantryStage({
   const [addSchool, setAddSchool] = useState("");
   const quantityContextId = useId();
   const addButton = useRef<HTMLButtonElement>(null);
-  const addSchoolInput = useRef<HTMLSelectElement>(null);
+  const addSchoolInput = useRef<HTMLInputElement>(null);
   const schoolOrder = new Map(
     c.schools.map((school, index) => [school.school_id, index]),
   );
@@ -93,25 +94,13 @@ export function PlanningPantryStage({
             </Text>
           </Box>
         ) : (
-          <NativeSelect.Root
+          <PantrySchoolChooser
+            inputRef={addSchoolInput}
+            schools={schools}
+            value={targetSchoolId}
+            onChange={setAddSchool}
             disabled={!c.canEdit || c.noAdditions}
-            w="var(--atlas-layout-add-school-width, 220px)"
-          >
-            <NativeSelect.Field
-              ref={addSchoolInput}
-              aria-label="Trường cần thêm hàng"
-              value={targetSchoolId}
-              onChange={(e) => setAddSchool(e.target.value)}
-            >
-              <option value="">Chọn trường cần thêm hàng</option>
-              {schools.map((s) => (
-                <option key={s.school_id} value={s.school_id}>
-                  {s.school_name}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
+          />
         )}
         <Button
           ref={addButton}

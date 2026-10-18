@@ -1011,9 +1011,14 @@ describe("Planning sources Chakra workbench", () => {
       width: "100%",
       tableLayout: "fixed",
     });
-    fireEvent.change(
-      await screen.findByRole("combobox", { name: "Trường cần thêm hàng" }),
-      { target: { value: "school-0" } },
+    const targetSchool = await screen.findByRole("combobox", {
+      name: "Trường cần thêm hàng",
+    });
+    fireEvent.focus(targetSchool);
+    fireEvent.change(targetSchool, { target: { value: "nguyen du" } });
+    expect(targetSchool).toHaveValue("nguyen du");
+    fireEvent.click(
+      await screen.findByRole("option", { name: /Trường Nguyễn Du/ }),
     );
     fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
     fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
@@ -1212,10 +1217,14 @@ it.each(["menu", "attendance", "pantry"] as const)(
       expect(
         screen.getAllByRole("textbox").some((e) => !e.hasAttribute("disabled")),
       ).toBe(true);
-    if (job === "pantry")
-      expect(
+    if (job === "pantry") {
+      fireEvent.focus(
         screen.getByRole("combobox", { name: "Trường cần thêm hàng" }),
+      );
+      expect(
+        await screen.findByRole("listbox", { name: "Trường cần thêm hàng" }),
       ).toHaveTextContent(fixture.pantry.schools[0].school_name);
+    }
     fireEvent.click(
       screen.getByRole("tab", {
         name: job === "pantry" ? "Thực đơn" : "Hàng đặt riêng",
