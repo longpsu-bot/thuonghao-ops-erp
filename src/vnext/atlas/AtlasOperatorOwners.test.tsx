@@ -173,7 +173,14 @@ it("retains separate Menu, Attendance, direct-order and Need owners without navi
     name: "Trường cần thêm hàng",
   });
   await waitFor(() => expect(addSchool).toBeEnabled());
-  fireEvent.change(addSchool, { target: { value: "school-1" } });
+  fireEvent.focus(addSchool);
+  fireEvent.change(addSchool, { target: { value: "le loi" } });
+  expect(addSchool).toHaveValue("le loi");
+  const schoolOption = await screen.findByRole("option", {
+    name: /Trường Lê Lợi/,
+  });
+  expect(schoolOption.id).toMatch(/school-school-1$/);
+  fireEvent.click(schoolOption);
   fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
   const pantryQuantity = await screen.findByRole("textbox", {
     name: "Số lượng dòng 1",
