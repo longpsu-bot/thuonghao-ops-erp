@@ -140,7 +140,7 @@ async function nav(label: string) {
   ).toBeVisible();
   return panel;
 }
-async function clickSignOut() {
+async function clickSignOut(userLabel?: string) {
   fireEvent.click(
     within(screen.getByRole("banner")).getByRole("button", {
       name: "Tài khoản và môi trường",
@@ -150,6 +150,7 @@ async function clickSignOut() {
   const account = await screen.findByRole("dialog", {
     name: "Tài khoản và môi trường",
   });
+  if (userLabel) expect(within(account).getByText(userLabel)).toBeVisible();
   fireEvent.click(within(account).getByRole("button", { name: "Đăng xuất" }));
 }
 async function selectRange(start: string, end: string, label = "Khoảng ngày") {
@@ -519,12 +520,28 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
   expect(prepare).not.toHaveBeenCalled();
 }, 60000);
 
-it("clean sign out runs immediately and a changed identity loses the prior draft", async () => {
-  const { apis, signOut, rerender, schoolFields: fields } = await showSchool();
-  expect(fields).toHaveLength(schoolDefaultsFixtureSchools.length);
-  await clickSignOut();
+it("clean sign out calls back once without a dirty-state blocker", async () => {
+  const { apis, signOut } = await showMenu(2);
+  const save = vi.spyOn(apis.masterData, "updateSchoolDefaultsBulk");
+  await clickSignOut("operator@example.test");
   expect(signOut).toHaveBeenCalledOnce();
+  expect(screen.queryByText(/Chưa thể đăng xuất/)).not.toBeInTheDocument();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(save).not.toHaveBeenCalled();
+}, 5000);
+
+it("a changed identity loses the prior unsaved draft including a stale post-sign-out edit", async () => {
+  const { apis, signOut, rerender, schoolFields: fields } = await showSchool(2);
+  const save = vi.spyOn(apis.masterData, "updateSchoolDefaultsBulk");
+  const read = vi.spyOn(apis.masterData, "getSchools");
+  expect(fields).toHaveLength(2);
+  await clickSignOut("operator@example.test");
+  expect(signOut).toHaveBeenCalledOnce();
+  // The callback does not unmount this harness: retain the original stale-edit race.
   fireEvent.change(fields[0]!, { target: { value: "123" } });
+  expect(fields[0]).toHaveValue("123");
+  expect(fields[1]).toHaveValue("317");
+  expect(save).not.toHaveBeenCalled();
   rerender(
     <AtlasVNextProvider>
       <AtlasVNextApp
@@ -539,16 +556,45 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
   expect(
     await screen.findByRole("heading", { level: 1, name: "Thực đơn" }),
   ).toBeVisible();
+  expect(fields[0]!.isConnected).toBe(false);
+  expect(fields[1]!.isConnected).toBe(false);
   const nextSchool = await nav("Trường học");
-  await waitFor(() =>
-    expect(
-      within(nextSchool).getAllByLabelText(/Học sinh mặc định/, {
-        selector: "input",
-      })[0],
-    ).not.toHaveValue("123"),
+  const nextFields = await within(nextSchool).findAllByLabelText(
+    /Học sinh mặc định/,
+    { selector: "input" },
   );
+  expect(nextFields).toHaveLength(2);
+  expect(read).toHaveBeenCalledWith("second-operator", expect.any(String));
+  for (const [index, field] of nextFields.entries()) {
+    expect(field).toBeVisible();
+    expect(field).toBeEnabled();
+    expect(field).not.toHaveValue("123");
+    expect(field).toHaveValue(
+      String(schoolDefaultsFixtureSchools[index]!.default_student_portions),
+    );
+  }
+  fireEvent.click(
+    within(screen.getByRole("banner")).getByRole("button", {
+      name: "Tài khoản và môi trường",
+    }),
+  );
+  const account = await screen.findByRole("dialog", {
+    name: "Tài khoản và môi trường",
+  });
+  expect(within(account).getByText("second@example.test")).toBeVisible();
+  expect(
+    within(account).queryByText("operator@example.test"),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    within(screen.getByRole("banner")).getByRole("button", {
+      name: "Tài khoản và môi trường",
+    }),
+  );
+  expect(save).not.toHaveBeenCalled();
+  expect(signOut).toHaveBeenCalledOnce();
+  expect(screen.queryByText(/Chưa thể đăng xuất/)).not.toBeInTheDocument();
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-});
+}, 5000);
 
 it("uses the injected business date for Recipe's independent initial as-of context", async () => {
   const { apis } = await showSchool();
