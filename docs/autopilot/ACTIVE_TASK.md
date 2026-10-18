@@ -1,5 +1,13 @@
 # Atlas Autopilot — Active Task
 
+**18 October B1 authorization supersession (this stacked Draft only):** The Owner
+explicitly authorizes `ATLAS-B1-PANTRY-TWO-SOURCE` from verified #401 head
+`4419033c2e4637fefb651d4ba395f4993a4e3599`, targeting its existing branch. Execute
+only the [B1 contract delta and plan](../implementation-tasks/TASK-ATLAS-B1-PANTRY-TWO-SOURCE.md).
+Earlier queued/UI-only restrictions below are historical for this bounded task.
+Preserve #392/#401 and all historical evidence; no B2/C, merge, deployment, hosted
+write, Warehouse work or automatic next task. Stop for Product review.
+
 Task: **ATLAS-UI392-CI-REPAIR-01 — Task A only**
 
 Status: **School follow-up development/browser/source review PASS — exact-head normal CI pending**

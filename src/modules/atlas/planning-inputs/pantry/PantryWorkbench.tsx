@@ -327,21 +327,29 @@ export function PantryWorkbench({
       correlationId,
       weekStart,
       noAdditions,
-      pantryRowsForWrite(rows),
+      pantryRowsForWrite(rows, "PANTRY-02.v4"),
       effectiveSchoolDateModes,
+      undefined,
+      "PANTRY-02.v4",
     );
     const nextPreview = pantryPreviewFromResult(result);
     setPreview(nextPreview);
     const impactResult =
       nextPreview?.can_save && api.getCorrectionImpact
-        ? await api.getCorrectionImpact(authSubject, correlationId, "PANTRY", {
-            week_start: weekStart,
-            no_additions_confirmed: noAdditions,
-            source_signature: nextPreview.source_signature,
-            expected_source_signature: data.batch?.source_signature ?? null,
-            rows: pantryRowsForWrite(rows),
-            school_date_modes: effectiveSchoolDateModes,
-          })
+        ? await api.getCorrectionImpact(
+            authSubject,
+            correlationId,
+            "PANTRY",
+            {
+              week_start: weekStart,
+              no_additions_confirmed: noAdditions,
+              source_signature: nextPreview.source_signature,
+              expected_source_signature: data.batch?.source_signature ?? null,
+              rows: pantryRowsForWrite(rows, "PANTRY-02.v4"),
+              school_date_modes: effectiveSchoolDateModes,
+            },
+            "PANTRY-02.v4",
+          )
         : null;
     const impact = impactResult
       ? planningCorrectionImpactFromResult(impactResult)
@@ -410,9 +418,11 @@ export function PantryWorkbench({
         no_additions_confirmed: noAdditions,
         source_signature: preview.source_signature,
         expected_source_signature: data.batch?.source_signature ?? null,
-        rows: pantryRowsForWrite(rows),
+        rows: pantryRowsForWrite(rows, "PANTRY-02.v4"),
         school_date_modes: effectiveSchoolDateModes,
       },
+      undefined,
+      "PANTRY-02.v4",
     );
     await runCompletion(() => api.saveCompleted(request));
   };

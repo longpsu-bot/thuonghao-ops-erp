@@ -47,7 +47,7 @@ export type PantryCompletionPayload = Record<string, JsonValue> & {
 };
 
 export type PantryCompletionCommandRequest = AtlasRpcRequest & {
-  contract_version: "PANTRY-02.v4";
+  contract_version: "PANTRY-02.v3" | "PANTRY-02.v4";
   command_id: string;
   correlation_id: string;
   idempotency_key: string;
@@ -101,10 +101,11 @@ export function pantryCompletionRequest(
   expectedVersion: number,
   payload: PantryCompletionPayload,
   reasonNote: string | null = "Lưu và hoàn tất Nhu cầu bổ sung.",
+  contractVersion: "PANTRY-02.v3" | "PANTRY-02.v4" = "PANTRY-02.v3",
 ): PantryCompletionCommandRequest {
   const commandId = crypto.randomUUID();
   return {
-    contract_version: "PANTRY-02.v4",
+    contract_version: contractVersion,
     command_id: commandId,
     correlation_id: correlationId,
     idempotency_key: `pantry_saved:${commandId}`,
@@ -120,14 +121,19 @@ export function pantryCompletionRequest(
 export function createPantryApi(invoker: PantryRpcInvoker) {
   const correction = createPlanningCorrectionApi(invoker);
   return {
-    getCorrectionImpact(...args: Parameters<typeof correction.impact>) {
-      const [subject, correlationId, kind, payload] = args;
+    getCorrectionImpact(
+      subject: string,
+      correlationId: string,
+      kind: Parameters<typeof correction.impact>[2],
+      payload: Parameters<typeof correction.impact>[3],
+      contractVersion: "PANTRY-02.v3" | "PANTRY-02.v4" = "PANTRY-02.v3",
+    ) {
       return correction.impact(
         subject,
         correlationId,
         kind,
-        kind === "PANTRY"
-          ? { ...payload, source_contract_version: "PANTRY-02.v4" }
+        kind === "PANTRY" && contractVersion === "PANTRY-02.v4"
+          ? { ...payload, source_contract_version: contractVersion }
           : payload,
       );
     },
@@ -152,6 +158,7 @@ export function createPantryApi(invoker: PantryRpcInvoker) {
       rows: JsonValue[],
       schoolDateModes: PantrySchoolDateMode[] = [],
       claimedSourceSignature?: string,
+      contractVersion: "PANTRY-02.v3" | "PANTRY-02.v4" = "PANTRY-02.v3",
     ) {
       return invoker.invoke(PANTRY_RPC_FUNCTIONS.preview, {
         ...pantryReadRequest(authSubject, correlationId, {
@@ -161,7 +168,7 @@ export function createPantryApi(invoker: PantryRpcInvoker) {
           claimed_source_signature: claimedSourceSignature ?? null,
           school_date_modes: schoolDateModes as unknown as JsonValue,
         }),
-        contract_version: "PANTRY-02.v4",
+        contract_version: contractVersion,
       });
     },
     saveCompleted(request: PantryCompletionCommandRequest) {

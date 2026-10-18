@@ -1,5 +1,40 @@
 # PANTRY-02 Pantry Source API Contract
 
+## B1 two-source forward amendment — 18 October 2026
+
+The connected #401 Pantry workbench now uses the existing authored-purpose
+`PANTRY-02.v3` Preview and consequential Save contract. See the
+[contract delta and validation record](../implementation-tasks/TASK-ATLAS-B1-PANTRY-TWO-SOURCE.md).
+No public endpoint or lifecycle is added. The existing purpose-free v4 contract
+remains callable; its neutral rows are never automatically reclassified.
+
+The stable source grain is batch + date + School + derived Delivery Location +
+Ingredient + Purpose. Purpose is immutable source identity. Different Purposes
+may each author the same Ingredient; same-Purpose duplicates remain blockers.
+Preview comparison joins, canonical ordering, signatures and stable Save conflict
+targets include Purpose. Omission invalidates only the omitted source, and
+restoring a grain reuses its UUID. All old approval snapshots remain unchanged.
+
+The operator selects `Bổ sung` (`planning_identified_supplement`) or
+`Đặt theo yêu cầu nhà trường` (`school_requested_supplement`) once for newly added
+lines. The UI obtains the exact active reference ID from the backend catalog;
+PostgreSQL validates it and applies its existing note rule. The browser cannot
+author Purpose metadata, Location or Unit. Existing categories, including neutral
+and inactive historical references, display their actual saved classification.
+Notes remain optional for the existing Foundation package's two OPTIONAL
+categories; no migration rewrites catalog policies or historical note evidence.
+
+Exact v3 retries use the existing receipt-first v4 authorization boundary before
+mutable impact checks. New intents still require the same consequential correction
+guards, source signature and expected version. The separate School/date modes
+remain unchanged: ADDITIVE combines Recipe and both direct contributions;
+COMPLETE excludes Recipe demand for that School/date. Existing source-line and
+snapshot references provide downstream provenance; no stored summary is added.
+
+Migration: `20261018072142_pantry_b1_two_source_identity.sql`. V1–v4 remain
+available. The legacy non-vnext workbench explicitly retains v4 requests; only
+the accepted vnext interaction selects authored v3. No hosted migration is applied.
+
 ## Boundary
 
 Contract version: `PANTRY-02.v1`

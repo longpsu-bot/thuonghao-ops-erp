@@ -23,6 +23,56 @@ async function setup() {
   return { ...hook, fixture };
 }
 describe("Planning source safety", () => {
+  it("B1 inherits a source once and preserves same-Ingredient sources through Save/readback and deletion", async () => {
+    const { result, fixture } = await setup();
+    fixture.pantry.purposes = [
+      {
+        ...fixture.pantry.purposes[0],
+        purpose_code: "planning_identified_supplement",
+        note_rule: "OPTIONAL",
+      },
+      {
+        ...fixture.pantry.purposes[0],
+        pantry_need_purpose_id: "purpose-2",
+        purpose_code: "school_requested_supplement",
+        note_rule: "OPTIONAL",
+      },
+    ];
+    act(() => result.current.transition({ job: "pantry" }));
+    act(() => result.current.transition({ refresh: true }));
+    await waitFor(() =>
+      expect(result.current.pantryData?.purposes).toHaveLength(2),
+    );
+    await waitFor(() => expect(result.current.canEdit).toBe(true));
+    act(() => result.current.addPantryRow("school-0", "purpose-1"));
+    act(() => result.current.addPantryRow("school-0", "purpose-2"));
+    act(() => result.current.addPantryRow("school-0", "spoofed-purpose"));
+    expect(
+      result.current.pantryRows.map((row) => row.pantry_need_purpose_id),
+    ).toEqual(["purpose-1", "purpose-2"]);
+    act(() =>
+      result.current.editPantryRow(0, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "5",
+        source_request_reference: "planning-request",
+      }),
+    );
+    act(() =>
+      result.current.editPantryRow(1, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "3",
+        source_request_reference: "school-request",
+      }),
+    );
+    const authored = structuredClone(result.current.pantryRows);
+    await act(() => result.current.previewChanges());
+    await act(() => result.current.save());
+    expect(result.current.pantryRows).toEqual(authored);
+    act(() => result.current.editPantryRow(1, { requested_quantity: "4" }));
+    expect(result.current.pantryRows[0]).toEqual(authored[0]);
+    act(() => result.current.removePantryRow(1));
+    expect(result.current.pantryRows).toEqual([authored[0]]);
+  });
   it("orders the School catalogue independently of incoming payload order", async () => {
     const fixture = createPlanningReviewFixture();
     fixture.planning.schools.reverse();
@@ -558,30 +608,23 @@ describe("Planning source safety", () => {
     expect(preview).toHaveBeenCalledTimes(1);
     expect(preview.mock.calls[0][5]).toEqual(expectedModes);
     expect(preview.mock.calls[0][4]).toEqual(
-      result.current.pantryRows.map(
-        ({ pantry_need_purpose_id: _, ...row }) => ({
-          ...row,
-          note: null,
-        }),
-      ),
+      result.current.pantryRows.map((row) => ({
+        ...row,
+        note: null,
+      })),
     );
     await act(() => result.current.save());
     expect(save).toHaveBeenCalledTimes(1);
     expect(save.mock.calls[0][0]).toMatchObject({
-      contract_version: "PANTRY-02.v4",
+      contract_version: "PANTRY-02.v3",
       expected_version: 1,
       payload: { school_date_modes: expectedModes },
     });
     expect(result.current.modes).toEqual(expectedModes);
-    expect(result.current.pantryRows.slice(0, 2)).toEqual(
-      firstDateRows.map((row) => ({
-        ...row,
-        pantry_need_purpose_id: "review-only-neutral-classification",
-      })),
-    );
+    expect(result.current.pantryRows.slice(0, 2)).toEqual(firstDateRows);
     expect(result.current.dirty).toBe(false);
   });
-  it("saves and reads back exact Pantry quantities and one School/date mode through v4", async () => {
+  it("saves and reads back exact Pantry quantities and one School/date mode through v3", async () => {
     const { result, fixture } = await setup();
     const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
     const preview = vi.spyOn(fixture.pantryApi, "preview");
@@ -610,7 +653,7 @@ describe("Planning source safety", () => {
     expect(preview).toHaveBeenCalled();
     expect(save).toHaveBeenCalledWith(
       expect.objectContaining({
-        contract_version: "PANTRY-02.v4",
+        contract_version: "PANTRY-02.v3",
         payload: expect.objectContaining({
           no_additions_confirmed: false,
           rows: expect.arrayContaining([

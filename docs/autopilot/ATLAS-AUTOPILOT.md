@@ -1,5 +1,11 @@
 # Atlas Autopilot Mandate
 
+**18 October B1-only supersession:** The latest explicit Owner brief activates
+the bounded Pantry two-source implementation under [ACTIVE_TASK.md](ACTIVE_TASK.md)
+and its linked contract delta. Older UI-only/queued statements below remain
+historical evidence; they do not override this B1 authorization. No B2/C, merge,
+deployment, hosted write or next-task promotion is authorized.
+
 Status: **School follow-up development/browser/source review PASS — exact-head normal CI pending**
 
 **Current bounded activation:** Owner explicitly releases Task A `ATLAS-UI392-CI-REPAIR-01` in the current thread, even while recovery-policy #393 is Draft/unmerged. This exception does not merge/adopt that policy or activate Task B. [Active task](ACTIVE_TASK.md#product-priority-and-work-authorization) pins the six known seams, focused-first checks, two-attempt same-root stop and review/normal-CI gate. Preserve prior failed evidence. No #388 command/change/integration, Warehouse/parked Draft work, new business semantics, merge or deployment. Earlier blanket STOP applies outside this exact repair.

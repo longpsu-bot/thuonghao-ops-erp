@@ -508,10 +508,20 @@ export function usePlanningSources({
       attendanceDraft(parseAttendancePaste(value, data.schools)),
     );
   };
-  const addPantryRow = (schoolId: string) => {
+  const addPantryRow = (schoolId: string, purposeId?: string) => {
+    const purpose = pantryData?.purposes.find(
+      (p) =>
+        p.purpose_status === "ACTIVE" &&
+        (p.purpose_code === "planning_identified_supplement" ||
+          p.purpose_code === "school_requested_supplement") &&
+        (purposeId
+          ? p.pantry_need_purpose_id === purposeId
+          : p.purpose_code === "planning_identified_supplement"),
+    );
     if (
       !canEdit ||
       noAdditions ||
+      !purpose ||
       !pantryData?.schools.some(
         (s) => s.school_id === schoolId && s.school_status === "ACTIVE",
       )
@@ -524,7 +534,7 @@ export function usePlanningSources({
         service_date: date,
         school_id: schoolId,
         ingredient_id: "",
-        pantry_need_purpose_id: "",
+        pantry_need_purpose_id: purpose.pantry_need_purpose_id,
         requested_quantity: "",
         note: "",
         source_request_reference: "",

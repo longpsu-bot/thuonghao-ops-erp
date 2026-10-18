@@ -266,12 +266,22 @@ export function pantrySnapshot(): PantryWorkbenchData {
     purposes: [
       {
         pantry_need_purpose_id: "purpose-1",
-        purpose_code: "EXTRA",
-        purpose_name_vi: "Bổ sung theo yêu cầu",
+        purpose_code: "planning_identified_supplement",
+        purpose_name_vi: "Bổ sung",
         purpose_description: "",
-        note_rule: "REQUIRED",
+        note_rule: "OPTIONAL",
         purpose_status: "ACTIVE",
         display_order: 1,
+        version: 1,
+      },
+      {
+        pantry_need_purpose_id: "purpose-2",
+        purpose_code: "school_requested_supplement",
+        purpose_name_vi: "Đặt theo yêu cầu nhà trường",
+        purpose_description: "",
+        note_rule: "OPTIONAL",
+        purpose_status: "ACTIVE",
+        display_order: 2,
         version: 1,
       },
     ],
@@ -507,9 +517,17 @@ export function createPlanningReviewFixture() {
               unit_id: ingredient?.purchase_unit.unit_id ?? "",
               unit_code: ingredient?.purchase_unit.unit_code ?? "",
               unit_name: ingredient?.purchase_unit.unit_name ?? "",
-              pantry_need_purpose_id: "review-only-neutral-classification",
-              purpose_code: "direct_entry_unspecified",
-              purpose_name_vi: "Nhập trực tiếp — không chỉ định mục đích",
+              pantry_need_purpose_id: text("pantry_need_purpose_id"),
+              purpose_code:
+                pantry.purposes.find(
+                  (p) =>
+                    p.pantry_need_purpose_id === text("pantry_need_purpose_id"),
+                )?.purpose_code ?? "legacy_unknown",
+              purpose_name_vi:
+                pantry.purposes.find(
+                  (p) =>
+                    p.pantry_need_purpose_id === text("pantry_need_purpose_id"),
+                )?.purpose_name_vi ?? "Phân loại đã lưu",
               requested_quantity: text("requested_quantity"),
               note: text("note"),
               source_request_reference: text("source_request_reference"),

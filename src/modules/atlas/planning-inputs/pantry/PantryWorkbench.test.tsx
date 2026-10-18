@@ -412,7 +412,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       source_row_reference: "row",
     } satisfies PantryDraftRow;
 
-    expect(pantryRowsForWrite([row])[0]).not.toHaveProperty(
+    expect(pantryRowsForWrite([row], "PANTRY-02.v4")[0]).not.toHaveProperty(
       "pantry_need_purpose_id",
     );
     expect(pantryRowsForWrite([row])[0]).toMatchObject({

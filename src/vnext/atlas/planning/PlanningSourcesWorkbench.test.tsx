@@ -995,6 +995,52 @@ describe("Planning sources Chakra workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Dùng dữ liệu dán" }));
     expect(screen.getByText(/chưa nhận diện được trường/)).toBeVisible();
   });
+  it("B1 displays actual persisted source sections and one creation category selector", async () => {
+    const fixture = createPlanningStoryFixture("pantry_review");
+    const first = fixture.pantry.batch!.active_lines[0];
+    fixture.pantry.batch!.active_lines = [
+      {
+        ...first,
+        pantry_need_purpose_id: "purpose-1",
+        requested_quantity: "5",
+        source_row_reference: "planning-source",
+      },
+      {
+        ...first,
+        pantry_need_line_id: "school-source-id",
+        pantry_need_purpose_id: "purpose-2",
+        requested_quantity: "3",
+        source_row_reference: "school-source",
+      },
+    ];
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          initialJob="pantry"
+        />
+      </AtlasVNextProvider>,
+    );
+    const table = await screen.findByRole("table", { name: "Hàng đặt riêng" });
+    expect(
+      await screen.findByRole("combobox", { name: "Nguồn của các dòng mới" }),
+    ).toBeVisible();
+    expect(within(table).getByText("Bổ sung", { exact: true })).toBeVisible();
+    expect(
+      within(table).getByText("Đặt theo yêu cầu nhà trường", { exact: true }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("textbox", { name: "Số lượng dòng 1" }),
+    ).toHaveValue("5");
+    expect(
+      screen.getByRole("textbox", { name: "Số lượng dòng 2" }),
+    ).toHaveValue("3");
+    expect(
+      within(table).queryByRole("combobox", { name: /Nguồn/ }),
+    ).not.toBeInTheDocument();
+  });
   it("offers one toolbar demand mode before the first Pantry line and guards an empty target", async () => {
     const fixture = createPlanningReviewFixture();
     fixture.pantry.schools = fixture.pantry.schools.slice(0, 2);
@@ -1334,7 +1380,7 @@ it("keeps OPTIONAL Pantry notes optional", async () => {
 });
 
 it.each(["REQUIRED", "PROHIBITED"] as const)(
-  "uses optional v4 notes even when historical Purpose was %s",
+  "retains historical Purpose note rules without relabeling the source: %s",
   async (rule) => {
     await renderPantryNoteRule(rule, "Nội dung giữ lại");
     const input = await screen.findByRole("textbox", {

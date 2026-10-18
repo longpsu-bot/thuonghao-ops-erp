@@ -78,7 +78,7 @@ describe("PANTRY-02 API adapter", () => {
     ]);
   });
 
-  it("builds PANTRY-02.v4 with explicit School/date modes and routes one consequential Save", async () => {
+  it("builds PANTRY-02.v3 with explicit School/date modes and routes one consequential Save", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createPantryApi({ invoke });
     const request = pantryCompletionRequest("subject", "correlation", 4, {
@@ -93,14 +93,14 @@ describe("PANTRY-02 API adapter", () => {
     await api.saveCompleted(request);
 
     expect(request).toMatchObject({
-      contract_version: "PANTRY-02.v4",
+      contract_version: "PANTRY-02.v3",
       expected_version: 4,
       reason_code: "PANTRY_SAVED",
     });
     expect(invoke.mock.calls).toEqual([["atlas_api.save_pantry", request]]);
   });
 
-  it("marks only Pantry purpose-free correction proposals explicitly", async () => {
+  it("preserves authored-purpose Pantry correction proposals", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createPantryApi({ invoke });
     await api.getCorrectionImpact("subject", "correlation", "PANTRY", {
@@ -111,13 +111,13 @@ describe("PANTRY-02 API adapter", () => {
       expect.objectContaining({
         payload: {
           source_kind: "PANTRY",
-          source_payload: { rows: [], source_contract_version: "PANTRY-02.v4" },
+          source_payload: { rows: [] },
         },
       }),
     );
   });
 
-  it("sends explicit School/date composition authority with a v4 preview", async () => {
+  it("sends explicit School/date composition authority with a v3 preview", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createPantryApi({ invoke });
 
@@ -139,7 +139,7 @@ describe("PANTRY-02 API adapter", () => {
     expect(invoke).toHaveBeenCalledWith(
       "atlas_api.preview_pantry_source",
       expect.objectContaining({
-        contract_version: "PANTRY-02.v4",
+        contract_version: "PANTRY-02.v3",
         payload: expect.objectContaining({
           school_date_modes: [
             {

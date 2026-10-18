@@ -65,6 +65,8 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "rmvp_03a_connected_weekly_menu_attendance.sql",
   "pantry_02_connected_pantry_source.sql",
   "pantry_v4_purpose_free.sql",
+  "pantry_b1_two_source.sql",
+  "pantry_b1_composition.sql",
   "pa_06e_h1b1_line_decision_structure_security.sql",
   "pa_06e_h1b1_line_decision_chain_pointer.sql",
   "pa_06e_h1b1_line_decision_policy_quantity_integrity.sql",

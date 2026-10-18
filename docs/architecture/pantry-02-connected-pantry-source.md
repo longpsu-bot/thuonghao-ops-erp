@@ -51,7 +51,15 @@ batch
 + Ingredient
 ```
 
-Purpose, Unit, quantity, note, and source evidence are mutable facts, not identity. Complete replacement reuses an existing line for the same grain, invalidates omissions, and never physically deletes a stable line. Restoring a prior grain reuses its UUID.
+**B1 forward amendment, 18 October 2026:** Purpose is part of stable source
+identity, extending the grain above by `pantry_need_purpose_id`. Unit, quantity,
+note and source evidence remain mutable facts under the existing backend rules.
+Complete replacement reuses an existing line for the same purpose-inclusive grain,
+invalidates omissions, and never physically deletes a stable line. Restoring a
+prior grain reuses its UUID. Changing Purpose cannot overwrite an existing source
+identity: it omits one source and authors another. Historical snapshots are not
+rewritten. See the [B1 delta](../implementation-tasks/TASK-ATLAS-B1-PANTRY-TWO-SOURCE.md)
+and [API amendment](../api/pantry-02-source.md#b1-two-source-forward-amendment--18-october-2026).
 
 Quantities are exact positive decimals with at most six fractional digits. The backend does not round, ceil, convert, or reinterpret them.
 
