@@ -98,7 +98,6 @@ export function PlanningPantryStage({
             w="var(--atlas-layout-add-school-width, 220px)"
           >
             <NativeSelect.Field
-              disabled={!c.canEdit || c.noAdditions}
               ref={addSchoolInput}
               aria-label="Trường cần thêm hàng"
               value={targetSchoolId}
@@ -247,7 +246,6 @@ export function PlanningPantryStage({
                           w="var(--atlas-layout-mode-width, 230px)"
                         >
                           <NativeSelect.Field
-                            disabled={!c.canEdit}
                             aria-label={`Cách kết hợp ${s.school_name}`}
                             value={
                               c.modes.find(
