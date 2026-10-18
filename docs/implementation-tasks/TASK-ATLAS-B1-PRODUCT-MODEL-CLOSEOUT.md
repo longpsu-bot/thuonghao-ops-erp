@@ -136,3 +136,18 @@ was deleted, converted, backfilled or silently interpreted as ADDITIVE.
   navigation, dirty edit, callback and draft-reset assertions remain; an explicit
   full-fixture School count assertion was added. No app/auth behavior or timeout
   changed. Timing instrumentation was removed; GitHub owns further certification.
+- GitHub run39135021096 still failed the same5000 ms auth journey after the second
+  bounded lookup correction (3061 passed,2 existing skips). Stop that repair path
+  at its two-attempt boundary; do not reopen the old performance work or weaken
+  the budget. Smoke/Full run39135023427 passed on6f4d153.
+- Real connected UI saved unchanged28 and then reasoned30 on2026-11-02; read-only
+  PostgreSQL proof retains theory28 and three original20/5/3 contributions. Actual
+  app viewports1440×900,1366×768,390×844 and local mobile table scrolling were
+  measured and captured. A two-identity HTTP race on a separate ADDITIVE week
+  returned one success/one STALE_VERSION, exact retry identity and changed-payload
+  conflict with stable line UUIDs. Browser B also rejected its frozen stale Save.
+- That browser review caught one missed current Preview label: the comparison
+  formatter rendered the historical School-source name. Its display now maps
+  stable Purpose codes to Bổ sung/Hàng đặt riêng, falling back to captured labels
+  for neutral/unknown history. Backend comparison membership, quantities, saved
+  names and snapshots are untouched; focused label/immutability cases added.
