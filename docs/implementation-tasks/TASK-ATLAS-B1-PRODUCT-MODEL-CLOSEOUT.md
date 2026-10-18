@@ -121,3 +121,10 @@ was deleted, converted, backfilled or silently interpreted as ADDITIVE.
   No timeout, assertion, security boundary or CI check was weakened. A subsequent
   focused UI run encountered renewed host memory exhaustion (about92 MB free);
   that incomplete run is not certification.
+- First exact-head Frontend run39126617019 failed1 of3064 tests (3061 passed,
+  2 pre-existing skips): an old progressive-detail test changed Confirmed theory
+  to0.0255 but retained the new shaped read's default10.25 source breakdown. The
+  fixture now supplies matching exact source fields; original raw/proposal/step
+  assertions remain, with explicit Recipe0.0255/B0 assertions added. No production
+  fallback arithmetic was introduced. The focused rerun also stalled under host
+  memory pressure; remote recertification is required on the corrected head.

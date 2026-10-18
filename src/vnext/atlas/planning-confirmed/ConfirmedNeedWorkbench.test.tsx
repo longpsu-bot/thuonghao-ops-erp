@@ -798,6 +798,19 @@ describe("Confirmed Need Chakra operator surface", () => {
         proposal_rounding_step: "0.100000",
       });
       fixture.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
+      Object.assign(fixture.need.grouped_requirements[0]!, {
+        total_theoretical_quantity: 0.0255,
+        recipe_derived_quantity: 0.0255,
+        pantry_direct_quantity: 0,
+        source_breakdown: {
+          recipe_derived_quantity: "0.025500",
+          planning_supplement_quantity: "0",
+          recipe_associated_quantity: "0.025500",
+          special_order_quantity: "0",
+          unclassified_direct_quantity: "0",
+          total_theoretical_quantity: "0.025500",
+        },
+      });
     });
     const input = await quantity();
     const row = input.closest("tr")!;
@@ -835,6 +848,8 @@ describe("Confirmed Need Chakra operator surface", () => {
       }),
     ).toHaveAttribute("tabindex", "0");
     const evidenceRow = within(evidence).getByText("Gạo thơm").closest("tr")!;
+    expect(evidenceRow).toHaveTextContent("Từ công thức: 0,0255 kg");
+    expect(evidenceRow).toHaveTextContent("Bổ sung: 0 kg");
     expect(evidenceRow).toHaveTextContent("0,0255 kg");
     expect(evidenceRow).toHaveTextContent("0,1 kg");
     expect(evidenceRow).toHaveTextContent("0,01 kg");
