@@ -149,7 +149,7 @@ it.each([
   ["REQUIRED", "   "],
   ["PROHIBITED", "Operator text"],
 ] as const)(
-  "uses optional v4 notes without erasing text from historical %s metadata",
+  "preserves authored Purpose and text for backend validation of %s notes",
   async (rule, note) => {
     const f = createPlanningReviewFixture();
     f.pantry.purposes[0].note_rule = rule;
@@ -177,11 +177,10 @@ it.each([
     expect(preview).toHaveBeenCalledTimes(1);
     expect(result.current.pantryRows[0].note).toBe(note);
     expect(preview.mock.calls[0]?.[4]?.[0]).toMatchObject({
+      pantry_need_purpose_id: "purpose-1",
       note: note.trim() || null,
     });
-    expect(preview.mock.calls[0]?.[4]?.[0]).not.toHaveProperty(
-      "pantry_need_purpose_id",
-    );
+    expect(result.current.pantryData?.purposes[0].note_rule).toBe(rule);
     act(() =>
       result.current.editPantryRow(0, {
         note: note ? "" : "Explicit optional note",

@@ -115,3 +115,23 @@ relations/helpers, hardened function ownership and schema leases, and atomic rol
   **BLOCKED — VALIDATION**. No B1 completion, hosted persistence, Product acceptance,
   merge or deployment claim. Detailed final results belong to the stacked Draft
   and external evidence handoff, pinned to its actual final SHA.
+- First remote checkpoint `88aa359`: Supabase Smoke PASS; Full Integration reached
+  the expanded B1 suite and passed 38/39 assertions, including actual confirmation,
+  supplier allocation, released Need contribution preservation and exact correction
+  blocker. The unknown-School test changed the row's School without adding its
+  required School/date mode, so v3 correctly rejected mode coverage before exposing
+  the expected `UNKNOWN_SCHOOL` row blocker. The fixture now supplies both represented
+  mode keys; the exact unknown-reference assertion is retained. No runtime, policy,
+  timeout, capability or expected rejection is changed. Fresh final CI is required.
+- The first Frontend CI checkpoint passed formatting/typecheck and 3,057 tests;
+  two source-isolation assertions still expected v4 Purpose stripping in the
+  vnext controller. They now require the actual authored Purpose and unchanged
+  catalog note metadata for backend v3 validation. Explicit legacy v4 adapter
+  compatibility coverage remains. This is a contract-expectation update; no
+  runtime or validation guard is changed. The corrected focused invocation passed
+  168 tests across 12 files; fresh exact-head CI remains required.
+- After the Owner freed RAM, focused tests completed. Browser navigation still
+  timed out in both the in-app browser and Chrome, including a browser focus
+  command. No viewport, screenshot, rendered UX or connected persistence result
+  was obtained. The B1-only Vite process was stopped; other applications and
+  Docker projects were preserved.

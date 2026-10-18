@@ -505,7 +505,10 @@ select ok(jsonb_path_exists(atlas_api.preview_pantry_source(pg_temp.pantry02_rea
 '$.preview.issues.blockers[*] ? (@.code == "CALLER_UNIT_NOT_ALLOWED")'),'browser Unit authority is rejected');
 select ok(jsonb_path_exists(atlas_api.preview_pantry_source(pg_temp.pantry02_read(jsonb_set(pg_temp.b1_payload(),'{rows,1,requested_quantity}','"-1"'))||'{"contract_version":"PANTRY-02.v3"}'),
 '$.preview.issues.blockers[*] ? (@.code == "QUANTITY_NOT_POSITIVE")'),'negative source quantities are rejected');
-select ok(jsonb_path_exists(atlas_api.preview_pantry_source(pg_temp.pantry02_read(jsonb_set(pg_temp.b1_payload(),'{rows,1,school_id}','"ffffffff-ffff-ffff-ffff-ffffffffffff"'))||'{"contract_version":"PANTRY-02.v3"}'),
+select ok(jsonb_path_exists(atlas_api.preview_pantry_source(pg_temp.pantry02_read(jsonb_set(
+jsonb_set(pg_temp.b1_payload(),'{rows,1,school_id}','"ffffffff-ffff-ffff-ffff-ffffffffffff"'),
+'{school_date_modes}',(pg_temp.b1_payload()->'school_date_modes')||jsonb_build_array(jsonb_build_object(
+'school_id','ffffffff-ffff-ffff-ffff-ffffffffffff','service_date','2026-08-24','direct_need_mode','COMPLETE'))))||'{"contract_version":"PANTRY-02.v3"}'),
 '$.preview.issues.blockers[*] ? (@.code == "UNKNOWN_SCHOOL")'),'unknown School is rejected');
 select ok(jsonb_path_exists(atlas_api.preview_pantry_source(pg_temp.pantry02_read(jsonb_set(pg_temp.b1_payload(),'{rows,1,ingredient_id}','"ffffffff-ffff-ffff-ffff-ffffffffffff"'))||'{"contract_version":"PANTRY-02.v3"}'),
 '$.preview.issues.blockers[*] ? (@.code == "UNKNOWN_INGREDIENT")'),'unknown Ingredient is rejected');
