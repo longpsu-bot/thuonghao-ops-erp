@@ -98,10 +98,15 @@ export function AtlasSchoolScope({
           w="var(--atlas-layout-school-width, min(360px, calc(100vw - 32px)))"
           maxW="var(--atlas-layout-school-max-width, calc(100vw - 32px))"
           animation="var(--atlas-layout-motion, none)"
+          overflow="hidden"
         >
-          <Popover.Body>
-            <Stack gap="sm">
-              <Flex align="center" justify="space-between">
+          <Popover.Body
+            display="flex"
+            minH="var(--atlas-layout-zero, 0)"
+            overflowY="auto"
+          >
+            <Stack gap="sm" flex="1" minH="var(--atlas-layout-zero, 0)">
+              <Flex align="center" justify="space-between" flexShrink="0">
                 <Popover.Title fontWeight="semibold">
                   Trường / điểm giao
                 </Popover.Title>
@@ -115,13 +120,14 @@ export function AtlasSchoolScope({
                 </Button>
               </Flex>
               <Input
+                flexShrink="0"
                 ref={searchInput}
                 aria-label="Tìm trường"
                 placeholder="Tìm tên trường"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
-              <Flex gap="xs" wrap="wrap">
+              <Flex gap="xs" wrap="wrap" flexShrink="0">
                 <Button
                   size="sm"
                   onClick={() =>
@@ -138,10 +144,12 @@ export function AtlasSchoolScope({
                   Bỏ chọn tất cả
                 </Button>
               </Flex>
-              <Text textStyle="helper" color="fg.muted">
+              <Text textStyle="helper" color="fg.muted" flexShrink="0">
                 Đã chọn {draft.length} / {schools.length} trường
               </Text>
               <Stack
+                flex="1"
+                minH="var(--atlas-layout-mobile-target, 44px)"
                 maxH="var(--atlas-layout-school-list-height, 260px)"
                 overflowY="auto"
                 gap="xs"
@@ -181,24 +189,27 @@ export function AtlasSchoolScope({
                 ))}
               </Stack>
               {!draft.length && (
-                <Text color="status.warning" textStyle="helper">
+                <Text color="status.warning" textStyle="helper" flexShrink="0">
                   Chọn ít nhất một trường để áp dụng.
                 </Text>
               )}
-              <Button
-                variant="secondary"
-                disabled={!draft.length}
-                onClick={() => {
-                  onApply(
-                    draft.length === schools.length ? [] : [...draft].sort(),
-                  );
-                  close();
-                }}
-              >
-                Áp dụng
-              </Button>
             </Stack>
           </Popover.Body>
+          <Popover.Footer flexShrink="0" pt="var(--atlas-layout-zero, 0)">
+            <Button
+              w="full"
+              variant="secondary"
+              disabled={!draft.length}
+              onClick={() => {
+                onApply(
+                  draft.length === schools.length ? [] : [...draft].sort(),
+                );
+                close();
+              }}
+            >
+              Áp dụng
+            </Button>
+          </Popover.Footer>
         </Popover.Content>
       </Popover.Positioner>
     </Popover.Root>
