@@ -10,6 +10,7 @@ import {
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { AtlasVNextApp } from "./AtlasVNextApp";
+import { schoolDefaultsFixtureSchools } from "./schools/schoolDefaultsReviewFixtures";
 import {
   createAtlasApplicationFixture,
   applicationReviewNow,
@@ -51,8 +52,19 @@ const modules = [
   ["Phiếu xuất kho", "Phiếu xuất kho"],
   ["Đối chiếu PO / Phiếu xuất kho", "Đối chiếu PO / Phiếu xuất kho"],
 ];
-async function showMenu() {
+async function showMenu(schoolLimit?: number) {
   const apis = createAtlasApplicationFixture();
+  if (schoolLimit !== undefined) {
+    apis.masterData.getSchools = async () => ({
+      kind: "success",
+      response: {
+        success: true,
+        schools: structuredClone(
+          schoolDefaultsFixtureSchools.slice(0, schoolLimit),
+        ),
+      },
+    });
+  }
   const signOut = vi.fn();
   const result = render(
     <AtlasVNextProvider>
@@ -73,8 +85,8 @@ async function showMenu() {
   );
   return { apis, signOut, ...result };
 }
-async function showSchool() {
-  const result = await showMenu();
+async function showSchool(schoolLimit?: number) {
+  const result = await showMenu(schoolLimit);
   await nav("Trường học");
   const panel = screen.getByRole("tabpanel", {
     name: "Trường học",
@@ -352,8 +364,11 @@ it.each(modules)(
   },
   20000,
 );
-it("blocks dirty sign-out without discarding and resolves School through its close guard", async () => {
-  const { signOut, schoolFields: fields } = await showSchool();
+it("blocks dirty sign-out without discarding and resolves two Schools through their close guard", async () => {
+  // One dirty and one untouched School isolate owner guards from catalog size.
+  const { signOut, schoolFields: fields } = await showSchool(2);
+  expect(fields).toHaveLength(2);
+  expect(fields[1]).toHaveValue("317");
   const strip = within(
     screen.getByRole("tablist", {
       name: "Màn hình đang mở",
@@ -373,6 +388,7 @@ it("blocks dirty sign-out without discarding and resolves School through its clo
     screen.queryByRole("button", { name: "Bỏ thay đổi", hidden: true }),
   ).not.toBeInTheDocument();
   expect(fields[0]).toHaveValue("123");
+  expect(fields[1]).toHaveValue("317");
   fireEvent.click(close);
   const dialog = await screen.findByRole("dialog", {
     hidden: true,
@@ -386,6 +402,7 @@ it("blocks dirty sign-out without discarding and resolves School through its clo
   expect(cancel).toBeVisible();
   fireEvent.click(cancel);
   expect(fields[0]).toHaveValue("123");
+  expect(fields[1]).toHaveValue("317");
   await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
   fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
   await waitFor(() => expect(dialog).not.toBeInTheDocument());
@@ -402,6 +419,7 @@ it("blocks dirty sign-out without discarding and resolves School through its clo
   expect(discard).toBeVisible();
   fireEvent.click(discard);
   await waitFor(() => expect(fields[0]!.isConnected).toBe(false));
+  expect(fields[1]!.isConnected).toBe(false);
   await clickSignOut();
   expect(signOut).toHaveBeenCalledOnce();
 });
