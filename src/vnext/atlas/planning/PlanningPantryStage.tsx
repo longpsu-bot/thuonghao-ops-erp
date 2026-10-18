@@ -81,9 +81,17 @@ export function PlanningPantryStage({
   const targetSchoolId =
     automaticSchool?.school_id ??
     (schools.some((s) => s.school_id === addSchool) ? addSchool : "");
+  const schoolMode = (schoolId: string) =>
+    c.modes.find(
+      (mode) => mode.school_id === schoolId && mode.service_date === c.date,
+    )?.direct_need_mode ?? "ADDITIVE";
+  const modeLabels = {
+    ADDITIVE: "Cộng với thực đơn",
+    COMPLETE: "Danh sách đầy đủ",
+  };
   return (
     <>
-      <Flex p="sm" gap="sm" wrap="wrap" align="center">
+      <Flex p="sm" gap="sm" wrap="wrap" align="end">
         {automaticSchool ? (
           <Box>
             <Text fontWeight="semibold">
@@ -102,6 +110,29 @@ export function PlanningPantryStage({
             disabled={!c.canEdit || c.noAdditions}
           />
         )}
+        <Field.Root
+          disabled={!c.canEdit || c.noAdditions || !targetSchoolId}
+          w={{ base: "full", md: "var(--atlas-layout-mode-width, 230px)" }}
+          gap="xs"
+        >
+          <Field.Label>Cách tính nhu cầu</Field.Label>
+          <NativeSelect.Root>
+            <NativeSelect.Field
+              value={schoolMode(targetSchoolId)}
+              onChange={(event) => {
+                if (targetSchoolId)
+                  c.setMode(
+                    targetSchoolId,
+                    event.target.value === "COMPLETE" ? "COMPLETE" : "ADDITIVE",
+                  );
+              }}
+            >
+              <option value="ADDITIVE">{modeLabels.ADDITIVE}</option>
+              <option value="COMPLETE">{modeLabels.COMPLETE}</option>
+            </NativeSelect.Field>
+            <NativeSelect.Indicator />
+          </NativeSelect.Root>
+        </Field.Root>
         <Button
           ref={addButton}
           size="sm"
@@ -230,33 +261,9 @@ export function PlanningPantryStage({
                             {s.default_delivery_location.location_name}
                           </Text>
                         </Box>
-                        <NativeSelect.Root
-                          disabled={!c.canEdit}
-                          w="var(--atlas-layout-mode-width, 230px)"
-                        >
-                          <NativeSelect.Field
-                            aria-label={`Cách kết hợp ${s.school_name}`}
-                            value={
-                              c.modes.find(
-                                (m) =>
-                                  m.school_id === s.school_id &&
-                                  m.service_date === c.date,
-                              )?.direct_need_mode ?? "ADDITIVE"
-                            }
-                            onChange={(e) =>
-                              c.setMode(
-                                s.school_id,
-                                e.target.value === "COMPLETE"
-                                  ? "COMPLETE"
-                                  : "ADDITIVE",
-                              )
-                            }
-                          >
-                            <option value="ADDITIVE">Cộng với thực đơn</option>
-                            <option value="COMPLETE">Danh sách đầy đủ</option>
-                          </NativeSelect.Field>
-                          <NativeSelect.Indicator />
-                        </NativeSelect.Root>
+                        <Text textStyle="helper" color="fg.muted">
+                          {modeLabels[schoolMode(s.school_id)]}
+                        </Text>
                       </Flex>
                     </Table.Cell>
                   </Table.Row>

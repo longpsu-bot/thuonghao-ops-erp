@@ -1060,7 +1060,9 @@ export function usePlanningSources({
     menuRows,
     attendanceRows,
     pantryRows,
-    modes: effectiveModes,
+    // The toolbar can choose a mode before a line exists. Preview/Save and
+    // dirty comparison still use the row-scoped effectiveModes projection.
+    modes,
     noAdditions,
     menuSource,
     menuSyncedAt,
