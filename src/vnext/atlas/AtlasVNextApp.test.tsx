@@ -93,9 +93,10 @@ async function showSchool(schoolLimit?: number) {
     hidden: true,
   });
   expect(panel).toBeVisible();
-  const fields = await within(panel).findAllByRole("textbox", {
-    name: /Học sinh mặc định/,
+  const fields = await within(panel).findAllByLabelText(/Học sinh mặc định/, {
+    selector: "input",
   });
+  expect(fields[0]).toBeVisible();
   await waitFor(() => expect(fields[0]).toBeEnabled());
   return { ...result, schoolFields: fields };
 }
@@ -519,10 +520,8 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
 }, 60000);
 
 it("clean sign out runs immediately and a changed identity loses the prior draft", async () => {
-  const { apis, signOut, rerender } = await showSchool();
-  const fields = await screen.findAllByRole("textbox", {
-    name: /Học sinh mặc định/,
-  });
+  const { apis, signOut, rerender, schoolFields: fields } = await showSchool();
+  expect(fields).toHaveLength(schoolDefaultsFixtureSchools.length);
   await clickSignOut();
   expect(signOut).toHaveBeenCalledOnce();
   fireEvent.change(fields[0]!, { target: { value: "123" } });
@@ -540,10 +539,12 @@ it("clean sign out runs immediately and a changed identity loses the prior draft
   expect(
     await screen.findByRole("heading", { level: 1, name: "Thực đơn" }),
   ).toBeVisible();
-  await nav("Trường học");
+  const nextSchool = await nav("Trường học");
   await waitFor(() =>
     expect(
-      screen.getAllByRole("textbox", { name: /Học sinh mặc định/ })[0],
+      within(nextSchool).getAllByLabelText(/Học sinh mặc định/, {
+        selector: "input",
+      })[0],
     ).not.toHaveValue("123"),
   );
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

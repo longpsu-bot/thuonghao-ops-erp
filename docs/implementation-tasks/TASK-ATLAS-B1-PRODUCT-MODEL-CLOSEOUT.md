@@ -128,3 +128,11 @@ was deleted, converted, backfilled or silently interpreted as ADDITIVE.
   assertions remain, with explicit Recipe0.0255/B0 assertions added. No production
   fallback arithmetic was introduced. The focused rerun also stalled under host
   memory pressure; remote recertification is required on the corrected head.
+- Resume diagnosis reproduced the unchanged5000 ms clean sign-out test timeout.
+  Timed boundaries showed the same50-School field lookup taking about1 second
+  twice before sign-out; a visibility-scan-only first correction still timed out.
+  The bounded test-harness correction reuses the already resolved fields and
+  queries labelled inputs inside the visible School panel. Both identity changes,
+  navigation, dirty edit, callback and draft-reset assertions remain; an explicit
+  full-fixture School count assertion was added. No app/auth behavior or timeout
+  changed. Timing instrumentation was removed; GitHub owns further certification.
