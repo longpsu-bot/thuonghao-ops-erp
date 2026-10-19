@@ -1,5 +1,19 @@
 # School-Catering Procurement API Contract
 
+## K2 corrected Need source amendment — 19 October 2026
+
+Authority: [Issue #400 Owner K2 decision](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6263269007), implemented in the bounded [K2 task record](../implementation-tasks/TASK-ATLAS-C-K2-CORRECTED-NEED-PO-01.md). This supersedes #406's proposed receipt certificate for the closed corrected-Need branch. Command receipts retain idempotency, recovery and audit meaning; a command name, completed outcome or response never supplies missing source authority.
+
+An authentic `RMVP-05.v3` post-release correction retains the immutable original Need release and Handoff. The existing explicit Supplier Allocation Save accepts exact current Need contributions, quantities, Suppliers and notes. Corrected Preparation verifies that source and the complete supplier/date frontier without another Planning release or a fabricated Handoff successor. Unchanged families retain applicable original Handoff identities. Affected families use existing typed `CONFIRMED_NEED` contributions; each contribution retains the existing source XOR.
+
+The existing complete replacement command creates or regenerates the whole Supplier/date Draft. The existing explicit `release_school_catering_purchase_order` remains the final commitment boundary. It independently rederives original validated release/Handoff ancestry, immutable human revision/decision chains, exact current theoretical membership, Unit/policy/quantity evidence, accepted allocation membership and the complete date document frontier. Live upstream preflight is required even when captured facts and RMVP-06 evaluation still match. Equal quantities alone confer no authority. Invalid corrected evidence fails closed and cannot restore the old Handoff as current authority.
+
+Release locks the corrected source before supplier/date uniqueness and allocation locks, rechecks the current Actor and whole represented School/location scope, and serializes Supplier status and relevant authorization changes. The releaser needs existing Procurement write authority; the previous authentic K1 Save already established Planning authority, which is not reauthorized against the historical Actor's current roles. Existing predecessor/version checks and atomic new-number release/old-root supersession remain. Original numbers, quantities, frozen School/item/note snapshots and exports are retained through repeated replacements. Historical typed-source validation uses immutable ancestry and the accepted source version, independently of later working currentness.
+
+A later Need or allocation change invalidates an old Draft. Missing Supplier coverage blocks release even when the target Supplier's own Draft remains current. A removed Supplier retains `CANCELLATION_REQUIRED`; no zero PO or implicit cancellation is introduced. Ordinary initial Handoff release behavior remains. K1 writer/readback activation, staff enablement, PXK issuance, Warehouse and document styling are not expanded by this backend checkpoint.
+
+Verification uses real authenticated commands in disposable databases, including 100 → 110 → 90, multiple Suppliers and shared Schools, R/B/H evidence, scope/permission denial, forged receipt alone, missing Supplier coverage, replay, UNKNOWN recovery, rollback and actual competing transactions. No hosted install, merge or deployment is authorized.
+
 ## B2 optional Ingredient code amendment — 19 October 2026
 
 Authority: [Owner decision](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389#issuecomment-6236671930)

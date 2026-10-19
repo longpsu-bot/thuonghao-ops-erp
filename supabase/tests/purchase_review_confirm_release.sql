@@ -249,8 +249,19 @@ create function pg_temp.need_save(quantity text) returns jsonb language sql vola
 $$;
 create function pg_temp.need_save_complete_review(quantity text) returns jsonb
 language sql volatile set search_path='' as $$
-  select pg_temp.review_command('RMVP-05.v2','CONFIRMED_NEED_SAVED',b.version,jsonb_build_object(
-    'confirmed_need_batch_id',b.confirmed_need_batch_id,'lines',(
+  select pg_temp.review_command('RMVP-05.v3','CONFIRMED_NEED_SAVED',b.version,jsonb_build_object(
+    'confirmed_need_batch_id',b.confirmed_need_batch_id,
+    'correction',jsonb_build_object(
+      'expected_confirmed_need_release_id',(select released.confirmed_need_release_id
+        from atlas_planning.confirmed_need_releases released
+        where released.confirmed_need_batch_id=b.confirmed_need_batch_id
+        order by released.resulting_released_batch_version desc limit 1),
+      'expected_purchase_handoff_batch_id',h.purchase_handoff_batch_id,
+      'expected_purchase_handoff_revision_id',hr.purchase_handoff_revision_id,
+      'expected_purchase_handoff_version',h.version,
+      'expected_source_fingerprint',encode(sha256(convert_to(
+        atlas_core.rmvp_07_validated_facts_projection(b.confirmed_need_batch_id)::text,'UTF8')),'hex')),
+    'lines',(
       select jsonb_agg(jsonb_build_object(
         'confirmed_need_line_id',l.confirmed_need_line_id,
         'expected_current_revision_id',r.confirmed_need_line_revision_id,
@@ -267,6 +278,8 @@ language sql volatile set search_path='' as $$
         on r.confirmed_need_line_id=l.confirmed_need_line_id and r.is_current
       where l.confirmed_need_batch_id=b.confirmed_need_batch_id)))
   from atlas_planning.confirmed_need_batches b
+  join atlas_planning.purchase_handoff_batches h using(confirmed_need_batch_id)
+  join atlas_planning.purchase_handoff_revisions hr on hr.purchase_handoff_batch_id=h.purchase_handoff_batch_id and hr.is_current
   where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
 $$;
 create function pg_temp.allocation_request(row_data jsonb,qa text,qb text) returns jsonb language sql volatile set search_path='' as $$
@@ -1110,17 +1123,12 @@ update atlas_admin.supplier_eligibilities set priority=2
 update atlas_admin.supplier_eligibilities set priority=1
   where supplier_id='c7100000-0000-4000-8000-000000000001';
 
--- Scenario C regression: after released 125 kg supplier commitments, a governed
--- correction to 130 kg and exact same-supplier reallocation must be able to
--- commit Planning release, Handoff and allocation promotion. Ordinary draft
--- creation correctly skips the released roots; the preparation frontier must
--- therefore accept their derived REPLACEMENT_REQUIRED state.
-set local session_replication_role=replica;
-select atlas_core.issue_222_reopen_confirmed_need(
-  'b6500000-0000-0000-0000-000000000050',
-  (select version from atlas_planning.confirmed_need_batches
-    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
-set local session_replication_role=origin;
+-- Owner #400 K2: authentic post-issuance correction preserves the original
+-- Planning release/Handoff and explicitly accepts corrected Need allocation.
+insert into atlas_core.role_capabilities(role_id,capability_id)
+select 'b6000000-0000-0000-0000-000000000003',capability_id
+from atlas_core.capabilities where capability_code in
+  ('planning.need_generation.write','confirmed_need_release.release') on conflict do nothing;
 insert into command_requests values('correct130',pg_temp.need_save_complete_review('130.00'));
 set local role authenticated;
 insert into review_results values('correct130',atlas_api.save_confirmed_needs(
@@ -1162,27 +1170,26 @@ select is((select response->>'success' from review_results where name='prepare-r
   'Scenario C preparation accepts a valid released-PO replacement frontier');
 select is((select batch_status from atlas_planning.confirmed_need_batches
     where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
-  'RELEASED_FOR_PURCHASE_HANDOFF','Scenario C preparation commits the corrected Planning release');
+  'REOPENED','Scenario C preparation preserves corrected Need without a second Planning release');
 select is((select purchase_handoff_batch_id from atlas_planning.purchase_handoff_batches
     where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
   (select handoff_batch_id from replacement_frontier_snapshot),
   'Scenario C preparation reuses the historical Handoff root');
-select ok((select r.revision_kind='SUPERSEDING'
-    and r.predecessor_revision_id=(select handoff_revision_id from replacement_frontier_snapshot)
+select ok((select r.purchase_handoff_revision_id=(select handoff_revision_id from replacement_frontier_snapshot)
     and r.revision_status='RELEASED_TO_PROCUREMENT'
   from atlas_planning.purchase_handoff_batches b
   join atlas_planning.purchase_handoff_revisions r using(purchase_handoff_batch_id)
   where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050' and r.is_current),
-  'Scenario C preparation appends a released SUPERSEDING Handoff revision');
+  'Scenario C preparation preserves the original released Handoff revision');
 select is((select r.source_kind from atlas_procurement.school_catering_allocation_family_revisions r
     where r.family_id=(select (response#>>'{family,family_id}')::uuid from review_results where name='allocate130')
-      and r.is_current),'PURCHASE_HANDOFF',
-  'Scenario C preparation promotes corrected allocation to Handoff authority');
-select is((select r.predecessor_revision_id from atlas_procurement.school_catering_allocation_family_revisions r
+      and r.is_current),'CONFIRMED_NEED',
+  'Scenario C preparation retains explicit corrected Need allocation authority');
+select is((select r.family_revision_id from atlas_procurement.school_catering_allocation_family_revisions r
     where r.family_id=(select (response#>>'{family,family_id}')::uuid from review_results where name='allocate130')
       and r.is_current),
   (select (response#>>'{family,family_revision_id}')::uuid from review_results where name='allocate130'),
-  'Scenario C promoted allocation retains its confirmed-source predecessor');
+  'Scenario C Preparation retains the explicitly accepted corrected allocation revision');
 select is((select sum(s.allocated_quantity)
     from atlas_procurement.school_catering_allocation_supplier_splits s
     join atlas_procurement.school_catering_allocation_family_revisions r using(family_revision_id)
@@ -1408,12 +1415,6 @@ declare
   stale_line_id uuid; line_data record; current_version bigint;
   before_state jsonb; after_state jsonb;
 begin
-  set local session_replication_role=replica;
-  perform atlas_core.issue_222_reopen_confirmed_need(
-    'b6500000-0000-0000-0000-000000000050',
-    (select version from atlas_planning.confirmed_need_batches
-      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
-  set local session_replication_role=origin;
 
   corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save_complete_review('131.00'));
   for row_data in select value from jsonb_array_elements(pg_temp.review_read(
@@ -1530,16 +1531,6 @@ create function pg_temp.cancellation_frontier_case() returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare corrected jsonb;row_data jsonb;saved jsonb:='[]'::jsonb;prepared jsonb;current_version bigint;
 begin
-  if (select batch_status from atlas_planning.confirmed_need_batches
-      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050')
-      not in ('DRAFT_REVIEW','REOPENED') then
-    set local session_replication_role=replica;
-    perform atlas_core.issue_222_reopen_confirmed_need(
-      'b6500000-0000-0000-0000-000000000050',
-      (select version from atlas_planning.confirmed_need_batches
-        where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
-    set local session_replication_role=origin;
-  end if;
   corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save_complete_review('131.00'));
   for row_data in select value from jsonb_array_elements(pg_temp.review_read(
     'get_confirmed_supplier_allocation_workbench','CONFIRMED-SUPPLIER-ALLOCATION.v1',
@@ -1706,12 +1697,6 @@ select replacement_id,released_id,replacement_state,released_state,
   (replacement_state#>>'{root,version}')::bigint replacement_version
 from existing_replacement_before;
 
-set local session_replication_role=replica;
-select atlas_core.issue_222_reopen_confirmed_need(
-  'b6500000-0000-0000-0000-000000000050',
-  (select version from atlas_planning.confirmed_need_batches
-    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
-set local session_replication_role=origin;
 insert into command_requests values('correct134',
   pg_temp.need_save_complete_review('134.00'));
 set local role authenticated;
@@ -1761,7 +1746,7 @@ select ok((select bool_and(response->>'success'='true') from review_results
   'second correction saves the complete revised supplier allocation');
 select is((select response->>'success' from review_results
     where name='prepare-second-correction'),'true',
-  'second-correction preparation reaches the new Handoff authority');
+  'second-correction preparation accepts authentic corrected Need authority');
 select is(pg_temp.purchase_order_state(
     (select replacement_id from second_correction_before)),
   (select replacement_state from second_correction_before),
@@ -1775,8 +1760,7 @@ select is((select count(*) from atlas_procurement.purchase_orders candidate
       (select released_id from second_correction_before)),
   (select replacement_root_count from second_correction_before),
   'second-correction preparation creates no replacement root');
-select ok((select r.revision_kind='SUPERSEDING'
-      and r.predecessor_revision_id=before.handoff_revision_id
+select ok((select r.purchase_handoff_revision_id=before.handoff_revision_id
       and r.revision_status='RELEASED_TO_PROCUREMENT'
     from second_correction_before before
     join atlas_planning.purchase_handoff_batches b
@@ -1784,13 +1768,13 @@ select ok((select r.revision_kind='SUPERSEDING'
     join atlas_planning.purchase_handoff_revisions r
       using(purchase_handoff_batch_id)
     where r.is_current),
-  'second-correction preparation appends the expected Handoff successor');
+  'second-correction preparation retains the same original Handoff');
 select is((select r.source_kind
     from atlas_procurement.school_catering_allocation_family_revisions r
     where r.family_id=(select (response#>>'{family,family_id}')::uuid
       from review_results where name='allocate134') and r.is_current),
-  'PURCHASE_HANDOFF',
-  'second-correction preparation promotes the new allocation to Handoff authority');
+  'CONFIRMED_NEED',
+  'second-correction preparation retains the accepted corrected Need source');
 select is((select sum(s.allocated_quantity)
     from atlas_procurement.school_catering_allocation_supplier_splits s
     join atlas_procurement.school_catering_allocation_family_revisions r

@@ -29,6 +29,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "purchase_review_confirm_release.sql",
   "atlas_c_need_correction_authority.sql",
   "atlas_k2_receipt_integrity.sql",
+  "atlas_k2_corrected_need_purchase_orders.sql",
   "purchase_preparation_release_projection.sql",
   "purchase_preparation_source_ambiguity.sql",
   "supplier_allocation_released_read.sql",
@@ -148,6 +149,7 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
                   "purchase_review_confirm_release.sql",
                   "atlas_c_need_correction_authority.sql",
                   "atlas_k2_receipt_integrity.sql",
+                  "atlas_k2_corrected_need_purchase_orders.sql",
                   "purchase_preparation_release_projection.sql",
                   "purchase_preparation_source_ambiguity.sql",
                   "supplier_allocation_released_read.sql",
@@ -185,6 +187,10 @@ export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
     ]),
   }),
   ...databaseTests,
+  Object.freeze({
+    command: "node",
+    args: Object.freeze(["scripts/test-local-atlas-k2-po-concurrency.mjs"]),
+  }),
   Object.freeze({
     command: "node",
     args: Object.freeze(["scripts/test-local-planning-final-closeout.mjs"]),

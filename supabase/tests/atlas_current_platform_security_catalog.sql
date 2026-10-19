@@ -17,6 +17,9 @@ select plan(30);
 -- Cutover authorization alignment 108 adds one private whole-PO scope helper with
 -- EXECUTE only for read/procurement runtimes; public API/capability/role/table
 -- catalogs and browser privileges remain unchanged.
+-- K2 adds two private stateless helpers, nine policies and thirteen precise grants.
+-- Core key UPDATE grants are lock-only, with false write checks; the existing PO
+-- guard now uses the existing Procurement runtime so forced RLS exposes its rows.
 -- Exact Atlas schema and relation posture.
 select is(
   (
@@ -461,8 +464,8 @@ select is(
   ),
   jsonb_build_object(
     -- K1 adds exactly six private source SELECT/lock policies.
-    'count', 680,
-    'md5', '9a9c0b67f7e34f7dd652811149715d50'
+    'count', 689,
+    'md5', 'd2a7ef8da79571431cbd60b93bd2acdf'
   ),
   'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
@@ -1810,18 +1813,18 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 680,
-    'policy_catalog_md5', '9a9c0b67f7e34f7dd652811149715d50',
+    'policy_count', 689,
+    'policy_catalog_md5', 'd2a7ef8da79571431cbd60b93bd2acdf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 352,
+    'private_function_count', 354,
     -- Pantry v4 adds two private IMMUTABLE INVOKER normalizers; existing function metadata is unchanged.
-    'private_function_catalog_md5', 'b7cad8ed58059963d3907c1af2b4e989',
+    'private_function_catalog_md5', 'c43cd2daec1dd3c3a3c9e8661b45aad9',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
     -- Each new helper grants EXECUTE only to Read/Planning runtimes: four target grants, no browser grant.
     -- One private EXECUTE plus SELECT/UPDATE on three source primary keys.
-    'positive_target_grant_count', 1866,
-    'positive_target_grant_md5', '1e9a82c9b1401d0229615f25173d6dc5',
+    'positive_target_grant_count', 1879,
+    'positive_target_grant_md5', '59202d2d0a257afa26eaac28d1a04518',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

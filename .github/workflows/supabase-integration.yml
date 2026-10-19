@@ -40,6 +40,7 @@ on:
       - "scripts/certify-frontend.mjs"
       - "scripts/certify-supabase-full-integration.mjs"
       - "scripts/test-local-purchase-review.mjs"
+      - "scripts/test-local-atlas-k2-po-concurrency.mjs"
       - "scripts/local-confirmed-supplier-allocation.mjs"
       - "scripts/verify-atlas-staging.mjs"
       - "scripts/verify-atlas-staging-school-fulfilment.mjs"
@@ -116,6 +117,7 @@ on:
       - "scripts/certify-frontend.mjs"
       - "scripts/certify-supabase-full-integration.mjs"
       - "scripts/test-local-purchase-review.mjs"
+      - "scripts/test-local-atlas-k2-po-concurrency.mjs"
       - "scripts/local-confirmed-supplier-allocation.mjs"
       - "scripts/verify-atlas-staging.mjs"
       - "scripts/verify-atlas-staging-school-fulfilment.mjs"
@@ -241,6 +243,7 @@ jobs:
           pnpm exec supabase test db supabase/tests/purchase_handoff_clock_skew.sql --local
           node scripts/test-local-purchase-review.mjs purchase_review_confirm_release.sql
           node scripts/test-local-purchase-review.mjs atlas_c_need_correction_authority.sql
+          node scripts/test-local-purchase-review.mjs atlas_k2_corrected_need_purchase_orders.sql
           pnpm exec supabase test db supabase/tests/pantry_02_connected_pantry_source.sql supabase/tests/pantry_v4_purpose_free.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_03b_connected_planning_input_readiness.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_03a_connected_weekly_menu_attendance.sql --local

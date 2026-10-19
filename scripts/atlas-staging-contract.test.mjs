@@ -1038,7 +1038,18 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(121);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(123);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "node",
+      args: [
+        "scripts/test-local-purchase-review.mjs",
+        "atlas_k2_corrected_need_purchase_orders.sql",
+      ],
+    });
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "node",
+      args: ["scripts/test-local-atlas-k2-po-concurrency.mjs"],
+    });
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: [
@@ -2350,8 +2361,8 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.authenticatedApiSignatures).not.toContain(
       dispatchSnapshotBase,
     );
-    expect(authority.policyCount).toBe(680);
-    expect(authority.policyDigest).toBe("9a9c0b67f7e34f7dd652811149715d50");
+    expect(authority.policyCount).toBe(689);
+    expect(authority.policyDigest).toBe("d2a7ef8da79571431cbd60b93bd2acdf");
   });
 
   it("compares authenticated EXECUTE against CAT-18 rather than physical CAT-15", () => {
@@ -2464,7 +2475,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 680");
+    expect(sql).toContain("normal_policy_count <> 689");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -2553,11 +2564,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [680, 1, true],
-    [680, 0, false],
-    [680, 2, false],
-    [679, 1, false],
-    [681, 1, false],
+    [689, 1, true],
+    [689, 0, false],
+    [689, 2, false],
+    [688, 1, false],
+    [690, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

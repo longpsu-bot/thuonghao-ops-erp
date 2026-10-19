@@ -56,7 +56,7 @@ const result = spawnSync(
     "-U",
     "postgres",
     "-d",
-    "postgres",
+    process.env.ATLAS_LOCAL_DB_NAME ?? "postgres",
   ],
   { input: sql, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
 );
