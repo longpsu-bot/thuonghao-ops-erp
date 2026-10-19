@@ -45,7 +45,7 @@ type PurchaseOrderExportLine = {
   ingredientId: string;
   unitId: string;
   sources: Record<string, unknown>[];
-  ingredientDocumentCode: string;
+  ingredientDocumentCode: string | null;
   ingredientName: string;
   orderedQuantity: string;
   unitCode: string;
@@ -115,7 +115,8 @@ export function buildPurchaseOrderExportData(
       !order.lines.length ||
       order.lines.some(
         (line) =>
-          !officialCode(line.ingredient_document_code_snapshot) ||
+          (line.ingredient_document_code_snapshot != null &&
+            !officialCode(line.ingredient_document_code_snapshot)) ||
           !line.ingredient_name_snapshot?.trim() ||
           !line.unit_code_snapshot?.trim(),
       ))
@@ -141,7 +142,7 @@ export function buildPurchaseOrderExportData(
     string,
     {
       ingredientName: string;
-      ingredientDocumentCode: string;
+      ingredientDocumentCode: string | null;
       unitCode: string;
       supplierNote: string | null;
       quantity: bigint;
@@ -175,7 +176,7 @@ export function buildPurchaseOrderExportData(
       ingredientId: line.ingredient.ingredient_id,
       unitId: line.unit.unit_id,
       sources: [...(current?.sources ?? []), source],
-      ingredientDocumentCode: line.ingredient_document_code_snapshot!,
+      ingredientDocumentCode: line.ingredient_document_code_snapshot ?? null,
       ingredientName: line.ingredient_name_snapshot!,
       unitCode: line.unit_code_snapshot!,
       supplierNote: line.supplier_note,
@@ -217,7 +218,7 @@ export function buildPurchaseOrderExportData(
         cookingLocationHostSchoolId:
           school.cooking_location_host_school_id ?? null,
         canonicalCookingSnapshot: Object.hasOwn(school, "cooking_location_id"),
-        ingredientDocumentCode: line.ingredient_document_code_snapshot!,
+        ingredientDocumentCode: line.ingredient_document_code_snapshot ?? null,
         ingredientName: line.ingredient_name_snapshot!,
         orderedQuantity: exactQuantity(schoolQuantity),
         unitCode: line.unit_code_snapshot!,

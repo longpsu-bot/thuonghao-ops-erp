@@ -5,7 +5,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(155);
+select plan(161);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -578,16 +578,26 @@ select is(pg_temp.prb_release_isolated(pg_temp.prb_release('24050000-0000-4000-8
 reset role;
 select ok((select purchase_order_status='DRAFT' and document_number is null from atlas_procurement.purchase_orders where supplier_id='24020000-0000-4000-8000-000000000051' and school_catering_service_date='2026-09-21'),'code-blocked release leaves supplier commitment unchanged');
 update atlas_admin.suppliers set document_code='53' where supplier_id='24020000-0000-4000-8000-000000000051';
+savepoint optional_item_code;
 update atlas_admin.ingredients set document_code=null where ingredient_id='24020000-0000-4000-8000-000000000041';
 set local role authenticated;
-select is(pg_temp.prb_release_isolated(pg_temp.prb_release('24050000-0000-4000-8000-000000000191','24020000-0000-4000-8000-000000000051'))->>'error_code','PO_DOCUMENT_CODE_REQUIRED','any missing item document code blocks official release');
+insert into prb_results values('read-null-code-draft',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+insert into prb_results values('release-null-code',atlas_api.release_school_catering_purchase_order(pg_temp.prb_release('24050000-0000-4000-8000-000000000191','24020000-0000-4000-8000-000000000051')));
+insert into prb_results values('release-null-code-replay',atlas_api.release_school_catering_purchase_order(pg_temp.prb_release('24050000-0000-4000-8000-000000000191','24020000-0000-4000-8000-000000000051',2,true)));
+insert into prb_results values('read-null-code-released',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
 reset role;
-update atlas_admin.ingredients set document_code='1082' where ingredient_id='24020000-0000-4000-8000-000000000041';
+select ok((select (po->>'release_eligible')::boolean and (po#>>'{allowed_actions,release}')::boolean and not (po->'blockers' ? 'PO_DOCUMENT_CODE_REQUIRED') from prb_results,jsonb_array_elements(response->'purchase_orders') po where name='read-null-code-draft' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),'null internal Ingredient code does not block shaped Draft release eligibility');
+select ok((select response->>'success'='true' and response->>'document_number' is not null from prb_results where name='release-null-code'),'null Ingredient code and valid Supplier code release with a backend official number');
+select ok((select count(*)=2 and bool_and(ingredient_document_code_snapshot is null and ingredient_name_snapshot='PR-B Rice' and unit_code_snapshot='pr-b-kg') and sum(ordered_quantity)=100 from atlas_procurement.purchase_order_line_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-null-code')),'null-code release freezes exact descriptive facts and full100 quantity without a fabricated code');
+select ok((select (po->>'document_snapshot_complete')::boolean and (po->>'export_ready')::boolean and (po#>>'{allowed_actions,export}')::boolean from prb_results,jsonb_array_elements(response->'purchase_orders') po where name='read-null-code-released' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),'null-code released snapshot is complete and exportable');
+select throws_ok($$update atlas_procurement.purchase_order_line_revisions set ingredient_document_code_snapshot='FABRICATED' where ingredient_document_code_snapshot is null and ingredient_name_snapshot='PR-B Rice'$$,'23514','PO item document snapshots are immutable','a frozen null Ingredient code cannot later be fabricated');
+select is((select response from prb_results where name='release-null-code-replay'),(select response from prb_results where name='release-null-code'),'null-code release replays identical receipt and official number');
+rollback to savepoint optional_item_code;
 savepoint malformed_master_document_code;
 alter table atlas_admin.ingredients drop constraint ingredients_document_code_check;
 update atlas_admin.ingredients set document_code='ITEM-25000000-0000-4000-8000-000000000001' where ingredient_id='24020000-0000-4000-8000-000000000041';
 set local role authenticated;
-select is(pg_temp.prb_release_isolated(pg_temp.prb_release('24050000-0000-4000-8000-000000000192','24020000-0000-4000-8000-000000000051'))->>'error_code','PO_DOCUMENT_CODE_REQUIRED','release defensively rejects embedded UUID code even with malformed private master evidence');
+select is(pg_temp.prb_release_isolated(pg_temp.prb_release('24050000-0000-4000-8000-000000000192','24020000-0000-4000-8000-000000000051'))->>'error_code','PO_INGREDIENT_DOCUMENT_CODE_INVALID','release distinguishes corrupt nonnull internal metadata from a missing Supplier code');
 reset role;
 rollback to savepoint malformed_master_document_code;
 savepoint control_master_document_code;
@@ -1455,6 +1465,7 @@ select is(
   (select response->>'purchase_order_id' from prb_results where name='replacement-a'),
   'release fixture selects the exact prepared replacement despite a same-time unrelated Draft');
 
+update atlas_admin.ingredients set document_code=null where ingredient_id='24020000-0000-4000-8000-000000000041';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
 insert into prb_results values('release-replacement-a',
@@ -1475,10 +1486,11 @@ select ok((
     and school_catering_service_date='2026-09-21'
 ), 'replacement release atomically supersedes the old root and preserves both numbers');
 select ok((select supplier_document_code_snapshot='99' and supplier_name_snapshot='PR-B Supplier Alpha renamed' from atlas_procurement.purchase_order_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-replacement-a')),'replacement freezes its current supplier identity');
-select ok((select bool_and(ingredient_document_code_snapshot='9999' and ingredient_name_snapshot='PR-B Rice renamed' and unit_code_snapshot='pr-b-new-unit') from atlas_procurement.purchase_order_line_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-replacement-a')),'replacement freezes its current item identity');
+select ok((select bool_and(ingredient_document_code_snapshot is null and ingredient_name_snapshot='PR-B Rice renamed' and unit_code_snapshot='pr-b-new-unit') from atlas_procurement.purchase_order_line_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-replacement-a')),'replacement freezes its current item identity with a null internal code');
 set local role authenticated;
 insert into prb_results values('read-superseded-document-identity',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
 reset role;
+select ok((select (po->>'document_snapshot_complete')::boolean and (po->>'export_ready')::boolean and (po#>>'{allowed_actions,export}')::boolean from prb_results,jsonb_array_elements(response->'purchase_orders') po where name='read-superseded-document-identity' and po->>'status'='RELEASED_TO_SUPPLIER' and po->>'purchase_order_id'=(select response->>'purchase_order_id' from prb_results where name='replacement-a')),'null-code complete replacement remains officially exportable');
 select ok((select (po->>'export_ready')::boolean and (po#>>'{allowed_actions,export}')::boolean and (po->>'document_snapshot_complete')::boolean and po#>>'{current_revision,supplier_document_code_snapshot}'='53' and bool_and(line->>'ingredient_document_code_snapshot'='1082' and line->>'ingredient_name_snapshot'='PR-B Rice' and line->>'unit_code_snapshot'='pr-b-kg') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-superseded-document-identity' and po->>'status'='SUPERSEDED' group by po),'superseded official PO remains exportable from its original immutable display facts');
 select ok((select bool_and(line->>'supplier_note'='Frozen supplier note') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-superseded-document-identity' and po->>'status'='SUPERSEDED'),'superseded history preserves its original captured supplier note');
 select ok((select bool_and(line->>'supplier_note'='Corrected supplier note') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-superseded-document-identity' and po->>'status'='RELEASED_TO_SUPPLIER' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),'replacement official lines capture the corrected supplier note');

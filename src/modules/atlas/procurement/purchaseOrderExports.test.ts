@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
 import { createReviewPurchaseOrdersFixture } from "./reviewSchoolCateringProcurementApi";
 import {
   buildPurchaseOrderExportData,
@@ -10,6 +11,78 @@ import {
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it.each(["all", "details_ing", "details_school", "sum"] as const)(
+    "exports null internal codes in %s XLSX/PDF and both ZIP formats with exact lineage",
+    async (mode) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      for (const line of order.lines) {
+        line.ingredient_document_code_snapshot = null;
+        line.ingredient.document_code = "CURRENT-INTERNAL-ONLY";
+        line.ingredient_name_snapshot =
+          "Rau cải ngọt Đà Lạt loại một dành cho bữa ăn học sinh";
+        line.supplier_note = "Giao trước 05:30; đóng gói riêng từng trường.";
+      }
+      const before = structuredClone(order);
+      const inspect = async (bytes: ExcelJS.Buffer) => {
+        const book = new ExcelJS.Workbook();
+        await book.xlsx.load(bytes);
+        const visible: string[] = [];
+        for (const sheet of book.worksheets.filter(
+          (s) => s.state === "visible",
+        )) {
+          expect(sheet.pageSetup.paperSize).toBe(9);
+          expect(sheet.getColumn(2).hidden).toBe(true);
+          sheet.eachRow((row) =>
+            row.eachCell((cell) => {
+              if (!sheet.getColumn(cell.col).hidden) visible.push(cell.text);
+            }),
+          );
+        }
+        const text = visible.join("\n");
+        expect(text).toContain("Mã NCC: 53");
+        expect(text).toContain("Rau cải ngọt Đà Lạt");
+        expect(text).toContain("Giao trước 05:30");
+        expect(text).not.toContain("Mã hàng");
+        expect(text).not.toContain("CURRENT-INTERNAL-ONLY");
+        expect(text).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]{23}/i);
+        const metadata = JSON.stringify(
+          book.getWorksheet("_ATLAS_META")!.getSheetValues(),
+        );
+        expect(metadata).toContain("DOCUMENT");
+        expect(metadata).toContain("ROW_SOURCE");
+        expect(JSON.stringify(book.model)).toContain(
+          order.lines[0]!.ingredient.ingredient_id,
+        );
+        expect(metadata).toContain(
+          order.lines[0]!.purchase_order_line_revision_id,
+        );
+        expect(metadata).toContain(order.lines[0]!.ordered_quantity);
+        expect(metadata).toContain("ingredient_document_code_snapshot");
+      };
+      await inspect(await createPurchaseOrderXlsx(order, mode));
+      const pdf = await createPurchaseOrderPdf(order, mode);
+      expect(new TextDecoder().decode(pdf.slice(0, 5))).toBe("%PDF-");
+      const definition = JSON.stringify(
+        buildPurchaseOrderPdfDefinition(order, mode),
+      );
+      expect(definition).toContain("Mã NCC: 53");
+      expect(definition).not.toContain("Mã hàng");
+      expect(definition).not.toContain("CURRENT-INTERNAL-ONLY");
+      for (const format of ["xlsx", "pdf"] as const) {
+        const zip = await JSZip.loadAsync(
+          await createPurchaseOrderZip([order], mode, format),
+        );
+        const files = Object.values(zip.files).filter((file) => !file.dir);
+        expect(files).toHaveLength(1);
+        if (format === "xlsx")
+          await inspect(await files[0]!.async("arraybuffer"));
+        else
+          expect((await files[0]!.async("string")).slice(0, 5)).toBe("%PDF-");
+      }
+      expect(order).toEqual(before);
+    },
+  );
   it("sizes long frozen supplier codes using a conservative header width", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
@@ -126,48 +199,45 @@ describe("released purchase-order exports", () => {
       expect(pdf).not.toContain("v1-ingredient-");
     }
   });
-  it.each([
-    "header-code",
-    "line-code",
-    "line-name",
-    "unit-code",
-    "completeness",
-  ])("fails official regeneration closed for missing %s", async (missing) => {
-    const order =
-      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
-    Object.assign(order, {
-      document_snapshot_complete: missing !== "completeness",
-    });
-    Object.assign(order.current_revision, {
-      supplier_document_code_snapshot: missing === "header-code" ? null : "53",
-    });
-    for (const line of order.lines)
-      Object.assign(line, {
-        ingredient_document_code_snapshot:
-          missing === "line-code" ? null : "1082",
-        ingredient_name_snapshot: missing === "line-name" ? null : "Tên A",
-        unit_code_snapshot: missing === "unit-code" ? null : "kg",
+  it.each(["header-code", "line-name", "unit-code", "completeness"])(
+    "fails official regeneration closed for missing %s",
+    async (missing) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      Object.assign(order, {
+        document_snapshot_complete: missing !== "completeness",
       });
-    expect(() => buildPurchaseOrderExportData(order)).toThrow(
-      "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
-    );
-    for (const mode of [
-      "all",
-      "details_ing",
-      "details_school",
-      "sum",
-    ] as const) {
-      await expect(createPurchaseOrderXlsx(order, mode)).rejects.toThrow(
+      Object.assign(order.current_revision, {
+        supplier_document_code_snapshot:
+          missing === "header-code" ? null : "53",
+      });
+      for (const line of order.lines)
+        Object.assign(line, {
+          ingredient_document_code_snapshot: null,
+          ingredient_name_snapshot: missing === "line-name" ? null : "Tên A",
+          unit_code_snapshot: missing === "unit-code" ? null : "kg",
+        });
+      expect(() => buildPurchaseOrderExportData(order)).toThrow(
         "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
       );
-      await expect(createPurchaseOrderPdf(order, mode)).rejects.toThrow(
-        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
-      );
-      await expect(createPurchaseOrderZip([order], mode)).rejects.toThrow(
-        "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
-      );
-    }
-  });
+      for (const mode of [
+        "all",
+        "details_ing",
+        "details_school",
+        "sum",
+      ] as const) {
+        await expect(createPurchaseOrderXlsx(order, mode)).rejects.toThrow(
+          "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+        );
+        await expect(createPurchaseOrderPdf(order, mode)).rejects.toThrow(
+          "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+        );
+        await expect(createPurchaseOrderZip([order], mode)).rejects.toThrow(
+          "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
+        );
+      }
+    },
+  );
   it("keeps superseded predecessor business display separate from a replacement's new snapshots", () => {
     const predecessor =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;

@@ -1,5 +1,15 @@
 # Atlas Autopilot — Active Task
 
+**19 October B2 authorization (this independent stacked Draft only):** execute
+`ATLAS-B2-PO-INGREDIENT-CODE-OPTIONAL-01` from exact `689398e12f3911182862c76a964434c8776b6bec`
+on `feat/atlas-b2-po-ingredient-code-optional`, targeting
+`fix/atlas-ci-auth-01-test-boundary`. The explicit Owner brief supersedes older
+B1-only restrictions for this task. Follow the [contract delta](../implementation-tasks/TASK-ATLAS-B2-PO-INGREDIENT-CODE-OPTIONAL-01.md).
+Preserve #392/#401/#402/#404 and immutable historical PO reproduction. Run
+focused tests and exact-head Frontend/Smoke/actually executed Full Integration.
+No benchmark interference, automatic rebase, merge, deployment, hosted mutation,
+real supplier commitment, C, Dispatch or Warehouse work. Stop for Product review.
+
 **18 October Product-model closeout:** continue existing #402 from `7f1343a`
 under the [latest Owner-approved bounded contract](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md).
 This amends current Pantry labels, source disclosure and coverage evidence only.

@@ -1,0 +1,87 @@
+[
+  {
+    "file": "po-all-pdf.zip",
+    "bytes": 54703,
+    "sha256": "a8767d46a7a10340c0a26e7ee9d318a98553bc76556665d24235a9b297831a90"
+  },
+  {
+    "file": "po-all-xlsx.zip",
+    "bytes": 32029,
+    "sha256": "93043c0e8aa538b5dc53f58af9c75c3214424c1bc9ffce3aa1909448fd847a74"
+  },
+  {
+    "file": "po-all.pdf",
+    "bytes": 94899,
+    "sha256": "8dd32bc98562c8d1872cde5d0f4c1bdfb76f833f81e15f3494859652fa34515a"
+  },
+  {
+    "file": "po-all.xlsx",
+    "bytes": 35489,
+    "sha256": "dc9bcce4a56b6c0cb4e17d015203cb50e67c1aed3ca0d87e41dc1dc6f931edf2"
+  },
+  {
+    "file": "po-details_ing-pdf.zip",
+    "bytes": 48089,
+    "sha256": "907e474799d0b6e163fa0b8fbc802097fed1cde21b443e972b3efc803af8e6e6"
+  },
+  {
+    "file": "po-details_ing-xlsx.zip",
+    "bytes": 27568,
+    "sha256": "95f2c46344547e68e1f01f22814f75209816cd657f8f7f62b48e7b33aec088d8"
+  },
+  {
+    "file": "po-details_ing.pdf",
+    "bytes": 51845,
+    "sha256": "3388b898df60d018c0446aac77c52d95c1b35fe9062075535b0032b5dcd3a7fd"
+  },
+  {
+    "file": "po-details_ing.xlsx",
+    "bytes": 29194,
+    "sha256": "bae27e2426c5fd3e24a0cafbc81b16b99edbf9e7bce4702aef9c3031f11f25a7"
+  },
+  {
+    "file": "po-details_school-pdf.zip",
+    "bytes": 47892,
+    "sha256": "ebf699370d09f21f8a737eae99b1e08f075a8d155c6b3ab573ffe2ca397c2052"
+  },
+  {
+    "file": "po-details_school-xlsx.zip",
+    "bytes": 27653,
+    "sha256": "ae2742b466adc2c45df4b5c44d3a35baf8917b14ed5d217fe4f731bfd6a5cb94"
+  },
+  {
+    "file": "po-details_school.pdf",
+    "bytes": 51612,
+    "sha256": "171f3c8422cefbe4a5bbf4ac24c1a7be06a8187660b967bea3e12deeb2e2a825"
+  },
+  {
+    "file": "po-details_school.xlsx",
+    "bytes": 29261,
+    "sha256": "81cd74cff5f107e9bdf889848aaacffb1cfd6681d6a6f18c3937cf5e2c028c8c"
+  },
+  {
+    "file": "po-sum-pdf.zip",
+    "bytes": 46529,
+    "sha256": "02595932b68e81dcc51cae419b51db178aca68d549d82c2f7a1f221e6433ffe9"
+  },
+  {
+    "file": "po-sum-xlsx.zip",
+    "bytes": 27278,
+    "sha256": "ae7a88ac2348e25f9822e8a8349a581db00c8c6a75e8a56a3b581bed52cb14e0"
+  },
+  {
+    "file": "po-sum.pdf",
+    "bytes": 50129,
+    "sha256": "77bbaacb19ed202824275924a999f33bc6f3d5204df457a89fb421ab4926d8f8"
+  },
+  {
+    "file": "po-sum.xlsx",
+    "bytes": 28922,
+    "sha256": "7ece8a18c2ba7c9b75df8b8de86a928028412e33bc0f910700f0b2dddfa5616d"
+  },
+  {
+    "file": "preliminary.xlsx",
+    "bytes": 9709,
+    "sha256": "7d0c5e6a15e1377ae36c09f31beae8d72ad73d6367573e9f0bc64a1a7dff0da9"
+  }
+]

@@ -1,0 +1,3 @@
+src/modules/atlas/procurement/purchaseOrderExports.test.ts(79,25): error TS2345: Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'Buffer'.
+  The types returned by 'slice(...)[Symbol.toStringTag]' are incompatible between these types.
+    Type '"Uint8Array"' is not assignable to type '"ArrayBuffer"'.

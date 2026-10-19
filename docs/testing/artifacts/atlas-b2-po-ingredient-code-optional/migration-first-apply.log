@@ -1,0 +1,26 @@
+BEGIN
+SELECT 3
+DO
+SELECT 3
+SELECT 3
+GRANT
+GRANT ROLE
+SET
+psql:/tmp/atlas-b2-migration.sql:25: NOTICE:  role "postgres" has already been granted membership in role "atlas_owner" by role "postgres"
+DO
+RESET
+SET
+DO
+DO
+RESET
+SET
+DO
+RESET
+SET
+DO
+RESET
+psql:/tmp/atlas-b2-migration.sql:209: ERROR:  syntax error at or near "t"
+LINE 1: grant atlas_owner to postgres with set t
+                                               ^
+QUERY:  grant atlas_owner to postgres with set t
+CONTEXT:  PL/pgSQL function inline_code_block line 11 at EXECUTE

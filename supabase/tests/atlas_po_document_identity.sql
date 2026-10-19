@@ -70,6 +70,13 @@ select is((select response from doc_results where name='create-item-replay'),(se
 select is((select document_code from atlas_admin.ingredients where ingredient_code='native-document-item'),'ITEM-A','authored native item code persists');
 select is((select document_code from atlas_admin.suppliers where supplier_id=(select (response#>>'{affected_aggregate_ids,supplier_id}')::uuid from doc_results where name='create-supplier')),'NCC-A','authored native supplier code persists');
 set local role authenticated;
+insert into doc_results values('create-optional-item',atlas_api.create_ingredient(pg_temp.doc_request(pg_temp.doc_ingredient('null')-'document_code'-'ingredient_code',1,'doc-optional-item-create')));
+insert into doc_results values('create-optional-item-replay',atlas_api.create_ingredient(pg_temp.doc_request(pg_temp.doc_ingredient('null')-'document_code'-'ingredient_code',1,'doc-optional-item-create')));
+reset role;
+select is((select response->>'success' from doc_results where name='create-optional-item'),'true','native Ingredient Create accepts omitted manual and technical codes');
+select ok((select document_code is null and ingredient_code ~ '^ingredient-[0-9a-f-]{36}$' from atlas_admin.ingredients where ingredient_id=(select (response#>>'{affected_aggregate_ids,ingredient_id}')::uuid from doc_results where name='create-optional-item')),'native creation retains a null internal code and generated technical identity');
+select is((select response from doc_results where name='create-optional-item-replay'),(select response from doc_results where name='create-optional-item'),'code-free native creation retains exact idempotent identity');
+set local role authenticated;
 insert into doc_results values('read',atlas_api.get_ingredient_supplier_master_data(jsonb_build_object('contract_version','RMVP-01.v1','correlation_id','d7100000-0000-4000-8000-000000000099','requested_by_auth_subject','d7100000-0000-4000-8000-000000000101','payload','{}'::jsonb)));
 insert into doc_results values
  ('update-item',atlas_api.update_ingredient(pg_temp.doc_request(pg_temp.doc_ingredient('"ITEM-B"')||jsonb_build_object('ingredient_id',(select response#>>'{affected_aggregate_ids,ingredient_id}' from doc_results where name='create-item')),1,'doc-item-update'))),

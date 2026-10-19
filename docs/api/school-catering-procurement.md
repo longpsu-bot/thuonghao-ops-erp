@@ -1,5 +1,37 @@
 # School-Catering Procurement API Contract
 
+## B2 optional Ingredient code amendment — 19 October 2026
+
+Authority: [Owner decision](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389#issuecomment-6236671930)
+and [bounded contract delta](../implementation-tasks/TASK-ATLAS-B2-PO-INGREDIENT-CODE-OPTIONAL-01.md).
+Ingredient `document_code` is optional internal metadata. Normal and complete
+replacement PO release/read/export permit a null code. Supplier outward code
+remains required. `PO_DOCUMENT_CODE_REQUIRED` identifies missing/invalid Supplier
+code; `PO_INGREDIENT_DOCUMENT_CODE_INVALID` identifies corrupt nonnull internal
+metadata and permits correcting it or clearing it through normal Master Data.
+Master-data nonnull-code validation is unchanged.
+
+Migration `20261019014456_atlas_b2_po_ingredient_code_optional.sql` amends only
+`release_school_catering_purchase_order`, `freeze_school_catering_po_line_output`
+and `get_school_catering_purchase_orders`. It retains their owners, ACLs, search
+paths, all required descriptive evidence, exact quantities, source guards,
+whole-PO authorization, locking, numbering, receipts and replacement semantics.
+`document_snapshot_complete`/`export_ready` no longer treat null Ingredient code
+as missing outward evidence. Other incomplete/corrupt snapshots fail closed.
+
+Official XLSX already hides the item-code compatibility column; official PDF
+already omits it. Preserve those historical layouts, hidden code snapshots and
+`DOCUMENT`/`ROW_SOURCE` metadata unchanged. New null code cells stay blank, with
+no UUID or technical-code fallback. Preliminary summary removes the visible
+`Mã hàng` column and gives its width to names; preliminary detail already omits
+codes. Both retain preliminary labeling and no fabricated official number.
+No historical rows are rewritten, no rendering-version authority is introduced,
+and PXK/Dispatch/Shopping List remain outside B2.
+
+Rollback must preserve nullable read/export compatibility for already issued
+null-code POs. Reinstating the old requirement would strand valid commitments;
+disable release/presentation through a reviewed forward change if needed.
+
 ## B1 three-source coverage clarification — 18 October 2026
 
 The [approved B1 model](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md)
@@ -305,7 +337,8 @@ implementations retained behind shaped public wrappers.
 
 The 9 October hidden-parsing follow-up stores technical Ingredient/Unit/document
 identities and released source links in hidden row columns and a very-hidden
-worksheet. Frozen business codes remain visible. See the
+worksheet. Supplier code remains visible; the official Ingredient-code column
+is hidden compatibility evidence. See the
 [operational XLSX metadata contract](operational-document-xlsx-metadata.md).
 
 Authority: the Owner's final Document System closeout retains the accepted School
@@ -320,10 +353,12 @@ using the retained legacy ID provenance. Native technical codes and UUIDs are
 never outward-code authority. See the
 [Master Data amendment](../architecture/rmvp-01-independent-atlas-master-data.md#document-facing-code-amendment--pr-360).
 
-Future official school-catering PO release requires every participating Supplier
-and Ingredient to have a nonblank, trimmed, single-line printable document code
+Official school-catering PO release requires the participating Supplier
+to have a nonblank, trimmed, single-line printable document code
 of at most 200 Unicode code points. Technical V1 prefixes, UUID substrings and control
-characters are invalid, including Unicode boundary whitespace such as NBSP and BOM. `PO_DOCUMENT_CODE_REQUIRED` returns a safe blocker before
+characters are invalid, including Unicode boundary whitespace such as NBSP and BOM.
+Ingredient code may be null; nonnull internal metadata retains the same validity
+rules. `PO_DOCUMENT_CODE_REQUIRED` is now Supplier-specific and returns a safe blocker before
 issuing a number or commitment. The existing command acquires Supplier, ordered
 Ingredient and ordered Unit row locks before reading the display facts, retaining
 those locks through validation and capture. Existing version, source-currentness,
@@ -345,7 +380,7 @@ The existing shaped read adds:
   `unit_code_snapshot`: nullable text.
 - Order `document_snapshot_complete`: derived boolean.
 - `supplier.document_code` and `line.ingredient.document_code`: current Master Data
-  for Drafts, frozen outward codes for released/superseded records.
+  for Drafts, frozen Supplier code/optional Ingredient metadata for released/superseded records.
 - `document_export_blocker`: safe Vietnamese explanation when an official record
   lacks reproducible display evidence.
 
@@ -357,7 +392,8 @@ the explicit snapshots and require `document_snapshot_complete === true`.
 
 The shaped line retains `supplier_note` from its frozen revision snapshot after current allocation notes change.
 
-Completeness requires valid outward codes, the captured Supplier name, captured Ingredient/Unit labels and
+Completeness requires valid Supplier outward code, valid nonnull internal code
+metadata when present, the captured Supplier name, captured Ingredient/Unit labels and
 the existing complete School breakdown on every line. Incomplete or malformed
 historical evidence remains readable with `document_snapshot_complete: false`,
 `export_ready: false`, `allowed_actions.export: false` and

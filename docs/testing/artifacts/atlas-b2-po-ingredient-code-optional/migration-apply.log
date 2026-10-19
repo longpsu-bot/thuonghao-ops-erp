@@ -1,0 +1,24 @@
+BEGIN
+SELECT 3
+DO
+SELECT 3
+SELECT 3
+GRANT
+GRANT ROLE
+psql:/tmp/atlas-b2-migration.sql:25: NOTICE:  role "postgres" has already been granted membership in role "atlas_owner" by role "postgres"
+SET
+DO
+RESET
+SET
+DO
+DO
+RESET
+SET
+DO
+psql:/tmp/atlas-b2-migration.sql:210: NOTICE:  role "postgres" has already been granted membership in role "atlas_owner" by role "postgres"
+RESET
+SET
+DO
+RESET
+DO
+COMMIT

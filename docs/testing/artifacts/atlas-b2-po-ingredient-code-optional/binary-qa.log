@@ -1,0 +1,8 @@
+
+ RUN  v4.1.10 C:/Users/HOME/.codex/worktrees/atlas-b2-po-ingredient-code-optional/thuonghao-ops-erp
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  08:52:53
+   Duration  3.73s (transform 199ms, setup 0ms, import 182ms, tests 1.78s, environment 1.52s)

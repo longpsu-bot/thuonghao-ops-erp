@@ -1,0 +1,32 @@
+
+ RUN  v4.1.10 C:/Users/HOME/.codex/worktrees/atlas-b2-po-ingredient-code-optional/thuonghao-ops-erp
+
+ ❯ src/modules/atlas/procurement/reviewPurchaseReviewApi.test.ts (1 test | 1 failed) 20ms
+   × keeps generated100 separate from saved120, retained72/48 and explicit75/50 through official release 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/modules/atlas/procurement/reviewPurchaseReviewApi.test.ts > keeps generated100 separate from saved120, retained72/48 and explicit75/50 through official release
+AssertionError: expected '1082' to be null
+
+- Expected:
+null
+
++ Received:
+"1082"
+
+ ❯ src/modules/atlas/procurement/reviewPurchaseReviewApi.test.ts:118:52
+    116|   ).toEqual(["75.000000", "50.000000"]);
+    117|   const first = journey.inspect().orders[0]!;
+    118|   expect(first.lines[0]!.ingredient.document_code).toBeNull();
+       |                                                    ^
+    119|   await journey.procurementApi.releasePurchaseOrder(
+    120|     releasePurchaseOrderRequest(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  08:44:52
+   Duration  1.89s (transform 150ms, setup 0ms, import 189ms, tests 20ms, environment 1.30s)

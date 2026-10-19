@@ -97,7 +97,7 @@ function prepare(
   review: GeneratedPurchaseReview,
   detail: boolean,
 ) {
-  const end = detail ? "G" : "F";
+  const end = detail ? "G" : "E";
   widths.forEach((width, index) => {
     sheet.getColumn(index + 1).width = width;
   });
@@ -106,10 +106,10 @@ function prepare(
   sheet.pageSetup = {
     paperSize: 9,
     orientation:
-      widths[detail ? 5 : 4]! * (detail ? 2 : 1) > 18
+      widths[detail ? 5 : 3]! * (detail ? 2 : 1) > 18
         ? "landscape"
         : "portrait",
-    fitToPage: widths[detail ? 5 : 4]! * (detail ? 2 : 1) <= 18,
+    fitToPage: widths[detail ? 5 : 3]! * (detail ? 2 : 1) <= 18,
     scale: 100,
     fitToWidth: 1,
     fitToHeight: 0,
@@ -124,7 +124,7 @@ function prepare(
     printTitlesRow: "1:9",
   };
   sheet.headerFooter.oddFooter = `&C${review.document_label}&R&P / &N`;
-  const companyColumn = detail ? "B" : "C";
+  const companyColumn = "B";
   sheet.mergeCells(`${companyColumn}1:${end}1`);
   sheet.getCell(`${companyColumn}1`).value =
     "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO";
@@ -192,7 +192,7 @@ function prepare(
         "Số lượng",
         null,
       ]
-    : ["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng", "Ghi chú"];
+    : ["STT", "Tên hàng", "Đơn vị", "Số lượng", "Ghi chú"];
   border(header, widths.length);
   if (detail) {
     sheet.mergeCells("A9:B9");
@@ -248,10 +248,9 @@ export async function createGeneratedPurchaseReviewXlsx(
     summary,
     [
       7,
-      12,
       quantityWidth > 18
-        ? Math.max(36, 139 - 7 - 12 - 9 - quantityWidth - 20)
-        : 36 + Math.max(0, 24 - quantityWidth),
+        ? Math.max(48, 139 - 7 - 9 - quantityWidth - 20)
+        : 48 + Math.max(0, 24 - quantityWidth),
       9,
       quantityWidth,
       20,
@@ -295,13 +294,13 @@ export async function createGeneratedPurchaseReviewXlsx(
   );
   for (const rows of suppliers) {
     const supplier = `NCC đề xuất: ${generatedSupplierLabel(rows[0]!)}`;
-    band(summary, 6, supplier, true);
+    band(summary, 5, supplier, true);
     band(detail, 7, supplier, true);
     const warnings = [...new Set(rows.flatMap((row) => row.warnings))]
       .map(generatedReviewWarning)
       .join(" ");
     if (warnings) {
-      band(summary, 6, warnings);
+      band(summary, 5, warnings);
       band(detail, 7, warnings);
     }
     const ingredients = groupBy(
@@ -313,17 +312,15 @@ export async function createGeneratedPurchaseReviewXlsx(
       const total = exact(
         items.reduce((sum, item) => sum + quantity(item.family_quantity), 0n),
       );
-      // No business item code in this read contract: leave its v1 column blank.
       const row = summary.addRow([
         index + 1,
-        null,
         `${first.ingredient_name}\n${supplier}`,
         first.unit_code,
         total,
         null,
       ]);
-      border(row, 6, index % 2 === 1);
-      setExactQuantity(row.getCell(5), total);
+      border(row, 5, index % 2 === 1);
+      setExactQuantity(row.getCell(4), total);
     });
     for (const schoolRows of groupBy(
       rows,
@@ -365,10 +362,10 @@ export async function createGeneratedPurchaseReviewXlsx(
     summary.addRow([]).height = 10;
   }
   for (const sheet of [summary, detail]) {
-    const end = sheet === summary ? "F" : "G";
+    const end = sheet === summary ? "E" : "G";
     band(
       sheet,
-      sheet === summary ? 6 : 7,
+      sheet === summary ? 5 : 7,
       "Người rà soát: ____________________    Ngày: ____________",
     );
     sheet.eachRow((row, index) => {

@@ -1,5 +1,13 @@
 # Atlas Autopilot Mandate
 
+**19 October B2-only supersession:** the Owner explicitly authorizes the bounded
+[optional Ingredient-code task](../implementation-tasks/TASK-ATLAS-B2-PO-INGREDIENT-CODE-OPTIONAL-01.md)
+in its independent exact-base worktree. This replaces the inherited B1-only
+baton for this branch. Preserve historical PO reproduction and all Supplier,
+quantity, source and security requirements. Endpoint: one verified stacked Draft
+and STOP for Owner review. No automatic next task, ancestor integration, benchmark
+interference, hosted writes, real commitments, merge or deployment.
+
 **18 October Product-model closeout:** the [active B1 amendment](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md)
 on existing #402 supersedes older Pantry operator labels/COMPLETE instructions.
 Only bounded source-read/presentation/coverage work is active. Historical

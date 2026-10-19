@@ -84,8 +84,8 @@ A nonnull document code must be trimmed, 1–200 Unicode code points, and single
 printable text. Control characters, a case-insensitive `v1-ingredient-` or
 `v1-supplier-` prefix, and any UUID substring are rejected as `VALIDATION_FAILED`.
 Boundary whitespace uses the JavaScript trim set, including NBSP and BOM; those boundary characters are rejected rather than captured. Explicit native alphanumeric codes are permitted. No uniqueness rule is added.
-The existing editors label this fact `Mã hàng trên chứng từ` or
-`Mã NCC trên chứng từ`; frontend code performs no provenance inference.
+The current Ingredient editor labels this fact `Mã nội bộ (không bắt buộc)`;
+Supplier uses `Mã NCC trên chứng từ`. Frontend code performs no provenance inference.
 
 The forward migration populates only exact technical codes matching
 `^v1-ingredient-[1-9][0-9]*$` or `^v1-supplier-[1-9][0-9]*$`, extracting the retained
@@ -97,8 +97,12 @@ updates and import updates preserve governed explicit codes; the trigger does no
 rederive on update. Long numeric suffixes are never converted through machine
 numeric types. Zero, leading-zero and unrelated code forms remain null.
 
-Official school-catering PO release requires these outward codes and freezes them
-with Ingredient/Unit labels. Missing code blocks release with
+The [B2 Owner amendment](../implementation-tasks/TASK-ATLAS-B2-PO-INGREDIENT-CODE-OPTIONAL-01.md)
+requires only the Supplier outward code for official school-catering PO release.
+Ingredient code is optional internal metadata; creation may omit it, omitted
+update preserves it and explicit null clears it. Technical identity remains
+backend-generated and stable. PO release freezes the nullable Ingredient code
+with required Ingredient/Unit labels. Missing Supplier code blocks release with
 `PO_DOCUMENT_CODE_REQUIRED`; see the
 [PO document identity contract](../api/school-catering-procurement.md#released-document-identity-closeout--pr-360).
 The migration backfills only eligible current master codes. It never backfills
