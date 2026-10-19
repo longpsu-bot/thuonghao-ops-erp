@@ -633,6 +633,13 @@ forced RLS and all guards enabled; public statement limit remains 8 seconds:
   bring the total to **1,416/1,416 across 19 SQL suites**. The certification
   contract test passes **116/116**; K1 SQL is registered in Smoke and Full
   Integration using the existing fixture-expanding runner.
+- The platform security snapshot passes **30/30** after its exact policy/grant
+  counts and hashes are advanced for the independently verified six policies
+  and seven privileges. Queries, filters, assertions and test plan are unchanged;
+  independent review accepted this fixture-only update. The combined focused
+  total is **1,446/1,446 across 20 SQL suites**. The earlier certification runs
+  were canceled when this stale expected snapshot was identified; final-head
+  runs replace them, without changing runtime or suppressing any check.
 - Fresh migration application and rejected atomic duplicate replay pass.
   Catalog comparison verifies exactly three changed bodies out of 472 Atlas
   functions, one approved preflight EXECUTE, three changed key-column ACLs and

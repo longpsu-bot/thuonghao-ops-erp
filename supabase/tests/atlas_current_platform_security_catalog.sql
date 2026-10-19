@@ -460,8 +460,9 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 674,
-    'md5', 'b20fe6da611858ba85a679a3e4be56cf'
+    -- K1 adds exactly six private source SELECT/lock policies.
+    'count', 680,
+    'md5', '9a9c0b67f7e34f7dd652811149715d50'
   ),
   'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
@@ -1809,8 +1810,8 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 674,
-    'policy_catalog_md5', 'b20fe6da611858ba85a679a3e4be56cf',
+    'policy_count', 680,
+    'policy_catalog_md5', '9a9c0b67f7e34f7dd652811149715d50',
     'rmvp_05_unit_lock_policy_count', 1,
     'private_function_count', 351,
     -- Pantry v4 adds two private IMMUTABLE INVOKER normalizers; existing function metadata is unchanged.
@@ -1818,8 +1819,9 @@ select is(
     'trigger_count', 126,
     'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
     -- Each new helper grants EXECUTE only to Read/Planning runtimes: four target grants, no browser grant.
-    'positive_target_grant_count', 1859,
-    'positive_target_grant_md5', 'c44751ead18da9ba2ea172a52972456e',
+    -- One private EXECUTE plus SELECT/UPDATE on three source primary keys.
+    'positive_target_grant_count', 1866,
+    'positive_target_grant_md5', '1e9a82c9b1401d0229615f25173d6dc5',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,
