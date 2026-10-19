@@ -640,6 +640,16 @@ forced RLS and all guards enabled; public statement limit remains 8 seconds:
   total is **1,446/1,446 across 20 SQL suites**. The earlier certification runs
   were canceled when this stale expected snapshot was identified; final-head
   runs replace them, without changing runtime or suppressing any check.
+- CI additionally exposed the same expected-count delta in the legacy Pantry
+  test and JavaScript catalog-authority fixtures. Pantry's exact total is
+  681 (680 normal + the isolated Unit-lock policy); its unchanged **144/144**
+  assertions pass with the updated count. Catalog-authority tests retain exact
+  digest checks and missing/extra-policy rejection. Independent review accepted
+  both fixture-only changes. Total SQL proof is **1,590/1,590 in 21 suites**.
+  The contract and unchanged Dispatch test together pass **124/124** after an
+  unrelated Dispatch async teardown error in the superseded Frontend run; final
+  certification must also complete without that error. No Dispatch code,
+  thresholds, test plan or runtime implementation was changed.
 - Fresh migration application and rejected atomic duplicate replay pass.
   Catalog comparison verifies exactly three changed bodies out of 472 Atlas
   functions, one approved preflight EXECUTE, three changed key-column ACLs and
