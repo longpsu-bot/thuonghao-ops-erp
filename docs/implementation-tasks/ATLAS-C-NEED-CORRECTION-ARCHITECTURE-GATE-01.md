@@ -1,5 +1,8 @@
 # ATLAS-C-NEED-CORRECTION-ARCHITECTURE-GATE-01
 
+Latest K1 execution: see **K1 source-lock correction — 19 October 2026** below.
+Earlier proposal verdicts and failed execution stops are preserved history.
+
 ## Executive contract delta — Owner decision page
 
 **Verdict: DECISION REQUIRED. Design only; implementation is not authorized.**
@@ -383,3 +386,280 @@ This design has no database migration or operational rollback. A Git revert remo
 Future migrations must be forward-only and version-gated, with no backfill or relabeling of old receipts as transfer witnesses. Old PO/PXK readers/exports must reproduce their frozen snapshots. Before operational use, code rollback can remove new routing; after new corrected authority/transfer/PO facts exist, an old Handoff-only reader is unsafe as a rollback target. Disable the new write route and fail closed on unsupported corrected sources while retaining evidence; restore through reviewed forward correction/compatible readers. Never delete receipts, releases, decisions or snapshots to roll back.
 
 **STOP — await separate Product Owner architecture approval. No implementation starts under this gate.**
+
+## K1 execution stop — 19 October 2026
+
+**BLOCKED / DECISION REQUIRED.** The [Owner's K1-only approval](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6258968878)
+was investigated from approved design `96a2f048139e92281eb5cebe1421b28b4c1f14d1`
+in an independent `feat/atlas-c-need-correction-authority-01` worktree. This
+record does not approve K2 or amend the approved execution/access boundary.
+
+The candidate `RMVP-05.v3` branch in the existing Save writer passes genuine
+public-command 100→110→90 successor decisions, unchanged School/Ingredient
+identities, B1 R20/B5/H3→30 composition, original release/Handoff/issued PO/PXK
+retention, capability/GLOBAL denials, completed replay/changed-payload conflict,
+lost-response readback and complete forced-deferred-failure rollback. A real
+two-Actor concurrent-session proof observes the second session waiting on a
+database lock, then receiving `STALE_CONFIRMED_NEED_BATCH`; exactly one new
+revision and one decision result. These are bounded development results, not a
+passing K1 checkpoint.
+
+### Reproducible source-currentness blocker
+
+The complete rolled-back reproduction is
+[`supabase/tests/atlas_c_need_correction_authority.sql`](../../supabase/tests/atlas_c_need_correction_authority.sql),
+under `-- A public compatibility source reopen`. Apply the 113 approved baseline
+migrations followed by the candidate
+[`20261019033321_atlas_c_need_correction_authority.sql`](../../supabase/migrations/20261019033321_atlas_c_need_correction_authority.sql)
+to disposable PostgreSQL, then execute that test with `psql -X -qAt -v
+ON_ERROR_STOP=1 -f supabase/tests/atlas_c_need_correction_authority.sql`. Inspect
+TAP failures as well as the process exit code; `psql` itself does not fail on a
+`not ok` assertion. No trigger, RLS or replication-role bypass is used.
+
+1. Public Menu/Attendance/Pantry Save and Need Generation establish real B1
+   evidence, public Preparation releases it, and public K1 Save records 28→30.
+2. The authenticated operator successfully invokes existing
+   `atlas_api.reopen_weekly_menu(jsonb)` (`RMVP-03A.v1`) with the exact current
+   Menu version and a nonempty reason. Its existing guard preserves historical
+   approval while setting the current Menu header to `REOPENED`.
+3. Fresh public `get_planning_input_preflight` reports `readiness_state=BLOCKED`,
+   `downstream_currentness=OUTDATED` and
+   `MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT`.
+4. `rmvp_06_canonical_evaluation` still reports `VALIDATED`; the SHA-256 of
+   `rmvp_07_validated_facts_projection` is identical before and after the reopen.
+   Those functions validate captured Need facts, not fresh upstream authority.
+5. Public `save_confirmed_needs` accepts 30→31 using current batch/revision/
+   decision IDs, original release/Handoff IDs and that unchanged fingerprint.
+   Assertion 73 requires rejection and fails (`have: true; want: false`).
+
+The missing predicate is in the candidate Save's `v_evaluation` / `v_facts`
+source-proof branch: it must also prove fresh current upstream source authority
+under compatible locks. The existing RMVP-06/07 guards remain unchanged; a
+fingerprint of the retained snapshot cannot establish that predicate.
+
+### Runtime access boundary and required decision
+
+The Save owner remains `atlas_confirmed_need_review_runtime`. Catalog inspection
+reports **false** for its EXECUTE on all of:
+
+- `atlas_core.planning_contract_01_preflight_payload(date,date,jsonb)`;
+- `atlas_api.get_planning_input_preflight(jsonb)`;
+- `atlas_api.get_need_generation_workbench(jsonb)`;
+- `atlas_core.need_generation_effective_current(uuid)`.
+
+Its SELECT privileges on `weekly_menus`, `attendance_batches` and
+`pantry_need_batches` are also false. No grants or ownership changes were made.
+Calling the existing fresh-source authority therefore crosses the frozen runtime
+access boundary; duplicating an incomplete status/fingerprint check is unsafe.
+
+**Owner decision required:** approve a narrow private fresh-source proof with
+explicit runtime access/ownership and upstream lock ordering, or explicitly
+revise the K1 source-currentness requirement. Do not proceed by granting access,
+changing compatibility commands, weakening historical guards or treating a
+retained release as current authority under the present approval.
+
+### Verification disposition at STOP
+
+| Check                                                                     | Actual result                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Focused K1 SQL                                                            | **FAIL: 72/73**, source-currentness rejection fails                                                                                                                                                                   |
+| RMVP-05/06/07, D-037, three H1B1 suites, selective continuity, Issue #222 | **PASS: 459/459** across nine unchanged suites                                                                                                                                                                        |
+| Concurrent authenticated operators                                        | **PASS**, one successor; second stale after lock wait                                                                                                                                                                 |
+| Fresh candidate migration application                                     | **PASS**, matches candidate database definitions                                                                                                                                                                      |
+| Duplicate direct migration execution                                      | **PASS**, baseline checksum rejects it atomically without catalog change; it is a forward-only migration                                                                                                              |
+| Function/runtime catalog boundary                                         | **PASS**, exactly the three allowlisted function bodies change out of 472 Atlas functions; all owners, ACLs, security modes, search paths and volatility preserved; relations, roles, triggers and policies unchanged |
+| Independent read-only source/security review                              | **FAIL / STOP**, confirmed the source-currentness blocker                                                                                                                                                             |
+| GitHub Frontend / Supabase Smoke / Supabase Full Integration              | **BLOCKED: not dispatched**, failed local acceptance prevents a coherent Draft delivery                                                                                                                               |
+
+Only the candidate migration, focused test and this dated gate amendment are
+changed. No API/decision contract claims implementation acceptance. No Draft PR,
+push, merge, hosted migration or feature activation occurs at this stop. The
+approved starting commit and ancestor branches remain unchanged. Candidate
+sources are retained locally for review, including the failing assertion; the
+whole test transaction rolls back.
+
+Rollback impact: all writes were in task-owned disposable infrastructure. There
+is no hosted rollback. The candidate forward migration has no down migration;
+any later authorized installation would need an approved forward repair and
+must preserve authentic appended decisions. Do not erase released correction
+history. K2 transfer receipts, allocation successors, official PO source changes,
+replacement Preparation and PXK successors remain unapproved and unimplemented.
+
+## K1 direct-preflight repair — 19 October 2026
+
+**BLOCKED / concurrency FAIL.** The [subsequent Owner decision](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6259578703),
+also [recorded on #406](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/406#issuecomment-6259579922),
+authorizes one EXECUTE grant on the existing
+`atlas_core.planning_contract_01_preflight_payload(date,date,jsonb)` to
+`atlas_confirmed_need_review_runtime`, and direct canonical reuse in K1 Save.
+It supersedes the earlier permission stop; no new helper or architecture work
+was undertaken.
+
+The same uncommitted migration now contains exactly that grant. Before changing
+working pointers or quantities, K1 Save calls preflight using the locked batch's
+server-owned date as both arguments and `NULL` source candidates. It rejects a
+non-single-date batch, unexpected line date, missing/unexpected preflight data,
+non-READY readiness, nonzero blockers, non-CURRENT currentness, or a current Need
+whose batch/version, run/version or release snapshot differs from the locked
+authoritative chain. No browser-supplied date or candidate can override this
+check. The previously failing Menu-reopen rejection now passes with
+`CORRECTION_SOURCE_NOT_CURRENT`.
+
+### Exact remaining concurrency conflict
+
+`save_confirmed_needs` locks the existing Need run, batch, stable lines, policies
+and release/Handoff evidence. Its later quantity update must also lock the old
+`confirmed_need_line_revisions` row. The canonical preflight is STABLE and reads
+the mutable Menu source without taking a source-row lock.
+`atlas_api.reopen_weekly_menu` takes `FOR UPDATE` only on its Menu header before
+changing the header status/version; it does not participate in Save's Need/run
+locking boundary. These commands therefore have no shared source lock that
+establishes the required ordering.
+
+The disposable multi-session reproduction uses the same authenticated envelopes
+and real guards; no function, trigger, RLS setting or deadline is changed:
+
+1. Establish the released 100-quantity fixture from the focused test. A fixture
+   coordination session holds `FOR UPDATE` on its existing current Need revision
+   row, without changing data.
+2. Actor A invokes real public Menu reopen in a transaction and holds its result
+   uncommitted. Actor B invokes real public K1 Save for 110.
+3. Save sees the committed approved Menu, passes canonical preflight and then
+   waits updating the held Need revision. `pg_stat_activity` records a
+   `transactionid` wait, with the coordination session as its blocker.
+4. Actor A commits Menu reopen. Before releasing the revision lock, a separate
+   canonical read observes **quantity 100, readiness BLOCKED, currentness
+   OUTDATED**. This intervening observation prevents treating Save as a completed
+   operation ordered before Menu reopen.
+5. Release the existing revision lock. Actor B's Save returns **success** and
+   commits **110**, one new revision and one new decision. Fresh canonical
+   preflight remains **OUTDATED**. The concurrency acceptance fails.
+
+This is a source-validation race, not an observed deadlock. The one approved
+EXECUTE grant allows the fresh read but does not serialize it with Menu reopen.
+Clause 3 of the Owner decision requires **STOP** when the existing lock boundary
+cannot demonstrate safe ordering. No additional grant, helper, double-check
+workaround, source-command amendment or cross-domain lock protocol was added.
+The exact conflict above is returned for Owner review; no separate architecture
+task was created.
+
+### Results after the approved repair
+
+| Check                                                                                                 | Actual result                                                                                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Focused K1 SQL, including the original stale-source failure, replay, UNKNOWN recovery and rollback    | **PASS: 75/75**                                                                                                                                                                                                               |
+| Retained nine RMVP-05/06/07, D-037, H1B1, continuity and Issue #222 suites rerun on repaired database | **PASS: 459/459**                                                                                                                                                                                                             |
+| Authenticated Menu-reopen versus correction Save interleaving                                         | **FAIL**, accepted 110 after committed Menu reopen and intervening 100/OUTDATED read                                                                                                                                          |
+| Independent read-only source/security review                                                          | **FAIL / STOP**, confirmed the same race                                                                                                                                                                                      |
+| Catalog and fresh/duplicate migration application                                                     | **PASS**, exactly three existing function bodies and the one approved preflight EXECUTE grant differ; remaining owners, ACLs, security modes, volatility, search paths, relations, roles, triggers and policies are unchanged |
+| Frontend / Supabase Smoke / Supabase Full Integration                                                 | **BLOCKED / not dispatched**, local concurrency acceptance fails                                                                                                                                                              |
+
+Local evidence is retained in the task's `atlas-c-k1-evidence` directory:
+`direct-preflight.log`, `direct-preflight-regressions.json`,
+`direct-preflight-catalog-replay.json`, `menu-concurrency.mjs` (complete runnable
+disposable setup/interleaving), and `menu-concurrency-result.json` (observed
+wait, intervening read and failed acceptance). The task container is stopped;
+the existing user Supabase containers are untouched.
+
+The three-file candidate remains local and uncommitted on
+`feat/atlas-c-need-correction-authority-01`. Starting/final Git HEAD remains
+`96a2f048139e92281eb5cebe1421b28b4c1f14d1`. No push, Draft PR, hosted write,
+deployment, merge or K2 change occurred. It remains unapproved for installation.
+
+## K1 source-lock correction — 19 October 2026
+
+The Owner's explicit resume instruction authorizes finishing the existing dirty
+K1 candidate on `feat/atlas-c-need-correction-authority-01`, using RMVP-04's
+established source locks. It supersedes the preceding concurrency STOP for this
+bounded fix. This is implementation of that instruction, not another
+architecture review or K2 authorization. Earlier failed evidence above remains
+historical evidence and is preserved.
+
+The verified registered worktree is
+`C:/Users/HOME/.codex/worktrees/atlas-c-need-correction-authority-01/thuonghao-ops-erp`;
+its starting HEAD is `96a2f048139e92281eb5cebe1421b28b4c1f14d1`, rooted at
+`origin/main` `3667966a3f6703a6585f07ba619969ec851ca7b8` through the approved
+ancestor stack. The initial E: checkout is a different, clean documentation
+branch and was not edited. The existing dirty candidate and all eight stashes
+were retained; pre-fix copies and previous raw evidence remain available.
+
+### Lock sequence and private access
+
+RMVP-04 Need Generation takes the input set/evaluation, terminal run, then Menu →
+Attendance → Pantry roots in ID order before checking their current pointers.
+Issue #222 source preparation takes advisory → run → Need batch; guarded source
+Save takes advisory → Need batch → Handoff before source mutation. Compatibility
+Menu/Attendance/Pantry reopen commands take their own source root and do not
+wait on Need revisions.
+
+K1 retains run SHARE → batch UPDATE, then resolves the exact current Need's
+source IDs from server-canonical preflight and takes Menu → Attendance → Pantry
+SHARE locks **before** Need line/revision waits. Source IDs and date are never
+request-supplied. The exact canonical preflight is evaluated again under those
+locks before working-pointer or quantity writes; READY/zero blockers/CURRENT
+and exact batch/run/release identity remain mandatory. Null Menu/Attendance in
+a COMPLETE-only captured source require only its Pantry root. SHARE conflicts
+with source UPDATE while allowing other readers; all locks survive function
+return through transaction completion.
+
+The existing Need runtime gets SELECT and UPDATE only on each source root's
+primary-key column, with six role-specific SELECT/lock policies. As in RMVP-04,
+UPDATE USING permits locking and `WITH CHECK (false)` rejects every actual
+write. No business-attribute grants, public source access, new helper, role,
+domain object, generalized framework or historical integrity change is added.
+The already approved private canonical-preflight EXECUTE remains the only new
+function ACL.
+
+### Focused proof
+
+Fresh development proof on task-owned disposable PostgreSQL 17.6.1.155, 113
+baseline migrations plus this candidate, normal authenticated public commands,
+forced RLS and all guards enabled; public statement limit remains 8 seconds:
+
+- The new concurrency regression first fails against the retained candidate:
+  Menu reopen is held uncommitted but Save waits on the old Need revision.
+- All six corrected interleavings pass, for Menu, Attendance and Pantry in both
+  commit orders. Source-first Save waits on that source and rejects
+  `CORRECTION_SOURCE_NOT_CURRENT` without waiting on the held revision; no new
+  decision/revision or working-pointer changes result. Correction-first source
+  reopen waits during the revision wait **and after Save returns**, until commit;
+  110 is committed before the reopen legitimately derives OUTDATED.
+- Original released Need/Handoff/allocation/issued PO/PXK snapshots are identical
+  in every case. The independent two-Actor Save race produces one successor
+  decision/revision and `STALE_CONFIRMED_NEED_BATCH` for the waiting competitor.
+- K1 passes **81/81**, including six new key-only privilege / actual RLS-denial
+  assertions; the nine retained core suites pass **459/459**. Source commands,
+  Need Generation, B1 composition/two-source, Handoff, PO and PXK regressions
+  bring the total to **1,416/1,416 across 19 SQL suites**. The certification
+  contract test passes **116/116**; K1 SQL is registered in Smoke and Full
+  Integration using the existing fixture-expanding runner.
+- Fresh migration application and rejected atomic duplicate replay pass.
+  Catalog comparison verifies exactly three changed bodies out of 472 Atlas
+  functions, one approved preflight EXECUTE, three changed key-column ACLs and
+  six new source-only policies. All other function attributes/owners/ACLs,
+  existing policies, relation/role catalogs and triggers are unchanged.
+
+Runnable multi-session proof:
+`node scripts/test-local-atlas-c-k1-concurrency.mjs <disposable-container> <idle-applied-template-db> <result.json>`.
+The template must contain the baseline plus K1 and no fixture rows; only new
+`k1_source_<pid>*` databases are created, and they are retained for inspection.
+SQL proof: `node scripts/test-local-purchase-review.mjs atlas_c_need_correction_authority.sql`
+with `ATLAS_LOCAL_DB_CONTAINER` pointing at a disposable local PostgreSQL
+container whose `postgres` database has the baseline plus K1. No hosted data is
+used. The new local evidence directory is
+`C:/Users/HOME/.codex/visualizations/2026/10/19/01a152cb-5335-7141-b1a9-8df4ac8ca12e/atlas-c-k1-lock-evidence`;
+it preserves pre-fix sources, red/green concurrency, suite logs and catalog proof.
+
+Independent read-only implementation/security review found **no blocking
+findings** in the bounded K1 candidate, covering exact source bindings,
+authorization, lock ordering/lifetime, historical preservation, rollback,
+replay and CI wiring. This source-root proof does not certify serialization
+against every mutable Recipe/Admin input; broader preexisting currentness
+concurrency is unchanged and was not expanded into another architecture task.
+
+Exact-head GitHub certification is the remaining delivery gate. Its run IDs and
+final SHA belong in the Draft PR evidence, rather than treating local source
+tests or ancestor CI as certification. The K1 API amendment documents the v3 envelope,
+truthful unavailable downstream workflow and forward-only rollback. K2,
+Procurement transfer, PO/PXK authority, hosted installation, merge and deployment
+remain outside this checkpoint.
