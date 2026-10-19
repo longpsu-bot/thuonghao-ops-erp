@@ -291,7 +291,10 @@ insert into atlas_dispatch.dispatch_load_line_applications
 
 insert into atlas_core.command_receipts
   (command_receipt_id,command_name,scope_key,idempotency_key,command_id,correlation_id,actor_id,expected_version,request_hash,outcome,completed_at) values
-  ('75000000-0000-0000-0000-000000000001','record_dispatch_departure','DISPATCH_TRIP:55000000-0000-0000-0000-000000000902','pa05c-timeline','95000000-0000-0000-0000-000000000004','95000000-0000-0000-0000-000000000010','15000000-0000-0000-0000-000000000001',1,repeat('a',64),'COMPLETED',timestamptz '2026-07-15 00:40:00+00');
+  ('75000000-0000-0000-0000-000000000001','record_dispatch_departure','DISPATCH_TRIP:55000000-0000-0000-0000-000000000902','pa05c-timeline','95000000-0000-0000-0000-000000000004','95000000-0000-0000-0000-000000000010','15000000-0000-0000-0000-000000000001',1,repeat('a',64),'IN_PROGRESS',null);
+update atlas_core.command_receipts set outcome='COMPLETED',response_payload='{}',
+  completed_at=timestamptz '2026-07-15 00:40:00+00'
+where command_receipt_id='75000000-0000-0000-0000-000000000001';
 insert into atlas_audit.domain_events
   (domain_event_id,event_type,source_domain,aggregate_type,aggregate_id,aggregate_version,command_receipt_id,command_id,correlation_id,actor_id,occurred_at) values
   ('75000000-0000-0000-0000-000000000002','DISPATCH_DEPARTED','DISPATCH','DISPATCH_STOP','55000000-0000-0000-0000-000000000903',2,'75000000-0000-0000-0000-000000000001','95000000-0000-0000-0000-000000000004','95000000-0000-0000-0000-000000000010','15000000-0000-0000-0000-000000000001',timestamptz '2026-07-15 00:39:00+00'),

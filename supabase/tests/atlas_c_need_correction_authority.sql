@@ -235,9 +235,17 @@ begin
       update atlas_admin.units set unit_status='INACTIVE'
       where unit_id='b6500000-0000-0000-0000-000000000005';
     elsif fault='corrupt_untouched_receipt' then
-      update atlas_core.command_receipts set outcome='FAILED_NON_RETRYABLE'
-      where command_id=(select (decision->>'command_id')::uuid from k1_original_lines
-        where ingredient_id='b6500000-0000-0000-0000-000000000007');
+      before_state:=pg_temp.k1_snapshot(true);
+      begin
+        update atlas_core.command_receipts set outcome='FAILED_NON_RETRYABLE'
+        where command_id=(select (decision->>'command_id')::uuid from k1_original_lines
+          where ingredient_id='b6500000-0000-0000-0000-000000000007');
+      exception when check_violation then
+        -- Receipt integrity now blocks this fault before correction can run.
+        return jsonb_build_object('receipt_integrity_blocked',true,
+          'business_unchanged',pg_temp.k1_snapshot(true)=before_state,
+          'receipt_unchanged',true);
+      end;
     elsif fault='stale_batch' then command:=jsonb_set(command,'{expected_version}','1');
     elsif fault='wrong_batch' then command:=jsonb_set(command,'{payload,confirmed_need_batch_id}',to_jsonb(gen_random_uuid()));
     elsif fault='missing_release' then command:=jsonb_set(command,'{payload,correction,expected_confirmed_need_release_id}',to_jsonb(gen_random_uuid()));
@@ -278,7 +286,9 @@ from k1_requests cross join unnest(array[
   'cross_membership','missing_note','invalid_step','unchanged','unknown_field',
   'corrupt_untouched_receipt']) fault
 where name='correction110';
-select ok(result#>>'{response,success}'='false' and (result->>'business_unchanged')::boolean,
+select ok((result#>>'{response,success}'='false'
+    or (fault='corrupt_untouched_receipt' and result->>'receipt_integrity_blocked'='true'))
+    and (result->>'business_unchanged')::boolean,
   'K1-06/10 '||fault||' rejected without authoritative business writes')
 from k1_negative order by fault;
 select ok(bool_and((result->>'receipt_unchanged')::boolean),

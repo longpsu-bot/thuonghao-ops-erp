@@ -1813,11 +1813,11 @@ select is(
     'policy_count', 680,
     'policy_catalog_md5', '9a9c0b67f7e34f7dd652811149715d50',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 351,
+    'private_function_count', 352,
     -- Pantry v4 adds two private IMMUTABLE INVOKER normalizers; existing function metadata is unchanged.
-    'private_function_catalog_md5', 'e20c8abcc027dba08b1f5bdc008c4461',
-    'trigger_count', 126,
-    'trigger_catalog_md5', '094482db23fd61e5aea7b636e5fd4d96',
+    'private_function_catalog_md5', 'b7cad8ed58059963d3907c1af2b4e989',
+    'trigger_count', 127,
+    'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
     -- Each new helper grants EXECUTE only to Read/Planning runtimes: four target grants, no browser grant.
     -- One private EXECUTE plus SELECT/UPDATE on three source primary keys.
     'positive_target_grant_count', 1866,

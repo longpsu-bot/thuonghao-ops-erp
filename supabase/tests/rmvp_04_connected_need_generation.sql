@@ -2775,19 +2775,15 @@ from rmvp04_responses released
 cross join rmvp04_responses materialized
 where released.response_name = 'recipe-replacement-release'
   and materialized.response_name = '02b-recipe-predecessor-materialize';
+-- This fixture directly orchestrates the shared atomic parent, so finish its
+-- final response before flushing the same completed-receipt continuity guards.
+select atlas_core.planning_contract_01_finish_receipt(
+  'e4900000-0000-0000-0000-000000000094',response,true)
+from rmvp04_responses where response_name='02b-recipe-successor-materialize';
 set constraints all immediate;
 set constraints all deferred;
 reset role;
 revoke atlas_need_generation_runtime from postgres;
-update atlas_core.command_receipts
-set outcome = 'COMPLETED',
-    response_payload = (
-      select response from rmvp04_responses
-      where response_name = '02b-recipe-successor-materialize'
-    ),
-    completed_at = transaction_timestamp()
-where command_receipt_id = 'e4900000-0000-0000-0000-000000000094';
-
 select is(
   (
     select jsonb_build_object(
