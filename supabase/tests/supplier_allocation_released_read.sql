@@ -144,5 +144,123 @@ select is((select jsonb_agg(to_jsonb(r) order by command_receipt_id)
 select diag(jsonb_build_object('sample',sample,'elapsed_ms',elapsed_ms,
   'source_calls',source_calls,'rows',jsonb_array_length(response->'rows'))::text)
 from read_samples order by sample;
+
+-- The reported Staging case is REOPENED, not the ordinary released case above.
+set constraints all deferred;
+insert into scale_requests(name,request)
+select 'correct',pg_temp.scale_command('allocation-read-correct','RMVP-05.v3',
+  'CONFIRMED_NEED_SAVED',b.version,jsonb_build_object(
+    'confirmed_need_batch_id',b.confirmed_need_batch_id,
+    'correction',jsonb_build_object(
+      'expected_confirmed_need_release_id',b.current_confirmed_need_release_id,
+      'expected_purchase_handoff_batch_id',h.purchase_handoff_batch_id,
+      'expected_purchase_handoff_revision_id',hr.purchase_handoff_revision_id,
+      'expected_purchase_handoff_version',h.version,
+      'expected_source_fingerprint',encode(sha256(convert_to(
+        atlas_core.rmvp_07_validated_facts_projection(b.confirmed_need_batch_id)::text,'UTF8')),'hex')),
+    'lines',jsonb_build_array(jsonb_build_object(
+      'confirmed_need_line_id',l.confirmed_need_line_id,
+      'expected_current_revision_id',r.confirmed_need_line_revision_id,
+      'expected_current_decision_id',l.current_confirmed_need_line_decision_id,
+      'proposed_confirmed_quantity',(r.confirmed_quantity+1)::numeric(20,6)::text,
+      'reason_code','OPERATIONAL_QUANTITY_ADJUSTMENT','reason_note','Read regression correction'))))
+from atlas_planning.confirmed_need_batches b
+join atlas_planning.purchase_handoff_batches h using(confirmed_need_batch_id)
+join atlas_planning.purchase_handoff_revisions hr using(purchase_handoff_batch_id)
+join atlas_planning.confirmed_need_lines l using(confirmed_need_batch_id)
+join atlas_planning.confirmed_need_line_revisions r using(confirmed_need_line_id)
+where b.confirmed_need_batch_id=md5('allocation-released-read:confirmed-need-batch')::uuid
+  and r.is_current and hr.is_current
+order by l.confirmed_need_line_id limit 1;
+set local role authenticated;
+insert into scale_results(name,response)
+select name,atlas_api.save_confirmed_needs(request) from scale_requests where name='correct';
+reset role;
+select is((select response->>'success' from scale_results where name='correct'),
+  'true','official post-release correction reopens the genuine 236-family batch');
+select diag(response::text) from scale_results where name='correct' and response->>'success'<>'true';
+create temporary table reopened_before as select pg_temp.scale_business_snapshot() facts,
+  (select jsonb_agg(to_jsonb(r) order by command_receipt_id) from atlas_core.command_receipts r) receipts;
+create temporary table reopened_samples(kind text,response jsonb,elapsed_ms numeric,proof_calls bigint);
+grant select,insert on reopened_samples to authenticated;
+create function pg_temp.sample_reopened_read(p_kind text) returns void language plpgsql as $$
+declare started timestamptz:=clock_timestamp(); answer jsonb; prior_calls bigint; failure_context text;
+begin
+  select coalesce(sum(calls),0) into prior_calls from pg_stat_xact_user_functions
+  where schemaname='atlas_core' and funcname='procurement_read_batch_proof';
+  if p_kind='allocation' then
+    answer:=atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_build_object(
+      'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','correlation_id',gen_random_uuid(),
+      'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+      'payload',jsonb_build_object('date_start','2027-01-18','date_end','2027-01-18')));
+  else
+    answer:=atlas_api.get_school_catering_purchase_orders(jsonb_build_object(
+      'contract_version','SCHOOL-CATERING-PROCUREMENT.v1','correlation_id',gen_random_uuid(),
+      'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+      'payload',jsonb_build_object('date_start','2027-01-18','date_end','2027-01-18',
+        'supplier_ids','[]'::jsonb,'statuses','[]'::jsonb,'search',null)));
+  end if;
+  insert into reopened_samples select p_kind,answer,
+    extract(epoch from clock_timestamp()-started)*1000,coalesce(sum(calls),0)-prior_calls
+  from pg_stat_xact_user_functions
+  where schemaname='atlas_core' and funcname='procurement_read_batch_proof';
+exception when query_canceled then
+  get stacked diagnostics failure_context=PG_EXCEPTION_CONTEXT;
+  insert into reopened_samples values(p_kind,jsonb_build_object('success',false,'timeout',true,'context',failure_context),
+    extract(epoch from clock_timestamp()-started)*1000,null);
+end;
+$$;
+grant execute on function pg_temp.sample_reopened_read(text) to authenticated;
+set local statement_timeout='8s';
+set local role authenticated;
+select pg_temp.sample_reopened_read('allocation');
+select pg_temp.sample_reopened_read('orders');
+reset role;
+select ok(response->>'success'='true' and elapsed_ms<8000,
+  'reopened 236-family '||kind||' read succeeds within the unchanged eight seconds') from reopened_samples;
+select is(proof_calls,1::bigint,'closed batch proof runs once for '||kind) from reopened_samples;
+select is((select jsonb_array_length(response->'rows') from reopened_samples where kind='allocation'),
+  236,'reopened read retains every family');
+select is((select count(*) from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item
+  where kind='allocation' and item#>>'{family,source_kind}'='CONFIRMED_NEED'),1::bigint,
+  'only the genuinely corrected family changes source authority');
+select is(pg_temp.scale_business_snapshot(),(select facts from reopened_before),
+  'reopened reads leave all business facts and historical documents unchanged');
+select is((select jsonb_agg(to_jsonb(r) order by command_receipt_id) from atlas_core.command_receipts r),
+  (select receipts from reopened_before),'reopened reads leave receipts unchanged');
+select diag(jsonb_build_object('kind',kind,'elapsed_ms',elapsed_ms,'proof_calls',proof_calls)::text)
+from reopened_samples;
+select diag(response::text) from reopened_samples where response->>'success'<>'true';
+select ok(not exists(select 1 from pg_proc function
+  join pg_namespace namespace on namespace.oid=function.pronamespace
+  cross join pg_roles role where namespace.nspname='atlas_core'
+    and function.proname like 'procurement_read_%'
+    and role.rolname in ('anon','authenticated','service_role')
+    and has_function_privilege(role.rolname,function.oid,'EXECUTE')),
+  'public request roles cannot supply or execute a private read context');
+select ok(exists(select 1 from reopened_samples
+  cross join lateral jsonb_array_elements(response->'purchase_orders') item
+  where kind='orders' and item->>'commitment_state'='DRAFT_STALE'),
+  'read reuse still reports the Draft affected by the actual correction as stale');
+create temporary table context_parity as
+with context as materialized(select atlas_core.procurement_read_context('2027-01-18','2027-01-18') value)
+select distinct on (source->>'corrected_family') context.value context,source
+from context cross join lateral jsonb_each(context.value->'confirmed') entry
+cross join lateral jsonb_array_elements(entry.value) source
+order by source->>'corrected_family',source->>'ingredient_id';
+select is(atlas_core.procurement_read_purchase_review_confirmed_projection(
+    (source->>'service_date')::date,(source->>'delivery_location_id')::uuid,
+    (source->>'ingredient_id')::uuid,(source->>'unit_id')::uuid,context),
+  atlas_core.purchase_review_confirmed_projection(
+    (source->>'service_date')::date,(source->>'delivery_location_id')::uuid,
+    (source->>'ingredient_id')::uuid,(source->>'unit_id')::uuid),
+  'read proof exactly matches command proof; corrected='||(source->>'corrected_family')) from context_parity;
+select is(atlas_core.procurement_read_school_catering_family_projection(
+    (source->>'service_date')::date,(source->>'delivery_location_id')::uuid,
+    (source->>'ingredient_id')::uuid,(source->>'unit_id')::uuid,context),
+  atlas_core.school_catering_family_projection(
+    (source->>'service_date')::date,(source->>'delivery_location_id')::uuid,
+    (source->>'ingredient_id')::uuid,(source->>'unit_id')::uuid),
+  'read family selector exactly matches canonical selector; corrected='||(source->>'corrected_family')) from context_parity;
 select * from finish();
 rollback;
