@@ -600,16 +600,21 @@ select ok((select
   from pxk_results where name='read-legacy-release'),
   'legacy PXK without the direct header snapshot fails closed for export');
 rollback to savepoint legacy_pxk_export_guard;
-select ok((select pg_get_functiondef(
+select ok((select definition !~* '\m(stock|inventory|lot|reservation|pick|trip|vehicle|driver|load)\M'
+  from (select pg_get_functiondef(
     'atlas_core.school_dispatch_release_preview(date,uuid,uuid)'::regprocedure)
-    !~* '\m(stock|inventory|lot|reservation|pick|trip|vehicle|driver|load)\M'),
+    ||pg_get_functiondef(
+      'atlas_core.procurement_read_school_dispatch_release_preview(date,uuid,uuid,jsonb)'::regprocedure)
+    definition) source),
   'PXK readiness has no stock, receiving, trip, vehicle, driver, or load dependency');
-select ok((select pg_get_functiondef(
-    'atlas_core.school_dispatch_release_preview(date,uuid,uuid)'::regprocedure)
-      ~ 'contribution_start'
-    and pg_get_functiondef(
-      'atlas_core.school_dispatch_release_preview(date,uuid,uuid)'::regprocedure)
-      !~ 'contribution_quantity\s*\*\s*split\.split_ratio'),
+select ok((select wrapper ~ 'atlas_core.procurement_read_school_dispatch_release_preview'
+    and calculation ~ 'contribution_start'
+    and calculation !~ 'contribution_quantity\s*\*\s*split\.split_ratio'
+  from (select pg_get_functiondef(
+    'atlas_core.school_dispatch_release_preview(date,uuid,uuid)'::regprocedure) wrapper,
+    pg_get_functiondef(
+      'atlas_core.procurement_read_school_dispatch_release_preview(date,uuid,uuid,jsonb)'::regprocedure)
+      calculation) source),
   'PXK source coverage uses exact residual-preserving contribution/supplier ranges');
 select throws_ok($$update atlas_dispatch.school_dispatch_release_lines set quantity=99$$,
   '23514','School dispatch release history is immutable.',
