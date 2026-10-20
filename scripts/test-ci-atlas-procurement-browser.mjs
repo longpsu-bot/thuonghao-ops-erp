@@ -90,13 +90,32 @@ const release = source
   .slice(start)
   .search(/insert into k2_requests\s+select 'b1_po001:'/);
 assert(release > 0, "Review changed first-release boundary.");
+const initialUnitCode = "'effective-generation-kg'";
+const technicalUnitCode = "v1-unit-disposable-kg";
+const humanUnitName = "kg";
+let operationalFixture = source.slice(start, start + release);
+assert.equal(
+  operationalFixture.split(initialUnitCode).length,
+  2,
+  "Review the single synthetic Unit master prerequisite.",
+);
+// Initial synthetic master metadata only, before the unchanged public source commands.
+operationalFixture = operationalFixture.replace(
+  initialUnitCode,
+  `'${technicalUnitCode}'`,
+);
+assert.equal(operationalFixture.split("'Need scale kilogram'").length, 2);
+operationalFixture = operationalFixture.replace(
+  "'Need scale kilogram'",
+  `'${humanUnitName}'`,
+);
 const fixture = `begin; create extension if not exists pgtap with schema extensions; set local search_path=extensions,public,pg_catalog; select no_plan();
 -- B1 explicitly reuses the canonical calculation contract from this prerequisite.
 ${expand(path.join(root, "supabase/local/purchase_review_confirm_release_fixture.sql"))}
 create table public.k2_results(name text primary key,response jsonb not null);
 create table public.k2_requests(name text primary key,request jsonb not null);
 grant select,insert on public.k2_results,public.k2_requests to authenticated;
-${source.slice(start, start + release).replaceAll("create temporary table ", "create table public.")}
+${operationalFixture.replaceAll("create temporary table ", "create table public.")}
 set constraints all immediate; commit;`;
 const fixtureResult = sql(fixture);
 assert(
@@ -157,7 +176,8 @@ const read = async () => {
   );
   return result.data.purchase_orders;
 };
-const before = await read();
+const initialOrders = await read();
+let before = initialOrders;
 assert.equal(before.length, 2);
 assert(
   before.every(
@@ -167,8 +187,9 @@ assert(
 );
 // Draft reads have no frozen School snapshot yet. Capture the canonical
 // read-only projection before the UI releases; compare its persisted snapshot.
-const expectedSchools = JSON.parse(
-  sql(`
+const readSchoolCoverage = () =>
+  JSON.parse(
+    sql(`
 select jsonb_object_agg(line.purchase_order_line_id,
   atlas_core.school_catering_po_school_breakdown(line.school_catering_allocation_supplier_split_id))
 from atlas_procurement.purchase_order_line_revisions line
@@ -176,7 +197,26 @@ join atlas_procurement.purchase_order_revisions revision using(purchase_order_re
 join atlas_procurement.purchase_orders po using(purchase_order_id)
 where revision.is_current and po.school_catering_service_date='2050-09-19'
 `),
-);
+  );
+let expectedSchools = readSchoolCoverage();
+const initialSchools = expectedSchools;
+const readAllocations = async () => {
+  const result = await operator
+    .schema("atlas_api")
+    .rpc("get_confirmed_supplier_allocation_workbench", {
+      request: {
+        contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+        requested_by_auth_subject: subject,
+        correlation_id: crypto.randomUUID(),
+        payload: { date_start: "2050-09-19", date_end: "2050-09-19" },
+      },
+    });
+  assert(
+    !result.error && result.data?.success,
+    "Authenticated Allocation read failed.",
+  );
+  return result.data.rows;
+};
 const coverage = (orders, schoolsByLine) =>
   orders
     .map((order) => ({
@@ -293,13 +333,24 @@ try {
     evaluate(
       `(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(label)});if(!b||b.disabled)return false;b.click();return true;})()`,
     );
+  const reload = async () => {
+    const previousDocument = await evaluate("performance.timeOrigin");
+    await connection.send("Page.reload", {});
+    await until(
+      () =>
+        evaluate(
+          `performance.timeOrigin!==${JSON.stringify(previousDocument)}&&document.readyState==='complete'`,
+        ),
+      "NEW_RELOADED_DOCUMENT",
+    );
+  };
   await connection.send("Browser.setDownloadBehavior", {
     behavior: "allow",
     downloadPath: evidence,
   });
   const url =
     "http://127.0.0.1:3019/supabase/local/atlas_procurement_browser.html";
-  await connection.send("Page.navigate", { url });
+  await connection.send("Page.navigate", { url: `${url}?stage=allocation` });
   await until(async () => (await text()).includes("Đăng nhập"), "LOGIN");
   assert(
     !(await text()).includes("Phát hành tất cả"),
@@ -310,8 +361,175 @@ try {
   );
   assert(await click("Đăng nhập"));
   await until(
+    async () => (await text()).includes(humanUnitName),
+    "ALLOCATION_UNIT_NAME",
+  );
+  assert(!(await text()).includes(technicalUnitCode));
+  const allocationBefore = await readAllocations();
+  assert(allocationBefore.length > 0);
+  assert(
+    allocationBefore.every(
+      (row) =>
+        row.unit_name === humanUnitName && row.unit_code === technicalUnitCode,
+    ),
+  );
+  const editedFamily = allocationBefore.find(
+    (row) =>
+      row.state === "BALANCED" &&
+      row.splits.length > 0 &&
+      row.allowed_actions.save_allocation,
+  );
+  assert(
+    editedFamily,
+    "Prepared fixture must expose a saved editable Allocation.",
+  );
+  assert.equal(
+    allocationBefore.filter(
+      (row) => row.ingredient_id === editedFamily.ingredient_id,
+    ).length,
+    1,
+    "Select one unambiguous synthetic ingredient family.",
+  );
+  const editLabel = await evaluate(
+    `(()=>{const row=[...document.querySelectorAll('tr')].find(row=>row.querySelector('[data-allocation-ingredient]')?.textContent.trim()===${JSON.stringify(editedFamily.ingredient_name)});const b=row?.querySelector('button[aria-label^="Xem phân bổ "]');return !b?.disabled&&b?.getAttribute('aria-label');})()`,
+  );
+  assert(editLabel, "Prepared Allocation must remain editable.");
+  const editAllocation = () =>
+    evaluate(
+      `(()=>{const b=[...document.querySelectorAll('button[aria-label]')].find(b=>b.getAttribute('aria-label')===${JSON.stringify(editLabel)});if(!b||b.disabled)return false;b.click();return true;})()`,
+    );
+  assert(await editAllocation());
+  const noteLabel = await until(
+    () =>
+      evaluate(
+        `document.querySelector('textarea[aria-label^="Ghi chú cho "]')?.getAttribute('aria-label')`,
+      ),
+    "ALLOCATION_EDITOR",
+  );
+  const supplierNote = "Disposable Unit label browser check";
+  await evaluate(
+    `(()=>{const input=[...document.querySelectorAll('textarea')].find(input=>input.getAttribute('aria-label')===${JSON.stringify(noteLabel)});const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(input,${JSON.stringify(supplierNote)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`,
+  );
+  await until(() => click("Lưu phân bổ"), "ALLOCATION_SAVE_READY");
+  // One actual public command; uncertainty stops this journey, never a blind retry.
+  await until(
+    async () =>
+      (await readAllocations()).some((row) =>
+        row.splits.some((split) => split.supplier_note === supplierNote),
+      ),
+    "ALLOCATION_SAVED_READBACK",
+  );
+  const allocationQuantities = (rows) =>
+    rows
+      .map((row) => ({
+        date: row.service_date,
+        location: row.delivery_location_id,
+        ingredient: row.ingredient_id,
+        unit: row.unit_id,
+        quantity: row.family_quantity,
+        family: {
+          id: row.family.family_id,
+          source_kind: row.family.source_kind,
+          batch: row.family.source_confirmed_need_batch_id,
+          batch_version: row.family.source_confirmed_need_batch_version,
+          fingerprint: row.family.source_fingerprint,
+        },
+        contributions: row.contributions,
+        schools: row.schools,
+        splits: row.splits
+          .map((split) => ({
+            supplier: split.supplier_id,
+            quantity: split.allocated_quantity,
+          }))
+          .sort((a, b) => a.supplier.localeCompare(b.supplier)),
+      }))
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  assert.deepEqual(
+    allocationQuantities(await readAllocations()),
+    allocationQuantities(allocationBefore),
+    "A supplier-note edit must preserve all allocated quantities and scope.",
+  );
+  await until(
+    () =>
+      evaluate(
+        `[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Đóng'&&!b.disabled)`,
+      ),
+    "ALLOCATION_COMMAND_READBACK",
+  );
+  await reload();
+  await until(editAllocation, "ALLOCATION_REOPEN");
+  await until(
+    () =>
+      evaluate(
+        `[...document.querySelectorAll('textarea')].some(input=>input.getAttribute('aria-label')===${JSON.stringify(noteLabel)}&&input.value===${JSON.stringify(supplierNote)})`,
+      ),
+    "ALLOCATION_PERSISTED_NOTE",
+  );
+  assert(
+    (await text()).includes(humanUnitName) &&
+      !(await text()).includes(technicalUnitCode),
+  );
+  assert(await click("Đóng"));
+  await connection.send("Page.navigate", { url });
+  await until(
+    () =>
+      evaluate(
+        `(()=>{const b=[...document.querySelectorAll('button[aria-label^="Xem đơn "]')].find(b=>b.getAttribute('aria-label').endsWith('Cần cập nhật'));if(!b||b.disabled)return false;b.click();return true;})()`,
+      ),
+    "STALE_DRAFT",
+  );
+  await until(
+    () => click("Tạo lại đơn cần cập nhật"),
+    "REGENERATE_DRAFT_READY",
+  );
+  await until(
     async () => (await text()).includes("Phát hành tất cả PO (2)"),
     "CURRENT_DRAFTS",
+  );
+  before = await read();
+  expectedSchools = readSchoolCoverage();
+  assert(
+    before.every(
+      (order) =>
+        order.status === "DRAFT" &&
+        order.commitment_state === "DRAFT_CURRENT" &&
+        order.release_eligible,
+    ),
+  );
+  const quantityFootprint = (orders, schoolsByLine) =>
+    orders
+      .map((order) => ({
+        id: order.purchase_order_id,
+        supplier: order.supplier.supplier_id,
+        date: order.service_date,
+        lines: order.lines
+          .map((line) => ({
+            ingredient: line.ingredient.ingredient_id,
+            unit: line.unit.unit_id,
+            location: line.delivery_location.delivery_location_id,
+            quantity: line.ordered_quantity,
+            family: line.source.family_id,
+            schools: schoolsByLine[line.purchase_order_line_id]
+              .map((school) => ({
+                id: school.school_id,
+                location: school.delivery_location_id,
+                quantity: school.ordered_quantity,
+              }))
+              .sort((a, b) => a.id.localeCompare(b.id)),
+          }))
+          .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  assert.deepEqual(
+    quantityFootprint(before, expectedSchools),
+    quantityFootprint(initialOrders, initialSchools),
+    "Supported Draft regeneration must retain PO/source family/School scope and exact quantities.",
+  );
+  assert(
+    before.some((order) =>
+      order.lines.some((line) => line.supplier_note === supplierNote),
+    ),
+    "Regeneration must carry the saved supplier note into the Draft.",
   );
   const searchName = before.find((o) =>
     o.supplier.supplier_name.includes("second"),
@@ -347,12 +565,27 @@ try {
     coverage(before, expectedSchools),
     "PO identity, source, exact quantities and per-School coverage must survive release.",
   );
+  assert(
+    after.every((order) =>
+      order.lines.every(
+        (line) =>
+          line.unit_code_snapshot === technicalUnitCode &&
+          line.unit_name_snapshot === humanUnitName,
+      ),
+    ),
+    "Future official documents must freeze both the technical Unit code and its human name.",
+  );
+  assert(
+    after.some((order) =>
+      order.lines.some((line) => line.supplier_note === supplierNote),
+    ),
+  );
   const numbers = after.map((o) => o.document_number).sort();
   const receipts = sql(
     "select count(*) from atlas_core.command_receipts where command_name='release_school_catering_purchase_order' and outcome='COMPLETED'",
   );
   assert.equal(receipts, "2", "One receipt per PO, with no duplicate command.");
-  await connection.send("Page.reload", {});
+  await reload();
   await until(async () => {
     const body = await text();
     return (
@@ -453,14 +686,7 @@ try {
             quantityLabel(quantity),
             "Visible XLSX quantity must match its exact released source.",
           );
-          assert.equal(
-            row.getCell(4).text,
-            order.lines.find(
-              (line) =>
-                line.purchase_order_line_id ===
-                source.data.purchase_order_line_id,
-            )?.unit_code_snapshot,
-          );
+          assert.equal(row.getCell(4).text, humanUnitName);
         }
         for (const line of order.lines) {
           const source = records.find(
@@ -478,6 +704,8 @@ try {
             source.data.purchase_order_line_revision_id,
             line.purchase_order_line_revision_id,
           );
+          assert.equal(source.data.unit_code_snapshot, technicalUnitCode);
+          assert.equal(source.data.unit_name_snapshot, humanUnitName);
         }
         assert.equal(
           workbook.worksheets.filter((sheet) => sheet.state === "visible")
@@ -501,7 +729,8 @@ try {
         );
         for (const line of order.lines) {
           assert(contents.includes(line.ingredient_name_snapshot));
-          assert(contents.includes(line.unit_code_snapshot));
+          assert(contents.includes(humanUnitName));
+          assert(!contents.includes(technicalUnitCode));
           const quantity = quantityLabel(line.ordered_quantity);
           assert(
             flatContents.includes(` ${quantity} `),
@@ -528,7 +757,7 @@ try {
     }).trim(),
     environment: "disposable GitHub runner",
     journey:
-      "Auth → prepared Drafts → search → publish all → public readback → reload → XLSX/PDF",
+      "Auth → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → XLSX/PDF",
     poCount: after.length,
     receiptCount: 2,
     documentNumbers: numbers,

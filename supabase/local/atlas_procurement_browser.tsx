@@ -53,7 +53,11 @@ function ConnectedProcurement() {
             {...apis}
             authSubject={auth.state.authSubject}
             initialServiceDate="2050-09-19"
-            ownerStage="orders"
+            ownerStage={
+              new URLSearchParams(location.search).get("stage") === "allocation"
+                ? "allocation"
+                : "orders"
+            }
             onExportXlsx={downloadPurchaseOrderXlsx}
             onExportPdf={downloadPurchaseOrderPdf}
             onExportZip={downloadPurchaseOrderZip}

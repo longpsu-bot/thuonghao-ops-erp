@@ -1,5 +1,11 @@
 # School-Catering Procurement API Contract
 
+## Allocation Unit display — 21 October 2026
+
+The existing confirmed-allocation read adds optional current `unit_name` display metadata to every returned row, including retained Handoff rows. Existing `unit_id`, `unit_code`, quantities, contribution/source bindings, order and allowed actions remain authoritative and unchanged. The Allocation list/editor use this name for imported technical Unit identifiers, applying the same presentation policy as Draft POs; standard codes such as `kg` remain readable as before. A missing name is explicit and does not introduce a new allocation prerequisite. Released PO/PXK documents continue to use their own immutable snapshots.
+
+The amendment changes no public inputs, signatures, grants, source selection, saving or acceptance rules, budgets or business data. Rollback restores the previous read definition and frontend labels through a reviewed forward repair; no history or quantity backfill is required.
+
 ## K3 Allocation read reconciliation — 20 October 2026
 
 The continuation's forward migration
