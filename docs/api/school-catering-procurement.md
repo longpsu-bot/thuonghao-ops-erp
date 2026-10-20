@@ -171,11 +171,19 @@ All precision-sensitive workbench response values are JSON strings at the public
 
 `create_school_catering_purchase_order_drafts` uses reason `SCHOOL_CATERING_PO_DRAFTS_CREATED`, sentinel expected version `1`, and payload `{ date_start, date_end }` for an inclusive range of at most 31 days. A date is ready only when every current Handoff-derived Allocation Family is balanced, source-current, and assigned only to active/effective eligible suppliers. Ready dates create or regenerate one DRAFT lineage per supplier/date; blocked dates are skipped atomically by date with explicit blockers. Regeneration creates successor revisions and never rewrites history or released roots.
 
+**20 October functional stabilization:** Draft creation/regeneration accepts the same maximum +60-second browser `requested_at` skew as PO release; +61 seconds and malformed envelopes still fail. Request identifiers, receipt semantics, source checks, authorization and command budgets are unchanged.
+
 `release_school_catering_purchase_order` uses reason `SCHOOL_CATERING_PO_RELEASED` and payload `{ purchase_order_id, expected_purchase_order_revision_id }`; callers cannot provide the supplier, status, actor, or document number. Under deterministic locks, the server revalidates root/revision versions, current family/split evidence, supplier activity, and effective eligibility. Success creates an immutable `RELEASED_TO_SUPPLIER` successor and the server-only number `PO-<YYYYMMDD>-<first 16 uppercase PO UUID hex characters>`.
 
 Its browser-facing command envelope accepts `requested_at` at most 60 seconds ahead of server transaction time; malformed timestamps and larger positive skew return `VALIDATION_FAILED`.
 
 `get_school_catering_purchase_orders` accepts payload `{ date_start, date_end, supplier_ids, statuses, search }`. It returns supplier/date roots, the current revision/version, multi-destination lines and exact family/split sources, server-derived stale/release/export state, the official number only after release, blockers/warnings, and backend-owned allowed/disabled actions.
+
+The 20 October read amendment adds optional `line.unit.unit_name`: the authoritative current name on Drafts and null on released/superseded documents. The operator UI uses this name for technical imported Draft Unit codes. Future releases also capture optional `line.unit_name_snapshot` through the existing backend freeze trigger under the existing Unit locks. This nullable field is immutable, including historical nulls. A missing/blank optional name stays null and introduces no release prerequisite. UI and official XLSX/PDF use the frozen name for a technical Unit code; normal Unit codes remain unchanged. Controlled Unit identity, exact quantities and `unit_code_snapshot` remain unchanged. Existing released documents receive no backfill and never fall back to a mutable name; legacy technical codes without a captured name retain their original evidence.
+
+The operator's **Phát hành tất cả PO** action sequences the existing single-PO release command across eligible loaded Drafts, independently of search. Each selected ID/version/revision remains fixed, is checked against fresh readback before its send, and retains its own request/receipt. Each success requires authoritative readback. Failure, changed next authority or UNKNOWN stops the batch with partial-progress guidance; no automatic retry, replacement creation or allocation acceptance occurs. An explicit retryable failure retains only the original failed request under the existing retry control.
+
+Rollback: the clock and Draft-read migrations replace existing function definitions only. The subsequent Unit-name migration adds one nullable snapshot column, amends existing capture/read/guard functions and extends the existing line snapshot trigger. A reviewed forward rollback may restore the strict Draft timestamp predicate or remove new presentation; it must retain the Unit-name column and all captured history, owners, ACLs, security modes/search paths and receipts. The UI tolerates absent Draft `unit_name` with missing Unit guidance and absent official `unit_name_snapshot` with the original frozen code. No released-document rewrite is needed. Reapplying the clock amendment outside the migration ledger fails closed instead of widening the skew window again.
 
 Each newly released school-catering PO line also freezes
 `school_breakdown_snapshot`: the exact contribution/supplier interval overlap grouped
@@ -408,6 +416,7 @@ The existing shaped read adds:
 - `current_revision.supplier_document_code_snapshot`: nullable text.
 - Line `ingredient_document_code_snapshot`, `ingredient_name_snapshot` and
   `unit_code_snapshot`: nullable text.
+- Line `unit_name_snapshot`: optional nullable text added on 20 October; captured only on future releases, used for technical Unit codes without changing their frozen code.
 - Order `document_snapshot_complete`: derived boolean.
 - `supplier.document_code` and `line.ingredient.document_code`: current Master Data
   for Drafts, frozen Supplier code/optional Ingredient metadata for released/superseded records.

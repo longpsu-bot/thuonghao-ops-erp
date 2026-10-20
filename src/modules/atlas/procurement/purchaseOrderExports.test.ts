@@ -11,6 +11,51 @@ import {
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("exports the frozen human Unit label for imported technical codes", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    for (const line of order.lines) {
+      Object.assign(line, {
+        unit_code_snapshot: "v1-unit-count",
+        unit_name_snapshot: "Gói",
+      });
+      Object.assign(line.unit, {
+        unit_code: "unit-new",
+        unit_name: "Mutable current name",
+      });
+    }
+    const data = buildPurchaseOrderExportData(order);
+    expect(data.summaryLines.every((line) => line.unitCode === "Gói")).toBe(
+      true,
+    );
+    expect(data.schoolLines.every((line) => line.unitCode === "Gói")).toBe(
+      true,
+    );
+    const pdf = JSON.stringify(buildPurchaseOrderPdfDefinition(order));
+    expect(pdf).toContain("Gói");
+    expect(pdf).not.toContain("v1-unit-count");
+    expect(pdf).not.toContain("Mutable current name");
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(await createPurchaseOrderXlsx(order));
+    const visible: string[] = [];
+    for (const sheet of book.worksheets.filter(
+      (sheet) => sheet.state === "visible",
+    ))
+      sheet.eachRow((row) =>
+        row.eachCell((cell) => {
+          if (!sheet.getColumn(cell.col).hidden) visible.push(cell.text);
+        }),
+      );
+    expect(visible).toContain("Gói");
+    expect(visible).not.toContain("v1-unit-count");
+    expect(visible).not.toContain("Mutable current name");
+    const metadata = JSON.stringify(
+      book.getWorksheet("_ATLAS_META")!.getSheetValues(),
+    );
+    expect(metadata).toContain("unit_name_snapshot");
+    expect(metadata).toContain("Gói");
+    expect(metadata).toContain("v1-unit-count");
+  });
   it.each(["all", "details_ing", "details_school", "sum"] as const)(
     "exports null internal codes in %s XLSX/PDF and both ZIP formats with exact lineage",
     async (mode) => {

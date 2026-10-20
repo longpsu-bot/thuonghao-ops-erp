@@ -33,6 +33,8 @@ Complete saved/current Confirmed Need
 
 Import executes **zero business writes**, Save/Preview/release/generation commands or downstream operations.
 
+20 October stabilization preserves those guards and provides distinct recovery guidance for an uneditable date, unavailable/changed authority, unsaved edits, an incorrect date range and invalid quantity. Business/currentness blockers are not reported as workbook structural corruption. Structural and stale-identity rejection still applies atomically to the whole file.
+
 ## Presentation contract — V2
 
 Each date sheet preserves:

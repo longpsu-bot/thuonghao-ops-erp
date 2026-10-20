@@ -184,15 +184,20 @@ it("retains UNKNOWN recovery locally through activation and blocks its owner's c
   await show(true);
   await recipe();
   const recipes = panel("Công thức");
+  const recipeControls = within(recipes);
   fireEvent.click(
-    screen.getByRole("button", { name: "Sửa công thức Canh bí đỏ thịt bằm" }),
+    recipeControls.getByRole("button", {
+      name: "Sửa công thức Canh bí đỏ thịt bằm",
+    }),
   );
-  fireEvent.change(await screen.findByLabelText("Định lượng Bí đỏ"), {
+  fireEvent.change(await recipeControls.findByLabelText("Định lượng Bí đỏ"), {
     target: { value: "2,25" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-  fireEvent.click(screen.getByRole("button", { name: "Lưu công thức" }));
-  const recovery = await screen.findByRole("button", {
+  fireEvent.click(recipeControls.getByRole("button", { name: "Xem thay đổi" }));
+  fireEvent.click(
+    recipeControls.getByRole("button", { name: "Lưu công thức" }),
+  );
+  const recovery = await recipeControls.findByRole("button", {
     name: "Tải lại để xác nhận",
   });
   activate("Trường học");
@@ -204,9 +209,9 @@ it("retains UNKNOWN recovery locally through activation and blocks its owner's c
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Đóng Công thức" }));
   expect(panel("Công thức")).toBe(recipes);
-  expect(screen.getByRole("button", { name: "Tải lại để xác nhận" })).toBe(
-    recovery,
-  );
+  expect(
+    recipeControls.getByRole("button", { name: "Tải lại để xác nhận" }),
+  ).toBe(recovery);
   expect(
     within(screen.getByRole("tablist", { name: "Màn hình đang mở" })).getByRole(
       "tab",

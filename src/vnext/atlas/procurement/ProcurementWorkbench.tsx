@@ -330,7 +330,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   <Tabs.Trigger
                     value="allocation"
                     disabled={
-                      Boolean(selected) && controller.stage !== "allocation"
+                      Boolean(controller.bulkProgress) ||
+                      (Boolean(selected) && controller.stage !== "allocation")
                     }
                     {...atlasPrimaryTabTrigger}
                   >
@@ -339,7 +340,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   <Tabs.Trigger
                     value="orders"
                     disabled={
-                      Boolean(selected) && controller.stage !== "orders"
+                      Boolean(controller.bulkProgress) ||
+                      (Boolean(selected) && controller.stage !== "orders")
                     }
                     {...atlasPrimaryTabTrigger}
                   >
@@ -722,6 +724,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   disabled={commandDisabled}
                   search={search}
                   onAction={(order) => void controller.orderAction(order)}
+                  onReleaseAll={() => void controller.releaseAllOrders()}
+                  bulkProgress={controller.bulkProgress}
                   onExportXlsx={props.onExportXlsx}
                   onExportPdf={props.onExportPdf}
                   onExportZip={props.onExportZip}

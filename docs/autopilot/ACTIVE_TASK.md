@@ -1,5 +1,7 @@
 # Atlas Autopilot — Active Task
 
+**20 October functional stabilization supersession:** the Owner explicitly authorizes the autonomous campaign recorded in [the stabilization ledger](../testing/atlas-functional-stabilization-2026-10-20.md), using the confirmed D: checkout and fresh latest-main repair branches. Prior task-only horizons below are historical. Bounded fixes may proceed through independent review, exact-revision checks, merge and guarded Staging deployment; hosted business data remains read-only and transactional journeys run only in disposable environments. ARCH-002, existing business/security contracts, OPS v1/Retool NO-WRITE and unapproved-module exclusions remain in force.
+
 **19 October B2 authorization (this independent stacked Draft only):** execute
 `ATLAS-B2-PO-INGREDIENT-CODE-OPTIONAL-01` from exact `689398e12f3911182862c76a964434c8776b6bec`
 on `feat/atlas-b2-po-ingredient-code-optional`, targeting

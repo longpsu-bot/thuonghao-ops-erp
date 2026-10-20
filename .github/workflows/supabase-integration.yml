@@ -41,6 +41,7 @@ on:
       - "scripts/certify-supabase-full-integration.mjs"
       - "scripts/test-local-purchase-review.mjs"
       - "scripts/test-local-atlas-k2-po-concurrency.mjs"
+      - "scripts/test-ci-atlas-procurement-browser.mjs"
       - "scripts/local-confirmed-supplier-allocation.mjs"
       - "scripts/verify-atlas-staging.mjs"
       - "scripts/verify-atlas-staging-school-fulfilment.mjs"
@@ -118,6 +119,7 @@ on:
       - "scripts/certify-supabase-full-integration.mjs"
       - "scripts/test-local-purchase-review.mjs"
       - "scripts/test-local-atlas-k2-po-concurrency.mjs"
+      - "scripts/test-ci-atlas-procurement-browser.mjs"
       - "scripts/local-confirmed-supplier-allocation.mjs"
       - "scripts/verify-atlas-staging.mjs"
       - "scripts/verify-atlas-staging-school-fulfilment.mjs"
@@ -330,5 +332,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Ensure PDF inspection tool
+        run: command -v pdftotext || (sudo apt-get update && sudo apt-get install --no-install-recommends -y poppler-utils)
+
       - name: Run repository Supabase Full Integration certification
         run: pnpm certify:supabase:full-integration
+
+      - name: Upload disposable connected Procurement evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-connected-procurement-${{ github.sha }}
+          include-hidden-files: true
+          if-no-files-found: ignore
+          path: |
+            .git/atlas-procurement-browser/report.json
+            .git/atlas-procurement-browser/*.png
+            .git/atlas-procurement-browser/*.zip
