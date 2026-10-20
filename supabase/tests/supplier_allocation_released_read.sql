@@ -86,6 +86,36 @@ select diag(response::text) from scale_results where name='issue' and response->
 create temporary table read_before as select pg_temp.scale_business_snapshot() facts,
   (select jsonb_agg(to_jsonb(r) order by command_receipt_id)
     from atlas_core.command_receipts r) receipts;
+create temporary table reconciliation_parity_scopes(label text primary key,service_date date,
+  school_id uuid,delivery_location_id uuid,actual jsonb);
+create function pg_temp.capture_reconciliation_scope(p_label text) returns void language plpgsql as $$
+declare context jsonb; scope record;
+begin
+  context:=atlas_core.procurement_read_context('2027-01-18','2027-01-18');
+  if p_label='reopened' then
+    select line.service_date,line.school_id,line.delivery_location_id into scope
+    from atlas_planning.confirmed_need_lines line join scale_requests command
+      on line.confirmed_need_line_id=(command.request#>>'{payload,lines,0,confirmed_need_line_id}')::uuid
+    where command.name='correct';
+  else
+    select (source->>'service_date')::date service_date,
+      (contribution->>'school_id')::uuid school_id,
+      (source->>'delivery_location_id')::uuid delivery_location_id into scope
+    from jsonb_array_elements(context->'sources') source
+    cross join lateral jsonb_array_elements(source->'contributions') contribution
+    order by contribution->>'school_id',source->>'ingredient_id' limit 1;
+  end if;
+  if not found then raise exception 'Reconciliation parity requires a genuine School scope'; end if;
+  insert into reconciliation_parity_scopes values(p_label,scope.service_date,scope.school_id,
+    scope.delivery_location_id,atlas_core.procurement_read_school_fulfilment_reconciliation_scope(
+      scope.service_date,scope.school_id,scope.delivery_location_id,context));
+end;
+$$;
+-- Each authority construction retains its own unchanged eight-second statement budget.
+select pg_temp.capture_reconciliation_scope('ordinary');
+select is(actual,atlas_core.school_fulfilment_reconciliation_scope(service_date,school_id,delivery_location_id),
+  'ordinary reconciliation exactly matches the original complete scope result')
+from reconciliation_parity_scopes where label='ordinary';
 create temporary table read_samples(sample integer,response jsonb,elapsed_ms numeric,source_calls bigint);
 grant select,insert on read_samples to authenticated;
 -- Each sample is a separate statement so the unchanged transport budget resets.
@@ -213,6 +243,16 @@ reset role;
 select is((select response->>'success' from scale_results where name='correct'),
   'true','official post-release correction reopens the genuine 236-family batch');
 select diag(response::text) from scale_results where name='correct' and response->>'success'<>'true';
+select pg_temp.capture_reconciliation_scope('reopened');
+select is((select jsonb_build_array(service_date,school_id,delivery_location_id)
+    from reconciliation_parity_scopes where label='reopened'),
+  (select jsonb_build_array(line.service_date,line.school_id,line.delivery_location_id)
+    from atlas_planning.confirmed_need_lines line join scale_requests command
+      on line.confirmed_need_line_id=(command.request#>>'{payload,lines,0,confirmed_need_line_id}')::uuid
+    where command.name='correct'),'reopened parity targets the actual corrected line School and captured location');
+select is(actual,atlas_core.school_fulfilment_reconciliation_scope(service_date,school_id,delivery_location_id),
+  'reopened reconciliation exactly matches the original complete scope result')
+from reconciliation_parity_scopes where label='reopened';
 create temporary table reopened_before as select pg_temp.scale_business_snapshot() facts,
   (select jsonb_agg(to_jsonb(r) order by command_receipt_id) from atlas_core.command_receipts r) receipts;
 create temporary table reopened_samples(kind text,response jsonb,elapsed_ms numeric,proof_calls bigint,context_calls bigint);
@@ -307,6 +347,21 @@ select ok(not exists(select 1 from pg_proc function
     and role.rolname in ('anon','authenticated','service_role')
     and has_function_privilege(role.rolname,function.oid,'EXECUTE')),
   'public request roles cannot supply or execute a private read context');
+select ok((select pg_get_userbyid(proowner)='atlas_read_runtime' and prosecdef
+    and provolatile='s' and proconfig=array['search_path=""']
+  from pg_proc where oid='atlas_core.procurement_read_school_fulfilment_reconciliation_scope(date,uuid,uuid,jsonb)'::regprocedure),
+  'private reconciliation retains stable runtime ownership and empty definer search path');
+set local role authenticated;
+select throws_ok($$select atlas_core.procurement_read_school_fulfilment_reconciliation_scope(
+    date '2027-01-18',null::uuid,null::uuid,'{}'::jsonb)$$,'42501',null,
+  'authenticated clients cannot execute a caller-supplied private reconciliation context');
+select is(atlas_api.get_school_fulfilment_reconciliation_workbench(jsonb_build_object(
+    'contract_version','SCHOOL-FULFILMENT-RECONCILIATION.v1','correlation_id',gen_random_uuid(),
+    'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+    'payload',jsonb_build_object('date_start','2027-01-18','date_end','2027-01-18',
+      'school_ids','[]'::jsonb,'search',null,'read_context','{}'::jsonb)))->>'error_code',
+  'VALIDATION_FAILED','public reconciliation rejects injected read context');
+reset role;
 select ok(exists(select 1 from reopened_samples
   cross join lateral jsonb_array_elements(response->'purchase_orders') item
   where kind='orders' and item->>'commitment_state'='DRAFT_STALE'),
