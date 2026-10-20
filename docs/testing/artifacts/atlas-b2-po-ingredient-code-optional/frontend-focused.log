@@ -1,0 +1,30 @@
+
+ RUN  v4.1.10 C:/Users/HOME/.codex/worktrees/atlas-b2-po-ingredient-code-optional/thuonghao-ops-erp
+
+ ❯ src/modules/atlas/procurement/purchaseOrderExports.test.ts (40 tests | 1 failed) 2091ms
+     × exports null internal codes in sum XLSX/PDF and both ZIP formats with exact lineage 25ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/modules/atlas/procurement/purchaseOrderExports.test.ts > released purchase-order exports > exports null internal codes in sum XLSX/PDF and both ZIP formats with exact lineage
+AssertionError: expected '[null,[null,"contract_version","ATLAS…' to contain '25000000-0000-4000-8000-000000000021'
+
+Expected: "25000000-0000-4000-8000-000000000021"
+Received: "[null,[null,"contract_version","ATLAS_OPERATIONAL_DOCUMENT_V1"],[null,"record_kind","document_id","sheet_name","row_number","payload_json"],[null,"DOCUMENT","25000000-0000-4000-8000-000000000051","",null,"{\"document_type\":\"PO\",\"workbook_mode\":\"sum\",\"purchase_order_id\":\"25000000-0000-4000-8000-000000000051\",\"purchase_order_revision_id\":\"25000000-0000-4000-8000-000000000053\",\"revision_number\":2,\"service_date\":\"2026-09-02\",\"document_number\":\"PO-20260902-2500000000004000\",\"status\":\"RELEASED_TO_SUPPLIER\",\"supplier_id\":\"25000000-0000-4000-8000-000000000041\",\"supplier_document_code_snapshot\":\"53\",\"released_at\":\"2026-09-01T08:00:00.000Z\",\"predecessor_revision_id\":\"25000000-0000-4000-8000-000000000052\",\"replaces_purchase_order_id\":null,\"replaced_by_purchase_order_id\":null}"],[null,"ROW_SOURCE","25000000-0000-4000-8000-000000000051","02-09-2026 - Tổng",11,"{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000092\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000091\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000011\",\"ordered_quantity\":\"60.000000\",\"ingredient_document_code_snapshot\":null}"],[null,"ROW_SOURCE","25000000-0000-4000-8000-000000000051","02-09-2026 - Tổng",11,"{\"purchase_order_line_id\":\"25000000-0000-4000-8000-000000000094\",\"purchase_order_line_revision_id\":\"25000000-0000-4000-8000-000000000093\",\"family_id\":\"25000000-0000-4000-8000-000000000001\",\"family_revision_id\":\"25000000-0000-4000-8000-000000000002\",\"supplier_split_id\":\"25000000-0000-4000-8000-000000000081\",\"delivery_location_id\":\"25000000-0000-4000-8000-000000000012\",\"ordered_quantity\":\"40.000000\",\"ingredient_document_code_snapshot\":null}"]]"
+
+ ❯ inspect src/modules/atlas/procurement/purchaseOrderExports.test.ts:48:26
+     46|         expect(metadata).toContain("DOCUMENT");
+     47|         expect(metadata).toContain("ROW_SOURCE");
+     48|         expect(metadata).toContain(order.lines[0]!.ingredient.ingredie…
+       |                          ^
+     49|         expect(metadata).toContain(order.lines[0]!.ordered_quantity);
+     50|         expect(metadata).toContain("ingredient_document_code_snapshot"…
+ ❯ src/modules/atlas/procurement/purchaseOrderExports.test.ts:52:7
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 57 passed (58)
+   Start at  08:48:42
+   Duration  13.44s (transform 388ms, setup 0ms, import 2.98s, tests 3.61s, environment 5.43s)

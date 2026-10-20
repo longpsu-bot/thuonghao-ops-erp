@@ -1,11 +1,15 @@
 // Presentation only: catalogue eligibility and save blockers remain backend-owned.
 const pantryIssueLabels: Record<string, string> = {
   PURPOSE_CATALOG_EMPTY:
-    "Chưa có mục đích đặt hàng đang dùng. Liên hệ người quản lý danh mục.",
-  PURPOSE_REQUIRED: "Chọn mục đích đặt hàng.",
-  INVALID_PURPOSE_ID: "Mục đích đặt hàng không hợp lệ. Hãy chọn lại.",
-  UNKNOWN_PURPOSE: "Không tìm thấy mục đích đặt hàng. Hãy chọn lại.",
-  INACTIVE_PURPOSE: "Mục đích đặt hàng đã ngừng dùng. Hãy chọn lại.",
+    "Chưa có phân loại nhập trực tiếp. Liên hệ người quản lý danh mục.",
+  PURPOSE_REQUIRED:
+    "Chưa xác định phân loại nhập trực tiếp. Tải lại dữ liệu hoặc liên hệ người quản lý.",
+  INVALID_PURPOSE_ID:
+    "Phân loại nhập trực tiếp không hợp lệ. Tải lại dữ liệu hoặc liên hệ người quản lý.",
+  UNKNOWN_PURPOSE:
+    "Không tìm thấy phân loại nhập trực tiếp. Tải lại dữ liệu hoặc liên hệ người quản lý.",
+  INACTIVE_PURPOSE:
+    "Phân loại nhập trực tiếp đã ngừng dùng. Liên hệ người quản lý danh mục.",
   DEFAULT_DELIVERY_LOCATION_MISSING:
     "Trường chưa có điểm giao mặc định. Liên hệ người quản lý danh mục.",
   DEFAULT_DELIVERY_LOCATION_INACTIVE:

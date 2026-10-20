@@ -112,7 +112,6 @@ describe("generated purchase review worksheet", () => {
     expect(workbook.getWorksheet("Tổng")!.getRow(9).values).toEqual([
       undefined,
       "STT",
-      "Mã hàng",
       "Tên hàng",
       "Đơn vị",
       "Số lượng",
@@ -120,8 +119,8 @@ describe("generated purchase review worksheet", () => {
     ]);
     expect(text).toContain("Trường An Bình");
     expect(text).toContain("Bếp An Bình");
-    expect(workbook.getWorksheet("Tổng")!.getCell("B12").value).toBeNull();
-    expect(workbook.getWorksheet("Tổng")!.getCell("F12").value).toBeNull();
+    expect(workbook.getWorksheet("Tổng")!.getCell("E12").value).toBeNull();
+    expect(text).not.toContain("Mã hàng");
     if (process.env.PURCHASE_REVIEW_QA_XLSX) {
       const { writeFile } = await import("node:fs/promises");
       await writeFile(
@@ -187,10 +186,10 @@ describe("generated purchase review worksheet", () => {
     expect(text).toContain("99999999999999.000002");
     expect(text).toContain("99999999999999.000001");
     expect(text).toContain("0.000001");
-    expect(workbook.getWorksheet("Tổng")!.getCell("E11").value).toBe(
+    expect(workbook.getWorksheet("Tổng")!.getCell("D11").value).toBe(
       "99999999999999.000002",
     );
-    expect(workbook.getWorksheet("Tổng")!.getCell("C11").value).toContain(
+    expect(workbook.getWorksheet("Tổng")!.getCell("B11").value).toContain(
       "NCC đề xuất: Nhà cung ứng A",
     );
     expect(workbook.getWorksheet("Chi tiết")!.getCell("A12").value).toContain(
@@ -215,17 +214,17 @@ describe("generated purchase review worksheet", () => {
     const before = structuredClone(source);
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createGeneratedPurchaseReviewXlsx(source));
-    expect(workbook.getWorksheet("Tổng")!.getCell("E11").value).toBe("12.39");
+    expect(workbook.getWorksheet("Tổng")!.getCell("D11").value).toBe("12.39");
     const quantities: string[] = [];
     workbook.getWorksheet("Chi tiết")!.eachRow((row) => {
       const cell = row.getCell(6);
       if (cell.numFmt === "@") quantities.push(cell.text);
     });
     expect(quantities).toEqual(["12.34", "0.05"]);
-    expect(workbook.getWorksheet("Tổng")!.getColumn(3).width).toBeGreaterThan(
+    expect(workbook.getWorksheet("Tổng")!.getColumn(2).width).toBeGreaterThan(
       36,
     );
-    expect(workbook.getWorksheet("Tổng")!.getColumn(5).width).toBeLessThan(24);
+    expect(workbook.getWorksheet("Tổng")!.getColumn(4).width).toBeLessThan(24);
     expect(
       workbook.getWorksheet("Chi tiết")!.getColumn(4).width,
     ).toBeGreaterThan(34);

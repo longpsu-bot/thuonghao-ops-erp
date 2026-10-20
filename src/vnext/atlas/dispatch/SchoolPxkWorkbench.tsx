@@ -31,6 +31,10 @@ import {
 export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const rangeErrorId = useId();
   const c = useSchoolPxkWorkbench(props);
+  const incomingScope =
+    props.incomingScope && props.incomingScope.id !== c.appliedIncomingScope
+      ? props.incomingScope
+      : null;
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: Boolean(c.note.trim()),
     blocked: c.busy || Boolean(c.lock),
@@ -303,6 +307,22 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
           else transition({ refresh: true });
         }}
       />
+      {incomingScope && (
+        <Box p="sm" bg="bg.info" role="status">
+          <Text>
+            Đơn mua đang xem thuộc ngày {incomingScope.range.start},{" "}
+            {incomingScope.schoolIds.length} trường. Phiếu đang mở và ghi chú
+            chưa lưu được giữ cho đến khi áp dụng.
+          </Text>
+          <Button
+            variant="secondary"
+            disabled={disabled || c.loading}
+            onClick={() => transition({ incomingScope })}
+          >
+            Áp dụng ngữ cảnh đơn mua và tải lại
+          </Button>
+        </Box>
+      )}
       <Flex
         px="md"
         py="sm"
@@ -322,9 +342,13 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
         </Text>
         {(props.onExportGroupedXlsx || props.onExportZip) && (
           <AtlasWorkbar
-            aria-label="Xuất phiếu trong phạm vi đã tải"
+            aria-label="Xuất phiếu đã tải"
             justifyContent="flex-end"
           >
+            <Text textStyle="helper" color="fg.muted" w="full">
+              Xuất các phiếu đủ điều kiện trong dữ liệu đã tải, không giới hạn
+              theo tìm kiếm.
+            </Text>
             {props.onExportZip && (
               <Field.Root
                 w={{
@@ -356,7 +380,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
                   }
                   onClick={() => void exportLoaded(false)}
                 >
-                  Xuất Excel · phạm vi đã tải
+                  Xuất XLSX
                 </Button>
               )}
               {props.onExportZip && (
@@ -366,7 +390,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
                   disabled={!c.canExportLoaded || !releasedDocuments.length}
                   onClick={() => void exportLoaded(true)}
                 >
-                  Xuất ZIP · phạm vi đã tải
+                  Xuất ZIP
                 </Button>
               )}
             </AtlasWorkbarActions>
@@ -427,7 +451,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
             row={c.selected}
             note={c.note}
             onNote={c.setNote}
-            canRelease={c.canRelease}
+            canRelease={c.canRelease && !incomingScope}
             actionAllowed={c.actionAllowed}
             busy={c.busy}
             locked={Boolean(c.lock)}

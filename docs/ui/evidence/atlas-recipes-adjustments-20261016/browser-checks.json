@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-16",
+  "route": "http://127.0.0.1:5177/atlas-vnext-review.html?scenario=range",
+  "data": "Local review fixture; no Save, release or hosted write",
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "documentWidth": 1366,
+      "checks": [
+        "Recipe landing uses full workplane; existing selected dish navigator retained",
+        "Adjustment compact ledger beside broad existing detail; six original facts and history retained",
+        "One visibly labelled framed Allocation sort selector"
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "checks": [
+        "Recipe base-row region303px viewport/content, previously650px content; quantity/storedUnit/notes/remove fit",
+        "Adjustment ledger370px viewport/content, previously705px content",
+        "Adjustment first-open focuses detail top240px and exposes facts/history/actions through vertical scroll",
+        "Clean Adjustment Close restores exact origin; cancelled dirty Close retains the unsaved reason, then restored without Save",
+        "All native sort options checked: School5axes, Supplier3, Ingredient5, Allocation5, each ascending/descending plus original order",
+        "Allocation issue descending option fits336px selector,right363px; original-order reset retained",
+        "School draft281 survives status-descending sort; restored280 without Save"
+      ]
+    }
+  ],
+  "finalScreenshots": [
+    "recipes-after-1366x768.jpg",
+    "recipes-after-390x844.jpg",
+    "recipe-editor-after-1366x768.jpg",
+    "recipe-editor-final-390x844.jpg",
+    "adjustment-detail-after-1366x768.jpg",
+    "adjustment-detail-final-390x844.jpg",
+    "allocation-sort-after-390x844.jpg",
+    "school-sort-after-390x844.jpg",
+    "ingredient-sort-after-390x844.jpg",
+    "supplier-sort-after-390x844.jpg"
+  ],
+  "reviewCorrection": "Independent Terra review found inaccessible CSS-hidden table headers in3responsive tables. Final accessibility confirmation recorded separately after correction; visual layout unchanged.",
+  "limits": [
+    "Bounded desktop/mobile review, not all-state or viewport certification",
+    "Initial read-failure correctness supported by focused component tests",
+    "Synthetic data does not establish live effective quantities, issuance or backend acceptance",
+    "Backend/Warehouse/OPSv1/Retool remain paused; no merge or manual deployment"
+  ],
+  "accessibilityConfirmation": {
+    "viewport": "390×844",
+    "catalogueHeaders": [
+      "Món",
+      "Loại món",
+      "Trạng thái",
+      "Công thức",
+      "Thao tác"
+    ],
+    "baseHeaders": [
+      "Nguyên liệu",
+      "Định lượng",
+      "Đơn vị",
+      "Ghi chú",
+      "Thao tác"
+    ],
+    "adjustmentHeaders": [
+      "Lệnh",
+      "Phạm vi",
+      "Đối tượng",
+      "Hiệu lực",
+      "Trạng thái",
+      "Thao tác"
+    ],
+    "result": "All5/5/6columnheaders exposed by current browser roles; Recipe303px content still equals viewport after correction."
+  }
+}

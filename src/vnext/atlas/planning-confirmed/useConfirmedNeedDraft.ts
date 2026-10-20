@@ -11,6 +11,7 @@ import { draftChanged, draftError } from "./confirmedNeedDraft";
 export function useConfirmedNeedDraft(
   workbench: ConfirmedNeedWorkbenchData | null,
   schoolIds: string[],
+  correctionReason?: string,
 ) {
   const [drafts, setDrafts] = useState<Record<string, ConfirmedNeedDraftLine>>(
     {},
@@ -42,7 +43,17 @@ export function useConfirmedNeedDraft(
   const dirty = changedLines.length > 0;
   const errors = Object.fromEntries(
     changedLines.flatMap((l) => {
-      const error = draftError(l, drafts[l.confirmed_need_line_id]!);
+      const draft = drafts[l.confirmed_need_line_id]!;
+      const error = draftError(
+        l,
+        correctionReason === undefined
+          ? draft
+          : {
+              ...draft,
+              reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+              reason_note: correctionReason,
+            },
+      );
       return error ? [[l.confirmed_need_line_id, error]] : [];
     }),
   );

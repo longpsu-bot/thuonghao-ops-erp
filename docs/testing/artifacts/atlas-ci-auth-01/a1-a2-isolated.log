@@ -1,0 +1,33 @@
+$ vitest run "--dir" "src/vnext/atlas" "AtlasVNextApp.test.tsx" "-t" "clean sign out calls|a changed identity loses" "--maxWorkers=1" "--reporter=verbose"
+
+ RUN  v4.1.10 D:/Project/Repo/OPS/thuonghao-ops-erp
+
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > opens Weekly Menu as the actual fresh-session workbench without initializing School editing
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > carries the selected seven-day range from new Confirmed Need to Allocation and Orders without preparation
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > preserves an existing Allocation range and unsaved split note when Confirmed Need requests another range
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > preserves an existing Orders range and selected order when Allocation requests another range
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > downloads the attendance template from its persistent owner without saving attendance
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Trường học with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Nguyên liệu with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Nhà cung ứng with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Công thức with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Thực đơn with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Sĩ số with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Hàng đặt riêng with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Xác nhận nhu cầu with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Phân bổ NCC with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Đơn mua with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Lệnh điều chỉnh with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Phiếu xuất kho with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Đối chiếu PO / Phiếu xuất kho with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > blocks dirty sign-out without discarding and resolves two Schools through their close guard
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > Confirmed Need continues to supplier allocation with no hidden write
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > preserves a changed date through Planning, Confirmed Need, Procurement, PXK and Reconciliation
+ ✓ src/vnext/atlas/AtlasVNextApp.test.tsx > clean sign out calls back once without a dirty-state blocker 1989ms
+ ✓ src/vnext/atlas/AtlasVNextApp.test.tsx > a changed identity loses the prior unsaved draft including a stale post-sign-out edit 3625ms
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > uses the injected business date for Recipe's independent initial as-of context
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 22 skipped (24)
+   Start at  00:29:18
+   Duration  24.20s (transform 3.10s, setup 0ms, import 16.97s, tests 5.62s, environment 1.27s)

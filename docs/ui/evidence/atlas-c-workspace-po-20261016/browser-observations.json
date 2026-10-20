@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-16",
+  "target": "local fixture-backed real Atlas interface",
+  "routes": [
+    "scenario=ready",
+    "scenario=range"
+  ],
+  "observed": {
+    "realOwnersOpened": 13,
+    "documentHorizontalOverflowAtWidths": {
+      "390": false,
+      "768": false,
+      "1366": false,
+      "1440": false,
+      "1920": false
+    },
+    "searchExcludedSelection": "detail and command removed",
+    "closeDetail": "remained closed; focus returned to originating order",
+    "sameSupplierMultipleDates": "08/09 selected exact PO-20260908-53",
+    "draft": "exact quantity 60,000001 kg; missing School evidence disclosed",
+    "released": "captured School detail; Excel/PDF; loaded-scope ZIP",
+    "readyReleaseCallback": "existing fixture callback followed by fixture readback; no real issuance",
+    "currentTabConsoleErrors": []
+  },
+  "limits": [
+    "Synthetic existing fixtures; no hosted data or commands",
+    "Ready fixture application scope September 7 versus PO September 10 mismatch retained",
+    "No live export/download or supplier commitment performed",
+    "Screenshots may be softer than DOM text; viewport filename identifies requested CSS size"
+  ]
+}

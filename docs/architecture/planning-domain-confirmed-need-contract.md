@@ -1,5 +1,16 @@
 # PD-01.8 — Planning Domain Confirmed Need Contract
 
+**B1 Product amendment, 18 October 2026:**
+[Owner approval](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6249057414)
+requires original Recipe R, Bổ sung B, derived recipe-associated R+B, separate
+Hàng đặt riêng H and total theoretical R+B+H to remain distinguishable in source
+support. Both Pantry Purpose identities and all atomic memberships remain intact.
+No subtotal object or Recipe/BOM mutation is authorized. Final human confirmation
+with reason remains the quantity authority for Procurement and School PXK.
+COMPLETE is historical compatibility only; current authoring is additive. Current
+COMPLETE commitments need separately controlled reconciliation, never automatic
+conversion. See the [bounded closeout](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md).
+
 **Status:** MVP contract v0.2; H0B1 school-catering identity and contribution-membership amendment accepted
 **Domain:** Planning  
 **Business owner:** Tổ Kế hoạch  

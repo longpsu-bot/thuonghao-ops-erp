@@ -75,10 +75,24 @@ function setup(
   );
   return { api, report, exitRef };
 }
+async function openCooking() {
+  fireEvent.click(await screen.findByRole("tab", { name: "Nơi nấu" }));
+  const group = await screen.findByRole("combobox", { name: "Nơi nấu" });
+  await waitFor(() => expect(group).toBeEnabled());
+  return group;
+}
+async function membership() {
+  const group = await openCooking();
+  await waitFor(() => expect(group).toHaveTextContent("Bếp X"));
+  if ((group as HTMLSelectElement).value !== "group-x")
+    fireEvent.change(group, { target: { value: "group-x" } });
+  fireEvent.change(screen.getByLabelText("Danh sách trường — Nấu tại"), {
+    target: { value: "ALL" },
+  });
+  return screen.findByLabelText(`Nấu tại — ${school.school_name}`);
+}
 async function selectGroup() {
-  const select = await screen.findByLabelText(
-    `Nấu tại — ${school.school_name}`,
-  );
+  const select = await membership();
   fireEvent.change(select, { target: { value: "group-x" } });
   return select;
 }
@@ -148,9 +162,7 @@ it("creates a group and permits explicit deactivation through the same editor", 
       affected_aggregate_ids: { cooking_group_id: "group-created" },
     },
   });
-  fireEvent.click(
-    await screen.findByText("Quản lý nơi nấu", { selector: "button" }),
-  );
+  await openCooking();
   fireEvent.change(screen.getByLabelText("Tên nơi nấu"), {
     target: { value: "Bếp mới" },
   });
@@ -194,9 +206,11 @@ it("creates a group and permits explicit deactivation through the same editor", 
     ),
   );
   await waitFor(() =>
-    expect(screen.getByLabelText("Nơi nấu")).not.toBeDisabled(),
+    expect(
+      screen.getByRole("combobox", { name: "Nơi nấu" }),
+    ).not.toBeDisabled(),
   );
-  fireEvent.change(screen.getByLabelText("Nơi nấu"), {
+  fireEvent.change(screen.getByRole("combobox", { name: "Nơi nấu" }), {
     target: { value: "group-x" },
   });
   fireEvent.change(screen.getByLabelText("Trạng thái nơi nấu"), {
@@ -225,9 +239,7 @@ it("never confirms uncertain creation using an existing same-name group and repl
     diagnostic: { code: "NETWORK_FAILURE", safeMessage: "offline" },
   };
   const { api, report } = setup(unknown);
-  fireEvent.click(
-    await screen.findByText("Quản lý nơi nấu", { selector: "button" }),
-  );
+  await openCooking();
   fireEvent.change(screen.getByLabelText("Tên nơi nấu"), {
     target: { value: "Bếp X" },
   });
@@ -312,9 +324,7 @@ it("removes a current group through an explicit nullable assignment command", as
   const { api } = setup(success, [
     { ...school, cooking_group_id: "group-x", cooking_group_name: "Bếp X" },
   ]);
-  const select = await screen.findByLabelText(
-    `Nấu tại — ${school.school_name}`,
-  );
+  const select = await membership();
   expect(select).toHaveValue("group-x");
   fireEvent.change(select, { target: { value: "" } });
   fireEvent.click(screen.getByLabelText(`Lưu Nấu tại — ${school.school_name}`));
@@ -348,7 +358,7 @@ it("locks a successful command if group authority cannot be read back", async ()
 it("keeps group drafts and School assignment drafts behind the existing dirty exit guard", async () => {
   const { exitRef, report } = setup();
   await selectGroup();
-  fireEvent.click(screen.getByText("Quản lý nơi nấu", { selector: "button" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Nơi nấu" }));
   fireEvent.change(screen.getByLabelText("Tên nơi nấu"), {
     target: { value: "Chưa lưu" },
   });
@@ -377,8 +387,8 @@ it("preserves a rejected deactivation and explains the current membership blocke
     },
   });
   await selectGroup();
-  fireEvent.click(screen.getByText("Quản lý nơi nấu", { selector: "button" }));
-  fireEvent.change(screen.getByLabelText("Nơi nấu"), {
+  fireEvent.click(screen.getByRole("tab", { name: "Nơi nấu" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "Nơi nấu" }), {
     target: { value: "group-x" },
   });
   fireEvent.change(screen.getByLabelText("Trạng thái nơi nấu"), {
@@ -396,9 +406,7 @@ it("preserves a rejected deactivation and explains the current membership blocke
 
 it("requires explicit host School identity instead of deriving it from the location name", async () => {
   const { api } = setup();
-  fireEvent.click(
-    await screen.findByText("Quản lý nơi nấu", { selector: "button" }),
-  );
+  await openCooking();
   fireEvent.change(screen.getByLabelText("Tên nơi nấu"), {
     target: { value: school.school_name },
   });

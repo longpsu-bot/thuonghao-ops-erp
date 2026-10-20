@@ -47,9 +47,17 @@ import {
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
 import { derivedDefaultAllocation } from "./procurementAllocationPresentation";
+import type { ProcurementPxkImpactProps } from "./ProcurementPxkImpact";
 
 export type ProcurementWorkbenchProps = ProcurementControllerProps &
   AtlasModuleExitProps & {
+    needContinuation?: {
+      id: string;
+      range: AtlasOperatorDateRange;
+      schoolIds: string[];
+    };
+    schoolDispatchApi?: ProcurementPxkImpactProps["api"];
+    onOpenPxk?: ProcurementPxkImpactProps["onOpenPxk"];
     schools?: ProcurementSchoolOption[];
     onExportXlsx?: ProcurementExport;
     onExportPdf?: ProcurementExport;
@@ -75,6 +83,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const [exception, setException] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [appliedContinuation, setAppliedContinuation] = useState<string | null>(
+    null,
+  );
+  const pendingContinuation =
+    props.needContinuation && props.needContinuation.id !== appliedContinuation
+      ? props.needContinuation
+      : null;
   const [detailStatus, setDetailStatus] = useState<AtlasWorkbenchStatus>({
     unsaved: false,
     blocked: false,
@@ -190,6 +205,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     preparation?.ready &&
     preparation.allowed &&
     !selected &&
+    !pendingContinuation &&
     !commandDisabled;
   const sourceMessages = procurementOperatorMessages(
     [
@@ -258,6 +274,41 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
           ]}
         />
         <Box minW="var(--atlas-layout-zero, 0)" bg="bg.workbench">
+          {pendingContinuation && (
+            <Box p="sm" bg="bg.info" role="status">
+              <Text mb="xs">
+                Nhu cầu vừa được mở từ khoảng {pendingContinuation.range.start}{" "}
+                → {pendingContinuation.range.end},{" "}
+                {pendingContinuation.schoolIds.length
+                  ? `${pendingContinuation.schoolIds.length} trường`
+                  : "tất cả trường"}
+                . Kiểm tra thay đổi đang chỉnh sửa trước khi tải nguồn mới.
+              </Text>
+              <Button
+                variant="secondary"
+                disabled={
+                  controller.busy ||
+                  controller.loading ||
+                  controller.locked ||
+                  controller.hasRetry
+                }
+                onClick={() => {
+                  const apply = () => {
+                    setSelectedKey(null);
+                    setAppliedContinuation(pendingContinuation.id);
+                    controller.applyNeedScope(
+                      pendingContinuation.range,
+                      pendingContinuation.schoolIds,
+                    );
+                  };
+                  if (selected) detailExit.current?.requestExit(apply);
+                  else apply();
+                }}
+              >
+                Áp dụng ngữ cảnh nhu cầu và tải lại
+              </Button>
+            </Box>
+          )}
           <Tabs.Root
             value={controller.stage}
             onValueChange={({ value }) => {
@@ -303,7 +354,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               aria-label="Phạm vi mua hàng"
               bg="bg.toolbar"
               px={{ base: "sm", md: "md" }}
-              py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
+              py={{
+                base: "sm",
+                md:
+                  controller.stage === "orders"
+                    ? "xs"
+                    : "var(--atlas-workbar-y, 12px)",
+              }}
               gap="sm"
               borderBottomWidth="var(--atlas-layout-edge, 1px)"
               borderColor="border.default"
@@ -418,7 +475,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 </Field.Label>
                 <Input
                   aria-label="Tìm kiếm"
-                  placeholder="Nguyên liệu, trường, nhà cung ứng"
+                  placeholder={
+                    controller.stage === "orders"
+                      ? "Nhà cung ứng, số đơn, nguyên liệu, trường"
+                      : "Nguyên liệu, trường, nhà cung ứng"
+                  }
                   value={search}
                   disabled={Boolean(selected)}
                   onChange={(event) => setSearch(event.target.value)}
@@ -515,128 +576,146 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               p="var(--atlas-layout-zero, 0)"
             >
               {controller.stage === "allocation" ? (
-                <>
-                  <Flex
-                    px="md"
-                    py="sm"
-                    bg="bg.toolbar"
-                    borderYWidth="var(--atlas-layout-edge, 1px)"
-                    borderColor="border.subtle"
-                    align="center"
-                    justify="space-between"
-                    gap="sm"
-                    wrap="wrap"
-                  >
-                    <Text textStyle="helper" color="fg.muted">
-                      Cần xử lý{" "}
-                      {
-                        rows.filter(
-                          (row) =>
-                            row.state !== "BALANCED" &&
-                            !derivedDefaultAllocation(row),
-                        ).length
-                      }{" "}
-                      · Đã đủ{" "}
-                      {
-                        rows.filter(
-                          (row) =>
-                            row.state === "BALANCED" ||
-                            Boolean(derivedDefaultAllocation(row)),
-                        ).length
-                      }
-                    </Text>
-                    {canPrepare && (
-                      <Button
-                        variant="businessPrimary"
-                        onClick={() =>
-                          void controller.prepare(Boolean(selected))
-                        }
+                controller.allocation && (
+                  <>
+                    {sourceMessages.map((message) => (
+                      <Text
+                        px="md"
+                        pb="sm"
+                        key={message}
+                        color="status.warning"
                       >
-                        Tiếp tục lên đơn
-                      </Button>
-                    )}
-                    {multiDay && (
-                      <Text textStyle="helper" color="fg.muted">
-                        Chọn 1 ngày để chuẩn bị đơn mua.
+                        ⚠ {message}
                       </Text>
-                    )}
-                    {props.ownerStage === "allocation" &&
-                      props.onOpenOrders && (
-                        <Button
-                          variant="secondary"
-                          disabled={
-                            Boolean(selected) ||
-                            controller.busy ||
-                            Boolean(controller.rangeError)
-                          }
-                          onClick={controller.openOrders}
-                        >
-                          Xem đơn mua
-                        </Button>
-                      )}
-                    {!selected &&
-                      !multiDay &&
-                      !(preparation?.ready && preparation.allowed) &&
-                      preparation && (
-                        <Text textStyle="helper" color="status.warning">
-                          {procurementOperatorMessages(
-                            preparation.blockers,
-                            "Hoàn tất phân bổ trước khi lên đơn.",
-                          ).join(" ")}
-                        </Text>
-                      )}
-                  </Flex>
-                  {sourceMessages.map((message) => (
-                    <Text px="md" pb="sm" key={message} color="status.warning">
-                      ⚠ {message}
-                    </Text>
-                  ))}
-                  <Grid
-                    data-testid="procurement-master-detail"
-                    style={
-                      {
-                        "--atlas-attached-detail-width": "390px",
-                      } as CSSProperties
-                    }
-                    minW="var(--atlas-layout-zero, 0)"
-                    gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
-                    p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
-                    templateColumns={{
-                      base: "minmax(0, 1fr)",
-                      xl: selected
-                        ? "minmax(0, 1fr) var(--atlas-attached-detail-width)"
-                        : "minmax(0, 1fr)",
-                    }}
-                  >
-                    <ProcurementAllocationTable
-                      rows={visible}
-                      showServiceDate={multiDay}
-                      selectedKey={selected ? selectedKey : null}
-                      disabled={
-                        controller.loading ||
-                        controller.busy ||
-                        Boolean(controller.rangeError)
+                    ))}
+                    <Grid
+                      data-testid="procurement-master-detail"
+                      style={
+                        {
+                          "--atlas-allocation-directory-width": "340px",
+                        } as CSSProperties
                       }
-                      onSelect={(row, trigger) => {
-                        rowTrigger.current = trigger;
-                        setSelectedKey(row.family.source_fingerprint);
+                      minW="var(--atlas-layout-zero, 0)"
+                      gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
+                      p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
+                      templateColumns={{
+                        base: "minmax(0, 1fr)",
+                        lg: selected
+                          ? "minmax(0, 1fr) minmax(360px, 420px)"
+                          : "minmax(0, 1fr)",
                       }}
-                    />
-                    {selected && (
-                      <ProcurementSupplierDetail
-                        exitRef={detailExit}
-                        onWorkspaceStatus={setDetailStatus}
-                        key={`${selected.family.source_fingerprint}:${controller.revision}`}
-                        row={selected}
-                        disabled={commandDisabled}
-                        onSave={(splits) =>
-                          void controller.save(selected, splits)
+                    >
+                      <ProcurementAllocationTable
+                        tools={
+                          <>
+                            <Text textStyle="helper" color="fg.muted">
+                              Cần xử lý{" "}
+                              {
+                                rows.filter(
+                                  (row) =>
+                                    row.state !== "BALANCED" &&
+                                    !derivedDefaultAllocation(row),
+                                ).length
+                              }{" "}
+                              · Đã đủ{" "}
+                              {
+                                rows.filter(
+                                  (row) =>
+                                    row.state === "BALANCED" ||
+                                    Boolean(derivedDefaultAllocation(row)),
+                                ).length
+                              }
+                            </Text>
+                            {canPrepare && (
+                              <Box maxW="var(--atlas-layout-preparation-help-width, 520px)">
+                                <Button
+                                  variant="businessPrimary"
+                                  aria-describedby={`${ownerId}-preparation-help`}
+                                  onClick={() =>
+                                    void controller.prepare(Boolean(selected))
+                                  }
+                                >
+                                  Chuẩn bị đơn mua
+                                </Button>
+                                <Text
+                                  id={`${ownerId}-preparation-help`}
+                                  textStyle="helper"
+                                  color="fg.muted"
+                                  mt="xs"
+                                >
+                                  Có thể chốt nhu cầu, chuyển sang Thu mua và
+                                  tạo hoặc cập nhật đơn mua nháp. Chỉ Phát hành
+                                  đơn mua mới cam kết với nhà cung ứng.
+                                </Text>
+                              </Box>
+                            )}
+                            {multiDay && (
+                              <Text textStyle="helper" color="fg.muted">
+                                Chọn 1 ngày để chuẩn bị đơn mua.
+                              </Text>
+                            )}
+                            {props.ownerStage === "allocation" &&
+                              props.onOpenOrders && (
+                                <Button
+                                  variant="secondary"
+                                  disabled={
+                                    Boolean(selected) ||
+                                    controller.busy ||
+                                    Boolean(controller.rangeError)
+                                  }
+                                  onClick={controller.openOrders}
+                                >
+                                  Xem đơn mua
+                                </Button>
+                              )}
+                            {!selected &&
+                              !multiDay &&
+                              !(preparation?.ready && preparation.allowed) &&
+                              preparation && (
+                                <Text textStyle="helper" color="status.warning">
+                                  {procurementOperatorMessages(
+                                    preparation.blockers,
+                                    "Hoàn tất phân bổ trước khi lên đơn.",
+                                  ).join(" ")}
+                                </Text>
+                              )}
+                          </>
                         }
-                        onClose={closeDetail}
+                        rows={visible}
+                        showServiceDate={multiDay}
+                        selectedKey={selected ? selectedKey : null}
+                        disabled={
+                          controller.loading ||
+                          controller.busy ||
+                          Boolean(controller.rangeError)
+                        }
+                        onSelect={(row, trigger) => {
+                          rowTrigger.current = trigger;
+                          setSelectedKey(row.family.source_fingerprint);
+                        }}
                       />
-                    )}
-                  </Grid>
-                </>
+                      {selected && (
+                        <ProcurementSupplierDetail
+                          exitRef={detailExit}
+                          onWorkspaceStatus={setDetailStatus}
+                          key={`${selected.family.source_fingerprint}:${controller.revision}`}
+                          row={selected}
+                          disabled={commandDisabled}
+                          suspendSave={Boolean(pendingContinuation)}
+                          onSave={(splits) =>
+                            void controller.save(selected, splits)
+                          }
+                          onClose={closeDetail}
+                          returnFocusEl={() =>
+                            rowTrigger.current?.isConnected
+                              ? rowTrigger.current
+                              : heading.current
+                          }
+                        />
+                      )}
+                    </Grid>
+                  </>
+                )
               ) : (
                 <ProcurementOrdersStage
                   data={controller.orders}
@@ -646,6 +725,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   onExportXlsx={props.onExportXlsx}
                   onExportPdf={props.onExportPdf}
                   onExportZip={props.onExportZip}
+                  authSubject={props.authSubject}
+                  schoolDispatchApi={props.schoolDispatchApi}
+                  onOpenPxk={props.onOpenPxk}
                 />
               )}
             </Tabs.Content>

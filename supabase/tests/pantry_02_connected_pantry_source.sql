@@ -72,9 +72,11 @@ select is(
   (
     select count(*)::integer
     from atlas_planning.pantry_need_purposes
+    where pantry_need_purpose_id='3c3de399-b88f-575a-a3ce-eff9e16deb55'
+      and purpose_code='direct_entry_unspecified' and note_rule='OPTIONAL'
   ),
-  0,
-  'the migration adds no production Pantry Purpose row'
+  1,
+  'v4 adds exactly the reviewed backend-owned neutral classification'
 );
 
 select ok(
@@ -213,6 +215,7 @@ select is(
       order by display_order
     )
     from atlas_planning.pantry_need_purposes
+    where pantry_need_purpose_id in ('a7200000-0000-4000-8000-000000000001','a7200000-0000-4000-8000-000000000002')
   ),
   '[
     {
@@ -574,7 +577,7 @@ select ok(
     select (response_payload ->> 'success')::boolean
       and jsonb_array_length(
         response_payload -> 'workbench' -> 'purposes'
-      ) = 2
+      ) = 3
       and response_payload #>>
         '{workbench,schools,0,default_delivery_location,delivery_location_id}'
         = 'a7200000-0000-0000-0000-000000000022'

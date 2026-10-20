@@ -384,22 +384,10 @@ export function usePlanningSources({
         data?.attendance ?? null,
         data?.default_attendance_preview ?? [],
       ));
-  const pantryRowErrors = pantryRows.map((r) => {
-    const purpose = pantryData?.purposes.find(
-      (p) => p.pantry_need_purpose_id === r.pantry_need_purpose_id,
-    );
-    return {
-      ingredient: !r.ingredient_id ? "Chọn nguyên liệu." : "",
-      purpose: !r.pantry_need_purpose_id ? "Chọn mục đích." : "",
-      quantity: !r.requested_quantity.trim() ? "Nhập số lượng." : "",
-      note:
-        purpose?.note_rule === "REQUIRED" && !r.note.trim()
-          ? "Nhập lý do cho mục đích này."
-          : purpose?.note_rule === "PROHIBITED" && r.note.trim()
-            ? "Mục đích này không cho phép ghi chú."
-            : "",
-    };
-  });
+  const pantryRowErrors = pantryRows.map((r) => ({
+    ingredient: !r.ingredient_id ? "Chọn nguyên liệu." : "",
+    quantity: !r.requested_quantity.trim() ? "Nhập số lượng." : "",
+  }));
   const errors =
     job === "menu"
       ? importErrors
@@ -470,6 +458,28 @@ export function usePlanningSources({
   const transition = (next: PlanningTransition) => {
     if (fixedJob && next.job && next.job !== fixedJob) return;
     if (writeBusy.current) return;
+    // School/day are view filters over the same Pantry week, not replacement
+    // intent. Retain every authored row, source reference and exact quantity.
+    if (
+      job === "pantry" &&
+      !next.exit &&
+      !next.week &&
+      !next.job &&
+      !next.refresh &&
+      next.noAdditions === undefined &&
+      (next.schoolIds || next.date)
+    ) {
+      clearReview();
+      if (next.schoolIds && authority && !readError)
+        setSchoolIds(normalizePlanningSchoolScope(next.schoolIds, schools));
+      if (
+        next.date &&
+        next.date >= week &&
+        next.date <= (authority?.week_end ?? week)
+      )
+        setDate(next.date);
+      return;
+    }
     if (dirty) setPending(next);
     else applyTransition(next);
   };
@@ -498,10 +508,20 @@ export function usePlanningSources({
       attendanceDraft(parseAttendancePaste(value, data.schools)),
     );
   };
-  const addPantryRow = (schoolId: string) => {
+  const addPantryRow = (schoolId: string, purposeId?: string) => {
+    const purpose = pantryData?.purposes.find(
+      (p) =>
+        p.purpose_status === "ACTIVE" &&
+        (p.purpose_code === "planning_identified_supplement" ||
+          p.purpose_code === "school_requested_supplement") &&
+        (purposeId
+          ? p.pantry_need_purpose_id === purposeId
+          : p.purpose_code === "planning_identified_supplement"),
+    );
     if (
       !canEdit ||
       noAdditions ||
+      !purpose ||
       !pantryData?.schools.some(
         (s) => s.school_id === schoolId && s.school_status === "ACTIVE",
       )
@@ -514,7 +534,7 @@ export function usePlanningSources({
         service_date: date,
         school_id: schoolId,
         ingredient_id: "",
-        pantry_need_purpose_id: "",
+        pantry_need_purpose_id: purpose.pantry_need_purpose_id,
         requested_quantity: "",
         note: "",
         source_request_reference: "",
@@ -1050,7 +1070,9 @@ export function usePlanningSources({
     menuRows,
     attendanceRows,
     pantryRows,
-    modes: effectiveModes,
+    // Retain saved School/date modes. Preview/Save use effectiveModes, whose
+    // existing default for newly represented School/date rows is ADDITIVE.
+    modes,
     noAdditions,
     menuSource,
     menuSyncedAt,

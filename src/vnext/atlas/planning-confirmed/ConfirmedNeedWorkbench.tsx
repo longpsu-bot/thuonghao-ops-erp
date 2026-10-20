@@ -27,7 +27,12 @@ import {
 } from "./useConfirmedNeedWorkbench";
 import { noDemand, preflightMessage } from "./confirmedNeedAuthority";
 import { ConfirmedNeedTable } from "./ConfirmedNeedTable";
+import { ConfirmedNeedIssuedOrders } from "./ConfirmedNeedIssuedOrders";
 import { ConfirmedNeedDirtyExitDialog } from "./ConfirmedNeedDirtyExitDialog";
+import {
+  ConfirmedNeedCorrectionPanel,
+  ConfirmedNeedCorrectionReview,
+} from "./ConfirmedNeedCorrection";
 import { ConfirmedNeedCommandFeedback } from "./ConfirmedNeedCommandFeedback";
 import { ConfirmedNeedSupportDetail } from "./ConfirmedNeedSupportDetail";
 import {
@@ -40,6 +45,10 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [detailKey, setDetailKey] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [correctionReviewKey, setCorrectionReviewKey] = useState<string | null>(
+    null,
+  );
+  const correctionReviewTrigger = useRef<HTMLButtonElement>(null);
   const [dateReset, setDateReset] = useState(0);
   const dateField = useRef<HTMLDivElement>(null);
   const cancelledDate = useRef(false);
@@ -76,7 +85,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   useEffect(() => {
     if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
   }, [filtersOpen]);
-  const contextKey = `${c.date}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;
+  const contextKey = `${c.date}:${c.workbench?.confirmed_need_batch_id}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;
+  const correctionContext = `${props.authSubject}:${contextKey}`;
   const detailOpen = detailKey === contextKey;
   const contextDisabled = c.busy || Boolean(c.lock) || workbookBusy;
   const dateSummary = viDate(c.date);
@@ -91,6 +101,43 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
     needs_review: "Cần rà soát",
     carried_forward: "Giữ nguyên",
   }[c.filter];
+  const dayControls = (
+    <>
+      {" "}
+      {c.days.map((day) => (
+        <Button
+          key={day.date}
+          size="sm"
+          variant={day.date === c.date ? "secondary" : "tertiary"}
+          aria-pressed={day.date === c.date}
+          disabled={
+            contextDisabled ||
+            Boolean(c.rangeError) ||
+            c.rangeBusy ||
+            (!day.preflight && !day.readError)
+          }
+          onClick={() => c.selectDay(day.date)}
+        >
+          {viDate(day.date).slice(0, 5)} ·{" "}
+          {day.dirty
+            ? "Chưa lưu"
+            : day.readError
+              ? "Lỗi tải"
+              : !day.preflight
+                ? "Đang tải"
+                : noDemand(day.preflight ?? null)
+                  ? "Không có nhu cầu"
+                  : day.preflight?.readiness_state === "BLOCKED"
+                    ? "Cần kiểm tra"
+                    : day.preflight?.downstream_currentness === "CURRENT"
+                      ? "Đã lập"
+                      : day.preflight?.downstream_currentness === "OUTDATED"
+                        ? "Cần cập nhật"
+                        : "Chưa lập"}
+        </Button>
+      ))}
+    </>
+  );
   return (
     <Box
       as="section"
@@ -247,48 +294,18 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               />
             </AtlasWorkbarActions>
           </AtlasWorkbar>
-          <Flex
-            role="group"
-            aria-label="Ngày trong khoảng"
-            gap="xs"
-            wrap="wrap"
-            px="md"
-            py="sm"
-          >
-            {c.days.map((day) => (
-              <Button
-                key={day.date}
-                size="sm"
-                variant={day.date === c.date ? "secondary" : "tertiary"}
-                aria-pressed={day.date === c.date}
-                disabled={
-                  contextDisabled ||
-                  Boolean(c.rangeError) ||
-                  c.rangeBusy ||
-                  (!day.preflight && !day.readError)
-                }
-                onClick={() => c.selectDay(day.date)}
-              >
-                {viDate(day.date).slice(0, 5)} ·{" "}
-                {day.dirty
-                  ? "Chưa lưu"
-                  : day.readError
-                    ? "Lỗi tải"
-                    : !day.preflight
-                      ? "Đang tải"
-                      : noDemand(day.preflight ?? null)
-                        ? "Không có nhu cầu"
-                        : day.preflight?.readiness_state === "BLOCKED"
-                          ? "Cần kiểm tra"
-                          : day.preflight?.downstream_currentness === "CURRENT"
-                            ? "Đã lập"
-                            : day.preflight?.downstream_currentness ===
-                                "OUTDATED"
-                              ? "Cần cập nhật"
-                              : "Chưa lập"}
-              </Button>
-            ))}
-          </Flex>
+          {!c.workbench && (
+            <Flex
+              role="group"
+              aria-label="Ngày trong khoảng"
+              px="md"
+              py="xs"
+              gap="xs"
+              wrap="wrap"
+            >
+              {dayControls}
+            </Flex>
+          )}
           <AtlasOperationStatus operation={c.operation} />
           <ConfirmedNeedCommandFeedback
             lock={c.lock}
@@ -329,12 +346,20 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 role="group"
                 aria-label="Tiện ích nhu cầu xác nhận"
                 px="md"
-                py="sm"
+                py="xs"
                 gap="sm"
-                justify="space-between"
+                justify="flex-start"
                 align="center"
                 wrap="wrap"
               >
+                <Flex
+                  role="group"
+                  aria-label="Ngày trong khoảng"
+                  gap="xs"
+                  wrap="wrap"
+                >
+                  {dayControls}
+                </Flex>
                 <Text textStyle="helper" color="fg.muted">
                   {c.workbench.line_counts.total} dòng ·{" "}
                   {c.workbench.line_counts.needs_review} cần rà soát ·{" "}
@@ -478,7 +503,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   {workbookError}
                 </Text>
               )}
-              {c.dirty && !c.released && (
+              {c.dirty && (!c.released || c.correctionMode) && (
                 <Text px="md" pb="xs" textStyle="helper" color="fg.primary">
                   Đang chỉnh sửa · chưa lưu
                 </Text>
@@ -489,17 +514,31 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   tại.
                 </Text>
               )}
-              {c.released && (
+              {c.released && !c.correctionMode && (
                 <Text px="md" pb="sm" textStyle="helper" color="fg.muted">
                   Nhu cầu đã chuyển sang mua hàng · chỉ đọc.
                 </Text>
+              )}
+              <ConfirmedNeedCorrectionPanel c={c} />
+              {c.correctionRead && props.procurementApi && c.workbench && (
+                <ConfirmedNeedIssuedOrders
+                  api={props.procurementApi}
+                  authSubject={props.authSubject}
+                  workbench={c.workbench}
+                  serviceDate={c.date}
+                  schoolIds={c.schoolIds}
+                  onOpenOrders={props.onOpenOrders}
+                />
               )}
               <ConfirmedNeedTable
                 lines={c.visibleLines}
                 drafts={c.drafts}
                 errors={c.errors}
                 editable={c.editable}
-                compactEditing={c.dirty && !c.released}
+                compactEditing={c.dirty && (!c.released || c.correctionMode)}
+                correctionReason={
+                  c.correctionMode ? c.correctionReason : undefined
+                }
                 onEdit={c.edit}
               />
               <Flex
@@ -519,7 +558,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 borderColor="border.subtle"
               >
                 <Flex gap="sm" wrap="wrap">
-                  {!c.released && c.dirty && (
+                  {!c.correctionMode && !c.released && c.dirty && (
                     <Button
                       variant="businessPrimary"
                       data-atlas-action-priority="primary"
@@ -527,6 +566,25 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       onClick={() => void c.save()}
                     >
                       Lưu
+                    </Button>
+                  )}
+                  {!c.correctionMode && (c.released || c.correctionRead) && (
+                    <Button
+                      variant="secondary"
+                      disabled={!c.canStartCorrection}
+                      onClick={c.startCorrection}
+                    >
+                      Điều chỉnh nhu cầu đã phát hành
+                    </Button>
+                  )}
+                  {c.correctionMode && (
+                    <Button
+                      ref={correctionReviewTrigger}
+                      variant="businessPrimary"
+                      disabled={!c.canSave}
+                      onClick={() => setCorrectionReviewKey(correctionContext)}
+                    >
+                      Xem lại điều chỉnh
                     </Button>
                   )}
                   <Button
@@ -541,7 +599,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   </Button>
                 </Flex>
               </Flex>
-              {c.dirty &&
+              {!c.correctionMode &&
+                c.dirty &&
                 !c.workbench.allowed_actions.save_confirmed_needs &&
                 c.workbench.disabled_reasons.save_confirmed_needs && (
                   <Text px="md" pb="sm" color="status.warning">
@@ -578,6 +637,12 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   ) ?? null)
                 : null
             }
+          />
+          <ConfirmedNeedCorrectionReview
+            c={c}
+            open={c.correctionMode && correctionReviewKey === correctionContext}
+            onClose={() => setCorrectionReviewKey(null)}
+            finalFocusEl={() => correctionReviewTrigger.current}
           />
         </Box>
       </Grid>

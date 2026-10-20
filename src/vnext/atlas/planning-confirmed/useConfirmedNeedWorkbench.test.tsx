@@ -313,13 +313,21 @@ describe("Confirmed Need local draft and safety", () => {
       l.service_date = "2026-09-08";
     });
     h.read.mockResolvedValue(reviewSuccess({ workbench: b }));
-    act(() => h.result.current.transition({ date: "2026-09-08" }));
+    act(() =>
+      h.result.current.transition({
+        date: "2026-09-08",
+        schoolIds: ["school-1"],
+      }),
+    );
     await waitFor(() => expect(h.result.current.canContinue).toBe(true));
     act(() => h.result.current.continueAllocation());
-    expect(h.navigate).toHaveBeenCalledWith({
-      start: "2026-09-08",
-      end: "2026-09-08",
-    });
+    expect(h.navigate).toHaveBeenCalledWith(
+      { start: "2026-09-08", end: "2026-09-08" },
+      ["school-1"],
+    );
+    expect(h.navigate).toHaveBeenCalledTimes(1);
+    expect(h.save).not.toHaveBeenCalled();
+    expect(h.execute).not.toHaveBeenCalled();
     expect(h.navigate).not.toHaveBeenCalledWith(reviewDate);
   });
   it("blocks duplicate Save clicks while the first command is pending", async () => {
@@ -580,10 +588,11 @@ describe("Confirmed Need local draft and safety", () => {
       const h = await ready(scenario);
       expect(h.result.current.canContinue).toBe(true);
       act(() => h.result.current.continueAllocation());
-      expect(h.navigate).toHaveBeenCalledWith({
-        start: reviewDate,
-        end: reviewDate,
-      });
+      expect(h.navigate).toHaveBeenCalledWith(
+        { start: reviewDate, end: reviewDate },
+        [],
+      );
+      expect(h.navigate).toHaveBeenCalledTimes(1);
       expect(h.save).not.toHaveBeenCalled();
       expect(h.execute).not.toHaveBeenCalled();
     },

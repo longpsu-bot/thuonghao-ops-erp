@@ -202,8 +202,11 @@ select
   ('c7220000-0000-0000-0000-' || lpad(ordinal::text,12,'0'))::uuid,
   ('c7230000-0000-0000-0000-' || lpad(ordinal::text,12,'0'))::uuid,
   'c7200000-0000-0000-0000-000000000001', 1, repeat('b',64),
-  'COMPLETED', timestamptz '2026-07-22 10:00:00+07'
+  'IN_PROGRESS', null
 from generate_series(1,60) as ordinal;
+update atlas_core.command_receipts set outcome='COMPLETED',response_payload='{}',
+  completed_at=timestamptz '2026-07-22 10:00:00+07'
+where command_name='pa_06e_h1b1_test' and scope_key='confirmed-need-line-policy';
 
 create function pg_temp.h1b1_policy_decide(
   p_decision uuid,

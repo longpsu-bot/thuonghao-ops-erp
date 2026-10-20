@@ -146,11 +146,11 @@ it("guards the whole-week decision under a subset, including clearing it", async
 });
 
 it.each([
-  ["REQUIRED", "   ", "Nhập lý do cho mục đích này."],
-  ["PROHIBITED", "Operator text", "Mục đích này không cho phép ghi chú."],
+  ["REQUIRED", "   "],
+  ["PROHIBITED", "Operator text"],
 ] as const)(
-  "blocks %s notes without erasing text",
-  async (rule, note, error) => {
+  "preserves authored Purpose and text for backend validation of %s notes",
+  async (rule, note) => {
     const f = createPlanningReviewFixture();
     f.pantry.purposes[0].note_rule = rule;
     const preview = vi.spyOn(f.pantryApi, "preview");
@@ -164,27 +164,31 @@ it.each([
     );
     await waitFor(() => expect(result.current.canEdit).toBe(true));
     act(() => result.current.addPantryRow("school-0"));
-    expect(result.current.errors).toHaveLength(3);
+    expect(result.current.errors).toHaveLength(2);
     act(() =>
       result.current.editPantryRow(0, {
         ingredient_id: "ingredient-1",
-        pantry_need_purpose_id: "purpose-1",
         requested_quantity: "1.000",
         note,
-      }),
-    );
-    expect(result.current.errors.join()).toContain(error);
-    await act(() => result.current.previewChanges());
-    expect(preview).not.toHaveBeenCalled();
-    expect(result.current.pantryRows[0].note).toBe(note);
-    act(() =>
-      result.current.editPantryRow(0, {
-        note: rule === "REQUIRED" ? "Explicit reason" : "",
       }),
     );
     expect(result.current.errors).toEqual([]);
     await act(() => result.current.previewChanges());
     expect(preview).toHaveBeenCalledTimes(1);
+    expect(result.current.pantryRows[0].note).toBe(note);
+    expect(preview.mock.calls[0]?.[4]?.[0]).toMatchObject({
+      pantry_need_purpose_id: "purpose-1",
+      note: note.trim() || null,
+    });
+    expect(result.current.pantryData?.purposes[0].note_rule).toBe(rule);
+    act(() =>
+      result.current.editPantryRow(0, {
+        note: note ? "" : "Explicit optional note",
+      }),
+    );
+    expect(result.current.errors).toEqual([]);
+    await act(() => result.current.previewChanges());
+    expect(preview).toHaveBeenCalledTimes(2);
   },
 );
 

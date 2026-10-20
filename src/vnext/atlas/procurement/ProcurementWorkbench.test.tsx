@@ -63,6 +63,86 @@ const openFilters = () => {
     fireEvent.click(disclosure);
 };
 describe("Procurement vNext operator workbench", () => {
+  it("guards a retained dirty allocation before applying the continued School/date context", async () => {
+    const fixture = createProcurementReviewFixture("manual_split");
+    const read = vi.spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations");
+    const content = (continued = false) => (
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          schools={reviewSchools}
+          needContinuation={
+            continued
+              ? {
+                  id: "correction-1",
+                  range: { start: reviewDate, end: reviewDate },
+                  schoolIds: ["school-0"],
+                }
+              : undefined
+          }
+        />
+      </AtlasVNextProvider>
+    );
+    const view = render(content());
+    fireEvent.click(await action());
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+      { target: { value: "50" } },
+    );
+    const before = read.mock.calls.length;
+    view.rerender(content(true));
+    expect(read.mock.calls.length).toBe(before);
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Áp dụng ngữ cảnh nhu cầu và tải lại",
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(read.mock.calls.length).toBe(before);
+    expect(dialog).toHaveTextContent(/chưa lưu/i);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /Bỏ thay đổi/ }),
+    );
+    await waitFor(() => expect(read.mock.calls.length).toBeGreaterThan(before));
+    expect(read.mock.lastCall![0].payload).toMatchObject({
+      school_ids: ["school-0"],
+    });
+  });
+  it("does not represent initial read failure as successful zero allocations", async () => {
+    show("read_failure");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Không tải được dữ liệu hiện tại",
+    );
+    expect(screen.queryByText(/Cần xử lý/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Không có nguyên liệu phù hợp trong phạm vi này."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tải lại dữ liệu hiện tại" }),
+    ).toBeEnabled();
+  });
+  it("keeps successful empty and local filtered-empty allocation states distinct from unavailable data", async () => {
+    const first = show("empty");
+    await waitFor(() => expect(first.read).toHaveBeenCalledOnce());
+    expect(await screen.findByText(/Cần xử lý 0/)).toHaveTextContent("Đã đủ 0");
+    expect(
+      screen.getByText("Không có nguyên liệu phù hợp trong phạm vi này."),
+    ).toBeVisible();
+    first.unmount();
+    show();
+    await action();
+    openFilters();
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "không khớp" },
+    });
+    expect(
+      screen.getByText("Không có nguyên liệu phù hợp trong phạm vi này."),
+    ).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
   it("opens and closes a clean derived default without any business command", async () => {
     const { fixture, save, read } = show();
     const prepare = vi.spyOn(
@@ -121,7 +201,7 @@ describe("Procurement vNext operator workbench", () => {
     });
     expect(screen.getByText("Chọn 1 ngày để chuẩn bị đơn mua.")).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem đơn mua" }));
     expect(openOrders).toHaveBeenCalledExactlyOnceWith({
@@ -183,7 +263,7 @@ describe("Procurement vNext operator workbench", () => {
     );
     openFilters();
     fireEvent.click(
-      await screen.findByRole("button", { name: "Xem đơn NCC An Phú" }),
+      await screen.findByRole("button", { name: /^Xem đơn NCC An Phú/ }),
     );
     fireEvent.click(
       screen.getByRole("button", { name: "Mở lịch — Khoảng ngày dùng" }),
@@ -200,7 +280,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(
       screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Xuất Excel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất XLSX" }));
     expect(xlsx).toHaveBeenCalledWith(fixture.orders.purchase_orders[0], "all");
   });
   it("aggregates selected Supplier draft status and reports retained date/stage context", async () => {
@@ -281,7 +361,7 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("procurement-master-detail")).toHaveStyle({
-      "--atlas-attached-detail-width": "390px",
+      "--atlas-allocation-directory-width": "340px",
     });
   });
 
@@ -498,7 +578,7 @@ describe("Procurement vNext operator workbench", () => {
       screen.getByText("Cần quyền phát hành nhu cầu để lên đơn."),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();
   });
   it("protects the editing context until explicit dirty Close completes", async () => {
@@ -719,12 +799,9 @@ describe("Procurement vNext operator workbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-procurement-table-min, 1050px)",
+      minWidth: "var(--atlas-layout-zero, 0)",
       width: "100%",
       tableLayout: "fixed",
-      "--atlas-table-header-height": "38px",
-      "--atlas-table-row-height": "46px",
-      "--atlas-table-identity-width": "200px",
     });
     expect(
       within(table)
@@ -861,6 +938,38 @@ describe("Procurement vNext operator workbench", () => {
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("60");
   });
+  it("restores surviving Close and row controls after dirty Cancel and Discard settle", async () => {
+    show("manual_split");
+    const trigger = await action();
+    await userEvent.click(trigger);
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+      {
+        target: { value: "20" },
+      },
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    const cancelled = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(cancelled).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+    );
+    await waitFor(() => expect(cancelled).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Đóng" })).toHaveFocus();
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("20");
+    await userEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    const discarded = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(discarded).getByRole("button", { name: "Bỏ thay đổi và đóng" }),
+    );
+    await waitFor(() => expect(discarded).not.toBeInTheDocument());
+    await waitFor(() => expect(document.activeElement === trigger).toBe(true));
+    await userEvent.click(trigger);
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("60");
+  });
   it("requires explicit School Apply, supports search, and prevents zero-scope application", async () => {
     const { read } = show();
     await action();
@@ -948,22 +1057,32 @@ describe("Procurement vNext operator workbench", () => {
     expect(within(screen.getByRole("table")).getByText(label)).toBeVisible();
   });
   it("keeps preparation dominant only when ready and no detail is active", async () => {
-    show("ready");
+    const { fixture } = show("ready");
+    const prepare = vi.spyOn(
+      fixture.purchaseReviewApi,
+      "preparePurchaseOrders",
+    );
     const trigger = await action();
     expect(
-      screen.getByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+    ).toHaveAccessibleDescription(/đơn mua nháp/);
+    expect(prepare).not.toHaveBeenCalled();
     fireEvent.click(trigger);
     expect(
-      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
-    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục lên đơn" }));
+    expect(prepare).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị đơn mua" }));
     await waitFor(() =>
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
         "Đơn mua",
       ),
     );
+    expect(prepare).toHaveBeenCalledOnce();
   });
   it("unknown Save shows labeled recovery and disables routine refresh and mutation", async () => {
     const { save } = show("unknown");

@@ -15,6 +15,7 @@ import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
 import type { ConfirmedNeedWorkbenchProps } from "./useConfirmedNeedWorkbench";
 import {
   createConfirmedNeedReviewFixture,
+  createConfirmedNeedCorrectionFixture,
   reviewFailure,
   reviewDate,
   type ConfirmedReviewScenario,
@@ -64,6 +65,49 @@ function show(
 async function quantity() {
   return screen.findByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" });
 }
+
+describe("K3 explicit released correction UI", () => {
+  it("requires a reason and a separate exact-quantity review before writing", async () => {
+    const h = show("released", {}, (f) =>
+      Object.assign(f.batch, createConfirmedNeedCorrectionFixture().batch),
+    );
+    h.save.mockResolvedValue(reviewFailure("UNREVIEWED_RESULT", "UNKNOWN"));
+    const input = await quantity();
+    expect(input).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Điều chỉnh nhu cầu đã phát hành" }),
+    );
+    expect(input).not.toBeDisabled();
+    fireEvent.change(input, { target: { value: "110" } });
+    const review = screen.getByRole("button", { name: "Xem lại điều chỉnh" });
+    expect(review).toBeDisabled();
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Lý do điều chỉnh sau phát hành" }),
+      { target: { value: "Bếp xác nhận tăng 10 kg" } },
+    );
+    await waitFor(() => expect(review).not.toBeDisabled());
+    fireEvent.click(review);
+    const dialog = await screen.findByRole("dialog", {
+      name: "Xác nhận điều chỉnh nhu cầu đã phát hành",
+    });
+    expect(within(dialog).getByText("100")).toBeInTheDocument();
+    expect(within(dialog).getByText("110")).toBeInTheDocument();
+    expect(h.save).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
+    await waitFor(() => expect(h.save).toHaveBeenCalledTimes(1));
+    expect(h.save.mock.calls[0]![0].contract_version).toBe("RMVP-05.v3");
+    expect(h.save.mock.calls[0]![0].payload.lines).toHaveLength(1);
+  });
+  it("keeps an unavailable correction action disabled on a released batch", async () => {
+    show("released");
+    await quantity();
+    expect(
+      screen.getByRole("button", { name: "Điều chỉnh nhu cầu đã phát hành" }),
+    ).toBeDisabled();
+  });
+});
 async function editValid() {
   fireEvent.change(await quantity(), { target: { value: "12,5" } });
   fireEvent.change(screen.getByRole("combobox", { name: "Lý do Gạo thơm" }), {
@@ -74,6 +118,95 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
+  it("distinguishes recipe-associated need and special orders from a final human quantity", async () => {
+    show("normal", {}, (f) => {
+      f.batch.lines[0]!.theoretical_quantity = "28";
+      f.batch.lines[0]!.confirmed_quantity_after = "30";
+      Object.assign(f.need.grouped_requirements[0]!, {
+        total_theoretical_quantity: 28,
+        recipe_derived_quantity: 20,
+        pantry_direct_quantity: 8,
+        source_breakdown: {
+          recipe_derived_quantity: "20.000000",
+          planning_supplement_quantity: "5.000000",
+          recipe_associated_quantity: "25.000000",
+          special_order_quantity: "3.000000",
+          unclassified_direct_quantity: "0",
+          total_theoretical_quantity: "28.000000",
+        },
+      });
+      const original = f.needGenerationApi.getWorkbench.bind(
+        f.needGenerationApi,
+      );
+      f.needGenerationApi.getWorkbench = async (...args) => {
+        if (args[5]?.contribution_family)
+          Object.assign(f.need.grouped_requirements[0]!.source_breakdown!, {
+            recipe_derived_quantity: "0",
+            recipe_associated_quantity: "5",
+            total_theoretical_quantity: "8",
+          });
+        return original(...args);
+      };
+    });
+    await quantity();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
+    );
+    const evidence = within(
+      await screen.findByRole("table", { name: "Cách hình thành nhu cầu" }),
+    );
+    expect(evidence.getByText("Từ công thức: 20 kg")).toBeVisible();
+    expect(evidence.getByText("Bổ sung: 5 kg")).toBeVisible();
+    expect(evidence.getByText("Công thức + Bổ sung: 25 kg")).toBeVisible();
+    expect(evidence.getByText("Hàng đặt riêng: 3 kg")).toBeVisible();
+    expect(
+      within(
+        screen.getByRole("table", { name: "Cách hình thành nhu cầu" }),
+      ).getByText("Nhu cầu lý thuyết: 28 kg"),
+    ).toBeVisible();
+    expect(evidence.getByText("Đã xác nhận: 30 kg")).toBeVisible();
+    expect(evidence.queryByText("Bổ sung: 8 kg")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Nguồn đóng góp" }), {
+      target: { value: "PANTRY_DIRECT" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng chi tiết" }));
+    expect(await screen.findByText("Tổng nguồn đã lọc: 8 kg")).toBeVisible();
+    expect(
+      within(
+        screen.getByRole("table", { name: "Cách hình thành nhu cầu" }),
+      ).getByText("Nhu cầu lý thuyết: 28 kg"),
+    ).toBeVisible();
+  });
+  it("does not invent a purpose breakdown when old source reads lack it", async () => {
+    show("normal", {}, (f) => {
+      delete f.need.grouped_requirements[0]!.source_breakdown;
+    });
+    await quantity();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
+    );
+    const evidence = within(
+      await screen.findByRole("table", { name: "Cách hình thành nhu cầu" }),
+    );
+    expect(evidence.getByText("Chưa có phân tách nguồn.")).toBeVisible();
+    expect(evidence.queryByText(/^Bổ sung:/)).not.toBeInTheDocument();
+  });
+  it("keeps date, recipient, Ingredient, Unit and the saved quantity with an edited line after sort", async () => {
+    show();
+    const input = await quantity();
+    fireEvent.change(input, { target: { value: "12.500001" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sắp xếp theo Nguyên liệu" }),
+    );
+    const row = input.closest("tr")!;
+    expect(row).toHaveTextContent("07/09/2026");
+    expect(row).toHaveTextContent("Trường Nguyễn Du");
+    expect(row).toHaveTextContent("Gạo thơm");
+    expect(row).toHaveTextContent("Đã lưu: 10,25 kg");
+    expect(input).toHaveValue("12.500001");
+    expect(input).toHaveAccessibleDescription(/Trường Nguyễn Du.*Gạo thơm/);
+    expect(input).toHaveAccessibleDescription(/07\/09\/2026/);
+  });
   it("reports local quantities and unknown Save recovery to the workspace", async () => {
     const report = vi.fn();
     show("normal", { onWorkspaceStatus: report }, (f) => {
@@ -239,9 +372,9 @@ describe("Confirmed Need Chakra operator surface", () => {
         return `${cells[0]!.textContent}|${cells[1]!.textContent}`;
       }),
     ).toEqual([
-      "AN PHÚ (BD)|Bí đỏ",
-      "AN PHÚ (BD)PHÂN HIỆU 2|Gạo thơm",
-      "BÌNH MỸ - BÌNH DƯƠNGBINH MY - BINH DUONG|Cà rốt",
+      "AN PHÚ (BD)07/09/2026|Bí đỏ",
+      "AN PHÚ (BD)07/09/2026PHÂN HIỆU 2|Gạo thơm",
+      "BÌNH MỸ - BÌNH DƯƠNG07/09/2026BINH MY - BINH DUONG|Cà rốt",
     ]);
     expect(within(rows[0]!).getAllByText("AN PHÚ (BD)")).toHaveLength(1);
     expect(within(rows[1]!).getByText("PHÂN HIỆU 2")).toHaveAttribute(
@@ -419,6 +552,9 @@ describe("Confirmed Need Chakra operator surface", () => {
       name: "Tiện ích nhu cầu xác nhận",
     });
     expect(
+      within(utilities).getByRole("group", { name: "Ngày trong khoảng" }),
+    ).toBeVisible();
+    expect(
       within(utilities).getByRole("button", { name: "Xuất Phiếu đi chợ" }),
     ).toHaveAttribute("data-atlas-action-priority", "tertiary");
     expect(
@@ -449,7 +585,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(
       screen.getByRole("region", { name: "Bảng xác nhận nhu cầu" }),
     ).toHaveStyle({
-      "--atlas-confirmed-need-table-mobile-max-height": "28dvh",
+      "--atlas-confirmed-need-table-mobile-max-height": "max(280px, 40dvh)",
     });
     expect(input.closest('[data-field="confirmation"]')).toHaveAttribute(
       "data-adjustment-state",
@@ -706,6 +842,19 @@ describe("Confirmed Need Chakra operator surface", () => {
         proposal_rounding_step: "0.100000",
       });
       fixture.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
+      Object.assign(fixture.need.grouped_requirements[0]!, {
+        total_theoretical_quantity: 0.0255,
+        recipe_derived_quantity: 0.0255,
+        pantry_direct_quantity: 0,
+        source_breakdown: {
+          recipe_derived_quantity: "0.025500",
+          planning_supplement_quantity: "0",
+          recipe_associated_quantity: "0.025500",
+          special_order_quantity: "0",
+          unclassified_direct_quantity: "0",
+          total_theoretical_quantity: "0.025500",
+        },
+      });
     });
     const input = await quantity();
     const row = input.closest("tr")!;
@@ -743,6 +892,8 @@ describe("Confirmed Need Chakra operator surface", () => {
       }),
     ).toHaveAttribute("tabindex", "0");
     const evidenceRow = within(evidence).getByText("Gạo thơm").closest("tr")!;
+    expect(evidenceRow).toHaveTextContent("Từ công thức: 0,0255 kg");
+    expect(evidenceRow).toHaveTextContent("Bổ sung: 0 kg");
     expect(evidenceRow).toHaveTextContent("0,0255 kg");
     expect(evidenceRow).toHaveTextContent("0,1 kg");
     expect(evidenceRow).toHaveTextContent("0,01 kg");
@@ -800,9 +951,20 @@ describe("Confirmed Need Chakra operator surface", () => {
     const input = await quantity();
     fireEvent.change(input, { target: { value: "10,123" } });
     expect(input).toHaveAttribute("aria-invalid", "true");
-    expect(
-      document.getElementById(input.getAttribute("aria-describedby")!),
-    ).toHaveTextContent("Số lượng xác nhận phải theo bước 0,25 kg.");
+    const descriptions = input
+      .getAttribute("aria-describedby")!
+      .split(/\s+/)
+      .map((id) => document.getElementById(id));
+    expect(descriptions).toHaveLength(2);
+    descriptions.forEach((description) =>
+      expect(description).toBeInTheDocument(),
+    );
+    expect(descriptions[1]!.textContent).toBe(
+      "Số lượng xác nhận phải theo bước 0,25 kg.",
+    );
+    expect(input).toHaveAccessibleDescription(
+      /Trường Nguyễn Du.*Gạo thơm.*Số lượng xác nhận phải theo bước 0,25 kg\.$/,
+    );
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
@@ -987,10 +1149,12 @@ describe("Confirmed Need Chakra operator surface", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     );
-    expect(h.navigate).toHaveBeenCalledWith({
-      start: reviewDate,
-      end: reviewDate,
-    });
+    expect(h.navigate).toHaveBeenCalledWith(
+      { start: reviewDate, end: reviewDate },
+      [],
+    );
+    expect(h.navigate).toHaveBeenCalledTimes(1);
+    expect(h.save).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
   it("loads grouped Need only on disclosure with exact date and backend page bounds", async () => {

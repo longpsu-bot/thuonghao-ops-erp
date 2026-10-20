@@ -34,6 +34,67 @@ const quantity = (name: string, value: string) =>
     target: { value },
   });
 describe("Supplier decisions", () => {
+  it("requires explicit acceptance of a stale source even when the saved split is unchanged", () => {
+    const row = reviewFamily("manual_split");
+    row.state = "NEEDS_REALLOCATION";
+    const { onSave } = show(row);
+    const accept = screen.getByRole("button", {
+      name: "Chấp nhận phân bổ cho nguồn hiện tại",
+    });
+    expect(accept).toBeEnabled();
+    expect(onSave).not.toHaveBeenCalled();
+    fireEvent.click(accept);
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        supplier_id: "supplier-a",
+        allocated_quantity: "60.000000",
+        supplier_note: null,
+      },
+      {
+        supplier_id: "supplier-b",
+        allocated_quantity: "40.000000",
+        supplier_note: null,
+      },
+    ]);
+  });
+  it("cannot accept a stale source when the backend disallows allocation Save", () => {
+    const row = reviewFamily("manual_split");
+    row.state = "NEEDS_REALLOCATION";
+    row.allowed_actions.save_allocation = false;
+    const { onSave } = show(row);
+    expect(
+      screen.getByRole("button", {
+        name: "Chấp nhận phân bổ cho nguồn hiện tại",
+      }),
+    ).toBeDisabled();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+  it.each([true, false])(
+    "brings the new editor into view only on narrow screens (%s)",
+    (narrow) => {
+      const original = HTMLElement.prototype.scrollIntoView;
+      const scroll = vi.fn();
+      HTMLElement.prototype.scrollIntoView = scroll;
+      vi.stubGlobal(
+        "matchMedia",
+        vi.fn(() => ({ matches: narrow })),
+      );
+      try {
+        const { onSave } = show();
+        expect(
+          screen.getByRole("heading", { level: 2, name: "Gạo thơm" }),
+        ).toHaveFocus();
+        if (narrow) expect(scroll).toHaveBeenCalledWith({ block: "start" });
+        else expect(scroll).not.toHaveBeenCalled();
+        expect(onSave).not.toHaveBeenCalled();
+      } finally {
+        if (original) HTMLElement.prototype.scrollIntoView = original;
+        else
+          delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
+        vi.unstubAllGlobals();
+      }
+    },
+  );
   it.each(["\u00a0", "\u2003", "\u000b"])(
     "preserves backend-significant note suffix %j",
     (suffix) => {
@@ -111,7 +172,7 @@ describe("Supplier decisions", () => {
     }
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
     expect(
-      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+      screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();
   });
 
@@ -121,6 +182,12 @@ describe("Supplier decisions", () => {
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("60");
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveAccessibleDescription(/Gạo thơm.*kg/);
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveAccessibleDescription(/NCC An Phú/);
     quantity("NCC An Phú", "59.999999");
     expect(
       screen.getByRole("status", { name: "Cân đối phân bổ" }),
@@ -307,7 +374,7 @@ describe("Supplier decisions", () => {
     );
   });
   it("shows ineligible saved supplier and quantity without transferring it", () => {
-    show(reviewFamily("needs_reallocation"));
+    const { onSave } = show(reviewFamily("needs_reallocation"));
     expect(screen.getByRole("alert")).toHaveTextContent("NCC Bình Minh");
     expect(screen.getByRole("alert")).toHaveTextContent("40 kg");
     expect(
@@ -317,7 +384,12 @@ describe("Supplier decisions", () => {
     expect(
       screen.queryByRole("option", { name: "NCC Bình Minh" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    const accept = screen.getByRole("button", {
+      name: "Chấp nhận phân bổ cho nguồn hiện tại",
+    });
+    expect(accept).toBeDisabled();
+    fireEvent.click(accept);
+    expect(onSave).not.toHaveBeenCalled();
   });
   it("adds and removes only eligible unselected participants", () => {
     show(reviewFamily("manual_split"));

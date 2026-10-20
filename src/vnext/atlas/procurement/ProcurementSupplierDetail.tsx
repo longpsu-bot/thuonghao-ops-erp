@@ -11,13 +11,15 @@ import {
   Heading,
   Input,
   Icon,
+  IconButton,
   NativeSelect,
   Stack,
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import { Info } from "@phosphor-icons/react";
-import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { Info, Trash } from "@phosphor-icons/react";
+import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
+import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import type { CSSProperties } from "react";
 import {
   procurementOperatorMessages,
@@ -44,16 +46,21 @@ const normalizedSupplierNote = (note: string | null | undefined) =>
 export function ProcurementSupplierDetail({
   row,
   disabled,
+  suspendSave = false,
   onSave,
   onClose,
+  returnFocusEl,
   exitRef,
   onWorkspaceStatus,
 }: AtlasModuleExitProps & {
   row: AllocationFamilyRow;
   disabled: boolean;
+  suspendSave?: boolean;
   onSave: (splits: SupplierSplitInput[]) => void;
   onClose: () => void;
+  returnFocusEl?: () => HTMLElement | null;
 }) {
+  const quantityContextId = useId();
   const eligible = (id: string) =>
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
   const saved = row.splits.filter((split) => eligible(split.supplier_id));
@@ -87,6 +94,8 @@ export function ProcurementSupplierDetail({
   const cancelButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     heading.current?.focus();
+    if (window.matchMedia?.("(max-width: 63.99rem)").matches)
+      heading.current?.scrollIntoView?.({ block: "start" });
   }, []);
   const total = sumExactQuantities(
     draft.map((split) => split.allocated_quantity),
@@ -139,8 +148,13 @@ export function ProcurementSupplierDetail({
           normalizedSupplierNote(original.supplier_note)
       );
     });
+  const sourceAcceptance = [
+    "STALE_REBALANCE_AVAILABLE",
+    "NEEDS_REALLOCATION",
+  ].includes(row.state);
   const canSave =
-    dirty &&
+    (dirty || sourceAcceptance) &&
+    !suspendSave &&
     !locked &&
     row.allowed_actions.save_allocation &&
     remainder === 0n &&
@@ -278,6 +292,8 @@ export function ProcurementSupplierDetail({
         <Text color="fg.muted" textStyle="helper" mt="xs">
           {recipient.primary}
           {recipient.secondary ? ` · ${recipient.secondary}` : ""}
+          {" · "}
+          {row.service_date.split("-").reverse().join("/")}
         </Text>
       </Box>
       <Box
@@ -352,9 +368,33 @@ export function ProcurementSupplierDetail({
               <Field.Label overflowWrap="anywhere">
                 {supplier.supplier_name}
               </Field.Label>
+              <AtlasQuantityContext
+                id={`${quantityContextId}-${split.supplier_id}`}
+                recipient={recipient.primary}
+                location={recipient.secondary ?? undefined}
+                ingredient={row.ingredient_name}
+                date={row.service_date}
+                unit={row.unit_code}
+                source={supplier.supplier_name}
+              />
+              <Text textStyle="helper" color="fg.muted">
+                {saved.some((value) => value.supplier_id === split.supplier_id)
+                  ? "Đã lưu"
+                  : derived?.supplier.supplier_id === split.supplier_id
+                    ? "Mặc định"
+                    : "Dòng mới"}
+                :{" "}
+                {quantity(
+                  baseline.find(
+                    (value) => value.supplier_id === split.supplier_id,
+                  )?.allocated_quantity ?? "0",
+                )}{" "}
+                {row.unit_code}
+              </Text>
               <Flex gap="xs" w="full" align="center">
                 <Input
                   aria-label={`Phân bổ ${supplier.supplier_name}`}
+                  aria-describedby={`${quantityContextId}-${split.supplier_id}`}
                   aria-invalid={invalid}
                   inputMode="decimal"
                   value={split.allocated_quantity}
@@ -372,10 +412,11 @@ export function ProcurementSupplierDetail({
                 />
                 <Text>{row.unit_code}</Text>
                 {added.includes(split.supplier_id) && (
-                  <Button
+                  <IconButton
                     size="sm"
                     variant="tertiary"
                     aria-label={`Xóa ${supplier.supplier_name}`}
+                    title={`Xóa ${supplier.supplier_name}`}
                     disabled={locked}
                     onClick={() =>
                       setDraft((values) =>
@@ -389,8 +430,8 @@ export function ProcurementSupplierDetail({
                       lg: "compact",
                     }}
                   >
-                    Xóa
-                  </Button>
+                    <Trash aria-hidden="true" />
+                  </IconButton>
                 )}
               </Flex>
               {invalid && (
@@ -572,7 +613,9 @@ export function ProcurementSupplierDetail({
             )
           }
         >
-          Lưu phân bổ
+          {sourceAcceptance && !dirty
+            ? "Chấp nhận phân bổ cho nguồn hiện tại"
+            : "Lưu phân bổ"}
         </Button>
       </Flex>
       <Dialog.Root
@@ -582,7 +625,11 @@ export function ProcurementSupplierDetail({
           if (!open) pendingExit.current = null;
         }}
         initialFocusEl={() => cancelButton.current}
-        finalFocusEl={() => closeButton.current}
+        finalFocusEl={() =>
+          closeButton.current?.isConnected
+            ? closeButton.current
+            : (returnFocusEl?.() ?? null)
+        }
         placement="center"
         motionPreset="none"
         lazyMount

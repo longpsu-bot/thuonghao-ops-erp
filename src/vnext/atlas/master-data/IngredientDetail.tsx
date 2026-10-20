@@ -29,6 +29,7 @@ export function IngredientDetail({
     if (c.activeSurface?.kind === "ingredient") panel.current?.focus();
   }, [c.activeSurface]);
   if (c.activeSurface?.kind !== "ingredient") return null;
+  const disabled = c.saving || c.loading || Boolean(c.lock);
   const creating = c.activeSurface.id === "NEW";
   const item = c.selectedIngredient;
   const archived = item?.ingredient_status === "ARCHIVED";
@@ -127,7 +128,10 @@ export function IngredientDetail({
       {archived ? (
         <Box p="md">
           <Text>Nguyên liệu đã lưu trữ chỉ có thể xem.</Text>
-          <Fact label="Mã hàng trên chứng từ" value={item?.document_code} />
+          <Fact
+            label="Mã nội bộ (không bắt buộc)"
+            value={item?.document_code}
+          />
           <Fact label="Đơn vị mua" value={item?.purchase_unit_name} />
           <Fact label="Loại nguyên liệu" value={item?.ingredient_type_name} />
           <Fact
@@ -143,7 +147,16 @@ export function IngredientDetail({
         </Box>
       ) : (
         <>
-          <Box px="md" pb="md" display="grid" gap="sm">
+          <Box
+            px="md"
+            pb="md"
+            display="grid"
+            gap="sm"
+            gridTemplateColumns={{
+              base: "minmax(0, 1fr)",
+              xl: "repeat(2, minmax(0, 1fr))",
+            }}
+          >
             <Field.Root
               required
               invalid={c.ingredientDraft.ingredientName.trim() === ""}
@@ -151,6 +164,7 @@ export function IngredientDetail({
               <Field.Label>Tên nguyên liệu</Field.Label>
               <Input
                 required
+                disabled={disabled}
                 aria-invalid={c.ingredientDraft.ingredientName.trim() === ""}
                 value={c.ingredientDraft.ingredientName}
                 onChange={(e) =>
@@ -159,6 +173,7 @@ export function IngredientDetail({
               />
             </Field.Root>
             <SelectField
+              disabled={disabled}
               label="Đơn vị mua"
               value={c.ingredientDraft.purchaseUnitId}
               options={units}
@@ -167,21 +182,21 @@ export function IngredientDetail({
               }
             />
             <Field.Root>
-              <Field.Label>Mã hàng trên chứng từ</Field.Label>
+              <Field.Label>Mã nội bộ (không bắt buộc)</Field.Label>
               <Input
                 value={c.ingredientDraft.documentCode}
                 maxLength={200}
-                disabled={c.saving || c.loading || Boolean(c.lock)}
+                disabled={disabled}
                 onChange={(event) =>
                   c.setIngredientField("documentCode", event.target.value)
                 }
               />
               <Field.HelperText>
-                Có thể để trống khi tạo dữ liệu gốc. Cần có mã trước khi phát
-                hành đơn mua hàng.
+                Thông tin tham khảo nội bộ. Có thể để trống.
               </Field.HelperText>
             </Field.Root>
             <SelectField
+              disabled={disabled}
               label="Loại nguyên liệu"
               value={c.ingredientDraft.ingredientTypeId}
               options={types}
@@ -190,6 +205,7 @@ export function IngredientDetail({
               }
             />
             <SelectField
+              disabled={disabled}
               label="Nhóm đặt hàng"
               value={c.ingredientDraft.ingredientOrderGroupId}
               options={groups}
@@ -205,6 +221,7 @@ export function IngredientDetail({
               <Input
                 required
                 inputMode="decimal"
+                disabled={disabled}
                 aria-invalid={
                   c.ingredientDraft.orderStep !== "" && !c.ingredientValid
                 }
@@ -222,9 +239,7 @@ export function IngredientDetail({
           <Flex mt="var(--atlas-layout-auto, auto)" p="md" gap="sm" wrap="wrap">
             <Button
               variant="businessPrimary"
-              disabled={
-                !c.ingredientDirty || !c.ingredientValid || Boolean(c.lock)
-              }
+              disabled={disabled || !c.ingredientDirty || !c.ingredientValid}
               onClick={c.openIngredientReview}
               minH={{
                 base: "var(--atlas-layout-mobile-target, 44px)",
@@ -236,6 +251,7 @@ export function IngredientDetail({
             {item?.ingredient_status === "ACTIVE" && (
               <>
                 <Button
+                  disabled={disabled}
                   onClick={() => c.requestPriorities(item.ingredient_id)}
                   minH={{
                     base: "var(--atlas-layout-mobile-target, 44px)",
@@ -246,6 +262,7 @@ export function IngredientDetail({
                 </Button>
                 <Button
                   variant="destructive"
+                  disabled={disabled}
                   onClick={() =>
                     c.requestLifecycle(item.ingredient_id, "INACTIVE")
                   }
@@ -261,6 +278,7 @@ export function IngredientDetail({
             {item?.ingredient_status === "INACTIVE" && (
               <>
                 <Button
+                  disabled={disabled}
                   onClick={() =>
                     c.requestLifecycle(item.ingredient_id, "ACTIVE")
                   }
@@ -273,6 +291,7 @@ export function IngredientDetail({
                 </Button>
                 <Button
                   variant="destructive"
+                  disabled={disabled}
                   onClick={() =>
                     c.requestLifecycle(item.ingredient_id, "ARCHIVED")
                   }
@@ -297,14 +316,16 @@ function SelectField({
   value,
   options,
   onChange,
+  disabled,
 }: {
   label: string;
   value: string;
   options: { id: string; name: string; currentInactive: boolean }[];
+  disabled: boolean;
   onChange: (value: string) => void;
 }) {
   return (
-    <Field.Root required invalid={!value}>
+    <Field.Root required invalid={!value} disabled={disabled}>
       <Field.Label>{fieldLabel}</Field.Label>
       <NativeSelect.Root>
         <NativeSelect.Field

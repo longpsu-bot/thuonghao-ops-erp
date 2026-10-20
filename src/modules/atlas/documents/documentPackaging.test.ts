@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import JSZip from "jszip";
 import ExcelJS from "exceljs";
 import { createReviewPurchaseOrdersFixture } from "../procurement/reviewSchoolCateringProcurementApi";
-import { createPurchaseOrderZip } from "../procurement/purchaseOrderExports";
+import {
+  createPurchaseOrderZip,
+  downloadPurchaseOrderZip,
+} from "../procurement/purchaseOrderExports";
 import { createReviewSchoolDispatchDocument } from "../dispatch/reviewSchoolDispatchReleaseApi";
 import { createSchoolDispatchZip } from "../dispatch/schoolDispatchReleaseExports";
 
@@ -11,7 +14,80 @@ async function entries(bytes: Uint8Array) {
     (file) => !file.dir,
   );
 }
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 describe("presentation-only released document packaging", () => {
+  it.each(["all", "details_ing", "details_school", "sum"] as const)(
+    "packages real separate PDF documents in %s mode",
+    async (mode) => {
+      const a =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      const b = structuredClone(a);
+      b.purchase_order_id = "another-order";
+      b.document_number = "PO-ANOTHER";
+      b.status = "SUPERSEDED";
+      const files = await entries(
+        await createPurchaseOrderZip([b, a], mode, "pdf"),
+      );
+      expect(files).toHaveLength(2);
+      expect(files.map((file) => file.name).join()).toContain("PO-ANOTHER");
+      for (const file of files) {
+        expect(file.name).toContain(a.service_date);
+        expect(file.name).toMatch(new RegExp(`-${mode}\\.pdf$`));
+        const bytes = await file.async("uint8array");
+        expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
+        expect(bytes.length).toBeGreaterThan(1000);
+      }
+    },
+  );
+  it.each(["xlsx", "pdf"] as const)(
+    "downloads one %s ZIP and keeps immutable export denial",
+    async (format) => {
+      const order =
+        createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+      let blob: Blob | undefined;
+      const revoke = vi.fn();
+      const OriginalURL = URL;
+      vi.stubGlobal(
+        "URL",
+        class extends OriginalURL {
+          static createObjectURL(value: Blob) {
+            blob = value;
+            return "blob:po-archive";
+          }
+          static revokeObjectURL = revoke;
+        },
+      );
+      const names: string[] = [];
+      const click = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(function (this: HTMLAnchorElement) {
+          names.push(this.download);
+        });
+      if (format === "xlsx") await downloadPurchaseOrderZip([order], "sum");
+      else await downloadPurchaseOrderZip([order], "sum", format);
+      expect(click).toHaveBeenCalledTimes(1);
+      expect(names).toEqual([`PO-supplier-date-sum-${format}.zip`]);
+      expect(blob!.type).toBe("application/zip");
+      const bytes = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as ArrayBuffer);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(blob!);
+      });
+      const files = await entries(new Uint8Array(bytes));
+      expect(files).toHaveLength(1);
+      expect(files[0].name).toMatch(new RegExp(`\\.${format}$`));
+      expect(revoke).toHaveBeenCalledWith("blob:po-archive");
+      order.allowed_actions.export = false;
+      await expect(
+        downloadPurchaseOrderZip([order], "sum", format),
+      ).rejects.toThrow();
+      expect(click).toHaveBeenCalledTimes(1);
+    },
+  );
   it("never uses captured cooking authority to package unrelated Schools together", async () => {
     const a = createReviewSchoolDispatchDocument("RELEASED");
     Object.assign(a, {

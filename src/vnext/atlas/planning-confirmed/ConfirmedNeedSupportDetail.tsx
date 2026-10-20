@@ -15,6 +15,7 @@ import {
   exactQuantityDisplay,
   needGenerationResultMessage,
   needGenerationWorkbenchFromResult,
+  needGenerationSourceBreakdown,
   type ConfirmedNeedLine,
   type NeedGenerationApi,
   type NeedGenerationDetailGroup,
@@ -128,8 +129,9 @@ export function ConfirmedNeedSupportDetail({
         Cách hình thành nhu cầu
       </Heading>
       <Text textStyle="helper" color="fg.muted" mb="sm">
-        Nhu cầu được tính từ Công thức và Bổ sung. Bằng chứng dưới đây giữ riêng
-        nhu cầu tính, bước làm tròn đề xuất và bước xác nhận của con người.
+        Công thức và Bổ sung tạo nhu cầu gắn với thực đơn; Hàng đặt riêng được
+        giữ riêng. Bằng chứng giữ nguyên nguồn, đề xuất làm tròn và quyết định
+        xác nhận.
       </Text>
       <Grid
         templateColumns={{
@@ -199,7 +201,7 @@ export function ConfirmedNeedSupportDetail({
             >
               <option value="">Tất cả</option>
               <option value="RECIPE_DERIVED">Công thức</option>
-              <option value="PANTRY_DIRECT">Bổ sung</option>
+              <option value="PANTRY_DIRECT">Bổ sung / Hàng đặt riêng</option>
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
@@ -226,6 +228,12 @@ export function ConfirmedNeedSupportDetail({
       )}
       {data && (
         <>
+          {filters.contribution_family && (
+            <Text textStyle="helper" mb="sm">
+              Phân tách nguồn theo bộ lọc; nhu cầu lý thuyết của dòng giữ
+              nguyên.
+            </Text>
+          )}
           <AtlasTableViewport label="Bằng chứng hình thành nhu cầu">
             <Table.Root
               size="sm"
@@ -247,6 +255,9 @@ export function ConfirmedNeedSupportDetail({
               </Table.Header>
               <Table.Body>
                 {data.grouped_requirements.map((g) => {
+                  const source = needGenerationSourceBreakdown(
+                    g.source_breakdown,
+                  );
                   const detailIdentityMatches =
                     data.grouped_requirements.filter(
                       (candidate) =>
@@ -306,20 +317,69 @@ export function ConfirmedNeedSupportDetail({
                         )}
                       </Table.Cell>
                       <Table.Cell whiteSpace="nowrap">
-                        <Text>
-                          Từ công thức:{" "}
-                          {formatQuantity(g.recipe_derived_quantity)}{" "}
-                          {g.unit_name}
-                        </Text>
-                        <Text>
-                          Bổ sung: {formatQuantity(g.pantry_direct_quantity)}{" "}
-                          {g.unit_name}
-                        </Text>
-                        {line && (
-                          <Text fontWeight="semibold">
-                            Nhu cầu tính:{" "}
-                            {exactQuantityDisplay(line.theoretical_quantity)}{" "}
-                            {line.controlled_unit.code}
+                        {source ? (
+                          <>
+                            <Text>
+                              Từ công thức:{" "}
+                              {exactQuantityDisplay(
+                                source.recipe_derived_quantity,
+                              )}{" "}
+                              {g.unit_name}
+                            </Text>
+                            <Text>
+                              Bổ sung:{" "}
+                              {exactQuantityDisplay(
+                                source.planning_supplement_quantity,
+                              )}{" "}
+                              {g.unit_name}
+                            </Text>
+                            <Text fontWeight="semibold">
+                              Công thức + Bổ sung:{" "}
+                              {exactQuantityDisplay(
+                                source.recipe_associated_quantity,
+                              )}{" "}
+                              {g.unit_name}
+                            </Text>
+                            <Text>
+                              Hàng đặt riêng:{" "}
+                              {exactQuantityDisplay(
+                                source.special_order_quantity,
+                              )}{" "}
+                              {g.unit_name}
+                            </Text>
+                            {!/^0(?:\.0+)?$/.test(
+                              source.unclassified_direct_quantity,
+                            ) && (
+                              <Text color="status.warning">
+                                Nguồn trực tiếp chưa phân loại (lịch sử):{" "}
+                                {exactQuantityDisplay(
+                                  source.unclassified_direct_quantity,
+                                )}{" "}
+                                {g.unit_name}
+                              </Text>
+                            )}
+                            <Text fontWeight="semibold">
+                              {filters.contribution_family
+                                ? "Tổng nguồn đã lọc:"
+                                : "Nhu cầu lý thuyết:"}{" "}
+                              {exactQuantityDisplay(
+                                source.total_theoretical_quantity,
+                              )}{" "}
+                              {g.unit_name}
+                            </Text>
+                            {filters.contribution_family && line && (
+                              <Text fontWeight="semibold">
+                                Nhu cầu lý thuyết:{" "}
+                                {exactQuantityDisplay(
+                                  line.theoretical_quantity,
+                                )}{" "}
+                                {line.controlled_unit.code}
+                              </Text>
+                            )}
+                          </>
+                        ) : (
+                          <Text color="status.warning">
+                            Chưa có phân tách nguồn.
                           </Text>
                         )}
                       </Table.Cell>
@@ -404,12 +464,24 @@ export function ConfirmedNeedSupportDetail({
                 <Text key={i} textStyle="helper">
                   {a.contribution_family === "RECIPE_DERIVED"
                     ? "Công thức"
-                    : "Bổ sung"}{" "}
-                  · {a.dish_name ?? a.pantry_purpose}{" "}
+                    : a.pantry_purpose_code === "planning_identified_supplement"
+                      ? "Bổ sung"
+                      : a.pantry_purpose_code === "school_requested_supplement"
+                        ? "Hàng đặt riêng"
+                        : "Nguồn trực tiếp (lịch sử)"}{" "}
+                  ·{" "}
+                  {a.dish_name ??
+                    (a.pantry_purpose_code !== "school_requested_supplement"
+                      ? a.pantry_purpose
+                      : null)}{" "}
                   {a.pantry_source_reference
                     ? `· ${a.pantry_source_reference}`
                     : ""}{" "}
-                  · {formatQuantity(a.theoretical_quantity)} {a.unit_name}
+                  ·{" "}
+                  {typeof a.exact_theoretical_quantity === "string"
+                    ? exactQuantityDisplay(a.exact_theoretical_quantity)
+                    : formatQuantity(a.theoretical_quantity)}{" "}
+                  {a.unit_name}
                 </Text>
               ))}
             </Box>

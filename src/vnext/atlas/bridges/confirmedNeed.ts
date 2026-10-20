@@ -13,7 +13,12 @@ export type {
   NeedGenerationFilters,
   NeedGenerationDetailGroup,
 } from "../../../modules/atlas/planning-inputs/need-generation/needGenerationApi";
-export { confirmedNeedSaveV2Request } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";
+export {
+  confirmedNeedSaveV2Request,
+  confirmedNeedSaveV3Request,
+} from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";
+export { confirmedNeedCorrectionFromWorkbench } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedCorrection";
+export type { ConfirmedNeedCorrectionLine } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedCorrection";
 export type { ConfirmedNeedLineRequest } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi";
 export {
   generatedNoDemand,
@@ -22,6 +27,7 @@ export {
 export type { PlanningInputPreflightData } from "../../../modules/atlas/planning-inputs/readiness/planningInputReadinessModel";
 export {
   needGenerationWorkbenchFromResult,
+  needGenerationSourceBreakdown,
   needGenerationReadbackFromResult,
   needGenerationContinuitySummaryFromResult,
   needGenerationResultIsStale,

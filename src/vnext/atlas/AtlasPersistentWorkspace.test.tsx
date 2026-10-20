@@ -30,7 +30,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function show() {
+async function showSchool() {
   const apis = createAtlasApplicationFixture();
   const signOut = vi.fn();
   render(
@@ -43,6 +43,7 @@ function show() {
       />
     </AtlasVNextProvider>,
   );
+  await open("Trường học");
   return { apis, signOut };
 }
 
@@ -61,6 +62,7 @@ it("returns to an already-open School workbench with its exact draft and input i
       />
     </AtlasVNextProvider>,
   );
+  await open("Trường học");
   const field = (
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ })
   )[0]!;
@@ -68,8 +70,11 @@ it("returns to an already-open School workbench with its exact draft and input i
   await open("Phiếu xuất kho");
   await screen.findByRole("heading", { name: "Phiếu xuất kho" });
   expect(field.isConnected).toBe(true);
-  expect(field.closest('[role="tabpanel"]')).toHaveAttribute("hidden");
-  expect(field.closest('[role="tabpanel"]')).toHaveAttribute("inert");
+  const schoolOwner = field.closest(
+    '[role="tabpanel"][aria-label="Trường học"]',
+  );
+  expect(schoolOwner).toHaveAttribute("hidden");
+  expect(schoolOwner).toHaveAttribute("inert");
   await open("Trường học");
   await waitFor(() =>
     expect(
@@ -81,7 +86,7 @@ it("returns to an already-open School workbench with its exact draft and input i
 }, 20_000);
 
 it("activates existing instances with no duplicate or initialization reads", async () => {
-  const { apis } = show();
+  const { apis } = await showSchool();
   const schools = vi.spyOn(apis.masterData, "getSchools");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
@@ -103,7 +108,7 @@ it("activates existing instances with no duplicate or initialization reads", asy
 }, 20_000);
 
 it("blocks sign-out with multiple dirty owners and preserves every hidden draft", async () => {
-  const { signOut } = show();
+  const { signOut } = await showSchool();
   const school = (
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ })
   )[0]!;
@@ -135,14 +140,16 @@ it("blocks sign-out with multiple dirty owners and preserves every hidden draft"
 }, 20_000);
 
 it("makes an inactive dirty owner visible before close, retains cancellation, and closes only that owner on approval", async () => {
-  show();
+  await showSchool();
   const school = (
     await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ })
   )[0]!;
   fireEvent.change(school, { target: { value: "123" } });
   await open("Phiếu xuất kho");
   fireEvent.click(screen.getByRole("button", { name: "Đóng Trường học" }));
-  expect(school.closest('[role="tabpanel"]')).not.toHaveAttribute("hidden");
+  expect(
+    school.closest('[role="tabpanel"][aria-label="Trường học"]'),
+  ).not.toHaveAttribute("hidden");
   const cancelledDialog = await screen.findByRole("dialog");
   fireEvent.click(
     await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
@@ -168,7 +175,7 @@ it("makes an inactive dirty owner visible before close, retains cancellation, an
 }, 20_000);
 
 it("restores current active navigation when close focus cleanup completes after another owner opens", async () => {
-  show();
+  await showSchool();
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await open("Công thức");
   await screen.findByRole("button", { name: "Tạo món mới" });

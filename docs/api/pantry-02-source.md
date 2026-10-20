@@ -1,5 +1,57 @@
 # PANTRY-02 Pantry Source API Contract
 
+**Current operator model — 18 October Owner amendment:** exactly two creation
+choices, Bổ sung (`planning_identified_supplement`) and Hàng đặt riêng
+(`school_requested_supplement`). The second label supersedes earlier wording
+below; UUIDs/codes and immutable snapshots stay unchanged. New scopes are ADDITIVE.
+COMPLETE is historical compatibility, never an advanced/new-line option. Existing
+current bindings are not auto-flipped; the [closeout audit](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md)
+records the two effective Staging scopes needing controlled reconciliation.
+R+B is a derived operational subtotal; H remains separate, and the final human
+Confirmed Need quantity owns PO/PXK coverage. No Recipe/BOM change is implied.
+
+## B1 two-source forward amendment — 18 October 2026
+
+The connected #401 Pantry workbench now uses the existing authored-purpose
+`PANTRY-02.v3` Preview and consequential Save contract. See the
+[contract delta and validation record](../implementation-tasks/TASK-ATLAS-B1-PANTRY-TWO-SOURCE.md).
+No public endpoint or lifecycle is added. The existing purpose-free v4 contract
+remains callable; its neutral rows are never automatically reclassified.
+
+The stable source grain is batch + date + School + derived Delivery Location +
+Ingredient + Purpose. Purpose is immutable source identity. Different Purposes
+may each author the same Ingredient; same-Purpose duplicates remain blockers.
+Preview comparison joins, canonical ordering, signatures and stable Save conflict
+targets include Purpose. Omission invalidates only the omitted source, and
+restoring a grain reuses its UUID. All old approval snapshots remain unchanged.
+
+The operator selects `Bổ sung` (`planning_identified_supplement`) or
+`Đặt theo yêu cầu nhà trường` (`school_requested_supplement`) once for newly added
+lines. The UI obtains the exact active reference ID from the backend catalog;
+PostgreSQL validates it and applies its existing note rule. The browser cannot
+author Purpose metadata, Location or Unit. Existing categories, including neutral
+and inactive historical references, display their actual saved classification.
+Notes remain optional for the existing Foundation package's two OPTIONAL
+categories; no migration rewrites catalog policies or historical note evidence.
+
+The Owner's 18 October UI simplification keeps only `Nguồn của dòng mới` in the
+creation toolbar. Newly represented School/date rows use the existing ADDITIVE
+default; the UI does not offer a calculation-mode selector. Saved School/date
+modes, including COMPLETE, remain unchanged and are displayed as read-only facts.
+Choosing a source category never changes an existing calculation mode. This is
+the connected vnext interaction policy; the D-044 backend contracts remain valid.
+
+Exact v3 retries use the existing receipt-first v4 authorization boundary before
+mutable impact checks. New intents still require the same consequential correction
+guards, source signature and expected version. The separate School/date modes
+remain unchanged: ADDITIVE combines Recipe and both direct contributions;
+COMPLETE excludes Recipe demand for that School/date. Existing source-line and
+snapshot references provide downstream provenance; no stored summary is added.
+
+Migration: `20261018072142_pantry_b1_two_source_identity.sql`. V1–v4 remain
+available. The legacy non-vnext workbench explicitly retains v4 requests; only
+the accepted vnext interaction selects authored v3. No hosted migration is applied.
+
 ## Boundary
 
 Contract version: `PANTRY-02.v1`
@@ -176,3 +228,48 @@ only makes the proposal eligible for the separate Planning correction-impact rea
 and may still return `save_allowed = false`. The `PANTRY-02.v1` compatibility
 preview retains its original lifecycle behavior and remains ineligible while the
 current batch is `APPROVED`.
+
+## Owner amendment — purpose-free direct entry (`PANTRY-02.v4`, 16 October 2026)
+
+Implementation status: in progress; not deployed or certified. The Owner explicitly
+removed the Purpose input and made Pantry line notes optional. This forward
+contract applies only to the existing `preview_pantry_source` and consequential
+`save_pantry` APIs. Reads and the authored-purpose v1/v2/v3 contracts remain
+callable with their existing validation and lifecycle rules.
+
+V4 rows contain only service date, School, Ingredient, exact quantity, optional
+note and source references. Purpose, Location, Unit, lifecycle and other derived
+fields are rejected. The backend inserts one fixed neutral reference classification
+meaning “direct entry / purpose not specified”, with `OPTIONAL` notes. It is
+technical metadata, not an operator-selected purpose. Blank or whitespace-only
+notes normalize to SQL NULL. The neutral row is visible in the existing reference
+catalog; legacy callers may explicitly select it, but existing Purpose rows and
+`REQUIRED` / `PROHIBITED` rules are unchanged.
+
+The original v4 command remains the receipt and idempotency identity. Separate
+normalized legacy-compatible rows feed the existing Save children; separately
+enriched canonical rows determine signatures. Neither normalization merges nor
+deduplicates rows. Preview, correction-impact dates and Save use the same
+normalization. Pantry correction proposals include the explicit closed
+`source_contract_version: "PANTRY-02.v4"` marker; other source kinds reject it.
+Existing exact source-impact comparisons and ADDITIVE / COMPLETE modes remain.
+
+No current line or immutable historical snapshot is backfilled. Explicitly saving
+legacy content may change its classification to the neutral reference; preview
+and signature expose that change and the existing correction gates still apply.
+Command correction/reopen reasons remain required where their existing contracts
+require them; optional line notes do not relax audit reasons. Capabilities, scope,
+School/date/Unit derivation, quantities, routing and composition are unchanged.
+
+Acceptance requires purpose-spoof rejection, optional blank-note Save, exact
+preview/impact/Save signature agreement, legacy note rules, unchanged history,
+stale signatures and exact replay/conflict after a later Source Save and Need
+release. No hosted write is authorized by this amendment.
+
+The compatibility test also exposed a pre-existing D-044 omission:
+`request_planning_input_need_generation` still used the three-source-only
+`rmvp_03b_bindings_current` check. The amendment replaces only that call with
+`direct_need_evaluation_ready` under the identical evaluation/date arguments.
+This existing helper retains exact current snapshot/version/member coverage and
+accepts only valid COMPLETE-only evidence when catering sources are absent.
+Authentication, locking, receipts and all other request logic are unchanged.

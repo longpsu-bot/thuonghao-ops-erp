@@ -23,6 +23,56 @@ async function setup() {
   return { ...hook, fixture };
 }
 describe("Planning source safety", () => {
+  it("B1 inherits a source once and preserves same-Ingredient sources through Save/readback and deletion", async () => {
+    const { result, fixture } = await setup();
+    fixture.pantry.purposes = [
+      {
+        ...fixture.pantry.purposes[0],
+        purpose_code: "planning_identified_supplement",
+        note_rule: "OPTIONAL",
+      },
+      {
+        ...fixture.pantry.purposes[0],
+        pantry_need_purpose_id: "purpose-2",
+        purpose_code: "school_requested_supplement",
+        note_rule: "OPTIONAL",
+      },
+    ];
+    act(() => result.current.transition({ job: "pantry" }));
+    act(() => result.current.transition({ refresh: true }));
+    await waitFor(() =>
+      expect(result.current.pantryData?.purposes).toHaveLength(2),
+    );
+    await waitFor(() => expect(result.current.canEdit).toBe(true));
+    act(() => result.current.addPantryRow("school-0", "purpose-1"));
+    act(() => result.current.addPantryRow("school-0", "purpose-2"));
+    act(() => result.current.addPantryRow("school-0", "spoofed-purpose"));
+    expect(
+      result.current.pantryRows.map((row) => row.pantry_need_purpose_id),
+    ).toEqual(["purpose-1", "purpose-2"]);
+    act(() =>
+      result.current.editPantryRow(0, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "5",
+        source_request_reference: "planning-request",
+      }),
+    );
+    act(() =>
+      result.current.editPantryRow(1, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "3",
+        source_request_reference: "school-request",
+      }),
+    );
+    const authored = structuredClone(result.current.pantryRows);
+    await act(() => result.current.previewChanges());
+    await act(() => result.current.save());
+    expect(result.current.pantryRows).toEqual(authored);
+    act(() => result.current.editPantryRow(1, { requested_quantity: "4" }));
+    expect(result.current.pantryRows[0]).toEqual(authored[0]);
+    act(() => result.current.removePantryRow(1));
+    expect(result.current.pantryRows).toEqual([authored[0]]);
+  });
   it("orders the School catalogue independently of incoming payload order", async () => {
     const fixture = createPlanningReviewFixture();
     fixture.planning.schools.reverse();
@@ -343,7 +393,7 @@ describe("Planning source safety", () => {
     expect(result.current.locked).toBe(true);
   });
   it.each(["pantry"])(
-    "protects all context transitions for dirty %s drafts",
+    "protects dataset replacement and owner exit for dirty %s drafts",
     async (job) => {
       const { result } = await setup();
       act(() => result.current.transition({ job }));
@@ -351,8 +401,6 @@ describe("Planning source safety", () => {
       for (const next of [
         { job: "attendance" },
         { week: "2026-09-14" },
-        { date: "2026-09-08" },
-        { schoolIds: ["school-1"] },
         { refresh: true },
       ]) {
         act(() => result.current.transition(next));
@@ -363,6 +411,31 @@ describe("Planning source safety", () => {
       }
     },
   );
+  it("retains exact unsaved Pantry rows while School and day filters change", async () => {
+    const { result } = await setup();
+    act(() => result.current.transition({ job: "pantry" }));
+    act(() => result.current.addPantryRow("school-0"));
+    act(() =>
+      result.current.editPantryRow(0, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "123456789.123456",
+      }),
+    );
+    const rows = result.current.pantryRows;
+    act(() => result.current.transition({ schoolIds: ["school-1"] }));
+    expect(result.current.pending).toBeNull();
+    expect(result.current.schoolIds).toEqual(["school-1"]);
+    act(() => result.current.transition({ date: "2026-09-08" }));
+    expect(result.current.date).toBe("2026-09-08");
+    expect(result.current.pantryRows).toEqual(rows);
+    expect(result.current.dirty).toBe(true);
+    act(() => result.current.transition({ schoolIds: [], date: reviewWeek }));
+    expect(result.current.pantryRows[0]).toMatchObject({
+      school_id: "school-0",
+      service_date: reviewWeek,
+      requested_quantity: "123456789.123456",
+    });
+  });
   it("ends Menu synchronization without a local dirty candidate", async () => {
     const { result } = await setup();
     await act(() => result.current.syncGoogle("google-1"));
@@ -453,7 +526,105 @@ describe("Planning source safety", () => {
     expect(result.current.attendanceRows[0].student_portions).toBe("100");
     expect(result.current.dirty).toBe(false);
   });
-  it("saves exact Pantry quantities and one School/date mode through v3", async () => {
+  it("retains pre-line Pantry modes by School/date and serializes only represented targets", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.pantry.schools = fixture.pantry.schools.slice(0, 2);
+    const preview = vi.spyOn(fixture.pantryApi, "preview");
+    const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
+    const { result } = renderHook(() =>
+      usePlanningSources({
+        ...fixture,
+        authSubject: "operator",
+        initialWeek: reviewWeek,
+        initialJob: "pantry",
+      }),
+    );
+    await waitFor(() => expect(result.current.canEdit).toBe(true));
+    const modeA = {
+      school_id: "school-0",
+      service_date: reviewWeek,
+      direct_need_mode: "COMPLETE",
+    } as const;
+    act(() => result.current.setMode("school-0", "COMPLETE"));
+    expect(result.current.modes).toEqual([modeA]);
+    expect(result.current.pantryRows).toEqual([]);
+    expect(result.current.dirty).toBe(false);
+    await act(() => result.current.previewChanges());
+    await act(() => result.current.save());
+    expect(preview).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+
+    act(() => result.current.addPantryRow("school-0"));
+    act(() =>
+      result.current.editPantryRow(0, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "12.500001",
+      }),
+    );
+    act(() => result.current.setMode("school-1", "ADDITIVE"));
+    act(() => result.current.addPantryRow("school-1"));
+    act(() =>
+      result.current.editPantryRow(1, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "3.000001",
+      }),
+    );
+    const firstDateRows = structuredClone(result.current.pantryRows);
+    act(() => result.current.transition({ date: "2026-09-08" }));
+    act(() => result.current.setMode("school-0", "ADDITIVE"));
+    act(() => result.current.addPantryRow("school-0"));
+    act(() =>
+      result.current.editPantryRow(2, {
+        ingredient_id: "ingredient-1",
+        requested_quantity: "4.000001",
+      }),
+    );
+    // A mode-only target must survive as a local choice, without becoming a
+    // preview/Save fact for this empty School/date.
+    act(() => result.current.setMode("school-1", "COMPLETE"));
+    act(() => result.current.transition({ date: reviewWeek }));
+    act(() => result.current.transition({ schoolIds: ["school-0"] }));
+    expect(result.current.modes).toContainEqual(modeA);
+    expect(result.current.pantryRows.slice(0, 2)).toEqual(firstDateRows);
+    expect(result.current.pantryRows[2]).toMatchObject({
+      school_id: "school-0",
+      service_date: "2026-09-08",
+      requested_quantity: "4.000001",
+    });
+    const expectedModes = [
+      modeA,
+      {
+        school_id: "school-1",
+        service_date: reviewWeek,
+        direct_need_mode: "ADDITIVE",
+      },
+      {
+        school_id: "school-0",
+        service_date: "2026-09-08",
+        direct_need_mode: "ADDITIVE",
+      },
+    ];
+    await act(() => result.current.previewChanges());
+    expect(preview).toHaveBeenCalledTimes(1);
+    expect(preview.mock.calls[0][5]).toEqual(expectedModes);
+    expect(preview.mock.calls[0][4]).toEqual(
+      result.current.pantryRows.map((row) => ({
+        ...row,
+        note: null,
+      })),
+    );
+    await act(() => result.current.save());
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save.mock.calls[0][0]).toMatchObject({
+      contract_version: "PANTRY-02.v3",
+      expected_version: 1,
+      payload: { school_date_modes: expectedModes },
+    });
+    expect(result.current.modes).toEqual(expectedModes);
+    expect(result.current.pantryRows.slice(0, 2)).toEqual(firstDateRows);
+    expect(result.current.dirty).toBe(false);
+  });
+  it("saves and reads back exact Pantry quantities and one School/date mode through v3", async () => {
     const { result, fixture } = await setup();
     const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
     const preview = vi.spyOn(fixture.pantryApi, "preview");
@@ -498,7 +669,21 @@ describe("Planning source safety", () => {
         }),
       }),
     );
-    expect(result.current.pantryRows).toEqual([]);
+    expect(result.current.pantryRows).toHaveLength(1);
+    expect(result.current.pantryRows[0]).toMatchObject({
+      school_id: "school-0",
+      service_date: reviewWeek,
+      ingredient_id: "ingredient-1",
+      requested_quantity: "123456789.123456",
+      note: "Bữa phụ",
+    });
+    expect(result.current.modes).toEqual([
+      {
+        school_id: "school-0",
+        service_date: reviewWeek,
+        direct_need_mode: "COMPLETE",
+      },
+    ]);
     expect(result.current.dirty).toBe(false);
   });
   it.each(["attendance", "pantry"])(

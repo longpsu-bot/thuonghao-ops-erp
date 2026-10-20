@@ -1,6 +1,8 @@
 const reasonLabels: Record<string, string> = {
   PO_DOCUMENT_CODE_REQUIRED:
-    "Bổ sung mã hàng và mã NCC trên chứng từ trong Dữ liệu gốc trước khi phát hành.",
+    "Bổ sung mã NCC trên chứng từ trong Dữ liệu gốc trước khi phát hành.",
+  PO_INGREDIENT_DOCUMENT_CODE_INVALID:
+    "Mã nội bộ nguyên liệu không hợp lệ. Hãy kiểm tra Dữ liệu gốc hoặc để trống.",
   PO_DOCUMENT_SNAPSHOT_INCOMPLETE:
     "Không đủ dữ liệu chứng từ lịch sử để tái xuất chính thức.",
   STALE_VERSION: "Dữ liệu đã thay đổi; hãy tải lại trước khi tiếp tục.",

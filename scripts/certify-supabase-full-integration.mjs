@@ -27,6 +27,9 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "school_fulfilment_reconciliation.sql",
   "purchase_handoff_clock_skew.sql",
   "purchase_review_confirm_release.sql",
+  "atlas_c_need_correction_authority.sql",
+  "atlas_k2_receipt_integrity.sql",
+  "atlas_k2_corrected_need_purchase_orders.sql",
   "purchase_preparation_release_projection.sql",
   "purchase_preparation_source_ambiguity.sql",
   "supplier_allocation_released_read.sql",
@@ -64,6 +67,9 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "master_data_creation_ux_02.sql",
   "rmvp_03a_connected_weekly_menu_attendance.sql",
   "pantry_02_connected_pantry_source.sql",
+  "pantry_v4_purpose_free.sql",
+  "pantry_b1_two_source.sql",
+  "pantry_b1_composition.sql",
   "pa_06e_h1b1_line_decision_structure_security.sql",
   "pa_06e_h1b1_line_decision_chain_pointer.sql",
   "pa_06e_h1b1_line_decision_policy_quantity_integrity.sql",
@@ -141,6 +147,9 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
               })
             : [
                   "purchase_review_confirm_release.sql",
+                  "atlas_c_need_correction_authority.sql",
+                  "atlas_k2_receipt_integrity.sql",
+                  "atlas_k2_corrected_need_purchase_orders.sql",
                   "purchase_preparation_release_projection.sql",
                   "purchase_preparation_source_ambiguity.sql",
                   "supplier_allocation_released_read.sql",
@@ -178,6 +187,10 @@ export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
     ]),
   }),
   ...databaseTests,
+  Object.freeze({
+    command: "node",
+    args: Object.freeze(["scripts/test-local-atlas-k2-po-concurrency.mjs"]),
+  }),
   Object.freeze({
     command: "node",
     args: Object.freeze(["scripts/test-local-planning-final-closeout.mjs"]),

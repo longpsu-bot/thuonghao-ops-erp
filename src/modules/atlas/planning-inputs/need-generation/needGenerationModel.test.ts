@@ -8,6 +8,7 @@ import {
   needGenerationResultIsStale,
   needGenerationResultMessage,
   needGenerationWorkbenchFromResult,
+  needGenerationSourceBreakdown,
 } from "./needGenerationModel";
 
 const workbench = {
@@ -21,6 +22,33 @@ const workbench = {
 };
 
 describe("RMVP-04 authoritative model", () => {
+  it("accepts only complete exact source breakdowns without recomputing them", () => {
+    const breakdown = {
+      recipe_derived_quantity: "20.123456",
+      planning_supplement_quantity: "5.000001",
+      recipe_associated_quantity: "25.123457",
+      special_order_quantity: "3.000002",
+      unclassified_direct_quantity: "0",
+      total_theoretical_quantity: "28.123459",
+    };
+    expect(needGenerationSourceBreakdown(breakdown)).toEqual(breakdown);
+    expect(needGenerationSourceBreakdown(undefined)).toBeNull();
+    expect(
+      needGenerationSourceBreakdown({ pantry_direct_quantity: 8 }),
+    ).toBeNull();
+    expect(
+      needGenerationSourceBreakdown({
+        ...breakdown,
+        special_order_quantity: 3,
+      }),
+    ).toBeNull();
+    expect(
+      needGenerationSourceBreakdown({
+        ...breakdown,
+        special_order_quantity: "NaN",
+      }),
+    ).toBeNull();
+  });
   it("accepts shaped workbench and command readback only from success results", () => {
     const read: AtlasRpcResult = {
       kind: "success",

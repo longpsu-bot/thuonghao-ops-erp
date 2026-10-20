@@ -19,6 +19,7 @@ import {
 } from "./needGenerationApi";
 import {
   formatQuantity,
+  needGenerationSourceBreakdown,
   needGenerationContinuitySummaryFromResult,
   needGenerationReadbackFromResult,
   needGenerationResultIsStale,
@@ -27,6 +28,7 @@ import {
   type NeedGenerationGroup,
   type NeedGenerationWorkbenchData,
 } from "./needGenerationModel";
+import { exactQuantityDisplay } from "../confirmed-needs/confirmedNeedModel";
 
 const emptyFilters: NeedGenerationFilters = {
   service_date: null,
@@ -38,7 +40,7 @@ const emptyFilters: NeedGenerationFilters = {
 const sourceNames: Record<ReadinessSourceKind, string> = {
   weekly_menu: "Thực đơn",
   attendance: "Sĩ số",
-  pantry: "Nhu cầu bổ sung",
+  pantry: "Bổ sung / Hàng đặt riêng",
 };
 
 function viDate(value: string) {
@@ -994,7 +996,9 @@ export function NeedGenerationWorkbench({
                 >
                   <option value="">Tất cả</option>
                   <option value="RECIPE_DERIVED">Công thức</option>
-                  <option value="PANTRY_DIRECT">Nhu cầu bổ sung</option>
+                  <option value="PANTRY_DIRECT">
+                    Bổ sung / Hàng đặt riêng
+                  </option>
                 </select>
               </label>
               <button type="button" onClick={applyFilters}>
@@ -1012,43 +1016,74 @@ export function NeedGenerationWorkbench({
                   "ĐVT",
                   "Công thức",
                   "Bổ sung",
-                  "Tổng",
+                  "Công thức + Bổ sung",
+                  "Hàng đặt riêng",
+                  "Nguồn trực tiếp (lịch sử)",
+                  "Tổng lý thuyết",
                   "Chi tiết",
                 ]}
               >
-                {workbench.grouped_requirements.map((group) => (
-                  <tr
-                    key={`${group.service_date}:${group.customer_id}:${group.school_id}:${group.delivery_location_id}:${group.ingredient_id}:${group.unit_id}`}
-                  >
-                    <td>{viDate(group.service_date)}</td>
-                    <th scope="row">{group.school_name}</th>
-                    <td>{group.delivery_location_name}</td>
-                    <td>{group.ingredient_name}</td>
-                    <td>{group.unit_name}</td>
-                    <td className="quantity-cell">
-                      {formatQuantity(group.recipe_derived_quantity)}
-                    </td>
-                    <td className="quantity-cell">
-                      {formatQuantity(group.pantry_direct_quantity)}
-                    </td>
-                    <td className="quantity-cell total">
-                      <b>{formatQuantity(group.total_theoretical_quantity)}</b>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const identity = groupIdentity(group);
-                          setDetailGroup(identity);
-                          void loadAuthority({ nextDetail: identity });
-                        }}
-                      >
-                        <Eye aria-hidden="true" size={16} />
-                        Xem
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {workbench.grouped_requirements.map((group) => {
+                  const source = needGenerationSourceBreakdown(
+                    group.source_breakdown,
+                  );
+                  return (
+                    <tr
+                      key={`${group.service_date}:${group.customer_id}:${group.school_id}:${group.delivery_location_id}:${group.ingredient_id}:${group.unit_id}`}
+                    >
+                      <td>{viDate(group.service_date)}</td>
+                      <th scope="row">{group.school_name}</th>
+                      <td>{group.delivery_location_name}</td>
+                      <td>{group.ingredient_name}</td>
+                      <td>{group.unit_name}</td>
+                      <td className="quantity-cell">
+                        {source
+                          ? exactQuantityDisplay(source.recipe_derived_quantity)
+                          : "Chưa có phân tách nguồn."}
+                      </td>
+                      <td className="quantity-cell">
+                        {exactQuantityDisplay(
+                          source?.planning_supplement_quantity ?? null,
+                        )}
+                      </td>
+                      <td className="quantity-cell">
+                        {exactQuantityDisplay(
+                          source?.recipe_associated_quantity ?? null,
+                        )}
+                      </td>
+                      <td className="quantity-cell">
+                        {exactQuantityDisplay(
+                          source?.special_order_quantity ?? null,
+                        )}
+                      </td>
+                      <td className="quantity-cell">
+                        {exactQuantityDisplay(
+                          source?.unclassified_direct_quantity ?? null,
+                        )}
+                      </td>
+                      <td className="quantity-cell total">
+                        <b>
+                          {exactQuantityDisplay(
+                            source?.total_theoretical_quantity ?? null,
+                          )}
+                        </b>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const identity = groupIdentity(group);
+                            setDetailGroup(identity);
+                            void loadAuthority({ nextDetail: identity });
+                          }}
+                        >
+                          <Eye aria-hidden="true" size={16} />
+                          Xem
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </CompactTable>
             </div>
 
@@ -1061,9 +1096,18 @@ export function NeedGenerationWorkbench({
                       <b>
                         {item.contribution_family === "RECIPE_DERIVED"
                           ? "Công thức"
-                          : "Nhu cầu bổ sung"}
+                          : item.pantry_purpose_code ===
+                              "planning_identified_supplement"
+                            ? "Bổ sung"
+                            : item.pantry_purpose_code ===
+                                "school_requested_supplement"
+                              ? "Hàng đặt riêng"
+                              : "Nguồn trực tiếp (lịch sử)"}
                       </b>{" "}
-                      · {formatQuantity(item.theoretical_quantity)}{" "}
+                      ·{" "}
+                      {typeof item.exact_theoretical_quantity === "string"
+                        ? exactQuantityDisplay(item.exact_theoretical_quantity)
+                        : formatQuantity(item.theoretical_quantity)}{" "}
                       {item.unit_name}
                       <small>
                         {item.dish_name ??

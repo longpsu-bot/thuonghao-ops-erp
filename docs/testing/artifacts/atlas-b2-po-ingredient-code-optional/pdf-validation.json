@@ -1,0 +1,56 @@
+[
+  {
+    "file": "po-all.pdf",
+    "pages": [
+      {
+        "width": 595.28,
+        "height": 841.89,
+        "characters": 581
+      },
+      {
+        "width": 595.28,
+        "height": 841.89,
+        "characters": 670
+      },
+      {
+        "width": 595.28,
+        "height": 841.89,
+        "characters": 434
+      }
+    ],
+    "text_checks": "PASS"
+  },
+  {
+    "file": "po-details_ing.pdf",
+    "pages": [
+      {
+        "width": 595.28,
+        "height": 841.89,
+        "characters": 581
+      }
+    ],
+    "text_checks": "PASS"
+  },
+  {
+    "file": "po-details_school.pdf",
+    "pages": [
+      {
+        "width": 595.28,
+        "height": 841.89,
+        "characters": 670
+      }
+    ],
+    "text_checks": "PASS"
+  },
+  {
+    "file": "po-sum.pdf",
+    "pages": [
+      {
+        "width": 595.28,
+        "height": 841.89,
+        "characters": 434
+      }
+    ],
+    "text_checks": "PASS"
+  }
+]

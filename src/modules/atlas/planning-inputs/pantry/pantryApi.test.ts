@@ -100,6 +100,23 @@ describe("PANTRY-02 API adapter", () => {
     expect(invoke.mock.calls).toEqual([["atlas_api.save_pantry", request]]);
   });
 
+  it("preserves authored-purpose Pantry correction proposals", async () => {
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createPantryApi({ invoke });
+    await api.getCorrectionImpact("subject", "correlation", "PANTRY", {
+      rows: [],
+    });
+    expect(invoke).toHaveBeenLastCalledWith(
+      "atlas_api.get_planning_source_correction_impact",
+      expect.objectContaining({
+        payload: {
+          source_kind: "PANTRY",
+          source_payload: { rows: [] },
+        },
+      }),
+    );
+  });
+
   it("sends explicit School/date composition authority with a v3 preview", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createPantryApi({ invoke });

@@ -8,6 +8,7 @@ import {
   confirmedNeedReleaseRequest,
   confirmedNeedPurchaseHandoffRequest,
   confirmedNeedValidationRequest,
+  confirmedNeedSaveV3Request,
   createConfirmedNeedApi,
 } from "./confirmedNeedApi";
 import {
@@ -20,6 +21,78 @@ const success: AtlasRpcResult = {
   kind: "success",
   response: { success: true },
 };
+
+describe("K3 explicit released correction request", () => {
+  it("preserves exact changed quantities, five read bindings and replay identity", async () => {
+    const binding = {
+      expected_confirmed_need_release_id: "release-original",
+      expected_purchase_handoff_batch_id: "handoff-original",
+      expected_purchase_handoff_revision_id: "handoff-revision",
+      expected_purchase_handoff_version: 7,
+      expected_source_fingerprint: "a".repeat(64),
+    };
+    const lines = [
+      {
+        confirmed_need_line_id: "line-1",
+        expected_current_revision_id: "revision-1",
+        expected_current_decision_id: "decision-1",
+        proposed_confirmed_quantity: "110.000000",
+        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT" as const,
+        reason_note: "Bếp điều chỉnh sĩ số",
+      },
+    ];
+    const request = confirmedNeedSaveV3Request(
+      "actor",
+      "correlation",
+      "batch",
+      12,
+      lines,
+      binding,
+    );
+    expect(request.contract_version).toBe("RMVP-05.v3");
+    expect(request.payload).toEqual({
+      confirmed_need_batch_id: "batch",
+      lines,
+      correction: binding,
+    });
+    expect(Object.keys(request.payload.correction)).toHaveLength(5);
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createConfirmedNeedApi({ invoke });
+    await api.save(request);
+    await api.save(request);
+    expect(invoke.mock.calls[0]).toEqual([
+      "atlas_api.save_confirmed_needs",
+      request,
+    ]);
+    expect(invoke.mock.calls[1]![1]).toBe(request);
+    expect(request.idempotency_key).toContain(request.command_id);
+  });
+  it("keeps the complete nullable Handoff triple supplied by the read", () => {
+    const request = confirmedNeedSaveV3Request(
+      "actor",
+      "correlation",
+      "batch",
+      12,
+      [],
+      {
+        expected_confirmed_need_release_id: "release-original",
+        expected_purchase_handoff_batch_id: null,
+        expected_purchase_handoff_revision_id: null,
+        expected_purchase_handoff_version: null,
+        expected_source_fingerprint: "b".repeat(64),
+      },
+    );
+    expect(
+      request.payload.correction.expected_purchase_handoff_batch_id,
+    ).toBeNull();
+    expect(
+      request.payload.correction.expected_purchase_handoff_revision_id,
+    ).toBeNull();
+    expect(
+      request.payload.correction.expected_purchase_handoff_version,
+    ).toBeNull();
+  });
+});
 
 describe("RMVP-05 API adapter", () => {
   it("builds the exact review envelope with bounded pagination and filters", () => {

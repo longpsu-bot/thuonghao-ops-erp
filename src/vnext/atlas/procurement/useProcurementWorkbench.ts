@@ -43,6 +43,7 @@ export type ProcurementControllerProps = {
   procurementApi: SchoolCateringProcurementApi;
   initialServiceDate: string;
   initialRange?: AtlasOperatorDateRange;
+  initialSchoolIds?: string[];
   onServiceDateChange?: (date: string) => void;
   initialStage?: ProcurementStage;
   ownerStage?: ProcurementStage;
@@ -106,6 +107,7 @@ export function useProcurementWorkbench({
   procurementApi,
   initialServiceDate,
   initialRange,
+  initialSchoolIds,
   onServiceDateChange,
   initialStage = "allocation",
   ownerStage,
@@ -123,7 +125,8 @@ export function useProcurementWorkbench({
   useEffect(() => {
     onServiceDateChange?.(date);
   }, [date, onServiceDateChange]);
-  const [schoolIds, setSchoolIds] = useState<string[]>([]);
+  const [schoolIds, setSchoolIds] = useState<string[]>(initialSchoolIds ?? []);
+  const [scopeRefresh, setScopeRefresh] = useState(0);
   const [stage, setStage] = useState<ProcurementStage>(
     fixedStage ?? initialStage,
   );
@@ -220,7 +223,15 @@ export function useProcurementWorkbench({
       }
       return ok;
     },
-    [authSubject, purchaseReviewApi, procurementApi, date, dateEnd, schoolIds],
+    [
+      authSubject,
+      purchaseReviewApi,
+      procurementApi,
+      date,
+      dateEnd,
+      schoolIds,
+      scopeRefresh,
+    ],
   );
 
   useEffect(() => {
@@ -260,6 +271,23 @@ export function useProcurementWorkbench({
   };
   const changeDate = (value: string) =>
     changeRange({ start: value, end: value });
+  const applyNeedScope = (value: AtlasOperatorDateRange, ids: string[]) => {
+    if (
+      busy ||
+      loading ||
+      mutationLocked ||
+      !current ||
+      hasRetry ||
+      operatorDateRangeError(value)
+    )
+      return;
+    invalidate();
+    setRange(value);
+    setDate(value.start);
+    setDateEnd(value.end);
+    setSchoolIds([...new Set(ids)]);
+    setScopeRefresh((value) => value + 1);
+  };
   const changeSchools = (ids: string[]) => {
     if (rangeError || busy) return;
     if (ids.join("|") !== schoolIds.join("|")) {
@@ -531,6 +559,7 @@ export function useProcurementWorkbench({
     range,
     rangeError,
     changeRange,
+    applyNeedScope,
     schoolIds,
     stage,
     allocation,

@@ -226,15 +226,6 @@ export function PantryWorkbench({
     [onDirtyChange],
   );
 
-  const purposes = useMemo(
-    () =>
-      [...data.purposes].sort(
-        (left, right) =>
-          left.display_order - right.display_order ||
-          left.purpose_code.localeCompare(right.purpose_code),
-      ),
-    [data.purposes],
-  );
   const scopedSchools = useMemo(
     () =>
       data.schools.filter((school) =>
@@ -280,15 +271,14 @@ export function PantryWorkbench({
   const addRow = () => {
     const school = scopedSchools[0];
     const ingredient = data.ingredients[0];
-    const purpose = purposes[0];
-    if (!school || !ingredient || !purpose) return;
+    if (!school || !ingredient) return;
     markEdited([
       ...rows,
       {
         service_date: workingServiceDate ?? weekStart,
         school_id: school.school_id,
         ingredient_id: ingredient.ingredient_id,
-        pantry_need_purpose_id: purpose.pantry_need_purpose_id,
+        pantry_need_purpose_id: "",
         requested_quantity: "",
         note: "",
         source_request_reference: "",
@@ -337,21 +327,29 @@ export function PantryWorkbench({
       correlationId,
       weekStart,
       noAdditions,
-      pantryRowsForWrite(rows),
+      pantryRowsForWrite(rows, "PANTRY-02.v4"),
       effectiveSchoolDateModes,
+      undefined,
+      "PANTRY-02.v4",
     );
     const nextPreview = pantryPreviewFromResult(result);
     setPreview(nextPreview);
     const impactResult =
       nextPreview?.can_save && api.getCorrectionImpact
-        ? await api.getCorrectionImpact(authSubject, correlationId, "PANTRY", {
-            week_start: weekStart,
-            no_additions_confirmed: noAdditions,
-            source_signature: nextPreview.source_signature,
-            expected_source_signature: data.batch?.source_signature ?? null,
-            rows: pantryRowsForWrite(rows),
-            school_date_modes: effectiveSchoolDateModes,
-          })
+        ? await api.getCorrectionImpact(
+            authSubject,
+            correlationId,
+            "PANTRY",
+            {
+              week_start: weekStart,
+              no_additions_confirmed: noAdditions,
+              source_signature: nextPreview.source_signature,
+              expected_source_signature: data.batch?.source_signature ?? null,
+              rows: pantryRowsForWrite(rows, "PANTRY-02.v4"),
+              school_date_modes: effectiveSchoolDateModes,
+            },
+            "PANTRY-02.v4",
+          )
         : null;
     const impact = impactResult
       ? planningCorrectionImpactFromResult(impactResult)
@@ -420,9 +418,11 @@ export function PantryWorkbench({
         no_additions_confirmed: noAdditions,
         source_signature: preview.source_signature,
         expected_source_signature: data.batch?.source_signature ?? null,
-        rows: pantryRowsForWrite(rows),
+        rows: pantryRowsForWrite(rows, "PANTRY-02.v4"),
         school_date_modes: effectiveSchoolDateModes,
       },
+      undefined,
+      "PANTRY-02.v4",
     );
     await runCompletion(() => api.saveCompleted(request));
   };
@@ -626,7 +626,6 @@ export function PantryWorkbench({
                       <th>Trường / điểm giao</th>
                       <th>Nguyên liệu / đơn vị</th>
                       <th>Cách kết hợp</th>
-                      <th>Mục đích</th>
                       <th>Số lượng</th>
                       <th>Ghi chú</th>
                       <th>Tham chiếu</th>
@@ -640,11 +639,6 @@ export function PantryWorkbench({
                       );
                       const ingredient = data.ingredients.find(
                         (item) => item.ingredient_id === row.ingredient_id,
-                      );
-                      const purpose = purposes.find(
-                        (item) =>
-                          item.pantry_need_purpose_id ===
-                          row.pantry_need_purpose_id,
                       );
                       return (
                         <tr key={`${row.source_row_reference}:${index}`}>
@@ -759,30 +753,6 @@ export function PantryWorkbench({
                             </select>
                           </td>
                           <td>
-                            <select
-                              aria-label={`Mục đích dòng ${index + 1}`}
-                              value={row.pantry_need_purpose_id}
-                              disabled={!canEdit}
-                              onChange={(event) =>
-                                updateRow(
-                                  index,
-                                  "pantry_need_purpose_id",
-                                  event.target.value,
-                                )
-                              }
-                            >
-                              {purposes.map((purpose) => (
-                                <option
-                                  value={purpose.pantry_need_purpose_id}
-                                  key={purpose.pantry_need_purpose_id}
-                                  title={purpose.purpose_description}
-                                >
-                                  {purpose.purpose_name_vi}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td>
                             <input
                               aria-label={`Số lượng dòng ${index + 1}`}
                               type="number"
@@ -803,17 +773,8 @@ export function PantryWorkbench({
                             <input
                               aria-label={`Ghi chú dòng ${index + 1}`}
                               value={row.note}
-                              required={purpose?.note_rule === "REQUIRED"}
-                              disabled={
-                                !canEdit || purpose?.note_rule === "PROHIBITED"
-                              }
-                              placeholder={
-                                purpose?.note_rule === "REQUIRED"
-                                  ? "Bắt buộc theo Mục đích"
-                                  : purpose?.note_rule === "PROHIBITED"
-                                    ? "Không được phép theo Mục đích"
-                                    : "Không bắt buộc"
-                              }
+                              disabled={!canEdit}
+                              placeholder="Không bắt buộc"
                               onChange={(event) =>
                                 updateRow(index, "note", event.target.value)
                               }

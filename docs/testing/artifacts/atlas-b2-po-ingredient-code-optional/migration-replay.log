@@ -1,0 +1,41 @@
+SELECT 3
+SELECT 2
+SELECT 44
+BEGIN
+SELECT 3
+DO
+SELECT 3
+SELECT 3
+GRANT
+GRANT ROLE
+psql:/tmp/atlas-b2-migration.sql:25: NOTICE:  role "postgres" has already been granted membership in role "atlas_owner" by role "postgres"
+SET
+DO
+RESET
+SET
+psql:/tmp/atlas-b2-migration.sql:210: NOTICE:  role "postgres" has already been granted membership in role "atlas_owner" by role "postgres"
+DO
+DO
+RESET
+SET
+DO
+RESET
+SET
+DO
+RESET
+DO
+COMMIT
+ replay_preserves_all_three_functions
+--------------------------------------
+ t
+(1 row)
+
+ replay_preserves_schema_privileges
+------------------------------------
+ t
+(1 row)
+
+ replay_preserves_all_role_memberships
+---------------------------------------
+ t
+(1 row)

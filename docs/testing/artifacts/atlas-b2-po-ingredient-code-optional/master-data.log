@@ -1,0 +1,78 @@
+BEGIN
+CREATE EXTENSION
+psql:/tmp/atlas-b2-master-tests.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+SET
+ok 1 - Ingredient owns explicit outward document code
+ok 2 - Supplier owns explicit outward document code
+ok 3 - PO header freezes supplier outward code
+ok 4 - PO line freezes item outward code
+ok 5 - PO line freezes Ingredient display name
+ok 6 - PO line freezes Unit display code
+INSERT 0 4
+INSERT 0 3
+ok 7 - exact V1 item provenance becomes numeric text
+ok 8 - legacy suffix is text without numeric overflow
+ok 9 - exact V1 supplier provenance becomes numeric text
+ok 10 - unapproved technical prefix form stays null
+ok 11 - zero legacy form stays null
+ok 12 - native item has no invented outward code
+ok 13 - native supplier has no invented outward code
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 13
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+SET
+d7100000-0000-4000-8000-000000000101
+INSERT 0 3
+RESET
+ok 14 - native item document code is authored through create
+ok 15 - create exact replay returns same document identity
+ok 16 - authored native item code persists
+ok 17 - authored native supplier code persists
+SET
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 18 - native Ingredient Create accepts omitted manual and technical codes
+ok 19 - native creation retains a null internal code and generated technical identity
+ok 20 - code-free native creation retains exact idempotent identity
+SET
+INSERT 0 1
+INSERT 0 14
+RESET
+SET
+INSERT 0 1
+RESET
+ok 21 - shaped Ingredient read always exposes nullable document_code
+ok 22 - shaped Supplier read always exposes nullable document_code
+ok 23 - update persists code and omitted update preserves it
+ok 24 - document-code update cannot overwrite stale version
+ok 25 - blank, UUID including embedded UUID, technical prefix, type and oversized explicit codes reject safely
+ok 26 - explicit null clears the governed native supplier code
+ok 27 - document-code changes retain existing audit evidence
+INSERT 0 1
+ok 28 - ongoing import insertion never clobbers explicitly supplied code
+ok 29 - browser cannot write document codes through private tables
+ok 30 - document row-lock helper remains private
+ok 31 - all four bounded private helpers preserve exact ownership, fixed paths and denied browser execution
+ok 32 - existing master writer owns document-code writes and Procurement has no Admin UPDATE RLS policy
+SET
+d7100000-0000-4000-8000-000000000102
+INSERT 0 1
+RESET
+ok 33 - document-code authoring requires existing master write capability
+DELETE 1
+SET
+d7100000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 34 - document-code authoring requires GLOBAL Admin scope
+1..34
+ROLLBACK

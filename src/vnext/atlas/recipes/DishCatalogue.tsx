@@ -1,3 +1,4 @@
+import { atlasVisuallyHidden } from "../AtlasTaskTabs";
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
@@ -111,7 +112,7 @@ export function DishCatalogue({
           <Text p="md" role="status">
             Đang tải danh mục món…
           </Text>
-        ) : compact ? (
+        ) : c.error && !c.catalog.dishes.length ? null : compact ? (
           <Box
             as="ul"
             aria-label="Điều hướng món"
@@ -197,16 +198,22 @@ export function DishCatalogue({
             aria-label="Danh mục món"
             stickyHeader
             tableLayout="fixed"
-            w={
-              compact
-                ? "var(--atlas-dish-compact-table-width, 340px)"
-                : "var(--atlas-dish-table-width, 870px)"
-            }
-            minW={
-              compact
-                ? "var(--atlas-dish-compact-table-width, 340px)"
-                : "var(--atlas-dish-table-width, 870px)"
-            }
+            w="full"
+            minW="var(--atlas-layout-zero, 0)"
+            css={{
+              "@media (max-width: 47.99rem)": {
+                "& colgroup": { display: "none" },
+                "& tbody, & tr, & td": { display: "block", width: "100%" },
+                "& td": {
+                  border: "none",
+                  paddingBlock: "var(--atlas-spacing-xs)",
+                },
+                "& tr": {
+                  padding: "var(--atlas-spacing-sm)",
+                  borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+                },
+              },
+            }}
           >
             <Table.ColumnGroup>
               <Table.Column w="var(--atlas-dish-identity-width, 220px)" />
@@ -220,6 +227,7 @@ export function DishCatalogue({
               <Table.Column w="var(--atlas-dish-action-width, 120px)" />
             </Table.ColumnGroup>
             <Table.Header
+              css={{ "@media (max-width: 47.99rem)": atlasVisuallyHidden }}
               display={{
                 base:
                   compact && c.context && !expanded

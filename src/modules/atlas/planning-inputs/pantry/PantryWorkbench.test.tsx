@@ -297,7 +297,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     ).toBeVisible();
   });
 
-  it("keeps Location and Unit server-derived and performs one v3 Save with explicit composition authority", async () => {
+  it("keeps Location and Unit server-derived and performs one v4 Save with explicit composition authority", async () => {
     const api = createReviewPantryApi("ready");
     const preview = vi.spyOn(api, "preview");
     const completed = vi.spyOn(api, "saveCompleted");
@@ -326,7 +326,6 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       "Trường / điểm giao",
       "Nguyên liệu / đơn vị",
       "Cách kết hợp",
-      "Mục đích",
       "Số lượng",
       "Ghi chú",
       "Tham chiếu",
@@ -375,7 +374,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     const request = completed.mock.calls[0]?.[0];
     expect(preview.mock.calls[0]?.[4]?.[0]).toMatchObject({ note: null });
-    expect(request?.contract_version).toBe("PANTRY-02.v3");
+    expect(request?.contract_version).toBe("PANTRY-02.v4");
     expect(request?.payload.school_date_modes).toEqual([
       {
         school_id: "review-planning-school-1",
@@ -384,6 +383,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       },
     ]);
     expect(request?.payload.rows[0]).toMatchObject({ note: null });
+    expect(request?.payload.rows[0]).not.toHaveProperty(
+      "pantry_need_purpose_id",
+    );
     expect(request?.payload.rows[0]).not.toHaveProperty("delivery_location_id");
     expect(request?.payload.rows[0]).not.toHaveProperty("unit_id");
     expect(draft).not.toHaveBeenCalled();
@@ -410,6 +412,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       source_row_reference: "row",
     } satisfies PantryDraftRow;
 
+    expect(pantryRowsForWrite([row], "PANTRY-02.v4")[0]).not.toHaveProperty(
+      "pantry_need_purpose_id",
+    );
     expect(pantryRowsForWrite([row])[0]).toMatchObject({
       note: "Yêu cầu bổ sung có chủ đích.",
     });

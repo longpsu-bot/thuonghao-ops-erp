@@ -1,0 +1,54 @@
+$ vitest run "--dir" "src/vnext/atlas" "AtlasVNextApp.test.tsx" "AtlasUnresolvedExit.test.tsx" "schools/SchoolDefaultsWorkbench.test.tsx" "-t" "clean sign out calls|a changed identity loses|blocks dirty sign-out|UNKNOWN|unknown|locks a|locks after success" "--maxWorkers=1" "--reporter=verbose"
+
+ RUN  v4.1.10 D:/Project/Repo/OPS/thuonghao-ops-erp
+
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > opens Weekly Menu as the actual fresh-session workbench without initializing School editing
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > carries the selected seven-day range from new Confirmed Need to Allocation and Orders without preparation
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > preserves an existing Allocation range and unsaved split note when Confirmed Need requests another range
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > preserves an existing Orders range and selected order when Allocation requests another range
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > downloads the attendance template from its persistent owner without saving attendance
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Trường học with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Nguyên liệu with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Nhà cung ứng with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Công thức with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Thực đơn with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Sĩ số with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Hàng đặt riêng with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Xác nhận nhu cầu with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Phân bổ NCC with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Đơn mua with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Lệnh điều chỉnh with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Phiếu xuất kho with one active heading
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > launches Đối chiếu PO / Phiếu xuất kho with one active heading
+ × src/vnext/atlas/AtlasVNextApp.test.tsx > blocks dirty sign-out without discarding and resolves two Schools through their close guard 5741ms
+   → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > Confirmed Need continues to supplier allocation with no hidden write
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > preserves a changed date through Planning, Confirmed Need, Procurement, PXK and Reconciliation
+ × src/vnext/atlas/AtlasVNextApp.test.tsx > clean sign out calls back once without a dirty-state blocker 5107ms
+   → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ × src/vnext/atlas/AtlasVNextApp.test.tsx > a changed identity loses the prior unsaved draft including a stale post-sign-out edit 2121ms
+   → expected "vi.fn()" to be called once, but got 2 times
+ ↓ src/vnext/atlas/AtlasVNextApp.test.tsx > uses the injected business date for Recipe's independent initial as-of context
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > keeps all five sort actions and the School order visible in the narrow composition
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > retains secondary type/status sort cycles and exact unsaved School inputs
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > does not present an initial failed School read as an authoritative zero count
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > reports exact local edits and reversion to the workspace
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > reads once, orders operationally, searches accents and filters School Type locally
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > keeps table geometry local and cycles sortable School headers back to business order
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > shows filter-empty copy only when authoritative Schools exist
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > keeps loading and authoritative-empty states distinct from filter-empty
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > accepts explicit zero but rejects every invalid contract form without coercion
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > keeps hidden dirty Schools and includes all of them in the direct save
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > sends one exact frozen bulk command directly and clears only proven drafts after readback
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > keeps editing locked until successful Save readback establishes current authority
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > refreshes authority without discarding valid or invalid drafts and saves with the refreshed version
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > drops drafts that match refreshed authority and removes orphan School drafts
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > ignores a delayed read from the previous authentication subject and clears its drafts
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > ignores a delayed Save outcome from the previous authentication subject
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > recovers an ordinary read failure without using uncertain-write copy
+ ✓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > locks a stale result until an authoritative read and never resends 2123ms
+ ✓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > locks a unknown result until an authoritative read and never resends 631ms
+ ✓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > locks after success when authoritative readback fails 441ms
+ ↓ src/vnext/atlas/schools/SchoolDefaultsWorkbench.test.tsx > Chakra School default portions workbench > preserves drafts after a definite permission failure and serializes zero only when explicitly typed

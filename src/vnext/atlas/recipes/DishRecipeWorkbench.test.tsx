@@ -46,6 +46,28 @@ async function select(action = "Sửa") {
   await screen.findByRole("heading", { name: "Công thức gốc" });
 }
 describe("Công thức operator workbench", () => {
+  it("does not present an unavailable initial catalogue as zero dishes or a successful empty result", async () => {
+    const fixture = createRecipeReviewFixture("DISH_ACTIVE_EDITABLE");
+    fixture.api.getWorkbench = async () => ({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Offline." },
+    });
+    render(
+      <AtlasVNextProvider>
+        <DishRecipeWorkbench authSubject="operator" api={fixture.api} />
+      </AtlasVNextProvider>,
+    );
+    expect(
+      await screen.findByText(
+        "Không tải được công thức đã lưu. Hãy tải lại trước khi tiếp tục.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText("0 món")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Chưa có món. Tạo món mới để bắt đầu."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tạo món mới" })).toBeDisabled();
+  });
   it("adds the Ingredient purchase Unit instead of the first active Unit and saves exact readback", async () => {
     const f = await setup("DISH_ACTIVE_EDITABLE", ({ data }) => {
       Object.assign(data.ingredients[3], {
@@ -59,7 +81,17 @@ describe("Công thức operator workbench", () => {
         unit_status: "ACTIVE",
       });
     });
+    expect(
+      within(screen.getByRole("table", { name: "Danh mục món" }))
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Món", "Loại món", "Trạng thái", "Công thức", "Thao tác"]);
     await select();
+    expect(
+      within(screen.getByRole("table", { name: "Công thức gốc" }))
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Nguyên liệu", "Định lượng", "Đơn vị", "Ghi chú", "Thao tác"]);
     fireEvent.change(screen.getByLabelText("Tìm nguyên liệu để thêm"), {
       target: { value: "Cà rốt" },
     });
@@ -381,12 +413,14 @@ describe("Công thức operator workbench", () => {
     );
     expect(
       screen.getByLabelText("Định lượng Hành lá"),
-    ).toHaveAccessibleDescription("Nhập định lượng hợp lệ.");
+    ).toHaveAccessibleDescription(
+      "Canh bí đỏ thịt bằm · Hành lá 12/09/2026 · Công thức gốc · Khối nhỏ · Kilôgam Nhập định lượng hợp lệ.",
+    );
     expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Định lượng Hành lá"), {
       target: { value: "0,5" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Bỏ Bí đỏ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xóa dòng Bí đỏ" }));
     expect(write).not.toHaveBeenCalled();
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
@@ -398,6 +432,9 @@ describe("Công thức operator workbench", () => {
   it("requires dirty confirmation and cancel preserves the exact quantity draft", async () => {
     await setup();
     await select();
+    expect(
+      screen.getByLabelText("Định lượng Bí đỏ"),
+    ).toHaveAccessibleDescription(/Bí đỏ/);
     fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
       target: { value: "2,25" },
     });

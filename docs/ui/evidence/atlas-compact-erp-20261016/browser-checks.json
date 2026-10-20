@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-16",
+  "direction": "User requested compact OPSv1-like ERP UI; desktop columns lead, mobile stacking is fallback.",
+  "route": "http://127.0.0.1:5177/atlas-vnext-review.html?scenario=range",
+  "baseline": "e01b97b6628b04a93c9fb090d7b077dbe41c5ccb; new density correction not yet published",
+  "v1Evidence": "Read-only provided Retool source archives: Recipe tblDishes small, tblBoM medium; Ingredient/Supplier tables medium; Purchasing PPWBMaster/QA small. No live screenshot certification.",
+  "desktop": {
+    "width": 1366,
+    "height": 768,
+    "documentWidth": 1366,
+    "school": {
+      "columns": 5,
+      "rowHeight": 58.5,
+      "pairedPortions": true
+    },
+    "supplier": {
+      "columns": 6,
+      "rowHeight": 49,
+      "separatePersonPhoneEmail": true
+    },
+    "ingredient": {
+      "columns": 7,
+      "rowHeightApprox": 52,
+      "duplicateCountRemoved": true,
+      "selectedActionRight": 913.08,
+      "selectedViewportRight": 920
+    },
+    "allocation": {
+      "columns": 6,
+      "sortCountActionsOneRow": true,
+      "selectedNeed": "100 kg",
+      "supplierDrafts": ["60", "40"]
+    },
+    "adjustments": {
+      "columns": 6,
+      "explicitDetailAndHistoryRetained": true
+    },
+    "scrolling": "Intentional local table scroll remains where columns exceed selected catalogue width; identity/actions remain pinned."
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844,
+    "documentWidth": 390,
+    "ingredientFirstOpenHeadingTopApprox": 150,
+    "allocationQuantityCell": {
+      "width": 333,
+      "gridColumn": "1 / -1",
+      "whiteSpace": "normal",
+      "text": "Nhu cầu: 100 kg"
+    },
+    "note": "Large exact quantities are supported by focused tests/source; browser fixture uses100kg."
+  },
+  "sortAxes": {
+    "schools": 5,
+    "suppliers": 3,
+    "ingredients": 5,
+    "allocation": 5,
+    "total": 18,
+    "existingDirectionsAndOriginalOrderPreserved": true
+  },
+  "finalScreenshots": [
+    "schools-final-1366x768.jpg",
+    "suppliers-final-1366x768.jpg",
+    "ingredients-final-1366x768.jpg",
+    "ingredient-selected-final-1366x768.jpg",
+    "allocation-selected-final-1366x768.jpg",
+    "adjustment-selected-final-1366x768.jpg",
+    "allocation-selected-final-390x844.jpg",
+    "ingredient-selected-final-390x844.jpg"
+  ],
+  "excluded": "All first-pass/1280/desktop-first/selected-first images are excluded. Several captured prior views or unfinished transitions; final photos were captured in a separate tool roundtrip after exact owner visibility and launcher-hidden checks and visually verified.",
+  "limits": [
+    "Local synthetic fixtures; no Save or hosted writes",
+    "Bounded desktop and narrow review, not all-state/viewport acceptance",
+    "No backend, Warehouse, OPSv1 or Retool mutations",
+    "No merge or manual deployment"
+  ]
+}

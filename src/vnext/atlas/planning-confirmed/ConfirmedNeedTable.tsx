@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import type { CSSProperties } from "react";
 import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import {
   atlasDefaultSort,
@@ -32,6 +33,7 @@ export function ConfirmedNeedTable({
   errors,
   editable,
   compactEditing = false,
+  correctionReason,
   onEdit,
 }: {
   lines: ConfirmedNeedLine[];
@@ -39,6 +41,7 @@ export function ConfirmedNeedTable({
   errors: Record<string, string>;
   editable: boolean;
   compactEditing?: boolean;
+  correctionReason?: string;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   type SortKey = "school" | "ingredient" | "proposal";
@@ -107,7 +110,7 @@ export function ConfirmedNeedTable({
       style={
         {
           "--atlas-confirmed-need-table-mobile-max-height": compactEditing
-            ? "28dvh"
+            ? "max(280px, 40dvh)"
             : "var(--atlas-layout-table-mobile-height, 55dvh)",
         } as CSSProperties
       }
@@ -127,8 +130,16 @@ export function ConfirmedNeedTable({
           } as CSSProperties
         }
         minW="var(--atlas-layout-confirmed-need-table-min, 1120px)"
-        w="var(--atlas-layout-confirmed-need-table-width, 1120px)"
+        w="full"
         tableLayout="fixed"
+        css={{
+          "@media(max-width:47.99rem)": {
+            "& col:nth-of-type(4)": { width: "calc(100vw - 48px)" },
+            "& td[data-field=identity], & th:first-of-type": {
+              position: "static",
+            },
+          },
+        }}
       >
         <Table.ColumnGroup>
           <Table.Column w="var(--atlas-confirmed-school-width, 220px)" />
@@ -247,6 +258,9 @@ export function ConfirmedNeedTable({
                   <Text data-role="recipient" fontWeight="semibold">
                     {line.school.name}
                   </Text>
+                  <Text textStyle="helper" color="fg.muted">
+                    {line.service_date.split("-").reverse().join("/")}
+                  </Text>
                   {!duplicateRecipient && (
                     <Text
                       data-row-secondary=""
@@ -301,6 +315,29 @@ export function ConfirmedNeedTable({
                         : undefined,
                   }}
                 >
+                  <AtlasQuantityContext
+                    id={`${id}-quantity-${line.confirmed_need_line_id}`}
+                    recipient={line.school.name}
+                    location={
+                      duplicateRecipient
+                        ? undefined
+                        : line.delivery_location.name
+                    }
+                    ingredient={line.ingredient.name}
+                    unit={line.controlled_unit.code}
+                    date={line.service_date}
+                    source="Xác nhận nhu cầu"
+                  />
+                  <Text hideFrom="md" textStyle="helper" color="fg.muted">
+                    Đề xuất:{" "}
+                    {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
+                    {line.controlled_unit.code}
+                  </Text>
+                  <Text textStyle="helper" color="fg.muted" mb="xs">
+                    {line.confirmed_quantity_after === null
+                      ? "Chưa lưu"
+                      : `Đã lưu: ${exactQuantityDisplay(line.confirmed_quantity_after)} ${line.controlled_unit.code}`}
+                  </Text>
                   <Box
                     display="grid"
                     gridTemplateColumns="minmax(0, 1fr) auto"
@@ -327,9 +364,7 @@ export function ConfirmedNeedTable({
                             : undefined
                       }
                       fontWeight={adjusted ? "semibold" : "medium"}
-                      aria-describedby={
-                        error || historical ? description : undefined
-                      }
+                      aria-describedby={`${id}-quantity-${line.confirmed_need_line_id}${error || historical ? ` ${description}` : ""}`}
                       onChange={(e) =>
                         onEdit(line.confirmed_need_line_id, {
                           exact_quantity: e.target.value,
@@ -373,7 +408,13 @@ export function ConfirmedNeedTable({
                   minW="var(--atlas-layout-reason-width, 255px)"
                 >
                   <Box display="grid" gap="xs">
-                    {showReasonChrome ? (
+                    {correctionReason !== undefined ? (
+                      <Text textStyle="helper">
+                        {changed
+                          ? correctionReason || "Nhập lý do điều chỉnh ở trên."
+                          : "Giữ nguyên dòng đã xác nhận."}
+                      </Text>
+                    ) : showReasonChrome ? (
                       <NativeSelect.Root disabled={!editable || historical}>
                         <NativeSelect.Field
                           aria-label={`Lý do ${line.ingredient.name}`}
@@ -402,7 +443,7 @@ export function ConfirmedNeedTable({
                         Theo đề xuất
                       </Text>
                     )}
-                    {showReasonChrome && (
+                    {correctionReason === undefined && showReasonChrome && (
                       <Input
                         aria-label={`Ghi chú ${line.ingredient.name}`}
                         placeholder="Ghi chú điều chỉnh"

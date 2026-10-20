@@ -272,6 +272,7 @@ export type ConfirmedNeedWorkbenchData = {
   blockers: ConfirmedNeedIssue[];
   warnings: ConfirmedNeedIssue[];
   allowed_actions: {
+    correct_released_confirmed_needs?: boolean;
     preview_confirmation: boolean;
     confirm_quantities: boolean;
     approve_confirmed_needs: boolean;
@@ -280,12 +281,14 @@ export type ConfirmedNeedWorkbenchData = {
     release_confirmed_needs: boolean;
   };
   disabled_reason_codes: {
+    correct_released_confirmed_needs?: string | null;
     approve_confirmed_needs: string | null;
     release_confirmed_needs_for_purchase_handoff: string | null;
     save_confirmed_needs: string | null;
     release_confirmed_needs: string | null;
   };
   disabled_reasons: {
+    correct_released_confirmed_needs?: string | null;
     preview_confirmation: string | null;
     confirm_quantities: string | null;
     approve_confirmed_needs: string | null;
@@ -298,6 +301,7 @@ export type ConfirmedNeedWorkbenchData = {
   facts_changed_since_validation: boolean | null;
   facts_changed_since_approval: boolean | null;
   lifecycle_history: ConfirmedNeedLifecycleHistoryItem[];
+  need_correction_authority?: unknown;
   pagination: {
     offset: number;
     limit: number;

@@ -115,6 +115,7 @@ it("keeps generated100 separate from saved120, retained72/48 and explicit75/50 t
     journey.inspect().orders.map((po) => po.lines[0]!.ordered_quantity),
   ).toEqual(["75.000000", "50.000000"]);
   const first = journey.inspect().orders[0]!;
+  expect(first.lines[0]!.ingredient.document_code).toBeNull();
   await journey.procurementApi.releasePurchaseOrder(
     releasePurchaseOrderRequest(
       "actor",

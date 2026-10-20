@@ -322,8 +322,8 @@ describe("06B frozen Review safety and focus", () => {
       }),
     ).not.toBeInTheDocument();
     expect(button("Làm mới dữ liệu")).toBeEnabled();
-    expect(button("Lưu thay đổi")).toBeEnabled();
-    expect(primary()).toContain(button("Lưu thay đổi"));
+    expect(button("Lưu sĩ số")).toBeEnabled();
+    expect(primary()).toContain(button("Lưu sĩ số"));
   });
   it.each(["attendance", "pantry"] as const)(
     "blocks routine refresh during %s Preview and restores it on back",

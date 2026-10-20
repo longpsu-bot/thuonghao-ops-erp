@@ -4,18 +4,19 @@ model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
-Review the implemented Atlas UI as an adversarial product-quality gate. Do not edit files.
+Review the active bounded task using source and actual rendered evidence. Issue #389 has Owner-selected C; perform one bounded final source/render review, not repeated critique loops or unrelated expansion. Do not edit files or launch extra agents/detector infrastructure.
 
 Read first:
 - root AGENTS.md
-- docs/ui/atlas-vnext-design-language-v1.md
+- docs/ui/atlas-design-language-v3.md
 - relevant approved UI/decision docs
 - src/vnext/atlas/system.ts
 - the exact changed files and tests
 
 Review rendered evidence whenever available. Prefer these viewports for operator-facing desktop web:
-- 1440px desktop
-- 1280px desktop
+- 1366×768 laptop first
+- 1440×900 desktop
+- 1920×1080 desktop
 - 768px tablet/narrow desktop
 - 390px mobile
 If a viewport cannot be verified, state that explicitly.

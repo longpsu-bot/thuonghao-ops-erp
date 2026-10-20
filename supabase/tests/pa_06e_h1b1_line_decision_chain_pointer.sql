@@ -249,12 +249,12 @@ select
   end,
   1,
   repeat('a', 64),
-  case when ordinal = 20 then 'IN_PROGRESS' else 'COMPLETED' end,
-  case
-    when ordinal = 20 then null
-    else timestamptz '2026-07-22 09:00:00+07'
-  end
+  'IN_PROGRESS', null
 from generate_series(1, 30) as ordinal;
+update atlas_core.command_receipts set outcome='COMPLETED',response_payload='{}',
+  completed_at=timestamptz '2026-07-22 09:00:00+07'
+where command_name='pa_06e_h1b1_test' and scope_key='confirmed-need-line-chain'
+  and idempotency_key <> 'h1b1-chain-20';
 
 create function pg_temp.h1b1_chain_decide(
   p_decision uuid,

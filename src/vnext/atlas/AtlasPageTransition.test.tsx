@@ -71,6 +71,7 @@ async function show(unknown = false) {
       />
     </AtlasVNextProvider>,
   );
+  open("Trường học");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   return { apis, schoolsRead, recipeRead, ...result };
 }

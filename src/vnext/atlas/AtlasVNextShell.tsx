@@ -464,14 +464,17 @@ export function AtlasVNextShell({
           minW="var(--atlas-layout-zero, 0)"
           maxW="full"
           position="relative"
-          bg="bg.toolbar"
+          bg="bg.workspace"
           px="sm"
-          py="xs"
+          pt="xs"
+          pb="var(--atlas-layout-zero, 0)"
         >
           <Flex
             w="var(--atlas-workspace-tab-content-width, max-content)"
             minW="full"
-            gap="xs"
+            gap="var(--atlas-workspace-tab-gap, 3px)"
+            px="xs"
+            pt="xs"
           >
             {ids.map((id) => (
               <Flex
@@ -481,18 +484,30 @@ export function AtlasVNextShell({
                   else tabBoxes.current.delete(id);
                 }}
                 align="center"
-                bg={id === activeModule ? "bg.workbench" : "bg.context"}
-                borderLeftWidth="var(--atlas-layout-edge, 1px)"
-                borderRightWidth="var(--atlas-layout-edge, 1px)"
-                borderBottomWidth="var(--atlas-layout-edge, 1px)"
-                borderTopWidth="var(--atlas-workspace-selected-edge, 3px)"
-                borderColor={
-                  id === activeModule ? "border.accent" : "border.default"
-                }
-                borderRadius="control"
+                position="relative"
+                isolation="isolate"
+                px="xs"
+                _before={{
+                  content: '""',
+                  position: "absolute",
+                  inset: "var(--atlas-layout-zero, 0)",
+                  zIndex: "var(--atlas-workspace-tab-background, -1)",
+                  transform: "skewX(-10deg)",
+                  borderTopRadius: "control",
+                  borderWidth: "var(--atlas-layout-edge, 1px)",
+                  borderBottomWidth:
+                    id === activeModule
+                      ? "var(--atlas-layout-zero, 0)"
+                      : "var(--atlas-layout-edge, 1px)",
+                  borderColor:
+                    id === activeModule ? "border.strong" : "border.default",
+                  bg: id === activeModule ? "bg.workbench" : "bg.toolbar",
+                }}
                 pr="xs"
                 _hover={{
-                  bg: id === activeModule ? "bg.workbench" : "bg.subtle",
+                  _before: {
+                    bg: id === activeModule ? "bg.workbench" : "bg.context",
+                  },
                 }}
               >
                 <Button
@@ -512,6 +527,7 @@ export function AtlasVNextShell({
                   px="sm"
                   gap="sm"
                   _hover={{ bg: "transparent" }}
+                  minH="control"
                   onClick={() => select(id)}
                   onKeyDown={(event) => tabKeys(event, id)}
                 >
@@ -636,7 +652,7 @@ export function AtlasVNextShell({
                       minH="var(--atlas-layout-mobile-target, 44px)"
                       minW="var(--atlas-layout-mobile-target, 44px)"
                       onClick={() => {
-                        closeMenu(false);
+                        closeMenu();
                         onClose?.(id);
                       }}
                     >
@@ -658,6 +674,7 @@ export function AtlasVNextShell({
         overflow="auto"
         minW="var(--atlas-layout-zero, 0)"
         flex="1"
+        bg="bg.workbench"
         p="sm"
       >
         {children}

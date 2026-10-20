@@ -810,7 +810,17 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     const details = contributionDetail.closest("details")!;
     expect(within(details).getByText(/Công thức/)).toBeVisible();
     expect(within(details).getByText(/21 kg/)).toBeVisible();
-    expect(within(details).getByText(/Nhu cầu bổ sung/)).toBeVisible();
+    expect(within(details).getByText("Bổ sung", { exact: true })).toBeVisible();
+    expect(
+      within(calculationDetail).getByRole("columnheader", {
+        name: "Công thức + Bổ sung",
+      }),
+    ).toBeVisible();
+    expect(
+      within(calculationDetail).getByRole("columnheader", {
+        name: "Hàng đặt riêng",
+      }),
+    ).toBeVisible();
     expect(within(details).getByText(/2,5 kg/)).toBeVisible();
   });
 

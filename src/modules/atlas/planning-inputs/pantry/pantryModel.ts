@@ -67,10 +67,17 @@ export type PantryDraftRow = {
   source_row_reference: string;
 };
 
-export function pantryRowsForWrite(rows: PantryDraftRow[]): JsonValue[] {
+export function pantryRowsForWrite(
+  rows: PantryDraftRow[],
+  contractVersion: "PANTRY-02.v3" | "PANTRY-02.v4" = "PANTRY-02.v3",
+): JsonValue[] {
   return rows.map((row) => {
     const note = row.note.trim();
-    return { ...row, note: note === "" ? null : note } as JsonValue;
+    const { pantry_need_purpose_id: _purpose, ...purposeFree } = row;
+    return {
+      ...(contractVersion === "PANTRY-02.v4" ? purposeFree : row),
+      note: note === "" ? null : note,
+    } as JsonValue;
   });
 }
 

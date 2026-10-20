@@ -1,0 +1,18 @@
+{
+  "all": {
+    "xlsx": "86f49990a21b39cb3553f6b0f285d90e62186eb724b9ab824aa0b87cd50019fb",
+    "pdf": "97b264ffd8514b6128ba20268e6090f53ba0ca2ef9b563e3082459c90256b2ee"
+  },
+  "details_ing": {
+    "xlsx": "5f8224c4bb3d47f82c2e7c0497d690bd0f91b5254756a41c6441339f69074f3d",
+    "pdf": "edab3b1820a6b62a9d63a43def318c2fcb05f32e437b186ffbf17e0c19909b08"
+  },
+  "details_school": {
+    "xlsx": "78e0d8d1c83ed219e34154aca4c3f1f87a7ba80e01d3d7e423ddf95391341b53",
+    "pdf": "58c19cd026fab06674d1f7de4d52178a22b0e7dc436ad6d48233d7a9757f896c"
+  },
+  "sum": {
+    "xlsx": "586253ec7129a0f98bf4c003a124481acc3bae9004e524f6cad690adc7851120",
+    "pdf": "bbd93d9d3e05f157ad02dead8c5418540b4098b15c9313915d0538a6cebbb75e"
+  }
+}

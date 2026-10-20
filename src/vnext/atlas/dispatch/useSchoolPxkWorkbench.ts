@@ -19,6 +19,12 @@ export type SchoolPxkWorkbenchProps = AtlasModuleExitProps & {
   api: SchoolDispatchReleaseApi;
   authSubject: string | null;
   initialServiceDate: string;
+  initialSchoolIds?: string[];
+  incomingScope?: {
+    id: string;
+    range: AtlasOperatorDateRange;
+    schoolIds: string[];
+  };
   onServiceDateChange?: (date: string) => void;
   schools?: { school_id: string; school_name: string }[];
   onExportXlsx?: (document: SchoolDispatchDocument) => void | Promise<void>;
@@ -32,6 +38,7 @@ export type SchoolPxkWorkbenchProps = AtlasModuleExitProps & {
   ) => void | Promise<void>;
 };
 type Transition = {
+  incomingScope?: NonNullable<SchoolPxkWorkbenchProps["incomingScope"]>;
   exit?: () => void;
   date?: string;
   range?: AtlasOperatorDateRange;
@@ -80,6 +87,7 @@ export function useSchoolPxkWorkbench({
   api,
   authSubject,
   initialServiceDate,
+  initialSchoolIds,
   onServiceDateChange,
   schools: externalSchools,
 }: SchoolPxkWorkbenchProps) {
@@ -93,7 +101,10 @@ export function useSchoolPxkWorkbench({
   useEffect(() => {
     onServiceDateChange?.(date);
   }, [date, onServiceDateChange]);
-  const [schoolIds, setSchoolIds] = useState<string[]>([]);
+  const [schoolIds, setSchoolIds] = useState<string[]>(initialSchoolIds ?? []);
+  const [appliedIncomingScope, setAppliedIncomingScope] = useState<
+    string | null
+  >(null);
   const [catalogue, setCatalogue] = useState<{
     subject: string;
     schools: { school_id: string; school_name: string }[];
@@ -266,6 +277,16 @@ export function useSchoolPxkWorkbench({
     )
     .sort((a, b) => priority[a.state] - priority[b.state]);
   const apply = (next: Transition) => {
+    if (next.incomingScope) {
+      invalidate();
+      setDate(next.incomingScope.range.start);
+      setDateEnd(next.incomingScope.range.end);
+      setRange(next.incomingScope.range);
+      setSchoolIds([...new Set(next.incomingScope.schoolIds)].sort());
+      setSelectedKey(null);
+      setAppliedIncomingScope(next.incomingScope.id);
+      return;
+    }
     if (next.exit) {
       next.exit();
       return;
@@ -430,6 +451,7 @@ export function useSchoolPxkWorkbench({
     range,
     rangeError,
     schoolIds,
+    appliedIncomingScope,
     schools,
     search,
     setSearch,

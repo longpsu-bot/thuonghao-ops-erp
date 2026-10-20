@@ -1,5 +1,16 @@
 # RMVP-05 Connected Confirmed Need Review API Contract
 
+## B1 source disclosure amendment — 18 October 2026
+
+The existing Need Generation read supplies original Recipe R, Bổ sung B, derived
+R+B, separate Hàng đặt riêng H and total theory in Confirmed Need support. Its
+immutable Purpose classification and exact decimal-string contract are defined
+in [RMVP-04](rmvp-04-connected-need-generation.md#b1-product-source-disclosure--18-october-2026).
+RMVP-05 line/decision contracts, privileges and confirmation authority remain.
+R20/B5/H3 stays theoretical28 when a human explicitly confirms30 with reason:
+the +2 is a Planning decision, not a Pantry source or Recipe revision. Existing
+allocation/Handoff lineage makes final authorized30 the PO/PXK quantity.
+
 ## Shopping List round-trip precision correction — AUD-003 (17/09/2026)
 
 After workbook identity/version validation, the importer compares the visible

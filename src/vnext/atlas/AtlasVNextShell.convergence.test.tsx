@@ -10,6 +10,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { AtlasVNextShell } from "./AtlasVNextShell";
 import { atlasWorkbenches } from "./AtlasWorkbenchRegistry";
+import shellSource from "./AtlasVNextShell.tsx?raw";
 
 function viewport(desktop: boolean) {
   vi.stubGlobal(
@@ -91,15 +92,41 @@ it("gives inactive workspaces resting boundaries and the active workspace a dist
   const inactive = screen.getByRole("tab", { name: "Thực đơn" });
   expect(active).toHaveAttribute("aria-selected", "true");
   expect(inactive).toHaveAttribute("aria-selected", "false");
-  for (const tab of [active, inactive]) {
-    const style = getComputedStyle(tab.parentElement!);
-    expect(style.borderLeftWidth).toBe("var(--atlas-layout-edge, 1px)");
-    expect(style.borderRightWidth).toBe("var(--atlas-layout-edge, 1px)");
-    expect(style.borderLeftColor).not.toBe("transparent");
-  }
-  expect(getComputedStyle(active.parentElement!).background).not.toBe(
-    getComputedStyle(inactive.parentElement!).background,
+  const surface = (tab: HTMLElement) => {
+    const rule = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .filter(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule &&
+          [...tab.parentElement!.classList].some(
+            (name) => rule.selectorText === `.${name}::before`,
+          ),
+      );
+    expect(rule.length).toBeGreaterThan(0);
+    const merged = document.createElement("span");
+    merged.style.cssText = rule.map((entry) => entry.style.cssText).join(";");
+    const style = merged.style;
+    expect(style.borderColor).not.toBe("transparent");
+    expect(style.transform).toBe("skewX(-10deg)");
+    return style;
+  };
+  const activeSurface = surface(active);
+  const inactiveSurface = surface(inactive);
+  // JSDOM drops a var() border shorthand when the bottom edge is overridden.
+  // Keep its declared resting width pinned alongside the rendered surface checks.
+  expect(shellSource).toMatch(
+    /_before=\{\{[^}]*borderWidth: "var\(--atlas-layout-edge, 1px\)"/,
   );
+  expect(activeSurface.borderColor).toBe("var(--atlas-colors-border-strong)");
+  expect(inactiveSurface.borderColor).toBe(
+    "var(--atlas-colors-border-default)",
+  );
+  expect(activeSurface.borderBottomWidth).toBe("var(--atlas-layout-zero, 0)");
+  expect(inactiveSurface.borderBottomWidth).toBe(
+    "var(--atlas-layout-edge, 1px)",
+  );
+  expect(activeSurface.background).toBe("var(--atlas-colors-bg-workbench)");
+  expect(inactiveSurface.background).toBe("var(--atlas-colors-bg-toolbar)");
 });
 
 it("distinguishes unsaved, attention and blocked markers by shape with readable labels", () => {

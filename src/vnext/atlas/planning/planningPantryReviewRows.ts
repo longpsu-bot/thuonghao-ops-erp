@@ -15,13 +15,26 @@ export function planningPantryReviewRows(
     const unit =
       c.pantryData?.ingredients.find((i) => i.ingredient_id === r.ingredient_id)
         ?.purchase_unit.unit_name ?? "";
-    const purpose =
-      c.pantryData?.purposes.find(
-        (p) => p.pantry_need_purpose_id === r.pantry_need_purpose_id,
-      )?.purpose_name_vi ?? "";
+    const purpose = c.pantryData?.purposes.find(
+      (p) => p.pantry_need_purpose_id === r.pantry_need_purpose_id,
+    );
+    const code =
+      typeof r.purpose_code === "string"
+        ? r.purpose_code
+        : (purpose?.purpose_code ?? "");
+    const labels: Record<string, string> = {
+      planning_identified_supplement: "Bổ sung",
+      school_requested_supplement: "Hàng đặt riêng",
+    };
+    const purposeLabel =
+      labels[code] ??
+      (typeof r.purpose_name_vi === "string"
+        ? r.purpose_name_vi
+        : purpose?.purpose_name_vi) ??
+      "";
     return [
       `${r.requested_quantity ?? "—"} ${unit}`,
-      purpose,
+      purposeLabel,
       r.note,
       r.source_request_reference,
     ]

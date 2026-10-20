@@ -72,8 +72,20 @@ function show() {
 }
 
 async function nav(label: string) {
-  fireEvent.click(await screen.findByRole("button", { name: "Chức năng" }));
-  fireEvent.click(await screen.findByRole("button", { name: label }));
+  const trigger = await within(screen.getByRole("banner")).findByLabelText(
+    "Chức năng",
+    { selector: "button" },
+  );
+  expect(trigger).toHaveRole("button");
+  expect(trigger).toBeVisible();
+  fireEvent.click(trigger);
+  const launcher = await screen.findByRole("dialog", { name: "Chức năng" });
+  const destination = within(launcher).getByRole("button", {
+    name: label,
+    hidden: true,
+  });
+  expect(destination).toBeVisible();
+  fireEvent.click(destination);
   await waitFor(() =>
     expect(
       screen.queryByRole("dialog", { name: "Chức năng" }),
@@ -151,20 +163,42 @@ describe("Atlas pre-cutover UI polish", () => {
     show();
     await nav("Thực đơn");
     await nav("Xác nhận nhu cầu");
+    const need = within(
+      screen.getByRole("tabpanel", { name: "Xác nhận nhu cầu" }),
+    );
 
+    const utilityActions = within(
+      await need.findByRole("group", {
+        name: "Tiện ích nhu cầu xác nhận",
+        hidden: true,
+      }),
+    );
     expect(
-      await screen.findByRole("button", { name: "Xuất Phiếu đi chợ" }),
+      utilityActions.getByRole("button", {
+        name: "Xuất Phiếu đi chợ",
+        hidden: true,
+      }),
     ).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Nhập Phiếu đi chợ" }),
+      utilityActions.getByRole("button", {
+        name: "Nhập Phiếu đi chợ",
+        hidden: true,
+      }),
     ).toBeVisible();
     expect(
-      screen.getByLabelText("Nhập Phiếu đi chợ .xlsx"),
+      utilityActions.getByLabelText("Nhập Phiếu đi chợ .xlsx"),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
-    const workbar = screen.getByRole("group", {
+    const workbar = need.getByRole("group", {
       name: "Phạm vi xác nhận nhu cầu",
+      hidden: true,
     });
+    expect(workbar).toBeVisible();
+    const filter = within(workbar).getByRole("button", {
+      name: "Bộ lọc",
+      hidden: true,
+    });
+    expect(filter).toBeVisible();
+    fireEvent.click(filter);
     expect(
       within(workbar).queryByRole("textbox", { name: "Tuần phục vụ" }),
     ).not.toBeInTheDocument();

@@ -1,4 +1,5 @@
 import { AtlasDateInput } from "../AtlasDateInput";
+import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import {
   Box,
   Button,
@@ -82,6 +83,13 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
       ? c.targets?.effective_lines.find((l) => targetKey(l) === d.targetKey)
           ?.unit_name
       : purchaseIngredient(d, c.data)?.purchase_unit_name;
+  const quantityTarget = c.targets?.effective_lines.find(
+    (line) => targetKey(line) === d.targetKey,
+  );
+  const quantityIngredient =
+    d.action === "ADJUST_QUANTITY"
+      ? quantityTarget?.ingredient_name
+      : purchaseIngredient(d, c.data)?.ingredient_name;
   const dishOptions = dishes.map((i) => (
     <option key={i.dish_id} value={i.dish_id}>
       {i.dish_name}
@@ -289,6 +297,26 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
             invalid={Boolean(d.quantity && parseQuantity(d.quantity) === null)}
           >
             <Field.Label>Định lượng mới</Field.Label>
+            <AtlasQuantityContext
+              recipient={
+                d.audience === "one"
+                  ? c.data.schools.find((s) => s.school_id === d.schoolId)
+                      ?.school_name
+                  : "Tất cả trường"
+              }
+              ingredient={quantityIngredient}
+              unit={quantityUnit ?? undefined}
+              date={d.effectiveFrom}
+              source={
+                c.data.dishes.find((dish) => dish.dish_id === context.dishId)
+                  ?.dish_name ?? "Điều chỉnh nguyên liệu"
+              }
+            />
+            <Text textStyle="helper" color="fg.muted">
+              {quantityTarget
+                ? `Đang áp dụng: ${String(quantityTarget.quantity_per_basis).replace(".", ",")} ${quantityTarget.unit_name}`
+                : "Thành phần mới"}
+            </Text>
             <Flex role="group" aria-label="Định lượng và đơn vị" w="full">
               <Input
                 inputMode="decimal"

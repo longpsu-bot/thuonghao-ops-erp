@@ -102,3 +102,104 @@ allocation currentness is derived as stale.
 The amendment does not edit or supersede any PO/PXK, does not automatically save a
 new allocation, and does not change the historical WHOLESALE/supplier-direct guard.
 New supplier and dispatch commitments remain separate explicit commands.
+
+## C / K1 released correction — 19 October 2026
+
+Owner-authorized K1 adds an explicit `RMVP-05.v3` branch to the existing
+`atlas_api.save_confirmed_needs(jsonb)` writer. It is a backend checkpoint;
+the downstream correction workflow is unavailable until separately approved K2.
+The v2 editable Save and existing Release envelopes retain their contracts.
+
+The v3 envelope keeps the existing Save fields and exact changed `lines`. Its
+payload also requires a `correction` object with exactly these fields:
+
+- `expected_confirmed_need_release_id`: latest original release for this batch;
+- `expected_purchase_handoff_batch_id`, `expected_purchase_handoff_revision_id`,
+  `expected_purchase_handoff_version`: exact retained current Handoff, or all null
+  when the released batch has no Handoff;
+- `expected_source_fingerprint`: SHA-256 of the canonical current validated-facts
+  projection, supplied by authoritative readback.
+
+The authenticated Actor requires GLOBAL scope and the union of
+`confirmed_need_quantities.confirm`, `planning.need_generation.write` and
+`confirmed_need_release.release`. Expected batch version, current line revision
+and decision identities, exact quantity/reason/policy checks and immutable
+original release evidence remain mandatory. Each submitted line must represent
+an authentic changed human quantity. Released and subsequent K1-reopened batches
+use this branch; the v2 route rejects a batch with K1 correction authority.
+
+The transaction locks the current Need run before its batch, resolves source
+root IDs from canonical server preflight for that batch's single service date,
+then takes Menu → Attendance → Pantry `FOR SHARE` locks in ID order before any
+Need line/revision wait. The order follows RMVP-04's existing source-root order;
+the batch lock also serializes with Issue #222 guarded source Saves. A
+COMPLETE-only source with no Menu/Attendance evidence locks only its Pantry
+root. After acquisition, a fresh canonical preflight must report READY, zero
+blockers, CURRENT and the exact locked batch/version, run/version and release
+snapshot. Request data cannot choose dates, candidates or source roots. A
+reopen committed first yields `CORRECTION_SOURCE_NOT_CURRENT`; a correction
+committed first may legitimately become outdated after a subsequent reopen.
+Locks remain until transaction completion.
+
+Private access adds only the existing canonical preflight EXECUTE and SELECT /
+UPDATE on the three source primary-key columns for the existing Need runtime.
+Role-specific SELECT and UPDATE-lock RLS policies use `WITH CHECK (false)` for
+writes; even key self-updates are denied. There is no public source access,
+new function/role/domain object, historical guard relaxation or source writer.
+
+Successful Save appends authentic predecessor-linked decisions/revisions and
+advances the batch once into consistent REOPENED working pointers. Untouched
+line/decision identities, captured contributions, original Need approvals and
+releases, Handoff, allocation, issued PO and PXK remain immutable. Transaction
+failure rolls back all working changes and command evidence; completed replay
+returns the original result and changed-payload replay is rejected.
+
+Readback exposes `need_correction_authority`: original release/Handoff,
+current predecessor-linked lines, old/new quantity and difference, reason,
+Actor/time, source fingerprint and pending allocation/transfer/replacement
+obligations. Both response and readback report downstream workflow unavailable
+and supplier commitment unchanged. Save neither prepares nor releases a PO/PXK.
+
+The migration is forward-only and baseline-checksummed. Rollback before any
+installation removes this route; after authentic correction facts exist, disable
+new v3 writes and use a reviewed forward repair while preserving all decisions,
+receipts and released evidence. Never delete correction history to roll back.
+
+## K3 advisory correction read — 20 October 2026
+
+The [Owner amendment](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6277838544)
+adds three fields to the existing authenticated review response:
+
+- `allowed_actions.correct_released_confirmed_needs`: explicit advisory entry
+  to the existing v3 correction, separate from ordinary v2 Save;
+- `disabled_reason_codes.correct_released_confirmed_needs`: null when eligible,
+  otherwise a stable `CORRECTION_*` blocker;
+- `disabled_reasons.correct_released_confirmed_needs`: null when eligible,
+  otherwise safe Vietnamese operator wording.
+
+The existing review runtime resolves the active human Actor, GLOBAL scope and
+all three K1 capabilities. It checks the latest original validated release,
+retained Handoff (including genuine absence), exact current canonical READY /
+CURRENT source/run/batch/snapshot, complete original/current facts and immutable
+decision ancestry. A REOPENED batch additionally needs a nontrivial post-release
+human correction chain. Arbitrary reopened state, a receipt, a Draft or equal
+quantities are not permission. Missing, malformed or unreadable evidence fails
+closed. The five correction binding values and response shape remain available.
+
+`need_correction_authority.operationally_available` now reflects this explicit
+correction admission. `downstream_workflow_available` is narrower than write
+readiness: it identifies navigation to the existing Procurement review for a
+current authentic corrected chain retaining its Handoff. It is neither a
+Procurement capability nor proof of accepted allocations, current complete
+Supplier/date coverage, a releasable Draft or an issued replacement. The only
+projected pending obligation is `PROCUREMENT_CURRENTNESS_REVIEW`; fresh existing
+Procurement reads determine the actual next allowed command and blockers.
+Uncorrected batches have no correction-generated pending obligation. There is
+no remaining `PROCUREMENT_TRANSFER_NOT_IMPLEMENTED` claim in fresh review data.
+
+The v3 writer and its top-level compatibility response remain unchanged. After
+any Save or UNKNOWN outcome the client obtains fresh canonical review and
+Procurement reads; it does not enable actions from the historical K1-only
+top-level response message. Save still issues no PO or PXK, and every write
+rechecks its own authority under the existing locks. No privilege, RLS, role,
+capability, receipt, timeout or historical fact change is part of this amendment.

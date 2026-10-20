@@ -1,5 +1,78 @@
 # School-Catering Procurement API Contract
 
+## K3 Allocation read reconciliation — 20 October 2026
+
+The continuation's forward migration
+`20261020022939_atlas_k3_ordinary_allocation_blocker.sql` preserves the ordinary
+incomplete-Need instruction while retaining K3's corrected-source blocker. It
+changes only the existing shaped-read message branch, with no writer, privilege,
+history or timeout change. The connected single-School 100 → 110 → 90 path passes;
+the shared-School/two-Supplier PO/PXK read timeout remains a separate blocked
+acceptance gate recorded in the [K3 task](../implementation-tasks/TASK-ATLAS-C-K3-OPERATOR-INTEGRATION-01.md).
+
+Authority: [Owner decision #400](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6279713889). The existing `get_confirmed_supplier_allocation_workbench` uses K2's per-family source proof after a genuine post-release correction. Changed families expose the authentic current `CONFIRMED_NEED` proposal for explicit acceptance; untouched families retain applicable original `PURCHASE_HANDOFF` identities and contributors. Handoff rows in this correction branch do not expose CN command bindings. Ordinary released rows retain their existing CN lineage metadata. Actual contributing Schools remain associated with the family independently of current default-location metadata.
+
+`BALANCED` requires compatible typed source identity/version, exact contributor revision/decision or Handoff line membership, controlled Unit, canonical fingerprint and quantity, and eligible balanced Supplier splits. A later valid correction remains editable while the previously accepted allocation is stale. Missing or invalid correction evidence blocks actions; equal totals cannot establish currentness. Post-release Preparation advisory uses the canonical whole-date allocation frontier, independent of UI filters, and cannot use raw CN/default readiness to override `SOURCE_CHANGED` or an existing cancellation obligation. Ordinary pre-release Preparation/default behavior remains unchanged. These are advisory reads: unchanged transactional writers recheck source, authorization, locking, coverage and receipts.
+
+Migration `20261020004031_atlas_k3_allocation_source_read_parity.sql` amends only the existing Allocation read and Preparation advisory. No new function, privilege, persistence, status, writer, receipt, lock, historical source identity or PO snapshot is introduced. A reviewed forward rollback may restore the prior read definitions without changing operational history; it must keep correction entry fail-closed until a coherent read is restored.
+
+## K2 corrected Need source amendment — 19 October 2026
+
+Authority: [Issue #400 Owner K2 decision](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6263269007), implemented in the bounded [K2 task record](../implementation-tasks/TASK-ATLAS-C-K2-CORRECTED-NEED-PO-01.md). This supersedes #406's proposed receipt certificate for the closed corrected-Need branch. Command receipts retain idempotency, recovery and audit meaning; a command name, completed outcome or response never supplies missing source authority.
+
+An authentic `RMVP-05.v3` post-release correction retains the immutable original Need release and Handoff. The existing explicit Supplier Allocation Save accepts exact current Need contributions, quantities, Suppliers and notes. Corrected Preparation verifies that source and the complete supplier/date frontier without another Planning release or a fabricated Handoff successor. Unchanged families retain applicable original Handoff identities. Affected families use existing typed `CONFIRMED_NEED` contributions; each contribution retains the existing source XOR.
+
+The existing complete replacement command creates or regenerates the whole Supplier/date Draft. The existing explicit `release_school_catering_purchase_order` remains the final commitment boundary. It independently rederives original validated release/Handoff ancestry, immutable human revision/decision chains, exact current theoretical membership, Unit/policy/quantity evidence, accepted allocation membership and the complete date document frontier. Live upstream preflight is required even when captured facts and RMVP-06 evaluation still match. Equal quantities alone confer no authority. Invalid corrected evidence fails closed and cannot restore the old Handoff as current authority.
+
+Release locks the corrected source before supplier/date uniqueness and allocation locks, rechecks the current Actor and whole represented School/location scope, and serializes Supplier status and relevant authorization changes. The releaser needs existing Procurement write authority; the previous authentic K1 Save already established Planning authority, which is not reauthorized against the historical Actor's current roles. Existing predecessor/version checks and atomic new-number release/old-root supersession remain. Original numbers, quantities, frozen School/item/note snapshots and exports are retained through repeated replacements. Historical typed-source validation uses immutable ancestry and the accepted source version, independently of later working currentness.
+
+A later Need or allocation change invalidates an old Draft. Missing Supplier coverage blocks release even when the target Supplier's own Draft remains current. A removed Supplier retains `CANCELLATION_REQUIRED`; no zero PO or implicit cancellation is introduced. Ordinary initial Handoff release behavior remains. K1 writer/readback activation, staff enablement, PXK issuance, Warehouse and document styling are not expanded by this backend checkpoint.
+
+Verification uses real authenticated commands in disposable databases, including 100 → 110 → 90, multiple Suppliers and shared Schools, R/B/H evidence, scope/permission denial, forged receipt alone, missing Supplier coverage, replay, UNKNOWN recovery, rollback and actual competing transactions. No hosted install, merge or deployment is authorized.
+
+## B2 optional Ingredient code amendment — 19 October 2026
+
+Authority: [Owner decision](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/389#issuecomment-6236671930)
+and [bounded contract delta](../implementation-tasks/TASK-ATLAS-B2-PO-INGREDIENT-CODE-OPTIONAL-01.md).
+Ingredient `document_code` is optional internal metadata. Normal and complete
+replacement PO release/read/export permit a null code. Supplier outward code
+remains required. `PO_DOCUMENT_CODE_REQUIRED` identifies missing/invalid Supplier
+code; `PO_INGREDIENT_DOCUMENT_CODE_INVALID` identifies corrupt nonnull internal
+metadata and permits correcting it or clearing it through normal Master Data.
+Master-data nonnull-code validation is unchanged.
+
+Migration `20261019014456_atlas_b2_po_ingredient_code_optional.sql` amends only
+`release_school_catering_purchase_order`, `freeze_school_catering_po_line_output`
+and `get_school_catering_purchase_orders`. It retains their owners, ACLs, search
+paths, all required descriptive evidence, exact quantities, source guards,
+whole-PO authorization, locking, numbering, receipts and replacement semantics.
+`document_snapshot_complete`/`export_ready` no longer treat null Ingredient code
+as missing outward evidence. Other incomplete/corrupt snapshots fail closed.
+
+Official XLSX already hides the item-code compatibility column; official PDF
+already omits it. Preserve those historical layouts, hidden code snapshots and
+`DOCUMENT`/`ROW_SOURCE` metadata unchanged. New null code cells stay blank, with
+no UUID or technical-code fallback. Preliminary summary removes the visible
+`Mã hàng` column and gives its width to names; preliminary detail already omits
+codes. Both retain preliminary labeling and no fabricated official number.
+No historical rows are rewritten, no rendering-version authority is introduced,
+and PXK/Dispatch/Shopping List remain outside B2.
+
+Rollback must preserve nullable read/export compatibility for already issued
+null-code POs. Reinstating the old requirement would strand valid commitments;
+disable release/presentation through a reviewed forward change if needed.
+
+## B1 three-source coverage clarification — 18 October 2026
+
+The [approved B1 model](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md)
+does not change Procurement arithmetic or commitment semantics. Confirmed-source
+allocations consume final authorized Confirmed Need, then promote through the
+real Handoff into exact Supplier splits and released PO lines. R20+B5+H3 yields28
+when accepted unchanged; an explicit reasoned confirmation30 yields30, retaining
+the original three contributions and separate human +2 decision. A Pantry-only
+Ingredient B5+H3 yields8 without a fabricated Recipe contribution. Shared-location
+School and supplier coverage reconcile independently; R+B is never a new source.
+
 ## PROCUREMENT-SUPPLIER-LINE-NOTE-01 amendment
 
 Both existing supplier-allocation commands accept an optional `supplier_note` on each
@@ -294,7 +367,8 @@ implementations retained behind shaped public wrappers.
 
 The 9 October hidden-parsing follow-up stores technical Ingredient/Unit/document
 identities and released source links in hidden row columns and a very-hidden
-worksheet. Frozen business codes remain visible. See the
+worksheet. Supplier code remains visible; the official Ingredient-code column
+is hidden compatibility evidence. See the
 [operational XLSX metadata contract](operational-document-xlsx-metadata.md).
 
 Authority: the Owner's final Document System closeout retains the accepted School
@@ -309,10 +383,12 @@ using the retained legacy ID provenance. Native technical codes and UUIDs are
 never outward-code authority. See the
 [Master Data amendment](../architecture/rmvp-01-independent-atlas-master-data.md#document-facing-code-amendment--pr-360).
 
-Future official school-catering PO release requires every participating Supplier
-and Ingredient to have a nonblank, trimmed, single-line printable document code
+Official school-catering PO release requires the participating Supplier
+to have a nonblank, trimmed, single-line printable document code
 of at most 200 Unicode code points. Technical V1 prefixes, UUID substrings and control
-characters are invalid, including Unicode boundary whitespace such as NBSP and BOM. `PO_DOCUMENT_CODE_REQUIRED` returns a safe blocker before
+characters are invalid, including Unicode boundary whitespace such as NBSP and BOM.
+Ingredient code may be null; nonnull internal metadata retains the same validity
+rules. `PO_DOCUMENT_CODE_REQUIRED` is now Supplier-specific and returns a safe blocker before
 issuing a number or commitment. The existing command acquires Supplier, ordered
 Ingredient and ordered Unit row locks before reading the display facts, retaining
 those locks through validation and capture. Existing version, source-currentness,
@@ -334,7 +410,7 @@ The existing shaped read adds:
   `unit_code_snapshot`: nullable text.
 - Order `document_snapshot_complete`: derived boolean.
 - `supplier.document_code` and `line.ingredient.document_code`: current Master Data
-  for Drafts, frozen outward codes for released/superseded records.
+  for Drafts, frozen Supplier code/optional Ingredient metadata for released/superseded records.
 - `document_export_blocker`: safe Vietnamese explanation when an official record
   lacks reproducible display evidence.
 
@@ -346,7 +422,8 @@ the explicit snapshots and require `document_snapshot_complete === true`.
 
 The shaped line retains `supplier_note` from its frozen revision snapshot after current allocation notes change.
 
-Completeness requires valid outward codes, the captured Supplier name, captured Ingredient/Unit labels and
+Completeness requires valid Supplier outward code, valid nonnull internal code
+metadata when present, the captured Supplier name, captured Ingredient/Unit labels and
 the existing complete School breakdown on every line. Incomplete or malformed
 historical evidence remains readable with `document_snapshot_complete: false`,
 `export_ready: false`, `allowed_actions.export: false` and
@@ -405,3 +482,35 @@ cache persists between requests, and reads create no supporting business facts.
 The hosted migration-105 baseline and local migration-106 regression are recorded
 in [the bounded read-performance task](../implementation-tasks/TASK-PROCUREMENT-POST-RELEASE-ALLOCATION-READ-01.md).
 Hosted post-fix acceptance remains subject to Product-approved deployment.
+
+### K3 PO/PXK statement-local read evidence
+
+The bounded K3 recovery reuses selected PO Draft-currentness, per-document
+commitment state, distinct procurement dates and per-School PXK previews within
+their existing read statements. The explicitly approved shared Draft-currentness
+helper resolves each exact family once across the union of expected Supplier/date
+families and actual revision-line families, including historical or foreign-date
+actual memberships. All original source-kind, current-revision, fingerprint,
+quantity and symmetric split-membership predicates remain authoritative.
+
+No evidence persists between statements. Public request/response contracts,
+roles, grants, RLS, transactional writer bodies, immutable history and eight-second
+read budgets remain unchanged.
+
+The subsequent explicitly approved PXK amendment admits exact K2-authorized CN
+contributions alongside unchanged PH families and preserves typed historical
+contribution, School, location, Unit, split and released-PO coverage. A first-ever
+CN-only School scope is discoverable by the existing authorized workbench read.
+Missing or stale relevant CN membership blocks partial release; unrelated School
+membership does not erase the requested School's Need. Whole Supplier/date PO
+currentness and historical cancellation obligations still apply independently.
+
+The Owner also approved two existing lock-helper bodies after an executed
+post-preview concurrency failure. PXK locks Need sources before allocation/PO
+roots. The shared source locker takes run SHARE then Need batch UPDATE, derives
+corrected status under those locks, and returns the existing retryable concurrency
+failure if the run identity changed while waiting. It retains existing source,
+policy and line locks. The unchanged official PXK writer validates a fresh preview
+under these retained locks before persisting its immutable snapshot. No new
+privilege, lock framework, public API or source authority is introduced.
+See the [K3 recovery ledger](../implementation-tasks/TASK-ATLAS-C-K3-OPERATOR-INTEGRATION-01.md).

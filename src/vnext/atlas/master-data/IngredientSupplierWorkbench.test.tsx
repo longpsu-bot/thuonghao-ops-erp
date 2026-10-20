@@ -208,6 +208,227 @@ async function ready() {
 }
 
 describe("IngredientSupplierWorkbench", () => {
+  it("locks all Ingredient editor controls after an uncertain Save without changing the draft", async () => {
+    const api = createApi();
+    api.updateIngredient.mockResolvedValue({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Offline." },
+    });
+    renderWorkbench(api);
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: "Bí mật chưa xác nhận" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu nguyên liệu" }));
+    await screen.findByText(
+      "Atlas chưa thể xác nhận thao tác đã hoàn tất hay chưa.",
+    );
+    const detail = within(
+      screen.getByRole("complementary", { name: "Chi tiết nguyên liệu" }),
+    );
+    for (const input of [
+      ...detail.getAllByRole("textbox"),
+      ...detail.getAllByRole("combobox"),
+    ])
+      expect(input).toBeDisabled();
+    expect(detail.getByLabelText("Tên nguyên liệu")).toHaveValue(
+      "Bí mật chưa xác nhận",
+    );
+    expect(detail.getByRole("button", { name: "Ưu tiên NCC" })).toBeDisabled();
+    expect(api.updateIngredient).toHaveBeenCalledOnce();
+  });
+  it("keeps all five Ingredient sort actions reachable and retains unsaved edits across sorting", async () => {
+    renderWorkbench();
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: "Bí mật chưa lưu" },
+    });
+    expect(
+      within(screen.getByRole("table", { name: "Danh mục nguyên liệu" }))
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "Nguyên liệu",
+      "Trạng thái",
+      "Đơn vị mua",
+      "Loại / nhóm đặt hàng",
+      "Mức làm tròn",
+      "Ưu tiên NCC",
+      "Thao tác",
+    ]);
+    for (const label of [
+      "Nguyên liệu",
+      "Trạng thái",
+      "Đơn vị mua",
+      "Loại / nhóm đặt hàng",
+      "Ưu tiên NCC",
+    ]) {
+      const button = screen.getByRole("button", {
+        name: `Sắp xếp theo ${label}`,
+      });
+      const header = button.closest("th")!;
+      expect(button).toBeVisible();
+      for (const direction of ["ascending", "descending", "none"]) {
+        fireEvent.click(button);
+        expect(header).toHaveAttribute("aria-sort", direction);
+      }
+      expect(screen.getByLabelText("Tên nguyên liệu")).toHaveValue(
+        "Bí mật chưa lưu",
+      );
+    }
+  });
+  it("keeps all Supplier contact fields and cycles secondary sorts without reading or writing", async () => {
+    const api = createApi();
+    render(
+      <AtlasVNextProvider>
+        <IngredientSupplierWorkbench
+          authSubject="operator-1"
+          api={api}
+          ownerJob="suppliers"
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("button", { name: "Xem / sửa NCC Minh Tâm" });
+    const table = screen.getByRole("table", { name: "Danh mục nhà cung ứng" });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "Nhà cung ứng",
+      "Trạng thái",
+      "Người liên hệ",
+      "Điện thoại",
+      "Email",
+      "Thao tác",
+    ]);
+    const first = () => within(table).getAllByRole("row")[1]!;
+    expect(first()).toHaveTextContent("Minh Tâm");
+    expect(first()).toHaveTextContent("0901");
+    expect(first()).toHaveTextContent("tam@example.test");
+    const status = screen.getByRole("button", {
+      name: "Sắp xếp theo Trạng thái",
+    });
+    fireEvent.click(status);
+    fireEvent.click(status);
+    expect(first()).toHaveTextContent("NCC Tạm dừng");
+    fireEvent.click(status);
+    expect(first()).toHaveTextContent("NCC Minh Tâm");
+    const contact = screen.getByRole("button", {
+      name: "Sắp xếp theo Người liên hệ",
+    });
+    fireEvent.click(contact);
+    expect(first()).toHaveTextContent("NCC Đã nghỉ");
+    fireEvent.click(contact);
+    expect(first()).toHaveTextContent("NCC Minh Tâm");
+    fireEvent.click(contact);
+    expect(contact.closest("th")).toHaveAttribute("aria-sort", "none");
+    expect(api.getIngredientsAndSuppliers).toHaveBeenCalledOnce();
+    expect(api.updateSupplier).not.toHaveBeenCalled();
+  });
+  it("keeps every Supplier field locked after an uncertain Save", async () => {
+    const api = createApi();
+    api.updateSupplier.mockResolvedValue({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Offline." },
+    });
+    render(
+      <AtlasVNextProvider>
+        <IngredientSupplierWorkbench
+          authSubject="operator-1"
+          api={api}
+          ownerJob="suppliers"
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Xem / sửa NCC Minh Tâm" }),
+    );
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Tên nhà cung ứng" }),
+      { target: { value: "NCC Minh Tâm mới" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu nhà cung ứng" }));
+    await screen.findByText(
+      "Atlas chưa thể xác nhận thao tác đã hoàn tất hay chưa.",
+    );
+    const detail = screen.getByRole("complementary", {
+      name: "Chi tiết nhà cung ứng",
+    });
+    for (const input of within(detail).getAllByRole("textbox"))
+      expect(input).toBeDisabled();
+    expect(
+      within(detail).getByRole("button", { name: "Xem thay đổi" }),
+    ).toBeDisabled();
+    expect(api.updateSupplier).toHaveBeenCalledOnce();
+  });
+  it("does not label an initial failed Supplier read as a successful empty search", async () => {
+    const api = createApi();
+    api.getIngredientsAndSuppliers.mockResolvedValue({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Offline." },
+    });
+    render(
+      <AtlasVNextProvider>
+        <IngredientSupplierWorkbench
+          authSubject="operator-1"
+          api={api}
+          ownerJob="suppliers"
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("alert");
+    expect(
+      screen.queryByText("Không có nhà cung ứng phù hợp tìm kiếm."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Thử tải lại dữ liệu" }),
+    ).toBeEnabled();
+  });
+  it.each(["row", "create", "filtered"] as const)(
+    "restores Supplier focus after %s detail closes",
+    async (origin) => {
+      render(
+        <AtlasVNextProvider>
+          <IngredientSupplierWorkbench
+            authSubject="operator-1"
+            api={createApi()}
+            ownerJob="suppliers"
+          />
+        </AtlasVNextProvider>,
+      );
+      const row = await screen.findByRole("button", {
+        name: "Xem / sửa NCC Minh Tâm",
+      });
+      const create = screen.getByRole("button", { name: "Tạo nhà cung ứng" });
+      const trigger = origin === "create" ? create : row;
+      fireEvent.click(trigger);
+      const detail = screen.getByRole("complementary", {
+        name: "Chi tiết nhà cung ứng",
+      });
+      expect(detail).toHaveFocus();
+      if (origin === "filtered")
+        fireEvent.change(
+          screen.getByRole("textbox", { name: "Tìm nhà cung ứng" }),
+          { target: { value: "không khớp" } },
+        );
+      fireEvent.click(
+        within(detail).getByRole("button", { name: "Đóng chi tiết" }),
+      );
+      expect(
+        screen.queryByRole("complementary", { name: "Chi tiết nhà cung ứng" }),
+      ).not.toBeInTheDocument();
+      expect(
+        origin === "filtered"
+          ? screen.getByRole("heading", { level: 1, name: "Nhà cung ứng" })
+          : trigger,
+      ).toHaveFocus();
+    },
+  );
   it("reports untouched, edited, reverted and frozen Review state", async () => {
     const report = vi.fn();
     render(
@@ -244,7 +465,7 @@ describe("IngredientSupplierWorkbench", () => {
       expect.objectContaining({ unsaved: true, blocked: true }),
     );
   });
-  it("uses the locked Station context/detail geometry and returns focus to the exact Ingredient action", async () => {
+  it("keeps the catalogue primary beside a task-sized editor and returns focus to the exact Ingredient action", async () => {
     renderWorkbench();
     await ready();
     const context = screen.getByRole("region", {
@@ -268,7 +489,7 @@ describe("IngredientSupplierWorkbench", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("ingredient-supplier-master-detail")).toHaveStyle(
       {
-        "--atlas-master-detail-columns": "minmax(0, 62fr) minmax(320px, 38fr)",
+        "--atlas-master-detail-columns": "minmax(0, 1fr) minmax(360px, 420px)",
       },
     );
     expect(
@@ -732,7 +953,11 @@ describe("IngredientSupplierWorkbench", () => {
     expect(
       await screen.findByText("Nguyên liệu sơ chế 360"),
     ).toBeInTheDocument();
-    expect(screen.getByText("360 nguyên liệu")).toBeVisible();
+    expect(
+      screen.getByLabelText(
+        "Tóm tắt công việc: 360 nguyên liệu · Tất cả trạng thái",
+      ),
+    ).toBeVisible();
     const region = screen.getByRole("region", {
       name: "Danh mục nguyên liệu",
     });
@@ -742,12 +967,9 @@ describe("IngredientSupplierWorkbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-ingredient-table-min, 1050px)",
+      minWidth: "var(--atlas-layout-zero, 0)",
       width: "100%",
       tableLayout: "fixed",
-      "--atlas-table-header-height": "38px",
-      "--atlas-table-row-height": "42px",
-      "--atlas-table-identity-width": "220px",
     });
     expect(screen.getAllByRole("row")).toHaveLength(361);
     const actions = screen.getAllByRole("button", {
@@ -773,7 +995,11 @@ describe("IngredientSupplierWorkbench", () => {
     fireEvent.change(screen.getByLabelText("Tìm nguyên liệu"), {
       target: { value: "không tồn tại" },
     });
-    expect(screen.getByText("0 / 360 nguyên liệu")).toBeVisible();
+    expect(
+      screen.getByLabelText(
+        "Tóm tắt công việc: 0 / 360 nguyên liệu · Tất cả trạng thái",
+      ),
+    ).toBeVisible();
     expect(
       screen.getByText("Không có nguyên liệu phù hợp bộ lọc."),
     ).toBeVisible();

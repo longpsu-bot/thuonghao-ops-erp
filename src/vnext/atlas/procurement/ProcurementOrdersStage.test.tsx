@@ -31,7 +31,7 @@ function show(
       />
     </AtlasVNextProvider>,
   );
-  const trigger = screen.getByRole("button", { name: "Xem đơn NCC An Phú" });
+  const trigger = screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ });
   fireEvent.click(trigger);
   return {
     fixture,
@@ -43,6 +43,167 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it("opens the authoritative predecessor and successor without issuing another command", () => {
+    const fixture = createProcurementReviewFixture("po_released");
+    const current = fixture.orders.purchase_orders[0]!;
+    current.purchase_order_id = "new-order";
+    current.document_number = "PO-002";
+    current.replaces_purchase_order_id = "old-order";
+    const old = structuredClone(current);
+    old.purchase_order_id = "old-order";
+    old.document_number = "PO-001";
+    old.status = "SUPERSEDED";
+    old.commitment_state = "SUPERSEDED";
+    old.replaces_purchase_order_id = null;
+    old.replaced_by_purchase_order_id = "new-order";
+    fixture.orders.purchase_orders.push(old);
+    const action = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={action}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem đơn trước PO-001" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Xem đơn thay thế PO-002" }),
+    ).toBeInTheDocument();
+    expect(action).not.toHaveBeenCalled();
+  });
+  it("does not label unavailable PO data as zero documents or a successful empty scope", () => {
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={null}
+          disabled
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    expect(
+      screen.queryByText(/0 đơn mua|Chưa có đơn mua|nhu cầu bằng không/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Xuất/ }),
+    ).not.toBeInTheDocument();
+  });
+  it("starts with a supplier rail and visible first document without a second click", () => {
+    const fixture = createProcurementReviewFixture("po_draft");
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    const rail = screen.getByRole("navigation", {
+      name: "Đơn mua theo nhà cung cấp",
+    });
+    expect(
+      within(rail).getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(rail).toHaveTextContent("10/09/2026");
+    const detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    expect(
+      within(detail).getByRole("button", { name: "Phát hành cho NCC" }),
+    ).toBeEnabled();
+    expect(detail).toHaveTextContent(/Chưa có chi tiết trường nhận/);
+    expect(detail).not.toHaveTextContent("0 trường");
+  });
+  it("does not retain hidden document actions after filtering and does not reopen after Close", () => {
+    const fixture = createProcurementReviewFixture("po_draft"),
+      action = vi.fn();
+    const showStage = (search: string) => (
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search={search}
+          onAction={action}
+        />
+      </AtlasVNextProvider>
+    );
+    const { rerender } = render(showStage(""));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    );
+    rerender(showStage("Không khớp"));
+    expect(
+      screen.queryByRole("button", { name: "Phát hành cho NCC" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Không có đơn mua khớp/)).toBeVisible();
+    rerender(showStage(""));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    );
+    const trigger = screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ });
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    expect(trigger).toHaveFocus();
+    rerender(showStage(""));
+    expect(
+      screen.queryByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
+    ).not.toBeInTheDocument();
+    expect(action).not.toHaveBeenCalled();
+  });
+  it("distinguishes same-supplier document UUIDs and uses their fresh readback object", () => {
+    const fixture = createProcurementReviewFixture("po_draft");
+    const second = structuredClone(fixture.orders.purchase_orders[0]);
+    second.purchase_order_id = "other-date-order";
+    second.service_date = "2026-09-11";
+    fixture.orders.purchase_orders.push(second);
+    const action = vi.fn();
+    const showStage = () => (
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={action}
+        />
+      </AtlasVNextProvider>
+    );
+    const { rerender } = render(showStage());
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Xem đơn NCC An Phú · 11/09/2026 · Bản nháp",
+      }),
+    );
+    let detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    expect(detail).toHaveTextContent("11/09/2026");
+    const fresh = structuredClone(second);
+    fresh.lines[0].ordered_quantity = "70.000002";
+    fresh.version += 1;
+    fixture.orders.purchase_orders[1] = fresh;
+    rerender(showStage());
+    detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    expect(detail).toHaveTextContent("70,000002");
+    fireEvent.click(
+      within(detail).getByRole("button", { name: "Phát hành cho NCC" }),
+    );
+    expect(action).toHaveBeenCalledWith(fresh);
+  });
+  it("shows only captured released School quantities without confusing delivery locations with Schools", () => {
+    const { detail } = show("po_released");
+    expect(detail).toHaveTextContent("Trường Nguyễn Du");
+    expect(detail).toHaveTextContent("Bếp chính Nguyễn Du");
+    expect(detail).toHaveTextContent("60,000001 kg");
+  });
   it("shows each immutable supplier instruction in the PO line detail", () => {
     const fixture = createProcurementReviewFixture("po_draft");
     fixture.orders.purchase_orders[0]!.lines[0]!.supplier_note =
@@ -57,12 +218,14 @@ describe("Supplier purchase orders", () => {
         />
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    );
     const detail = within(
       screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
     );
     expect(
-      detail.getByRole("columnheader", { name: "Ghi chú", hidden: true }),
+      detail.getByRole("heading", { name: "Nguyên liệu và nơi nhận" }),
     ).toBeInTheDocument();
     expect(detail.getByText("Ghi chú:")).toBeVisible();
     expect(detail.getByText("Ghi chú:").parentElement).toHaveTextContent(
@@ -87,7 +250,9 @@ describe("Supplier purchase orders", () => {
         />
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    );
     const detail = within(
       screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
     );
@@ -136,7 +301,7 @@ describe("Supplier purchase orders", () => {
         </AtlasVNextProvider>,
       );
       fireEvent.click(
-        screen.getByRole("button", { name: "Xem đơn NCC An Phú" }),
+        screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
       );
       const detail = within(
         screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
@@ -164,7 +329,9 @@ describe("Supplier purchase orders", () => {
         />
       </AtlasVNextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Xem đơn NCC An Phú/ }),
+    );
     expect(screen.getByText(/Đơn đã được phát hành/)).toBeVisible();
     expect(screen.getByText(/không còn khớp phân bổ/)).toBeVisible();
   });
@@ -224,7 +391,7 @@ describe("Supplier purchase orders", () => {
         within(detail).queryByRole("button", { name: "Phát hành cho NCC" }),
       ).not.toBeInTheDocument();
       fireEvent.click(
-        within(detail).getByRole("button", { name: "Xuất Excel" }),
+        within(detail).getByRole("button", { name: "Xuất XLSX" }),
       );
       expect(onExportXlsx).toHaveBeenCalledWith(
         fixture.orders.purchase_orders[0],
@@ -238,7 +405,7 @@ describe("Supplier purchase orders", () => {
   it("does not expose exports for drafts", () => {
     const { detail } = show();
     expect(
-      within(detail).queryByRole("button", { name: "Xuất Excel" }),
+      within(detail).queryByRole("button", { name: "Xuất XLSX" }),
     ).not.toBeInTheDocument();
   });
   it.each(["po_draft", "po_stale", "replacement_required"] as const)(

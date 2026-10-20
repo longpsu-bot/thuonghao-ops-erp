@@ -422,6 +422,17 @@ it("enforces a separate exact connected-root integration allowlist", () => {
   ).not.toEqual([]);
 });
 
+it("allows correction read validation only through a business bridge", () => {
+  const helper =
+    'export * from "@/modules/atlas/planning-inputs/confirmed-needs/confirmedNeedCorrection";';
+  expect(
+    checkSources({ "src/vnext/atlas/bridges/confirmedNeed.ts": helper }),
+  ).toEqual([]);
+  expect(
+    checkSources({ "src/vnext/atlas/planning-confirmed/View.tsx": helper }),
+  ).toHaveLength(1);
+});
+
 it("allows complete Confirmed Need read authority only through its business bridge", () => {
   const helper =
     'export * from "@/modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";';

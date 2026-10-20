@@ -1,0 +1,463 @@
+BEGIN
+GRANT ROLE
+CREATE SCHEMA
+psql:/tmp/atlas-b2-po-tests.sql:4: NOTICE:  schema "extensions" already exists, skipping
+CREATE EXTENSION
+psql:/tmp/atlas-b2-po-tests.sql:5: NOTICE:  extension "pgtap" already exists, skipping
+SET
+1..161
+ok 1 - Function atlas_api.create_school_catering_purchase_order_drafts(jsonb) should exist
+ok 2 - Function atlas_api.release_school_catering_purchase_order(jsonb) should exist
+ok 3 - Function atlas_api.create_school_catering_purchase_order_replacement(jsonb) should exist
+ok 4 - Function atlas_api.get_school_catering_purchase_orders(jsonb) should exist
+ok 5 - whole-PO relational authorization helper exists
+ok 6 - whole-PO scope helper is private from browser actors
+ok 7 - Function atlas_api.create_school_catering_purchase_order_drafts(jsonb) should be owned by atlas_procurement_command_runtime
+ok 8 - Function atlas_api.release_school_catering_purchase_order(jsonb) should be owned by atlas_procurement_command_runtime
+ok 9 - Function atlas_api.create_school_catering_purchase_order_replacement(jsonb) should be owned by atlas_procurement_command_runtime
+ok 10 - Function atlas_api.get_school_catering_purchase_orders(jsonb) should be owned by atlas_read_runtime
+ok 11 - PR-B entry functions are hardened definers with pinned search paths
+ok 12 - PR-B entry functions contain no dynamic SQL
+ok 13 - Role authenticated should be granted EXECUTE on function atlas_api.create_school_catering_purchase_order_drafts(jsonb)
+ok 14 - Role authenticated should be granted EXECUTE on function atlas_api.release_school_catering_purchase_order(jsonb)
+ok 15 - Role authenticated should be granted EXECUTE on function atlas_api.create_school_catering_purchase_order_replacement(jsonb)
+ok 16 - Role authenticated should be granted EXECUTE on function atlas_api.get_school_catering_purchase_orders(jsonb)
+ok 17 - Role anon should be granted no privileges on function atlas_api.create_school_catering_purchase_order_drafts(jsonb)
+ok 18 - Role anon should be granted no privileges on function atlas_api.release_school_catering_purchase_order(jsonb)
+ok 19 - Role anon should be granted no privileges on function atlas_api.create_school_catering_purchase_order_replacement(jsonb)
+ok 20 - Role anon should be granted no privileges on function atlas_api.get_school_catering_purchase_orders(jsonb)
+ok 21 - shared PO root declares its source kind
+ok 22 - school-catering root stores the supplier/date identity date
+ok 23 - replacement roots point directly to the released commitment they replace
+ok 24 - legacy/wholesale inserts default to the existing PO kind
+ok 25 - purchase_orders_kind_check
+ok 26 - purchase_orders_school_catering_date_check
+ok 27 - one active school-catering PO lineage is enforced per supplier and service date
+ok 28 - stable PO line supports a school-catering Allocation Family source
+ok 29 - wholesale PO stable-line source becomes nullable for the shared XOR
+ok 30 - purchase_order_lines_source_xor_check
+ok 31 - PO line revision supports an exact school-catering Supplier Split source
+ok 32 - released PO line revision supports an immutable School quantity breakdown
+ok 33 - wholesale PO line-revision source becomes nullable for the shared XOR
+ok 34 - purchase_order_line_revisions_source_xor_check
+ok 35 - school-catering PO revisions permit a null multi-destination header location
+ok 36 - shared PO revision integrity is enforced by a deferred exact trigger
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 3
+INSERT 0 3
+SET
+INSERT 0 4
+INSERT 0 4
+INSERT 0 1
+INSERT 0 1
+INSERT 0 4
+INSERT 0 4
+INSERT 0 4
+SET
+CREATE TABLE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 37 - PR-A produces the three exact balanced input families
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 38 - bounded range draft materialization succeeds for ready dates
+ok 39 - ready dates materialize while blocked dates are returned explicitly
+ok 40 - a blocked date creates no incomplete PO
+ok 41 - ready families group into one PO per supplier and service date
+ok 42 - school-catering roots start as internal DRAFTs without official numbers
+ok 43 - one supplier/date PO retains multiple school delivery locations
+ok 44 - multi-destination DRAFT headers use the server-owned summary and exact date
+ok 45 - every school-catering PO line retains a non-null location and exact service date
+ok 46 - stable PO lines and line revisions retain exactly one source family
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 47 - PO read returns the complete backend-owned draft decision shape
+ok 48 - PO read serializes every exact ordered quantity as a lossless string
+ok 49 - only supplier/date DRAFTs using the changed family become stale
+ok 50 - a stale DRAFT cannot be released
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 51 - regeneration creates successor DRAFT revisions only for affected POs
+ok 52 - unrelated supplier/date PO roots remain unchanged
+ok 53 - regeneration preserves both affected historical DRAFT snapshots
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 54 - release rejects caller-authored document numbers and unknown fields
+UPDATE 1
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 55 - release revalidates current supplier activity
+UPDATE 1
+SET
+24000000-0000-4000-8000-000000000101
+RESET
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+SET
+ok 56 - missing supplier document code blocks official release
+RESET
+ok 57 - code-blocked release leaves supplier commitment unchanged
+UPDATE 1
+SAVEPOINT
+UPDATE 1
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 58 - null internal Ingredient code does not block shaped Draft release eligibility
+ok 59 - null Ingredient code and valid Supplier code release with a backend official number
+ok 60 - null-code release freezes exact descriptive facts and full100 quantity without a fabricated code
+ok 61 - null-code released snapshot is complete and exportable
+ok 62 - a frozen null Ingredient code cannot later be fabricated
+ok 63 - null-code release replays identical receipt and official number
+ROLLBACK
+SAVEPOINT
+ALTER TABLE
+UPDATE 1
+SET
+ok 64 - release distinguishes corrupt nonnull internal metadata from a missing Supplier code
+RESET
+ROLLBACK
+SAVEPOINT
+ALTER TABLE
+UPDATE 1
+SET
+ok 65 - release rejects multi-line outward codes even with malformed private master evidence
+RESET
+ROLLBACK
+SET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 66 - one current PO releases successfully
+ok 67 - official PO number is generated server-side from the approved deterministic format
+ok 68 - release creates a successor revision and preserves both DRAFT revisions
+ok 69 - release advances the root once and stores the immutable official number
+ok 70 - exact release replay returns identical IDs and official number
+ok 71 - same command identity with changed PO payload conflicts
+ok 72 - a second release attempt creates no second supplier commitment
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 73 - draft materialization never regenerates a released PO
+ok 74 - released successor lines preserve exact immutable source and predecessor references
+ok 75 - release freezes a complete exact School breakdown on every official PO line
+ok 76 - release header freezes supplier document code
+ok 77 - release line freezes exact item code, name and Unit code
+ok 78 - released supplier code cannot be rewritten
+ok 79 - released item labels cannot be rewritten
+ok 80 - released item codes cannot be rewritten
+ok 81 - released Unit codes cannot be rewritten
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 82 - read model exposes only a released PO as export-ready with its official number
+UPDATE 1
+UPDATE 1
+UPDATE 1
+SET
+INSERT 0 1
+RESET
+ok 83 - released shaped lines expose the captured supplier note
+ok 84 - released shaped display uses frozen identity after all current master edits
+ok 85 - released PO read exposes immutable School identity and order from the line snapshot
+UPDATE 1
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 86 - released PO School labels and order do not follow later mutable master changes
+UPDATE 1
+ok 87 - new official PO lines freeze cooking X for the exact School
+ok 88 - official capture includes explicit host and independent Dispatch facts
+ok 89 - PO School snapshot cannot be mutated
+UPDATE 1
+DELETE 1
+UPDATE 1
+UPDATE 1
+ok 90 - historical canonical location and Dispatch facts remain frozen
+ok 91 - historical PO keeps cooking X after membership change and group rename
+ok 92 - future PO capture uses current cooking Y
+ok 93 - actual new official PO release after reassignment freezes cooking Y
+DELETE 1
+ok 94 - future PO capture after removal carries explicit null group facts
+ok 95 - actual new official PO release after removal freezes null cooking facts
+ok 96 - membership removal leaves historical PO snapshots unchanged
+SAVEPOINT
+SET
+UPDATE 2
+SET
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 97 - legacy released PO without a School snapshot fails closed for official export
+ROLLBACK
+SET
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+SET
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 98 - the isolated date initially has two balanced current Handoff families
+ok 99 - the initial source truth materializes one two-line DRAFT
+SELECT 1
+GRANT
+CREATE FUNCTION
+GRANT
+SET
+24000000-0000-4000-8000-000000000102
+INSERT 0 1
+INSERT 0 1
+24000000-0000-4000-8000-000000000103
+INSERT 0 1
+INSERT 0 1
+24000000-0000-4000-8000-000000000101
+RESET
+ok 100 - School-A-only actor cannot see a shared PO that also contains School B
+ok 101 - Customer-scoped actor sees the entire shared two-line PO
+ok 102 - partial School scope denies the entire PO release with zero commitment
+ok 103 - actor covering every constituent School/location can release the whole PO
+SAVEPOINT
+UPDATE 1
+SET
+24000000-0000-4000-8000-000000000102
+INSERT 0 1
+RESET
+ok 104 - shared default location never exposes a partially authorized PO through the public read
+ok 105 - shared default location cannot release the other School contribution
+SET
+ok 106 - shared default location does not authorize the other School in a whole PO
+RESET
+ROLLBACK
+SAVEPOINT
+INSERT 0 1
+SET
+24000000-0000-4000-8000-000000000102
+INSERT 0 1
+RESET
+ok 107 - separate exact School scopes expose the entire covered PO
+ok 108 - separate exact School scopes authorize whole-PO release
+ROLLBACK
+SAVEPOINT
+DELETE 2
+SET
+24000000-0000-4000-8000-000000000103
+INSERT 0 1
+RESET
+ok 109 - full document scope does not bypass missing Procurement read capability
+ok 110 - full document scope does not bypass missing Procurement write capability
+ROLLBACK
+SAVEPOINT
+SET
+DELETE 1
+SELECT 1
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+SET
+GRANT
+ok 111 - isolated supplier split represents exactly School A, not the later School B contribution
+SET
+ok 112 - read runtime requires only Schools represented by the supplier split
+ok 113 - relational scope cannot authorize a missing PO
+RESET
+SET
+ok 114 - command runtime uses the same exact supplier split School coverage
+RESET
+ok 115 - exact supplier coverage succeeds without adding GLOBAL authority
+SET
+UPDATE 1
+SET
+ok 116 - incomplete supplier quantity coverage fails whole-PO authorization closed
+ok 117 - all isolated authorization probes preserve the unreleased PO
+ROLLBACK
+SET
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+SET
+ok 118 - correction preserves the removed Allocation Family and prior DRAFT evidence
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 119 - the remaining current-Handoff family can be rebalanced against corrected truth
+ok 120 - draft materialization regenerates only the supplier/date rooted in current truth
+ok 121 - the regenerated current DRAFT excludes the removed historical family
+ok 122 - historical removed-family evidence does not keep the corrected current DRAFT stale
+ok 123 - one release creates exactly one receipt, domain event, and audit event
+INSERT 0 1
+ok 124 - legacy wholesale root inserts retain their default shape
+ok 125 - release and draft generation acquire uniqueness guards before deterministic ordered source locks
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 126 - the second supplier commitment is released before the correction
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 127 - allocation correction can redistribute exact School membership after PO release
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 128 - each affected positive supplier receives a replacement draft
+ok 129 - old released roots stay active while separate replacement drafts exist
+ok 130 - every replacement root has direct same-supplier/date released-root lineage
+ok 131 - replacement drafts carry no official number and no external status
+ok 132 - replacement drafts contain the complete current supplier/date instruction set
+ok 133 - unchanged supplier total does not hide changed School-level commitment membership
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 134 - read model derives replacement-required on both stale released commitments
+ok 135 - allocation note correction does not reconstruct old released notes
+ok 136 - release fixture selects the exact prepared replacement despite a same-time unrelated Draft
+UPDATE 1
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+RESET
+ok 137 - explicit replacement release assigns a new official number
+ok 138 - replacement release atomically supersedes the old root and preserves both numbers
+ok 139 - replacement freezes its current supplier identity
+ok 140 - replacement freezes its current item identity with a null internal code
+SET
+INSERT 0 1
+RESET
+ok 141 - null-code complete replacement remains officially exportable
+ok 142 - superseded official PO remains exportable from its original immutable display facts
+ok 143 - superseded history preserves its original captured supplier note
+ok 144 - replacement official lines capture the corrected supplier note
+SAVEPOINT
+SET
+UPDATE 1
+SET
+SET
+INSERT 0 1
+RESET
+ok 145 - historical Unicode-blank supplier name fails official completeness closed
+ROLLBACK
+SET
+UPDATE 1
+SET
+SET
+INSERT 0 1
+RESET
+ok 146 - malformed historical UUID code fails official completeness closed
+SET
+UPDATE 1
+SET
+SET
+INSERT 0 1
+RESET
+ok 147 - historical multi-line outward code fails official completeness closed
+SET
+UPDATE 1
+UPDATE 2
+SET
+SET
+INSERT 0 1
+RESET
+ok 148 - historical missing evidence remains readable while official regeneration fails closed
+ok 149 - missing historical labels never reconstruct from mutable current master
+ROLLBACK
+ok 150 - atomic supersession records dedicated domain and audit evidence
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 151 - factual allocation correction remains saveable when a supplier becomes zero
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 152 - removed supplier derives cancellation-required instead of a replacement document
+ok 153 - removed supplier leaves the old PO active and creates no zero-line PO
+ok 154 - an unresolved removed-supplier commitment makes Procurement not current
+ok 155 - read model exposes cancellation-required and the bounded currentness failure
+ok 156 - a stale replacement draft cannot bypass removed-supplier safety
+ok 157 - this slice introduces no School-catering cancellation command
+SET
+24000000-0000-4000-8000-000000000101
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+RESET
+ok 158 - release permits a browser command timestamp 30 seconds ahead of server time
+ok 159 - release permits the 60-second positive clock-skew boundary
+ok 160 - release rejects a command timestamp 61 seconds ahead of server time
+ok 161 - release rejects a malformed command timestamp
+ROLLBACK

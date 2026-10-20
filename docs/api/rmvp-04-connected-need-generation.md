@@ -1,5 +1,39 @@
 # RMVP-04 Connected Need Generation API Contract
 
+## B1 Product source disclosure — 18 October 2026
+
+[Owner approval](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6249057414)
+adds optional `source_breakdown` to each grouped requirement. Existing numeric
+quantity fields and public envelopes remain compatible. The new object contains
+exact decimal strings: `recipe_derived_quantity` (R),
+`planning_supplement_quantity` (B), `recipe_associated_quantity` (R+B),
+`special_order_quantity` (H), `unclassified_direct_quantity`, and
+`total_theoretical_quantity`. R20/B5/H3 returns20/5/25/3/0/28.
+
+PostgreSQL classifies PANTRY_DIRECT by the exact immutable approval snapshot +
+stable-line composite key and `purpose_code_snapshot`, never Vietnamese text or
+mutable Purpose data. Current labels are Bổ sung and Hàng đặt riêng. Source
+families remain RECIPE_DERIVED/PANTRY_DIRECT; R+B is only a read subtotal.
+Neutral/unknown historical direct purposes stay explicitly unclassified and
+included in total, without being fabricated as B/H or modifying Recipe/BOM.
+
+Atomic detail adds `exact_theoretical_quantity`, actual Recipe version/line/
+revision/use IDs where present and Pantry stable-line, approval-snapshot and
+Purpose IDs/code. Effective ADD contributions may lack base-line IDs. Removed
+quantities remain zero; classification never consults mutable source rows. The
+descriptive historical snapshot remains in the response.
+
+The six-part grain, filters and pagination are unchanged. Family filtering
+produces a filtered source subtotal, distinguished in Confirmed Need support from
+the complete line's theory and final human confirmation. Historical membership
+is selected once per theoretical line, preferring its current/latest captured
+revision; a human adjustment cannot double grouped quantities or atomic detail.
+
+Need Generation and Confirmed Need source support share this existing read.
+Missing/malformed extensions display unavailable, with no JavaScript source sum.
+No RMVP-05 privilege extension, command, relation, currentness bypass or stored
+aggregate is added. See the [closeout contract](../implementation-tasks/TASK-ATLAS-B1-PRODUCT-MODEL-CLOSEOUT.md).
+
 **Status:** Implemented on a draft branch; exact-head GitHub validation and merge pending
 
 **Contract version:** `RMVP-04.v1`

@@ -452,6 +452,55 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       expect(f.calls.filter((c) => c.name === "create")).toHaveLength(1);
     },
   );
+  it("keeps all ledger facts and opens the exact Adjustment in the narrow workplane, then restores its trigger", async () => {
+    const scroll = vi.fn();
+    const previous = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scroll;
+    const previousMedia = window.matchMedia;
+    window.matchMedia = vi.fn(() => ({ matches: true }) as MediaQueryList);
+    try {
+      const f = await setup();
+      const table = screen.getByRole("table", { name: "Lệnh điều chỉnh" });
+      expect(
+        within(table)
+          .getAllByRole("columnheader")
+          .map((header) => header.textContent),
+      ).toEqual([
+        "Lệnh",
+        "Phạm vi",
+        "Đối tượng",
+        "Hiệu lực",
+        "Trạng thái",
+        "Thao tác",
+      ]);
+      const row = table.querySelector<HTMLTableRowElement>("tbody tr")!;
+      const cells = within(row).getAllByRole("cell");
+      expect(cells).toHaveLength(6);
+      expect(cells[0]).toHaveTextContent("Thay nguyên liệu");
+      expect(cells[1].textContent).not.toBe("");
+      expect(cells[2]).toHaveTextContent("Canh bí đỏ thịt bằm");
+      expect(cells[3]).toHaveTextContent("01/09/2026");
+      expect(cells[4]).toHaveTextContent("Đang hiệu lực");
+      const trigger = within(cells[5]).getByRole("button");
+      fireEvent.click(trigger);
+      const panel = screen.getByLabelText("Chi tiết lệnh");
+      expect(panel).toHaveFocus();
+      expect(scroll).toHaveBeenCalledWith({ block: "start" });
+      expect(
+        within(panel).getAllByText("Thay bí đỏ bằng cà rốt theo thực đơn")[0],
+      ).toBeVisible();
+      fireEvent.click(screen.getByRole("button", { name: "Đóng lệnh" }));
+      expect(trigger).toHaveFocus();
+      expect(
+        f.calls.some((call) =>
+          ["create", "supersede", "cancel"].includes(call.name),
+        ),
+      ).toBe(false);
+    } finally {
+      window.matchMedia = previousMedia;
+      HTMLElement.prototype.scrollIntoView = previous;
+    }
+  });
   it("has one capability heading and peer jobs above the full-width base catalogue", async () => {
     const f = await setup("ACTIVE", "recipes");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
