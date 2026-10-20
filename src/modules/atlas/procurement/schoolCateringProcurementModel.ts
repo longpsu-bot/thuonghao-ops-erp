@@ -129,6 +129,7 @@ export type PurchaseOrderLine = {
   ingredient_document_code_snapshot?: string | null;
   ingredient_name_snapshot?: string | null;
   unit_code_snapshot?: string | null;
+  unit_name_snapshot?: string | null;
   purchase_order_line_revision_id: string;
   purchase_order_line_id: string;
   ingredient: {
@@ -227,12 +228,16 @@ export function purchaseOrderLineUnitLabel(
   status: PurchaseOrderStatus,
   line: PurchaseOrderLine,
 ) {
-  if (status !== "DRAFT") return line.unit_code_snapshot ?? line.unit.unit_code;
+  const draft = status === "DRAFT";
+  const code = draft
+    ? line.unit.unit_code
+    : (line.unit_code_snapshot ?? line.unit.unit_code);
+  const name = draft ? line.unit.unit_name : line.unit_name_snapshot;
   return /^(?:v1-unit-|atlas[-_:]|unit[-_:])|^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(
-    line.unit.unit_code,
+    code,
   )
-    ? line.unit.unit_name?.trim() || "Chưa có ĐVT"
-    : line.unit.unit_code;
+    ? name?.trim() || (draft ? "Chưa có ĐVT" : code)
+    : code;
 }
 
 /** Presentation eligibility only; the release command rechecks backend authority. */

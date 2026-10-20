@@ -5,7 +5,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(162);
+select plan(167);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -496,6 +496,10 @@ select ok((select bool_and(line#>>'{unit,unit_name}'=unit.unit_name)
   join atlas_admin.units unit on unit.unit_id=(line#>>'{unit,unit_id}')::uuid
   where result.name='read-draft'),
   'Draft PO lines expose the authoritative Unit name without changing controlled identity');
+select ok((select bool_and(line->>'unit_name_snapshot' is null)
+  from prb_results result cross join lateral jsonb_array_elements(result.response->'purchase_orders') po
+  cross join lateral jsonb_array_elements(po->'lines') line where result.name='read-draft'),
+  'Drafts carry no official Unit-name snapshot');
 select ok((select bool_and(jsonb_typeof(line -> 'ordered_quantity')='string'
       and line ->> 'ordered_quantity'=source_line.ordered_quantity::text)
   from prb_results result
@@ -587,6 +591,7 @@ select ok((select purchase_order_status='DRAFT' and document_number is null from
 update atlas_admin.suppliers set document_code='53' where supplier_id='24020000-0000-4000-8000-000000000051';
 savepoint optional_item_code;
 update atlas_admin.ingredients set document_code=null where ingredient_id='24020000-0000-4000-8000-000000000041';
+update atlas_admin.units set unit_name='   ' where unit_id='24020000-0000-4000-8000-000000000031';
 set local role authenticated;
 insert into prb_results values('read-null-code-draft',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
 insert into prb_results values('release-null-code',atlas_api.release_school_catering_purchase_order(pg_temp.prb_release('24050000-0000-4000-8000-000000000191','24020000-0000-4000-8000-000000000051')));
@@ -595,6 +600,7 @@ insert into prb_results values('read-null-code-released',atlas_api.get_school_ca
 reset role;
 select ok((select (po->>'release_eligible')::boolean and (po#>>'{allowed_actions,release}')::boolean and not (po->'blockers' ? 'PO_DOCUMENT_CODE_REQUIRED') from prb_results,jsonb_array_elements(response->'purchase_orders') po where name='read-null-code-draft' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),'null internal Ingredient code does not block shaped Draft release eligibility');
 select ok((select response->>'success'='true' and response->>'document_number' is not null from prb_results where name='release-null-code'),'null Ingredient code and valid Supplier code release with a backend official number');
+select ok((select count(*)=2 and bool_and(unit_name_snapshot is null and unit_code_snapshot='pr-b-kg') from atlas_procurement.purchase_order_line_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-null-code')),'blank optional Unit name preserves the existing release boundary and frozen code');
 select ok((select count(*)=2 and bool_and(ingredient_document_code_snapshot is null and ingredient_name_snapshot='PR-B Rice' and unit_code_snapshot='pr-b-kg') and sum(ordered_quantity)=100 from atlas_procurement.purchase_order_line_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-null-code')),'null-code release freezes exact descriptive facts and full100 quantity without a fabricated code');
 select ok((select (po->>'document_snapshot_complete')::boolean and (po->>'export_ready')::boolean and (po#>>'{allowed_actions,export}')::boolean from prb_results,jsonb_array_elements(response->'purchase_orders') po where name='read-null-code-released' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),'null-code released snapshot is complete and exportable');
 select throws_ok($$update atlas_procurement.purchase_order_line_revisions set ingredient_document_code_snapshot='FABRICATED' where ingredient_document_code_snapshot is null and ingredient_name_snapshot='PR-B Rice'$$,'23514','PO item document snapshots are immutable','a frozen null Ingredient code cannot later be fabricated');
@@ -707,6 +713,8 @@ select throws_ok($$update atlas_procurement.purchase_order_revisions set supplie
 select throws_ok($$update atlas_procurement.purchase_order_line_revisions set ingredient_name_snapshot='REWRITE' where ingredient_name_snapshot='PR-B Rice'$$,'23514','PO item document snapshots are immutable','released item labels cannot be rewritten');
 select throws_ok($$update atlas_procurement.purchase_order_line_revisions set ingredient_document_code_snapshot='REWRITE' where ingredient_document_code_snapshot='1082'$$,'23514','PO item document snapshots are immutable','released item codes cannot be rewritten');
 select throws_ok($$update atlas_procurement.purchase_order_line_revisions set unit_code_snapshot='REWRITE' where unit_code_snapshot='pr-b-kg'$$,'23514','PO item document snapshots are immutable','released Unit codes cannot be rewritten');
+select ok((select bool_and(unit_name_snapshot='PR-B kilogram') from atlas_procurement.purchase_order_line_revisions where purchase_order_revision_id=(select (response->>'purchase_order_revision_id')::uuid from prb_results where name='release-a')),'future release captures its exact human Unit name');
+select throws_ok($$update atlas_procurement.purchase_order_line_revisions set unit_name_snapshot='REWRITE' where unit_name_snapshot='PR-B kilogram'$$,'23514','PO item document snapshots are immutable','released Unit names cannot be rewritten');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
@@ -725,11 +733,16 @@ select ok((
 ), 'read model exposes only a released PO as export-ready with its official number');
 -- Later Admin edits must not change any displayed fact of the official release.
 update atlas_admin.ingredients set ingredient_name='PR-B Rice renamed',document_code='9999' where ingredient_id='24020000-0000-4000-8000-000000000041';
-update atlas_admin.units set unit_code='pr-b-new-unit' where unit_id='24020000-0000-4000-8000-000000000031';
+update atlas_admin.units set unit_code='pr-b-new-unit',unit_name='Changed current Unit name' where unit_id='24020000-0000-4000-8000-000000000031';
 update atlas_admin.suppliers set supplier_name='PR-B Supplier Alpha renamed',document_code='99' where supplier_id='24020000-0000-4000-8000-000000000051';
 set local role authenticated;
 insert into prb_results values('read-frozen-document-identity',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
 reset role;
+select ok((select bool_and(line->>'unit_name_snapshot'='PR-B kilogram' and line#>>'{unit,unit_name}' is null)
+  from prb_results result cross join lateral jsonb_array_elements(result.response->'purchase_orders') po
+  cross join lateral jsonb_array_elements(po->'lines') line
+  where result.name='read-frozen-document-identity' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),
+  'official Unit names remain frozen after a current master rename');
 select ok((select bool_and(line->>'supplier_note'='Frozen supplier note') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-released' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'),'released shaped lines expose the captured supplier note');
 select ok((select (po->>'document_snapshot_complete')::boolean and po#>>'{current_revision,supplier_document_code_snapshot}'='53' and po#>>'{supplier,supplier_name}'='PR-B Supplier Alpha' and bool_and(line#>>'{ingredient,document_code}'='1082' and line#>>'{ingredient,ingredient_name}'='PR-B Rice' and line#>>'{unit,unit_code}'='pr-b-kg') from prb_results,jsonb_array_elements(response->'purchase_orders') po,jsonb_array_elements(po->'lines') line where name='read-frozen-document-identity' and po->>'status'='RELEASED_TO_SUPPLIER' and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051' group by po),'released shaped display uses frozen identity after all current master edits');
 select ok((

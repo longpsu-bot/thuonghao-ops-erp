@@ -49,7 +49,18 @@ function sql(statement) {
     ],
     { input: statement, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
   );
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(
+    result.status,
+    0,
+    [
+      result.stderr,
+      result.stdout
+        .split(/\r?\n/)
+        .filter((line) => /^(?:not ok|#)/.test(line))
+        .slice(-30)
+        .join("\n"),
+    ].join("\n"),
+  );
   return result.stdout.trim();
 }
 assert.equal(
@@ -80,6 +91,8 @@ const release = source
   .search(/insert into k2_requests\s+select 'b1_po001:'/);
 assert(release > 0, "Review changed first-release boundary.");
 const fixture = `begin; create extension if not exists pgtap with schema extensions; set local search_path=extensions,public,pg_catalog; select no_plan();
+-- B1 explicitly reuses the canonical calculation contract from this prerequisite.
+${expand(path.join(root, "supabase/local/purchase_review_confirm_release_fixture.sql"))}
 create table public.k2_results(name text primary key,response jsonb not null);
 create table public.k2_requests(name text primary key,request jsonb not null);
 grant select,insert on public.k2_results,public.k2_requests to authenticated;
