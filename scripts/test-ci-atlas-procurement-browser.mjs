@@ -24,6 +24,7 @@ import {
 import { certifyMasterSourceAuthoring } from "./atlas-connected-source-authoring.mjs";
 import { certifyConnectedReplacements } from "./atlas-connected-replacements.mjs";
 import { certifyConnectedCorrections } from "./atlas-connected-corrections.mjs";
+import { readAfterSchemaCacheStarts } from "./disposable-schema-cache-read.mjs";
 
 assert(
   process.env.GITHUB_ACTIONS === "true" ||
@@ -181,10 +182,9 @@ assert(
   !(await operator.auth.signInWithPassword({ email, password })).error,
   "Public Auth sign-in failed.",
 );
-const read = async () => {
-  const result = await operator
-    .schema("atlas_api")
-    .rpc("get_school_catering_purchase_orders", {
+const read = async ({ startup = false } = {}) => {
+  const request = () =>
+    operator.schema("atlas_api").rpc("get_school_catering_purchase_orders", {
       request: {
         contract_version: "SCHOOL-CATERING-PROCUREMENT.v1",
         requested_by_auth_subject: subject,
@@ -198,13 +198,16 @@ const read = async () => {
         },
       },
     });
+  const result = startup
+    ? await readAfterSchemaCacheStarts(request, until)
+    : await request();
   assert(
     !result.error && result.data?.success,
-    "Authenticated PO read failed.",
+    `Authenticated PO read failed: ${result.status}/${result.error?.code ?? result.data?.error_code ?? "invalid response"}`,
   );
   return result.data.purchase_orders;
 };
-const initialOrders = await read();
+const initialOrders = await read({ startup: true });
 let before = initialOrders;
 assert.equal(before.length, 2);
 assert(
@@ -377,7 +380,7 @@ const server = await preview({
 });
 const profile = mkdtempSync(path.join(tmpdir(), "atlas-procurement-ci-"));
 let chrome, connection;
-const until = async (fn, label) => {
+async function until(fn, label) {
   const end = Date.now() + 30000;
   while (Date.now() < end) {
     const result = await fn();
@@ -385,7 +388,7 @@ const until = async (fn, label) => {
     await new Promise((r) => setTimeout(r, 100));
   }
   throw new Error(`CONNECTED_PROCUREMENT_${label}`);
-};
+}
 try {
   chrome = spawn(
     process.env.CHROME_BIN ||
