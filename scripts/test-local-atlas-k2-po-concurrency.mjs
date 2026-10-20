@@ -605,6 +605,113 @@ try {
     ]);
   }
 
+  // A first correction may commit after Draft readiness and source locks.
+  const draftTransitionDb = `${prefix}_draft_first_correction`;
+  clone(draftTransitionDb, empty);
+  const draftSetupEnd = suite.indexOf(
+    "insert into k2_requests\nselect 'po001'",
+  );
+  const originalSource = suite.match(
+    /create temporary table k2_original_source as[\s\S]*?;/,
+  )?.[0];
+  assert(draftSetupEnd > 0 && originalSource);
+  const draftSetup = (suite.slice(0, draftSetupEnd) + originalSource).replace(
+    /create (?:temporary|temp) table (?!k2_core_lock_results)/gi,
+    "create table ",
+  );
+  run(
+    draftTransitionDb,
+    draftSetup +
+      correction.replace(/set local role authenticated;$/, "") +
+      `
+    insert into k2_requests select 'race_drafts',pg_temp.k2_command(
+      'SCHOOL-CATERING-PROCUREMENT.v1','SCHOOL_CATERING_PO_DRAFTS_CREATED',1,
+      '{"date_start":"2026-11-02","date_end":"2026-11-02"}');
+    create table k2_race_results(name text primary key,response jsonb not null);
+    grant select,insert on k2_race_results to authenticated;
+    do $hook$ declare definition text; anchor text:=E'end loop;\\n\\n  for v_supplier in'; begin
+      definition:=pg_get_functiondef('atlas_api.create_school_catering_purchase_order_drafts(jsonb)'::regprocedure);
+      assert strpos(definition,anchor)>0;
+      definition:=replace(definition,anchor,
+        E'end loop;\\n  perform pg_catalog.pg_advisory_xact_lock(710122);\\n\\n  for v_supplier in');
+      execute definition;
+    end $hook$;
+    commit;`,
+  );
+  const draftGate = session(draftTransitionDb, "k2_draft_gate"),
+    draftSession = session(draftTransitionDb, "k2_transition_drafts"),
+    draftCorrection = session(draftTransitionDb, "k2_draft_first_correction");
+  try {
+    draftGate.process.stdin.write(
+      "select pg_advisory_xact_lock(710122);select 'GATE_HELD';\n",
+    );
+    await until(
+      () => draftGate.out.includes("GATE_HELD"),
+      "Draft phase gate held",
+    );
+    draftSession.process.stdin.write(
+      call(
+        "drafts",
+        "create_school_catering_purchase_order_drafts",
+        "race_drafts",
+      ),
+    );
+    await until(
+      () =>
+        blockers(draftTransitionDb, draftSession.name).includes(draftGate.name),
+      "Draft command reached the real post-readiness boundary",
+    );
+    draftCorrection.process.stdin.write(
+      call("correction", "save_confirmed_needs", "correction110"),
+    );
+    await until(
+      () => draftCorrection.out.includes("correction_RETURNED"),
+      "first correction returns while Draft source locks are held",
+    );
+    draftCorrection.process.stdin.end("commit;\n");
+    assert.equal(await draftCorrection.done, 0, draftCorrection.error);
+    draftGate.process.stdin.end("rollback;\n");
+    assert.equal(await draftGate.done, 0, draftGate.error);
+    await until(
+      () => draftSession.out.includes("drafts_RETURNED"),
+      "Draft resumes after correction commit",
+    );
+    draftSession.process.stdin.end("commit;\n");
+    assert.equal(await draftSession.done, 0, draftSession.error);
+    const facts = JSON.parse(
+      run(
+        draftTransitionDb,
+        `select jsonb_build_object(
+      'results',(select jsonb_object_agg(name,response) from k2_race_results),
+      'old_corrected_lines',(select count(*) from atlas_procurement.purchase_order_line_revisions line
+        join atlas_procurement.purchase_order_revisions revision using(purchase_order_revision_id)
+        where revision.is_current and line.ingredient_id='b6500000-0000-0000-0000-000000000006'),
+      'issued',(select count(*) from atlas_procurement.purchase_orders
+        where purchase_order_status='RELEASED_TO_SUPPLIER'));`,
+      ),
+    );
+    assert.equal(facts.results.correction.success, true, JSON.stringify(facts));
+    assert.equal(facts.results.drafts.success, true, JSON.stringify(facts));
+    assert.equal(
+      facts.old_corrected_lines,
+      0,
+      "A later Draft selector must not retain the pre-correction Handoff quantity",
+    );
+    assert.equal(facts.issued, 0);
+    console.log(
+      "K2 Draft refreshes first correction committed after readiness PASS",
+    );
+  } finally {
+    for (const state of [draftGate, draftSession, draftCorrection])
+      if (!state.process.stdin.writableEnded)
+        state.process.stdin.end("rollback;\n");
+    await Promise.all([
+      draftGate.done,
+      draftSession.done,
+      draftCorrection.done,
+    ]);
+  }
+
   // Real Pantry Save + Need Generation advances the run while the locker waits.
   const pointerDb = `${prefix}_run_pointer`;
   clone(pointerDb, empty);
