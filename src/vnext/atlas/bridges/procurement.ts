@@ -17,6 +17,8 @@ export {
   type SchoolCateringProcurementApi,
 } from "../../../modules/atlas/procurement/schoolCateringProcurementApi";
 export {
+  canReleasePurchaseOrder,
+  purchaseOrderLineUnitLabel,
   purchaseOrderDraftReadinessMessages,
   type AllocationFamilyRow,
   type AllocationProposalSplit,

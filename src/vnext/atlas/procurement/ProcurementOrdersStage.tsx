@@ -11,6 +11,8 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useId, useRef, useState } from "react";
 import {
+  canReleasePurchaseOrder,
+  purchaseOrderLineUnitLabel,
   procurementOperatorMessages,
   type PurchaseOrdersData,
   type SchoolCateringPurchaseOrder,
@@ -67,6 +69,8 @@ export function ProcurementOrdersStage({
   disabled,
   search,
   onAction,
+  onReleaseAll,
+  bulkProgress,
   onExportXlsx,
   onExportPdf,
   onExportZip,
@@ -78,6 +82,8 @@ export function ProcurementOrdersStage({
   disabled: boolean;
   search: string;
   onAction: (order: SchoolCateringPurchaseOrder) => void;
+  onReleaseAll?: () => void;
+  bulkProgress?: { completed: number; total: number } | null;
   onExportXlsx?: ProcurementExport;
   onExportPdf?: ProcurementExport;
   onExportZip?: ProcurementZipExport;
@@ -94,6 +100,9 @@ export function ProcurementOrdersStage({
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportMode, setExportMode] = useState<ProcurementExportMode>("all");
   const exportOrders = (data?.purchase_orders ?? []).filter(canExport);
+  const releaseOrders = (data?.purchase_orders ?? []).filter(
+    canReleasePurchaseOrder,
+  );
   const trigger = useRef<HTMLButtonElement | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const visible = (data?.purchase_orders ?? []).filter((order) =>
@@ -198,6 +207,32 @@ export function ProcurementOrdersStage({
             tìm kiếm.
           </Text>
         </Text>
+        {onReleaseAll && (
+          <Box>
+            <Button
+              variant="businessPrimary"
+              disabled={disabled || exporting || releaseOrders.length === 0}
+              loading={Boolean(bulkProgress)}
+              onClick={onReleaseAll}
+              aria-describedby={`${detailId}-release-scope`}
+            >
+              Phát hành tất cả PO ({releaseOrders.length})
+            </Button>
+            <Text
+              id={`${detailId}-release-scope`}
+              textStyle="helper"
+              color="fg.muted"
+            >
+              Phát hành các bản nháp đủ điều kiện trong khoảng ngày đã tải;
+              không giới hạn theo tìm kiếm.
+            </Text>
+            {bulkProgress && (
+              <Text role="status" textStyle="helper">
+                Đã xác nhận {bulkProgress.completed}/{bulkProgress.total} PO.
+              </Text>
+            )}
+          </Box>
+        )}
         <Field.Root
           disabled={disabled || exporting}
           w={{ base: "full", md: "var(--atlas-layout-auto, auto)" }}
@@ -600,7 +635,7 @@ export function ProcurementOrdersStage({
                           fontWeight="semibold"
                         >
                           {quantity(line.ordered_quantity)}{" "}
-                          {line.unit.unit_code}
+                          {purchaseOrderLineUnitLabel(selected.status, line)}
                         </Text>
                         <Text mt="xs" textStyle="helper" color="fg.muted">
                           Điểm giao: {line.delivery_location.location_name}
@@ -625,7 +660,10 @@ export function ProcurementOrdersStage({
                               fontVariantNumeric="tabular-nums"
                             >
                               {quantity(school.ordered_quantity)}{" "}
-                              {line.unit.unit_code}
+                              {purchaseOrderLineUnitLabel(
+                                selected.status,
+                                line,
+                              )}
                             </Text>
                           </Flex>
                         ))}

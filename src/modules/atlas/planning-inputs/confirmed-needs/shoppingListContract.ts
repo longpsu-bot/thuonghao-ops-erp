@@ -90,10 +90,32 @@ export const shoppingListContract = {
   },
 } as const;
 
+const shoppingListRecovery: Record<string, string> = {
+  READ_ONLY_WORKBENCH:
+    "Khoảng ngày có nhu cầu đã phát hành hoặc không thể chỉnh sửa. Chọn khoảng ngày chỉ gồm nhu cầu còn được chỉnh sửa rồi thử lại.",
+  INELIGIBLE_AUTHORITY:
+    "Nhu cầu không đủ điều kiện nhập Phiếu đi chợ. Tải lại và kiểm tra trạng thái nhu cầu trước khi tiếp tục.",
+  STALE_AUTHORITY:
+    "Chưa xác nhận được nhu cầu hiện tại hoặc dữ liệu đã thay đổi. Tải lại nhu cầu và xuất một Phiếu đi chợ mới.",
+  STALE_IDENTITY:
+    "Dòng nhu cầu đã thay đổi từ khi xuất Phiếu đi chợ. Tải lại và xuất file mới.",
+  STALE_QUANTITY:
+    "Số lượng đã lưu đã thay đổi từ khi xuất Phiếu đi chợ. Tải lại và xuất file mới.",
+  DIRTY_WORKBENCH:
+    "Lưu hoặc bỏ các thay đổi chưa lưu trước khi xuất/nhập Phiếu đi chợ.",
+  WORKBENCH_DATE_MISMATCH:
+    "Ngày trong Phiếu đi chợ nằm ngoài khoảng ngày đang mở. Chọn đúng khoảng ngày của file rồi nhập lại.",
+  INVALID_DATE_RANGE: "Chọn khoảng ngày hợp lệ, tối đa 7 ngày, rồi thử lại.",
+  INVALID_QUANTITY:
+    "Số lượng trong Phiếu đi chợ không hợp lệ hoặc không đúng bước lượng. Kiểm tra cột SỐ LƯỢNG rồi nhập lại.",
+  NO_ELIGIBLE_DATES:
+    "Khoảng ngày chưa có nhu cầu đủ điều kiện xuất Phiếu đi chợ. Chọn ngày đã lập nhu cầu.",
+};
 export class ShoppingListError extends Error {
   constructor(
     public readonly code: string,
-    message = "Phiếu đi chợ không còn khớp hoặc sai cấu trúc. Hãy xuất một file mới.",
+    message = shoppingListRecovery[code] ??
+      "Phiếu đi chợ không còn khớp hoặc sai cấu trúc. Hãy xuất một file mới.",
   ) {
     super(message);
     this.name = "ShoppingListError";

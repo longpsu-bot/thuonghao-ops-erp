@@ -4,6 +4,7 @@ import {
   type AtlasOperatorDateRange,
 } from "../atlasOperatorDateRange";
 import {
+  canReleasePurchaseOrder,
   confirmedAllocationFromResult,
   confirmedAllocationReadRequest,
   confirmedAllocationRequest,
@@ -133,9 +134,15 @@ export function useProcurementWorkbench({
   const [allocation, setAllocation] =
     useState<ConfirmedAllocationWorkbench | null>(null);
   const [orders, setOrders] = useState<PurchaseOrdersData | null>(null);
+  const ordersAuthority = useRef<PurchaseOrdersData | null>(null);
   const [current, setCurrent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{
+    completed: number;
+    total: number;
+  } | null>(null);
+  const bulkActive = useRef(false);
   const [mutationLocked, setMutationLocked] = useState(false);
   const [feedback, setFeedback] = useState<ProcurementFeedback | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
@@ -205,7 +212,10 @@ export function useProcurementWorkbench({
       const ok =
         target === "allocation" ? Boolean(nextAllocation) : Boolean(nextOrders);
       if (target === "allocation") setAllocation(nextAllocation);
-      else setOrders(nextOrders);
+      else {
+        ordersAuthority.current = nextOrders;
+        setOrders(nextOrders);
+      }
       setCurrent(ok);
       setLoading(false);
       setBusy(false);
@@ -254,13 +264,14 @@ export function useProcurementWorkbench({
     setCurrent(false);
     setAllocation(null);
     setOrders(null);
+    ordersAuthority.current = null;
     setFeedback(null);
     setReadError(null);
     setBusy(false);
     setMutationLocked(true);
   };
   const changeRange = (value: AtlasOperatorDateRange) => {
-    if (busy) return;
+    if (busy || bulkActive.current) return;
     setRange(value);
     if (operatorDateRangeError(value)) return;
     if (value.start !== date || value.end !== dateEnd) {
@@ -273,6 +284,7 @@ export function useProcurementWorkbench({
     changeRange({ start: value, end: value });
   const applyNeedScope = (value: AtlasOperatorDateRange, ids: string[]) => {
     if (
+      bulkActive.current ||
       busy ||
       loading ||
       mutationLocked ||
@@ -289,13 +301,14 @@ export function useProcurementWorkbench({
     setScopeRefresh((value) => value + 1);
   };
   const changeSchools = (ids: string[]) => {
-    if (rangeError || busy) return;
+    if (rangeError || busy || bulkActive.current) return;
     if (ids.join("|") !== schoolIds.join("|")) {
       invalidate();
       setSchoolIds(ids);
     }
   };
   const changeStage = (value: ProcurementStage) => {
+    if (bulkActive.current) return;
     if (!fixedStage && value !== stage) {
       invalidate();
       setStage(value);
@@ -317,7 +330,7 @@ export function useProcurementWorkbench({
     }
   };
   const reload = async () => {
-    if (active.current || rangeError) return;
+    if (active.current || bulkActive.current || rangeError) return;
     clearRetry();
     const target = recoveryStage.current ?? stage;
     const ok = await read(target);
@@ -330,13 +343,18 @@ export function useProcurementWorkbench({
   const locked = !current || mutationLocked || hasRetry;
   const canStart = () =>
     Boolean(
-      authSubject && current && !locked && !active.current && !rangeError,
+      authSubject &&
+      current &&
+      !locked &&
+      !active.current &&
+      !bulkActive.current &&
+      !rangeError,
     );
   const runCommand = async (
     invoke: () => Promise<AtlasRpcResult>,
     target: ProcurementStage,
     preparation = false,
-  ) => {
+  ): Promise<boolean> => {
     const ticket = generation.current;
     active.current = true;
     setBusy(true);
@@ -354,19 +372,19 @@ export function useProcurementWorkbench({
         },
       };
     }
-    if (ticket !== generation.current) return;
+    if (ticket !== generation.current) return false;
     const nextFeedback = feedbackFromResult(result);
     setFeedback(nextFeedback);
     if (preparation && ["success", "unknown"].includes(nextFeedback.kind))
       recoveryStage.current = "orders";
     if (nextFeedback.kind === "success") {
       const ok = await read(target);
-      if (ok === null) return;
+      if (ok === null) return false;
       if (!ok) {
         setFeedback(uncertain());
         setMutationLocked(true);
       } else if (preparation) await enterOrdersAfterRead(target);
-      return;
+      return ok === true;
     }
     if (["stale", "unknown"].includes(nextFeedback.kind))
       setMutationLocked(true);
@@ -380,6 +398,7 @@ export function useProcurementWorkbench({
     }
     active.current = false;
     setBusy(false);
+    return false;
   };
 
   const save = async (
@@ -493,13 +512,7 @@ export function useProcurementWorkbench({
           candidate.current_revision.purchase_order_revision_id,
     );
     if (!order) return;
-    if (
-      order.status === "DRAFT" &&
-      order.commitment_state === "DRAFT_CURRENT" &&
-      !order.stale &&
-      order.release_eligible &&
-      order.allowed_actions.release
-    ) {
+    if (canReleasePurchaseOrder(order)) {
       const request = releasePurchaseOrderRequest(
         authSubject!,
         correlation.current,
@@ -543,6 +556,75 @@ export function useProcurementWorkbench({
       );
     }
   };
+  const releaseAllOrders = async () => {
+    if (!canStart() || stage !== "orders") return;
+    const eligible = (ordersAuthority.current?.purchase_orders ?? [])
+      .filter(canReleasePurchaseOrder)
+      .map((order) => ({
+        id: order.purchase_order_id,
+        version: order.version,
+        revision: order.current_revision.purchase_order_revision_id,
+      }));
+    if (!eligible.length) return;
+    bulkActive.current = true;
+    let completed = 0;
+    setBulkProgress({ completed, total: eligible.length });
+    try {
+      for (const order of eligible) {
+        const latest = ordersAuthority.current?.purchase_orders.find(
+          (item) => item.purchase_order_id === order.id,
+        );
+        if (
+          !latest ||
+          !canReleasePurchaseOrder(latest) ||
+          latest.version !== order.version ||
+          latest.current_revision.purchase_order_revision_id !== order.revision
+        ) {
+          setMutationLocked(true);
+          setFeedback({
+            kind: "stale",
+            message: `Đã phát hành ${completed}/${eligible.length} PO. Dữ liệu đơn tiếp theo đã thay đổi; tải lại và kiểm tra trước khi tiếp tục.`,
+            messages: [],
+          });
+          return;
+        }
+        const request = releasePurchaseOrderRequest(
+          authSubject!,
+          correlation.current,
+          order.version,
+          order.id,
+          order.revision,
+        );
+        const ok = await runCommand(
+          () => procurementApi.releasePurchaseOrder(request),
+          "orders",
+        );
+        if (!ok) {
+          setFeedback(
+            (previous) =>
+              previous && {
+                ...previous,
+                messages: [
+                  `Đã xác nhận phát hành ${completed}/${eligible.length} PO. Đã dừng; kiểm tra kết quả trước khi tiếp tục.`,
+                  ...previous.messages,
+                ],
+              },
+          );
+          return;
+        }
+        completed += 1;
+        setBulkProgress({ completed, total: eligible.length });
+      }
+      setFeedback({
+        kind: "success",
+        message: `Đã phát hành ${completed}/${eligible.length} PO.`,
+        messages: [],
+      });
+    } finally {
+      bulkActive.current = false;
+      setBulkProgress(null);
+    }
+  };
   const retry = async () => {
     if (rangeError) return;
     await retryCommand.current?.();
@@ -566,7 +648,8 @@ export function useProcurementWorkbench({
     orders,
     current,
     loading,
-    busy,
+    busy: busy || bulkProgress !== null,
+    bulkProgress,
     locked,
     feedback,
     readError,
@@ -580,6 +663,7 @@ export function useProcurementWorkbench({
     save,
     prepare,
     orderAction,
+    releaseAllOrders,
     retry,
   };
 }

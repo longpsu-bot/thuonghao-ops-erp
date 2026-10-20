@@ -5,7 +5,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(161);
+select plan(162);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -489,6 +489,13 @@ select ok((select (response ->> 'success')::boolean
         'blockers','warnings','allowed_actions','disabled_reasons']))
   from prb_results where name='read-draft'),
   'PO read returns the complete backend-owned draft decision shape');
+select ok((select bool_and(line#>>'{unit,unit_name}'=unit.unit_name)
+  from prb_results result
+  cross join lateral jsonb_array_elements(result.response->'purchase_orders') po
+  cross join lateral jsonb_array_elements(po->'lines') line
+  join atlas_admin.units unit on unit.unit_id=(line#>>'{unit,unit_id}')::uuid
+  where result.name='read-draft'),
+  'Draft PO lines expose the authoritative Unit name without changing controlled identity');
 select ok((select bool_and(jsonb_typeof(line -> 'ordered_quantity')='string'
       and line ->> 'ordered_quantity'=source_line.ordered_quantity::text)
   from prb_results result

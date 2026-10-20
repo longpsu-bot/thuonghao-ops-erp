@@ -138,7 +138,7 @@ export type PurchaseOrderLine = {
   };
   ordered_quantity: ExactQuantity;
   supplier_note: string | null;
-  unit: { unit_id: string; unit_code: string };
+  unit: { unit_id: string; unit_code: string; unit_name?: string | null };
   delivery_location: {
     delivery_location_id: string;
     location_name: string;
@@ -222,6 +222,29 @@ export type PurchaseOrdersData = {
   warnings: string[];
   blockers: string[];
 };
+
+export function purchaseOrderLineUnitLabel(
+  status: PurchaseOrderStatus,
+  line: PurchaseOrderLine,
+) {
+  if (status !== "DRAFT") return line.unit_code_snapshot ?? line.unit.unit_code;
+  return /^(?:v1-unit-|atlas[-_:]|unit[-_:])|^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(
+    line.unit.unit_code,
+  )
+    ? line.unit.unit_name?.trim() || "Chưa có ĐVT"
+    : line.unit.unit_code;
+}
+
+/** Presentation eligibility only; the release command rechecks backend authority. */
+export function canReleasePurchaseOrder(order: SchoolCateringPurchaseOrder) {
+  return (
+    order.status === "DRAFT" &&
+    order.commitment_state === "DRAFT_CURRENT" &&
+    !order.stale &&
+    order.release_eligible &&
+    order.allowed_actions.release
+  );
+}
 
 export type ProcurementCommandClassification =
   | "SUCCESS"
