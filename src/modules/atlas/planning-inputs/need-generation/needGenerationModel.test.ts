@@ -118,6 +118,21 @@ describe("RMVP-04 authoritative model", () => {
     ).toBeNull();
   });
 
+  it("directs a missing Unit quantity policy to administration instead of refresh", () => {
+    const result: AtlasRpcResult = {
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "MISSING_PLANNING_QUANTITY_POLICY",
+        safe_message: "No eligible exact-Unit Planning quantity policy exists.",
+      },
+    };
+    expect(needGenerationResultMessage(result)).toBe(
+      "Chưa có quy tắc số lượng cho một số đơn vị tính trong ngày đã chọn. Hãy liên hệ quản trị viên để bổ sung.",
+    );
+    expect(needGenerationResultAllowsExactRetry(result)).toBe(false);
+  });
+
   it("uses business-language generation messages without implementation jargon", () => {
     const backend = (
       errorCode: string,

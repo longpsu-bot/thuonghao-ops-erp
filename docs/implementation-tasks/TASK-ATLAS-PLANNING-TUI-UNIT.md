@@ -8,6 +8,14 @@ The snapshot normalizer, retained reference importer and backend rehearsal/impor
 
 The Staging count-policy package includes Túi among its fifteen exact imported COUNT Units, with the existing step `1` and effective date `2026-09-14`. It requires the Unit to exist with the approved meaning before configuring its policy, rejects conflicting policies and preserves exact replay. The closeout verifier expects those fifteen policies plus the unchanged kilogram policy. Run the package only after the protected import has made Túi available; no generic COUNT fallback is permitted.
 
+## 20 October 2026 installation repair
+
+Two hosted Need Generation commands failed with `MISSING_PLANNING_QUANTITY_POLICY` and `NO_COMMITTED_CHANGE`. Read-only inspection found Túi to be the sole active Unit without an eligible policy on 13 October. Ingredient `v1-ingredient-1215` already has the approved Túi purchase Unit and order step `1`; no Ingredient or Recipe correction is required.
+
+The unchanged SQL package covers fifteen Units, but its runner still accepted and reported fourteen. The runner now requires fifteen. The protected **Atlas Staging Foundation Install** workflow provides an explicit `install_count_unit_policies=true` input: replay Foundation, verify the count-policy package with rollback, reconcile that package, then run the normal authenticated verifier. The input defaults to false; fresh Foundation installation does not require imported master data. Dispatch only from the exact merged main SHA after the approved Units exist.
+
+The operator error now identifies missing Unit quantity configuration and directs administration instead of advising repeated refreshes. The receipt remains terminal and is never replayed as a new generation request. This repair introduces no migration, rounding rule, Unit conversion, source rewrite or automatic Need Generation. Existing policy identities and released documents must remain unchanged. After installation, the operator refreshes and deliberately creates Need with a fresh command.
+
 Source Ingredient `1215` and Dish `2062` Recipes `3510`/`3511` resolve their `Túi` labels to the same Unit. Each source BoM quantity remains `100`; no unit conversion or mismatch adoption is needed. Snapshot regressions verify the exact hash, type, scale, lifecycle, shared reference and quantity preservation.
 
 The accompanying Owner decision also preserves active source Recipe roots with zero BoM rows. Normalized roots retain `source_record_id`; diagnostic `SOURCE_RECIPE_EMPTY` has severity `INFO`, field `composition`, and the exact source Recipe ID in `detail`. No lines are invented. Protected catchup handles these roots without creating Recipe Versions or lines; backend readiness continues to reject unavailable compositions. Missing dependencies, invalid source values and unknown Units remain blockers.
