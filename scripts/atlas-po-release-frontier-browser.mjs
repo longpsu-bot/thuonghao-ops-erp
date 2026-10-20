@@ -416,16 +416,35 @@ and l.ingredient_id='a7400000-0000-4000-8000-000000002002' and r.is_current and 
         `(()=>{const b=[...document.querySelectorAll('button[aria-label]')].find(b=>b.getAttribute('aria-label')===${JSON.stringify(label)});if(!b||b.disabled)return false;b.click();return true;})()`,
       ),
     );
-    const values = order.lines.map((line) => ({
-      name: line.ingredient.ingredient_name,
-      quantity: exact(line.ordered_quantity).replace(".", ","),
-    }));
-    await until(
-      () =>
-        evaluate(
-          `(()=>{const body=document.querySelector('[aria-label="Dòng đơn mua"]')?.innerText;return Boolean(body)&&${JSON.stringify(values)}.every(v=>body.includes(v.name)&&body.includes(v.quantity));})()`,
-        ),
-      "FRONTIER_REOPENED_QUANTITIES",
+    const compare = (a, b) =>
+      JSON.stringify(a).localeCompare(JSON.stringify(b));
+    const values = order.lines
+      .map((line) => {
+        const quantity = exact(line.ordered_quantity);
+        assert(
+          /^\d{1,3}(?:\.\d+)?$/.test(quantity),
+          "Review fixture quantity formatting beyond the known sub-1000 range.",
+        );
+        return [
+          line.ingredient.ingredient_name,
+          `${quantity.replace(".", ",")} kg`,
+          `Điểm giao: ${line.delivery_location.location_name}`,
+        ];
+      })
+      .sort(compare);
+    const rendered = await until(async () => {
+      const actual = await evaluate(
+        `(()=>{const root=document.querySelector('[aria-label="Dòng đơn mua"]');if(!root)return null;return [...root.children].map(section=>[...section.firstElementChild.firstElementChild.children].slice(0,3).map(cell=>cell.textContent.trim().replace(/\\s+/g,' ')));})()`,
+      );
+      return actual &&
+        JSON.stringify(actual.sort(compare)) === JSON.stringify(values)
+        ? actual
+        : null;
+    }, "FRONTIER_REOPENED_QUANTITIES");
+    assert.deepEqual(
+      rendered,
+      values,
+      "Each reopened row must pair its exact Ingredient, quantity/Unit and delivery location.",
     );
   }
   const releasedShot = await connection.send("Page.captureScreenshot", {

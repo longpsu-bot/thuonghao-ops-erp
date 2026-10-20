@@ -1284,7 +1284,8 @@ select (jsonb_array_length(response->'purchase_orders')=1
     and response#>>'{purchase_orders,0,commitment_state}'='DRAFT_CURRENT'
     and response#>>'{purchase_orders,0,allowed_actions,release}'='false'
     and response#>>'{purchase_orders,0,release_eligible}'='false')::text denied,
-    (response->'blockers'=jsonb_build_array(
+    -- V2 already reports this generic whole-date currentness code; preserve it.
+    (response->'blockers'=jsonb_build_array('PROCUREMENT_NOT_CURRENT',
       '19/09/2050: Cần chuẩn bị đầy đủ đơn mua theo phân bổ hiện tại trước khi phát hành. Kiểm tra các đơn Cần cập nhật hoặc trở lại Phân bổ NCC.'))::text generic
 from k2_results where name='b1_omitted_filtered_read'
 \gset k3_omitted_filtered_
