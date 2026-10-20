@@ -49,6 +49,12 @@ describe("released purchase-order exports", () => {
     expect(visible).toContain("Gói");
     expect(visible).not.toContain("v1-unit-count");
     expect(visible).not.toContain("Mutable current name");
+    const metadata = JSON.stringify(
+      book.getWorksheet("_ATLAS_META")!.getSheetValues(),
+    );
+    expect(metadata).toContain("unit_name_snapshot");
+    expect(metadata).toContain("Gói");
+    expect(metadata).toContain("v1-unit-count");
   });
   it.each(["all", "details_ing", "details_school", "sum"] as const)(
     "exports null internal codes in %s XLSX/PDF and both ZIP formats with exact lineage",

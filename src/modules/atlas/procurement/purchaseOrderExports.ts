@@ -174,8 +174,12 @@ export function buildPurchaseOrderExportData(
       delivery_location_id: line.delivery_location.delivery_location_id,
       ordered_quantity: line.ordered_quantity,
       ingredient_document_code_snapshot: line.ingredient_document_code_snapshot,
-      unit_code_snapshot: line.unit_code_snapshot,
-      unit_name_snapshot: line.unit_name_snapshot,
+      ...(line.unit_name_snapshot == null
+        ? {}
+        : {
+            unit_code_snapshot: line.unit_code_snapshot,
+            unit_name_snapshot: line.unit_name_snapshot,
+          }),
     };
     summaries.set(key, {
       ingredientId: line.ingredient.ingredient_id,
