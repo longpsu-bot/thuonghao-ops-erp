@@ -2,7 +2,7 @@
 
 Status: **Local K3/B1 acceptance and independent source/security review PASS. Exact-head GitHub Actions certification pending. No activation, merge or deployment approval.**
 
-Publication checkpoint: the Owner subsequently requested **“Please push”**. The current implementation is committed and pushed as a work-in-progress checkpoint under that instruction. The execution, connected-browser and exact-head CI gates below remain incomplete; this publication does not establish acceptance or readiness. No K3 Draft PR is created at this checkpoint.
+Historical publication checkpoint: the Owner requested **“Please push”** before the local acceptance gates completed. The approved closeout below supersedes that checkpoint; exact-head CI is recorded in the final delivery report and stacked Draft PR.
 
 Authority: [Owner read-contract amendment, 20 October 2026](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6277838544), [K2 Product review](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/409#issuecomment-6265983563), ARCH-002 and the original K3 operator integration brief.
 
@@ -391,7 +391,7 @@ Evidence: `browser-rpc.jsonl`, `canonical-procurement-read.json`, `browser-exact
 - New and touched K2 savepoint assertions capture observations with `\\gset` and assert after rollback, preserving valid TAP numbering. Existing fault cases remain; each independent case retains the same 8s statement limit. The isolated `atlas_k3_read_tests` database and `atlas_k3_browser_probe` clone are disposable test resources in the task container. The original browser database was never reset; temporary read/command probes rolled back. Task API services were restarted after the SQL attempts. The two unrelated Supabase stacks remain untouched; permission to pause them temporarily was requested because of memory pressure.
 - Browser endpoint remains 100 → 110 with PO-001/PXK history preserved; no new PO-002/PO-003 or post-amendment acceptance is claimed. Exact-head Frontend, Smoke and Full Integration are outstanding. Before the Owner's subsequent push instruction, HEAD remained the pinned `8adc0803a450192931ece3192642051ca05cc5e2` and all 42 files were uncommitted. The publication checkpoint above records the later instruction; no K3 PR exists.
 
-## Acceptance matrix
+## Current acceptance matrix
 
 | Case | Required result                                                                                               | Current evidence                                                                               |
 | ---- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
@@ -399,12 +399,12 @@ Evidence: `browser-rpc.jsonl`, `canonical-procurement-read.json`, `browser-exact
 | A2   | Authorized reasoned 100 → 110 correction, truthful readback, no new PO yet                                    | Fresh authenticated browser PASS                                                               |
 | A3   | Explicit split acceptance, Preparation, whole PO-002/110, new number, immutable PO-001 export                 | Fresh primary browser PASS; export lifecycle metadata distinction recorded above               |
 | A4   | Same connected session, 110 → 90, whole PO-003, immutable linked history                                      | Fresh primary browser PASS, including committed-response loss and recovery                     |
-| A5   | R20+B5+H3 → confirmed30, two Suppliers/Schools/shared location, removed Supplier and complete date membership | SQL PASS; browser BLOCKED after first full replacement Draft by PO/PXK read timeout            |
+| A5   | R20+B5+H3 → confirmed30, two Suppliers/Schools/shared location, removed Supplier and complete date membership | SQL and completed B1 browser PASS; two current successors, two historical predecessors         |
 | A6   | Stale/currentness/membership/scope/capability rejection, no locally fabricated action                         | Fresh SQL and stale/Actor/capability browser denials PASS; historical races retained           |
 | A7   | Distinct Actors, replay, UNKNOWN, refresh/reload, dirty School/date/tab guards and rollback                   | Fresh primary browser recovery/replay/Actor/dirty-close PASS; SQL rollback/context checks PASS |
-| A8   | Authoritative PXK effects/history and independent successor, unrelated School isolation                       | Primary PXK history/successor guidance PASS; B1 PXK impact read BLOCKED                        |
-| A9   | Authenticated disposable exact-stack browser, desktop/mobile screenshots and step logs                        | Primary desktop/mobile PASS; complete B1 operator acceptance BLOCKED                           |
-| A10  | Focused checks and exact-head Frontend, Smoke, executed Full Integration                                      | Focused checks PASS; recovered-head CI failures retained; preservation-head results in handoff |
+| A8   | Authoritative PXK effects/history and independent successor, unrelated School isolation                       | Primary frozen PXK snapshot identical; B1 READY 30/20 with complete released-PO coverage PASS  |
+| A9   | Authenticated disposable exact-stack browser, desktop/mobile screenshots and step logs                        | Primary and completed B1 desktop/mobile PASS; screenshots, exports and RPC records retained    |
+| A10  | Focused checks and exact-head Frontend, Smoke, executed Full Integration                                      | Focused checks PASS; exact-head CI links and outcomes recorded in final delivery report/PR     |
 
 ## Reproducible browser protocol
 
@@ -412,7 +412,7 @@ Start with an authenticated staff Actor in the disposable local database. Open t
 
 ## Migration and rollback
 
-The approved amendment is additive and read-only; no backfill or historical mutation. A reviewed forward rollback can restore the parent review definition without deleting correction/PO/PXK history. Application rollback must keep v3-corrected chains fail-closed and preserve UNKNOWN recovery. Exact migration, file manifest, tests, review findings and open risks will be recorded as execution progresses.
+The forward migrations change existing read definitions and the two expressly approved source-lock helpers; there is no backfill or historical mutation. A rollback requires a reviewed forward migration and must retain source serialization, fail-closed v3 currentness and UNKNOWN recovery. Restoring the old lock definitions would reintroduce the reproduced race. Never delete correction/PO/PXK history to roll back application code. The exact source manifest and certification evidence are recorded in the final delivery report and stacked Draft PR.
 
 ## Affected file manifest at STOP
 
