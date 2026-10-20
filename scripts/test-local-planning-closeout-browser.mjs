@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { localSql } from "./planning-closeout-local-fixture.mjs";
 import { createClient } from "@supabase/supabase-js";
 import ExcelJS from "exceljs";
+import { editShoppingListQuantity } from "./shopping-list-browser-edit.mjs";
 import { readLocalSupabaseStatus } from "./local-supabase-status.mjs";
 import {
   cdp,
@@ -455,12 +456,14 @@ export async function certifyLocalCloseoutBrowser() {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(readFileSync(originalWorkbook));
     let changedCells = 0;
+    let worksheetPath, cell;
     for (const sheet of workbook.worksheets.filter(
       (sheet) => sheet.state === "visible",
     ))
       sheet.eachRow((row) => {
         if (row.getCell(7).text === candidate.lineId) {
-          row.getCell(4).value = proposed;
+          worksheetPath = `xl/worksheets/sheet${sheet.id}.xml`;
+          cell = `D${row.number}`;
           changedCells++;
         }
       });
@@ -472,7 +475,12 @@ export async function certifyLocalCloseoutBrowser() {
     const modifiedWorkbook = join(evidenceDir, "quantity-proposal.xlsx");
     writeFileSync(
       modifiedWorkbook,
-      Buffer.from(await workbook.xlsx.writeBuffer()),
+      await editShoppingListQuantity(
+        readFileSync(originalWorkbook),
+        worksheetPath,
+        cell,
+        proposed,
+      ),
     );
     await importFile(modifiedWorkbook);
     assert(
