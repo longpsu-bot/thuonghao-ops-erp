@@ -1816,18 +1816,18 @@ select is(
     'policy_count', 689,
     'policy_catalog_md5', 'd2a7ef8da79571431cbd60b93bd2acdf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 370,
-    -- Reconciliation adds one read-runtime-only context helper. Independently
-    -- projected from the unchanged369-function baseline plus its exact signature,
-    -- owner/definer/search-path row; every original catalog row stays pinned.
-    'private_function_catalog_md5', '854e985528db7425b6eb1793bdef82d4',
+    'private_function_count', 372,
+    -- Baseline370/hash854e9855 plus exactly the two private context variants
+    -- of existing PO coverage/frontier, independently projected before install.
+    -- Both retain procurement-runtime ownership, definer and empty search path.
+    'private_function_catalog_md5', 'b892806b6558f55461e9f1d56ea604f4',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
-    -- Baseline1909 plus exactly the private whole-date frontier EXECUTE grant
-    -- to atlas_read_runtime (not grantable), independently projected before install.
-    -- Public/browser grants, owners and every original row remain pinned.
-    'positive_target_grant_count', 1910,
-    'positive_target_grant_md5', '45371989e6b364872c64436d121ffd7d',
+    -- Baseline1909/hash3be94aca plus the two new function owners' EXECUTE
+    -- and only frontier EXECUTE for atlas_read_runtime: three non-grantable rows.
+    -- Browser/public grants and every original row remain pinned.
+    'positive_target_grant_count', 1912,
+    'positive_target_grant_md5', '1211d64964b9d4ff872d6ee04edcce93',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

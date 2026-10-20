@@ -314,6 +314,8 @@ set local plan_cache_mode='auto';
 select ok(response->>'success'='true' and elapsed_ms<8000,
   'reopened 236-family '||kind||' read succeeds within the unchanged eight seconds') from reopened_samples;
 select is(proof_calls,1::bigint,'closed batch proof runs once for '||kind) from reopened_samples;
+select is((select context_calls from reopened_samples where kind='orders'),1::bigint,
+  'whole-date PO prerequisite reuses the one authoritative context per public request');
 select is((select context_calls from reopened_samples where kind='reconciliation'),1::bigint,
   'all-School reconciliation builds one authoritative context per public request');
 select is((select jsonb_array_length(response->'rows') from reopened_samples where kind='allocation'),

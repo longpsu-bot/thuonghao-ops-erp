@@ -1215,6 +1215,15 @@ select ok((select bool_and((po->>'release_eligible')::boolean
     cross join lateral jsonb_array_elements(response->'purchase_orders') po
     where name='b1_both_drafts_po_read' and po->>'status'='DRAFT'),
   'complete corrected-date frontier exposes both Drafts as releasable');
+select is(atlas_core.procurement_read_purchase_review_preparation_po_frontier(date '2050-09-19',
+    atlas_core.procurement_read_context(date '2050-09-19',date '2050-09-19')),
+  atlas_core.purchase_review_preparation_po_frontier(date '2050-09-19'),
+  'private read frontier exactly matches canonical writer frontier for complete replacement Drafts');
+select is(atlas_core.procurement_read_purchase_review_po_coverage(date '2050-09-19',
+    atlas_core.procurement_read_context(date '2050-09-19',date '2050-09-19')),
+  atlas_core.purchase_review_po_coverage(date '2050-09-19'),
+  'private read coverage exactly matches canonical writer coverage for replacement Drafts');
+
 select is((select count(*) from k2_results where name like 'b1_draft002:%'
   and response->>'success'='true'),2::bigint,'both Suppliers receive complete replacement Drafts');
 select ok(atlas_core.school_catering_po_draft_is_stale(
@@ -1289,7 +1298,20 @@ select (jsonb_array_length(response->'purchase_orders')=1
       '19/09/2050: Cần chuẩn bị đầy đủ đơn mua theo phân bổ hiện tại trước khi phát hành. Kiểm tra các đơn Cần cập nhật hoặc trở lại Phân bổ NCC.'))::text generic
 from k2_results where name='b1_omitted_filtered_read'
 \gset k3_omitted_filtered_
+select (atlas_core.procurement_read_purchase_review_preparation_po_frontier(date '2050-09-19',
+    atlas_core.procurement_read_context(date '2050-09-19',date '2050-09-19'))=
+  atlas_core.purchase_review_preparation_po_frontier(date '2050-09-19'))::text matches
+\gset k3_omitted_frontier_
+select (atlas_core.procurement_read_purchase_review_po_coverage(date '2050-09-19',
+    atlas_core.procurement_read_context(date '2050-09-19',date '2050-09-19'))=
+  atlas_core.purchase_review_po_coverage(date '2050-09-19'))::text matches
+\gset k3_omitted_coverage_
 rollback to savepoint b1_omitted_supplier;
+select is(:'k3_omitted_frontier_matches'::text,'true',
+  'private read frontier exactly matches canonical writer frontier for mixed current/stale Drafts');
+select is(:'k3_omitted_coverage_matches'::text,'true',
+  'private read coverage exactly matches canonical writer coverage for incomplete date coverage');
+
 select is(:'k3_omitted_allocation_success'::text,'true',
   'omitted-Supplier scenario uses an explicit Save in a different family');
 select is(:'k3_omitted_draft_stale'::text,'false',
