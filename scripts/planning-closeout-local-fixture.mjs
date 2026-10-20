@@ -49,7 +49,8 @@ export function planningCloseoutLocalFixtureSql() {
   );
   setup = setup.replace(
     "values(pg_temp.ng_id(13),'need-scale-kg','Need scale kilogram','mass');",
-    "values(pg_temp.ng_id(13),'need-scale-kg','Need scale kilogram','mass'), (pg_temp.ng_id(15),'need-scale-target','Adopted Unit','mass');",
+    // Valid initial printable labels; identities/adoption/quantities stay intact.
+    "values(pg_temp.ng_id(13),'kg-old','Legacy kilogram','mass'), (pg_temp.ng_id(15),'kg','Kilogram','mass');",
   );
   // The importer records raw composition; quantity remains unchanged.
   const mappings = [
