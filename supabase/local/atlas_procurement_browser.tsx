@@ -10,9 +10,11 @@ import { SchoolFulfilmentWorkbench } from "../../src/vnext/atlas/reconciliation/
 import { SchoolDefaultsWorkbench } from "../../src/vnext/atlas/schools/SchoolDefaultsWorkbench";
 import { IngredientSupplierWorkbench } from "../../src/vnext/atlas/master-data/IngredientSupplierWorkbench";
 import { DishRecipeWorkbench } from "../../src/vnext/atlas/recipes/DishRecipeWorkbench";
+import { ChangeOrderWorkbench } from "../../src/vnext/atlas/recipes/ChangeOrderWorkbench";
 import { PlanningSourcesWorkbench } from "../../src/vnext/atlas/planning/PlanningSourcesWorkbench";
 import { createMasterDataApi } from "../../src/modules/atlas/master-data/masterDataApi";
 import { createRecipeApi } from "../../src/modules/atlas/recipes/recipeApi";
+import { createRecipeAdjustmentApi } from "../../src/modules/atlas/recipe-adjustments/recipeAdjustmentApi";
 import { createPlanningInputsApi } from "../../src/modules/atlas/planning-inputs/planningInputsApi";
 import { createPantryApi } from "../../src/modules/atlas/planning-inputs/pantry/pantryApi";
 import { getAtlasSupabaseClient } from "../../src/modules/atlas/connection/supabaseClient";
@@ -51,6 +53,7 @@ const authoringStages = [
   "ingredients",
   "suppliers",
   "recipes",
+  "adjustments",
   "attendance",
   "pantry",
 ];
@@ -68,6 +71,7 @@ function ConnectedAuthoring({
     return {
       master: createMasterDataApi(transport),
       recipes: createRecipeApi(transport),
+      adjustments: createRecipeAdjustmentApi(transport),
       planning: createPlanningInputsApi(transport),
       pantry: createPantryApi(transport),
     };
@@ -98,6 +102,14 @@ function ConnectedAuthoring({
         pantryApi={apis.pantry}
         initialServiceDate="2050-09-26"
         ownerJob={stage}
+      />
+    );
+  if (stage === "adjustments")
+    return (
+      <ChangeOrderWorkbench
+        authSubject={subject}
+        api={apis.adjustments}
+        standalone
       />
     );
   throw new Error("DISPOSABLE_STAGE_REQUIRED");

@@ -23,6 +23,7 @@ import {
 } from "./atlas-procurement-browser-coverage.mjs";
 import { certifyMasterSourceAuthoring } from "./atlas-connected-source-authoring.mjs";
 import { certifyConnectedReplacements } from "./atlas-connected-replacements.mjs";
+import { certifyConnectedCorrections } from "./atlas-connected-corrections.mjs";
 
 assert(
   process.env.GITHUB_ACTIONS === "true" ||
@@ -891,6 +892,101 @@ try {
     await evaluate(
       `(()=>{const input=document.querySelector('textarea[aria-label="Ghi chú trên phiếu"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(note)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`,
     );
+    if (dispatches.length === 0) {
+      // Connected focus recovery with dirty local notes; no release command.
+      const beforeCancel = await readDispatch();
+      const receiptsBeforeCancel = sql(
+        "select count(*) from atlas_core.command_receipts where command_name='release_school_dispatch_document' and outcome='COMPLETED'",
+      );
+      await evaluate(
+        "document.querySelector('button[aria-label=\"Mở lịch — Khoảng ngày\"]').setAttribute('data-pxk-original-range','true')",
+      );
+      await until(
+        () =>
+          evaluate(
+            "(()=>{const b=document.querySelector('button[aria-label=\"Mở lịch — Khoảng ngày\"]');if(!b||b.disabled)return false;b.click();return true;})()",
+          ),
+        "PXK_CANCEL_CALENDAR",
+      );
+      for (const date of ["2050-09-20", "2050-09-21"]) {
+        const selector = `[data-part="table-cell-trigger"][data-value="${date}"]`;
+        await until(
+          () =>
+            evaluate(
+              `Boolean(document.querySelector(${JSON.stringify(selector)}))`,
+            ),
+          "PXK_CANCEL_DATE_READY",
+        );
+        await evaluate(
+          `document.querySelector(${JSON.stringify(selector)}).click()`,
+        );
+      }
+      await until(
+        () =>
+          evaluate(
+            "(()=>{const d=[...document.querySelectorAll('[role=dialog][data-state=open]')].find(d=>d.textContent.includes('Có ghi chú chưa phát hành.'));const b=[...d?.querySelectorAll('button')??[]].find(b=>b.textContent.trim()==='Tiếp tục chỉnh sửa');if(!b)return false;b.click();return true;})()",
+          ),
+        "PXK_CANCEL_DIRTY_WARNING",
+      );
+      await until(
+        () =>
+          evaluate(
+            "(()=>{const b=document.querySelector('button[aria-label=\"Mở lịch — Khoảng ngày\"]');return b===document.activeElement&&!document.querySelector('[role=dialog][data-state=open]');})()",
+          ),
+        "PXK_CANCEL_RESTORED_FOCUS",
+      );
+      assert.equal(
+        await evaluate(
+          "document.querySelector('textarea[aria-label=\"Ghi chú trên phiếu\"]').value",
+        ),
+        note,
+      );
+      assert(
+        await evaluate(
+          "document.querySelector('button[aria-label=\"Mở lịch — Khoảng ngày\"]').textContent.includes('19/09/2050 — 19/09/2050')",
+        ),
+      );
+      assert(
+        await evaluate("!document.querySelector('[data-pxk-original-range]')"),
+        "Cancel replaces the original date trigger.",
+      );
+      await evaluate(
+        "document.querySelector('button[aria-label=\"Mở lịch — Khoảng ngày\"]').click()",
+      );
+      await until(
+        () =>
+          evaluate(
+            "['start','end'].every(edge=>document.querySelector('[data-part=\"table-cell-trigger\"][data-range-'+edge+']')?.getAttribute('data-value')==='2050-09-19')",
+          ),
+        "PXK_CANCEL_INTERNAL_RANGE_RESET",
+      );
+      await connection.send("Input.dispatchKeyEvent", {
+        type: "keyDown",
+        key: "Escape",
+        code: "Escape",
+        windowsVirtualKeyCode: 27,
+      });
+      await connection.send("Input.dispatchKeyEvent", {
+        type: "keyUp",
+        key: "Escape",
+        code: "Escape",
+        windowsVirtualKeyCode: 27,
+      });
+      await until(
+        () =>
+          evaluate(
+            '!document.querySelector(\'[data-scope="date-picker"][data-part="content"][data-state=open]\')',
+          ),
+        "PXK_CANCEL_CALENDAR_CLOSED",
+      );
+      assert.deepEqual(await readDispatch(), beforeCancel);
+      assert.equal(
+        sql(
+          "select count(*) from atlas_core.command_receipts where command_name='release_school_dispatch_document' and outcome='COMPLETED'",
+        ),
+        receiptsBeforeCancel,
+      );
+    }
     await until(() => click("Phát hành phiếu xuất kho"), "PXK_RELEASE_READY");
     const released = await until(async () => {
       const row = (await readDispatch()).find(
@@ -1389,6 +1485,16 @@ try {
     sql,
     url,
   });
+  const corrections = await certifyConnectedCorrections({
+    connection,
+    evaluate,
+    until,
+    operator,
+    subject,
+    sql,
+    url,
+    authoring,
+  });
   const officialOrders = (orders) =>
     orders.map((order) => ({
       id: order.purchase_order_id,
@@ -1443,12 +1549,14 @@ try {
     }).trim(),
     environment: "disposable GitHub runner",
     authoring,
+    corrections,
     replacements,
     journey:
       "Auth → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → PO XLSX/PDF → two School PXK releases → PXK XLSX/PDF → reopen → matching public/UI reconciliation",
     poCount: after.length,
     receiptCount: 2,
     pxkCount: dispatches.length,
+    pxkDirtyCancelFocus: "PASS",
     pxkReceiptCount: 2,
     pxkDocumentNumbers: dispatches.map((document) => document.document_number),
     reconciliation: comparison.map((row) => ({

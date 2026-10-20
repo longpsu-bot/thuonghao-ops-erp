@@ -525,6 +525,8 @@ export async function certifyMasterSourceAuthoring({
     supplier: supplier.supplier_id,
     ingredient: ingredient.ingredient_id,
     dish: dish.dish_id,
+    schoolType: selectedType,
+    unit: unitId,
     sourceLines: 3,
     teacherZeroPreserved: true,
     nativeCommands: 7,
