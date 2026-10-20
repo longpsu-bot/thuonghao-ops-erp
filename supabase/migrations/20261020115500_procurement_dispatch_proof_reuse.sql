@@ -82,7 +82,7 @@ end $proof$;
 
 -- Keep the original lock and receipt phases; refresh facts after source locks.
 do $preparation$
-declare definition text; family_pattern text;
+declare definition text; family_pattern text; context_expression text;
 begin
   definition:=pg_get_functiondef('atlas_api.prepare_school_catering_purchase_orders(jsonb)'::regprocedure);
   definition:=replace(definition,E'declare\n',E'declare\n  v_phase_context jsonb;\n');
@@ -102,11 +102,20 @@ begin
             (source->>'ingredient_id')::uuid,(source->>'unit_id')::uuid,v_phase_context)$anchor$);
   execute definition;
 
+  -- Match the canonical family selector's correction branch; ordinary Handoff needs no proof.
+  context_expression:=$context$case when exists(
+    select 1 from atlas_planning.confirmed_need_batches batch
+    join atlas_planning.confirmed_need_lines line using(confirmed_need_batch_id)
+    where batch.batch_status='REOPENED' and batch.released_at is not null
+      and line.service_date between v_date_start and v_date_end)
+    then atlas_core.procurement_read_context(v_date_start,v_date_end)
+    else '{"sources":[],"confirmed":{}}'::jsonb end$context$;
   definition:=pg_get_functiondef('atlas_api.create_school_catering_purchase_order_drafts(jsonb)'::regprocedure);
   if regexp_count(definition,'atlas_core.school_catering_po_date_readiness\(v_date\)')<>2
     then raise exception 'Draft date-readiness anchors changed'; end if;
   definition:=replace(definition,'atlas_core.school_catering_po_date_readiness(v_date)',
-    '(with context as materialized (select atlas_core.procurement_read_context(v_date,v_date) value)
+    '(with context as materialized (select '
+      ||replace(replace(context_expression,'v_date_start','v_date'),'v_date_end','v_date')||' value)
       select atlas_core.procurement_read_school_catering_po_date_readiness(v_date,context.value) from context)');
   -- A first correction can commit between statements, including after source locks.
   if regexp_count(definition,'from atlas_procurement.school_catering_allocation_families f')<>5
@@ -114,7 +123,7 @@ begin
   definition:=replace(definition,'from atlas_procurement.school_catering_allocation_families f',
     'from atlas_procurement.school_catering_allocation_families f
       cross join (with context as materialized (
-        select atlas_core.procurement_read_context(v_date_start,v_date_end) value)
+        select '||context_expression||' value)
         select value from context) proof_context');
   family_pattern:='atlas_core\.school_catering_family_projection\([[:space:]]*f\.service_date,f\.delivery_location_id,f\.ingredient_id,f\.unit_id[[:space:]]*\)';
   if regexp_count(definition,family_pattern)<>5 then raise exception 'Draft family-proof anchors changed'; end if;
@@ -123,11 +132,12 @@ begin
   -- Keep the canonical stale check at its existing caller position.
   execute definition;
 
+  context_expression:=replace(replace(context_expression,'v_date_start','p_date'),'v_date_end','p_date');
   definition:=pg_get_functiondef('atlas_core.purchase_review_po_coverage(date)'::regprocedure);
   if position('with expected as materialized (' in definition)=0
     or regexp_count(definition,family_pattern)<>1 then raise exception 'PO coverage proof anchors changed'; end if;
   definition:=replace(definition,'with expected as materialized (',
-    'with context as materialized (select atlas_core.procurement_read_context(p_date,p_date) value), expected as materialized (');
+    'with context as materialized (select '||context_expression||' value), expected as materialized (');
   if position('join atlas_procurement.school_catering_allocation_supplier_splits s using(family_revision_id)' in definition)=0
     then raise exception 'PO coverage context anchor changed'; end if;
   definition:=replace(definition,'join atlas_procurement.school_catering_allocation_supplier_splits s using(family_revision_id)',
@@ -141,7 +151,7 @@ begin
   if position('v_readiness := atlas_core.school_catering_po_date_readiness(p_date);' in definition)=0
     or regexp_count(definition,family_pattern)<>1 then raise exception 'PO frontier proof anchors changed'; end if;
   definition:=replace(definition,'v_readiness := atlas_core.school_catering_po_date_readiness(p_date);',
-    E'v_phase_context:=atlas_core.procurement_read_context(p_date,p_date);\n  v_readiness := atlas_core.procurement_read_school_catering_po_date_readiness(p_date,v_phase_context);');
+    'v_phase_context:='||context_expression||E';\n  v_readiness := atlas_core.procurement_read_school_catering_po_date_readiness(p_date,v_phase_context);');
   definition:=regexp_replace(definition,family_pattern,
     'atlas_core.procurement_read_school_catering_family_projection(f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id,v_phase_context)','g');
   family_pattern:='atlas_core\.school_catering_po_commitment_state\([[:space:]]*([a-z_]+\.purchase_order_id),[[:space:]]*([a-z_]+\.purchase_order_revision_id)[[:space:]]*\)';
