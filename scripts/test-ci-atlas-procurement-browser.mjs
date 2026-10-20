@@ -22,6 +22,7 @@ import {
   schoolQuantityFootprint,
 } from "./atlas-procurement-browser-coverage.mjs";
 import { certifyMasterSourceAuthoring } from "./atlas-connected-source-authoring.mjs";
+import { certifyConnectedReplacements } from "./atlas-connected-replacements.mjs";
 
 assert(
   process.env.GITHUB_ACTIONS === "true" ||
@@ -1412,6 +1413,29 @@ try {
       document,
       "Master/source authoring must preserve each complete frozen School PXK.",
     );
+  const replacements = await certifyConnectedReplacements({
+    connection,
+    evaluate,
+    until,
+    read,
+    readAllocations,
+    readSchoolCoverage,
+    readDispatch,
+    readReconciliation,
+    allocationQuantities,
+    coverage,
+    schoolSourceKeys,
+    pxkScope,
+    sql,
+    url,
+  });
+  const replacementShot = await connection.send("Page.captureScreenshot", {
+    format: "png",
+  });
+  writeFileSync(
+    path.join(evidence, "replaced.png"),
+    Buffer.from(replacementShot.data, "base64"),
+  );
   const report = {
     status: "PASS",
     source: execFileSync("git", ["rev-parse", "HEAD"], {
@@ -1419,6 +1443,7 @@ try {
     }).trim(),
     environment: "disposable GitHub runner",
     authoring,
+    replacements,
     journey:
       "Auth → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → PO XLSX/PDF → two School PXK releases → PXK XLSX/PDF → reopen → matching public/UI reconciliation",
     poCount: after.length,
