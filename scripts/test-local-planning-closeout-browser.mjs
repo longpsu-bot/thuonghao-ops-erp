@@ -18,6 +18,7 @@ import { createClient } from "@supabase/supabase-js";
 import ExcelJS from "exceljs";
 import { editShoppingListQuantity } from "./shopping-list-browser-edit.mjs";
 import { readLocalSupabaseStatus } from "./local-supabase-status.mjs";
+import { certifyFirstNeedGeneration } from "./atlas-connected-need-generation.mjs";
 import {
   cdp,
   prepareConfirmedNeedEdit,
@@ -717,6 +718,26 @@ export async function certifyLocalCloseoutBrowser() {
       join(evidenceDir, "reopened.png"),
       Buffer.from(screenshot.data, "base64"),
     );
+    const generation = await certifyFirstNeedGeneration({
+      evaluate,
+      until,
+      rpc,
+      sql: localSql,
+      subject,
+      open,
+      readOriginal: readReview,
+      original: saved,
+      originalReceiptState: evidence,
+      receiptState,
+    });
+    const generatedScreenshot = await connection.send(
+      "Page.captureScreenshot",
+      { format: "png" },
+    );
+    writeFileSync(
+      join(evidenceDir, "generated-reopened.png"),
+      Buffer.from(generatedScreenshot.data, "base64"),
+    );
     const report = {
       status: "LOCAL_BROWSER_SAVE_REOPEN_PASS",
       ...decisions,
@@ -724,11 +745,12 @@ export async function certifyLocalCloseoutBrowser() {
       saveClicks: saves,
       preSave: initialEdit.preSave,
       worksheetSuccessorDecisions: 1,
+      firstNeedGeneration: generation,
       source: execFileSync("git", ["rev-parse", "HEAD"], {
         encoding: "utf8",
       }).trim(),
       journey:
-        "Public Auth → initial248-line Save/reopen → fresh XLSX download → unchanged import → one file quantity proposal → explicit reason/note → one successor Save → public readback → reopen → stale-file rejection",
+        "Public Auth → initial248-line Save/reopen → fresh XLSX download → unchanged import → one file quantity proposal → explicit reason/note → one successor Save → public readback → reopen → stale-file rejection → native fresh-day first generation →248 rows/304 memberships → explicit unconfirmed Discard → new-document reselect/reopen",
       transport:
         "actual public Auth/PostgREST; real connected React/Chakra workbench and shopping service; disposable runner only",
     };
