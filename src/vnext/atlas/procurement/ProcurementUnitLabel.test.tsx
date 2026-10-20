@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ProcurementOrdersStage } from "./ProcurementOrdersStage";
@@ -38,8 +38,23 @@ describe("Allocation Unit display", () => {
     expect(detail).toHaveTextContent("100 / 100 Gói");
     expect(table).not.toHaveTextContent("v1-unit-");
     expect(detail).not.toHaveTextContent("v1-unit-");
-    expect(screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" })).toHaveValue("60");
-    expect(screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" })).toHaveValue("40");
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("60");
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+    ).toHaveValue("40");
+    const quantity = screen.getByRole("textbox", {
+      name: "Phân bổ NCC An Phú",
+    });
+    fireEvent.change(quantity, { target: { value: "59" } });
+    expect(detail).toHaveTextContent("99 / 100 Gói");
+    expect(detail).toHaveTextContent("Thiếu 1 Gói");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    fireEvent.change(quantity, { target: { value: "61" } });
+    expect(detail).toHaveTextContent("101 / 100 Gói");
+    expect(detail).toHaveTextContent("Vượt 1 Gói");
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
   });
 });
 describe("PO Unit display", () => {

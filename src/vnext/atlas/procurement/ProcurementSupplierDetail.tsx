@@ -23,6 +23,7 @@ import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import type { CSSProperties } from "react";
 import {
   procurementOperatorMessages,
+  allocationFamilyUnitLabel,
   type AllocationFamilyRow,
   type AllocationProposalSplit,
   type SupplierSplitInput,
@@ -108,25 +109,25 @@ export function ProcurementSupplierDetail({
   const reconciliation =
     total === null || need === null || remainder === null
       ? "Chưa đủ dữ liệu để đối chiếu phân bổ."
-      : `${quantity(total)} / ${quantity(need)} ${row.unit_code} đã phân bổ · ${
+      : `${quantity(total)} / ${quantity(need)} ${allocationFamilyUnitLabel(row)} đã phân bổ · ${
           remainder === 0n
             ? "Đã đủ"
             : remainder > 0n
-              ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
-              : `Vượt ${quantity(-remainder)} ${row.unit_code}`
+              ? `Thiếu ${quantity(remainder)} ${allocationFamilyUnitLabel(row)}`
+              : `Vượt ${quantity(-remainder)} ${allocationFamilyUnitLabel(row)}`
         }`;
   const reconciliationQuantity =
     total === null || need === null
       ? null
-      : `${quantity(total)} / ${quantity(need)} ${row.unit_code}`;
+      : `${quantity(total)} / ${quantity(need)} ${allocationFamilyUnitLabel(row)}`;
   const reconciliationOutcome =
     remainder === null
       ? null
       : remainder === 0n
         ? "Đã đủ"
         : remainder > 0n
-          ? `Thiếu ${quantity(remainder)} ${row.unit_code}`
-          : `Vượt ${quantity(-remainder)} ${row.unit_code}`;
+          ? `Thiếu ${quantity(remainder)} ${allocationFamilyUnitLabel(row)}`
+          : `Vượt ${quantity(-remainder)} ${allocationFamilyUnitLabel(row)}`;
   const locked = disabled || row.complete === false;
   // Zero participants are omitted by the command payload, not an override.
   // Invalid quantities remain in the comparison and keep the draft dirty.
@@ -240,7 +241,8 @@ export function ProcurementSupplierDetail({
           {row.eligible_suppliers.find(
             (supplier) => supplier.supplier_id === split.supplier_id,
           )?.supplier_name ?? "Nhà cung ứng không còn phù hợp"}{" "}
-          · {quantity(split.allocated_quantity)} {row.unit_code}
+          · {quantity(split.allocated_quantity)}{" "}
+          {allocationFamilyUnitLabel(row)}
         </Text>
       ))}
       <Button
@@ -351,8 +353,9 @@ export function ProcurementSupplierDetail({
               borderRadius="control"
             >
               ⚠ {split.supplier_name} không còn phù hợp (
-              {quantity(split.allocated_quantity)} {row.unit_code}). Cần chọn
-              nhà cung ứng thay thế; phần đã lưu không tự chuyển.
+              {quantity(split.allocated_quantity)}{" "}
+              {allocationFamilyUnitLabel(row)}). Cần chọn nhà cung ứng thay thế;
+              phần đã lưu không tự chuyển.
             </Box>
           ))}
         {draft.length === 0 && (
@@ -374,7 +377,7 @@ export function ProcurementSupplierDetail({
                 location={recipient.secondary ?? undefined}
                 ingredient={row.ingredient_name}
                 date={row.service_date}
-                unit={row.unit_code}
+                unit={allocationFamilyUnitLabel(row)}
                 source={supplier.supplier_name}
               />
               <Text textStyle="helper" color="fg.muted">
@@ -389,7 +392,7 @@ export function ProcurementSupplierDetail({
                     (value) => value.supplier_id === split.supplier_id,
                   )?.allocated_quantity ?? "0",
                 )}{" "}
-                {row.unit_code}
+                {allocationFamilyUnitLabel(row)}
               </Text>
               <Flex gap="xs" w="full" align="center">
                 <Input
@@ -410,7 +413,7 @@ export function ProcurementSupplierDetail({
                   }
                   minW="var(--atlas-layout-zero, 0)"
                 />
-                <Text>{row.unit_code}</Text>
+                <Text>{allocationFamilyUnitLabel(row)}</Text>
                 {added.includes(split.supplier_id) && (
                   <IconButton
                     size="sm"

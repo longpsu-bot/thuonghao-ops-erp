@@ -353,6 +353,13 @@ from command_requests original cross join lateral (values
   ('version',jsonb_set(original.request,'{expected_version}','99'))
 ) variant(name,request) where original.name='allocate120';
 reset role;
+select ok(count(*)>0 and bool_and(line ? 'unit_name'
+    and line->>'unit_name' is not distinct from unit.unit_name
+    and line->>'unit_code'=unit.unit_code),
+  name||' retains current human Unit names and original codes')
+from review_results cross join lateral jsonb_array_elements(response->'rows') line
+join atlas_admin.units unit on unit.unit_id=(line->>'unit_id')::uuid
+where name in ('confirmed120','confirmed120_range') group by name;
 create function pg_temp.review_negative_context(variant text) returns jsonb language plpgsql as $$
 declare generated jsonb;confirmed jsonb;saved jsonb;answer jsonb;
 begin
@@ -1862,6 +1869,13 @@ select is((select jsonb_array_length(response->'rows') from review_results where
   'current legacy Handoff rows remain visible when no active generated source exists');
 select ok((select bool_and(line#>>'{family,source_kind}'='PURCHASE_HANDOFF') from review_results,
   lateral jsonb_array_elements(response->'rows') line where name='legacy_handoff'),'legacy rows retain Handoff authority');
+select ok(count(*)>0 and bool_and(line ? 'unit_name'
+    and line->>'unit_name' is not distinct from unit.unit_name
+    and line->>'unit_code'=unit.unit_code),
+  'retained Handoff rows also expose current Unit names without changing codes')
+from review_results cross join lateral jsonb_array_elements(response->'rows') line
+join atlas_admin.units unit on unit.unit_id=(line->>'unit_id')::uuid
+where name='legacy_handoff';
 -- Existing Handoff with later ineligible supplier: child draft API skips the
 -- date, which must never be reported as successful commitment preparation.
 update atlas_admin.supplier_eligibilities set eligibility_status='INACTIVE'

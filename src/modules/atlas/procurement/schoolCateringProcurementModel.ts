@@ -82,6 +82,7 @@ export type AllocationFamilyRow = {
   ingredient_name: string;
   unit_id: string;
   unit_code: string;
+  unit_name?: string | null;
   family_quantity: ExactQuantity | null;
   contributions: AllocationContribution[];
   contribution_count: number;
@@ -224,6 +225,24 @@ export type PurchaseOrdersData = {
   blockers: string[];
 };
 
+function procurementUnitLabel(
+  code: string,
+  name: string | null | undefined,
+  fallback: string,
+) {
+  return /^(?:v1-unit-|atlas[-_:]|unit[-_:])|^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(
+    code,
+  )
+    ? name?.trim() || fallback
+    : code;
+}
+
+export function allocationFamilyUnitLabel(
+  row: Pick<AllocationFamilyRow, "unit_code" | "unit_name">,
+) {
+  return procurementUnitLabel(row.unit_code, row.unit_name, "Chưa có ĐVT");
+}
+
 export function purchaseOrderLineUnitLabel(
   status: PurchaseOrderStatus,
   line: PurchaseOrderLine,
@@ -233,11 +252,7 @@ export function purchaseOrderLineUnitLabel(
     ? line.unit.unit_code
     : (line.unit_code_snapshot ?? line.unit.unit_code);
   const name = draft ? line.unit.unit_name : line.unit_name_snapshot;
-  return /^(?:v1-unit-|atlas[-_:]|unit[-_:])|^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(
-    code,
-  )
-    ? name?.trim() || (draft ? "Chưa có ĐVT" : code)
-    : code;
+  return procurementUnitLabel(code, name, draft ? "Chưa có ĐVT" : code);
 }
 
 /** Presentation eligibility only; the release command rechecks backend authority. */
