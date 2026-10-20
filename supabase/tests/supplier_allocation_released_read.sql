@@ -212,10 +212,13 @@ end;
 $$;
 grant execute on function pg_temp.sample_reopened_read(text) to authenticated;
 set local statement_timeout='8s';
+-- Reproduce CI's custom-plan path; the private helper must bound its own plan.
+set local plan_cache_mode='force_custom_plan';
 set local role authenticated;
 select pg_temp.sample_reopened_read('allocation');
 select pg_temp.sample_reopened_read('orders');
 reset role;
+set local plan_cache_mode='auto';
 select ok(response->>'success'='true' and elapsed_ms<8000,
   'reopened 236-family '||kind||' read succeeds within the unchanged eight seconds') from reopened_samples;
 select is(proof_calls,1::bigint,'closed batch proof runs once for '||kind) from reopened_samples;
