@@ -1,6 +1,6 @@
 # ATLAS-C-K3-OPERATOR-INTEGRATION-01
 
-Status: **BLOCKED — primary 100 → 110 → 90 connected journey PASS; shared-School/two-Supplier PO/PXK reads exceed the unchanged 8s budget. Owner scope decision required. No activation approval.**
+Status: **Local K3/B1 acceptance and independent source/security review PASS. Exact-head GitHub Actions certification pending. No activation, merge or deployment approval.**
 
 Publication checkpoint: the Owner subsequently requested **“Please push”**. The current implementation is committed and pushed as a work-in-progress checkpoint under that instruction. The execution, connected-browser and exact-head CI gates below remain incomplete; this publication does not establish acceptance or readiness. No K3 Draft PR is created at this checkpoint.
 
@@ -15,6 +15,146 @@ The starting tree was clean; all six pre-existing stashes and other worktrees ar
 The Owner explicitly authorizes this parent instead of `origin/main` and supersedes the historical B2 Autopilot baton for this task only.
 
 ## 20 October continuation on the confirmed E: checkout
+
+### Approved lock fix and B1 closeout
+
+The Owner explicitly approved the two-helper lock fix in this chat and instructed
+continuation through B1 and final GitHub Actions certification, without merge or
+deployment. This supplements the [shared PXK-preview approval](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6283262062)
+and resolves the named lock-change stop below for these two existing helpers only.
+
+The preserved original database was copied for a deterministic RED experiment.
+An advisory-gate test trigger paused the unchanged official PXK writer after its
+preview validation. A genuine authenticated 30 → 31 correction committed in
+523 ms while that writer remained paused; resuming it issued a 30 kg PXK, and a
+fresh preview immediately failed currentness. This failure is preserved as
+evidence and was never run against hosted data or the original browser database.
+
+The forward amendment now makes `school_dispatch_lock_sources(date,uuid)` acquire
+the existing Need-source locks before allocation and PO locks. The existing
+`purchase_review_lock_confirmed_source(uuid)` takes run SHARE then batch UPDATE,
+derives corrected status from the locked batch, and rejects a changed run pointer
+with the existing retryable `40001`. Existing source/policy/line locks remain.
+The official PXK writer body, all seven modified function owners/ACLs/security
+modes/volatility/search paths, roles, RLS and public contracts are unchanged.
+
+The already approved preview amendment admits authentic K2 CN contributions beside
+unchanged PH contributions, retains exact historical CN/PH scope and source-kind
+XOR, and deduplicates PO/revision identities before canonical evaluation. A
+School-relevant completeness check prevents partial previews without falsely
+erasing another School's Need. The existing authorized workbench scope read also
+discovers a first-ever CN-only scope; no prior PXK or unchanged PH family is needed.
+
+Focused execution passes **153 K2/read/source assertions**, including genuine
+CN-only discovery and School-only stale-membership negatives. The concurrency
+harness passes the existing **10 K2 cases** plus **8 K3 cases**: PXK/Need and
+PXK/Menu in both commit orders, commit/rollback replay with UNKNOWN readback,
+PH → REOPENED while waiting with retained Menu locks and rollback, and real
+Pantry Save/Need Generation run-pointer advancement returning `40001`. Restoring
+only the two old lock definitions makes the new concurrency check fail RED.
+No timeout, assertion, writer guard or receipt behavior was weakened.
+
+The downstream dispatch fixture now supplies the two run roots already referenced
+by its Need batches; no production guard was relaxed for synthetic orphan data.
+The unchanged assertion sets also pass: dispatch 134, reconciliation 16, security
+30, receipts 50 and correction authority 125. Together with the 153 K2 assertions,
+this is **508 focused SQL assertions** and **18 real-session concurrency cases**.
+Independent review also passed this fixture-only amendment.
+
+After independent source/security review passed, the original local browser
+database was backed up and the exact forward amendment applied transactionally.
+Eight inspected function postures, including the official writer, remain equal.
+Supplier B was explicitly issued through its real browser action as
+`PO-20500919-7926A49430914E3E`; its lost transport response was recovered by fresh
+authenticated readback without another issuance. Both successors are CURRENT,
+both predecessors SUPERSEDED, and the two School PXK previews are READY with exact
+30/20 quantities and complete released-PO contribution coverage. No B1 PXK was
+automatically issued. Desktop/mobile screens and actual authenticated RPC timing
+records are preserved. Supplier A/B predecessor XLSX exports retain every
+business cell; only B's documented lifecycle/successor metadata changes.
+
+The primary 100 → 110 → 90 lineage and historical evidence remain preserved.
+Final certification is performed by manually dispatched Frontend CI and Supabase
+Smoke/actually executed Full Integration at the committed exact head. Their URLs
+and outcomes belong in the final delivery report and stacked Draft PR, without
+creating a new source revision merely to record an already certified SHA.
+
+Current evidence directory:
+`C:/Users/HOME/.codex/visualizations/2026/10/20/01a15806-2fac-7bf0-bf8e-e8d0122d8e26/k3-approved-preview/`.
+The older checkpoint entries below retain their original PASS/FAIL/BLOCKED meaning.
+
+### Final-blocker recovery from `d0547274`
+
+The [20 October Owner read-performance decision](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6282523277)
+was read first. The confirmed E: checkout was clean at exact
+`d054727490ebad9faf82c2bf0ed7388dbdc19a2d`, matching the remote branch. The
+existing 45-file parent-relative implementation and every earlier result below
+remain preserved. No merge, rebase, force push or hosted write occurred.
+
+The preserved disposable browser database was resumed without reset. Exact
+authenticated PO/PXK requests reproduced `57014` at 8,240/8,262 ms. Function
+tracking recorded 332/340 completed canonical family projections and Planning
+preflights before cancellation. A single five-family Draft-currentness check
+evaluated canonical family evidence 40 times. This is repeated read evaluation;
+the prior zero-paging measurement is not reclassified as a RAM defect.
+
+The additive migration `20261020033102_atlas_k3_read_evidence_reuse.sql` initially
+materialized three existing read boundaries and distinct procurement dates. The
+preserved first-Draft state then read PO/PXK in 5,088/4,667 ms, but the actual
+after-A-release/B-Draft PXK read still failed at 8,203 ms. The separate regenerated
+B1 SQL fixture also exposed the unchanged eight-second limit. These are failed
+intermediate attempts, not acceptance results.
+
+Independent review identified that `school_catering_po_draft_is_stale(uuid,uuid)`
+also serves commands. A local prototype was reverted when that scope review
+returned. The human Owner then explicitly authorized this exact helper extension
+in this chat: **"Approve this exact helper extension, with full negative tests and
+independent review"**. It reuses canonical evidence once per exact family within
+the statement, including both expected families and all actual revision-line
+families; predicates, writers, lock order and privileges are unchanged. Static
+source/security review found no semantic defect. Ten existing function postures
+(owner, ACL, security mode, volatility and search path) remain identical, and the
+whole-platform security catalogue passes all 30 assertions.
+
+With that approved helper, the browser database's after-A-release state read
+PO/PXK in 3,252/3,859 ms. A fresh transaction against the preserved regenerated
+B1 fixture read them in 2,392/5,060 ms. However, the longer regression transaction
+still timed out; bounded diagnostic execution showed the same PXK read taking
+3,941 ms with 142 family evaluations and 7,978 ms with 262 after a diagnostic
+ANALYZE. The diagnostic transaction rolled back. No planner setting, timeout or
+canonical integrity check was relaxed.
+
+The remaining repeated historical PO evaluation is inside the shared
+`school_dispatch_release_preview(date,uuid,uuid)`. Independent review found the
+prepared PO/revision-identity deduplication relationally exact, but requires a
+second named scope extension because PXK commands also invoke it. That proposal
+has not been applied; the human decision is pending. Supplier B remains
+unreleased. No new CN-backed PXK release capability is implied or authorized.
+
+Frontend run `39361503999` remains FAIL. All four affected suites were reproduced:
+five navigation/Supplier assertions failed and 192 tests passed; the Attendance
+focus case passed locally, retaining its CI failure as evidence. The four
+navigation assertions omitted the existing School-scope argument. The Supplier
+assertion expected the old label despite explicit current-source acceptance.
+Corrections retain exact date/School scope, single navigation, disabled-control
+and zero-write assertions. The focus assertion retains the same target and waits
+for its existing asynchronous effect without increasing a timeout. All four
+updated suites pass (197 tests); independent source review found no findings.
+The timing explanation for the CI-only focus failure remains an inference until
+normal CI passes. Final exact-head certification remains pending.
+
+The actual Supplier A successor `c46d0f3c-b935-47fb-ab31-382d420e6f5f` was
+explicitly released as `PO-20500919-C46D0F3CB93547FB`. Its predecessor
+`b0a11952-5b7d-4b9d-a957-f706fe04b2ef` is SUPERSEDED. The Supplier B successor
+`7926a494-3091-4e3e-8005-fec72aeecbc9` remains DRAFT; predecessor
+`dd3ece67-a888-4cfb-b973-cce353bccb21` remains issued and REPLACEMENT_REQUIRED.
+The final held-state authenticated PO read took 2,972 ms. Re-exporting Supplier
+A's predecessor compares 884 cells: all business cells are identical; only the
+documented `_ATLAS_META!E3` lifecycle status/successor metadata changes. No PXK
+successor was created or released.
+
+New evidence is under the existing evidence directory's `final-recovery/` folder.
+No K3 PR, final acceptance, merge, deployment or staff activation is claimed.
 
 The Owner confirmed `E:/Project/OPS ERP/thuonghao-ops-erp` after multiple checkouts
 were found. The real repository, origin, clean tree and workspace check were
@@ -79,11 +219,11 @@ Need was 100 kg rice plus unchanged 3 kg beans. A reason was required before
 review; Cancel received initial review focus. The reason and quantity survived a
 tab switch. Reason-only dirty close required explicit continuation/discard.
 
-| Document | Backend number | Rice | Predecessor | Final state |
-| --- | --- | --- | --- | --- |
-| PO-001 | `PO-20261102-1720C7322722417B` | 100 kg | none | SUPERSEDED |
-| PO-002 | `PO-20261102-8F3DE618CC494D9B` | 110 kg | PO-001 | SUPERSEDED |
-| PO-003 | `PO-20261102-4697749D2BC045D1` | 90 kg | PO-002 | RELEASED_TO_SUPPLIER |
+| Document | Backend number                 | Rice   | Predecessor | Final state          |
+| -------- | ------------------------------ | ------ | ----------- | -------------------- |
+| PO-001   | `PO-20261102-1720C7322722417B` | 100 kg | none        | SUPERSEDED           |
+| PO-002   | `PO-20261102-8F3DE618CC494D9B` | 110 kg | PO-001      | SUPERSEDED           |
+| PO-003   | `PO-20261102-4697749D2BC045D1` | 90 kg  | PO-002      | RELEASED_TO_SUPPLIER |
 
 Each complete document also retains beans 3 kg. The browser explicitly accepted
 the affected Supplier allocation, ran successful Preparation, created the complete
@@ -253,17 +393,17 @@ Evidence: `browser-rpc.jsonl`, `canonical-procurement-read.json`, `browser-exact
 
 ## Acceptance matrix
 
-| Case | Required result                                                                                               | Current evidence                                                             |
-| ---- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| A1   | Ordinary v2 Save/Release and initial PO unchanged                                                             | Fresh ordinary/D037 SQL PASS; released 100 kg browser baseline preserved |
-| A2   | Authorized reasoned 100 → 110 correction, truthful readback, no new PO yet                                    | Fresh authenticated browser PASS |
-| A3   | Explicit split acceptance, Preparation, whole PO-002/110, new number, immutable PO-001 export                 | Fresh primary browser PASS; export lifecycle metadata distinction recorded above |
-| A4   | Same connected session, 110 → 90, whole PO-003, immutable linked history                                      | Fresh primary browser PASS, including committed-response loss and recovery |
-| A5   | R20+B5+H3 → confirmed30, two Suppliers/Schools/shared location, removed Supplier and complete date membership | SQL PASS; browser BLOCKED after first full replacement Draft by PO/PXK read timeout |
-| A6   | Stale/currentness/membership/scope/capability rejection, no locally fabricated action                         | Fresh SQL and stale/Actor/capability browser denials PASS; historical races retained |
+| Case | Required result                                                                                               | Current evidence                                                                               |
+| ---- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| A1   | Ordinary v2 Save/Release and initial PO unchanged                                                             | Fresh ordinary/D037 SQL PASS; released 100 kg browser baseline preserved                       |
+| A2   | Authorized reasoned 100 → 110 correction, truthful readback, no new PO yet                                    | Fresh authenticated browser PASS                                                               |
+| A3   | Explicit split acceptance, Preparation, whole PO-002/110, new number, immutable PO-001 export                 | Fresh primary browser PASS; export lifecycle metadata distinction recorded above               |
+| A4   | Same connected session, 110 → 90, whole PO-003, immutable linked history                                      | Fresh primary browser PASS, including committed-response loss and recovery                     |
+| A5   | R20+B5+H3 → confirmed30, two Suppliers/Schools/shared location, removed Supplier and complete date membership | SQL PASS; browser BLOCKED after first full replacement Draft by PO/PXK read timeout            |
+| A6   | Stale/currentness/membership/scope/capability rejection, no locally fabricated action                         | Fresh SQL and stale/Actor/capability browser denials PASS; historical races retained           |
 | A7   | Distinct Actors, replay, UNKNOWN, refresh/reload, dirty School/date/tab guards and rollback                   | Fresh primary browser recovery/replay/Actor/dirty-close PASS; SQL rollback/context checks PASS |
-| A8   | Authoritative PXK effects/history and independent successor, unrelated School isolation                       | Primary PXK history/successor guidance PASS; B1 PXK impact read BLOCKED |
-| A9   | Authenticated disposable exact-stack browser, desktop/mobile screenshots and step logs                        | Primary desktop/mobile PASS; complete B1 operator acceptance BLOCKED |
+| A8   | Authoritative PXK effects/history and independent successor, unrelated School isolation                       | Primary PXK history/successor guidance PASS; B1 PXK impact read BLOCKED                        |
+| A9   | Authenticated disposable exact-stack browser, desktop/mobile screenshots and step logs                        | Primary desktop/mobile PASS; complete B1 operator acceptance BLOCKED                           |
 | A10  | Focused checks and exact-head Frontend, Smoke, executed Full Integration                                      | Focused checks PASS; recovered-head CI failures retained; preservation-head results in handoff |
 
 ## Reproducible browser protocol

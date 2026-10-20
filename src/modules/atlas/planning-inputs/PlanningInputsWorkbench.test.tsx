@@ -124,11 +124,13 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       action.focus();
       fireEvent.click(action);
       const review = await screen.findByRole("region", { name: label });
-      expect(review).toHaveFocus();
+      await waitFor(() => expect(review).toHaveFocus());
       fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
-      expect(
-        screen.getByRole("button", { name: "Xem thay đổi" }),
-      ).toHaveFocus();
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Xem thay đổi" }),
+        ).toHaveFocus(),
+      );
       expect(
         screen.queryByRole("region", { name: label }),
       ).not.toBeInTheDocument();

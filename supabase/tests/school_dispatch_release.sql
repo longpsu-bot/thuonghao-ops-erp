@@ -144,6 +144,18 @@ values
 
 -- Exact current Confirmed Need -> Handoff -> Allocation -> released PO evidence.
 set session_replication_role=replica;
+-- These downstream fixtures now need their referenced run roots for source locks.
+insert into atlas_planning.need_generation_runs(
+  need_generation_run_id,planning_input_set_id,planning_input_evaluation_id,evaluation_version,
+  period_start,period_end,attempt_ordinal,input_snapshot_id,run_status,version,
+  generated_line_count,blocking_issue_count,warning_count,generated_by_actor_id,generated_at,
+  validated_by_actor_id,validated_at,released_by_actor_id,released_at,updated_at)
+select run_id,run_id,run_id,1,service_date,service_date,1,run_id,'RELEASED_FOR_CONFIRMATION',1,
+  1,0,0,'26000000-0000-4000-8000-000000000001',transaction_timestamp(),
+  '26000000-0000-4000-8000-000000000001',transaction_timestamp(),
+  '26000000-0000-4000-8000-000000000001',transaction_timestamp(),transaction_timestamp()
+from (values('26030000-0000-4000-8000-000000000002'::uuid,'2026-09-24'::date),
+  ('26130000-0000-4000-8000-000000000002'::uuid,'2026-09-25'::date)) source(run_id,service_date);
 insert into atlas_planning.confirmed_need_batches(
   confirmed_need_batch_id,period_start,period_end,batch_status,version,
   created_by_actor_id,source_kind,origin_need_generation_run_id,

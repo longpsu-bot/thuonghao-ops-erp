@@ -1149,10 +1149,12 @@ describe("Confirmed Need Chakra operator surface", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     );
-    expect(h.navigate).toHaveBeenCalledWith({
-      start: reviewDate,
-      end: reviewDate,
-    });
+    expect(h.navigate).toHaveBeenCalledWith(
+      { start: reviewDate, end: reviewDate },
+      [],
+    );
+    expect(h.navigate).toHaveBeenCalledTimes(1);
+    expect(h.save).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
   it("loads grouped Need only on disclosure with exact date and backend page bounds", async () => {

@@ -374,7 +374,7 @@ describe("Supplier decisions", () => {
     );
   });
   it("shows ineligible saved supplier and quantity without transferring it", () => {
-    show(reviewFamily("needs_reallocation"));
+    const { onSave } = show(reviewFamily("needs_reallocation"));
     expect(screen.getByRole("alert")).toHaveTextContent("NCC Bình Minh");
     expect(screen.getByRole("alert")).toHaveTextContent("40 kg");
     expect(
@@ -384,7 +384,12 @@ describe("Supplier decisions", () => {
     expect(
       screen.queryByRole("option", { name: "NCC Bình Minh" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    const accept = screen.getByRole("button", {
+      name: "Chấp nhận phân bổ cho nguồn hiện tại",
+    });
+    expect(accept).toBeDisabled();
+    fireEvent.click(accept);
+    expect(onSave).not.toHaveBeenCalled();
   });
   it("adds and removes only eligible unselected participants", () => {
     show(reviewFamily("manual_split"));

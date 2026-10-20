@@ -482,3 +482,35 @@ cache persists between requests, and reads create no supporting business facts.
 The hosted migration-105 baseline and local migration-106 regression are recorded
 in [the bounded read-performance task](../implementation-tasks/TASK-PROCUREMENT-POST-RELEASE-ALLOCATION-READ-01.md).
 Hosted post-fix acceptance remains subject to Product-approved deployment.
+
+### K3 PO/PXK statement-local read evidence
+
+The bounded K3 recovery reuses selected PO Draft-currentness, per-document
+commitment state, distinct procurement dates and per-School PXK previews within
+their existing read statements. The explicitly approved shared Draft-currentness
+helper resolves each exact family once across the union of expected Supplier/date
+families and actual revision-line families, including historical or foreign-date
+actual memberships. All original source-kind, current-revision, fingerprint,
+quantity and symmetric split-membership predicates remain authoritative.
+
+No evidence persists between statements. Public request/response contracts,
+roles, grants, RLS, transactional writer bodies, immutable history and eight-second
+read budgets remain unchanged.
+
+The subsequent explicitly approved PXK amendment admits exact K2-authorized CN
+contributions alongside unchanged PH families and preserves typed historical
+contribution, School, location, Unit, split and released-PO coverage. A first-ever
+CN-only School scope is discoverable by the existing authorized workbench read.
+Missing or stale relevant CN membership blocks partial release; unrelated School
+membership does not erase the requested School's Need. Whole Supplier/date PO
+currentness and historical cancellation obligations still apply independently.
+
+The Owner also approved two existing lock-helper bodies after an executed
+post-preview concurrency failure. PXK locks Need sources before allocation/PO
+roots. The shared source locker takes run SHARE then Need batch UPDATE, derives
+corrected status under those locks, and returns the existing retryable concurrency
+failure if the run identity changed while waiting. It retains existing source,
+policy and line locks. The unchanged official PXK writer validates a fresh preview
+under these retained locks before persisting its immutable snapshot. No new
+privilege, lock framework, public API or source authority is introduced.
+See the [K3 recovery ledger](../implementation-tasks/TASK-ATLAS-C-K3-OPERATOR-INTEGRATION-01.md).

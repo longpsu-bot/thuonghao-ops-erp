@@ -22,8 +22,28 @@ the exact Owner scope decision needed before any further implementation.
 
 ## Global constraints
 
+**20 October lock-fix authorization:** the Owner explicitly approved the two-helper
+lock fix in this chat, concurrency regressions, B1 acceptance and final GitHub
+Actions certification. Extend only `school_dispatch_lock_sources(date,uuid)` and
+`purchase_review_lock_confirmed_source(uuid)` as specified in the concurrency
+proposal: run → Need batch → existing source roots → allocation → PO, with a
+retryable run-identity check. This supersedes the previous lock-change stop for
+these two helpers only. The already approved mixed PH/CN preview amendment also
+continues. Preserve all existing security postures, public contracts, history and
+time budgets. No merge or deployment.
+
+**Final blocker recovery from `d0547274`:** the linked 20 October read-performance
+decision authorizes bounded statement-local reuse. The human subsequently
+approved the exact shared Draft-currentness helper extension after independent
+scope review. Original timeout records and the intermediate after-A-release PXK
+failure remain preserved. Supplier B remains Draft while additional shared
+PXK-preview identity-deduplication approval, complete lifecycle/negative tests,
+four frontend suites and final exact-head Actions gates are pending. See the task
+ledger for measured timings and the precise pending signature. No acceptance or
+activation is implied.
+
 - Base is exact #409 `8adc0803a450192931ece3192642051ca05cc5e2`.
-- No new privileges, public RPC, domain authority, writer/receipt/lock change or historical mutation.
+- No new privileges, public RPC, domain authority, writer/receipt change or historical mutation. Lock changes are limited to the two existing helpers explicitly approved above.
 - Preserve v2 semantics; v3 is explicit, never a Save fallback.
 - No new dependency; use the existing Chakra system and semantic tokens.
 - Preserve 8-second statement and 20-second Preparation limits; no weakened tests.
