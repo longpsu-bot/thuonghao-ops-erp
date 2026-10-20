@@ -99,7 +99,13 @@ assert(release > 0, "Review changed first-release boundary.");
 const initialUnitCode = "'effective-generation-kg'";
 const technicalUnitCode = "v1-unit-disposable-kg";
 const humanUnitName = "kg";
-let operationalFixture = source.slice(start, start + release);
+const prepareBoundary = "\ninsert into k2_requests\nselect 'b1_prepare48',";
+assert.equal(source.split(prepareBoundary).length, 2);
+const prepareStart = source.indexOf(prepareBoundary, start);
+assert(prepareStart > start && prepareStart < start + release);
+// Keep the source/confirmation/explicit split prerequisites. First Prepare is
+// performed once through the connected operator UI below.
+let operationalFixture = source.slice(start, prepareStart);
 assert.equal(
   operationalFixture.split(initialUnitCode).length,
   2,
@@ -140,13 +146,13 @@ set constraints all immediate; commit;`;
 const fixtureResult = sql(fixture);
 assert(
   !/^not ok\b/m.test(fixtureResult),
-  "Source/confirmation/allocation/Prepare prerequisites failed.",
+  "Source/confirmation/allocation prerequisites failed.",
 );
 assert.equal(
   sql(
     "select count(*) from atlas_procurement.purchase_orders where school_catering_service_date='2050-09-19' and purchase_order_status='DRAFT'",
   ),
-  "2",
+  "0",
 );
 const local = readLocalSupabaseStatus({ requireAdminKey: true });
 assert.equal(local.apiUrl, "http://127.0.0.1:54321");
@@ -196,15 +202,8 @@ const read = async () => {
   );
   return result.data.purchase_orders;
 };
-const initialOrders = await read();
-let before = initialOrders;
-assert.equal(before.length, 2);
-assert(
-  before.every(
-    (o) =>
-      o.status === "DRAFT" && o.release_eligible && o.allowed_actions.release,
-  ),
-);
+assert.equal((await read()).length, 0);
+let initialOrders, before, expectedSchools, initialSchools;
 // Draft reads have no frozen School snapshot yet. Capture the canonical
 // read-only projection before the UI releases; compare its persisted snapshot.
 const readSchoolCoverage = () =>
@@ -218,8 +217,6 @@ join atlas_procurement.purchase_orders po using(purchase_order_id)
 where revision.is_current and po.school_catering_service_date='2050-09-19'
 `),
   );
-let expectedSchools = readSchoolCoverage();
-const initialSchools = expectedSchools;
 const readAllocations = async () => {
   const result = await operator
     .schema("atlas_api")
@@ -330,15 +327,6 @@ const coverage = (orders, schoolsByLine) =>
         .sort((a, b) => a.id.localeCompare(b.id)),
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
-assert(before.every((order) => order.lines.length > 0));
-assert.equal(
-  new Set(
-    Object.values(expectedSchools).flatMap((schools) =>
-      schools.map((school) => school.school_id),
-    ),
-  ).size,
-  2,
-);
 Object.assign(process.env, {
   VITE_ATLAS_ENVIRONMENT: "local",
   VITE_SUPABASE_URL: local.apiUrl,
@@ -450,6 +438,59 @@ try {
     "ALLOCATION_UNIT_NAME",
   );
   assert(!(await text()).includes(technicalUnitCode));
+  const prepareReceipts = () =>
+    Number(
+      sql(
+        "select count(*) from atlas_core.command_receipts where command_name='prepare_school_catering_purchase_orders' and outcome='COMPLETED'",
+      ),
+    );
+  const previousPrepareReceipts = prepareReceipts();
+  await until(
+    () =>
+      evaluate(
+        "[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Chuẩn bị đơn mua'&&!b.disabled)",
+      ),
+    "FIRST_PREPARE_READY",
+  );
+  assert(await click("Chuẩn bị đơn mua"));
+  initialOrders = await until(async () => {
+    const orders = await read();
+    return orders.length === 2 &&
+      prepareReceipts() === previousPrepareReceipts + 1
+      ? orders
+      : null;
+  }, "FIRST_PREPARE_PUBLIC_READBACK");
+  assert.equal(prepareReceipts(), previousPrepareReceipts + 1);
+  before = initialOrders;
+  assert(
+    before.every(
+      (order) =>
+        order.status === "DRAFT" &&
+        order.release_eligible &&
+        order.allowed_actions.release &&
+        order.lines.length > 0,
+    ),
+  );
+  expectedSchools = readSchoolCoverage();
+  initialSchools = expectedSchools;
+  assert.equal(
+    new Set(
+      Object.values(expectedSchools).flatMap((schools) =>
+        schools.map((school) => school.school_id),
+      ),
+    ).size,
+    2,
+  );
+  const prepareUiComplete = () =>
+    evaluate(
+      "Boolean(document.querySelector('button[aria-label=\"Làm mới dữ liệu\"]:not(:disabled)'))&&[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Chuẩn bị đơn mua'&&!b.disabled)&&!document.querySelector('[role=\"alert\"]')",
+    );
+  // A persisted receipt alone must not hide a failed or uncertain UI readback.
+  await until(prepareUiComplete, "FIRST_PREPARE_UI_READBACK");
+  await reload();
+  await until(prepareUiComplete, "FIRST_PREPARE_REOPENED");
+  assert.deepEqual(await read(), initialOrders);
+  assert.equal(prepareReceipts(), previousPrepareReceipts + 1);
   const allocationBefore = await readAllocations();
   assert(allocationBefore.length > 0);
   assert(
@@ -1380,7 +1421,13 @@ try {
     }).trim(),
     environment: "disposable GitHub runner",
     journey:
-      "Auth → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → PO XLSX/PDF → two School PXK releases → PXK XLSX/PDF → reopen → matching public/UI reconciliation",
+      "Auth → first Prepare/readback/reopen → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → PO XLSX/PDF → two School PXK releases → PXK XLSX/PDF → reopen → matching public/UI reconciliation",
+    firstPrepare: {
+      clicks: 1,
+      completedReceipts: 1,
+      draftCount: initialOrders.length,
+      reopened: true,
+    },
     poCount: after.length,
     receiptCount: 2,
     pxkCount: dispatches.length,
