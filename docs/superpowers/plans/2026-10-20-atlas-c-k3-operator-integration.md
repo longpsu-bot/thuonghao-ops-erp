@@ -10,6 +10,16 @@
 
 **Spec:** [Task and acceptance contract](../../implementation-tasks/TASK-ATLAS-C-K3-OPERATOR-INTEGRATION-01.md), the linked Owner decision and original K3 brief.
 
+**20 October continuation:** recovered pushed checkpoint `6eeb4c6` in the
+Owner-confirmed E: checkout. Focused SQL (562 assertions), boundary tests (47),
+format/typecheck and independent static review pass. The actual primary
+100 → 110 → PO-002 → 90 → PO-003 journey passes on desktop/mobile, including
+UNKNOWN, replay, Actor and immutable business-content evidence. The additional
+shared-School/two-Supplier browser case is **BLOCKED** by reproducible unchanged
+PO/PXK shaped-read timeouts at 8s after one replacement Draft. Preserve checkpoint
+and exact-head CI evidence; no K3 Draft PR or activation. The task report records
+the exact Owner scope decision needed before any further implementation.
+
 ## Global constraints
 
 - Base is exact #409 `8adc0803a450192931ece3192642051ca05cc5e2`.
@@ -41,8 +51,8 @@ Produces: `allowed_actions.correct_released_confirmed_needs` and matching disabl
 
 - [x] Reproduce the exact authenticated read/Preparation mismatch with unchanged upstream facts under decision `6279713889`.
 - [x] Implement the bounded two-read amendment and obtain independent static review without writer or privilege changes.
-- [ ] Pass final focused positive/negative, ordinary/K1/K2/security/B1/PXK and concurrency execution under unchanged budgets. Current host paging/timeouts block this gate; retained diagnostic runs are not acceptance.
-- [ ] Resume the connected operator journey only after that execution gate passes.
+- [x] Pass focused positive/negative, ordinary/K1/K2/security/receipt/D037 execution under unchanged budgets; 562 assertions pass. Preserve prior failed attempts and historical concurrency evidence separately.
+- [x] Resume the connected operator journey after the focused read-parity gate. The primary journey passes; the required B1 operator case remains blocked as recorded above.
 
 ### Task 2: Explicit operator correction
 

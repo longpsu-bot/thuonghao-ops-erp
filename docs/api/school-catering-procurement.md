@@ -2,6 +2,14 @@
 
 ## K3 Allocation read reconciliation — 20 October 2026
 
+The continuation's forward migration
+`20261020022939_atlas_k3_ordinary_allocation_blocker.sql` preserves the ordinary
+incomplete-Need instruction while retaining K3's corrected-source blocker. It
+changes only the existing shaped-read message branch, with no writer, privilege,
+history or timeout change. The connected single-School 100 → 110 → 90 path passes;
+the shared-School/two-Supplier PO/PXK read timeout remains a separate blocked
+acceptance gate recorded in the [K3 task](../implementation-tasks/TASK-ATLAS-C-K3-OPERATOR-INTEGRATION-01.md).
+
 Authority: [Owner decision #400](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6279713889). The existing `get_confirmed_supplier_allocation_workbench` uses K2's per-family source proof after a genuine post-release correction. Changed families expose the authentic current `CONFIRMED_NEED` proposal for explicit acceptance; untouched families retain applicable original `PURCHASE_HANDOFF` identities and contributors. Handoff rows in this correction branch do not expose CN command bindings. Ordinary released rows retain their existing CN lineage metadata. Actual contributing Schools remain associated with the family independently of current default-location metadata.
 
 `BALANCED` requires compatible typed source identity/version, exact contributor revision/decision or Handoff line membership, controlled Unit, canonical fingerprint and quantity, and eligible balanced Supplier splits. A later valid correction remains editable while the previously accepted allocation is stale. Missing or invalid correction evidence blocks actions; equal totals cannot establish currentness. Post-release Preparation advisory uses the canonical whole-date allocation frontier, independent of UI filters, and cannot use raw CN/default readiness to override `SOURCE_CHANGED` or an existing cancellation obligation. Ordinary pre-release Preparation/default behavior remains unchanged. These are advisory reads: unchanged transactional writers recheck source, authorization, locking, coverage and receipts.

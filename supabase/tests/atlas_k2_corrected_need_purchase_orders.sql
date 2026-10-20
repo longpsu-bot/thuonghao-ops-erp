@@ -1001,13 +1001,13 @@ reset role;
 select response->>'error_code' code from k2_results where name='b1_removed_replacement'
 \gset k3_removed_replacement_
 rollback to savepoint b1_removed_supplier;
-select is(:'k3_removed_allocation_success','true',
+select is(:'k3_removed_allocation_success'::text,'true',
   'removed-Supplier scenario uses an authentic explicit allocation Save');
-select is(:'k3_removed_commitment_state','CANCELLATION_REQUIRED',
+select is(:'k3_removed_commitment_state'::text,'CANCELLATION_REQUIRED',
   'removed Supplier keeps a cancellation obligation');
-select is(:'k3_removed_replacement_code','CANCELLATION_REQUIRED',
+select is(:'k3_removed_replacement_code'::text,'CANCELLATION_REQUIRED',
   'public replacement refuses a zero-Supplier document');
-select is(:'k3_removed_ready','false',
+select is(:'k3_removed_ready'::text,'false',
   'removed issued Supplier blocks Preparation read until explicit cancellation');
 
 insert into k2_requests values('b1_allocation50',pg_temp.k2_b1_allocation(32,18));
@@ -1020,8 +1020,16 @@ select is((select response->>'success' from k2_results where name='b1_allocation
 set local role authenticated;
 insert into k2_results values('b1_mixed_read',pg_temp.k3_allocation_read('2050-09-19'));
 reset role;
-select is((select jsonb_array_length(response->'rows') from k2_results where name='b1_mixed_read'),
-  2,'shared-School corrected read includes both distinct Ingredient families');
+select is((select jsonb_agg(jsonb_build_array(row->>'service_date',row->>'delivery_location_id',
+    row->>'ingredient_id',row->>'unit_id') order by row->>'ingredient_id')
+  from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+  where name='b1_mixed_read'),jsonb_build_array(
+    jsonb_build_array('2050-09-19',pg_temp.ng_id(11),pg_temp.ng_id(2001),pg_temp.ng_id(13)),
+    jsonb_build_array('2050-09-19',pg_temp.ng_id(11),pg_temp.ng_id(2002),pg_temp.ng_id(13)),
+    jsonb_build_array('2050-09-19',pg_temp.ng_id(11),pg_temp.ng_id(2003),pg_temp.ng_id(13)),
+    jsonb_build_array('2050-09-19',pg_temp.ng_id(11),pg_temp.ng_id(2004),pg_temp.ng_id(13)),
+    jsonb_build_array('2050-09-19',pg_temp.ng_id(11),pg_temp.ng_id(2016),pg_temp.ng_id(13))),
+  'shared-School corrected read includes exactly the five authored family keys');
 select ok(row#>>'{family,source_kind}'='CONFIRMED_NEED'
     and row->>'state'='BALANCED' and jsonb_array_length(row->'schools')=2
     and jsonb_array_length(row->'contributions')=2 and jsonb_array_length(row->'splits')=2,
@@ -1104,11 +1112,11 @@ reset role;
 select response->>'error_code' code from k2_results where name='b1_omitted_supplier_release'
 \gset k3_omitted_release_
 rollback to savepoint b1_omitted_supplier;
-select is(:'k3_omitted_allocation_success','true',
+select is(:'k3_omitted_allocation_success'::text,'true',
   'omitted-Supplier scenario uses an explicit Save in a different family');
-select is(:'k3_omitted_draft_stale','false',
+select is(:'k3_omitted_draft_stale'::text,'false',
   'target Supplier Draft itself remains current despite the other-family change');
-select is(:'k3_omitted_release_code','PREPARATION_BLOCKED',
+select is(:'k3_omitted_release_code'::text,'PREPARATION_BLOCKED',
   'final Release rejects the missing Supplier/date document despite current target totals');
 
 -- Inherited immutable guard rejects contribution UPDATE before touching data;
@@ -1140,7 +1148,7 @@ reset role;
 select response->>'error_code' code from k2_results where name='b1_wrong_shared_scope'
 \gset k3_shared_scope_
 rollback to savepoint b1_wrong_shared_scope;
-select is(:'k3_shared_scope_code','SCOPE_DENIED',
+select is(:'k3_shared_scope_code'::text,'SCOPE_DENIED',
   'one School at a shared location cannot issue the whole shared-School PO');
 set local role authenticated;
 insert into k2_results select name,atlas_api.release_school_catering_purchase_order(request)

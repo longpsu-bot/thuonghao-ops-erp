@@ -475,14 +475,18 @@ create temporary table k3_procurement_history(fault text,response jsonb);
 select format('insert into k3_procurement_history select %L,pg_temp.k3_history_case(%L,true);',fault,fault)
 from unnest(array['missing_current_handoff','invalid_handoff_status','unsupported_source']) fault
 \gexec
-select ok(response->>'integrity_rejected' is null and response#>>'{procurement,success}'='true',
-  'post-release historical fault reaches the actual authenticated Procurement read: '||fault)
+select ok(case when fault='unsupported_source' then
+    response='{"integrity_rejected":true,"sqlstate":"23514"}'::jsonb
+  else response->>'integrity_rejected' is null and response#>>'{procurement,success}'='true' end,
+  'post-release historical fault preserves the integrity guard or reaches the authenticated read: '||fault)
 from k3_procurement_history;
-select ok(response#>>'{procurement,preparation,ready}'='false'
+select ok(case when fault='unsupported_source' then
+    response->>'integrity_rejected'='true' and not response?'procurement'
+  else response#>>'{procurement,preparation,ready}'='false'
     and not exists(select 1 from jsonb_array_elements(response#>'{procurement,rows}') row
       where row->>'state'='BALANCED' or row->>'complete'='true'
         or row#>>'{allowed_actions,save_allocation}'='true'
-        or row#>>'{allowed_actions,confirm_recommendation}'='true'),
+        or row#>>'{allowed_actions,confirm_recommendation}'='true') end,
   'unavailable historical authority blocks row actions and Preparation: '||fault)
 from k3_procurement_history;
 select is((select response from k1_results where name='replay110'),
