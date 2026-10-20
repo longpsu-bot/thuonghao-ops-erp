@@ -7,6 +7,10 @@ on:
         description: Exact full merged-main SHA to install from
         required: true
         type: string
+      install_count_unit_policies:
+        description: Reconcile the fifteen approved imported COUNT Unit policies
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -56,6 +60,14 @@ jobs:
 
       - name: Replay the protected Foundation package
         run: pnpm atlas:staging:foundation:install -- --commit-sha "${{ inputs.commit_sha }}"
+
+      - name: Verify approved count-unit policies with rollback
+        if: inputs.install_count_unit_policies
+        run: node scripts/install-staging-count-unit-policies.mjs --commit-sha "${{ inputs.commit_sha }}" --dry-run
+
+      - name: Reconcile approved count-unit policies
+        if: inputs.install_count_unit_policies
+        run: node scripts/install-staging-count-unit-policies.mjs --commit-sha "${{ inputs.commit_sha }}"
 
       - name: Run read-only hosted verification
         run: pnpm atlas:staging:verify

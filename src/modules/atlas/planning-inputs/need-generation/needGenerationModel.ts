@@ -242,6 +242,8 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
   const clockSkewMessage = planningClockSkewMessage(result);
   if (clockSkewMessage) return clockSkewMessage;
   const messages: Record<string, string> = {
+    MISSING_PLANNING_QUANTITY_POLICY:
+      "Chưa có quy tắc số lượng cho một số đơn vị tính trong ngày đã chọn. Hãy liên hệ quản trị viên để bổ sung.",
     ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED:
       "Dữ liệu nhu cầu không hợp lệ: đóng góp bằng 0 không được đưa vào nhu cầu mua hàng.",
     CAPABILITY_DENIED: "Bạn không có quyền tạo hoặc cập nhật nhu cầu.",

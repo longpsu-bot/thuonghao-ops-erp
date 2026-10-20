@@ -32,11 +32,11 @@ export async function installCountPolicies({
   verifyPackageCheckout({ commitSha, cwd });
   const result = await executeSql(target, buildCountPolicySql({ dryRun, cwd }));
   const rows = JSON.parse(result);
-  if (rows?.[0]?.count_policy_result?.policy_count !== 14)
+  if (rows?.[0]?.count_policy_result?.policy_count !== 15)
     throw new Error("STAGING_COUNT_POLICY_READBACK_MISMATCH");
   return {
     status: dryRun ? "verified-rollback" : "installed",
-    policies: 14,
+    policies: 15,
     effectiveFrom: "2026-09-14",
   };
 }
