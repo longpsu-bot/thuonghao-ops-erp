@@ -21,6 +21,8 @@ import {
   supplierQuantityFootprint,
   schoolQuantityFootprint,
 } from "./atlas-procurement-browser-coverage.mjs";
+import { certifyMasterSourceAuthoring } from "./atlas-connected-source-authoring.mjs";
+import { readAfterSchemaCacheStarts } from "./disposable-schema-cache-read.mjs";
 
 assert(
   process.env.GITHUB_ACTIONS === "true" ||
@@ -142,6 +144,11 @@ create table public.k2_results(name text primary key,response jsonb not null);
 create table public.k2_requests(name text primary key,request jsonb not null);
 grant select,insert on public.k2_results,public.k2_requests to authenticated;
 ${operationalFixture.replaceAll("create temporary table ", "create table public.")}
+-- Appropriate synthetic Admin capability setup in this disposable database only.
+insert into atlas_core.role_capabilities(role_id,capability_id)
+select 'a7400000-0000-4000-8000-000000000003',capability_id
+from atlas_core.capabilities where capability_code like 'master_data.%'
+on conflict do nothing;
 set constraints all immediate; commit;`;
 const fixtureResult = sql(fixture);
 assert(
@@ -179,10 +186,9 @@ assert(
   !(await operator.auth.signInWithPassword({ email, password })).error,
   "Public Auth sign-in failed.",
 );
-const read = async () => {
-  const result = await operator
-    .schema("atlas_api")
-    .rpc("get_school_catering_purchase_orders", {
+const read = async ({ startup = false } = {}) => {
+  const request = () =>
+    operator.schema("atlas_api").rpc("get_school_catering_purchase_orders", {
       request: {
         contract_version: "SCHOOL-CATERING-PROCUREMENT.v1",
         requested_by_auth_subject: subject,
@@ -196,13 +202,16 @@ const read = async () => {
         },
       },
     });
+  const result = startup
+    ? await readAfterSchemaCacheStarts(request, until)
+    : await request();
   assert(
     !result.error && result.data?.success,
-    "Authenticated PO read failed.",
+    `Authenticated PO read failed: ${result.status}/${result.error?.code ?? result.data?.error_code ?? "invalid response"}`,
   );
   return result.data.purchase_orders;
 };
-assert.equal((await read()).length, 0);
+assert.equal((await read({ startup: true })).length, 0);
 let initialOrders, before, expectedSchools, initialSchools;
 // Draft reads have no frozen School snapshot yet. Capture the canonical
 // read-only projection before the UI releases; compare its persisted snapshot.
@@ -357,7 +366,7 @@ const server = await preview({
 });
 const profile = mkdtempSync(path.join(tmpdir(), "atlas-procurement-ci-"));
 let chrome, connection;
-const until = async (fn, label) => {
+async function until(fn, label) {
   const end = Date.now() + 30000;
   while (Date.now() < end) {
     const result = await fn();
@@ -365,7 +374,7 @@ const until = async (fn, label) => {
     await new Promise((r) => setTimeout(r, 100));
   }
   throw new Error(`CONNECTED_PROCUREMENT_${label}`);
-};
+}
 try {
   chrome = spawn(
     process.env.CHROME_BIN ||
@@ -1414,12 +1423,46 @@ try {
     path.join(evidence, "reconciled.png"),
     Buffer.from(shot.data, "base64"),
   );
+  const authoring = await certifyMasterSourceAuthoring({
+    connection,
+    evaluate,
+    until,
+    operator,
+    subject,
+    sql,
+    url,
+  });
+  const officialOrders = (orders) =>
+    orders.map((order) => ({
+      id: order.purchase_order_id,
+      number: order.document_number,
+      version: order.version,
+      revision: order.current_revision,
+      lines: order.lines,
+    }));
+  assert.deepEqual(
+    officialOrders(await read()),
+    officialOrders(after),
+    "Master/source authoring must preserve the original official POs.",
+  );
+  const finalDispatches = await readDispatch();
+  for (const document of dispatches)
+    assert.deepEqual(
+      finalDispatches.find(
+        (row) =>
+          row.school_id === document.school_id &&
+          row.delivery_location_id === document.delivery_location_id,
+      )?.current_release,
+      document,
+      "Master/source authoring must preserve each complete frozen School PXK.",
+    );
   const report = {
     status: "PASS",
     source: execFileSync("git", ["rev-parse", "HEAD"], {
       encoding: "utf8",
     }).trim(),
     environment: "disposable GitHub runner",
+    authoring,
     journey:
       "Auth → first Prepare/readback/reopen → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → PO XLSX/PDF → two School PXK releases → PXK XLSX/PDF → reopen → matching public/UI reconciliation",
     firstPrepare: {

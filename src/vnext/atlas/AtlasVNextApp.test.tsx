@@ -422,6 +422,11 @@ it("blocks dirty sign-out without discarding and resolves two Schools through th
   fireEvent.click(discard);
   await waitFor(() => expect(fields[0]!.isConnected).toBe(false));
   expect(fields[1]!.isConnected).toBe(false);
+  // Closing restores navigation focus on the next frame. Let that finish
+  // before opening the account popup, whose blur handler closes it.
+  await waitFor(() =>
+    expect(screen.getByRole("tab", { name: /^Thực đơn/ })).toHaveFocus(),
+  );
   await clickSignOut();
   expect(signOut).toHaveBeenCalledOnce();
 });

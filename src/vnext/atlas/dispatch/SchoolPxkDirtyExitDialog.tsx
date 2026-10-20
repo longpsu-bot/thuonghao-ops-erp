@@ -12,6 +12,7 @@ export function SchoolPxkDirtyExitDialog({
   finalFocusEl: () => HTMLElement | null;
 }) {
   const cancel = useRef<HTMLButtonElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   return (
     <Dialog.Root
       open={open}
@@ -20,6 +21,20 @@ export function SchoolPxkDirtyExitDialog({
       }}
       initialFocusEl={() => cancel.current}
       finalFocusEl={finalFocusEl}
+      // Quick Cancel can close before the focus trap activates. Resolve the
+      // destination after exit, including a remounted calendar trigger.
+      onExitComplete={() => {
+        const target = finalFocusEl();
+        const active = document.activeElement;
+        if (
+          target?.isConnected &&
+          !target.closest('[hidden], [inert], [aria-hidden="true"]') &&
+          (!active ||
+            active === document.body ||
+            content.current?.contains(active))
+        )
+          target.focus();
+      }}
       placement="center"
       lazyMount
       unmountOnExit
@@ -27,6 +42,7 @@ export function SchoolPxkDirtyExitDialog({
       <Dialog.Backdrop />
       <Dialog.Positioner>
         <Dialog.Content
+          ref={content}
           bg="bg.workbench"
           color="fg.default"
           borderRadius="workbench"
