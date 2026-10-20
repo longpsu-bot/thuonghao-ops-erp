@@ -7,6 +7,14 @@ import { AtlasSessionGate } from "../../src/vnext/atlas/AtlasSessionGate";
 import { ProcurementWorkbench } from "../../src/vnext/atlas/procurement/ProcurementWorkbench";
 import { SchoolPxkWorkbench } from "../../src/vnext/atlas/dispatch/SchoolPxkWorkbench";
 import { SchoolFulfilmentWorkbench } from "../../src/vnext/atlas/reconciliation/SchoolFulfilmentWorkbench";
+import { SchoolDefaultsWorkbench } from "../../src/vnext/atlas/schools/SchoolDefaultsWorkbench";
+import { IngredientSupplierWorkbench } from "../../src/vnext/atlas/master-data/IngredientSupplierWorkbench";
+import { DishRecipeWorkbench } from "../../src/vnext/atlas/recipes/DishRecipeWorkbench";
+import { PlanningSourcesWorkbench } from "../../src/vnext/atlas/planning/PlanningSourcesWorkbench";
+import { createMasterDataApi } from "../../src/modules/atlas/master-data/masterDataApi";
+import { createRecipeApi } from "../../src/modules/atlas/recipes/recipeApi";
+import { createPlanningInputsApi } from "../../src/modules/atlas/planning-inputs/planningInputsApi";
+import { createPantryApi } from "../../src/modules/atlas/planning-inputs/pantry/pantryApi";
 import { getAtlasSupabaseClient } from "../../src/modules/atlas/connection/supabaseClient";
 import { readAtlasBrowserEnvironment } from "../../src/modules/atlas/connection/environment";
 import { useAtlasAuthSession } from "../../src/modules/atlas/connection/authSession";
@@ -38,6 +46,62 @@ if (
   environment.config.supabaseUrl !== "http://127.0.0.1:54321"
 )
   throw new Error("DISPOSABLE_API_ONLY");
+const authoringStages = [
+  "schools",
+  "ingredients",
+  "suppliers",
+  "recipes",
+  "attendance",
+  "pantry",
+];
+function ConnectedAuthoring({
+  subject,
+  stage,
+}: {
+  subject: string;
+  stage: string;
+}) {
+  const apis = useMemo(() => {
+    if (connection.status !== "configured")
+      throw new Error("DISPOSABLE_CONNECTION_REQUIRED");
+    const transport = createAtlasRpcTransport(connection.client);
+    return {
+      master: createMasterDataApi(transport),
+      recipes: createRecipeApi(transport),
+      planning: createPlanningInputsApi(transport),
+      pantry: createPantryApi(transport),
+    };
+  }, []);
+  if (stage === "schools")
+    return <SchoolDefaultsWorkbench authSubject={subject} api={apis.master} />;
+  if (stage === "ingredients" || stage === "suppliers")
+    return (
+      <IngredientSupplierWorkbench
+        authSubject={subject}
+        api={apis.master}
+        ownerJob={stage}
+      />
+    );
+  if (stage === "recipes")
+    return (
+      <DishRecipeWorkbench
+        authSubject={subject}
+        api={apis.recipes}
+        initialDate="2050-09-26"
+      />
+    );
+  if (stage === "attendance" || stage === "pantry")
+    return (
+      <PlanningSourcesWorkbench
+        authSubject={subject}
+        api={apis.planning}
+        pantryApi={apis.pantry}
+        initialServiceDate="2050-09-26"
+        ownerJob={stage}
+      />
+    );
+  throw new Error("DISPOSABLE_STAGE_REQUIRED");
+}
 function ConnectedProcurement() {
   const auth = useAtlasAuthSession(connection);
   const apis = useMemo(() => {
@@ -59,7 +123,14 @@ function ConnectedProcurement() {
         onSignIn={auth.signIn}
       >
         {auth.state.status === "authenticated" &&
-          (new URLSearchParams(location.search).get("stage") === "pxk" ? (
+          (authoringStages.includes(
+            new URLSearchParams(location.search).get("stage") ?? "",
+          ) ? (
+            <ConnectedAuthoring
+              subject={auth.state.authSubject}
+              stage={new URLSearchParams(location.search).get("stage")!}
+            />
+          ) : new URLSearchParams(location.search).get("stage") === "pxk" ? (
             <SchoolPxkWorkbench
               api={apis.dispatchApi}
               authSubject={auth.state.authSubject}

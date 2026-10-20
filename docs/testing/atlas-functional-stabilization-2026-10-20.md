@@ -80,6 +80,17 @@ Acceptance: fresh valid XLSX round trip; stale/modified identity files still blo
 
 ## Connected School fulfilment certification implementation plan
 
+## Connected master/source authoring certification implementation plan
+
+Branch `codex/atlas-connected-source-authoring` starts from verified latest main22d5590 and integrates the pending reviewed Planning/School verification prerequisites115a1f8. Root, origin, clean status and workspace check pass. Goal: close the connected browser authoring gap for existing School defaults, native Supplier/Ingredient creation, Recipes, Attendance and the two-purpose Pantry UI, using synthetic isolated data and real public APIs.
+
+Allowed: existing disposable entry/driver, a bounded authoring browser helper, existing evidence paths and this ledger. Provision appropriate synthetic master-data capabilities before operator commands; keep them within the disposable loopback database. New authoring uses an unused week and never alters the released operational scopes. Prohibited: product/schema/business/security/budget changes, operational Google Sheet sync, hosted transactions and supplier communication. Existing required workflow budgets remain unchanged.
+
+- [ ] Exercise actual UI authoring, validation, review/Save, authoritative public readback and new-document reopening. Verify stable IDs, exact quantities/Units/source classifications and receipts. Include incomplete/forbidden access and dirty cancel/discard where applicable.
+- [ ] Focused syntax/types, independent source/security review, exact-source Frontend/executed Full; integrate prior certified main before final certification. Record untested/external paths explicitly rather than inferring browser success from API tests.
+
+## Connected School fulfilment certification implementation plan
+
 Branch `codex/atlas-connected-school-fulfilment` starts at clean verified latest main `22d5590`. Preserve the pending Planning PR417 independently. Goal: extend the existing disposable real-Auth Procurement browser from its two PO releases through actual School PXK release/export/reopen and PO/PXK reconciliation. This is existing School Dispatch, not Warehouse Receiving or stock movement.
 
 Allowed files: existing disposable Procurement entry/driver, existing Full Integration artifact paths and this ledger. Initial synthetic School issuer configuration is a missing fixture prerequisite and may be provided before public source commands, preserving all School/Unit/source IDs and quantities. Prohibited: product/schema/business/grants/budgets, mutable operational source patches, hosted transactions or supplier communication.

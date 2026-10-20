@@ -21,6 +21,7 @@ import {
   supplierQuantityFootprint,
   schoolQuantityFootprint,
 } from "./atlas-procurement-browser-coverage.mjs";
+import { certifyMasterSourceAuthoring } from "./atlas-connected-source-authoring.mjs";
 
 assert(
   process.env.GITHUB_ACTIONS === "true" ||
@@ -136,6 +137,11 @@ create table public.k2_results(name text primary key,response jsonb not null);
 create table public.k2_requests(name text primary key,request jsonb not null);
 grant select,insert on public.k2_results,public.k2_requests to authenticated;
 ${operationalFixture.replaceAll("create temporary table ", "create table public.")}
+-- Appropriate synthetic Admin capability setup in this disposable database only.
+insert into atlas_core.role_capabilities(role_id,capability_id)
+select 'a7400000-0000-4000-8000-000000000003',capability_id
+from atlas_core.capabilities where capability_code like 'master_data.%'
+on conflict do nothing;
 set constraints all immediate; commit;`;
 const fixtureResult = sql(fixture);
 assert(
@@ -1373,12 +1379,22 @@ try {
     path.join(evidence, "reconciled.png"),
     Buffer.from(shot.data, "base64"),
   );
+  const authoring = await certifyMasterSourceAuthoring({
+    connection,
+    evaluate,
+    until,
+    operator,
+    subject,
+    sql,
+    url,
+  });
   const report = {
     status: "PASS",
     source: execFileSync("git", ["rev-parse", "HEAD"], {
       encoding: "utf8",
     }).trim(),
     environment: "disposable GitHub runner",
+    authoring,
     journey:
       "Auth → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → PO XLSX/PDF → two School PXK releases → PXK XLSX/PDF → reopen → matching public/UI reconciliation",
     poCount: after.length,
