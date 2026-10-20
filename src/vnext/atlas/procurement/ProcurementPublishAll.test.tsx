@@ -156,6 +156,24 @@ describe("Publish all loaded eligible POs", () => {
     });
     expect(h.result.current.busy).toBe(false);
   });
+  it("explains a date-wide preparation rejection in Vietnamese and stops the batch", async () => {
+    const h = hook();
+    await waitFor(() => expect(h.result.current.current).toBe(true));
+    const failure = reviewFailure("PREPARATION_BLOCKED");
+    if (failure.kind !== "backend_error") throw new Error("Expected rejection");
+    failure.error.safe_message =
+      "Prepare the complete current Supplier/date document set before release.";
+    h.release.mockResolvedValueOnce(failure);
+    await act(async () => {
+      await h.result.current.releaseAllOrders();
+    });
+    expect(h.release).toHaveBeenCalledOnce();
+    expect(h.result.current.feedback?.kind).toBe("blocked");
+    expect(h.result.current.feedback?.message).toContain("đơn mua");
+    expect(h.result.current.feedback?.message).toContain("Cần cập nhật");
+    expect(h.result.current.feedback?.message).not.toContain("Supplier/date");
+    expect(h.result.current.feedback?.messages.join(" ")).toContain("0/2");
+  });
   it("stops when a fresh read changes the next approved PO instead of releasing a new revision", async () => {
     const h = hook();
     await waitFor(() => expect(h.result.current.current).toBe(true));

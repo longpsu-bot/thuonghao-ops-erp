@@ -24,6 +24,7 @@ import {
 import { certifyMasterSourceAuthoring } from "./atlas-connected-source-authoring.mjs";
 import { certifyConnectedReplacements } from "./atlas-connected-replacements.mjs";
 import { certifyConnectedCorrections } from "./atlas-connected-corrections.mjs";
+import { certifyPoReleaseFrontier } from "./atlas-po-release-frontier-browser.mjs";
 import { readAfterSchemaCacheStarts } from "./disposable-schema-cache-read.mjs";
 
 assert(
@@ -1586,6 +1587,17 @@ try {
     path.join(evidence, "replaced.png"),
     Buffer.from(replacementShot.data, "base64"),
   );
+  const releaseFrontier = await certifyPoReleaseFrontier({
+    connection,
+    evaluate,
+    until,
+    operator,
+    subject,
+    sql,
+    source,
+    url,
+    evidence,
+  });
   const report = {
     status: "PASS",
     source: execFileSync("git", ["rev-parse", "HEAD"], {
@@ -1595,6 +1607,7 @@ try {
     authoring,
     corrections,
     replacements,
+    releaseFrontier,
     journey:
       "Auth → first Prepare/readback/reopen → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → PO XLSX/PDF → two School PXK releases → PXK XLSX/PDF → reopen → matching public/UI reconciliation",
     firstPrepare: {

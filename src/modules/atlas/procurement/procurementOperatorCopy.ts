@@ -1,4 +1,6 @@
 const reasonLabels: Record<string, string> = {
+  PREPARATION_BLOCKED:
+    "Chưa thể phát hành: cần chuẩn bị đầy đủ đơn mua theo phân bổ hiện tại cho ngày này. Kiểm tra các đơn Cần cập nhật hoặc trở lại Phân bổ NCC trước khi tiếp tục.",
   PO_DOCUMENT_CODE_REQUIRED:
     "Bổ sung mã NCC trên chứng từ trong Dữ liệu gốc trước khi phát hành.",
   PO_INGREDIENT_DOCUMENT_CODE_INVALID:

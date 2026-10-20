@@ -87,7 +87,12 @@ function feedbackFromResult(result: AtlasRpcResult): ProcurementFeedback {
         : result.error.retryable
           ? "retryable"
           : "blocked",
-      message: procurementOperatorMessage(result.error.safe_message, fallback),
+      message: procurementOperatorMessage(
+        result.error.error_code === "PREPARATION_BLOCKED"
+          ? result.error.error_code
+          : result.error.safe_message,
+        fallback,
+      ),
       messages: [],
     };
   return result.kind === "transport_error"
