@@ -5,6 +5,11 @@ set search_path=extensions,public,pg_catalog;
 select no_plan();
 \ir ../local/purchase_preparation_scale_fixture.sql
 
+insert into atlas_core.role_capabilities(role_id,capability_id)
+select 'b6000000-0000-0000-0000-000000000003',capability_id
+from atlas_core.capabilities where capability_code='dispatch.school_release.read'
+on conflict do nothing;
+
 select pg_temp.seed_purchase_preparation_scale(
   'allocation-released-read','allocation-read',date '2027-01-18');
 insert into scale_requests(name,request)
@@ -48,6 +53,35 @@ set constraints all immediate;
 reset role;
 select is((select response->>'success' from scale_results where name='prepare'),
   'true','local scale setup establishes released Handoff and Draft POs');
+
+set constraints all deferred;
+insert into scale_requests(name,request)
+select 'issue',pg_temp.scale_command('allocation-read-issue','SCHOOL-CATERING-PROCUREMENT.v1',
+  'SCHOOL_CATERING_PO_RELEASED',po.version,jsonb_build_object(
+    'purchase_order_id',po.purchase_order_id,
+    'expected_purchase_order_revision_id',revision.purchase_order_revision_id))
+from atlas_procurement.purchase_orders po
+join atlas_procurement.purchase_order_revisions revision using(purchase_order_id)
+where po.school_catering_service_date='2027-01-18' and revision.is_current
+  and not exists(select 1 from atlas_procurement.purchase_order_line_revisions line
+    where line.purchase_order_revision_id=revision.purchase_order_revision_id
+      and (line.ingredient_id,line.delivery_location_id)=(
+        select current.ingredient_id,current.delivery_location_id
+        from atlas_planning.confirmed_need_lines need
+        join atlas_planning.confirmed_need_line_revisions current using(confirmed_need_line_id)
+        where need.confirmed_need_batch_id=md5('allocation-released-read:confirmed-need-batch')::uuid
+          and current.is_current order by need.confirmed_need_line_id limit 1))
+order by po.purchase_order_id limit 1;
+set local statement_timeout='8s';
+set local role authenticated;
+insert into scale_results(name,response)
+select name,atlas_api.release_school_catering_purchase_order(request)
+from scale_requests where name='issue';
+set constraints all immediate;
+reset role;
+select is((select response->>'success' from scale_results where name='issue'),
+  'true','fixture issues one genuine unaffected PO before checking dispatch impact');
+select diag(response::text) from scale_results where name='issue' and response->>'success'<>'true';
 
 create temporary table read_before as select pg_temp.scale_business_snapshot() facts,
   (select jsonb_agg(to_jsonb(r) order by command_receipt_id)
@@ -193,12 +227,18 @@ begin
       'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','correlation_id',gen_random_uuid(),
       'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
       'payload',jsonb_build_object('date_start','2027-01-18','date_end','2027-01-18')));
-  else
+  elsif p_kind='orders' then
     answer:=atlas_api.get_school_catering_purchase_orders(jsonb_build_object(
       'contract_version','SCHOOL-CATERING-PROCUREMENT.v1','correlation_id',gen_random_uuid(),
       'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
       'payload',jsonb_build_object('date_start','2027-01-18','date_end','2027-01-18',
         'supplier_ids','[]'::jsonb,'statuses','[]'::jsonb,'search',null)));
+  else
+    answer:=atlas_api.get_school_dispatch_release_workbench(jsonb_build_object(
+      'contract_version','SCHOOL-DISPATCH-RELEASE.v1','correlation_id',gen_random_uuid(),
+      'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+      'payload',jsonb_build_object('date_start','2027-01-18','date_end','2027-01-18',
+        'school_ids','[]'::jsonb,'search',null)));
   end if;
   insert into reopened_samples select p_kind,answer,
     extract(epoch from clock_timestamp()-started)*1000,coalesce(sum(calls),0)-prior_calls
@@ -217,6 +257,7 @@ set local plan_cache_mode='force_custom_plan';
 set local role authenticated;
 select pg_temp.sample_reopened_read('allocation');
 select pg_temp.sample_reopened_read('orders');
+select pg_temp.sample_reopened_read('dispatch');
 reset role;
 set local plan_cache_mode='auto';
 select ok(response->>'success'='true' and elapsed_ms<8000,
@@ -227,6 +268,12 @@ select is((select jsonb_array_length(response->'rows') from reopened_samples whe
 select is((select count(*) from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item
   where kind='allocation' and item#>>'{family,source_kind}'='CONFIRMED_NEED'),1::bigint,
   'only the genuinely corrected family changes source authority');
+select is((select jsonb_array_length(response->'rows') from reopened_samples where kind='dispatch'),
+  4,'issued-order dispatch impact retains all four School scopes');
+select ok((select bool_and(item->>'state'='BLOCKED'
+    and item#>>'{preview,ready}'='false' and item#>>'{allowed_actions,release}'='false')
+  from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item
+  where kind='dispatch'),'dispatch impact retains incomplete-coverage release blockers');
 select is(pg_temp.scale_business_snapshot(),(select facts from reopened_before),
   'reopened reads leave all business facts and historical documents unchanged');
 select is((select jsonb_agg(to_jsonb(r) order by command_receipt_id) from atlas_core.command_receipts r),
@@ -265,5 +312,96 @@ select is(atlas_core.procurement_read_school_catering_family_projection(
     (source->>'service_date')::date,(source->>'delivery_location_id')::uuid,
     (source->>'ingredient_id')::uuid,(source->>'unit_id')::uuid),
   'read family selector exactly matches canonical selector; corrected='||(source->>'corrected_family')) from context_parity;
+
+-- Continue the operator's next step using only the authenticated read's binding.
+set constraints all deferred;
+insert into scale_requests(name,request)
+select 'accept-correction',pg_temp.scale_command('allocation-read-accept-correction',
+  'CONFIRMED-SUPPLIER-ALLOCATION.v1','CONFIRMED_SUPPLIER_ALLOCATION_SAVED',
+  (row#>>'{family,version}')::bigint,jsonb_build_object(
+    'family',jsonb_build_object('service_date',row->'service_date',
+      'delivery_location_id',row->'delivery_location_id','ingredient_id',row->'ingredient_id',
+      'unit_id',row->'unit_id','expected_source_fingerprint',row#>'{family,source_fingerprint}',
+      'expected_source_batch_id',row#>'{family,source_confirmed_need_batch_id}',
+      'expected_source_batch_version',row#>'{family,source_confirmed_need_batch_version}'),
+    'splits',jsonb_build_array(jsonb_build_object('supplier_id',row#>'{splits,0,supplier_id}',
+      'allocated_quantity',row->'family_quantity','supplier_note','Accepted fixture correction'))))
+from reopened_samples cross join lateral jsonb_array_elements(response->'rows') row
+where kind='allocation' and row#>>'{family,source_kind}'='CONFIRMED_NEED';
+set local role authenticated;
+insert into scale_results(name,response)
+select name,atlas_api.save_confirmed_supplier_allocation(request)
+from scale_requests where name='accept-correction';
+set constraints all immediate;
+reset role;
+select is((select response->>'success' from scale_results where name='accept-correction'),
+  'true','operator accepts the corrected allocation using exact public read bindings');
+select diag(response::text) from scale_results where name='accept-correction' and response->>'success'<>'true';
+
+set constraints all deferred;
+insert into scale_requests(name,request)
+select 'prepare-correction',pg_temp.scale_command('allocation-read-prepare-correction',
+  'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',batch.version,
+  jsonb_build_object('confirmed_need_batch_id',batch.confirmed_need_batch_id,
+    'service_date',batch.period_start))
+from atlas_planning.confirmed_need_batches batch
+where batch.confirmed_need_batch_id=md5('allocation-released-read:confirmed-need-batch')::uuid;
+set local statement_timeout='20s';
+set local role authenticated;
+insert into scale_results(name,response)
+select name,atlas_api.prepare_school_catering_purchase_orders(request)
+from scale_requests where name='prepare-correction';
+set constraints all immediate;
+reset role;
+select is((select response->>'success' from scale_results where name='prepare-correction'),
+  'true','236-family corrected Preparation succeeds through the normal public command');
+select diag(response::text) from scale_results where name='prepare-correction' and response->>'success'<>'true';
+
+set constraints all deferred;
+insert into scale_requests(name,request)
+select 'issue-correction',pg_temp.scale_command('allocation-read-issue-correction',
+  'SCHOOL-CATERING-PROCUREMENT.v1','SCHOOL_CATERING_PO_RELEASED',po.version,
+  jsonb_build_object('purchase_order_id',po.purchase_order_id,
+    'expected_purchase_order_revision_id',revision.purchase_order_revision_id))
+from atlas_procurement.purchase_orders po
+join atlas_procurement.purchase_order_revisions revision using(purchase_order_id)
+where po.school_catering_service_date='2027-01-18' and po.purchase_order_status='DRAFT'
+  and revision.is_current and exists(
+    select 1 from atlas_procurement.purchase_order_line_revisions line
+    join atlas_planning.confirmed_need_line_revisions need
+      on need.ingredient_id=line.ingredient_id and need.unit_id=line.unit_id
+      and need.delivery_location_id=line.delivery_location_id and need.is_current
+    where line.purchase_order_revision_id=revision.purchase_order_revision_id
+      and need.confirmed_need_line_id=(select (request#>>'{payload,lines,0,confirmed_need_line_id}')::uuid
+        from scale_requests where name='correct'));
+set local statement_timeout='8s';
+set local role authenticated;
+insert into scale_results(name,response)
+select name,atlas_api.release_school_catering_purchase_order(request)
+from scale_requests where name='issue-correction';
+set constraints all immediate;
+reset role;
+select is((select response->>'success' from scale_results where name='issue-correction'),
+  'true','operator releases the repaired corrected PO through the normal public command');
+select diag(response::text) from scale_results where name='issue-correction' and response->>'success'<>'true';
+select ok(exists(select 1 from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions revision using(purchase_order_id)
+  join atlas_procurement.purchase_order_line_revisions line using(purchase_order_revision_id)
+  join atlas_planning.confirmed_need_line_revisions need
+    on need.ingredient_id=line.ingredient_id and need.unit_id=line.unit_id
+    and need.delivery_location_id=line.delivery_location_id and need.is_current
+  where po.purchase_order_id=(select (response->>'purchase_order_id')::uuid
+      from scale_results where name='issue-correction')
+    and po.purchase_order_status='RELEASED_TO_SUPPLIER' and revision.is_current
+    and need.confirmed_need_line_id=(select (request#>>'{payload,lines,0,confirmed_need_line_id}')::uuid
+      from scale_requests where name='correct')
+    and line.ordered_quantity=need.confirmed_quantity),
+  'issued corrected document retains the exact newly confirmed quantity');
+select is((select to_jsonb(po) from atlas_procurement.purchase_orders po
+    where po.purchase_order_id=(select (response->>'purchase_order_id')::uuid
+      from scale_results where name='issue')),
+  (select old from read_before cross join lateral jsonb_array_elements(facts->'purchase_orders') old
+    where old->>'purchase_order_id'=(select response->>'purchase_order_id' from scale_results where name='issue')),
+  'correction and new issuance leave the unrelated issued order unchanged');
 select * from finish();
 rollback;
