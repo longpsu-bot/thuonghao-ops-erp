@@ -27,4 +27,8 @@ Rows arise only from current Confirmed Need, current allocation contribution lin
 
 Rows return School/date/location identity, PO and PXK identities, `pxk_state`, operational `blockers[]`, `warnings[]`, exact `details[]`, and immutable PXK `history[]`. Comparison and operational currentness are independent: `OK` does not overrule procurement or PXK blockers. No command receipt, event, approval, resolution, or business fact is written.
 
+The public read constructs one private, server-owned procurement context after envelope, Actor and capability validation. Scope discovery and per-School comparisons reuse that same request-local authority. Whole-family completeness remains independent of the visible School filter; the existing Dispatch predicate still controls returned School rows. The context is rebuilt on every invocation, including after a correction, and is neither a public request field nor a cache across requests. The original three-argument scope helper remains available for internal compatibility; the context-aware helper is private to the read runtime. The eight-second read budget is unchanged.
+
 Rollback removes only the new functions and grants; it preserves PO, PXK, allocation, Need, Identity, and audit history.
+
+For the context-reuse repair, rollback is a reviewed forward migration restoring the prior public-read definition before removing its private helper. It requires no data backfill or business/history changes. Public signature, grants, comparison precedence and command behavior are unchanged.
