@@ -8,6 +8,7 @@ import {
   commandPayload,
   validChangeDraft,
   proposalFor,
+  sameAdjustmentProposal,
   vietnamLocalDate,
 } from "./changeOrderModel";
 import {
@@ -15,6 +16,81 @@ import {
   type EffectiveTargetContext,
 } from "../bridges/recipeAdjustment";
 const data = emptyRecipeAdjustmentWorkbench();
+describe("exact Adjustment Preview JSON equality", () => {
+  const proposal = {
+    adjustment_id: "root",
+    scope_kind: "SYSTEM_DISH",
+    target_recipe_line_id: "line",
+    quantity_per_basis: 3.5,
+    unit_id: null,
+    reason_note: "Operator evidence",
+    source_evidence: {
+      source_kind: "ATLAS_OPERATOR",
+      references: [
+        { line: "first", quantity: 0 },
+        { line: "second", quantity: 1 },
+      ],
+    },
+  };
+  it("ignores nested object order while preserving complete evidence", () => {
+    expect(
+      sameAdjustmentProposal(
+        {
+          ...proposal,
+          source_evidence: {
+            references: proposal.source_evidence.references.map(
+              ({ line, quantity }) => ({ quantity, line }),
+            ),
+            source_kind: "ATLAS_OPERATOR",
+          },
+        },
+        proposal,
+      ),
+    ).toBe(true);
+  });
+  it.each([
+    ["adjustment_id", "another"],
+    ["scope_kind", "SCHOOL_DISH"],
+    ["target_recipe_line_id", "another"],
+    ["quantity_per_basis", 3.75],
+    ["quantity_per_basis", "3.5"],
+    ["reason_note", "Different evidence"],
+    ["unit_id", "unit"],
+  ])("rejects changed %s: %s", (key, value) => {
+    expect(
+      sameAdjustmentProposal({ ...proposal, [key]: value }, proposal),
+    ).toBe(false);
+  });
+  it("distinguishes explicit null, missing fields and extra fields", () => {
+    const { unit_id: _unit, ...missing } = proposal;
+    expect(sameAdjustmentProposal(missing, proposal)).toBe(false);
+    expect(sameAdjustmentProposal({ ...proposal, extra: null }, proposal)).toBe(
+      false,
+    );
+    expect(sameAdjustmentProposal(null, {})).toBe(false);
+  });
+  it("retains evidence array order, cardinality and value types", () => {
+    for (const references of [
+      [...proposal.source_evidence.references].reverse(),
+      proposal.source_evidence.references.slice(0, 1),
+      [
+        proposal.source_evidence.references[0],
+        { line: "second", quantity: "1" },
+      ],
+    ])
+      expect(
+        sameAdjustmentProposal(
+          {
+            ...proposal,
+            source_evidence: { ...proposal.source_evidence, references },
+          },
+          proposal,
+        ),
+      ).toBe(false);
+    expect(sameAdjustmentProposal([], {})).toBe(false);
+    expect(sameAdjustmentProposal({ 0: "item" }, ["item"])).toBe(false);
+  });
+});
 data.scope_catalog = [
   {
     scope_kind: "SYSTEM_DISH",

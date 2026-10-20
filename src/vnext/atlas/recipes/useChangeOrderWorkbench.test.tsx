@@ -381,6 +381,73 @@ describe("Change Order delayed authority and failure boundaries", () => {
     await act(() => c.result.current.save());
     expect(c.calls.some((x) => x.name === "create")).toBe(false);
   });
+  it.each(["create", "supersede"] as const)(
+    "accepts an exact Preview after JSONB reorders keys for %s",
+    async (method) => {
+      const c = await setup();
+      const preview = c.api.preview;
+      c.api.preview = async (...args) => {
+        const result = await preview(...args);
+        if (result.kind === "success") {
+          const response = result.response.preview as Record<string, unknown>;
+          const original = response.proposed_adjustment as object;
+          const reordered = Object.fromEntries(
+            Object.entries(original).reverse(),
+          );
+          expect(reordered).toEqual(original);
+          expect(JSON.stringify(reordered)).not.toBe(JSON.stringify(original));
+          response.proposed_adjustment = reordered;
+        }
+        return result;
+      };
+      if (method === "create") await prepare(c);
+      else {
+        act(() => c.result.current.openCorrection(c.data.operator_rows[0]));
+        await waitFor(() => expect(c.result.current.targets).not.toBeNull());
+        await act(() => c.result.current.runPreview());
+        expect(c.result.current.preview?.can_save).toBe(true);
+      }
+      await act(() => c.result.current.save());
+      expect(c.calls.filter((call) => call.name === method)).toHaveLength(1);
+      const reviewed = c.calls.find((call) => call.name === "preview")!
+        .payload as {
+        proposed_adjustment: object;
+      };
+      const created = c.calls.find((call) => call.name === method)!.payload as {
+        payload: object;
+      };
+      expect(created.payload).toMatchObject(reviewed.proposed_adjustment);
+      expect(c.result.current.lock).toBeNull();
+    },
+  );
+  it.each(["nested evidence", "missing null", "extra key"])(
+    "rejects a reordered Preview with changed %s",
+    async (difference) => {
+      const c = await setup();
+      await prepare(c);
+      act(() => c.result.current.backToEdit());
+      const preview = c.api.preview;
+      c.api.preview = async (...args) => {
+        const result = await preview(...args);
+        if (result.kind === "success") {
+          const response = result.response.preview as Record<string, unknown>;
+          const proposal = Object.fromEntries(
+            Object.entries(response.proposed_adjustment as object).reverse(),
+          );
+          if (difference === "nested evidence")
+            proposal.source_evidence = { source_kind: "OTHER_SOURCE" };
+          else if (difference === "missing null") delete proposal.unit_id;
+          else proposal.unrequested = true;
+          response.proposed_adjustment = proposal;
+        }
+        return result;
+      };
+      await act(() => c.result.current.runPreview());
+      expect(c.result.current.preview).toBeNull();
+      await act(() => c.result.current.save());
+      expect(c.calls.some((call) => call.name === "create")).toBe(false);
+    },
+  );
   it("ignores late target responses after changing Dish", async () => {
     const c = await setup();
     let finish!: (r: AtlasRpcResult) => void;

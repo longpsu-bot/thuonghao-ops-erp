@@ -81,10 +81,19 @@ export async function certifyConnectedCorrections({
   };
   const action = async (label, scope = "body", aria = false) => {
     const expression = `(()=>[...document.querySelector(${JSON.stringify(scope)})?.querySelectorAll('button')??[]].find(b=>${aria ? "b.getAttribute('aria-label')" : "b.textContent.trim()"}===${JSON.stringify(label)}&&!b.disabled))()`;
-    await until(
-      () => evaluate(`Boolean(${expression})`),
-      `CORRECTION_READY_${label}`,
-    );
+    try {
+      await until(
+        () => evaluate(`Boolean(${expression})`),
+        `CORRECTION_READY_${label}`,
+      );
+    } catch (error) {
+      const state = await evaluate(
+        "({alerts:[...document.querySelectorAll('[role=alert]')].map(e=>e.innerText),dialogs:[...document.querySelectorAll('[role=dialog]')].map(e=>e.innerText.slice(0,1800)),text:document.body.innerText.slice(-2500)})",
+      );
+      throw new Error(`${error.message}: ${JSON.stringify(state)}`, {
+        cause: error,
+      });
+    }
     assert(
       await evaluate(
         `(()=>{const b=${expression};if(!b)return false;b.click();return true;})()`,

@@ -192,6 +192,38 @@ export const needsQuantity = (d: ChangeDraft) =>
   d.action === "ADD" ||
   d.action === "ADJUST_QUANTITY" ||
   (d.action === "REPLACE" && d.replaceQuantity);
+// JSON objects may arrive in PostgreSQL JSONB key order. Only object member
+// ordering is immaterial; field presence, values and array order remain exact.
+export function sameAdjustmentProposal(
+  left: JsonValue,
+  right: JsonValue,
+): boolean {
+  if (left === right) return true;
+  if (Array.isArray(left))
+    return (
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => sameAdjustmentProposal(value, right[index]))
+    );
+  if (
+    left === null ||
+    right === null ||
+    typeof left !== "object" ||
+    typeof right !== "object" ||
+    Array.isArray(right)
+  )
+    return false;
+  const keys = Object.keys(left);
+  return (
+    keys.length === Object.keys(right).length &&
+    keys.every(
+      (key) =>
+        Object.hasOwn(right, key) &&
+        sameAdjustmentProposal(left[key], right[key]),
+    )
+  );
+}
+
 export function proposalFor(
   d: ChangeDraft,
   data: RecipeAdjustmentWorkbenchData,
