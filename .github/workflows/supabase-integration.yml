@@ -349,6 +349,8 @@ jobs:
             .git/atlas-procurement-browser/report.json
             .git/atlas-procurement-browser/*.png
             .git/atlas-procurement-browser/*.zip
+            .git/atlas-procurement-browser/*.xlsx
+            .git/atlas-procurement-browser/*.pdf
 
       - name: Upload disposable connected Planning evidence
         if: always()

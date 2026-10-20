@@ -5,12 +5,20 @@ import { createRoot } from "react-dom/client";
 import { AtlasVNextProvider } from "../../src/vnext/atlas/AtlasVNextProvider";
 import { AtlasSessionGate } from "../../src/vnext/atlas/AtlasSessionGate";
 import { ProcurementWorkbench } from "../../src/vnext/atlas/procurement/ProcurementWorkbench";
+import { SchoolPxkWorkbench } from "../../src/vnext/atlas/dispatch/SchoolPxkWorkbench";
+import { SchoolFulfilmentWorkbench } from "../../src/vnext/atlas/reconciliation/SchoolFulfilmentWorkbench";
 import { getAtlasSupabaseClient } from "../../src/modules/atlas/connection/supabaseClient";
 import { readAtlasBrowserEnvironment } from "../../src/modules/atlas/connection/environment";
 import { useAtlasAuthSession } from "../../src/modules/atlas/connection/authSession";
 import { createAtlasRpcTransport } from "../../src/modules/atlas/connection/atlasRpc";
 import { createPurchaseReviewApi } from "../../src/modules/atlas/procurement/purchaseReviewApi";
 import { createSchoolCateringProcurementApi } from "../../src/modules/atlas/procurement/schoolCateringProcurementApi";
+import { createSchoolDispatchReleaseApi } from "../../src/modules/atlas/dispatch/schoolDispatchReleaseApi";
+import { createSchoolFulfilmentReconciliationApi } from "../../src/modules/atlas/dispatch/schoolFulfilmentReconciliationApi";
+import {
+  downloadSchoolDispatchXlsx,
+  downloadSchoolDispatchPdf,
+} from "../../src/modules/atlas/dispatch/schoolDispatchReleaseExports";
 import {
   downloadPurchaseOrderXlsx,
   downloadPurchaseOrderPdf,
@@ -39,6 +47,8 @@ function ConnectedProcurement() {
     return {
       purchaseReviewApi: createPurchaseReviewApi(transport),
       procurementApi: createSchoolCateringProcurementApi(transport),
+      dispatchApi: createSchoolDispatchReleaseApi(transport),
+      reconciliationApi: createSchoolFulfilmentReconciliationApi(transport),
     };
   }, []);
   return (
@@ -48,21 +58,39 @@ function ConnectedProcurement() {
         safeAuthError={auth.safeAuthError}
         onSignIn={auth.signIn}
       >
-        {auth.state.status === "authenticated" && (
-          <ProcurementWorkbench
-            {...apis}
-            authSubject={auth.state.authSubject}
-            initialServiceDate="2050-09-19"
-            ownerStage={
-              new URLSearchParams(location.search).get("stage") === "allocation"
-                ? "allocation"
-                : "orders"
-            }
-            onExportXlsx={downloadPurchaseOrderXlsx}
-            onExportPdf={downloadPurchaseOrderPdf}
-            onExportZip={downloadPurchaseOrderZip}
-          />
-        )}
+        {auth.state.status === "authenticated" &&
+          (new URLSearchParams(location.search).get("stage") === "pxk" ? (
+            <SchoolPxkWorkbench
+              api={apis.dispatchApi}
+              authSubject={auth.state.authSubject}
+              initialServiceDate="2050-09-19"
+              onExportXlsx={downloadSchoolDispatchXlsx}
+              onExportPdf={downloadSchoolDispatchPdf}
+            />
+          ) : new URLSearchParams(location.search).get("stage") ===
+            "reconciliation" ? (
+            <SchoolFulfilmentWorkbench
+              api={apis.reconciliationApi}
+              authSubject={auth.state.authSubject}
+              initialDateStart="2050-09-19"
+              initialDateEnd="2050-09-19"
+            />
+          ) : (
+            <ProcurementWorkbench
+              {...apis}
+              authSubject={auth.state.authSubject}
+              initialServiceDate="2050-09-19"
+              ownerStage={
+                new URLSearchParams(location.search).get("stage") ===
+                "allocation"
+                  ? "allocation"
+                  : "orders"
+              }
+              onExportXlsx={downloadPurchaseOrderXlsx}
+              onExportPdf={downloadPurchaseOrderPdf}
+              onExportZip={downloadPurchaseOrderZip}
+            />
+          ))}
       </AtlasSessionGate>
     </AtlasVNextProvider>
   );
