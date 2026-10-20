@@ -17,6 +17,10 @@ import JSZip from "jszip";
 import ExcelJS from "exceljs";
 import { readLocalSupabaseStatus } from "./local-supabase-status.mjs";
 import { cdp } from "./staging-planning-browser.mjs";
+import {
+  supplierQuantityFootprint,
+  schoolQuantityFootprint,
+} from "./atlas-procurement-browser-coverage.mjs";
 
 assert(
   process.env.GITHUB_ACTIONS === "true" ||
@@ -577,34 +581,15 @@ try {
         order.release_eligible,
     ),
   );
-  const quantityFootprint = (orders, schoolsByLine) =>
-    orders
-      .map((order) => ({
-        id: order.purchase_order_id,
-        supplier: order.supplier.supplier_id,
-        date: order.service_date,
-        lines: order.lines
-          .map((line) => ({
-            ingredient: line.ingredient.ingredient_id,
-            unit: line.unit.unit_id,
-            location: line.delivery_location.delivery_location_id,
-            quantity: line.ordered_quantity,
-            family: line.source.family_id,
-            schools: schoolsByLine[line.purchase_order_line_id]
-              .map((school) => ({
-                id: school.school_id,
-                location: school.delivery_location_id,
-                quantity: school.ordered_quantity,
-              }))
-              .sort((a, b) => a.id.localeCompare(b.id)),
-          }))
-          .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
-      }))
-      .sort((a, b) => a.id.localeCompare(b.id));
   assert.deepEqual(
-    quantityFootprint(before, expectedSchools),
-    quantityFootprint(initialOrders, initialSchools),
-    "Supported Draft regeneration must retain PO/source family/School scope and exact quantities.",
+    supplierQuantityFootprint(before),
+    supplierQuantityFootprint(initialOrders),
+    "Draft regeneration must preserve each PO's supplier/family/scope and exact quantity.",
+  );
+  assert.deepEqual(
+    schoolQuantityFootprint(before, expectedSchools),
+    schoolQuantityFootprint(initialOrders, initialSchools),
+    "Draft regeneration must preserve aggregate School/date/location/ingredient/Unit/family quantities across all suppliers.",
   );
   assert(
     before.some((order) =>

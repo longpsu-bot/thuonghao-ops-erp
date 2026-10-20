@@ -351,3 +351,15 @@ jobs:
             .git/atlas-procurement-browser/*.zip
             .git/atlas-procurement-browser/*.xlsx
             .git/atlas-procurement-browser/*.pdf
+
+      - name: Upload disposable connected Planning evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-connected-planning-${{ github.sha }}
+          include-hidden-files: true
+          if-no-files-found: ignore
+          path: |
+            .git/atlas-planning-browser/report.json
+            .git/atlas-planning-browser/*.png
+            .git/atlas-planning-browser/*.xlsx
