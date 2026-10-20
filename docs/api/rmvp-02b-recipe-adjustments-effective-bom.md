@@ -77,6 +77,7 @@ resolver and are never selected by `RECIPE-EFFECTIVE.v1`.
 - Context payload for `SYSTEM_INGREDIENT`, `SCHOOL`, and `SCHOOL_DISH`: existing explicit `school_id` impact-preview context
 - Optional correction payload: `replaces_adjustment_id`
 - Returns `preview` containing the normalized proposal, current `before`, hypothetical `after`, affected-line count, `can_save`, warnings, and blockers.
+- Preview proposal equality ignores JSON object member order, including PostgreSQL JSONB serialization order. The application must still verify exact field presence, values, types, nested source evidence and array order before freezing the review; omitted and explicit-null fields are distinct.
 - Effect: no write.
 
 For `SYSTEM_DISH`, the proposal's `dish_id` and `school_type_id` must exactly match the outer reviewed context. Preview resolves the exact typed released Recipe followed by `SYSTEM_INGREDIENT` and `SYSTEM_DISH` only. It does not select or accept a representative School, apply a School layer, or fall back to a nullable GENERAL Recipe. Both before and hypothetical after use this same system-only authority.

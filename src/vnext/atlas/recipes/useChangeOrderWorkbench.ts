@@ -25,6 +25,7 @@ import {
   newChangeDraft,
   previewRequest,
   proposalFor,
+  sameAdjustmentProposal,
   targetKey,
   validChangeDraft,
   validDate,
@@ -436,7 +437,7 @@ export function useChangeOrderWorkbench({
       parsed.school_type_id !== (ctx.system ? ctx.schoolTypeId : null) ||
       parsed.before.school_type_id !== ctx.schoolTypeId ||
       parsed.after.school_type_id !== ctx.schoolTypeId ||
-      JSON.stringify(parsed.proposed_adjustment) !== JSON.stringify(proposal)
+      !sameAdjustmentProposal(parsed.proposed_adjustment, proposal)
     ) {
       setMessage(
         "Kết quả kiểm tra tác động không khớp lựa chọn đã gửi. Hãy kiểm tra lại món, trường và ngày áp dụng rồi xem tác động lần nữa.",

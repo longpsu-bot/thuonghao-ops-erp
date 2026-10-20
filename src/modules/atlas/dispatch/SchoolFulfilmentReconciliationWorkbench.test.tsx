@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { MantineProvider } from "@mantine/core";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -19,7 +20,9 @@ import { SchoolFulfilmentReconciliationWorkbench } from "./SchoolFulfilmentRecon
 import type { SchoolFulfilmentReconciliationApi } from "./schoolFulfilmentReconciliationApi";
 import type { SchoolFulfilmentWorkbenchData } from "./schoolFulfilmentReconciliationModel";
 
-afterEach(cleanup);
+afterEach(async () => {
+  await act(async () => cleanup());
+});
 
 async function reviewData() {
   const result =
@@ -146,14 +149,18 @@ describe("School fulfilment reconciliation workbench", () => {
       target: { value: "mới" },
     });
     await waitFor(() => expect(getWorkbench).toHaveBeenCalledTimes(2));
-    resolveNewer({
-      kind: "success",
-      response: newer as unknown as AtlasSuccessEnvelope,
+    await act(async () => {
+      resolveNewer({
+        kind: "success",
+        response: newer as unknown as AtlasSuccessEnvelope,
+      });
     });
     expect(await screen.findByText("Trường mới")).toBeVisible();
-    resolveOlder({
-      kind: "success",
-      response: older as unknown as AtlasSuccessEnvelope,
+    await act(async () => {
+      resolveOlder({
+        kind: "success",
+        response: older as unknown as AtlasSuccessEnvelope,
+      });
     });
     await waitFor(() => expect(screen.queryByText("Trường cũ")).toBeNull());
   });
