@@ -1816,14 +1816,17 @@ select is(
     'policy_count', 689,
     'policy_catalog_md5', 'd2a7ef8da79571431cbd60b93bd2acdf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 369,
-    -- Procurement adds fifteen private context readers; original owners/configuration remain pinned.
-    'private_function_catalog_md5', '0e3026537788b5de2f7c5248151ba18f',
+    'private_function_count', 370,
+    -- Reconciliation adds one read-runtime-only context helper. Independently
+    -- projected from the unchanged369-function baseline plus its exact signature,
+    -- owner/definer/search-path row; every original catalog row stays pinned.
+    'private_function_catalog_md5', '854e985528db7425b6eb1793bdef82d4',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
-    -- Twenty-nine new target grants are internal EXECUTE only; browser grants remain unchanged.
-    'positive_target_grant_count', 1908,
-    'positive_target_grant_md5', 'f8d849bc4a0545b2af9311e041bdd355',
+    -- Exactly one added owner EXECUTE grant, not grantable, to atlas_read_runtime.
+    -- Baseline1908 grants plus that precise tuple; browser grants remain unchanged.
+    'positive_target_grant_count', 1909,
+    'positive_target_grant_md5', '3be94aca0b468cc57ecb34abd98bba06',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,
