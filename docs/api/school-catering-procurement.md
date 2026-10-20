@@ -1,5 +1,13 @@
 # School-Catering Procurement API Contract
 
+## Corrected-date PO release read parity — 21 October 2026
+
+The existing `get_school_catering_purchase_orders` read now applies K2's existing complete-date document frontier to represented Draft dates in the exact `REOPENED` / previously released single-date Need branch. A target can remain `DRAFT_CURRENT` while another Supplier's stale/missing document blocks its release. In that case `release_eligible` and `allowed_actions.release` are false, with generic date-prefixed prerequisite guidance in existing blocker/disabled-reason arrays. Supplier/status/search filters cannot remove the whole-date prerequisite; they still limit returned documents and never disclose private frontier reasons or hidden identities. A valid replacement frontier remains eligible under all existing per-document gates. Other dates, ordinary initial release, official snapshots and export eligibility retain their existing meanings.
+
+This is an advisory read repair, not a new commitment rule or a new public signature. The writer still independently rechecks the complete source, Actor, scope, Supplier and date frontier. No automatic allocation acceptance, Preparation, Draft regeneration, release or retry is introduced. The read evaluates the existing private helper once per represented corrected Draft date; the existing read runtime receives only that helper's non-grantable EXECUTE privilege, with no browser grant or budget increase.
+
+Rollback uses a reviewed forward migration restoring the prior PO read and revoking only the added private read-runtime grant; the existing writer gate stays enforced. No operational history or released document is rewritten. Focused tests and connected disposable mixed-Draft regeneration/release evidence are recorded in the [stabilization ledger](../testing/atlas-functional-stabilization-2026-10-20.md).
+
 ## Allocation Unit display — 21 October 2026
 
 The existing confirmed-allocation read adds optional current `unit_name` display metadata to every returned row, including retained Handoff rows. Existing `unit_id`, `unit_code`, quantities, contribution/source bindings, order and allowed actions remain authoritative and unchanged. The Allocation list/editor use this name for imported technical Unit identifiers, applying the same presentation policy as Draft POs; standard codes such as `kg` remain readable as before. A missing name is explicit and does not introduce a new allocation prerequisite. Released PO/PXK documents continue to use their own immutable snapshots.

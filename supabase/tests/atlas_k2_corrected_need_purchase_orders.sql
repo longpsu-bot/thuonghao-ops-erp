@@ -1210,6 +1210,11 @@ select ok((select bool_and(row->>'state'='BLOCKED'
     cross join lateral jsonb_array_elements(response->'rows') row
     where name='b1_both_drafts_pxk_read'),
   'PXK stays blocked until both Supplier commitments are explicitly current');
+select ok((select bool_and((po->>'release_eligible')::boolean
+    and (po#>>'{allowed_actions,release}')::boolean) from k2_results
+    cross join lateral jsonb_array_elements(response->'purchase_orders') po
+    where name='b1_both_drafts_po_read' and po->>'status'='DRAFT'),
+  'complete corrected-date frontier exposes both Drafts as releasable');
 select is((select count(*) from k2_results where name like 'b1_draft002:%'
   and response->>'success'='true'),2::bigint,'both Suppliers receive complete replacement Drafts');
 select ok(atlas_core.school_catering_po_draft_is_stale(
@@ -1258,9 +1263,31 @@ from k2_requests where name='b1_po002:'||pg_temp.ng_id(61)
 set local role authenticated;
 insert into k2_results select 'b1_omitted_supplier_release',atlas_api.release_school_catering_purchase_order(request)
 from k2_requests where name='b1_po002:'||pg_temp.ng_id(61);
+insert into k2_results values('b1_omitted_supplier_read',pg_temp.k3_po_read());
+insert into k2_results values('b1_omitted_filtered_read',atlas_api.get_school_catering_purchase_orders(jsonb_build_object(
+  'contract_version','SCHOOL-CATERING-PROCUREMENT.v1','correlation_id',gen_random_uuid(),
+  'requested_by_auth_subject',current_setting('request.jwt.claim.sub',true),
+  'payload',jsonb_build_object('date_start','2050-09-19','date_end','2050-09-19',
+    'supplier_ids',jsonb_build_array(pg_temp.ng_id(61)),'statuses',jsonb_build_array('DRAFT'),'search',null))));
 reset role;
 select response->>'error_code' code from k2_results where name='b1_omitted_supplier_release'
 \gset k3_omitted_release_
+select bool_and(po->>'release_eligible'='false'
+    and po#>>'{allowed_actions,release}'='false'
+    and jsonb_array_length(po->'disabled_reasons')>0)::text denied,
+    (select jsonb_array_length(response->'blockers')>0 from k2_results
+      where name='b1_omitted_supplier_read')::text explained
+from k2_results cross join lateral jsonb_array_elements(response->'purchase_orders') po
+where name='b1_omitted_supplier_read' and po->>'status'='DRAFT'
+\gset k3_omitted_read_
+select (jsonb_array_length(response->'purchase_orders')=1
+    and response#>>'{purchase_orders,0,commitment_state}'='DRAFT_CURRENT'
+    and response#>>'{purchase_orders,0,allowed_actions,release}'='false'
+    and response#>>'{purchase_orders,0,release_eligible}'='false')::text denied,
+    (response->'blockers'=jsonb_build_array(
+      '19/09/2050: Cần chuẩn bị đầy đủ đơn mua theo phân bổ hiện tại trước khi phát hành. Kiểm tra các đơn Cần cập nhật hoặc trở lại Phân bổ NCC.'))::text generic
+from k2_results where name='b1_omitted_filtered_read'
+\gset k3_omitted_filtered_
 rollback to savepoint b1_omitted_supplier;
 select is(:'k3_omitted_allocation_success'::text,'true',
   'omitted-Supplier scenario uses an explicit Save in a different family');
@@ -1268,6 +1295,14 @@ select is(:'k3_omitted_draft_stale'::text,'false',
   'target Supplier Draft itself remains current despite the other-family change');
 select is(:'k3_omitted_release_code'::text,'PREPARATION_BLOCKED',
   'final Release rejects the missing Supplier/date document despite current target totals');
+select is(:'k3_omitted_read_denied'::text,'true',
+  'public PO read denies every Draft on a blocked corrected date, including the current target');
+select is(:'k3_omitted_read_explained'::text,'true',
+  'public PO read explains the whole-date prerequisite before an operator submits release');
+select is(:'k3_omitted_filtered_denied'::text,'true',
+  'Supplier/status filter cannot hide the complete-date prerequisite from the current target');
+select is(:'k3_omitted_filtered_generic'::text,'true',
+  'filtered read reveals only the generic release prerequisite, not hidden Supplier/frontier details');
 
 -- Inherited immutable guard rejects contribution UPDATE before touching data;
 -- its existing 42703 diagnostic is outside this task's historical-guard scope.

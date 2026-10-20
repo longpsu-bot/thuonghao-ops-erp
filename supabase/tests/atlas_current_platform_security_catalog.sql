@@ -1823,10 +1823,11 @@ select is(
     'private_function_catalog_md5', '854e985528db7425b6eb1793bdef82d4',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
-    -- Exactly one added owner EXECUTE grant, not grantable, to atlas_read_runtime.
-    -- Baseline1908 grants plus that precise tuple; browser grants remain unchanged.
-    'positive_target_grant_count', 1909,
-    'positive_target_grant_md5', '3be94aca0b468cc57ecb34abd98bba06',
+    -- Baseline1909 plus exactly the private whole-date frontier EXECUTE grant
+    -- to atlas_read_runtime (not grantable), independently projected before install.
+    -- Public/browser grants, owners and every original row remain pinned.
+    'positive_target_grant_count', 1910,
+    'positive_target_grant_md5', '45371989e6b364872c64436d121ffd7d',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

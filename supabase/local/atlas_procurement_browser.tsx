@@ -162,7 +162,9 @@ function ConnectedProcurement() {
             <ProcurementWorkbench
               {...apis}
               authSubject={auth.state.authSubject}
-              initialServiceDate="2050-09-19"
+              initialServiceDate={
+                new URLSearchParams(location.search).get("date") ?? "2050-09-19"
+              }
               ownerStage={
                 new URLSearchParams(location.search).get("stage") ===
                 "allocation"
