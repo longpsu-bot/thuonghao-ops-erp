@@ -76,8 +76,8 @@ export async function certifyMasterSourceAuthoring({
   };
   const input = (selector, value, kind) =>
     evaluate(
-      kind === "textarea"
-        ? `(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled)throw Error('AUTHORING_INPUT_DISABLED');e.focus();Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));e.blur();})()`
+      kind === "textarea" || kind === "combobox"
+        ? `(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled)throw Error('AUTHORING_INPUT_DISABLED');e.focus();Object.getOwnPropertyDescriptor(${kind === "textarea" ? "HTMLTextAreaElement" : "HTMLInputElement"}.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));${kind === "textarea" ? "e.blur();" : ""}})()`
         : controlledInputExpression(selector, value, kind),
     );
   const field = async (scope, label, value) => {
@@ -106,6 +106,10 @@ export async function certifyMasterSourceAuthoring({
     await field(scope, label, value);
     return value;
   };
+  const fieldValue = (scope, label) =>
+    evaluate(
+      `(()=>{const root=document.querySelector(${JSON.stringify(scope)});const l=[...root?.querySelectorAll('label')??[]].find(l=>l.textContent.replaceAll('*','').trim()===${JSON.stringify(label)});return (l?.control??l?.parentElement.querySelector('input,textarea,select'))?.value;})()`,
+    );
   const readAfter = async (name, original, read, predicate) => {
     await until(
       () => receipts(name) === original + 1,
@@ -202,6 +206,16 @@ export async function certifyMasterSourceAuthoring({
       .length,
     1,
   );
+  await action(`Xem / sửa ${supplierName}`, "body", true);
+  assert.equal(
+    await fieldValue(supplierScope, "Tên nhà cung ứng"),
+    supplierName,
+  );
+  assert.equal(
+    await fieldValue(supplierScope, "Mã NCC trên chứng từ"),
+    "BROWSER-SUPPLIER",
+  );
+  assert.equal(await fieldValue(supplierScope, "Email"), "operator@local.test");
 
   await open("ingredients", 'section[aria-label="Nguyên liệu"]');
   await action("Tạo nguyên liệu");
@@ -239,6 +253,57 @@ export async function certifyMasterSourceAuthoring({
         `document.body.innerText.includes(${JSON.stringify(ingredientName)})`,
       ),
     "AUTHORING_INGREDIENT_REOPEN",
+  );
+  await action(`Xem / sửa ${ingredientName}`, "body", true);
+  assert.equal(
+    await fieldValue(ingredientScope, "Tên nguyên liệu"),
+    ingredientName,
+  );
+  assert.equal(await fieldValue(ingredientScope, "Đơn vị mua"), unitId);
+  assert.equal(await fieldValue(ingredientScope, "Loại nguyên liệu"), typeId);
+  assert.equal(await fieldValue(ingredientScope, "Nhóm đặt hàng"), groupId);
+  assert.equal(
+    (await fieldValue(ingredientScope, "Bước làm tròn mặc định")).replace(
+      ",",
+      ".",
+    ),
+    "0.1",
+  );
+  const updatesBeforeDiscard = receipts("update_ingredient");
+  const ingredientBeforeDiscard = (await master()).ingredients.find(
+    (i) => i.ingredient_id === ingredient.ingredient_id,
+  );
+  await field(ingredientScope, "Tên nguyên liệu", "Disposable discarded edit");
+  await action("Đóng", ingredientScope);
+  await action("Tiếp tục chỉnh sửa", "[role=dialog]");
+  assert.equal(
+    await fieldValue(ingredientScope, "Tên nguyên liệu"),
+    "Disposable discarded edit",
+  );
+  await until(
+    () => evaluate("!document.querySelector('[role=dialog]')"),
+    "AUTHORING_DIRTY_CANCEL",
+  );
+  await action("Đóng", ingredientScope);
+  await action("Bỏ thay đổi", "[role=dialog]");
+  await until(
+    () =>
+      evaluate(`!document.querySelector(${JSON.stringify(ingredientScope)})`),
+    "AUTHORING_DIRTY_DISCARD",
+  );
+  await action(`Xem / sửa ${ingredientName}`, "body", true);
+  assert.equal(
+    await fieldValue(ingredientScope, "Tên nguyên liệu"),
+    ingredientName,
+  );
+  assert.equal(receipts("create_ingredient"), ingredientReceipts + 1);
+  assert.equal(receipts("update_ingredient"), updatesBeforeDiscard);
+  assert.deepEqual(
+    (await master()).ingredients.find(
+      (i) => i.ingredient_id === ingredient.ingredient_id,
+    ),
+    ingredientBeforeDiscard,
+    "Cancel/Discard must not persist any Ingredient change.",
   );
 
   await open("recipes", 'section[aria-label="Công thức"]');
@@ -360,16 +425,21 @@ export async function certifyMasterSourceAuthoring({
     "pantry",
     'input[aria-label="Trường cần thêm hàng"]:not(:disabled)',
   );
-  await input('input[aria-label="Trường cần thêm hàng"]', school.school_name);
+  await input(
+    'input[aria-label="Trường cần thêm hàng"]',
+    school.school_name,
+    "combobox",
+  );
+  const schoolOption = `[role=option][id$="-school-${school.school_id}"]:not([aria-disabled=true])`;
   await until(
     () =>
       evaluate(
-        `Boolean([...document.querySelectorAll('[role=option]')].find(e=>e.textContent.includes(${JSON.stringify(school.school_name)})))`,
+        `Boolean(document.querySelector(${JSON.stringify(schoolOption)}))`,
       ),
     "AUTHORING_PANTRY_SCHOOL",
   );
   await evaluate(
-    `(()=>{const e=[...document.querySelectorAll('[role=option]')].find(e=>e.textContent.includes(${JSON.stringify(school.school_name)}));e.click();})()`,
+    `document.querySelector(${JSON.stringify(schoolOption)}).click()`,
   );
   const pantryScope = 'section[aria-label="Hàng đặt riêng"]';
   for (const [index, purpose, quantity] of [
@@ -379,16 +449,17 @@ export async function certifyMasterSourceAuthoring({
     await field(pantryScope, "Nguồn của dòng mới", purpose);
     await action("+ Thêm dòng");
     const chooser = `input[aria-label="Nguyên liệu dòng ${index}"]`;
-    await input(chooser, ingredientName);
+    await input(chooser, ingredientName, "combobox");
+    const ingredientOption = `[role=listbox][aria-label="Nguyên liệu dòng ${index}"] [role=option][id$="-option-${ingredient.ingredient_id}"]:not([aria-disabled=true])`;
     await until(
       () =>
         evaluate(
-          `Boolean(document.querySelector('[role=listbox][aria-label="Nguyên liệu dòng ${index}"] [role=option]'))`,
+          `Boolean(document.querySelector(${JSON.stringify(ingredientOption)}))`,
         ),
       "AUTHORING_PANTRY_INGREDIENT",
     );
     await evaluate(
-      `document.querySelector('[role=listbox][aria-label="Nguyên liệu dòng ${index}"] [role=option]').click()`,
+      `document.querySelector(${JSON.stringify(ingredientOption)}).click()`,
     );
     await input(`input[aria-label="Số lượng dòng ${index}"]`, quantity);
   }

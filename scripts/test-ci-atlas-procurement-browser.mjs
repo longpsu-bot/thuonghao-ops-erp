@@ -1388,6 +1388,30 @@ try {
     sql,
     url,
   });
+  const officialOrders = (orders) =>
+    orders.map((order) => ({
+      id: order.purchase_order_id,
+      number: order.document_number,
+      version: order.version,
+      revision: order.current_revision,
+      lines: order.lines,
+    }));
+  assert.deepEqual(
+    officialOrders(await read()),
+    officialOrders(after),
+    "Master/source authoring must preserve the original official POs.",
+  );
+  const finalDispatches = await readDispatch();
+  for (const document of dispatches)
+    assert.deepEqual(
+      finalDispatches.find(
+        (row) =>
+          row.school_id === document.school_id &&
+          row.delivery_location_id === document.delivery_location_id,
+      )?.current_release,
+      document,
+      "Master/source authoring must preserve each complete frozen School PXK.",
+    );
   const report = {
     status: "PASS",
     source: execFileSync("git", ["rev-parse", "HEAD"], {
