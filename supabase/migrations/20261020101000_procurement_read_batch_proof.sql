@@ -665,6 +665,9 @@ end $read$;
 -- Reuse the membership plan instead of rebuilding it for each large context.
 alter function atlas_core.procurement_read_school_catering_po_draft_is_stale(uuid,uuid,jsonb)
   set plan_cache_mode='force_generic_plan';
+-- Avoid repeated order-line scans when new orders have small row estimates.
+alter function atlas_core.procurement_read_school_catering_po_draft_is_stale(uuid,uuid,jsonb)
+  set enable_nestloop='off';
 
 -- Restore the exact pre-existing authoring privilege/membership posture.
 set local role atlas_owner;

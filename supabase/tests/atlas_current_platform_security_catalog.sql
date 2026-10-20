@@ -1818,7 +1818,7 @@ select is(
     'rmvp_05_unit_lock_policy_count', 1,
     'private_function_count', 368,
     -- Procurement adds fourteen private context readers; existing function metadata is unchanged.
-    'private_function_catalog_md5', 'a1cca32e4d87fb5a1b9ddd9057a3e716',
+    'private_function_catalog_md5', '80bec84ba496ce39ccf08b7ad9f9270e',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
     -- Twenty-six new target grants are internal EXECUTE only; browser grants remain unchanged.
@@ -1838,11 +1838,11 @@ select is(
 select ok((select proconfig @> array['search_path=""','join_collapse_limit=1']
   from pg_proc where oid='atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure),
   'D047 proof preserves its fixed search path and bounds only join planning');
-select ok((select proconfig @> array['search_path=""','plan_cache_mode=force_generic_plan']
+select ok((select proconfig @> array['search_path=""','plan_cache_mode=force_generic_plan','enable_nestloop=off']
     and not prosecdef and provolatile='s'
     and pg_get_userbyid(proowner)='atlas_owner'
   from pg_proc where oid='atlas_core.procurement_read_school_catering_po_draft_is_stale(uuid,uuid,jsonb)'::regprocedure),
-  'private PO read reuses its membership plan without changing invoker authority');
+  'private PO read bounds order-line scans without changing invoker authority');
 select * from finish();
 
 rollback;
