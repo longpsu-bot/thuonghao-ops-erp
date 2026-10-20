@@ -81,8 +81,12 @@ export async function certifyMasterSourceAuthoring({
         : controlledInputExpression(selector, value, kind),
     );
   const field = async (scope, label, value) => {
-    const selector = await evaluate(
-      `(()=>{const root=document.querySelector(${JSON.stringify(scope)});const label=[...root.querySelectorAll('label')].find(l=>l.textContent.replaceAll('*','').trim()===${JSON.stringify(label)});const e=label?.control??label?.parentElement.querySelector('input,textarea,select');if(!e||e.disabled)return null;e.setAttribute('data-certification-field','active');return e.tagName.toLowerCase();})()`,
+    const selector = await until(
+      () =>
+        evaluate(
+          `(()=>{const root=document.querySelector(${JSON.stringify(scope)});const label=[...root?.querySelectorAll('label')??[]].find(l=>l.textContent.replaceAll('*','').trim()===${JSON.stringify(label)});const e=label?.control??label?.parentElement.querySelector('input,textarea,select');if(!e||e.disabled)return null;e.setAttribute('data-certification-field','active');return e.tagName.toLowerCase();})()`,
+        ),
+      `AUTHORING_FIELD_READY_${label}`,
     );
     assert(selector, `Actual field missing: ${scope}/${label}`);
     await input(

@@ -21,6 +21,7 @@ export async function certifyConnectedCorrections({
         "get_pantry_source_workbench",
         "get_dish_recipe_operator_workbench",
         "get_recipe_adjustment_workbench",
+        "get_recipe_adjustment_operator_workbench",
         "resolve_system_effective_recipe_composition",
       ].includes(name),
     );
@@ -552,13 +553,94 @@ export async function certifyConnectedCorrections({
   assert.equal(successor.quantity_per_basis, 3.75);
   assert.equal(successor.reason_note, "Disposable governance correction");
   await checkEffective(date, 3.75, corrected.current_revision_id);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const datePart = (kind) => parts.find((part) => part.type === kind).value;
+  const referenceDate = `${datePart("year")}-${datePart("month")}-${datePart("day")}`;
+  const ledger = await rpc(
+    "get_recipe_adjustment_operator_workbench",
+    "RMVP-02B.v2",
+    { as_of_date: referenceDate },
+  );
+  assert.equal(ledger.reference_date, referenceDate);
+  const scheduled = ledger.operator_rows.find(
+    (row) => row.adjustment_id === root.adjustment_id,
+  );
+  assert.equal(scheduled.temporal_state, "SCHEDULED");
+  assert.equal(scheduled.is_effective_now, false);
+  assert.equal(scheduled.version, corrected.version);
+  assert.equal(scheduled.current_revision_id, corrected.current_revision_id);
+  // Before first effect the backend deliberately displays the first scheduled
+  // content; correction editing uses the separate latest command revision.
+  assert.equal(
+    scheduled.content_revision.revision_id,
+    root.current_revision_id,
+  );
+  assert.equal(scheduled.content_revision.quantity_per_basis, 3.5);
+  assert.equal(
+    scheduled.command_revision.revision_id,
+    corrected.current_revision_id,
+  );
+  assert.equal(scheduled.command_revision.quantity_per_basis, 3.75);
+  assert.equal(scheduled.command_revision.reason_note, successor.reason_note);
+  assert.deepEqual(
+    scheduled.history.map((revision) => ({
+      id: revision.revision_id,
+      event: revision.business_event_kind,
+      quantity: revision.quantity_per_basis,
+      reason: revision.reason_note,
+    })),
+    [
+      {
+        id: successor.revision_id,
+        event: "CORRECTED",
+        quantity: 3.75,
+        reason: successor.reason_note,
+      },
+      {
+        id: root.current_revision_id,
+        event: "CREATED",
+        quantity: 3.5,
+        reason: root.revisions[0].reason_note,
+      },
+    ],
+  );
   await open("adjustments");
   await chooseRoot();
   assert(
     await evaluate(
-      "document.querySelector('[aria-label=\"Chi tiết lệnh\"]').innerText.includes('3,75')",
+      "document.querySelector('[aria-label=\"Chi tiết lệnh\"]').innerText.includes('Định lượng: 3,5 kg')&&document.querySelector('[aria-label=\"Chi tiết lệnh\"]').innerText.includes('Disposable governance correction')",
     ),
   );
+  await action("Sửa lệnh", '[aria-label="Chi tiết lệnh"]');
+  await until(
+    () =>
+      evaluate(
+        `Boolean(document.querySelector(${JSON.stringify(correctForm)}))`,
+      ),
+    "CORRECTION_REOPEN_EDITOR",
+  );
+  assert.deepEqual(
+    await evaluate(
+      `(()=>{const form=document.querySelector(${JSON.stringify(correctForm)});return ['Định lượng mới','Lý do điều chỉnh'].map(text=>{const label=[...form.querySelectorAll('label')].find(label=>label.textContent.trim()===text);return (label?.control??label?.parentElement.querySelector('input,textarea')).value;});})()`,
+    ),
+    ["3.75", successor.reason_note],
+    "Reopened correction must use the latest exact command payload.",
+  );
+  await action("Đóng lệnh", '[aria-label="Chi tiết lệnh"]', true);
+  await until(
+    () => evaluate(`!document.querySelector(${JSON.stringify(correctForm)})`),
+    "CORRECTION_UNCHANGED_EDITOR_CLOSED",
+  );
+  assert.equal(
+    count("supersede_recipe_composition_adjustment"),
+    correctionReceipts + 1,
+  );
+  await chooseRoot();
   await action("Hủy lệnh", '[aria-label="Chi tiết lệnh"]');
   await action("Mở lịch — Hủy từ ngày", '[role="dialog"]', true);
   const cancelDay = '[data-part="table-cell-trigger"][data-value="2050-09-27"]';
