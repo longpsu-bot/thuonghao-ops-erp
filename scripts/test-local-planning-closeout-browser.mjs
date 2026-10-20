@@ -24,7 +24,7 @@ import {
   assertFirstSaveTransition,
   assertReopenedReview,
   preSaveGateStateExpression,
-  editableConfirmedNeedCandidateExpression,
+  controlledInputExpression,
   minimalPlanningAdjustment,
 } from "./staging-planning-browser.mjs";
 
@@ -155,6 +155,68 @@ export async function certifyLocalCloseoutBrowser() {
   );
   assert.equal(before.lines.length, 248);
   assert.equal(before.batch_version, 2);
+  assert(/^[0-9a-f-]{36}$/.test(state.batch));
+  const revisionFacts = () =>
+    localSql(`begin read only;
+    select jsonb_object_agg(r.confirmed_need_line_id, jsonb_build_object(
+      'id',r.confirmed_need_line_revision_id,'number',r.revision_number,
+      'predecessor',r.predecessor_revision_id,
+      'sources',(select jsonb_agg(
+        (to_jsonb(c) - array['confirmed_need_line_revision_contribution_id','confirmed_need_line_revision_id','created_at'])
+        || jsonb_build_object('source_theoretical_quantity',c.source_theoretical_quantity::text,
+          'controlled_contribution_quantity',c.controlled_contribution_quantity::text)
+        order by c.theoretical_need_line_id)
+        from atlas_planning.confirmed_need_line_revision_contributions c
+        where c.confirmed_need_line_revision_id=r.confirmed_need_line_revision_id)))
+    from atlas_planning.confirmed_need_line_revisions r
+    where r.confirmed_need_batch_id='${state.batch}'::uuid and r.is_current;
+    commit;`)[0];
+  const originalRevisionFacts = revisionFacts();
+  const assertRevisionTransition = (
+    priorReview,
+    nextReview,
+    priorFacts,
+    adjustedId,
+  ) => {
+    const nextFacts = revisionFacts();
+    assert.equal(Object.keys(nextFacts).length, 248);
+    for (const line of nextReview.lines) {
+      const prior = priorReview.lines.find(
+        (value) => value.confirmed_need_line_id === line.confirmed_need_line_id,
+      );
+      const id = line.confirmed_need_line_id;
+      const facts = nextFacts[id];
+      assert(
+        prior &&
+          facts &&
+          Array.isArray(facts.sources) &&
+          facts.sources.length > 0,
+      );
+      assert.equal(facts.id, line.current_revision_id);
+      assert.equal(facts.number, line.current_revision_number);
+      assert.deepEqual(
+        facts.sources,
+        originalRevisionFacts[id].sources,
+        "Every exact source membership, scope, Unit and contribution quantity survives Save.",
+      );
+      if (id === adjustedId) {
+        assert.notEqual(facts.id, priorFacts[id].id);
+        assert.equal(facts.predecessor, priorFacts[id].id);
+        assert.equal(facts.number, priorFacts[id].number + 1);
+      } else {
+        assert.deepEqual(
+          facts,
+          priorFacts[id],
+          "Untouched lines retain their exact revision and sources.",
+        );
+      }
+      const decision = line.decision_history.find(
+        (value) => value.decision_id === line.current_decision_id,
+      );
+      assert.equal(decision?.revision_id, facts.id);
+    }
+    return nextFacts;
+  };
   let saves = 0;
   Object.assign(process.env, {
     VITE_ATLAS_ENVIRONMENT: "local",
@@ -293,12 +355,65 @@ export async function certifyLocalCloseoutBrowser() {
       }, "248_rows");
     };
     await open();
+    assert(
+      !(await workbookReady()),
+      "Unsaved initial confirmations must keep workbook actions disabled.",
+    );
+    assert.deepEqual(receiptState(), {
+      handoffs: 0,
+      save_receipts: 0,
+      decisions: 0,
+    });
+    const initialEdit = await prepareConfirmedNeedEdit({ evaluate, before });
+    await clickBusinessActionOnce({
+      evaluate,
+      scope: 'section[aria-label="Xác nhận nhu cầu"]',
+      label: "Lưu",
+      gate: "initial_save_once",
+    });
+    saves++;
+    await until(
+      () => receiptState().save_receipts === 1,
+      "initial_save_receipt",
+    );
+    await until(
+      () =>
+        evaluate(
+          "Boolean(document.querySelector('button[aria-label=\"Mở lịch — Khoảng ngày\"]:not(:disabled)'))",
+        ),
+      "initial_save_readback_finished",
+    );
+    const confirmed = await readReview();
+    const decisions = assertFirstSaveTransition({
+      before,
+      after: confirmed,
+      adjustedLineId: initialEdit.line.confirmed_need_line_id,
+      adjustedQuantity: initialEdit.proposed,
+      note: initialEdit.note,
+    });
+    const confirmedRevisionFacts = assertRevisionTransition(
+      before,
+      confirmed,
+      originalRevisionFacts,
+      initialEdit.line.confirmed_need_line_id,
+    );
+    assert.deepEqual(
+      receiptState(),
+      { handoffs: 0, save_receipts: 1, decisions: 248 },
+      "Preserve the original one-Save/248-decision contract before the worksheet journey.",
+    );
+    await open();
+    assertReopenedReview(confirmed, await readReview());
+    assert.equal(
+      (await evaluate(preSaveGateStateExpression())).save_present,
+      false,
+    );
     await until(workbookReady, "shopping_list_ready");
     const originalFacts = receiptState();
     assert.deepEqual(originalFacts, {
       handoffs: 0,
-      save_receipts: 0,
-      decisions: 0,
+      save_receipts: 1,
+      decisions: 248,
     });
     assert(await click("Xuất Phiếu đi chợ"));
     const downloaded = await until(
@@ -321,7 +436,7 @@ export async function certifyLocalCloseoutBrowser() {
     );
     assert.deepEqual(
       await readReview(),
-      before,
+      confirmed,
       "Unchanged import must preserve every source and quantity.",
     );
     assert.deepEqual(
@@ -329,14 +444,13 @@ export async function certifyLocalCloseoutBrowser() {
       originalFacts,
       "Import alone must never write decisions/receipts.",
     );
-    const candidate = await evaluate(
-      editableConfirmedNeedCandidateExpression(),
-    );
-    assert(candidate);
-    const target = before.lines.find(
-      (line) => line.confirmed_need_line_id === candidate.lineId,
+    const target = confirmed.lines.find(
+      (line) =>
+        line.current_decision_kind === "UNCHANGED_PROPOSAL_ACCEPTED" &&
+        line.effective_policy?.status === "ACTIVE",
     );
     assert(target);
+    const candidate = { lineId: target.confirmed_need_line_id };
     const proposed = minimalPlanningAdjustment(target);
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(readFileSync(originalWorkbook));
@@ -368,7 +482,35 @@ export async function certifyLocalCloseoutBrowser() {
       "The actual workbook import must propose the selected quantity.",
     );
     const proposedState = await evaluate(preSaveGateStateExpression());
-    assert.equal(proposedState.quantity_delta_rows, 1);
+    const importedQuantities = await evaluate(
+      `(()=>[...document.querySelectorAll('section[aria-label="Xác nhận nhu cầu"] tr[data-confirmed-need-line-id]')].map(row=>({id:row.getAttribute('data-confirmed-need-line-id'),quantity:row.querySelector('input[aria-label^="Số lượng xác nhận"]')?.value})))()`,
+    );
+    assert.equal(importedQuantities.length, 248);
+    const normalized = (value) =>
+      String(value)
+        .replace(",", ".")
+        .replace(/(\.\d*?)0+$/, "$1")
+        .replace(/\.$/, "");
+    const confirmedQuantities = new Map(
+      confirmed.lines.map((line) => [
+        line.confirmed_need_line_id,
+        normalized(line.confirmed_quantity_after),
+      ]),
+    );
+    assert.deepEqual(
+      importedQuantities
+        .filter(
+          (row) => normalized(row.quantity) !== confirmedQuantities.get(row.id),
+        )
+        .map((row) => row.id),
+      [candidate.lineId],
+      "The import changes only its selected target relative to the saved baseline; the first saved adjustment remains intact.",
+    );
+    assert.equal(
+      proposedState.quantity_delta_rows,
+      2,
+      "Both confirmed and proposed adjustments remain visible against the original proposal.",
+    );
     assert.equal(
       proposedState.save_enabled,
       false,
@@ -380,18 +522,41 @@ export async function certifyLocalCloseoutBrowser() {
       "Modified import remains a local proposal.",
     );
     console.log("Local browser: explicit adjustment reason/note");
-    const edit = await prepareConfirmedNeedEdit({ evaluate, before });
-    assert.equal(edit.line.confirmed_need_line_id, candidate.lineId);
-    assert.equal(edit.proposed, proposed.replace(",", "."));
+    const importedRow = `section[aria-label="Xác nhận nhu cầu"] tr[data-confirmed-need-line-id="${candidate.lineId}"]`;
+    await evaluate(
+      controlledInputExpression(
+        `${importedRow} select[aria-label^="Lý do"]`,
+        "OPERATIONAL_QUANTITY_ADJUSTMENT",
+        "select",
+      ),
+    );
+    await until(
+      () =>
+        evaluate(
+          `Boolean(document.querySelector(${JSON.stringify(`${importedRow} input[aria-label^="Ghi chú"]:not(:disabled)`)}))`,
+        ),
+      "imported_note_ready",
+    );
+    const importedNote = "Disposable connected worksheet adjustment";
+    await evaluate(
+      controlledInputExpression(
+        `${importedRow} input[aria-label^="Ghi chú"]`,
+        importedNote,
+      ),
+    );
+    await until(
+      async () => (await evaluate(preSaveGateStateExpression())).save_enabled,
+      "imported_adjustment_ready",
+    );
     console.log("Local browser: save");
     await clickBusinessActionOnce({
       evaluate,
       scope: 'section[aria-label="Xác nhận nhu cầu"]',
       label: "Lưu",
-      gate: "save_once",
+      gate: "worksheet_successor_save_once",
     });
     saves++;
-    await until(() => receiptState().save_receipts === 1, "save_receipt");
+    await until(() => receiptState().save_receipts === 2, "save_receipt");
     await until(
       () =>
         evaluate(
@@ -400,11 +565,16 @@ export async function certifyLocalCloseoutBrowser() {
       "save_readback_finished",
     );
     const saved = await readReview();
+    assertRevisionTransition(
+      confirmed,
+      saved,
+      confirmedRevisionFacts,
+      candidate.lineId,
+    );
     const sourceScope = (review) =>
       review.lines
         .map((line) => ({
           id: line.confirmed_need_line_id,
-          revision: line.current_revision_id,
           date: line.service_date,
           customer: line.customer,
           school: line.school,
@@ -418,15 +588,64 @@ export async function certifyLocalCloseoutBrowser() {
     assert.deepEqual(
       sourceScope(saved),
       sourceScope(before),
-      "Saving a quantity decision must retain every exact source revision, Unit and School scope.",
+      "Saving a quantity decision must retain stable line identity, source count, Unit and School scope; revision lineage is checked separately.",
     );
-    const decisions = assertFirstSaveTransition({
-      before,
-      after: saved,
-      adjustedLineId: edit.line.confirmed_need_line_id,
-      adjustedQuantity: edit.proposed,
-      note: edit.note,
-    });
+    assert.equal(saved.batch_version, confirmed.batch_version + 1);
+    const confirmedById = new Map(
+      confirmed.lines.map((line) => [line.confirmed_need_line_id, line]),
+    );
+    for (const line of saved.lines) {
+      const prior = confirmedById.get(line.confirmed_need_line_id);
+      assert(prior);
+      assert.equal(line.theoretical_quantity, prior.theoretical_quantity);
+      assert.equal(
+        line.proposed_confirmed_quantity,
+        prior.proposed_confirmed_quantity,
+      );
+      if (line.confirmed_need_line_id === candidate.lineId) {
+        assert.notEqual(line.current_decision_id, prior.current_decision_id);
+        assert.equal(
+          line.current_decision_number,
+          prior.current_decision_number + 1,
+        );
+        const decision = line.decision_history.find(
+          (value) => value.decision_id === line.current_decision_id,
+        );
+        assert(decision);
+        assert.equal(
+          decision.predecessor_decision_id,
+          prior.current_decision_id,
+        );
+        assert.equal(decision.decision_kind, "ADJUSTED_QUANTITY_CONFIRMED");
+        assert.equal(decision.reason_code, "OPERATIONAL_QUANTITY_ADJUSTMENT");
+        assert.equal(decision.reason_note, importedNote);
+        assert.equal(
+          decision.policy_revision_id,
+          prior.effective_policy.revision_id,
+        );
+        assert.equal(decision.batch_version, saved.batch_version);
+        assert.equal(
+          line.confirmed_quantity_after
+            .replace(/(\.\d*?)0+$/, "$1")
+            .replace(/\.$/, ""),
+          proposed.replace(",", "."),
+        );
+        assert.deepEqual(
+          line.decision_history.filter(
+            (value) => value.decision_id !== decision.decision_id,
+          ),
+          prior.decision_history,
+          "The original explicit decision must remain immutable history.",
+        );
+      } else {
+        assert.equal(
+          line.confirmed_quantity_after,
+          prior.confirmed_quantity_after,
+        );
+        assert.equal(line.current_decision_id, prior.current_decision_id);
+        assert.deepEqual(line.decision_history, prior.decision_history);
+      }
+    }
     await connection.send("Page.navigate", { url: "about:blank" });
     await until(
       () => evaluate("location.href==='about:blank'"),
@@ -463,7 +682,7 @@ export async function certifyLocalCloseoutBrowser() {
       (await evaluate(preSaveGateStateExpression())).save_present,
       false,
     );
-    assert.equal(saves, 1);
+    assert.equal(saves, 2);
     await until(workbookReady, "reopened_shopping_list_ready");
     await importFile(originalWorkbook);
     assert(
@@ -480,8 +699,8 @@ export async function certifyLocalCloseoutBrowser() {
     const evidence = receiptState();
     assert.deepEqual(evidence, {
       handoffs: 0,
-      save_receipts: 1,
-      decisions: 248,
+      save_receipts: 2,
+      decisions: 249,
     });
     const screenshot = await connection.send("Page.captureScreenshot", {
       format: "png",
@@ -495,12 +714,13 @@ export async function certifyLocalCloseoutBrowser() {
       ...decisions,
       ...evidence,
       saveClicks: saves,
-      preSave: edit.preSave,
+      preSave: initialEdit.preSave,
+      worksheetSuccessorDecisions: 1,
       source: execFileSync("git", ["rev-parse", "HEAD"], {
         encoding: "utf8",
       }).trim(),
       journey:
-        "Public Auth → 248 current lines → fresh XLSX download → unchanged import → one file quantity proposal → explicit reason/note → one Save → public readback → reopen → stale-file rejection",
+        "Public Auth → initial248-line Save/reopen → fresh XLSX download → unchanged import → one file quantity proposal → explicit reason/note → one successor Save → public readback → reopen → stale-file rejection",
       transport:
         "actual public Auth/PostgREST; real connected React/Chakra workbench and shopping service; disposable runner only",
     };
@@ -511,10 +731,23 @@ export async function certifyLocalCloseoutBrowser() {
     console.log(JSON.stringify(report));
     return report;
   } catch (error) {
+    if (connection) {
+      try {
+        const screenshot = await connection.send("Page.captureScreenshot", {
+          format: "png",
+        });
+        writeFileSync(
+          join(evidenceDir, "failure.png"),
+          Buffer.from(screenshot.data, "base64"),
+        );
+      } catch {
+        /* Preserve the original failed assertion. */
+      }
+    }
     if (evaluate)
       console.error(
         await evaluate(
-          "({url:location.origin+location.pathname,text:document.body.innerText})",
+          "({url:location.origin+location.pathname,text:document.body.innerText.slice(0,3500),buttons:[...document.querySelectorAll('button')].map(b=>({label:b.textContent.trim()||b.getAttribute('aria-label'),disabled:b.disabled}))})",
         ).catch(() => ({ readFailed: true })),
       );
     throw error;
