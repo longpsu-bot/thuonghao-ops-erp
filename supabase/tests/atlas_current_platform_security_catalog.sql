@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(31);
 
 -- D-047 regeneration adds one invoker helper and three SELECT-only policies.
 -- Five private grants: legacy schema USAGE, three relation SELECTs, helper EXECUTE.
@@ -1816,15 +1816,14 @@ select is(
     'policy_count', 689,
     'policy_catalog_md5', 'd2a7ef8da79571431cbd60b93bd2acdf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 354,
-    -- Pantry v4 adds two private IMMUTABLE INVOKER normalizers; existing function metadata is unchanged.
-    'private_function_catalog_md5', 'c43cd2daec1dd3c3a3c9e8661b45aad9',
+    'private_function_count', 368,
+    -- Procurement adds fourteen private context readers; existing function metadata is unchanged.
+    'private_function_catalog_md5', '80bec84ba496ce39ccf08b7ad9f9270e',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
-    -- Each new helper grants EXECUTE only to Read/Planning runtimes: four target grants, no browser grant.
-    -- One private EXECUTE plus SELECT/UPDATE on three source primary keys.
-    'positive_target_grant_count', 1879,
-    'positive_target_grant_md5', '59202d2d0a257afa26eaac28d1a04518',
+    -- Twenty-six new target grants are internal EXECUTE only; browser grants remain unchanged.
+    'positive_target_grant_count', 1905,
+    'positive_target_grant_md5', 'dd5415753faf0b4948d3f69ac01fa47c',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,
@@ -1839,6 +1838,11 @@ select is(
 select ok((select proconfig @> array['search_path=""','join_collapse_limit=1']
   from pg_proc where oid='atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure),
   'D047 proof preserves its fixed search path and bounds only join planning');
+select ok((select proconfig @> array['search_path=""','plan_cache_mode=force_generic_plan','enable_nestloop=off']
+    and not prosecdef and provolatile='s'
+    and pg_get_userbyid(proowner)='atlas_owner'
+  from pg_proc where oid='atlas_core.procurement_read_school_catering_po_draft_is_stale(uuid,uuid,jsonb)'::regprocedure),
+  'private PO read bounds order-line scans without changing invoker authority');
 select * from finish();
 
 rollback;
