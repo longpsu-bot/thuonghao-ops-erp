@@ -71,9 +71,11 @@ assert.equal(
 function expand(file) {
   const absolute = path.resolve(file);
   assert(absolute.startsWith(path.join(root, "supabase") + path.sep));
-  return readFileSync(absolute, "utf8").replace(/^\\ir\s+(.+)$/gm, (_, name) =>
-    expand(path.resolve(path.dirname(absolute), name.trim())),
-  );
+  return readFileSync(absolute, "utf8")
+    .replaceAll("\r\n", "\n")
+    .replace(/^\\ir\s+(.+)$/gm, (_, name) =>
+      expand(path.resolve(path.dirname(absolute), name.trim())),
+    );
 }
 const source = expand(
   path.join(root, "supabase/tests/atlas_k2_corrected_need_purchase_orders.sql"),
@@ -109,6 +111,20 @@ operationalFixture = operationalFixture.replace(
   "'Need scale kilogram'",
   `'${humanUnitName}'`,
 );
+const schoolMasterColumns = "default_delivery_location_id,display_order)";
+const schoolMasterValues = "pg_temp.ng_id(11),i\nfrom generate_series(1,2) i;";
+assert.equal(operationalFixture.split(schoolMasterColumns).length, 2);
+assert.equal(operationalFixture.split(schoolMasterValues).length, 2);
+// Required initial document-header master facts, before any operational command.
+operationalFixture = operationalFixture
+  .replace(
+    schoolMasterColumns,
+    "default_delivery_location_id,display_order,dispatch_document_issuer_name,dispatch_document_issuer_address)",
+  )
+  .replace(
+    schoolMasterValues,
+    "pg_temp.ng_id(11),i,'Disposable issuer','Disposable issuer address'\nfrom generate_series(1,2) i;",
+  );
 const fixture = `begin; create extension if not exists pgtap with schema extensions; set local search_path=extensions,public,pg_catalog; select no_plan();
 -- B1 explicitly reuses the canonical calculation contract from this prerequisite.
 ${expand(path.join(root, "supabase/local/purchase_review_confirm_release_fixture.sql"))}
@@ -217,6 +233,71 @@ const readAllocations = async () => {
   );
   return result.data.rows;
 };
+const readSchoolDocuments = async (name, contract) => {
+  const result = await operator.schema("atlas_api").rpc(name, {
+    request: {
+      contract_version: contract,
+      requested_by_auth_subject: subject,
+      correlation_id: crypto.randomUUID(),
+      payload: {
+        date_start: "2050-09-19",
+        date_end: "2050-09-19",
+        school_ids: [],
+        search: null,
+      },
+    },
+  });
+  assert(
+    !result.error && result.data?.success,
+    `Authenticated School document read failed: ${result.error?.code ?? name}`,
+  );
+  return result.data.rows;
+};
+const readDispatch = () =>
+  readSchoolDocuments(
+    "get_school_dispatch_release_workbench",
+    "SCHOOL-DISPATCH-RELEASE.v1",
+  );
+const readReconciliation = () =>
+  readSchoolDocuments(
+    "get_school_fulfilment_reconciliation_workbench",
+    "SCHOOL-FULFILMENT-RECONCILIATION.v1",
+  );
+const exact = (value) => {
+  assert(
+    /^\d+(?:\.\d{1,6})?$/.test(value),
+    "Expected exact nonnegative six-decimal quantity.",
+  );
+  const [whole, fraction = ""] = value.split(".");
+  return BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, "0"));
+};
+const schoolSourceKeys = (sources) =>
+  sources
+    .map((source) => {
+      const identity = [
+        source.confirmed_need_line_revision_id,
+        source.confirmed_need_line_decision_id,
+        source.allocation_family_revision_id,
+        source.allocation_family_contribution_id,
+        source.allocation_supplier_split_id,
+        source.purchase_order_id,
+        source.purchase_order_revision_id,
+        source.purchase_order_line_revision_id,
+      ];
+      assert(
+        identity.every(
+          (value) =>
+            typeof value === "string" &&
+            /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value),
+        ),
+        "Every typed source identity must be present.",
+      );
+      return JSON.stringify([
+        ...identity,
+        exact(source.covered_quantity).toString(),
+      ]);
+    })
+    .sort();
 const coverage = (orders, schoolsByLine) =>
   orders
     .map((order) => ({
@@ -264,7 +345,7 @@ const quantityLabel = (value) =>
   value.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 mkdirSync(evidence, { recursive: true });
 for (const name of readdirSync(evidence).filter((name) =>
-  /\.(?:zip|png)$|^report\.json$/i.test(name),
+  /\.(?:zip|png|xlsx|pdf)$|^report\.json$/i.test(name),
 )) {
   rmSync(path.join(evidence, name));
 }
@@ -743,11 +824,568 @@ try {
     }
   }
   assert.deepEqual([...exported].sort(), ["pdf", "xlsx"]);
+  // Continue through the actual existing School PXK owner with the same public Auth.
+  const readySchools = await readDispatch();
+  assert.equal(readySchools.length, 2);
+  assert(
+    readySchools.every(
+      (row) =>
+        row.state === "READY" &&
+        row.allowed_actions.release &&
+        row.preview.ready &&
+        !row.current_release,
+    ),
+  );
+  const poSchoolQuantities = new Map();
+  for (const order of after)
+    for (const line of order.lines)
+      for (const school of line.school_breakdown) {
+        const key = JSON.stringify([
+          order.service_date,
+          school.school_id,
+          school.delivery_location_id,
+          line.ingredient.ingredient_id,
+          line.unit.unit_id,
+        ]);
+        poSchoolQuantities.set(
+          key,
+          (poSchoolQuantities.get(key) ?? 0n) + exact(school.ordered_quantity),
+        );
+      }
+  const pxkScope = (row, lines) =>
+    lines
+      .map((line) => ({
+        key: JSON.stringify([
+          row.service_date,
+          row.school_id,
+          row.delivery_location_id,
+          line.ingredient_id,
+          line.unit_id,
+        ]),
+        quantity: exact(line.quantity).toString(),
+      }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+  assert.deepEqual(
+    readySchools
+      .flatMap((row) => pxkScope(row, row.preview.lines))
+      .sort((a, b) => a.key.localeCompare(b.key)),
+    [...poSchoolQuantities]
+      .map(([key, quantity]) => ({ key, quantity: quantity.toString() }))
+      .sort((a, b) => a.key.localeCompare(b.key)),
+    "School previews must exactly match released PO School/ingredient/Unit coverage.",
+  );
+  await connection.send("Page.navigate", { url: `${url}?stage=pxk` });
+  await until(
+    async () => (await text()).includes("Phiếu xuất kho"),
+    "PXK_OWNER",
+  );
+  const dispatches = [];
+  for (const ready of readySchools) {
+    await until(
+      () =>
+        evaluate(
+          `(()=>{const b=[...document.querySelectorAll('button[aria-describedby]')].find(b=>b.getAttribute('aria-describedby').includes(${JSON.stringify(ready.school_id)})&&b.textContent.trim()==='Phát hành');if(!b||b.disabled)return false;b.click();return true;})()`,
+        ),
+      "PXK_OPEN_READY_SCHOOL",
+    );
+    const note = `Disposable PXK ${ready.school_id}`;
+    await until(
+      () =>
+        evaluate(
+          `Boolean(document.querySelector('textarea[aria-label="Ghi chú trên phiếu"]:not(:disabled)'))`,
+        ),
+      "PXK_NOTE_READY",
+    );
+    await evaluate(
+      `(()=>{const input=document.querySelector('textarea[aria-label="Ghi chú trên phiếu"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(note)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`,
+    );
+    await until(() => click("Phát hành phiếu xuất kho"), "PXK_RELEASE_READY");
+    const released = await until(async () => {
+      const row = (await readDispatch()).find(
+        (row) =>
+          row.school_id === ready.school_id &&
+          row.delivery_location_id === ready.delivery_location_id,
+      );
+      return row?.state === "CURRENT" &&
+        row.current_release?.status === "RELEASED"
+        ? row
+        : null;
+    }, "PXK_PERSISTED_RELEASE");
+    const document = released.current_release;
+    assert.equal(document.service_date, ready.service_date);
+    assert.equal(document.school_id, ready.school_id);
+    assert.equal(document.delivery_location_id, ready.delivery_location_id);
+    assert.equal(document.source_fingerprint, ready.preview.source_fingerprint);
+    assert.equal(document.predecessor_release_id, null);
+    assert.equal(document.note, note);
+    assert.equal(document.document_issuer_name, "Disposable issuer");
+    assert.equal(document.document_issuer_address, "Disposable issuer address");
+    assert(document.export_ready && document.document_number);
+    assert.deepEqual(
+      pxkScope(document, document.lines),
+      pxkScope(ready, ready.preview.lines),
+    );
+    for (const line of document.lines) {
+      const preview = ready.preview.lines.find(
+        (value) =>
+          value.ingredient_id === line.ingredient_id &&
+          value.unit_id === line.unit_id,
+      );
+      const frozenSources = schoolSourceKeys(line.sources),
+        previewSources = schoolSourceKeys(preview.sources);
+      assert.equal(
+        new Set(frozenSources).size,
+        frozenSources.length,
+        "Frozen typed sources must contain no duplicate membership.",
+      );
+      assert.equal(new Set(previewSources).size, previewSources.length);
+      assert.deepEqual(
+        frozenSources,
+        previewSources,
+        "Release must freeze every exact typed identity/quantity regardless of generated source-row ordering.",
+      );
+      assert.equal(
+        line.sources.reduce(
+          (total, source) => total + exact(source.covered_quantity),
+          0n,
+        ),
+        exact(line.quantity),
+      );
+    }
+    dispatches.push(document);
+    await until(
+      async () => (await text()).includes(document.document_number),
+      "PXK_UI_READBACK",
+    );
+    const exportSchool = (label) =>
+      evaluate(
+        `(()=>{const group=[...document.querySelectorAll('[role="group"][aria-label]')].find(group=>group.getAttribute('aria-label')===${JSON.stringify(`Xuất phiếu ${document.document_number}`)});const b=[...(group?.querySelectorAll('button')??[])].find(b=>b.textContent.trim()===${JSON.stringify(label)});if(!b||b.disabled)return false;b.click();return true;})()`,
+      );
+    await until(() => exportSchool("Xuất XLSX"), "PXK_XLSX_READY");
+    const schoolXlsx = await until(
+      () =>
+        readdirSync(evidence).find(
+          (name) =>
+            name.endsWith(".xlsx") && name.includes(document.document_number),
+        ),
+      "PXK_XLSX_DOWNLOAD",
+    );
+    await until(() => exportSchool("Xuất PDF"), "PXK_PDF_READY");
+    const schoolPdf = await until(
+      () =>
+        readdirSync(evidence).find(
+          (name) =>
+            name.endsWith(".pdf") && name.includes(document.document_number),
+        ),
+      "PXK_PDF_DOWNLOAD",
+    );
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(readFileSync(path.join(evidence, schoolXlsx)));
+    const metadata = workbook.getWorksheet("_ATLAS_META");
+    assert(metadata && metadata.state === "veryHidden");
+    assert.equal(metadata.getCell("B1").text, "ATLAS_OPERATIONAL_DOCUMENT_V1");
+    const records = [];
+    metadata.eachRow((row, index) => {
+      if (index > 2)
+        records.push({
+          kind: row.getCell(1).text,
+          id: row.getCell(2).text,
+          sheet: row.getCell(3).text,
+          row: Number(row.getCell(4).value),
+          data: JSON.parse(row.getCell(5).text),
+        });
+    });
+    assert(
+      records.every(
+        (record) => record.id === document.school_dispatch_release_id,
+      ),
+    );
+    const documentRecord = records.find((record) => record.kind === "DOCUMENT");
+    assert.equal(
+      records.filter((record) => record.kind === "DOCUMENT").length,
+      1,
+    );
+    assert.equal(documentRecord.data.document_number, document.document_number);
+    assert.equal(
+      documentRecord.data.source_fingerprint,
+      document.source_fingerprint,
+    );
+    assert.equal(documentRecord.data.school_id, document.school_id);
+    assert.equal(documentRecord.data.service_date, document.service_date);
+    assert.equal(
+      documentRecord.data.delivery_location_id,
+      document.delivery_location_id,
+    );
+    assert.equal(documentRecord.data.note, note);
+    const sheet = workbook.getWorksheet(documentRecord.sheet);
+    assert(sheet && sheet.state === "visible");
+    assert.equal(sheet.getCell("B1").text, document.document_issuer_name);
+    assert(sheet.getCell("B2").text.includes(document.document_issuer_address));
+    assert(sheet.getCell("A6").text.includes(document.school_name));
+    assert.equal(
+      sheet.getCell("G5").text,
+      document.service_date.split("-").reverse().join("/"),
+    );
+    const sourceTuple = (data) =>
+      JSON.stringify([
+        data.school_dispatch_release_line_id,
+        data.school_id,
+        data.source_quantity,
+        data.dispatch_group_id ?? null,
+        data.note,
+        schoolSourceKeys([data])[0],
+      ]);
+    const expectedSources = document.lines
+      .flatMap((line) =>
+        line.sources.map((source) =>
+          sourceTuple({
+            school_dispatch_release_line_id:
+              line.school_dispatch_release_line_id,
+            school_id: document.school_id,
+            source_quantity: line.quantity,
+            dispatch_group_id: document.dispatch_group_id ?? null,
+            note,
+            ...source,
+          }),
+        ),
+      )
+      .sort();
+    const actualSources = records
+      .filter((record) => record.kind === "ROW_SOURCE")
+      .map((record) => sourceTuple(record.data))
+      .sort();
+    assert.deepEqual(
+      actualSources,
+      expectedSources,
+      "PXK metadata must contain the complete frozen source multiset with no extra or duplicate records.",
+    );
+    assert.equal(records.length, expectedSources.length + 1);
+    for (const line of document.lines)
+      for (const source of line.sources) {
+        const record = records.find(
+          (record) =>
+            record.kind === "ROW_SOURCE" &&
+            record.data.school_dispatch_release_line_id ===
+              line.school_dispatch_release_line_id &&
+            record.data.allocation_family_contribution_id ===
+              source.allocation_family_contribution_id &&
+            record.data.allocation_supplier_split_id ===
+              source.allocation_supplier_split_id &&
+            record.data.purchase_order_line_revision_id ===
+              source.purchase_order_line_revision_id,
+        );
+        assert(record, "PXK export must retain every exact typed source.");
+        assert.equal(record.data.source_quantity, line.quantity);
+        assert.equal(record.data.covered_quantity, source.covered_quantity);
+        assert.equal(
+          record.data.confirmed_need_line_revision_id,
+          source.confirmed_need_line_revision_id,
+        );
+        assert.equal(
+          record.data.confirmed_need_line_decision_id,
+          source.confirmed_need_line_decision_id,
+        );
+        assert.equal(
+          sheet.getRow(record.row).getCell(4).text,
+          quantityLabel(line.quantity),
+        );
+        assert.equal(sheet.getRow(record.row).getCell(3).text, line.unit_code);
+        assert.equal(
+          sheet.getRow(record.row).getCell(2).text,
+          line.ingredient_name,
+        );
+        assert.equal(
+          sheet.getRow(record.row).getCell(9).text,
+          document.school_dispatch_release_id,
+        );
+        assert.equal(
+          sheet.getRow(record.row).getCell(10).text,
+          line.ingredient_id,
+        );
+        assert.equal(sheet.getRow(record.row).getCell(11).text, line.unit_id);
+        assert.equal(
+          sheet.getRow(record.row).getCell(12).text,
+          document.school_id,
+        );
+        assert.equal(
+          sheet.getRow(record.row).getCell(13).text,
+          document.delivery_location_id,
+        );
+      }
+    const pdf = execFileSync(
+      "pdftotext",
+      ["-layout", path.join(evidence, schoolPdf), "-"],
+      { encoding: "utf8" },
+    );
+    const rawPdf = execFileSync(
+      "pdftotext",
+      ["-raw", path.join(evidence, schoolPdf), "-"],
+      { encoding: "utf8" },
+    );
+    const compact = rawPdf.replace(/\s+/g, "");
+    for (const value of [
+      document.document_number,
+      document.school_name,
+      document.document_issuer_name,
+      document.document_issuer_address,
+      document.service_date.split("-").reverse().join("/"),
+      note,
+    ])
+      assert(
+        compact.includes(value.replace(/\s+/g, "")),
+        "PXK PDF must contain its frozen header/note.",
+      );
+    for (const line of document.lines) {
+      assert(compact.includes(line.ingredient_name.replace(/\s+/g, "")));
+      assert(compact.includes(line.unit_code));
+      assert(
+        pdf.replace(/\s+/g, " ").includes(` ${quantityLabel(line.quantity)} `),
+      );
+    }
+    assert(
+      await evaluate(
+        `(()=>{const b=document.querySelector('button[aria-label="Đóng chi tiết"]');if(!b||b.disabled)return false;b.click();return true;})()`,
+      ),
+    );
+  }
+  assert.equal(
+    sql(
+      "select count(*) from atlas_core.command_receipts where command_name='release_school_dispatch_document' and outcome='COMPLETED'",
+    ),
+    "2",
+    "One completed receipt per School release.",
+  );
+  await reload();
+  await until(async () => {
+    const body = await text();
+    return dispatches.every((document) =>
+      body.includes(document.document_number),
+    );
+  }, "PXK_PERSISTED_RELOAD");
+  const persistedDispatches = await readDispatch();
+  assert(persistedDispatches.every((row) => row.state === "CURRENT"));
+  for (const document of dispatches) {
+    assert.deepEqual(
+      persistedDispatches.find(
+        (row) =>
+          row.school_id === document.school_id &&
+          row.delivery_location_id === document.delivery_location_id,
+      )?.current_release,
+      document,
+      "Reopening must preserve the complete frozen School document.",
+    );
+    await until(
+      () =>
+        evaluate(
+          `(()=>{const b=[...document.querySelectorAll('button[aria-describedby]')].find(b=>b.getAttribute('aria-describedby').includes(${JSON.stringify(document.school_id)})&&b.textContent.trim()==='Xem phiếu');if(!b||b.disabled)return false;b.click();return true;})()`,
+        ),
+      "PXK_REOPEN_DOCUMENT",
+    );
+    const visible = await until(
+      () =>
+        evaluate(
+          `(()=>{const table=[...document.querySelectorAll('table[aria-label]')].find(table=>table.getAttribute('aria-label')===${JSON.stringify(`Nội dung ${document.document_number}`)});return table&&[...table.querySelectorAll('tbody tr')].map(row=>({ingredient:row.cells[0].textContent.trim(),quantity:row.cells[1].textContent.trim(),unit:row.cells[2].textContent.trim()}));})()`,
+        ),
+      "PXK_REOPENED_CONTENTS",
+    );
+    assert.deepEqual(
+      visible
+        .map((line) => ({
+          ...line,
+          quantity: exact(line.quantity.replace(",", ".")).toString(),
+        }))
+        .sort((a, b) => a.ingredient.localeCompare(b.ingredient)),
+      document.lines
+        .map((line) => ({
+          ingredient: line.ingredient_name,
+          quantity: exact(line.quantity).toString(),
+          unit: line.unit_code,
+        }))
+        .sort((a, b) => a.ingredient.localeCompare(b.ingredient)),
+      "Every reloaded visible School quantity and Unit must match its immutable snapshot.",
+    );
+    assert(
+      await evaluate(
+        `(()=>{const b=document.querySelector('button[aria-label="Đóng chi tiết"]');if(!b||b.disabled)return false;b.click();return true;})()`,
+      ),
+    );
+  }
+  const comparison = await readReconciliation();
+  assert.equal(comparison.length, 2);
+  assert(
+    comparison.every(
+      (row) =>
+        row.comparison_status === "OK" &&
+        row.pxk_state === "CURRENT" &&
+        row.blockers.length === 0 &&
+        row.quantity_totals_by_unit.every(
+          (total) => exact(total.delta_quantity) === 0n,
+        ),
+    ),
+    "Released PO/PXK coverage must reconcile without hidden operational blockers.",
+  );
+  assert.deepEqual(
+    new Set(comparison.map((row) => row.school_dispatch_release_id)),
+    new Set(dispatches.map((document) => document.school_dispatch_release_id)),
+  );
+  const comparisonKey = (row, ingredient, unit) =>
+    JSON.stringify([
+      row.service_date,
+      row.school_id,
+      row.delivery_location_id,
+      ingredient,
+      unit,
+    ]);
+  const expectedDetails = dispatches
+    .flatMap((document) =>
+      document.lines.map((line) => ({
+        key: comparisonKey(document, line.ingredient_id, line.unit_id),
+        unit: line.unit_code,
+        po: exact(line.quantity).toString(),
+        pxk: exact(line.quantity).toString(),
+        delta: "0",
+      })),
+    )
+    .sort((a, b) => a.key.localeCompare(b.key));
+  const actualDetails = comparison
+    .flatMap((row) =>
+      row.details.map((detail) => ({
+        key: comparisonKey(row, detail.ingredient_id, detail.unit_id),
+        unit: detail.unit_code,
+        po: exact(detail.po_quantity).toString(),
+        pxk: exact(detail.pxk_quantity).toString(),
+        delta: exact(detail.delta_quantity).toString(),
+      })),
+    )
+    .sort((a, b) => a.key.localeCompare(b.key));
+  assert.deepEqual(
+    actualDetails,
+    expectedDetails,
+    "Every reconciled School/date/location/ingredient/Unit quantity must equal its exact frozen document.",
+  );
+  const expectedUnitTotals = new Map();
+  for (const document of dispatches) {
+    const totals = new Map();
+    for (const line of document.lines) {
+      const previous = totals.get(line.unit_id);
+      totals.set(line.unit_id, {
+        unit_id: line.unit_id,
+        unit_code: line.unit_code,
+        quantity: (previous?.quantity ?? 0n) + exact(line.quantity),
+      });
+    }
+    assert(totals.size > 0);
+    expectedUnitTotals.set(document.school_dispatch_release_id, [
+      ...totals.values(),
+    ]);
+  }
+  for (const row of comparison) {
+    const document = dispatches.find(
+      (document) =>
+        document.school_dispatch_release_id === row.school_dispatch_release_id,
+    );
+    assert.equal(row.school_name, document.school_name);
+    assert.equal(row.delivery_location_name, document.delivery_location_name);
+    assert(row.details.length > 0 && row.quantity_totals_by_unit.length > 0);
+    assert.deepEqual(
+      row.quantity_totals_by_unit
+        .map((total) => ({
+          unit: total.unit_id,
+          code: total.unit_code,
+          po: exact(total.po_quantity).toString(),
+          pxk: exact(total.pxk_quantity).toString(),
+          delta: exact(total.delta_quantity).toString(),
+        }))
+        .sort((a, b) => a.unit.localeCompare(b.unit)),
+      expectedUnitTotals
+        .get(document.school_dispatch_release_id)
+        .map((total) => ({
+          unit: total.unit_id,
+          code: total.unit_code,
+          po: total.quantity.toString(),
+          pxk: total.quantity.toString(),
+          delta: "0",
+        }))
+        .sort((a, b) => a.unit.localeCompare(b.unit)),
+      "Reconciliation Unit totals must be complete, exact and nonempty.",
+    );
+  }
+  await connection.send("Page.navigate", {
+    url: `${url}?stage=reconciliation`,
+  });
+  await until(
+    async () => (await text()).replace(/\s+/g, " ").includes("Khớp 2"),
+    "RECONCILIATION_MATCHES",
+  );
+  await evaluate(
+    `(()=>{const select=document.querySelector('select[aria-label="Tình trạng"]');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(select,'all');select.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+  );
+  await until(
+    () =>
+      evaluate(
+        `document.querySelector('table[aria-label="Đối chiếu theo trường"]')?.querySelectorAll('tbody tr').length===2`,
+      ),
+    "RECONCILIATION_VISIBLE_SCHOOLS",
+  );
+  const comparisonText = await text();
+  assert(
+    dispatches.every(
+      (document) =>
+        comparisonText.includes(document.document_number) &&
+        comparisonText.includes(document.school_name),
+    ),
+  );
+  assert(numbers.every((number) => comparisonText.includes(number)));
+  const visibleComparison = await evaluate(
+    `(()=>{const table=document.querySelector('table[aria-label="Đối chiếu theo trường"]');return [...table.querySelectorAll('tbody tr')].map(row=>({date:row.cells[0].textContent.trim(),school:row.cells[1].children[0].textContent.trim(),location:row.cells[1].children[1].textContent.trim(),status:row.cells[2].textContent.trim(),totals:[...row.cells[4].children].map(total=>total.textContent.trim().replace(/\\s+/g,' ')).sort()}));})()`,
+  );
+  const displayedQuantity = (quantity) => {
+    const fraction = String(quantity % 1_000_000n)
+      .padStart(6, "0")
+      .replace(/0+$/, "");
+    return `${quantity / 1_000_000n}${fraction ? `,${fraction}` : ""}`;
+  };
+  assert.deepEqual(
+    visibleComparison.sort((a, b) => a.school.localeCompare(b.school)),
+    dispatches
+      .map((document) => ({
+        date: document.service_date.split("-").reverse().join("/"),
+        school: document.school_name,
+        location: document.delivery_location_name,
+        status: "Khớp",
+        totals: expectedUnitTotals
+          .get(document.school_dispatch_release_id)
+          .map(
+            (total) =>
+              `${total.unit_code} · PO ${displayedQuantity(total.quantity)} · PXK ${displayedQuantity(total.quantity)} · Δ 0`,
+          )
+          .sort(),
+      }))
+      .sort((a, b) => a.school.localeCompare(b.school)),
+    "Visible reconciliation status and all exact Unit totals must match the frozen School documents.",
+  );
+  assert.deepEqual(
+    (await read()).map((order) => ({
+      id: order.purchase_order_id,
+      number: order.document_number,
+      version: order.version,
+      revision: order.current_revision,
+      lines: order.lines,
+    })),
+    after.map((order) => ({
+      id: order.purchase_order_id,
+      number: order.document_number,
+      version: order.version,
+      revision: order.current_revision,
+      lines: order.lines,
+    })),
+    "School release must never mutate the original official PO documents.",
+  );
   const shot = await connection.send("Page.captureScreenshot", {
     format: "png",
   });
   writeFileSync(
-    path.join(evidence, "released.png"),
+    path.join(evidence, "reconciled.png"),
     Buffer.from(shot.data, "base64"),
   );
   const report = {
@@ -757,9 +1395,16 @@ try {
     }).trim(),
     environment: "disposable GitHub runner",
     journey:
-      "Auth → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → XLSX/PDF",
+      "Auth → Allocation human Unit → note Save/readback/reload → Draft regeneration → search → publish all → public readback → reload → PO XLSX/PDF → two School PXK releases → PXK XLSX/PDF → reopen → matching public/UI reconciliation",
     poCount: after.length,
     receiptCount: 2,
+    pxkCount: dispatches.length,
+    pxkReceiptCount: 2,
+    pxkDocumentNumbers: dispatches.map((document) => document.document_number),
+    reconciliation: comparison.map((row) => ({
+      school: row.school_id,
+      status: row.comparison_status,
+    })),
     documentNumbers: numbers,
     quantities: after.map((o) => o.lines.map((l) => l.ordered_quantity)),
   };
