@@ -215,13 +215,15 @@ select is((select response->>'success' from scale_results where name='correct'),
 select diag(response::text) from scale_results where name='correct' and response->>'success'<>'true';
 create temporary table reopened_before as select pg_temp.scale_business_snapshot() facts,
   (select jsonb_agg(to_jsonb(r) order by command_receipt_id) from atlas_core.command_receipts r) receipts;
-create temporary table reopened_samples(kind text,response jsonb,elapsed_ms numeric,proof_calls bigint);
+create temporary table reopened_samples(kind text,response jsonb,elapsed_ms numeric,proof_calls bigint,context_calls bigint);
 grant select,insert on reopened_samples to authenticated;
 create function pg_temp.sample_reopened_read(p_kind text) returns void language plpgsql as $$
-declare started timestamptz:=clock_timestamp(); answer jsonb; prior_calls bigint; failure_context text;
+declare started timestamptz:=clock_timestamp(); answer jsonb; prior_calls bigint; prior_context_calls bigint; failure_context text;
 begin
-  select coalesce(sum(calls),0) into prior_calls from pg_stat_xact_user_functions
-  where schemaname='atlas_core' and funcname='procurement_read_batch_proof';
+  select coalesce(sum(calls) filter(where funcname='procurement_read_batch_proof'),0),
+    coalesce(sum(calls) filter(where funcname='procurement_read_context'),0)
+  into prior_calls,prior_context_calls from pg_stat_xact_user_functions
+  where schemaname='atlas_core' and funcname in ('procurement_read_batch_proof','procurement_read_context');
   if p_kind='allocation' then
     answer:=atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_build_object(
       'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','correlation_id',gen_random_uuid(),
@@ -233,6 +235,12 @@ begin
       'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
       'payload',jsonb_build_object('date_start','2027-01-18','date_end','2027-01-18',
         'supplier_ids','[]'::jsonb,'statuses','[]'::jsonb,'search',null)));
+  elsif p_kind='reconciliation' then
+    answer:=atlas_api.get_school_fulfilment_reconciliation_workbench(jsonb_build_object(
+      'contract_version','SCHOOL-FULFILMENT-RECONCILIATION.v1','correlation_id',gen_random_uuid(),
+      'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+      'payload',jsonb_build_object('date_start','2027-01-18','date_end','2027-01-18',
+        'school_ids','[]'::jsonb,'search',null)));
   else
     answer:=atlas_api.get_school_dispatch_release_workbench(jsonb_build_object(
       'contract_version','SCHOOL-DISPATCH-RELEASE.v1','correlation_id',gen_random_uuid(),
@@ -241,13 +249,15 @@ begin
         'school_ids','[]'::jsonb,'search',null)));
   end if;
   insert into reopened_samples select p_kind,answer,
-    extract(epoch from clock_timestamp()-started)*1000,coalesce(sum(calls),0)-prior_calls
+    extract(epoch from clock_timestamp()-started)*1000,
+    coalesce(sum(calls) filter(where funcname='procurement_read_batch_proof'),0)-prior_calls,
+    coalesce(sum(calls) filter(where funcname='procurement_read_context'),0)-prior_context_calls
   from pg_stat_xact_user_functions
-  where schemaname='atlas_core' and funcname='procurement_read_batch_proof';
+  where schemaname='atlas_core' and funcname in ('procurement_read_batch_proof','procurement_read_context');
 exception when query_canceled then
   get stacked diagnostics failure_context=PG_EXCEPTION_CONTEXT;
   insert into reopened_samples values(p_kind,jsonb_build_object('success',false,'timeout',true,'context',failure_context),
-    extract(epoch from clock_timestamp()-started)*1000,null);
+    extract(epoch from clock_timestamp()-started)*1000,null,null);
 end;
 $$;
 grant execute on function pg_temp.sample_reopened_read(text) to authenticated;
@@ -258,11 +268,14 @@ set local role authenticated;
 select pg_temp.sample_reopened_read('allocation');
 select pg_temp.sample_reopened_read('orders');
 select pg_temp.sample_reopened_read('dispatch');
+select pg_temp.sample_reopened_read('reconciliation');
 reset role;
 set local plan_cache_mode='auto';
 select ok(response->>'success'='true' and elapsed_ms<8000,
   'reopened 236-family '||kind||' read succeeds within the unchanged eight seconds') from reopened_samples;
 select is(proof_calls,1::bigint,'closed batch proof runs once for '||kind) from reopened_samples;
+select is((select context_calls from reopened_samples where kind='reconciliation'),1::bigint,
+  'all-School reconciliation builds one authoritative context per public request');
 select is((select jsonb_array_length(response->'rows') from reopened_samples where kind='allocation'),
   236,'reopened read retains every family');
 select is((select count(*) from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item
@@ -270,6 +283,12 @@ select is((select count(*) from reopened_samples cross join lateral jsonb_array_
   'only the genuinely corrected family changes source authority');
 select is((select jsonb_array_length(response->'rows') from reopened_samples where kind='dispatch'),
   4,'issued-order dispatch impact retains all four School scopes');
+select is((select jsonb_array_length(response->'rows') from reopened_samples where kind='reconciliation'),
+  4,'reconciliation retains all four authorized School scopes after correction');
+select ok((select bool_and(item->>'pxk_state'='BLOCKED'
+    and jsonb_array_length(item->'blockers')>0)
+  from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item
+  where kind='reconciliation'),'reconciliation preserves incomplete-coverage blockers');
 select ok((select bool_and(item->>'state'='BLOCKED'
     and item#>>'{preview,ready}'='false' and item#>>'{allowed_actions,release}'='false')
   from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item
@@ -278,7 +297,7 @@ select is(pg_temp.scale_business_snapshot(),(select facts from reopened_before),
   'reopened reads leave all business facts and historical documents unchanged');
 select is((select jsonb_agg(to_jsonb(r) order by command_receipt_id) from atlas_core.command_receipts r),
   (select receipts from reopened_before),'reopened reads leave receipts unchanged');
-select diag(jsonb_build_object('kind',kind,'elapsed_ms',elapsed_ms,'proof_calls',proof_calls)::text)
+select diag(jsonb_build_object('kind',kind,'elapsed_ms',elapsed_ms,'proof_calls',proof_calls,'context_calls',context_calls)::text)
 from reopened_samples;
 select diag(response::text) from reopened_samples where response->>'success'<>'true';
 select ok(not exists(select 1 from pg_proc function
