@@ -309,6 +309,14 @@ export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
   pnpm("verify:local:rmvp07"),
   pnpm("local:planning-contract-01:verify"),
   pnpm("local:school-catering-procurement:verify"),
+  pnpm("exec", "supabase", "db", "reset", "--local", "--no-seed"),
+  Object.freeze({
+    command: "node",
+    args: Object.freeze(["scripts/test-ci-atlas-procurement-browser.mjs"]),
+    environment: Object.freeze({
+      ATLAS_DISPOSABLE_BROWSER_CERTIFICATION: "true",
+    }),
+  }),
 ]);
 
 function boundedDiagnostic(result) {
