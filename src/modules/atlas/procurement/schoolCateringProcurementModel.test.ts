@@ -1,6 +1,33 @@
 import { expect, it } from "vitest";
-import { purchaseOrderLineUnitLabel } from "./schoolCateringProcurementModel";
+import {
+  allocationFamilyUnitLabel,
+  purchaseOrderLineUnitLabel,
+} from "./schoolCateringProcurementModel";
 import { createReviewPurchaseOrdersFixture } from "./reviewSchoolCateringProcurementApi";
+
+it.each([
+  "v1-unit-count",
+  "atlas-unit-count",
+  "unit_count",
+  "6a3760e8-27fa-5182-b110-230d88fa1b41",
+])("uses the current human allocation Unit instead of %s", (unit_code) =>
+  expect(allocationFamilyUnitLabel({ unit_code, unit_name: "Gói" })).toBe(
+    "Gói",
+  ),
+);
+it.each([undefined, null, "", "  "])(
+  "makes missing allocation Unit names explicit (%s)",
+  (unit_name) => {
+    expect(
+      allocationFamilyUnitLabel({ unit_code: "v1-unit-count", unit_name }),
+    ).toBe("Chưa có ĐVT");
+  },
+);
+it("retains a standard allocation Unit code", () => {
+  expect(
+    allocationFamilyUnitLabel({ unit_code: "kg", unit_name: "Kilogram" }),
+  ).toBe("kg");
+});
 
 it("keeps the captured human Unit label after release and master rename", () => {
   const line =

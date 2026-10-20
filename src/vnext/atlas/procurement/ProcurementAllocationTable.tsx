@@ -3,7 +3,10 @@ import {
   atlasNarrowSortableHeader,
 } from "../AtlasSortableColumnHeader";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
-import type { AllocationFamilyRow } from "../bridges/procurement";
+import {
+  allocationFamilyUnitLabel,
+  type AllocationFamilyRow,
+} from "../bridges/procurement";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { useState, type ReactNode } from "react";
 import {
@@ -31,8 +34,10 @@ function allocationIssue(row: AllocationFamilyRow, remainder: bigint | null) {
   if (row.state === "UNALLOCATED") return "Chưa phân bổ";
   if (row.state === "BALANCED") return "Đủ";
   if (remainder === null) return "Cần phân bổ lại";
-  if (remainder > 0n) return `Thiếu ${quantity(remainder)} ${row.unit_code}`;
-  if (remainder < 0n) return `Vượt ${quantity(-remainder)} ${row.unit_code}`;
+  if (remainder > 0n)
+    return `Thiếu ${quantity(remainder)} ${allocationFamilyUnitLabel(row)}`;
+  if (remainder < 0n)
+    return `Vượt ${quantity(-remainder)} ${allocationFamilyUnitLabel(row)}`;
   return "Cần phân bổ lại";
 }
 
@@ -322,7 +327,7 @@ export function ProcurementAllocationTable({
                         color="fg.muted"
                         ml="xs"
                       >
-                        {row.unit_code}
+                        {allocationFamilyUnitLabel(row)}
                       </Box>
                     </Text>
                   </Table.Cell>
