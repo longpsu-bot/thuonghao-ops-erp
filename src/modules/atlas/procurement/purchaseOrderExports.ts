@@ -1,4 +1,7 @@
-import type { SchoolCateringPurchaseOrder } from "./schoolCateringProcurementModel";
+import {
+  purchaseOrderLineUnitLabel,
+  type SchoolCateringPurchaseOrder,
+} from "./schoolCateringProcurementModel";
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import type { Row, Worksheet } from "exceljs";
 import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
@@ -171,6 +174,12 @@ export function buildPurchaseOrderExportData(
       delivery_location_id: line.delivery_location.delivery_location_id,
       ordered_quantity: line.ordered_quantity,
       ingredient_document_code_snapshot: line.ingredient_document_code_snapshot,
+      ...(line.unit_name_snapshot == null
+        ? {}
+        : {
+            unit_code_snapshot: line.unit_code_snapshot,
+            unit_name_snapshot: line.unit_name_snapshot,
+          }),
     };
     summaries.set(key, {
       ingredientId: line.ingredient.ingredient_id,
@@ -178,7 +187,7 @@ export function buildPurchaseOrderExportData(
       sources: [...(current?.sources ?? []), source],
       ingredientDocumentCode: line.ingredient_document_code_snapshot ?? null,
       ingredientName: line.ingredient_name_snapshot!,
-      unitCode: line.unit_code_snapshot!,
+      unitCode: purchaseOrderLineUnitLabel(order.status, line),
       supplierNote: line.supplier_note,
       quantity: (current?.quantity ?? 0n) + quantity,
     });
@@ -221,7 +230,7 @@ export function buildPurchaseOrderExportData(
         ingredientDocumentCode: line.ingredient_document_code_snapshot ?? null,
         ingredientName: line.ingredient_name_snapshot!,
         orderedQuantity: exactQuantity(schoolQuantity),
-        unitCode: line.unit_code_snapshot!,
+        unitCode: purchaseOrderLineUnitLabel(order.status, line),
         supplierNote: line.supplier_note,
       });
     }

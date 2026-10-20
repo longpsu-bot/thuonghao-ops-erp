@@ -1,5 +1,7 @@
 # Atlas Autopilot Mandate
 
+**20 October functional stabilization supersession:** the Owner authorizes the [current campaign](../testing/atlas-functional-stabilization-2026-10-20.md) and its active bounded repair batches. This supersedes historical task sequencing and merge/deployment exclusions below only within this campaign. Preserve architecture/business/security contracts, all unrelated work, hosted business data read-only, disposable-only transactional tests and guarded exact-revision integration/deployment.
+
 **19 October B2-only supersession:** the Owner explicitly authorizes the bounded
 [optional Ingredient-code task](../implementation-tasks/TASK-ATLAS-B2-PO-INGREDIENT-CODE-OPTIONAL-01.md)
 in its independent exact-base worktree. This replaces the inherited B1-only

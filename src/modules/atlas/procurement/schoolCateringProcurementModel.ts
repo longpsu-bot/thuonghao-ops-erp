@@ -129,6 +129,7 @@ export type PurchaseOrderLine = {
   ingredient_document_code_snapshot?: string | null;
   ingredient_name_snapshot?: string | null;
   unit_code_snapshot?: string | null;
+  unit_name_snapshot?: string | null;
   purchase_order_line_revision_id: string;
   purchase_order_line_id: string;
   ingredient: {
@@ -138,7 +139,7 @@ export type PurchaseOrderLine = {
   };
   ordered_quantity: ExactQuantity;
   supplier_note: string | null;
-  unit: { unit_id: string; unit_code: string };
+  unit: { unit_id: string; unit_code: string; unit_name?: string | null };
   delivery_location: {
     delivery_location_id: string;
     location_name: string;
@@ -222,6 +223,33 @@ export type PurchaseOrdersData = {
   warnings: string[];
   blockers: string[];
 };
+
+export function purchaseOrderLineUnitLabel(
+  status: PurchaseOrderStatus,
+  line: PurchaseOrderLine,
+) {
+  const draft = status === "DRAFT";
+  const code = draft
+    ? line.unit.unit_code
+    : (line.unit_code_snapshot ?? line.unit.unit_code);
+  const name = draft ? line.unit.unit_name : line.unit_name_snapshot;
+  return /^(?:v1-unit-|atlas[-_:]|unit[-_:])|^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(
+    code,
+  )
+    ? name?.trim() || (draft ? "Chưa có ĐVT" : code)
+    : code;
+}
+
+/** Presentation eligibility only; the release command rechecks backend authority. */
+export function canReleasePurchaseOrder(order: SchoolCateringPurchaseOrder) {
+  return (
+    order.status === "DRAFT" &&
+    order.commitment_state === "DRAFT_CURRENT" &&
+    !order.stale &&
+    order.release_eligible &&
+    order.allowed_actions.release
+  );
+}
 
 export type ProcurementCommandClassification =
   | "SUCCESS"
