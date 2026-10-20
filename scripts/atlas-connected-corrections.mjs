@@ -143,6 +143,80 @@ export async function certifyConnectedCorrections({
   assert.equal(line?.student_portions, 12);
   assert.equal(line.teacher_portions, 0);
   assert(line.attendance_line_id);
+  const pair = (row) => `${row.school_id}|${row.service_date}`;
+  const previousRows = attendance.lines.filter(
+    (row) => row.line_status === "ACTIVE",
+  );
+  const previousByPair = new Map(previousRows.map((row) => [pair(row), row]));
+  assert.equal(previousRows.length, 1);
+  const activeSchools = sourceBefore.schools.filter(
+    (row) => row.school_status === "ACTIVE",
+  );
+  assert.equal(activeSchools.length, 3);
+  const weekDates = Array.from({ length: 7 }, (_, offset) =>
+    new Date(Date.parse(`${date}T00:00:00Z`) + offset * 86400000)
+      .toISOString()
+      .slice(0, 10),
+  );
+  const defaultPairs = new Map(
+    sourceBefore.default_attendance_preview.map((row) => [pair(row), row]),
+  );
+  assert.equal(sourceBefore.default_attendance_preview.length, 21);
+  assert.equal(defaultPairs.size, 21);
+  for (const school of activeSchools)
+    for (const day of weekDates)
+      assert.deepEqual(defaultPairs.get(`${school.school_id}|${day}`), {
+        school_id: school.school_id,
+        service_date: day,
+        student_portions: school.default_student_portions,
+        teacher_portions: school.default_teacher_portions,
+        source_row_reference: `default:${school.school_code}:${day}`,
+      });
+  // Approved whole-week Review overlays saved facts on public default facts.
+  const expectedByPair = new Map(
+    sourceBefore.default_attendance_preview.map((row) => [pair(row), row]),
+  );
+  for (const row of previousRows) expectedByPair.set(pair(row), row);
+  expectedByPair.set(pair(line), { ...line, student_portions: 13 });
+  const expectedRows = [...expectedByPair.values()];
+  assert.equal(expectedRows.length, 21);
+  const businessFacts = (rows) =>
+    rows
+      .map((row) => ({
+        school: row.school_id,
+        date: row.service_date,
+        students: row.student_portions,
+        teachers: row.teacher_portions,
+        source: row.source_row_reference,
+      }))
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  const expectedReview = expectedRows
+    .filter((row) => {
+      const old = previousByPair.get(pair(row));
+      return (
+        !old ||
+        old.student_portions !== row.student_portions ||
+        old.teacher_portions !== row.teacher_portions
+      );
+    })
+    .sort(
+      (a, b) =>
+        a.service_date.localeCompare(b.service_date) ||
+        a.school_id.localeCompare(b.school_id),
+    )
+    .map((row) => {
+      const old = previousByPair.get(pair(row));
+      const name = sourceBefore.schools.find(
+        (s) => s.school_id === row.school_id,
+      )?.school_name;
+      assert(name);
+      return [
+        `${name} ${row.service_date.split("-").reverse().join("/")} · Đổi`,
+        `HS ${old?.student_portions ?? "—"} · GV ${old?.teacher_portions ?? "—"}`,
+        `HS ${row.student_portions} · GV ${row.teacher_portions}`,
+      ];
+    });
+  assert.equal(expectedReview.length, 21);
   const school = sourceBefore.schools.find(
     (s) => s.school_id === authoring.school,
   );
@@ -151,6 +225,20 @@ export async function certifyConnectedCorrections({
   const student = `input[aria-label=${JSON.stringify(`Học sinh ${school.school_name}`)}]`;
   await input(student, "13");
   await action("Xem thay đổi");
+  await until(
+    () =>
+      evaluate(
+        "Boolean(document.querySelector('aside[aria-label=\"Xem thay đổi\"] table'))",
+      ),
+    "CORRECTION_WHOLE_WEEK_REVIEW",
+  );
+  assert.deepEqual(
+    await evaluate(
+      "[...document.querySelector('aside[aria-label=\"Xem thay đổi\"] table').querySelectorAll('tbody tr')].map(row=>[...row.cells].map(cell=>cell.innerText.replace(/\\s+/g,' ').trim()))",
+    ),
+    expectedReview,
+    "Every default and edited pair must be explicitly reviewed before whole-week Save.",
+  );
   const attendanceReceipts = count("save_attendance");
   await action("Lưu", 'aside[aria-label="Xem thay đổi"]');
   const savedSources = await readAfter(
@@ -168,12 +256,63 @@ export async function certifyConnectedCorrections({
     attendance.latest_approval_snapshot_id,
   );
   assert.deepEqual(
-    savedSources.attendance.lines,
-    attendance.lines.map((value) =>
-      value.attendance_line_id === line.attendance_line_id
-        ? { ...value, student_portions: 13 }
-        : value,
+    savedSources.attendance.approval_history.filter(
+      (row) =>
+        row.approval_snapshot_id !==
+        savedSources.attendance.latest_approval_snapshot_id,
     ),
+    attendance.approval_history,
+  );
+  assert.equal(
+    savedSources.attendance.approval_history.length,
+    attendance.approval_history.length + 1,
+  );
+  assert.equal(savedSources.attendance.row_count, 21);
+  const savedApproval = savedSources.attendance.approval_history.find(
+    (row) =>
+      row.approval_snapshot_id ===
+      savedSources.attendance.latest_approval_snapshot_id,
+  );
+  assert.equal(savedApproval?.line_count, 21);
+  assert.equal(savedApproval.version, savedSources.attendance.version);
+  assert.deepEqual(
+    businessFacts(savedSources.attendance.lines),
+    businessFacts(expectedRows),
+  );
+  assert.equal(
+    new Set(savedSources.attendance.lines.map(pair)).size,
+    expectedRows.length,
+  );
+  assert.equal(
+    new Set(savedSources.attendance.lines.map((row) => row.attendance_line_id))
+      .size,
+    expectedRows.length,
+  );
+  assert(
+    savedSources.attendance.lines.every(
+      (row) =>
+        row.line_status === "ACTIVE" &&
+        /^[0-9a-f-]{36}$/.test(row.attendance_line_id) &&
+        row.updated_at === savedSources.attendance.updated_at &&
+        Number.isFinite(Date.parse(row.updated_at)) &&
+        row.updated_by_actor_id ===
+          savedSources.attendance.latest_approved_by_actor_id,
+    ),
+  );
+  for (const old of previousRows)
+    assert.equal(
+      savedSources.attendance.lines.find((row) => pair(row) === pair(old))
+        ?.attendance_line_id,
+      old.attendance_line_id,
+    );
+  const previousIds = new Set(
+    previousRows.map((row) => row.attendance_line_id),
+  );
+  assert.equal(
+    savedSources.attendance.lines.filter(
+      (row) => !previousIds.has(row.attendance_line_id),
+    ).length,
+    20,
   );
   assert.equal(savedSources.readiness.attendance_approved, true);
   assert.equal(savedSources.readiness.weekly_menu_approved, false);
