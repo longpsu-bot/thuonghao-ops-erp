@@ -63,6 +63,17 @@ export function AtlasVNextApp(props: AtlasVNextAppProps) {
 type WorkbenchEntry = {
   seed: string;
   seedRange?: AtlasOperatorDateRange;
+  seedSchoolIds?: string[];
+  needContinuation?: {
+    id: string;
+    range: AtlasOperatorDateRange;
+    schoolIds: string[];
+  };
+  pxkContinuation?: {
+    id: string;
+    range: AtlasOperatorDateRange;
+    schoolIds: string[];
+  };
   exitRef: RefObject<AtlasModuleExitHandle | null>;
   panelRef: RefObject<HTMLDivElement | null>;
   report: (status: AtlasWorkbenchStatus) => void;
@@ -182,8 +193,20 @@ function ApplicationSession(props: AtlasVNextAppProps) {
     [canDeactivate, createEntry],
   );
   const continueAllocation = useCallback(
-    (range: AtlasOperatorDateRange) => {
+    (range: AtlasOperatorDateRange, schoolIds: string[] = []) => {
       const retained = entries.current!.has("procurement");
+      if (!canDeactivate("procurement")) return;
+      if (retained)
+        entries.current!.get("procurement")!.needContinuation = {
+          id: crypto.randomUUID(),
+          range,
+          schoolIds: [...schoolIds],
+        };
+      else {
+        const entry = createEntry("procurement", range.start, range);
+        entry.seedSchoolIds = [...schoolIds];
+        entries.current!.set("procurement", entry);
+      }
       if (!open("procurement", range.start, range)) return;
       const context = procurementContext.current;
       if (
@@ -196,7 +219,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
         );
       }
     },
-    [open],
+    [open, canDeactivate, createEntry],
   );
   const openOrders = useCallback(
     (scope: string | AtlasOperatorDateRange) => {
@@ -216,6 +239,24 @@ function ApplicationSession(props: AtlasVNextAppProps) {
   const openChangeOrders = useCallback(() => {
     open("change-orders");
   }, [open]);
+  const openPxk = useCallback(
+    (date: string, schoolIds: string[]) => {
+      if (!canDeactivate("pxk")) return;
+      if (entries.current!.has("pxk"))
+        entries.current!.get("pxk")!.pxkContinuation = {
+          id: crypto.randomUUID(),
+          range: { start: date, end: date },
+          schoolIds: [...schoolIds],
+        };
+      else {
+        const entry = createEntry("pxk", date);
+        entry.seedSchoolIds = [...schoolIds];
+        entries.current!.set("pxk", entry);
+      }
+      open("pxk", date);
+    },
+    [canDeactivate, createEntry, open],
+  );
   const restoreNavigationFocus = () => {
     requestAnimationFrame(() => {
       const id = currentWorkspace.current.activeId;
@@ -341,11 +382,15 @@ function ApplicationSession(props: AtlasVNextAppProps) {
                 app={props}
                 seed={entry.seed}
                 seedRange={entry.seedRange}
+                seedSchoolIds={entry.seedSchoolIds}
+                needContinuation={entry.needContinuation}
+                pxkContinuation={entry.pxkContinuation}
                 exitRef={entry.exitRef}
                 onWorkspaceStatus={entry.report}
                 onServiceDateChange={reportDate}
                 onContinueAllocation={continueAllocation}
                 onOpenOrders={openOrders}
+                onOpenPxk={openPxk}
                 onOpenChangeOrders={openChangeOrders}
                 onProcurementContextChange={reportProcurement}
                 onOrdersContextChange={reportOrders}

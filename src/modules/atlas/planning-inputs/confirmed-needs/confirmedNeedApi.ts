@@ -4,6 +4,7 @@ import type {
   AtlasRpcResult,
 } from "../../connection/atlasRpc";
 import type { ConfirmedNeedDraftLine } from "./confirmedNeedModel";
+import type { ConfirmedNeedCorrectionBinding } from "./confirmedNeedCorrection";
 
 export const CONFIRMED_NEED_RPC_FUNCTIONS = {
   getReview: "atlas_api.get_confirmed_need_review",
@@ -128,6 +129,23 @@ export type ConfirmedNeedReleaseV2Request = AtlasRpcRequest & {
   reason_code: "CONFIRMED_NEED_RELEASED";
   reason_note: null;
   payload: { confirmed_need_batch_id: string };
+};
+
+export type ConfirmedNeedSaveV3Request = AtlasRpcRequest & {
+  contract_version: "RMVP-05.v3";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "CONFIRMED_NEED_SAVED";
+  reason_note: null;
+  payload: {
+    confirmed_need_batch_id: string;
+    lines: ConfirmedNeedLineRequest[];
+    correction: ConfirmedNeedCorrectionBinding;
+  };
 };
 
 export type ConfirmedNeedPurchaseHandoffRequest = AtlasRpcRequest & {
@@ -341,6 +359,43 @@ export function confirmedNeedReleaseV2Request(
   };
 }
 
+export function confirmedNeedSaveV3Request(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+  lines: ConfirmedNeedLineRequest[],
+  correction: ConfirmedNeedCorrectionBinding,
+): ConfirmedNeedSaveV3Request {
+  const base = confirmedNeedSaveV2Request(
+    authSubject,
+    correlationId,
+    batchId,
+    expectedVersion,
+    lines,
+  );
+  return {
+    ...base,
+    contract_version: "RMVP-05.v3",
+    idempotency_key: `confirmed-need-released-correction:${base.command_id}`,
+    payload: {
+      confirmed_need_batch_id: batchId,
+      lines,
+      correction: {
+        expected_confirmed_need_release_id:
+          correction.expected_confirmed_need_release_id,
+        expected_purchase_handoff_batch_id:
+          correction.expected_purchase_handoff_batch_id,
+        expected_purchase_handoff_revision_id:
+          correction.expected_purchase_handoff_revision_id,
+        expected_purchase_handoff_version:
+          correction.expected_purchase_handoff_version,
+        expected_source_fingerprint: correction.expected_source_fingerprint,
+      },
+    },
+  };
+}
+
 export function confirmedNeedPurchaseHandoffRequest(
   authSubject: string,
   correlationId: string,
@@ -405,7 +460,7 @@ export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
     release(request: ConfirmedNeedReleaseRequest) {
       return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.release, request);
     },
-    save(request: ConfirmedNeedSaveV2Request) {
+    save(request: ConfirmedNeedSaveV2Request | ConfirmedNeedSaveV3Request) {
       return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.saveV2, request);
     },
     releaseSaved(request: ConfirmedNeedReleaseV2Request) {

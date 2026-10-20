@@ -63,6 +63,54 @@ const openFilters = () => {
     fireEvent.click(disclosure);
 };
 describe("Procurement vNext operator workbench", () => {
+  it("guards a retained dirty allocation before applying the continued School/date context", async () => {
+    const fixture = createProcurementReviewFixture("manual_split");
+    const read = vi.spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations");
+    const content = (continued = false) => (
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          schools={reviewSchools}
+          needContinuation={
+            continued
+              ? {
+                  id: "correction-1",
+                  range: { start: reviewDate, end: reviewDate },
+                  schoolIds: ["school-0"],
+                }
+              : undefined
+          }
+        />
+      </AtlasVNextProvider>
+    );
+    const view = render(content());
+    fireEvent.click(await action());
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+      { target: { value: "50" } },
+    );
+    const before = read.mock.calls.length;
+    view.rerender(content(true));
+    expect(read.mock.calls.length).toBe(before);
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Áp dụng ngữ cảnh nhu cầu và tải lại",
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(read.mock.calls.length).toBe(before);
+    expect(dialog).toHaveTextContent(/chưa lưu/i);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /Bỏ thay đổi/ }),
+    );
+    await waitFor(() => expect(read.mock.calls.length).toBeGreaterThan(before));
+    expect(read.mock.lastCall![0].payload).toMatchObject({
+      school_ids: ["school-0"],
+    });
+  });
   it("does not represent initial read failure as successful zero allocations", async () => {
     show("read_failure");
     expect(await screen.findByRole("alert")).toHaveTextContent(

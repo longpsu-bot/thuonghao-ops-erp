@@ -13,6 +13,10 @@ import {
   confirmedNeedResultMessage,
   confirmedNeedResultRequiresEligibilityRefresh,
   confirmedNeedSaveV2Request,
+  confirmedNeedSaveV3Request,
+  confirmedNeedCorrectionFromWorkbench,
+  exactDecimalEqual,
+  normalizeConfirmedNeedQuantity,
   loadCompleteConfirmedNeedReview,
   shoppingListRangeDates,
   initialConfirmedNeedDraft,
@@ -40,6 +44,7 @@ import {
   validPreflight,
 } from "./confirmedNeedAuthority";
 import { draftLineRequest, historicalQuantity } from "./confirmedNeedDraft";
+import type { SchoolCateringProcurementApi } from "../bridges/procurement";
 import type { ConfirmedNeedShoppingListImport } from "../bridges/confirmedNeed";
 export type ConfirmedNeedWorkbenchProps = AtlasModuleExitProps & {
   authSubject: string | null;
@@ -48,7 +53,12 @@ export type ConfirmedNeedWorkbenchProps = AtlasModuleExitProps & {
   preflightApi: PreflightApi;
   needGenerationApi: NeedGenerationApi;
   confirmedNeedApi: ConfirmedNeedApi;
-  onContinueAllocation?: (range: AtlasOperatorDateRange) => void;
+  onContinueAllocation?: (
+    range: AtlasOperatorDateRange,
+    schoolIds?: string[],
+  ) => void;
+  procurementApi?: SchoolCateringProcurementApi;
+  onOpenOrders?: (date: string) => void;
   onExportShoppingList?: (
     workbench: ConfirmedNeedWorkbenchData,
     context?: ShoppingListRangeContext,
@@ -61,6 +71,7 @@ export type ConfirmedNeedWorkbenchProps = AtlasModuleExitProps & {
   ) => Promise<ConfirmedNeedShoppingListImport>;
 };
 type Transition = {
+  cancelCorrection?: boolean;
   range?: AtlasOperatorDateRange;
   exit?: () => void;
   date?: string;
@@ -69,6 +80,7 @@ type Transition = {
   refresh?: boolean;
 };
 type Lock = "unknown" | "stale" | "eligibility" | null;
+type CorrectionDraft = { context: string; reason: string } | null;
 const readFailure = "Không thể tải dữ liệu hiện tại. Hãy thử tải lại.";
 export function useConfirmedNeedWorkbench({
   authSubject,
@@ -96,6 +108,7 @@ export function useConfirmedNeedWorkbench({
     dirty: boolean;
     lock: Lock;
     readError: string | null;
+    correction: CorrectionDraft;
   };
   const days = useRef<Record<string, Day>>({});
   const loadedDate = useRef<string | null>(null);
@@ -113,6 +126,15 @@ export function useConfirmedNeedWorkbench({
   const [workbench, setWorkbench] = useState<ConfirmedNeedWorkbenchData | null>(
     null,
   );
+  const [correctionDraft, setCorrectionDraft] = useState<CorrectionDraft>(null);
+  const correctionRequest = useRef<{
+    signature: string;
+    request: ReturnType<typeof confirmedNeedSaveV3Request>;
+  } | null>(null);
+  const correctionContext = `${authSubject}:${date}:${workbench?.confirmed_need_batch_id}:${workbench?.need_generation_source.run_id}:${workbench?.batch_version}`;
+  const correctionMode = correctionDraft?.context === correctionContext;
+  const correctionReason = correctionMode ? correctionDraft.reason : "";
+  const correctionRead = confirmedNeedCorrectionFromWorkbench(workbench);
   const [operation, setOperation] = useState<AtlasOperation>({
     status: "IDLE",
   });
@@ -138,12 +160,18 @@ export function useConfirmedNeedWorkbench({
     differencesOnly,
     setDifferencesOnly,
     changedLines,
-    dirty,
+    dirty: quantityDirty,
     errors,
     schools,
     visibleLines,
     hiddenDirtyCount,
-  } = useConfirmedNeedDraft(workbench, schoolIds);
+  } = useConfirmedNeedDraft(
+    workbench,
+    schoolIds,
+    correctionMode ? correctionReason : undefined,
+  );
+  const dirty =
+    quantityDirty || Boolean(correctionMode && correctionReason.trim());
   if (loadedDate.current === date)
     days.current[date] = {
       preflight,
@@ -152,6 +180,7 @@ export function useConfirmedNeedWorkbench({
       dirty,
       lock,
       readError,
+      correction: correctionMode ? correctionDraft : null,
     };
   const allDirty =
     dirty ||
@@ -190,8 +219,10 @@ export function useConfirmedNeedWorkbench({
   };
   const adopt = useCallback(
     (b: ConfirmedNeedWorkbenchData) => {
+      correctionRequest.current = null;
       setWorkbench(b);
       resetDrafts(b);
+      setCorrectionDraft(null);
     },
     [resetDrafts],
   );
@@ -288,6 +319,7 @@ export function useConfirmedNeedWorkbench({
       setDrafts(cached.drafts);
       setLock(cached.lock);
       setReadError(cached.readError);
+      setCorrectionDraft(cached.correction);
       setBusy(false);
       setNotice(null);
       setOperation({ status: "IDLE" });
@@ -299,6 +331,7 @@ export function useConfirmedNeedWorkbench({
     setOperation({ status: "IDLE" });
     setPreflight(null);
     setWorkbench(null);
+    setCorrectionDraft(null);
     setDrafts({});
     setLock(null);
     setNotice(null);
@@ -357,6 +390,7 @@ export function useConfirmedNeedWorkbench({
             dirty: false,
             lock: null,
             readError: null,
+            correction: null,
           };
         } catch (error) {
           if (token !== rangeEpoch.current) return;
@@ -367,6 +401,7 @@ export function useConfirmedNeedWorkbench({
             dirty: false,
             lock: "eligibility",
             readError: error instanceof Error ? error.message : readFailure,
+            correction: null,
           };
         }
       }),
@@ -382,30 +417,50 @@ export function useConfirmedNeedWorkbench({
   }, [range, authSubject, preflightApi, confirmedNeedApi, correlation]);
   const released =
     workbench?.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
-  const current = Boolean(
+  const sourceCurrent = Boolean(
     authSubject &&
     preflight?.downstream_currentness === "CURRENT" &&
     workbench &&
     validBatch(workbench, preflight, date) &&
     preflight.readiness_state === "READY" &&
-    workbench.blockers.length === 0 &&
     !workbench.lines.some((l) => l.source_stale || l.blockers.length > 0),
   );
+  const current = sourceCurrent && workbench?.blockers.length === 0;
+  // This legacy blocker describes ordinary v2 review. Only the separate backend
+  // v3 action can admit correction, with every other blocker still respected.
+  const correctionCurrent =
+    sourceCurrent &&
+    correctionRead?.allowed === true &&
+    workbench?.blockers.every(
+      (issue) => issue.code === "CONFIRMED_NEED_BATCH_NOT_REVIEWABLE",
+    );
   const editable =
-    current &&
     !rangeError &&
-    !released &&
-    workbench?.editing_allowed === true &&
+    ((correctionMode && correctionCurrent) ||
+      (!correctionMode &&
+        current &&
+        !released &&
+        workbench?.editing_allowed === true &&
+        workbench.allowed_actions.save_confirmed_needs === true)) &&
     !busy &&
     !lock;
   const canSave =
     editable &&
-    workbench?.allowed_actions.save_confirmed_needs === true &&
-    dirty &&
+    (correctionMode
+      ? correctionRead?.allowed === true && Boolean(correctionReason.trim())
+      : workbench?.allowed_actions.save_confirmed_needs === true) &&
+    changedLines.length > 0 &&
     !Object.keys(errors).length;
+  const canStartCorrection =
+    correctionCurrent &&
+    !rangeError &&
+    !busy &&
+    !lock &&
+    !dirty &&
+    correctionRead?.allowed === true;
   const canContinue =
     !rangeError &&
-    current &&
+    (current || correctionCurrent) &&
     !allDirty &&
     !rangeBusy &&
     !Object.keys(errors).length &&
@@ -430,7 +485,17 @@ export function useConfirmedNeedWorkbench({
     const line = workbench?.lines.find((l) => l.confirmed_need_line_id === id);
     if (invalidRange.current || !editable || !line || historicalQuantity(line))
       return;
-    setDrafts((d) => ({ ...d, [id]: { ...d[id]!, ...change } }));
+    const accepted = correctionMode
+      ? {
+          ...(change.exact_quantity !== undefined
+            ? { exact_quantity: change.exact_quantity }
+            : {}),
+          ...(change.quantity_entered !== undefined
+            ? { quantity_entered: change.quantity_entered }
+            : {}),
+        }
+      : change;
+    setDrafts((d) => ({ ...d, [id]: { ...d[id]!, ...accepted } }));
   };
   const classifyFailure = (r: AtlasRpcResult, generation = false) => {
     if (generation) {
@@ -490,15 +555,68 @@ export function useConfirmedNeedWorkbench({
     setBusy(true);
     setNotice(null);
     const requestEpoch = epoch.current;
-    const request = confirmedNeedSaveV2Request(
-      authSubject,
-      correlation,
-      workbench.confirmed_need_batch_id,
-      workbench.batch_version,
-      changedLines.map((l) =>
-        draftLineRequest(l, drafts[l.confirmed_need_line_id]!),
-      ),
-    );
+    const lines = changedLines
+      .filter(
+        (line) =>
+          !correctionMode ||
+          !exactDecimalEqual(
+            line.confirmed_quantity_after ?? "",
+            normalizeConfirmedNeedQuantity(
+              drafts[line.confirmed_need_line_id]!.exact_quantity,
+            ) ?? "",
+          ),
+      )
+      .map((line) => {
+        const draft = drafts[line.confirmed_need_line_id]!;
+        return draftLineRequest(
+          line,
+          correctionMode
+            ? {
+                ...draft,
+                reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+                reason_note: correctionReason,
+              }
+            : draft,
+        );
+      });
+    if (correctionMode && (!correctionRead?.allowed || !lines.length)) {
+      inFlight.current = false;
+      setBusy(false);
+      return;
+    }
+    const signature = correctionMode
+      ? JSON.stringify([
+          authSubject,
+          workbench.confirmed_need_batch_id,
+          workbench.batch_version,
+          lines,
+          correctionRead!.binding,
+        ])
+      : null;
+    const request = correctionMode
+      ? correctionRequest.current?.signature === signature
+        ? correctionRequest.current.request
+        : confirmedNeedSaveV3Request(
+            authSubject,
+            correlation,
+            workbench.confirmed_need_batch_id,
+            workbench.batch_version,
+            lines,
+            correctionRead!.binding,
+          )
+      : confirmedNeedSaveV2Request(
+          authSubject,
+          correlation,
+          workbench.confirmed_need_batch_id,
+          workbench.batch_version,
+          lines,
+        );
+    if (correctionMode)
+      correctionRequest.current = {
+        signature: signature!,
+        request: request as ReturnType<typeof confirmedNeedSaveV3Request>,
+      };
+    let correctionCommitted = false;
     try {
       saveNeedsReadback.current = true;
       const r = await confirmedNeedApi.save(request);
@@ -508,15 +626,40 @@ export function useConfirmedNeedWorkbench({
         validBatch(b, preflight, date) &&
         b.batch_version > workbench.batch_version
       ) {
-        adopt(b);
+        if (correctionMode) {
+          correctionCommitted = true;
+          const fresh = planningInputPreflightFromResult(
+            await preflightApi.preflight(authSubject, correlation, date, date),
+          );
+          if (epoch.current !== requestEpoch) return;
+          if (
+            !validPreflight(fresh, date) ||
+            fresh.downstream_currentness !== "CURRENT"
+          )
+            throw new Error(readFailure);
+          const canonical = await loadBatch(fresh);
+          if (epoch.current !== requestEpoch) return;
+          if (!canonical || canonical.batch_version < b.batch_version)
+            throw new Error(readFailure);
+          setPreflight(fresh);
+          adopt(canonical);
+        } else adopt(b);
         saveNeedsReadback.current = false;
         setLock(null);
-        setNotice("Đã lưu thay đổi.");
+        setNotice(
+          correctionMode
+            ? "Đã lưu điều chỉnh nhu cầu. Đơn nhà cung cấp chưa được phát hành lại; kiểm tra phân bổ và mua hàng."
+            : "Đã lưu thay đổi.",
+        );
       } else classifyFailure(r);
     } catch {
       if (epoch.current === requestEpoch) {
-        setLock("unknown");
-        setNotice("Chưa xác định được kết quả lưu. Tải lại để xác nhận.");
+        setLock(correctionCommitted ? "eligibility" : "unknown");
+        setNotice(
+          correctionCommitted
+            ? "Đã lưu điều chỉnh. Chưa tải được dữ liệu hiện tại; tải lại trước khi tiếp tục."
+            : "Chưa xác định được kết quả lưu. Tải lại để xác nhận.",
+        );
       }
     } finally {
       if (epoch.current === requestEpoch) {
@@ -643,6 +786,9 @@ export function useConfirmedNeedWorkbench({
     }
   };
   const applyTransition = (t: Transition) => {
+    if (t.cancelCorrection || t.schoolIds || t.exit || t.date || t.week)
+      setCorrectionDraft(null);
+    if (t.cancelCorrection && workbench) resetDrafts(workbench);
     if (t.exit) {
       t.exit();
       return;
@@ -693,6 +839,7 @@ export function useConfirmedNeedWorkbench({
     if (workbench && shouldDiscard(date)) resetDrafts(workbench);
     for (const [dayDate, day] of Object.entries(days.current))
       if (day.workbench && shouldDiscard(dayDate)) {
+        day.correction = null;
         day.drafts = Object.fromEntries(
           day.workbench.lines.map((l) => [
             l.confirmed_need_line_id,
@@ -797,6 +944,19 @@ export function useConfirmedNeedWorkbench({
     changedLines,
     hiddenDirtyCount,
     dirty,
+    correctionRead,
+    correctionMode,
+    correctionReason,
+    canStartCorrection,
+    startCorrection: () => {
+      if (canStartCorrection && !inFlight.current)
+        setCorrectionDraft({ context: correctionContext, reason: "" });
+    },
+    setCorrectionReason: (reason: string) => {
+      if (correctionMode && editable)
+        setCorrectionDraft({ context: correctionContext, reason });
+    },
+    cancelCorrection: () => transition({ cancelCorrection: true }),
     errors,
     released,
     editable,
@@ -817,7 +977,7 @@ export function useConfirmedNeedWorkbench({
     discardTransition,
     continueAllocation: () => {
       if (!invalidRange.current && canContinue && !inFlight.current)
-        onContinueAllocation?.(range);
+        onContinueAllocation?.(range, schoolIds);
     },
     captureShoppingListImport: () => {
       const expected = shoppingContext.current;

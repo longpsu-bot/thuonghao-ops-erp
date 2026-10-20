@@ -46,6 +46,7 @@ const normalizedSupplierNote = (note: string | null | undefined) =>
 export function ProcurementSupplierDetail({
   row,
   disabled,
+  suspendSave = false,
   onSave,
   onClose,
   returnFocusEl,
@@ -54,6 +55,7 @@ export function ProcurementSupplierDetail({
 }: AtlasModuleExitProps & {
   row: AllocationFamilyRow;
   disabled: boolean;
+  suspendSave?: boolean;
   onSave: (splits: SupplierSplitInput[]) => void;
   onClose: () => void;
   returnFocusEl?: () => HTMLElement | null;
@@ -146,8 +148,13 @@ export function ProcurementSupplierDetail({
           normalizedSupplierNote(original.supplier_note)
       );
     });
+  const sourceAcceptance = [
+    "STALE_REBALANCE_AVAILABLE",
+    "NEEDS_REALLOCATION",
+  ].includes(row.state);
   const canSave =
-    dirty &&
+    (dirty || sourceAcceptance) &&
+    !suspendSave &&
     !locked &&
     row.allowed_actions.save_allocation &&
     remainder === 0n &&
@@ -606,7 +613,9 @@ export function ProcurementSupplierDetail({
             )
           }
         >
-          Lưu phân bổ
+          {sourceAcceptance && !dirty
+            ? "Chấp nhận phân bổ cho nguồn hiện tại"
+            : "Lưu phân bổ"}
         </Button>
       </Flex>
       <Dialog.Root

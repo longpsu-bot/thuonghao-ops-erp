@@ -135,6 +135,11 @@ pg_temp.k1_snapshot(true)-array['atlas_core.command_receipts','atlas_audit.domai
       const sessions = [held, need, upstream];
       const evidence = { source, winner };
       try {
+        evidence.advisoryCorrectionEligible = run(
+          db,
+          "select response#>>'{workbench,allowed_actions,correct_released_confirmed_needs}' from k3_released_read;",
+        );
+        assert.equal(evidence.advisoryCorrectionEligible, "true");
         held.p.stdin.write(
           "select r.confirmed_need_line_revision_id from atlas_planning.confirmed_need_line_revisions r join atlas_planning.confirmed_need_lines l using(confirmed_need_line_id) where l.ingredient_id='b6500000-0000-0000-0000-000000000006' and r.is_current for update of r; select 'REVISION_HELD';\n",
         );

@@ -43,6 +43,39 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it("opens the authoritative predecessor and successor without issuing another command", () => {
+    const fixture = createProcurementReviewFixture("po_released");
+    const current = fixture.orders.purchase_orders[0]!;
+    current.purchase_order_id = "new-order";
+    current.document_number = "PO-002";
+    current.replaces_purchase_order_id = "old-order";
+    const old = structuredClone(current);
+    old.purchase_order_id = "old-order";
+    old.document_number = "PO-001";
+    old.status = "SUPERSEDED";
+    old.commitment_state = "SUPERSEDED";
+    old.replaces_purchase_order_id = null;
+    old.replaced_by_purchase_order_id = "new-order";
+    fixture.orders.purchase_orders.push(old);
+    const action = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={action}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem đơn trước PO-001" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Xem đơn thay thế PO-002" }),
+    ).toBeInTheDocument();
+    expect(action).not.toHaveBeenCalled();
+  });
   it("does not label unavailable PO data as zero documents or a successful empty scope", () => {
     render(
       <AtlasVNextProvider>

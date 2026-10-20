@@ -1,5 +1,13 @@
 # School-Catering Procurement API Contract
 
+## K3 Allocation read reconciliation — 20 October 2026
+
+Authority: [Owner decision #400](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6279713889). The existing `get_confirmed_supplier_allocation_workbench` uses K2's per-family source proof after a genuine post-release correction. Changed families expose the authentic current `CONFIRMED_NEED` proposal for explicit acceptance; untouched families retain applicable original `PURCHASE_HANDOFF` identities and contributors. Handoff rows in this correction branch do not expose CN command bindings. Ordinary released rows retain their existing CN lineage metadata. Actual contributing Schools remain associated with the family independently of current default-location metadata.
+
+`BALANCED` requires compatible typed source identity/version, exact contributor revision/decision or Handoff line membership, controlled Unit, canonical fingerprint and quantity, and eligible balanced Supplier splits. A later valid correction remains editable while the previously accepted allocation is stale. Missing or invalid correction evidence blocks actions; equal totals cannot establish currentness. Post-release Preparation advisory uses the canonical whole-date allocation frontier, independent of UI filters, and cannot use raw CN/default readiness to override `SOURCE_CHANGED` or an existing cancellation obligation. Ordinary pre-release Preparation/default behavior remains unchanged. These are advisory reads: unchanged transactional writers recheck source, authorization, locking, coverage and receipts.
+
+Migration `20261020004031_atlas_k3_allocation_source_read_parity.sql` amends only the existing Allocation read and Preparation advisory. No new function, privilege, persistence, status, writer, receipt, lock, historical source identity or PO snapshot is introduced. A reviewed forward rollback may restore the prior read definitions without changing operational history; it must keep correction entry fail-closed until a coherent read is restored.
+
 ## K2 corrected Need source amendment — 19 October 2026
 
 Authority: [Issue #400 Owner K2 decision](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6263269007), implemented in the bounded [K2 task record](../implementation-tasks/TASK-ATLAS-C-K2-CORRECTED-NEED-PO-01.md). This supersedes #406's proposed receipt certificate for the closed corrected-Need branch. Command receipts retain idempotency, recovery and audit meaning; a command name, completed outcome or response never supplies missing source authority.

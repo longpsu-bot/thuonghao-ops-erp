@@ -33,6 +33,7 @@ export function ConfirmedNeedTable({
   errors,
   editable,
   compactEditing = false,
+  correctionReason,
   onEdit,
 }: {
   lines: ConfirmedNeedLine[];
@@ -40,6 +41,7 @@ export function ConfirmedNeedTable({
   errors: Record<string, string>;
   editable: boolean;
   compactEditing?: boolean;
+  correctionReason?: string;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   type SortKey = "school" | "ingredient" | "proposal";
@@ -406,7 +408,13 @@ export function ConfirmedNeedTable({
                   minW="var(--atlas-layout-reason-width, 255px)"
                 >
                   <Box display="grid" gap="xs">
-                    {showReasonChrome ? (
+                    {correctionReason !== undefined ? (
+                      <Text textStyle="helper">
+                        {changed
+                          ? correctionReason || "Nhập lý do điều chỉnh ở trên."
+                          : "Giữ nguyên dòng đã xác nhận."}
+                      </Text>
+                    ) : showReasonChrome ? (
                       <NativeSelect.Root disabled={!editable || historical}>
                         <NativeSelect.Field
                           aria-label={`Lý do ${line.ingredient.name}`}
@@ -435,7 +443,7 @@ export function ConfirmedNeedTable({
                         Theo đề xuất
                       </Text>
                     )}
-                    {showReasonChrome && (
+                    {correctionReason === undefined && showReasonChrome && (
                       <Input
                         aria-label={`Ghi chú ${line.ingredient.name}`}
                         placeholder="Ghi chú điều chỉnh"

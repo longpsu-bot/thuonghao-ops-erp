@@ -65,6 +65,28 @@ returns jsonb language sql volatile set search_path='' as $$
 $$;
 grant execute on function pg_temp.k1_command(text,text,bigint,jsonb) to authenticated;
 
+-- K3 reads are advisory only: the unchanged writer must recheck every fact.
+create function pg_temp.k3_review(target uuid default 'b6500000-0000-0000-0000-000000000050')
+returns jsonb language plpgsql set search_path='' as $$
+declare response jsonb; prior_subject text:=current_setting('request.jwt.claim.sub',true);
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub','b6000000-0000-0000-0000-000000000101',true);
+  response:=atlas_api.get_confirmed_need_review(jsonb_build_object(
+    'contract_version','RMVP-05.v1',
+    'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+    'correlation_id',gen_random_uuid(),'payload',jsonb_build_object(
+      'confirmed_need_batch_id',target,'filters','{}'::jsonb,
+      'line_offset',0,'line_limit',10000)));
+  reset role;
+  perform set_config('request.jwt.claim.sub',coalesce(prior_subject,''),true);
+  return response;
+end $$;
+select is(pg_temp.k3_review()#>>'{workbench,allowed_actions,correct_released_confirmed_needs}',
+  'false','K3 ordinary unissued batch has no post-release correction action');
+select is(pg_temp.k3_review()#>>'{workbench,allowed_actions,save_confirmed_needs}',
+  'true','K3 ordinary editable v2 Save remains available');
+
 -- Initial human confirmation and transfer use the installed public commands.
 insert into k1_requests
 select 'initial_save',pg_temp.k1_command('RMVP-05.v2','CONFIRMED_NEED_SAVED',b.version,
@@ -121,6 +143,16 @@ from k1_requests where name='initial_po';
 reset role;
 select is((select response->>'success' from k1_results where name='initial_po'),
   'true','K1 prerequisite: real public Supplier PO release');
+create temporary table k3_released_read as select pg_temp.k3_review() response;
+select is((select response#>>'{workbench,allowed_actions,correct_released_confirmed_needs}'
+  from k3_released_read),'true','K3 authenticated released batch permits explicit v3 correction');
+select is((select response#>'{workbench,disabled_reason_codes,correct_released_confirmed_needs}'
+  from k3_released_read),'null'::jsonb,'K3 eligible action has no disabled reason');
+select is((select response#>>'{workbench,allowed_actions,save_confirmed_needs}'
+  from k3_released_read),'false','K3 released correction never enables ordinary v2 Save');
+select ok((select response#>'{workbench,need_correction_authority,pending_obligations}'
+  from k3_released_read) ? 'PROCUREMENT_TRANSFER_NOT_IMPLEMENTED' = false,
+  'K3 readback does not claim the proven K2 transfer is unimplemented');
 insert into k1_requests
 select 'initial_pxk',pg_temp.k1_command('SCHOOL-DISPATCH-RELEASE.v1',
   'SCHOOL_DISPATCH_DOCUMENT_RELEASED',0,jsonb_build_object('service_date','2026-11-02',
@@ -268,6 +300,7 @@ begin
     response:=atlas_api.save_confirmed_needs(command);
     execute 'reset role';
     answer:=jsonb_build_object('response',response,
+      'review',pg_temp.k3_review(),
       'business_unchanged',(before_state-'atlas_core.command_receipts')=
         (pg_temp.k1_snapshot(true)-'atlas_core.command_receipts'),
       'receipt_unchanged',before_state->'atlas_core.command_receipts'=
@@ -276,16 +309,81 @@ begin
   exception when sqlstate 'K1001' then return answer;
   end;
 end $$;
-create temporary table k1_negative as
-select fault,pg_temp.k1_reject_case(fault,request) result
-from k1_requests cross join unnest(array[
+create function pg_temp.k3_history_case(fault text,read_procurement boolean default false)
+returns jsonb language plpgsql set search_path='' as $$
+declare answer jsonb;
+begin
+  begin
+    if fault='arbitrary_reopened' then
+      update atlas_planning.confirmed_need_batches set batch_status='REOPENED',
+        current_confirmed_need_validation_attempt_id=null,
+        current_confirmed_need_approval_snapshot_id=null,current_confirmed_need_release_id=null
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+    elsif fault='missing_release_pointer' then
+      update atlas_planning.confirmed_need_batches set current_confirmed_need_release_id=null
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+    elsif fault='missing_current_handoff' then
+      update atlas_planning.purchase_handoff_revisions set is_current=false
+      where purchase_handoff_batch_id=(select purchase_handoff_batch_id
+        from atlas_planning.purchase_handoff_batches where confirmed_need_batch_id=
+          'b6500000-0000-0000-0000-000000000050') and is_current;
+    elsif fault='invalid_handoff_status' then
+      update atlas_planning.purchase_handoff_batches set handoff_status='REOPENED'
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+    elsif fault='same_total_membership' then
+      update atlas_planning.confirmed_need_line_revision_contributions
+      set theoretical_need_line_id=gen_random_uuid()
+      where confirmed_need_line_revision_id=(select confirmed_need_line_revision_id
+        from k1_original_lines order by confirmed_need_line_id limit 1);
+    elsif fault='unsupported_source' then
+      update atlas_planning.confirmed_need_batches set source_kind='WHOLESALE'
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+    end if;
+    answer:=case when read_procurement then '{}'::jsonb else pg_temp.k3_review() end;
+    if read_procurement then
+      set local role authenticated;
+      perform set_config('request.jwt.claim.sub','b6000000-0000-0000-0000-000000000101',true);
+      answer:=answer||jsonb_build_object('procurement',
+        atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_build_object(
+          'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','correlation_id',gen_random_uuid(),
+          'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+          'payload',jsonb_build_object('date_start','2026-11-02','date_end','2026-11-02',
+            'school_ids','[]'::jsonb,'states','[]'::jsonb,'search',null))));
+      reset role;
+    end if;
+    raise exception using errcode='K3001',message='Roll back negative read fixture';
+  exception when sqlstate 'K3001' then return answer;
+    when check_violation or foreign_key_violation or not_null_violation or undefined_column then
+      -- Existing immutable guards may reject corruption before the read. Keep
+      -- the known 42703 contribution diagnostic visible; never bypass a guard.
+      return jsonb_build_object('integrity_rejected',true,'sqlstate',sqlstate);
+  end;
+end $$;
+create temporary table k3_history_denials as
+select fault,pg_temp.k3_history_case(fault) response
+from unnest(array['arbitrary_reopened','missing_release_pointer','missing_current_handoff',
+  'invalid_handoff_status','same_total_membership','unsupported_source']) fault;
+select ok(response->>'integrity_rejected'='true'
+    or response#>>'{workbench,allowed_actions,correct_released_confirmed_needs}'='false',
+  'K3 invalid historical evidence cannot authorize correction: '||fault)
+from k3_history_denials;
+select ok(pg_temp.k1_snapshot()=(select facts from k1_original_history),
+  'K3 negative read probes preserve the exact original issued history');
+select is(pg_temp.k3_review(gen_random_uuid())->>'success','false',
+  'K3 unknown batch read cannot fabricate an eligible correction action');
+-- Each independent public-command/read case retains its own unchanged 8-second
+-- statement budget, as it does through PostgREST. Do not batch 22 RPC pairs
+-- inside one artificial SQL statement during concurrent development checks.
+create temporary table k1_negative(fault text primary key,result jsonb not null);
+select format('insert into k1_negative select %L,pg_temp.k1_reject_case(%L,request) from k1_requests where name=''correction110'';',fault,fault)
+from unnest(array[
   'missing:planning.need_generation.write','missing:confirmed_need_quantities.confirm',
   'missing:confirmed_need_release.release','inactive_actor','no_global','inactive_unit',
   'stale_batch','wrong_batch','missing_release','wrong_handoff','wrong_handoff_revision',
   'stale_handoff','stale_source','wrong_line','wrong_revision','wrong_decision',
   'cross_membership','missing_note','invalid_step','unchanged','unknown_field',
   'corrupt_untouched_receipt']) fault
-where name='correction110';
+\gexec
 select ok((result#>>'{response,success}'='false'
     or (fault='corrupt_untouched_receipt' and result->>'receipt_integrity_blocked'='true'))
     and (result->>'business_unchanged')::boolean,
@@ -294,6 +392,17 @@ from k1_negative order by fault;
 select ok(bool_and((result->>'receipt_unchanged')::boolean),
   'K1-06 capability/Actor/GLOBAL denials occur before command receipt creation')
 from k1_negative where fault like 'missing:%' or fault in ('inactive_actor','no_global');
+select ok(result#>>'{review,success}'='false'
+    or result#>>'{review,workbench,allowed_actions,correct_released_confirmed_needs}'='false',
+  'K3 authenticated eligibility rejects '||fault)
+from k1_negative where fault like 'missing:%' or fault in ('inactive_actor','no_global','inactive_unit');
+select is(result#>>'{review,workbench,disabled_reason_codes,correct_released_confirmed_needs}',
+  'CORRECTION_CAPABILITY_REQUIRED','K3 missing capability has a stable safe reason: '||fault)
+from k1_negative where fault like 'missing:%';
+select is(result#>>'{review,workbench,disabled_reasons,correct_released_confirmed_needs}',
+  'Bạn chưa có đủ quyền điều chỉnh nhu cầu đã phát hành.',
+  'K3 missing capability has Vietnamese operator wording: '||fault)
+from k1_negative where fault like 'missing:%';
 
 set local role authenticated;
 insert into k1_results select 'correction110',atlas_api.save_confirmed_needs(request)
@@ -330,7 +439,8 @@ select is((select response#>>'{authoritative_readback,need_correction_authority,
   from k1_results where name='correction110'),'b6000000-0000-0000-0000-000000000001',
   'K1-01 JWT-bound accountable human Actor');
 select is((select response#>>'{authoritative_readback,need_correction_authority,downstream_workflow_available}'
-  from k1_results where name='correction110'),'false','K1 readback says downstream workflow is unavailable');
+  from k1_results where name='correction110'),'true',
+  'K3 fresh readback identifies valid corrected-source continuation, not PO issuance');
 select is((select response->>'supplier_commitment_changed' from k1_results where name='correction110'),
   'false','K1 Save does not claim Supplier issuance');
 select is(pg_temp.k1_snapshot(),(select facts from k1_original_history),
@@ -355,6 +465,26 @@ reset role;
 select is((select response#>>'{workbench,need_correction_authority,current_lines,0,new_confirmed_quantity}'
   from k1_results where name='recovered110'),'110.000000',
   'K1-09 authoritative public read recovers executed Save after response loss');
+select is((select response#>>'{workbench,allowed_actions,correct_released_confirmed_needs}'
+  from k1_results where name='recovered110'),'true',
+  'K3 genuine K1-reopened chain permits a second explicit correction');
+select is((select response#>>'{workbench,allowed_actions,save_confirmed_needs}'
+  from k1_results where name='recovered110'),'false',
+  'K3 genuine K1-reopened chain still forbids ordinary v2 Save');
+create temporary table k3_procurement_history(fault text,response jsonb);
+select format('insert into k3_procurement_history select %L,pg_temp.k3_history_case(%L,true);',fault,fault)
+from unnest(array['missing_current_handoff','invalid_handoff_status','unsupported_source']) fault
+\gexec
+select ok(response->>'integrity_rejected' is null and response#>>'{procurement,success}'='true',
+  'post-release historical fault reaches the actual authenticated Procurement read: '||fault)
+from k3_procurement_history;
+select ok(response#>>'{procurement,preparation,ready}'='false'
+    and not exists(select 1 from jsonb_array_elements(response#>'{procurement,rows}') row
+      where row->>'state'='BALANCED' or row->>'complete'='true'
+        or row#>>'{allowed_actions,save_allocation}'='true'
+        or row#>>'{allowed_actions,confirm_recommendation}'='true'),
+  'unavailable historical authority blocks row actions and Preparation: '||fault)
+from k3_procurement_history;
 select is((select response from k1_results where name='replay110'),
   (select response from k1_results where name='correction110'),
   'K1-08 exact receipt replay returns original authoritative response and IDs');
@@ -565,6 +695,55 @@ from k1_b1_batch b;
 select is(pg_temp.k1_snapshot(),(select history from k1_b1_before),
  'K1-05 B1 correction adds no release/Handoff/PO/PXK or allocation effects');
 
+create function pg_temp.k3_source_reopen_case(source_name text)
+returns jsonb language plpgsql set search_path='' as $$
+declare command jsonb; reopened jsonb; review jsonb; procurement jsonb; answer jsonb;
+  prior_subject text:=current_setting('request.jwt.claim.sub',true);
+begin
+  begin
+    if source_name='attendance' then
+      select pg_temp.ng_request('RMVP-03A.v1','ATTENDANCE_REOPENED',
+        jsonb_build_object('week_start','2050-09-19','expected_source_signature',null))||jsonb_build_object('expected_version',version)
+      into command from atlas_planning.attendance_batches where period_start='2050-09-19';
+    else
+      select pg_temp.ng_request('PANTRY-02.v1','PANTRY_REOPENED',
+        jsonb_build_object('week_start','2050-09-19','expected_source_signature',source_signature))||jsonb_build_object('expected_version',version)
+      into command from atlas_planning.pantry_need_batches where week_start='2050-09-19';
+    end if;
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub',command->>'requested_by_auth_subject',true);
+    if source_name='attendance' then reopened:=atlas_api.reopen_attendance(command);
+    else reopened:=atlas_api.reopen_pantry(command); end if;
+    procurement:=atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_build_object(
+      'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','correlation_id',gen_random_uuid(),
+      'requested_by_auth_subject',command->>'requested_by_auth_subject',
+      'payload',jsonb_build_object('date_start','2050-09-19','date_end','2050-09-19',
+        'school_ids','[]'::jsonb,'states','[]'::jsonb,'search',null)));
+    reset role;
+    review:=pg_temp.k3_review((select confirmed_need_batch_id from k1_b1_batch));
+    answer:=jsonb_build_object('reopened',reopened,'review',review,'procurement',procurement);
+    raise exception using errcode='K3001',message='Roll back authenticated source reopen';
+  exception when sqlstate 'K3001' then
+    perform set_config('request.jwt.claim.sub',coalesce(prior_subject,''),true);
+    return answer;
+  end;
+end $$;
+create temporary table k3_source_denials(source_name text,response jsonb);
+select format('insert into k3_source_denials select %L,pg_temp.k3_source_reopen_case(%L);',source_name,source_name)
+from unnest(array['attendance','pantry']) source_name
+\gexec
+select is(response#>>'{reopened,success}','true',
+  'K3 real authenticated source reopen succeeds: '||source_name) from k3_source_denials;
+select is(response#>>'{review,workbench,allowed_actions,correct_released_confirmed_needs}',
+  'false','K3 source reopen disables correction: '||source_name) from k3_source_denials;
+select is(response#>>'{review,workbench,disabled_reason_codes,correct_released_confirmed_needs}',
+  'CORRECTION_SOURCE_NOT_CURRENT','K3 source reopen reports currentness: '||source_name) from k3_source_denials;
+select ok(response#>>'{procurement,preparation,ready}'='false'
+    and not exists(select 1 from jsonb_array_elements(response#>'{procurement,rows}') row
+      where row->>'state'='BALANCED' or row#>>'{allowed_actions,save_allocation}'='true'),
+  'amended Procurement read blocks genuine upstream source change: '||source_name)
+from k3_source_denials;
+
 -- A public compatibility source reopen must remove current-source authority.
 create temporary table k1_before_upstream_reopen as
 select encode(sha256(convert_to(atlas_core.rmvp_07_validated_facts_projection(
@@ -583,6 +762,12 @@ insert into k1_results select 'upstream_preflight',atlas_api.get_planning_input_
 reset role;
 select is((select response->>'success' from k1_results where name='upstream_menu_reopen'),'true',
  'K1-10 public upstream Menu reopen succeeds with its real guard');
+select is(pg_temp.k3_review((select confirmed_need_batch_id from k1_b1_batch))
+  #>>'{workbench,allowed_actions,correct_released_confirmed_needs}','false',
+  'K3 read action becomes false after authenticated upstream Menu reopen');
+select is(pg_temp.k3_review((select confirmed_need_batch_id from k1_b1_batch))
+  #>>'{workbench,disabled_reason_codes,correct_released_confirmed_needs}',
+  'CORRECTION_SOURCE_NOT_CURRENT','K3 stale source has a precise disabled reason');
 select ok((select response#>>'{preflight,readiness_state}'='BLOCKED'
  and response#>>'{preflight,downstream_currentness}'='OUTDATED'
  and response#>>'{preflight,issues,0,issue_code}'='MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT'

@@ -17,6 +17,10 @@ import {
 } from "../bridges/procurement";
 import { formatExactQuantityForOperator as quantity } from "./procurementExactQuantity";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
+import {
+  ProcurementPxkImpact,
+  type ProcurementPxkImpactProps,
+} from "./ProcurementPxkImpact";
 
 export type ProcurementExportMode =
   "all" | "details_ing" | "details_school" | "sum";
@@ -66,6 +70,9 @@ export function ProcurementOrdersStage({
   onExportXlsx,
   onExportPdf,
   onExportZip,
+  authSubject,
+  schoolDispatchApi,
+  onOpenPxk,
 }: {
   data: PurchaseOrdersData | null;
   disabled: boolean;
@@ -74,6 +81,9 @@ export function ProcurementOrdersStage({
   onExportXlsx?: ProcurementExport;
   onExportPdf?: ProcurementExport;
   onExportZip?: ProcurementZipExport;
+  authSubject?: string | null;
+  schoolDispatchApi?: ProcurementPxkImpactProps["api"];
+  onOpenPxk?: ProcurementPxkImpactProps["onOpenPxk"];
 }) {
   const [selectedId, setSelectedId] = useState<string | null | undefined>(
     undefined,
@@ -442,6 +452,37 @@ export function ProcurementOrdersStage({
                 </Button>
               </Flex>
               <Flex mt="sm" gap="sm" wrap="wrap">
+                {(
+                  [
+                    [selected.replaces_purchase_order_id, "Xem đơn trước"],
+                    [
+                      selected.replaced_by_purchase_order_id,
+                      "Xem đơn thay thế",
+                    ],
+                  ] as const
+                ).map(([id, label]) => {
+                  if (!id) return null;
+                  const linked = data.purchase_orders.find(
+                    (order) => order.purchase_order_id === id,
+                  );
+                  return linked ? (
+                    <Button
+                      key={label}
+                      variant="secondary"
+                      onClick={() => setSelectedId(id)}
+                    >
+                      {label} {linked.document_number ?? "chưa cấp số"}
+                    </Button>
+                  ) : (
+                    <Text
+                      key={label}
+                      textStyle="helper"
+                      overflowWrap="anywhere"
+                    >
+                      {label}: {id} · chưa có trong phạm vi đã tải
+                    </Text>
+                  );
+                })}
                 {primary && (
                   <Button
                     variant="businessPrimary"
@@ -510,6 +551,15 @@ export function ProcurementOrdersStage({
                   ⚠ {message}
                 </Text>
               ))}
+              {schoolDispatchApi && (
+                <ProcurementPxkImpact
+                  api={schoolDispatchApi}
+                  authSubject={authSubject ?? null}
+                  order={selected}
+                  disabled={disabled}
+                  onOpenPxk={onOpenPxk}
+                />
+              )}
               {selected.lines.some((line) => !line.school_breakdown.length) && (
                 <Text color="fg.muted" textStyle="helper">
                   Chưa có chi tiết trường nhận để đối chiếu cho một số dòng.

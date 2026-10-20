@@ -34,6 +34,41 @@ const quantity = (name: string, value: string) =>
     target: { value },
   });
 describe("Supplier decisions", () => {
+  it("requires explicit acceptance of a stale source even when the saved split is unchanged", () => {
+    const row = reviewFamily("manual_split");
+    row.state = "NEEDS_REALLOCATION";
+    const { onSave } = show(row);
+    const accept = screen.getByRole("button", {
+      name: "Chấp nhận phân bổ cho nguồn hiện tại",
+    });
+    expect(accept).toBeEnabled();
+    expect(onSave).not.toHaveBeenCalled();
+    fireEvent.click(accept);
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        supplier_id: "supplier-a",
+        allocated_quantity: "60.000000",
+        supplier_note: null,
+      },
+      {
+        supplier_id: "supplier-b",
+        allocated_quantity: "40.000000",
+        supplier_note: null,
+      },
+    ]);
+  });
+  it("cannot accept a stale source when the backend disallows allocation Save", () => {
+    const row = reviewFamily("manual_split");
+    row.state = "NEEDS_REALLOCATION";
+    row.allowed_actions.save_allocation = false;
+    const { onSave } = show(row);
+    expect(
+      screen.getByRole("button", {
+        name: "Chấp nhận phân bổ cho nguồn hiện tại",
+      }),
+    ).toBeDisabled();
+    expect(onSave).not.toHaveBeenCalled();
+  });
   it.each([true, false])(
     "brings the new editor into view only on narrow screens (%s)",
     (narrow) => {

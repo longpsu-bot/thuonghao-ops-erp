@@ -50,6 +50,34 @@ const splits = [
 ];
 
 describe("Procurement authoritative scope", () => {
+  it("applies the continued School/date context and refreshes even when the date is retained", async () => {
+    const h = setup();
+    await ready(h.result);
+    const before = h.read.mock.calls.length;
+    act(() =>
+      h.result.current.applyNeedScope({ start: reviewDate, end: reviewDate }, [
+        "school-0",
+      ]),
+    );
+    await waitFor(() =>
+      expect(h.read.mock.calls.length).toBeGreaterThan(before),
+    );
+    expect(h.read.mock.lastCall![0].payload).toMatchObject({
+      date_start: reviewDate,
+      date_end: reviewDate,
+      school_ids: ["school-0"],
+    });
+    await ready(h.result);
+    const repeated = h.read.mock.calls.length;
+    act(() =>
+      h.result.current.applyNeedScope({ start: reviewDate, end: reviewDate }, [
+        "school-0",
+      ]),
+    );
+    await waitFor(() =>
+      expect(h.read.mock.calls.length).toBeGreaterThan(repeated),
+    );
+  });
   it.each([
     ["2026-10-12", "2026-10-12"],
     ["2026-10-12", "2026-10-18"],
@@ -298,6 +326,21 @@ describe("Procurement authoritative scope", () => {
 });
 
 describe("Procurement command safety", () => {
+  it("cannot replace UNKNOWN recovery with a continued Need scope", async () => {
+    const h = setup("unknown");
+    await ready(h.result);
+    await act(async () => h.result.current.save(reviewFamily(), splits));
+    expect(h.result.current.locked).toBe(true);
+    const before = h.read.mock.calls.length;
+    act(() =>
+      h.result.current.applyNeedScope({ start: reviewDate, end: reviewDate }, [
+        "school-0",
+      ]),
+    );
+    expect(h.result.current.schoolIds).toEqual([]);
+    expect(h.read.mock.calls.length).toBe(before);
+    expect(h.result.current.feedback?.kind).toBe("unknown");
+  });
   it("retains UNKNOWN and safe read failure, never retries write, and recovers permissions", async () => {
     const { result, read, save, fixture } = setup("unknown");
     await ready(result);

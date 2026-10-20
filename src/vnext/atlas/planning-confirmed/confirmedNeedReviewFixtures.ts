@@ -605,3 +605,24 @@ export function createConfirmedNeedReviewFixture(
     needGenerationApi,
   };
 }
+
+export function createConfirmedNeedCorrectionFixture() {
+  const fixture = createConfirmedNeedReviewFixture("released");
+  fixture.batch.allowed_actions.correct_released_confirmed_needs = true;
+  fixture.batch.lines[0]!.confirmed_quantity_after = "100.000000";
+  fixture.batch.lines[0]!.proposed_confirmed_quantity = "100.000000";
+  fixture.batch.need_correction_authority = {
+    contract_version: "RMVP-05.v3",
+    operationally_available: true,
+    downstream_workflow_available: false,
+    supplier_commitment_changed: false,
+    source_fingerprint: "a".repeat(64),
+    original_release: {
+      confirmed_need_release_id: "b6500000-0000-0000-0000-000000000001",
+    },
+    purchase_handoff: null,
+    current_lines: [],
+    pending_obligations: [],
+  };
+  return fixture;
+}

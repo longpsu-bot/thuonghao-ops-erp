@@ -44,6 +44,30 @@ async function mount(scenario: SchoolPxkScenario = "READY") {
   return { ...h, api, read, write, originalRead };
 }
 describe("School PXK authoritative daily scope", () => {
+  it("preserves a dirty note until the exact incoming PO School/date scope is accepted", async () => {
+    const h = await mount("MULTIPLE_SCHOOLS");
+    const incomingScope = {
+      id: "po-002",
+      range: { start: reviewDate, end: reviewDate },
+      schoolIds: ["school-2"],
+    };
+    act(() => h.result.current.setNote("Ghi chú đang chỉnh sửa"));
+    const before = h.read.mock.calls.length;
+    act(() => h.result.current.transition({ incomingScope }));
+    expect(h.result.current.pendingTransition).toEqual({ incomingScope });
+    expect(h.read.mock.calls.length).toBe(before);
+    act(() => h.result.current.discardTransition());
+    await waitFor(() =>
+      expect(h.read.mock.calls.length).toBeGreaterThan(before),
+    );
+    expect(h.read.mock.lastCall![0].payload).toMatchObject({
+      date_start: reviewDate,
+      date_end: reviewDate,
+      school_ids: ["school-2"],
+    });
+    expect(h.result.current.appliedIncomingScope).toBe("po-002");
+    expect(h.write).not.toHaveBeenCalled();
+  });
   it.each(["READY", "REPLACEMENT_REQUIRED"] as const)(
     "keeps %s release on the selected School/date inside a multi-day scope",
     async (state) => {

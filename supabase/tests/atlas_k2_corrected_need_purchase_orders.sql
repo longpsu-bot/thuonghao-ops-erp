@@ -64,6 +64,16 @@ returns jsonb language sql volatile set search_path='' as $$
 $$;
 grant execute on function pg_temp.k2_command(text,text,bigint,jsonb) to authenticated;
 
+create function pg_temp.k3_allocation_read(p_date date) returns jsonb
+language sql volatile set search_path='' as $$
+  select atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_build_object(
+    'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','correlation_id',gen_random_uuid(),
+    'requested_by_auth_subject',current_setting('request.jwt.claim.sub',true),
+    'payload',jsonb_build_object('date_start',p_date,'date_end',p_date,
+      'school_ids','[]'::jsonb,'states','[]'::jsonb,'search',null)));
+$$;
+grant execute on function pg_temp.k3_allocation_read(date) to authenticated;
+
 insert into k2_requests
 select 'initial_save',pg_temp.k2_command('RMVP-05.v2','CONFIRMED_NEED_SAVED',b.version,
   jsonb_build_object('confirmed_need_batch_id',b.confirmed_need_batch_id,'lines',(
@@ -100,6 +110,17 @@ from k2_requests where name='initial_prepare';
 reset role;
 select is((select response->>'success' from k2_results where name='initial_prepare'),
   'true','initial Preparation preserves ordinary release and real Handoff');
+set local role authenticated;
+insert into k2_results values('ordinary_released_read',pg_temp.k3_allocation_read('2026-11-02'));
+reset role;
+select is((select jsonb_array_length(response->'rows') from k2_results where name='ordinary_released_read'),
+  2,'ordinary released read includes both families');
+select ok((select bool_and(row#>>'{family,source_kind}'='PURCHASE_HANDOFF'
+    and row->>'state'='BALANCED' and row#>>'{family,source_confirmed_need_batch_id}'=
+      'b6500000-0000-0000-0000-000000000050')
+  from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+  where name='ordinary_released_read'),
+  'ordinary released Handoff keeps the existing Confirmed Need lineage contract');
 
 insert into k2_requests
 select 'po001',pg_temp.k2_command('SCHOOL-CATERING-PROCUREMENT.v1',
@@ -243,6 +264,150 @@ reset role;
 select is((select response->>'success' from k2_results where name='allocation110'),
   'true','affected 110 Supplier Allocation is explicitly accepted');
 
+-- Owner #400 / 6279713889: reproduce the connected mixed-source read path.
+-- Roll back its explicit acceptance/Preparation so the original K2 journey and
+-- its immutable-history assertions below still exercise the same fixtures.
+savepoint k3_read_parity;
+set local role authenticated;
+insert into k2_results values('allocation_read110',
+  atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_build_object(
+    'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1',
+    'correlation_id',gen_random_uuid(),
+    'requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+    'payload',jsonb_build_object('date_start','2026-11-02','date_end','2026-11-02',
+      'school_ids','[]'::jsonb,'states','[]'::jsonb,'search',null))));
+reset role;
+
+-- Recreate the obsolete read's accepted CN binding for the untouched family.
+-- The existing writer remains unchanged; the amended read must now expose its
+-- stale authority and must never claim Preparation is ready from raw CN totals.
+savepoint k3_wrong_cn;
+insert into k2_requests
+select 'wrong_cn3',pg_temp.k2_command('CONFIRMED-SUPPLIER-ALLOCATION.v1',
+  'CONFIRMED_SUPPLIER_ALLOCATION_SAVED',f.version,jsonb_build_object(
+    'family',jsonb_build_object('service_date',p->'service_date',
+      'delivery_location_id',p->'delivery_location_id','ingredient_id',p->'ingredient_id',
+      'unit_id',p->'unit_id','expected_source_fingerprint',p->'source_fingerprint',
+      'expected_source_batch_id',p->'source_confirmed_need_batch_id',
+      'expected_source_batch_version',p->'source_confirmed_need_batch_version'),
+    'splits',jsonb_build_array(jsonb_build_object('supplier_id',s.supplier_id,
+      'allocated_quantity','3.000000','supplier_note',null))))
+from atlas_core.purchase_review_confirmed_sources('2026-11-02','2026-11-02') p
+join atlas_procurement.school_catering_allocation_families f
+  on f.ingredient_id=(p->>'ingredient_id')::uuid and f.service_date='2026-11-02'
+join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+join atlas_procurement.school_catering_allocation_supplier_splits s using(family_revision_id)
+where r.is_current and f.ingredient_id='b6500000-0000-0000-0000-000000000007';
+set local role authenticated;
+insert into k2_results select 'wrong_cn3',atlas_api.save_confirmed_supplier_allocation(request)
+from k2_requests where name='wrong_cn3';
+insert into k2_results values('wrong_cn_read',pg_temp.k3_allocation_read('2026-11-02'));
+reset role;
+insert into k2_requests
+select 'wrong_cn_prepare',pg_temp.k2_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+  (response#>>'{preparation,expected_version}')::bigint,
+  jsonb_build_object('service_date',response#>'{preparation,service_date}',
+    'confirmed_need_batch_id',response#>'{preparation,confirmed_need_batch_id}'))
+from k2_results where name='wrong_cn_read';
+set local role authenticated;
+insert into k2_results select 'wrong_cn_prepare',atlas_api.prepare_school_catering_purchase_orders(request)
+from k2_requests where name='wrong_cn_prepare';
+reset role;
+select jsonb_object_agg(name,response)::text evidence from k2_results
+where name in ('wrong_cn3','wrong_cn_read','wrong_cn_prepare')
+\gset k3_wrong_
+rollback to savepoint k3_wrong_cn;
+insert into k2_results select key,value from jsonb_each(:'k3_wrong_evidence'::jsonb);
+
+-- Reproduce the actual UI's dispatch using only the authenticated read's source
+-- kind, fingerprint and version; no test-side replacement of source authority.
+insert into k2_requests
+select 'read_accept3',pg_temp.k2_command(
+  case when row#>>'{family,source_kind}'='CONFIRMED_NEED'
+    then 'CONFIRMED-SUPPLIER-ALLOCATION.v1' else 'SCHOOL-CATERING-PROCUREMENT.v1' end,
+  case when row#>>'{family,source_kind}'='CONFIRMED_NEED'
+    then 'CONFIRMED_SUPPLIER_ALLOCATION_SAVED' else 'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED' end,
+  (row#>>'{family,version}')::bigint,jsonb_build_object('family',
+    jsonb_build_object('service_date',row->'service_date','delivery_location_id',row->'delivery_location_id',
+      'ingredient_id',row->'ingredient_id','unit_id',row->'unit_id',
+      'expected_source_fingerprint',row#>'{family,source_fingerprint}') ||
+    case when row#>>'{family,source_kind}'='CONFIRMED_NEED' then jsonb_build_object(
+      'expected_source_batch_id',row#>'{family,source_confirmed_need_batch_id}',
+      'expected_source_batch_version',row#>'{family,source_confirmed_need_batch_version}') else '{}'::jsonb end,
+    'splits',(select jsonb_agg(jsonb_build_object('supplier_id',s->'supplier_id',
+      'allocated_quantity',s->'allocated_quantity','supplier_note',s->'supplier_note'))
+      from jsonb_array_elements(row->'splits') s)))
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='allocation_read110' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+set local role authenticated;
+insert into k2_results select 'read_accept3',case
+  when request->>'contract_version'='CONFIRMED-SUPPLIER-ALLOCATION.v1'
+    then atlas_api.save_confirmed_supplier_allocation(request)
+  else atlas_api.save_school_catering_supplier_allocation(request) end
+from k2_requests where name='read_accept3';
+reset role;
+insert into k2_requests
+select 'read_prepare110',pg_temp.k2_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+  (response#>>'{preparation,expected_version}')::bigint,
+  jsonb_build_object('service_date',response#>'{preparation,service_date}',
+    'confirmed_need_batch_id',response#>'{preparation,confirmed_need_batch_id}'))
+from k2_results where name='allocation_read110';
+set local role authenticated;
+insert into k2_results select 'read_prepare110',atlas_api.prepare_school_catering_purchase_orders(request)
+from k2_requests where name='read_prepare110';
+reset role;
+select jsonb_object_agg(name,response)::text evidence from k2_results
+where name in ('allocation_read110','wrong_cn3','wrong_cn_read','wrong_cn_prepare','read_accept3','read_prepare110')
+\gset k3_parity_
+rollback to savepoint k3_read_parity;
+-- Keep observations only, after rollback, so TAP numbering/results survive.
+insert into k2_results select key,value from jsonb_each(:'k3_parity_evidence'::jsonb);
+select is((select jsonb_array_length(response->'rows') from k2_results where name='allocation_read110'),
+  2,'corrected read returns both real families');
+select is(row#>>'{family,source_kind}','PURCHASE_HANDOFF',
+  'untouched 3 kg read retains original Handoff authority')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='allocation_read110' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+select is(row#>>'{family,source_fingerprint}',
+  atlas_core.school_catering_family_projection('2026-11-02',
+    'b6500000-0000-0000-0000-000000000002','b6500000-0000-0000-0000-000000000007',
+    'b6500000-0000-0000-0000-000000000005')->>'source_fingerprint',
+  'untouched read fingerprint equals Preparation canonical source')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='allocation_read110' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+select is(row->>'state','BALANCED','untouched original Handoff needs no CN reacceptance')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='allocation_read110' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+select ok(row#>>'{family,source_confirmed_need_batch_id}' is null
+    and row#>>'{family,source_confirmed_need_batch_version}' is null
+    and not exists(select 1 from jsonb_array_elements(row->'contributions') c
+      where c->>'purchase_handoff_line_revision_id' is null
+        or c->>'confirmed_need_line_revision_id' is not null),
+  'Handoff row has exact Handoff contributors and no CN command bindings')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='allocation_read110' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+select is(row#>>'{family,source_kind}','CONFIRMED_NEED',
+  'changed 110 kg family retains authentic corrected CN authority')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='allocation_read110' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000006';
+select is((select response->>'success' from k2_results where name='wrong_cn3'),
+  'true','original obsolete CN acceptance is reproduced without a writer change');
+select is(row->>'state','STALE_REBALANCE_AVAILABLE',
+  'same 3 kg total with CN contributors cannot masquerade as canonical Handoff BALANCED')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='wrong_cn_read' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+select is((select response#>>'{preparation,ready}' from k2_results where name='wrong_cn_read'),
+  'false','raw CN readiness cannot override canonical date SOURCE_CHANGED');
+select is((select response->>'error_code' from k2_results where name='wrong_cn_prepare'),
+  'PREPARATION_BLOCKED','writer still rejects genuine noncanonical accepted source');
+select ok((select response#>'{blockers,0,blockers}' @> '[{"reason":"SOURCE_CHANGED"}]'
+  from k2_results where name='wrong_cn_prepare'),'SOURCE_CHANGED guard is preserved');
+select is((select response->>'success' from k2_results where name='read_accept3'),
+  'true','explicit unchanged 3 kg acceptance from exact read bindings succeeds');
+select diag(response::text) from k2_results where name='read_prepare110';
+select is((select response->>'success' from k2_results where name='read_prepare110'),
+  'true','exact authenticated read acceptance can Prepare mixed CN/Handoff without SOURCE_CHANGED');
+
 insert into k2_requests
 select 'prepare110',pg_temp.k2_command('PURCHASE-COMMITMENT.v1',
   'PURCHASE_ORDERS_PREPARED',version,jsonb_build_object(
@@ -363,7 +528,7 @@ language plpgsql set search_path='' as $$
 begin raise exception using errcode='23514',message='K2 deliberate release rollback'; end $$;
 create function pg_temp.k2_release_probe(fault text)
 returns jsonb language plpgsql volatile set search_path='' as $$
-declare response jsonb; source_response jsonb; command jsonb; before_state jsonb; answer jsonb;
+declare response jsonb; source_response jsonb; allocation_read jsonb; command jsonb; before_state jsonb; answer jsonb;
 begin
   begin
     if fault='no_planning_roles' then
@@ -424,18 +589,23 @@ begin
     command:=command||jsonb_build_object('command_id',gen_random_uuid(),
       'idempotency_key','k2-probe:'||gen_random_uuid());
     set local role authenticated;
+    allocation_read:=pg_temp.k3_allocation_read('2026-11-02');
     response:=atlas_api.release_school_catering_purchase_order(command);
     reset role;
-    answer:=jsonb_build_object('response',response,'source_response',source_response,
+    answer:=jsonb_build_object('response',response,'source_response',source_response,'allocation_read',allocation_read,
       'commitment_unchanged',pg_temp.k2_commitment_state()=before_state);
     raise exception using errcode='K2T01';
   exception when sqlstate 'K2T01' then return answer; end;
 end;
 $$;
-create temporary table k2_release_probes as
-select fault,pg_temp.k2_release_probe(fault) result from (values
+create temporary table k2_release_probes(fault text,result jsonb);
+-- Each independent fault retains the existing 8s budget, rather than sharing
+-- one statement budget across eight complete release transactions.
+select format('insert into k2_release_probes select %L,pg_temp.k2_release_probe(%L);',fault,fault)
+from (values
   ('no_planning_roles'),('no_procurement_write'),('inactive_actor'),('wrong_scope'),
-  ('inactive_supplier'),('upstream_reopened'),('new_need_decision'),('rollback')) cases(fault);
+  ('inactive_supplier'),('upstream_reopened'),('new_need_decision'),('rollback')) cases(fault)
+\gexec
 select is(result#>>'{response,success}','true',
   'Procurement releaser needs no current Planning capabilities after authentic K1 Save')
 from k2_release_probes where fault='no_planning_roles';
@@ -445,6 +615,35 @@ select is(result->>'commitment_unchanged','true','rejected '||fault||' leaves ev
 from k2_release_probes where fault<>'no_planning_roles' order by fault;
 select is(result#>>'{source_response,success}','true',fault||' is performed by its real public command')
 from k2_release_probes where fault in('upstream_reopened','new_need_decision') order by fault;
+select is(result#>>'{allocation_read,preparation,ready}','false',
+  'amended Procurement read blocks Preparation after '||fault)
+from k2_release_probes where fault in('inactive_supplier','upstream_reopened','new_need_decision');
+select is(result#>>'{allocation_read,preparation,allowed}','false',
+  'Procurement read denies Preparation without write capability')
+from k2_release_probes where fault='no_procurement_write';
+select ok(not exists(select 1 from jsonb_array_elements(result#>'{allocation_read,rows}') row
+    where row#>>'{allowed_actions,save_allocation}'='true'),
+  'read-only Procurement Actor cannot Save any allocation')
+from k2_release_probes where fault='no_procurement_write';
+select is(result#>>'{allocation_read,success}','false','inactive Actor cannot read Procurement')
+from k2_release_probes where fault='inactive_actor';
+select ok(result#>'{allocation_read,rows}'='[]'::jsonb
+    and result#>>'{allocation_read,preparation,allowed}'='false',
+  'out-of-scope Actor cannot see rows or Prepare')
+from k2_release_probes where fault='wrong_scope';
+
+savepoint k3_missing_read_capability;
+delete from atlas_core.role_capabilities binding using atlas_core.capabilities capability
+where binding.capability_id=capability.capability_id
+  and binding.role_id='b6000000-0000-0000-0000-000000000003'
+  and capability.capability_code='procurement.school_catering.read';
+set local role authenticated;
+select pg_temp.k3_allocation_read('2026-11-02')::text response
+\gset k3_missing_read_
+reset role;
+rollback to savepoint k3_missing_read_capability;
+select is(:'k3_missing_read_response'::jsonb->>'error_code','CAPABILITY_DENIED',
+  'missing Procurement read capability rejects the authenticated read');
 
 set local role authenticated;
 insert into k2_results select 'po002',atlas_api.release_school_catering_purchase_order(request)
@@ -495,6 +694,26 @@ from k2_requests where name='correction90';
 reset role;
 select is((select response->>'success' from k2_results where name='correction90'),
   'true','second authentic K1 correction from 110 to 90 succeeds after PO-002');
+
+set local role authenticated;
+insert into k2_results values('allocation_read90',pg_temp.k3_allocation_read('2026-11-02'));
+reset role;
+select is((select jsonb_array_length(response->'rows') from k2_results where name='allocation_read90'),
+  2,'repeated-correction read still includes both real families');
+select ok(row#>>'{family,source_kind}'='CONFIRMED_NEED'
+    and row->>'family_quantity'='90.000000'
+    and row#>>'{family,source_fingerprint}' is not null
+    and row#>>'{allowed_actions,save_allocation}'='true'
+    and row->>'state'='STALE_REBALANCE_AVAILABLE',
+  'later 90 kg correction exposes authentic editable CN proposal while old accepted 110 is stale')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='allocation_read90' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000006';
+select is((select response#>>'{preparation,ready}' from k2_results where name='allocation_read90'),
+  'false','90 kg correction requires explicit acceptance before Preparation');
+select ok(row#>>'{family,source_kind}'='PURCHASE_HANDOFF' and row->>'state'='BALANCED',
+  'second correction still preserves untouched 3 kg Handoff authority')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='allocation_read90' and row->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
 
 insert into k2_requests
 select 'allocation90',pg_temp.k2_command('CONFIRMED-SUPPLIER-ALLOCATION.v1',
@@ -755,13 +974,18 @@ set local role authenticated;
 insert into k2_results select name,atlas_api.save_confirmed_supplier_allocation(request)
 from k2_requests where name='b1_removed_allocation';
 reset role;
-select is((select response->>'success' from k2_results where name='b1_removed_allocation'),'true',
-  'removed-Supplier scenario uses an authentic explicit allocation Save');
-select is(atlas_core.school_catering_po_commitment_state(po.purchase_order_id,r.purchase_order_revision_id),
-  'CANCELLATION_REQUIRED','removed Supplier keeps a cancellation obligation')
+select response->>'success' success from k2_results where name='b1_removed_allocation'
+\gset k3_removed_allocation_
+set local role authenticated;
+insert into k2_results values('b1_removed_read',pg_temp.k3_allocation_read('2050-09-19'));
+reset role;
+select response#>>'{preparation,ready}' ready from k2_results where name='b1_removed_read'
+\gset k3_removed_
+select atlas_core.school_catering_po_commitment_state(po.purchase_order_id,r.purchase_order_revision_id) state
 from atlas_procurement.purchase_orders po
 join atlas_procurement.purchase_order_revisions r using(purchase_order_id)
-where po.school_catering_service_date='2050-09-19' and po.supplier_id=pg_temp.ng_id(61) and r.is_current;
+where po.school_catering_service_date='2050-09-19' and po.supplier_id=pg_temp.ng_id(61) and r.is_current
+\gset k3_removed_commitment_
 insert into k2_requests
 select 'b1_removed_replacement',pg_temp.ng_request('SCHOOL-CATERING-PROCUREMENT.v1',
   'SCHOOL_CATERING_PO_REPLACEMENT_CREATED',jsonb_build_object('replaced_purchase_order_id',po.purchase_order_id,
@@ -774,9 +998,17 @@ set local role authenticated;
 insert into k2_results select name,atlas_api.create_school_catering_purchase_order_replacement(request)
 from k2_requests where name='b1_removed_replacement';
 reset role;
-select is((select response->>'error_code' from k2_results where name='b1_removed_replacement'),
-  'CANCELLATION_REQUIRED','public replacement refuses a zero-Supplier document');
+select response->>'error_code' code from k2_results where name='b1_removed_replacement'
+\gset k3_removed_replacement_
 rollback to savepoint b1_removed_supplier;
+select is(:'k3_removed_allocation_success','true',
+  'removed-Supplier scenario uses an authentic explicit allocation Save');
+select is(:'k3_removed_commitment_state','CANCELLATION_REQUIRED',
+  'removed Supplier keeps a cancellation obligation');
+select is(:'k3_removed_replacement_code','CANCELLATION_REQUIRED',
+  'public replacement refuses a zero-Supplier document');
+select is(:'k3_removed_ready','false',
+  'removed issued Supplier blocks Preparation read until explicit cancellation');
 
 insert into k2_requests values('b1_allocation50',pg_temp.k2_b1_allocation(32,18));
 set local role authenticated;
@@ -785,6 +1017,23 @@ from k2_requests where name='b1_allocation50';
 reset role;
 select is((select response->>'success' from k2_results where name='b1_allocation50'),'true',
   'B1 corrected shared-School family50 requires explicit two-Supplier acceptance');
+set local role authenticated;
+insert into k2_results values('b1_mixed_read',pg_temp.k3_allocation_read('2050-09-19'));
+reset role;
+select is((select jsonb_array_length(response->'rows') from k2_results where name='b1_mixed_read'),
+  2,'shared-School corrected read includes both distinct Ingredient families');
+select ok(row#>>'{family,source_kind}'='CONFIRMED_NEED'
+    and row->>'state'='BALANCED' and jsonb_array_length(row->'schools')=2
+    and jsonb_array_length(row->'contributions')=2 and jsonb_array_length(row->'splits')=2,
+  'authenticated B1 read retains both Schools, both Suppliers and exact corrected contributors')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='b1_mixed_read' and row->>'ingredient_id'=pg_temp.ng_id(2001)::text;
+select ok(row#>>'{family,source_kind}'='PURCHASE_HANDOFF' and row->>'state'='BALANCED',
+  'B1 unchanged other Ingredient keeps original Handoff source in the mixed read')
+from k2_results cross join lateral jsonb_array_elements(response->'rows') row
+where name='b1_mixed_read' and row->>'ingredient_id'=pg_temp.ng_id(2002)::text;
+select is((select response#>>'{preparation,ready}' from k2_results where name='b1_mixed_read'),
+  'true','B1 mixed two-Supplier whole-date read agrees with actual Preparation');
 insert into k2_requests
 select 'b1_prepare50',pg_temp.ng_request('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
   jsonb_build_object('confirmed_need_batch_id',b.confirmed_need_batch_id,'service_date','2050-09-19'))
@@ -842,19 +1091,25 @@ set local role authenticated;
 insert into k2_results select name,atlas_api.save_school_catering_supplier_allocation(request)
 from k2_requests where name='b1_reassign_other_family';
 reset role;
-select is((select response->>'success' from k2_results where name='b1_reassign_other_family'),
-  'true','omitted-Supplier scenario uses an explicit Save in a different family');
-select is(atlas_core.school_catering_po_draft_is_stale(
-  (request#>>'{payload,purchase_order_id}')::uuid,(request#>>'{payload,expected_purchase_order_revision_id}')::uuid),
-  false,'target Supplier Draft itself remains current despite the other-family change')
-from k2_requests where name='b1_po002:'||pg_temp.ng_id(61);
+select response->>'success' success from k2_results where name='b1_reassign_other_family'
+\gset k3_omitted_allocation_
+select atlas_core.school_catering_po_draft_is_stale(
+  (request#>>'{payload,purchase_order_id}')::uuid,(request#>>'{payload,expected_purchase_order_revision_id}')::uuid)::text stale
+from k2_requests where name='b1_po002:'||pg_temp.ng_id(61)
+\gset k3_omitted_draft_
 set local role authenticated;
 insert into k2_results select 'b1_omitted_supplier_release',atlas_api.release_school_catering_purchase_order(request)
 from k2_requests where name='b1_po002:'||pg_temp.ng_id(61);
 reset role;
-select is((select response->>'error_code' from k2_results where name='b1_omitted_supplier_release'),
-  'PREPARATION_BLOCKED','final Release rejects the missing Supplier/date document despite current target totals');
+select response->>'error_code' code from k2_results where name='b1_omitted_supplier_release'
+\gset k3_omitted_release_
 rollback to savepoint b1_omitted_supplier;
+select is(:'k3_omitted_allocation_success','true',
+  'omitted-Supplier scenario uses an explicit Save in a different family');
+select is(:'k3_omitted_draft_stale','false',
+  'target Supplier Draft itself remains current despite the other-family change');
+select is(:'k3_omitted_release_code','PREPARATION_BLOCKED',
+  'final Release rejects the missing Supplier/date document despite current target totals');
 
 -- Inherited immutable guard rejects contribution UPDATE before touching data;
 -- its existing 42703 diagnostic is outside this task's historical-guard scope.
@@ -882,9 +1137,11 @@ set local role authenticated;
 insert into k2_results select 'b1_wrong_shared_scope',atlas_api.release_school_catering_purchase_order(request)
 from k2_requests where name='b1_po002:'||pg_temp.ng_id(60);
 reset role;
-select is((select response->>'error_code' from k2_results where name='b1_wrong_shared_scope'),
-  'SCOPE_DENIED','one School at a shared location cannot issue the whole shared-School PO');
+select response->>'error_code' code from k2_results where name='b1_wrong_shared_scope'
+\gset k3_shared_scope_
 rollback to savepoint b1_wrong_shared_scope;
+select is(:'k3_shared_scope_code','SCOPE_DENIED',
+  'one School at a shared location cannot issue the whole shared-School PO');
 set local role authenticated;
 insert into k2_results select name,atlas_api.release_school_catering_purchase_order(request)
 from k2_requests where name like 'b1_po002:%';

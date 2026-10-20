@@ -278,6 +278,14 @@ select ok((select response #>> '{authoritative_readback,release,current_release_
   is not null and response #>> '{authoritative_readback,pagination,total_lines}' = '2'
   from d037_results where name = 'release'),
   'D037-24 Release returns authoritative full readback');
+select is((select response#>'{authoritative_readback,need_correction_authority,purchase_handoff}'
+  from d037_results where name='release'),'null'::jsonb,
+  'K3 released batch with no Handoff preserves the nullable correction binding');
+select ok((select response#>>'{authoritative_readback,need_correction_authority,original_release,confirmed_need_release_id}'
+    =response#>>'{authoritative_readback,release,current_release_id}'
+    and response#>>'{authoritative_readback,need_correction_authority,source_fingerprint}' ~ '^[0-9a-f]{64}$'
+  from d037_results where name='release'),
+  'K3 no-Handoff release retains original release and authoritative source fingerprint');
 select ok((select response #>> '{workbench,allowed_actions,save_confirmed_needs}'
   = 'false' and response #>> '{workbench,allowed_actions,release_confirmed_needs}'
   = 'false' from d037_results where name = 'read_no_write'),

@@ -15,6 +15,7 @@ import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
 import type { ConfirmedNeedWorkbenchProps } from "./useConfirmedNeedWorkbench";
 import {
   createConfirmedNeedReviewFixture,
+  createConfirmedNeedCorrectionFixture,
   reviewFailure,
   reviewDate,
   type ConfirmedReviewScenario,
@@ -64,6 +65,49 @@ function show(
 async function quantity() {
   return screen.findByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" });
 }
+
+describe("K3 explicit released correction UI", () => {
+  it("requires a reason and a separate exact-quantity review before writing", async () => {
+    const h = show("released", {}, (f) =>
+      Object.assign(f.batch, createConfirmedNeedCorrectionFixture().batch),
+    );
+    h.save.mockResolvedValue(reviewFailure("UNREVIEWED_RESULT", "UNKNOWN"));
+    const input = await quantity();
+    expect(input).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Điều chỉnh nhu cầu đã phát hành" }),
+    );
+    expect(input).not.toBeDisabled();
+    fireEvent.change(input, { target: { value: "110" } });
+    const review = screen.getByRole("button", { name: "Xem lại điều chỉnh" });
+    expect(review).toBeDisabled();
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Lý do điều chỉnh sau phát hành" }),
+      { target: { value: "Bếp xác nhận tăng 10 kg" } },
+    );
+    await waitFor(() => expect(review).not.toBeDisabled());
+    fireEvent.click(review);
+    const dialog = await screen.findByRole("dialog", {
+      name: "Xác nhận điều chỉnh nhu cầu đã phát hành",
+    });
+    expect(within(dialog).getByText("100")).toBeInTheDocument();
+    expect(within(dialog).getByText("110")).toBeInTheDocument();
+    expect(h.save).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
+    await waitFor(() => expect(h.save).toHaveBeenCalledTimes(1));
+    expect(h.save.mock.calls[0]![0].contract_version).toBe("RMVP-05.v3");
+    expect(h.save.mock.calls[0]![0].payload.lines).toHaveLength(1);
+  });
+  it("keeps an unavailable correction action disabled on a released batch", async () => {
+    show("released");
+    await quantity();
+    expect(
+      screen.getByRole("button", { name: "Điều chỉnh nhu cầu đã phát hành" }),
+    ).toBeDisabled();
+  });
+});
 async function editValid() {
   fireEvent.change(await quantity(), { target: { value: "12,5" } });
   fireEvent.change(screen.getByRole("combobox", { name: "Lý do Gạo thơm" }), {

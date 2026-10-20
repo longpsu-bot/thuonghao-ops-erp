@@ -54,11 +54,26 @@ export type RenderContext = {
   app: AtlasVNextAppProps;
   seed: string;
   seedRange?: AtlasOperatorDateRange;
+  seedSchoolIds?: string[];
+  needContinuation?: {
+    id: string;
+    range: AtlasOperatorDateRange;
+    schoolIds: string[];
+  };
+  pxkContinuation?: {
+    id: string;
+    range: AtlasOperatorDateRange;
+    schoolIds: string[];
+  };
   exitRef: RefObject<AtlasModuleExitHandle | null>;
   onWorkspaceStatus: (status: AtlasWorkbenchStatus) => void;
   onServiceDateChange: (date: string) => void;
-  onContinueAllocation: (range: AtlasOperatorDateRange) => void;
+  onContinueAllocation: (
+    range: AtlasOperatorDateRange,
+    schoolIds?: string[],
+  ) => void;
   onOpenOrders: (scope: string | AtlasOperatorDateRange) => void;
+  onOpenPxk: (date: string, schoolIds: string[]) => void;
   onOpenChangeOrders: () => void;
   onProcurementContextChange: (context: AtlasProcurementContext) => void;
   onOrdersContextChange: (context: AtlasProcurementContext) => void;
@@ -140,6 +155,8 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
         preflightApi={c.app.apis.planningReadiness}
         needGenerationApi={c.app.apis.needGeneration}
         confirmedNeedApi={c.app.apis.confirmedNeed}
+        procurementApi={c.app.apis.procurement}
+        onOpenOrders={c.onOpenOrders}
         onContinueAllocation={c.onContinueAllocation}
         onExportShoppingList={c.app.exporters?.shoppingListXlsx}
         onImportShoppingList={c.app.exporters?.shoppingListImport}
@@ -156,6 +173,8 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
         {...dateOwner(c)}
         ownerStage="allocation"
         initialRange={c.seedRange}
+        initialSchoolIds={c.seedSchoolIds}
+        needContinuation={c.needContinuation}
         onOpenOrders={c.onOpenOrders}
         onContextChange={c.onProcurementContextChange}
         purchaseReviewApi={c.app.apis.purchaseReview}
@@ -176,6 +195,8 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
         {...dateOwner(c)}
         ownerStage="orders"
         initialRange={c.seedRange}
+        schoolDispatchApi={c.app.apis.schoolDispatch}
+        onOpenPxk={c.onOpenPxk}
         onContextChange={c.onOrdersContextChange}
         purchaseReviewApi={c.app.apis.purchaseReview}
         procurementApi={c.app.apis.procurement}
@@ -193,6 +214,8 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
     render: (c) => (
       <SchoolPxkWorkbench
         {...dateOwner(c)}
+        initialSchoolIds={c.seedSchoolIds}
+        incomingScope={c.pxkContinuation}
         api={c.app.apis.schoolDispatch}
         onExportXlsx={c.app.exporters?.pxkXlsx}
         onExportPdf={c.app.exporters?.pxkPdf}

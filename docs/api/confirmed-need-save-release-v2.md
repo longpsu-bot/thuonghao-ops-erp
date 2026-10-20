@@ -164,3 +164,42 @@ The migration is forward-only and baseline-checksummed. Rollback before any
 installation removes this route; after authentic correction facts exist, disable
 new v3 writes and use a reviewed forward repair while preserving all decisions,
 receipts and released evidence. Never delete correction history to roll back.
+
+## K3 advisory correction read — 20 October 2026
+
+The [Owner amendment](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6277838544)
+adds three fields to the existing authenticated review response:
+
+- `allowed_actions.correct_released_confirmed_needs`: explicit advisory entry
+  to the existing v3 correction, separate from ordinary v2 Save;
+- `disabled_reason_codes.correct_released_confirmed_needs`: null when eligible,
+  otherwise a stable `CORRECTION_*` blocker;
+- `disabled_reasons.correct_released_confirmed_needs`: null when eligible,
+  otherwise safe Vietnamese operator wording.
+
+The existing review runtime resolves the active human Actor, GLOBAL scope and
+all three K1 capabilities. It checks the latest original validated release,
+retained Handoff (including genuine absence), exact current canonical READY /
+CURRENT source/run/batch/snapshot, complete original/current facts and immutable
+decision ancestry. A REOPENED batch additionally needs a nontrivial post-release
+human correction chain. Arbitrary reopened state, a receipt, a Draft or equal
+quantities are not permission. Missing, malformed or unreadable evidence fails
+closed. The five correction binding values and response shape remain available.
+
+`need_correction_authority.operationally_available` now reflects this explicit
+correction admission. `downstream_workflow_available` is narrower than write
+readiness: it identifies navigation to the existing Procurement review for a
+current authentic corrected chain retaining its Handoff. It is neither a
+Procurement capability nor proof of accepted allocations, current complete
+Supplier/date coverage, a releasable Draft or an issued replacement. The only
+projected pending obligation is `PROCUREMENT_CURRENTNESS_REVIEW`; fresh existing
+Procurement reads determine the actual next allowed command and blockers.
+Uncorrected batches have no correction-generated pending obligation. There is
+no remaining `PROCUREMENT_TRANSFER_NOT_IMPLEMENTED` claim in fresh review data.
+
+The v3 writer and its top-level compatibility response remain unchanged. After
+any Save or UNKNOWN outcome the client obtains fresh canonical review and
+Procurement reads; it does not enable actions from the historical K1-only
+top-level response message. Save still issues no PO or PXK, and every write
+rechecks its own authority under the existing locks. No privilege, RLS, role,
+capability, receipt, timeout or historical fact change is part of this amendment.

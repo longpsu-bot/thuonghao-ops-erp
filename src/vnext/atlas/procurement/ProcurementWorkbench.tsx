@@ -47,9 +47,17 @@ import {
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
 import { derivedDefaultAllocation } from "./procurementAllocationPresentation";
+import type { ProcurementPxkImpactProps } from "./ProcurementPxkImpact";
 
 export type ProcurementWorkbenchProps = ProcurementControllerProps &
   AtlasModuleExitProps & {
+    needContinuation?: {
+      id: string;
+      range: AtlasOperatorDateRange;
+      schoolIds: string[];
+    };
+    schoolDispatchApi?: ProcurementPxkImpactProps["api"];
+    onOpenPxk?: ProcurementPxkImpactProps["onOpenPxk"];
     schools?: ProcurementSchoolOption[];
     onExportXlsx?: ProcurementExport;
     onExportPdf?: ProcurementExport;
@@ -75,6 +83,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const [exception, setException] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [appliedContinuation, setAppliedContinuation] = useState<string | null>(
+    null,
+  );
+  const pendingContinuation =
+    props.needContinuation && props.needContinuation.id !== appliedContinuation
+      ? props.needContinuation
+      : null;
   const [detailStatus, setDetailStatus] = useState<AtlasWorkbenchStatus>({
     unsaved: false,
     blocked: false,
@@ -190,6 +205,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     preparation?.ready &&
     preparation.allowed &&
     !selected &&
+    !pendingContinuation &&
     !commandDisabled;
   const sourceMessages = procurementOperatorMessages(
     [
@@ -258,6 +274,41 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
           ]}
         />
         <Box minW="var(--atlas-layout-zero, 0)" bg="bg.workbench">
+          {pendingContinuation && (
+            <Box p="sm" bg="bg.info" role="status">
+              <Text mb="xs">
+                Nhu cầu vừa được mở từ khoảng {pendingContinuation.range.start}{" "}
+                → {pendingContinuation.range.end},{" "}
+                {pendingContinuation.schoolIds.length
+                  ? `${pendingContinuation.schoolIds.length} trường`
+                  : "tất cả trường"}
+                . Kiểm tra thay đổi đang chỉnh sửa trước khi tải nguồn mới.
+              </Text>
+              <Button
+                variant="secondary"
+                disabled={
+                  controller.busy ||
+                  controller.loading ||
+                  controller.locked ||
+                  controller.hasRetry
+                }
+                onClick={() => {
+                  const apply = () => {
+                    setSelectedKey(null);
+                    setAppliedContinuation(pendingContinuation.id);
+                    controller.applyNeedScope(
+                      pendingContinuation.range,
+                      pendingContinuation.schoolIds,
+                    );
+                  };
+                  if (selected) detailExit.current?.requestExit(apply);
+                  else apply();
+                }}
+              >
+                Áp dụng ngữ cảnh nhu cầu và tải lại
+              </Button>
+            </Box>
+          )}
           <Tabs.Root
             value={controller.stage}
             onValueChange={({ value }) => {
@@ -650,6 +701,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                           key={`${selected.family.source_fingerprint}:${controller.revision}`}
                           row={selected}
                           disabled={commandDisabled}
+                          suspendSave={Boolean(pendingContinuation)}
                           onSave={(splits) =>
                             void controller.save(selected, splits)
                           }
@@ -673,6 +725,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   onExportXlsx={props.onExportXlsx}
                   onExportPdf={props.onExportPdf}
                   onExportZip={props.onExportZip}
+                  authSubject={props.authSubject}
+                  schoolDispatchApi={props.schoolDispatchApi}
+                  onOpenPxk={props.onOpenPxk}
                 />
               )}
             </Tabs.Content>

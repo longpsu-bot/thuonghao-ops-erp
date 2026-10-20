@@ -53,6 +53,7 @@ function coherent(b: ConfirmedNeedWorkbenchData) {
     editing: b.editing_allowed,
     actions: b.allowed_actions,
     blockers: b.blockers,
+    correction: b.need_correction_authority,
   });
 }
 export async function loadCompleteConfirmedNeedReview(
