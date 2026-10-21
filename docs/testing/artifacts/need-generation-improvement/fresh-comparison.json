@@ -1,0 +1,214 @@
+{
+  "base_revision": "cb7f6098a80b00c846d5a45cf6edce2e6e231bde",
+  "phase": "local diagnostic; five fresh equivalent clones per build, alternating order",
+  "environment": {
+    "postgres": "17",
+    "container": "supabase_db_thuonghao-ops-erp",
+    "jit": "off (matches observed Staging)",
+    "source_template": "atlas_full_day_sql_20261021 (empty, preserved)",
+    "migration_metadata_count": 130,
+    "migration_metadata_caveat": "Historical metadata mismatch; baseline function text verified exactly against canonical main; CI clean install remains authoritative.",
+    "benchmark_migration": "20261021082539_need_generation_proposal_statement_reuse.sql",
+    "fixture_sha256": "f6638e573e432199f38fb14934f94f067e7e29d892456afd4b273aca276f1d89",
+    "baseline_function_sha256": "97179236d395193205c08bcc108f879bbf21c3c9a6c5095999597c0206b44e95"
+  },
+  "workload": {
+    "atomic_contributions_per_generation": 304,
+    "confirmed_need_lines_per_generation": 248,
+    "schools": 19,
+    "fresh_generations_per_fixture": 3,
+    "prior_business_rows_at_start": 0,
+    "retained_generation_history_within_fixture": [0, 304, 608]
+  },
+  "timing_definition": "Database command wall time inside synthetic rollback fixture; excludes browser/network; not cold OS/cache certification.",
+  "runtime_acceptance": "Completion and intact semantic assertions; no elapsed threshold. Existing internal timeout protections unchanged.",
+  "summaries": [
+    {
+      "build": "before",
+      "fixture_count": 5,
+      "generation_count": 15,
+      "success": true,
+      "first_generation_samples_ms": [
+        3036.008, 2912.216, 2919.089, 4119.523, 2887.561
+      ],
+      "samples_ms": [
+        2887.561, 2912.216, 2919.089, 3036.008, 3788.774, 3806.455, 3820.332,
+        3859.73, 3972.468, 4119.523, 5116.777, 5162.043, 5183.096, 5242.153,
+        5525.819
+      ],
+      "median_ms": 3859.73,
+      "min_ms": 2887.561,
+      "max_ms": 5525.819
+    },
+    {
+      "build": "after",
+      "fixture_count": 5,
+      "generation_count": 15,
+      "success": true,
+      "first_generation_samples_ms": [
+        3005.637, 2694.221, 2747.679, 2659.39, 2729.375
+      ],
+      "samples_ms": [
+        2659.39, 2694.221, 2729.375, 2747.679, 2916.038, 2928.6, 2931.727,
+        3003.547, 3005.637, 3195.94, 3397.431, 3426.186, 3427.973, 3454.509,
+        3678.188
+      ],
+      "median_ms": 3003.547,
+      "min_ms": 2659.39,
+      "max_ms": 3678.188
+    }
+  ],
+  "samples": [
+    {
+      "pair": 1,
+      "build": "before",
+      "database": "atlas_need_sample_20261021_before_1",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 3036.008,
+      "max_ms": 5525.819,
+      "min_ms": 3036.008,
+      "median_ms": 3972.468,
+      "samples_ms": [3036.008, 3972.468, 5525.819],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 1,
+      "build": "after",
+      "database": "atlas_need_sample_20261021_after_1",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 3005.637,
+      "max_ms": 3678.188,
+      "min_ms": 3005.637,
+      "median_ms": 3195.94,
+      "samples_ms": [3005.637, 3195.94, 3678.188],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 2,
+      "build": "after",
+      "database": "atlas_need_sample_20261021_after_2",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 2694.221,
+      "max_ms": 3454.509,
+      "min_ms": 2694.221,
+      "median_ms": 3003.547,
+      "samples_ms": [2694.221, 3003.547, 3454.509],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 2,
+      "build": "before",
+      "database": "atlas_need_sample_20261021_before_2",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 2912.216,
+      "max_ms": 5183.096,
+      "min_ms": 2912.216,
+      "median_ms": 3806.455,
+      "samples_ms": [2912.216, 3806.455, 5183.096],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 3,
+      "build": "before",
+      "database": "atlas_need_sample_20261021_before_3",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 2919.089,
+      "max_ms": 5242.153,
+      "min_ms": 2919.089,
+      "median_ms": 3788.774,
+      "samples_ms": [2919.089, 3788.774, 5242.153],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 3,
+      "build": "after",
+      "database": "atlas_need_sample_20261021_after_3",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 2747.679,
+      "max_ms": 3397.431,
+      "min_ms": 2747.679,
+      "median_ms": 2916.038,
+      "samples_ms": [2747.679, 2916.038, 3397.431],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 4,
+      "build": "after",
+      "database": "atlas_need_sample_20261021_after_4",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 2659.39,
+      "max_ms": 3426.186,
+      "min_ms": 2659.39,
+      "median_ms": 2931.727,
+      "samples_ms": [2659.39, 2931.727, 3426.186],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 4,
+      "build": "before",
+      "database": "atlas_need_sample_20261021_before_4",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 4119.523,
+      "max_ms": 5162.043,
+      "min_ms": 3859.73,
+      "median_ms": 4119.523,
+      "samples_ms": [3859.73, 4119.523, 5162.043],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 5,
+      "build": "before",
+      "database": "atlas_need_sample_20261021_before_5",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 2887.561,
+      "max_ms": 5116.777,
+      "min_ms": 2887.561,
+      "median_ms": 3820.332,
+      "samples_ms": [2887.561, 3820.332, 5116.777],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 5,
+      "build": "after",
+      "database": "atlas_need_sample_20261021_after_5",
+      "jit": "off",
+      "fresh_clone": true,
+      "success": true,
+      "first_generation_ms": 2729.375,
+      "max_ms": 3427.973,
+      "min_ms": 2729.375,
+      "median_ms": 2928.6,
+      "samples_ms": [2729.375, 2928.6, 3427.973],
+      "sample_count": 3,
+      "timings_observational": true
+    }
+  ],
+  "limits": "Five fixtures/15 generations per build do not establish p95 or a hosted guarantee; earlier reused-heap/contended results retained separately."
+}

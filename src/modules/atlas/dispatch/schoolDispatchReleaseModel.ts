@@ -27,7 +27,9 @@ export type SchoolDispatchLine = {
   sources: SchoolDispatchLineSource[];
 };
 
-export function schoolDispatchUnitLabel(line: SchoolDispatchLine) {
+export function schoolDispatchUnitLabel(
+  line: Pick<SchoolDispatchLine, "unit_code" | "unit_name">,
+) {
   return /^(?:v1-unit-|atlas[-_:]|unit[-_:])|^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(
     line.unit_code,
   )

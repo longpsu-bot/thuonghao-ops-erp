@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(139);
+select plan(144);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -509,6 +509,15 @@ select ok((select response->>'success'='true'
   from (select pg_temp.pxk_ungrouped_release_isolated(pg_temp.pxk_release(
     'c7000000-0000-4000-8000-000000000011',0,null)) response) captured),
   'actual new PXK release after clearing assignment freezes null cooking facts');
+select ok(
+  atlas_core.school_fulfilment_reconciliation_scope('2026-09-24',
+    '26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000011')
+    #>>'{details,0,unit_name}'='Kilôgam'
+  and atlas_core.procurement_read_school_fulfilment_reconciliation_scope('2026-09-24',
+    '26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000011',
+    atlas_core.procurement_read_context('2026-09-24','2026-09-24'))
+    #>>'{quantity_totals_by_unit,0,unit_name}'='Kilôgam',
+  'both reconciliation scope paths carry prospective preview Unit names');
 set local role authenticated;
 insert into pxk_results values('release',atlas_api.release_school_dispatch_document(
   pg_temp.pxk_release('26060000-0000-4000-8000-000000000001',0,null,
@@ -531,6 +540,13 @@ select throws_ok($$update atlas_dispatch.school_dispatch_release_lines set unit_
   '23514','School dispatch release history is immutable.','PXK Unit name snapshot is immutable');
 savepoint pxk_unit_history;
 update atlas_admin.units set unit_name='Renamed master' where unit_id='26020000-0000-4000-8000-000000000031';
+select is((atlas_core.school_fulfilment_reconciliation_scope('2026-09-24',
+  '26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000011')
+  #>>'{details,0,unit_name}'),'Kilôgam','compatibility reconciliation retains captured Unit after master rename');
+select is((atlas_core.procurement_read_school_fulfilment_reconciliation_scope('2026-09-24',
+  '26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000011',
+  atlas_core.procurement_read_context('2026-09-24','2026-09-24'))
+  #>>'{quantity_totals_by_unit,0,unit_name}'),'Kilôgam','current reconciliation total retains captured Unit after master rename');
 select is((select atlas_core.school_dispatch_release_json(school_dispatch_release_id)#>>'{lines,0,unit_name}'
   from atlas_dispatch.school_dispatch_releases where school_dispatch_release_id=
     (select (response->>'school_dispatch_release_id')::uuid from pxk_results where name='release')),
@@ -538,6 +554,13 @@ select is((select atlas_core.school_dispatch_release_json(school_dispatch_releas
 set session_replication_role=replica;
 update atlas_dispatch.school_dispatch_release_lines set unit_name_snapshot=null;
 set session_replication_role=origin;
+select is((atlas_core.school_fulfilment_reconciliation_scope('2026-09-24',
+  '26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000011')
+  #>>'{details,0,unit_name}'),null::text,'compatibility scope never fills historical Unit absence from renamed master');
+select is((atlas_core.procurement_read_school_fulfilment_reconciliation_scope('2026-09-24',
+  '26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000011',
+  atlas_core.procurement_read_context('2026-09-24','2026-09-24'))
+  #>>'{quantity_totals_by_unit,0,unit_name}'),null::text,'current scope never fills historical Unit absence from renamed master');
 select ok((select atlas_core.school_dispatch_release_json(school_dispatch_release_id)#>'{lines,0,unit_name}'='null'::jsonb
   from atlas_dispatch.school_dispatch_releases where school_dispatch_release_id=
     (select (response->>'school_dispatch_release_id')::uuid from pxk_results where name='release')),

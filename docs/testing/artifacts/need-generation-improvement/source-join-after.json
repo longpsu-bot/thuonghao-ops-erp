@@ -1,0 +1,29 @@
+{
+  "candidate": "released contribution statement materialization",
+  "observations": [
+    {
+      "proposal_ms": 55.148,
+      "shared_hits": 6506,
+      "release_member_scans": 304,
+      "release_member_visits": 46208,
+      "source_members": 304,
+      "retained_source_members": 304
+    },
+    {
+      "proposal_ms": 95.23,
+      "shared_hits": 15947,
+      "release_member_scans": 608,
+      "release_member_visits": 138624,
+      "source_members": 304,
+      "retained_source_members": 608
+    },
+    {
+      "proposal_ms": 88.055,
+      "shared_hits": 21304,
+      "release_member_scans": 912,
+      "release_member_visits": 231648,
+      "source_members": 304,
+      "retained_source_members": 912
+    }
+  ]
+}

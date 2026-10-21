@@ -4,6 +4,7 @@ export type SchoolFulfilmentComparisonStatus =
 export type SchoolFulfilmentQuantityTotal = {
   unit_id: string;
   unit_code: string;
+  unit_name?: string | null;
   po_quantity: string;
   pxk_quantity: string;
   delta_quantity: string;

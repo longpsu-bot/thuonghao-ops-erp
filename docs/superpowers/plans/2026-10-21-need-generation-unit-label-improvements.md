@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Proposed plan only. No application, database, runtime policy or deployment change is made by this document.
+**Status:** Owner approved execution on 21 October. Bounded implementation and focused validation are in progress; exact-source CI, deployment and the fresh hosted journey remain release gates. See [execution evidence](../../testing/need-generation-unit-label-improvements-2026-10-21.md).
 
 **Goal:** Reduce avoidable Need generation work, make operational Unit labels readable, and preserve reliable completion under variable hosted conditions.
 

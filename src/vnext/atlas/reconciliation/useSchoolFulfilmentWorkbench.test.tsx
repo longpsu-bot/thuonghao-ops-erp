@@ -152,6 +152,7 @@ describe("reconciliation authority and presentation", () => {
     "warnings",
     "nullRow",
     "quantity",
+    "unitName",
   ])("rejects malformed %s authority", async (fault) => {
     const data = fulfilmentData([fulfilmentRow()]);
     const malformed = data as unknown as Record<string, unknown>;
@@ -165,6 +166,8 @@ describe("reconciliation authority and presentation", () => {
     if (fault === "warnings") row.warnings = null;
     if (fault === "nullRow") malformed.rows = [null];
     if (fault === "quantity") data.rows[0].details[0].po_quantity = "NaN";
+    if (fault === "unitName")
+      Object.assign(data.rows[0].details[0], { unit_name: 123 });
     const h = show({
       getWorkbench: vi.fn().mockResolvedValue(fulfilmentSuccess(data)),
     });

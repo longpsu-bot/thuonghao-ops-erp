@@ -62,6 +62,43 @@ async function openFirst() {
   return buttons[0];
 }
 describe("read-only reconciliation operator workbench", () => {
+  it("shows captured Unit names in summary and detail and searches them locally", async () => {
+    const total = {
+      unit_id: "unit-packet",
+      unit_code: "v1-unit-packet",
+      unit_name: "Gói",
+      po_quantity: "100.000000",
+      pxk_quantity: "100.000000",
+      delta_quantity: "0.000000",
+    };
+    const row = fulfilmentRow({
+      comparison_status: "OK",
+      quantity_totals_by_unit: [total],
+      details: [
+        { ...total, ingredient_id: "rice-cake", ingredient_name: "Bánh gạo" },
+      ],
+    });
+    const h = show("OK", {
+      getWorkbench: vi
+        .fn()
+        .mockResolvedValue(
+          fulfilmentSuccess(fulfilmentData([row], "2026-09-24", "2026-09-26")),
+        ),
+    });
+    await screen.findByText("Cần xử lý 0 · Khớp 1");
+    filter("all");
+    expect(table()).toHaveTextContent("Gói · PO 100 · PXK 100 · Δ 0");
+    expect(table()).not.toHaveTextContent("v1-unit-packet");
+    await openFirst();
+    const detail = screen.getByRole("table", { name: "Chi tiết nguyên liệu" });
+    expect(within(detail).getByText("Gói")).toBeVisible();
+    expect(detail).not.toHaveTextContent("v1-unit-packet");
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "goi" },
+    });
+    expect(within(table()).getByText(row.school_name)).toBeVisible();
+    expect(h.read).toHaveBeenCalledTimes(1);
+  });
   it.each([
     ["BLOCKED", ["PROCUREMENT_NOT_CURRENT"], "Đang bị chặn"],
     [

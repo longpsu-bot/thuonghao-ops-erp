@@ -161,8 +161,15 @@ export function useSchoolFulfilmentWorkbench({
             r.delivery_location_name,
             ...r.purchase_order_numbers,
             r.pxk_document_number,
-            ...r.details.flatMap((d) => [d.ingredient_name, d.unit_code]),
-            ...r.quantity_totals_by_unit.map((t) => t.unit_code),
+            ...r.details.flatMap((d) => [
+              d.ingredient_name,
+              d.unit_code,
+              d.unit_name,
+            ]),
+            ...r.quantity_totals_by_unit.flatMap((t) => [
+              t.unit_code,
+              t.unit_name,
+            ]),
           ].join(" "),
         ).includes(foldVietnameseSearch(search)),
     )

@@ -1,5 +1,14 @@
 # Atlas Autopilot Mandate
 
+**21 October bounded Need/Unit improvement:** execute the Owner-approved
+[plan](../superpowers/plans/2026-10-21-need-generation-unit-label-improvements.md)
+and current [active-task supersession](ACTIVE_TASK.md). Record runtime without an
+arbitrary generation acceptance limit; retain all correctness, history and
+security gates. Exact-source certification and guarded deployment precede one
+fresh, labeled hosted Staging rehearsal including the correction/replacement
+journey. Preserve existing released evidence, OPSv1/Retool NO-WRITE, synced
+sources and all unrelated work; no real Supplier communication or physical dispatch.
+
 **20 October functional stabilization supersession:** the Owner authorizes the [current campaign](../testing/atlas-functional-stabilization-2026-10-20.md) and its active bounded repair batches. This supersedes historical task sequencing and merge/deployment exclusions below only within this campaign. Preserve architecture/business/security contracts, all unrelated work, hosted business data read-only, disposable-only transactional tests and guarded exact-revision integration/deployment.
 
 **19 October B2-only supersession:** the Owner explicitly authorizes the bounded

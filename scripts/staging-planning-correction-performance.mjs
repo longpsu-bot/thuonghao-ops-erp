@@ -53,7 +53,7 @@ export function summarizeCorrectionPerformance(
 // the existing synthetic authenticated Actor, capabilities and forced RLS.
 function correctionTransactionSql(request, protectedMaintenance = true) {
   const literal = JSON.stringify(request).replaceAll("'", "''");
-  const policy = protectedMaintenance ? "60s" : "8s";
+  const policy = protectedMaintenance ? "60s" : "0";
   return `begin;
 set local lock_timeout='2s';
 set local row_security=on;
@@ -116,8 +116,7 @@ rollback;`;
 export function correctionRollbackSql(request) {
   return rollbackSql(request, true);
 }
-// Local normal-generation regression retains the normal 8s policy. Hosted
-// Planning Performance continues to use its existing independent runner.
+// Generation observes completion time; correction's protected policy is separate.
 export function normalGenerationRollbackSql(request) {
   return rollbackSql(request, false);
 }
