@@ -67,7 +67,11 @@ The first nested-plan attempt could not load `auto_explain` as the local `postgr
 
 ## Release and actual-app closeout
 
-Pending exact-source CI, merge, exact-main certification, guarded Staging deployment and read-only actual-app/download checks. No success is claimed for those gates yet.
+PR [428](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/428) merges as `30f0f8f16365e7111323bc0daeede24907cb91f4`; its tree exactly matches reviewed head `c4643e3c`. Exact-head Frontend `39616292654` and the actually executed Full Integration job `39616292623` both pass. The final 62 historical/all-view checks also pass locally, retaining the original historical golden.
+
+The automatic main-branch jobs and production build did not appear after the merge. The existing certification workflows are explicitly requested on exact main: Frontend `39619675611` and Supabase Integration `39619681800` (including executed Full). These are the unchanged workflows, with no bypass or modified gate. Cloudflare's dashboard still shows automatic production deployments enabled and source `457f8135`; no new main deployment exists at this checkpoint. This documentation-only checkpoint is published through the reviewed Git push path to deliver a normal repository push event. No hosting configuration, credential, access or hook is changed.
+
+Exact-main certification, guarded Staging deployment and fresh actual-app/download verification remain pending at this checkpoint. The prior app's Attendance warning repetition is reproduced with a preview-only 100→101 edit and restored to100; no Save occurs. Post-release verification must repeat that check on the new build and inspect all captured warning details.
 
 The complete hosted original → correction → reallocation → replacement PO → successor dispatch journey already passes on the deployed Need/Unit source, with 638 lineage/history checks, 117 export-data checks and all 22 final detail deltas exactly zero. This presentation change must preserve that result. Existing 21/23 October facts and all released originals remain frozen.
 
