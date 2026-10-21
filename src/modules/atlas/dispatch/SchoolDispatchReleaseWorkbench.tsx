@@ -27,6 +27,7 @@ import {
 import {
   SCHOOL_DISPATCH_STATE_LABELS,
   schoolDispatchBlockerLabel,
+  schoolDispatchUnitLabel,
   type SchoolDispatchDocument,
   type SchoolDispatchWorkbenchData,
   type SchoolDispatchWorkbenchRow,
@@ -405,7 +406,7 @@ export function SchoolDispatchReleaseWorkbench({
                       <Table.Tr key={`${line.ingredient_id}:${line.unit_id}`}>
                         <Table.Td>{line.ingredient_name}</Table.Td>
                         <Table.Td ta="right">{line.quantity}</Table.Td>
-                        <Table.Td>{line.unit_code}</Table.Td>
+                        <Table.Td>{schoolDispatchUnitLabel(line)}</Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>

@@ -343,21 +343,35 @@ it("downloads the attendance template from its persistent owner without saving a
 it.each(modules)(
   "launches %s with one active heading",
   async (label, heading) => {
-    await showSchool();
-    await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
-    await nav(label!);
+    const { schoolFields } = await showSchool();
+    expect(schoolFields).toHaveLength(schoolDefaultsFixtureSchools.length);
+    const panel = await nav(label!);
     expect(
-      await screen.findByRole("heading", { level: 1, name: heading! }),
+      await within(panel).findByRole("heading", { level: 1, name: heading! }),
     ).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
-    expect(await screen.findByRole("button", { name: label! })).toHaveAttribute(
-      "aria-current",
-      "page",
+    const trigger = within(screen.getByRole("banner")).getByLabelText(
+      "Chức năng",
+      {
+        selector: "button",
+      },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Chức năng" }));
+    expect(trigger).toBeVisible();
+    fireEvent.click(trigger);
+    const launcher = await screen.findByRole("dialog", {
+      name: "Chức năng",
+      hidden: true,
+    });
+    expect(launcher).toBeVisible();
+    const destination = within(launcher).getByRole("button", {
+      name: label!,
+      hidden: true,
+    });
+    expect(destination).toBeVisible();
+    expect(destination).toHaveAttribute("aria-current", "page");
+    fireEvent.click(trigger);
     await waitFor(() =>
       expect(
         document.querySelector('[role="dialog"][data-state="open"]'),

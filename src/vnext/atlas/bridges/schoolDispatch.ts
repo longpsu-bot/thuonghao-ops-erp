@@ -8,6 +8,7 @@ export {
 export {
   SCHOOL_DISPATCH_STATE_LABELS,
   schoolDispatchBlockerLabel,
+  schoolDispatchUnitLabel,
   type SchoolDispatchWorkbenchData,
   type SchoolDispatchWorkbenchRow,
   type SchoolDispatchDocument,

@@ -384,7 +384,7 @@ it("retains Allocation's dirty supplier detail and Orders search with independen
 }, 30000);
 
 it.each([false, true])(
-  "preparation activates existing Orders without reading or changing its local context (different date: %s)",
+  "preparation refreshes retained Orders after commit while activation preserves its local context (different date: %s)",
   async (differentDate) => {
     const apis = createAtlasApplicationFixture(),
       fixture = createProcurementReviewFixture("ready");
@@ -417,7 +417,9 @@ it.each([false, true])(
     expect(prepare).toHaveBeenCalledOnce();
     expect(prepare.mock.calls[0]![0].payload.service_date).toBe(reviewDate);
     expect(allocations).toHaveBeenCalledTimes(2); // First mount plus post-command Allocation authority.
-    expect(orders).toHaveBeenCalledTimes(differentDate ? 3 : 2); // Mount/date reads plus command proof; activation adds no read.
+    await waitFor(() =>
+      expect(orders).toHaveBeenCalledTimes(differentDate ? 4 : 3),
+    ); // Mount/date, command proof and commit invalidation; activation adds no read.
     expect(search).toHaveValue("Giữ bộ lọc");
     expect(
       screen.getByText(/^Đã mở Đơn mua từ Phân bổ NCC /),
@@ -433,6 +435,11 @@ it.each([false, true])(
     expect(
       screen.getByRole("heading", { level: 1, name: "Phân bổ NCC" }),
     ).toBeVisible();
+    const readsAfterCommit = orders.mock.calls.length;
+    await open("Đơn mua");
+    expect(owner("Đơn mua")).toBe(ordersOwner);
+    expect(search).toHaveValue("Giữ bộ lọc");
+    expect(orders).toHaveBeenCalledTimes(readsAfterCommit);
   },
   30000,
 );

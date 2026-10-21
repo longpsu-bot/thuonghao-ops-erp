@@ -45,6 +45,8 @@ function show() {
   );
   const ordersRead = vi.spyOn(apis.procurement, "getPurchaseOrders");
   const pxkRead = vi.spyOn(apis.schoolDispatch, "getWorkbench");
+  const needRead = vi.spyOn(apis.planningReadiness, "preflight");
+  const menuSave = vi.spyOn(apis.planning, "saveCompletedMenu");
   render(
     <AtlasVNextProvider>
       <AtlasVNextApp
@@ -55,7 +57,7 @@ function show() {
       />
     </AtlasVNextProvider>,
   );
-  return { allocationRead, ordersRead, pxkRead, signOut };
+  return { allocationRead, ordersRead, pxkRead, needRead, menuSave, signOut };
 }
 
 async function open(label: string) {
@@ -76,6 +78,26 @@ const allocationAction = () =>
   });
 const continueAllocation = () =>
   fireEvent.click(screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }));
+
+it("refreshes retained clean Need authority after a committed Menu sync without remounting it", async () => {
+  const h = show();
+  await planning();
+  const panel = screen.getByRole("tabpanel", { name: "Xác nhận nhu cầu" });
+  const reads = h.needRead.mock.calls.length;
+  await open("Thực đơn");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Đồng bộ Google Sheet" }),
+  );
+  await waitFor(() => expect(h.menuSave).toHaveBeenCalledOnce());
+  await waitFor(() =>
+    expect(h.needRead.mock.calls.length).toBeGreaterThan(reads),
+  );
+  await planning();
+  expect(screen.getByRole("tabpanel", { name: "Xác nhận nhu cầu" })).toBe(
+    panel,
+  );
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+}, 15000);
 
 it("Need activates same-context Procurement without a discrepancy, remount or read", async () => {
   const h = show();
@@ -99,6 +121,33 @@ it("Need activates same-context Procurement without a discrepancy, remount or re
   ).not.toBeInTheDocument();
   expect(h.allocationRead).toHaveBeenCalledTimes(allocationReads);
   expect(h.ordersRead).toHaveBeenCalledTimes(ordersReads);
+}, 15000);
+
+it("preserves dirty Supplier detail after a sibling commit, suspends Save and still permits discard", async () => {
+  const h = show();
+  await open("Phân bổ NCC");
+  fireEvent.click(await allocationAction());
+  const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
+  fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
+  await open("Thực đơn");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Đồng bộ Google Sheet" }),
+  );
+  await waitFor(() => expect(h.menuSave).toHaveBeenCalledOnce());
+  await open("Phân bổ NCC");
+  expect(screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" })).toBe(
+    note,
+  );
+  expect(note).toHaveValue("Giao trước 05:30");
+  expect(h.allocationRead).toHaveBeenCalledOnce();
+  expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: /^Đóng$/ }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Bỏ thay đổi và đóng" }),
+  );
+  await waitFor(() =>
+    expect(h.allocationRead.mock.calls.length).toBeGreaterThan(1),
+  );
 }, 15000);
 
 it("Need discloses the intended context while retaining Allocation's different local date", async () => {

@@ -10,6 +10,29 @@ import {
   type ConfirmedReviewScenario,
 } from "./confirmedNeedReviewFixtures";
 afterEach(cleanup);
+
+it("retains the draft and requires refreshed authority when Prepare has released the cached batch", async () => {
+  const h = await ready("needs_review");
+  const failure = reviewFailure(
+    "CONFIRMED_NEED_BATCH_NOT_EDITABLE",
+    "NO_COMMITTED_CHANGE",
+  );
+  if (failure.kind !== "backend_error")
+    throw new Error("Backend fixture required");
+  failure.error.safe_message = "This result can no longer be edited.";
+  h.save.mockResolvedValue(failure);
+  const draft = h.result.current.drafts;
+  await act(() => h.result.current.save());
+  expect(h.result.current.notice).toBe(
+    "Nhu cầu đã thay đổi trạng thái. Hãy tải lại dữ liệu để kiểm tra quyền điều chỉnh hiện tại.",
+  );
+  expect(h.result.current.lock).toBe("eligibility");
+  expect(h.result.current.canSave).toBe(false);
+  expect(h.result.current.drafts).toBe(draft);
+  await act(() => h.result.current.save());
+  expect(h.save).toHaveBeenCalledOnce();
+});
+
 function mount(scenario: ConfirmedReviewScenario = "normal") {
   const fixture = createConfirmedNeedReviewFixture(scenario);
   const preflightRead = vi.spyOn(fixture.preflightApi, "preflight");
@@ -17,21 +40,87 @@ function mount(scenario: ConfirmedReviewScenario = "normal") {
   const execute = vi.spyOn(fixture.needGenerationApi, "execute");
   const save = vi.spyOn(fixture.confirmedNeedApi, "save");
   const navigate = vi.fn();
-  const hook = renderHook(() =>
-    useConfirmedNeedWorkbench({
-      ...fixture,
-      authSubject: "operator",
-      initialServiceDate: reviewDate,
-      onContinueAllocation: navigate,
-    }),
+  const committed = vi.fn();
+  const hook = renderHook(
+    ({ freshnessRevision }) =>
+      useConfirmedNeedWorkbench({
+        ...fixture,
+        authSubject: "operator",
+        initialServiceDate: reviewDate,
+        onContinueAllocation: navigate,
+        onCommitted: committed,
+        freshnessRevision,
+      }),
+    { initialProps: { freshnessRevision: 0 } },
   );
-  return { ...hook, fixture, read, execute, save, preflightRead, navigate };
+  return {
+    ...hook,
+    fixture,
+    read,
+    execute,
+    save,
+    preflightRead,
+    navigate,
+    committed,
+  };
 }
 async function ready(scenario: ConfirmedReviewScenario = "normal") {
   const h = mount(scenario);
   await waitFor(() => expect(h.result.current.busy).toBe(false));
   return h;
 }
+it("preserves a dirty draft on sibling commits and guards explicit refresh with discard", async () => {
+  const h = await ready();
+  act(() =>
+    h.result.current.edit("line-0", {
+      exact_quantity: "12.5",
+      quantity_entered: true,
+      reason_code: "OTHER",
+      reason_note: "Bếp yêu cầu",
+    }),
+  );
+  const draft = h.result.current.drafts;
+  const reads = h.read.mock.calls.length;
+  const apply = h.result.current.captureShoppingListImport();
+  h.rerender({ freshnessRevision: 1 });
+  expect(h.result.current.drafts).toBe(draft);
+  expect(h.result.current.canSave).toBe(false);
+  expect(h.result.current.canContinue).toBe(false);
+  expect(h.read).toHaveBeenCalledTimes(reads);
+  expect(() => apply({ drafts: draft, changedLineIds: ["line-0"] })).toThrow();
+  act(() => h.result.current.requestRefresh());
+  expect(h.result.current.pendingTransition).toBeTruthy();
+  expect(h.result.current.drafts).toBe(draft);
+  await act(() => h.result.current.discardTransition());
+  await waitFor(() => expect(h.result.current.busy).toBe(false));
+  expect(h.read.mock.calls.length).toBeGreaterThan(reads);
+  expect(h.result.current.dirty).toBe(false);
+  expect(h.save).not.toHaveBeenCalled();
+});
+
+it("does not automatically read or retry an uncertain Save after a sibling commit", async () => {
+  const h = await ready("unknown");
+  act(() =>
+    h.result.current.edit("line-0", {
+      exact_quantity: "12.5",
+      quantity_entered: true,
+      reason_code: "OTHER",
+      reason_note: "Bếp yêu cầu",
+    }),
+  );
+  await act(() => h.result.current.save());
+  const draft = h.result.current.drafts;
+  const reads = h.read.mock.calls.length;
+  h.rerender({ freshnessRevision: 1 });
+  expect(h.result.current.lock).toBe("unknown");
+  expect(h.result.current.drafts).toBe(draft);
+  expect(h.read).toHaveBeenCalledTimes(reads);
+  expect(h.save).toHaveBeenCalledOnce();
+  expect(h.committed).not.toHaveBeenCalled();
+  await act(() => h.result.current.recover());
+  expect(h.committed).toHaveBeenCalledOnce();
+  expect(h.save).toHaveBeenCalledOnce();
+});
 describe("Confirmed Need date authority and generation", () => {
   it("derives the new Monday while keeping preflight on one exact service day", async () => {
     const h = await ready();
@@ -946,15 +1035,33 @@ function multiDayHook(start = "2026-09-07", ungenerated?: string) {
         },
       });
     });
-  const hook = renderHook(() =>
-    useConfirmedNeedWorkbench({
-      ...fixture,
-      authSubject: "operator",
-      initialServiceDate: start,
-    }),
+  const hook = renderHook(
+    ({ freshnessRevision }) =>
+      useConfirmedNeedWorkbench({
+        ...fixture,
+        authSubject: "operator",
+        initialServiceDate: start,
+        freshnessRevision,
+      }),
+    { initialProps: { freshnessRevision: 0 } },
   );
   return { ...hook, fixture, preflightRead, read, save, execute, dayData };
 }
+it("refreshes clean authorities for every cached day after a sibling commit", async () => {
+  const h = multiDayHook();
+  await waitFor(() => expect(h.result.current.busy).toBe(false));
+  act(() =>
+    h.result.current.changeRange({ start: reviewDate, end: "2026-09-08" }),
+  );
+  await waitFor(() => expect(h.result.current.rangeBusy).toBe(false));
+  const reads = h.read.mock.calls.length;
+  h.rerender({ freshnessRevision: 1 });
+  await waitFor(() =>
+    expect(h.result.current.busy || h.result.current.rangeBusy).toBe(false),
+  );
+  expect(h.read.mock.calls.length).toBeGreaterThanOrEqual(reads + 2);
+  expect(h.result.current.days.every((d) => Boolean(d.workbench))).toBe(true);
+});
 it.each([1, 2, 7])(
   "loads %i exact daily authorities across a week boundary",
   async (count) => {

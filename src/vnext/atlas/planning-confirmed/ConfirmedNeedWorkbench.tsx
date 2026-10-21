@@ -290,7 +290,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               <AtlasRefreshButton
                 loading={c.busy}
                 disabled={Boolean(c.lock) || Boolean(c.rangeError)}
-                onClick={() => c.transition({ refresh: true })}
+                onClick={c.requestRefresh}
               />
             </AtlasWorkbarActions>
           </AtlasWorkbar>
@@ -309,10 +309,10 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
           <AtlasOperationStatus operation={c.operation} />
           <ConfirmedNeedCommandFeedback
             lock={c.lock}
-            notice={c.operation.status === "IDLE" ? c.notice : null}
+            notice={c.stale || c.operation.status === "IDLE" ? c.notice : null}
             readError={c.readError}
             busy={c.busy || Boolean(c.rangeError)}
-            onRecover={() => void c.recover()}
+            onRecover={c.requestRefresh}
           />
           {c.busy && !c.workbench && c.operation.status !== "RUNNING" ? (
             <Text

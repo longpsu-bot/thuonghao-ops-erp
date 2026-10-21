@@ -16,6 +16,17 @@ function lineForStep(step: string, unitCode = "kg") {
 }
 
 describe("Confirmed Need exact Planning-step drafts", () => {
+  it("uses the human Unit name in feedback when the stored code is technical", () => {
+    const line = lineForStep("1.000000", "v1-unit-disposable-count");
+    line.controlled_unit.name = "Trái";
+    expect(
+      draftError(line, {
+        ...initialConfirmedNeedDraft(line),
+        exact_quantity: "4.5",
+        quantity_entered: true,
+      }),
+    ).toBe("Số lượng xác nhận phải theo bước 1 Trái.");
+  });
   it("keeps a fresh high-precision proposal editable", () => {
     const line = lineForStep("0.000001");
     line.proposed_confirmed_quantity = "10.123456";

@@ -1222,7 +1222,9 @@ try {
           sheet.getRow(record.row).getCell(4).text,
           quantityLabel(line.quantity),
         );
-        assert.equal(sheet.getRow(record.row).getCell(3).text, line.unit_code);
+        assert.equal(line.unit_code, technicalUnitCode);
+        assert.equal(line.unit_name, humanUnitName);
+        assert.equal(sheet.getRow(record.row).getCell(3).text, humanUnitName);
         assert.equal(
           sheet.getRow(record.row).getCell(2).text,
           line.ingredient_name,
@@ -1270,7 +1272,9 @@ try {
       );
     for (const line of document.lines) {
       assert(compact.includes(line.ingredient_name.replace(/\s+/g, "")));
-      assert(compact.includes(line.unit_code));
+      assert.equal(line.unit_name, humanUnitName);
+      assert(compact.includes(humanUnitName));
+      assert(!compact.includes(technicalUnitCode));
       assert(
         pdf.replace(/\s+/g, " ").includes(` ${quantityLabel(line.quantity)} `),
       );
@@ -1332,7 +1336,7 @@ try {
         .map((line) => ({
           ingredient: line.ingredient_name,
           quantity: exact(line.quantity).toString(),
-          unit: line.unit_code,
+          unit: humanUnitName,
         }))
         .sort((a, b) => a.ingredient.localeCompare(b.ingredient)),
       "Every reloaded visible School quantity and Unit must match its immutable snapshot.",

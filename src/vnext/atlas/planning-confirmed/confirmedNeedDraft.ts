@@ -5,10 +5,20 @@ import {
   exactQuantityDisplay,
   initialConfirmedNeedDraft,
   normalizeConfirmedNeedQuantity,
+  shoppingListUnitDisplay,
   type ConfirmedNeedDraftLine,
   type ConfirmedNeedLine,
   type ConfirmedNeedLineRequest,
 } from "../bridges/confirmedNeed";
+export function confirmedNeedUnitLabel(
+  unit: ConfirmedNeedLine["controlled_unit"],
+) {
+  try {
+    return shoppingListUnitDisplay(unit);
+  } catch {
+    return "Chưa có ĐVT";
+  }
+}
 export function draftChanged(
   line: ConfirmedNeedLine,
   draft: ConfirmedNeedDraftLine,
@@ -63,7 +73,7 @@ export function draftError(
   )
     return `Số lượng xác nhận phải theo bước ${exactQuantityDisplay(
       line.effective_policy.planning_step,
-    )} ${line.controlled_unit.code}.`;
+    )} ${confirmedNeedUnitLabel(line.controlled_unit)}.`;
   const equalsProposal = exactDecimalEqual(
     normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
       draft.exact_quantity,

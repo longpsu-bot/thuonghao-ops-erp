@@ -67,6 +67,8 @@ export type RenderContext = {
   };
   exitRef: RefObject<AtlasModuleExitHandle | null>;
   onWorkspaceStatus: (status: AtlasWorkbenchStatus) => void;
+  onCommitted: () => void;
+  freshnessRevision: number;
   onServiceDateChange: (date: string) => void;
   onContinueAllocation: (
     range: AtlasOperatorDateRange,
@@ -90,6 +92,8 @@ function owner(c: RenderContext) {
     authSubject: c.app.authSubject,
     exitRef: c.exitRef,
     onWorkspaceStatus: c.onWorkspaceStatus,
+    onCommitted: c.onCommitted,
+    freshnessRevision: c.freshnessRevision,
   };
 }
 function dateOwner(c: RenderContext) {
@@ -231,6 +235,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
     group: "CÔNG VIỆC HẰNG NGÀY",
     render: (c) => (
       <SchoolFulfilmentWorkbench
+        freshnessRevision={c.freshnessRevision}
         authSubject={c.app.authSubject}
         api={c.app.apis.reconciliation}
         initialDateStart={c.seed}

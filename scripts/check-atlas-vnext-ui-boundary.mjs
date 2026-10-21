@@ -28,6 +28,7 @@ const approvedLegacyBusinessModules = [
   "src/modules/atlas/planning-inputs/confirmed-needs/confirmedNeedModel",
   "src/modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority",
   "src/modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList",
+  "src/modules/atlas/planning-inputs/confirmed-needs/shoppingListContract",
   "src/modules/atlas/planning-inputs/planningInputsApi",
   "src/modules/atlas/planning-inputs/planningInputsModel",
   "src/modules/atlas/planning-inputs/planningInputsWorkbook",

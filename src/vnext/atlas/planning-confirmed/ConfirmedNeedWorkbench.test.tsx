@@ -1123,6 +1123,20 @@ describe("Confirmed Need Chakra operator surface", () => {
         screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
       ).toBeDisabled();
       fireEvent.click(recovery);
+      await screen.findByRole("dialog", {
+        name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+      });
+      fireEvent.click(
+        screen.getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+      );
+      expect(await quantity()).toHaveValue("12,5");
+      expect(
+        screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+      ).toBeDisabled();
+      fireEvent.click(recovery);
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Bỏ thay đổi" }),
+      );
       if (scenario === "recovery_failed") {
         expect(
           await screen.findByText(

@@ -77,6 +77,7 @@ type WorkbenchEntry = {
   exitRef: RefObject<AtlasModuleExitHandle | null>;
   panelRef: RefObject<HTMLDivElement | null>;
   report: (status: AtlasWorkbenchStatus) => void;
+  committed: () => void;
 };
 
 const WorkbenchContent = memo(function WorkbenchContent({
@@ -105,6 +106,9 @@ function ApplicationSession(props: AtlasVNextAppProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const [signOutBlocked, setSignOutBlocked] = useState(false);
   const entries = useRef<Map<AtlasWorkbenchId, WorkbenchEntry> | null>(null);
+  const [freshness, setFreshness] = useState<
+    Partial<Record<AtlasWorkbenchId, number>>
+  >({});
   const createEntry = useCallback(
     (
       id: AtlasWorkbenchId,
@@ -115,6 +119,36 @@ function ApplicationSession(props: AtlasVNextAppProps) {
       seedRange,
       exitRef: createRef(),
       panelRef: createRef(),
+      committed: () =>
+        setFreshness((previous) => {
+          const next = { ...previous };
+          const targets: AtlasWorkbenchId[] =
+            id === "pxk"
+              ? ["purchase-orders", "reconciliation"]
+              : ["planning", "attendance", "pantry"].includes(id)
+                ? [
+                    "planning",
+                    "attendance",
+                    "pantry",
+                    "confirmed-need",
+                    "procurement",
+                    "purchase-orders",
+                    "pxk",
+                    "reconciliation",
+                  ]
+                : [
+                    "confirmed-need",
+                    "procurement",
+                    "purchase-orders",
+                    "pxk",
+                    "reconciliation",
+                  ];
+          for (const target of targets) {
+            if (target !== id && entries.current?.has(target))
+              next[target] = (previous[target] ?? 0) + 1;
+          }
+          return next;
+        }),
       report: (status) =>
         setStatuses((previous) => {
           const old = previous[id];
@@ -387,6 +421,8 @@ function ApplicationSession(props: AtlasVNextAppProps) {
                 pxkContinuation={entry.pxkContinuation}
                 exitRef={entry.exitRef}
                 onWorkspaceStatus={entry.report}
+                onCommitted={entry.committed}
+                freshnessRevision={freshness[id] ?? 0}
                 onServiceDateChange={reportDate}
                 onContinueAllocation={continueAllocation}
                 onOpenOrders={openOrders}

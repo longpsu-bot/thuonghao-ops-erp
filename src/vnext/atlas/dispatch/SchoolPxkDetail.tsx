@@ -12,6 +12,7 @@ import {
 import { useState, type RefObject } from "react";
 import {
   schoolDispatchBlockerLabel,
+  schoolDispatchUnitLabel,
   type SchoolDispatchDocument,
   type SchoolDispatchLine,
   type SchoolDispatchWorkbenchRow,
@@ -48,7 +49,7 @@ function Lines({
               <Table.Cell textAlign="end" whiteSpace="nowrap">
                 {schoolPxkQuantity(l.quantity)}
               </Table.Cell>
-              <Table.Cell>{l.unit_code}</Table.Cell>
+              <Table.Cell>{schoolDispatchUnitLabel(l)}</Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>

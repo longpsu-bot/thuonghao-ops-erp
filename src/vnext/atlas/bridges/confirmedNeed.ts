@@ -73,3 +73,4 @@ export {
   shoppingListRangeDates,
 } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";
 export type { ShoppingListRangeContext } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";
+export { shoppingListUnitDisplay } from "../../../modules/atlas/planning-inputs/confirmed-needs/shoppingListContract";
