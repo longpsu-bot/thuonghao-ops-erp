@@ -117,6 +117,32 @@ const mappings = [
   },
 ];
 describe("bounded Planning master closure", () => {
+  it("limits an explicit Dish scope without trimming the signed source", () => {
+    const s = fixture();
+    s.records.dishes.push({ ...s.records.dishes[0], legacy_id: "10" });
+    s.snapshot_checksum = checksumOpsV1MasterSnapshot(s);
+    const original = structuredClone(s);
+    expect(
+      derivePlanningCatchup(s, mappings, ["9"]).records.dishes.map(
+        (d) => d.legacy_id,
+      ),
+    ).toEqual(["9"]);
+    expect(s).toEqual(original);
+    for (const ids of [[], ["9", "9"], ["missing"], [9]]) {
+      expect(() =>
+        buildPlanningCatchupSql(s, {
+          targetProjectRef: "rnzxmxiiqgtdevzregff",
+          dishLegacyIds: ids,
+        }),
+      ).toThrow("CATCHUP_DISH_SCOPE_INVALID");
+    }
+    expect(
+      buildPlanningCatchupSql(s, {
+        targetProjectRef: "rnzxmxiiqgtdevzregff",
+        dishLegacyIds: ["9"],
+      }),
+    ).toContain("'[\"9\"]'::jsonb");
+  });
   it("derives only missing active dishes and exact dependencies", () => {
     const p = derivePlanningCatchup(fixture(), mappings);
     expect(p.records.dishes.map((x) => x.legacy_id)).toEqual(["9"]);
@@ -125,6 +151,38 @@ describe("bounded Planning master closure", () => {
     expect(p.records.suppliers).toHaveLength(1);
     expect(p.records.supplier_eligibilities).toHaveLength(1);
     expect(p.records.customers).toEqual([]);
+  });
+  it("imports supplier decisions only for new Ingredients", () => {
+    const s = fixture();
+    s.records.ingredients.push({ ...s.records.ingredients[0], legacy_id: "6" });
+    s.records.recipe_lines.push({
+      ...s.records.recipe_lines[0],
+      legacy_id: "recipe:dish:9:school-type:1:ingredient:6",
+      ingredient_legacy_id: "6",
+    });
+    s.records.suppliers.push({ legacy_id: "3" });
+    s.records.supplier_eligibilities.push({
+      legacy_id: "ingredient:6:supplier:3",
+      ingredient_legacy_id: "6",
+      supplier_legacy_id: "3",
+    });
+    s.snapshot_checksum = checksumOpsV1MasterSnapshot(s);
+    const existing = [
+      ...mappings,
+      { object_type: "INGREDIENT", legacy_id: "5" },
+    ];
+    const p = derivePlanningCatchup(s, existing);
+    expect(p.records.ingredients.map((i) => i.legacy_id)).toEqual(["5", "6"]);
+    expect(p.records.supplier_eligibilities.map((e) => e.legacy_id)).toEqual([
+      "ingredient:6:supplier:3",
+    ]);
+    expect(p.records.suppliers.map((r) => r.legacy_id)).toEqual(["3"]);
+    const allExisting = derivePlanningCatchup(s, [
+      ...existing,
+      { object_type: "INGREDIENT", legacy_id: "6" },
+    ]);
+    expect(allExisting.records.supplier_eligibilities).toEqual([]);
+    expect(allExisting.records.suppliers).toEqual([]);
   });
   it("preserves empty 2034 and 2041 roots without copying 2036 or synthesizing Ingredient 1204", () => {
     const s = fixture();
@@ -497,7 +555,7 @@ describe("bounded Planning master closure", () => {
       ),
     ).toBeLessThan(
       sql.indexOf(
-        "scoped:=pg_temp.planning_catchup_scope(snapshot,prior.reconciliation",
+        "scoped:=pg_temp.planning_catchup_scope(snapshot,coalesce(prior.reconciliation",
       ),
     );
     expect(sql).toContain(
@@ -550,7 +608,7 @@ describe("bounded Planning master closure", () => {
       ["PLAN_HASH_DONE", "plan_fp:=atlas_legacy.master_snapshot_hash(plan);"],
       [
         "SCOPE_DONE",
-        "scoped:=pg_temp.planning_catchup_scope(snapshot,prior.reconciliation->'catchup_dish_ids');",
+        "scoped:=pg_temp.planning_catchup_scope(snapshot,coalesce(prior.reconciliation->'catchup_dish_ids',requested_scope));",
       ],
       [
         "DEPENDENCIES_DONE",

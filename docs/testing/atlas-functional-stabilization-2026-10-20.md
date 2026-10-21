@@ -255,3 +255,75 @@ the selected panel. All13 launch cases, explicit visibility, single visible H1,
 aria-current, dismissal and20s budget remain. No runtime behavior changes.
 The entire affected app file24/24 PASS; Ingredients launch6,993ms. Independent
 review clear. A fresh exact-source CI run still gates merge and deployment.
+
+### Menu catalog catch-up — 21 October
+
+Owner requests repair of the remaining14 source cells /11 missing Dish names,
+then a fresh complete original-and-correction journey. Source OPSv1 and Retool
+remain read-only. The bounded catalog repair is authorized; operational testing
+continues only in a disposable environment. No recipe, quantity, substitution,
+allocation or released-document history is inferred or silently rewritten.
+
+The protected read-only extractor run39543952267 proves snapshot
+`ops-v1-planning-catchup-39543952267-1`, checksum
+`46fd559ea4807cb81d6572b12b37c7b47b616d89659e0bc5ddb521ce5ffaeae8`.
+All11 exact source names exist as active Dishes2066–2076 with22 locked typed
+Recipes and84 source BoM lines. Only Ingredients1223/1224 are absent in Atlas.
+Full canonical reconstruction matches the trusted checksum; raw acquisition and
+provenance remain separately recorded in ignored local evidence.
+
+The first bounded preview exposed `SUPPLIER_ELIGIBILITY_DRIFT`: importing a
+missing Dish wrongly included legacy supplier decisions for existing Ingredients.
+The closure now imports supplier relationships only for genuinely new Ingredients;
+current Atlas priorities, eligibility and all existing Ingredient validation remain.
+An optional explicit Dish scope keeps unrelated missing source Dishes outside this
+repair without trimming the signed source. Empty, duplicate, unknown, inactive or
+already imported requested roots fail closed; replay retains original scope and
+fingerprints. Existing unscoped tooling remains compatible. These are session-local
+import helpers, with no persistent schema, permission, lifecycle or UI changes.
+
+Fresh actual Staging preview PASS: exact2066–2076,22 Recipes/versions,84 BoM lines,
+2 Ingredients,1 necessary Supplier and2 supplier relationships;49 Schools are
+`NO_CHANGE`,26 existing Ingredients remain references, no issues. Reviewed plan:
+`a8422829e8425149d604c4c7319830572eb7a0adfb29466092348815da70d668`.
+Both bug regressions failed before their fixes. Focused JS49 and rolled-back
+SQL146 assertions pass, including original priority4 vs source1 preservation,
+exact new relationship priority, narrow scope, guarded apply and replay.
+Exact-source CI, apply/readback and the fresh journey are pending at this checkpoint.
+
+The original632f7169 source Full Integration39545746397 PASS. Frontend39545705794
+passed3175 tests but exposed one pre-existing dirty-dialog test race: it reopened
+after `closed` before the canceled dialog unmounted. The test now waits for actual
+exit, opens the exact named dialog, waits for open, then discards and verifies
+Supplier selection/heading. All31 affected tests PASS; no runtime/timeout changes.
+
+Fresh isolated rehearsal uses the exact11 source Dishes,22 Recipes and84 BoM lines,
+two fixture Schools of different types, explicit100/0 portions, explicit quantity
+policies and labeled test Suppliers. The Google transport is a fixture; production
+parser, handler, authenticated commands and database logic are real. Three service
+days generate and confirm24/28/25 lines (77 total), explicitly allocate, release
+6 original POs and issue6 original School PXKs, all with zero reconciliation deltas.
+All three days then receive an explicit1kg post-release quantity correction,
+reallocation,6 replacement POs and6 replacement PXKs. All77 successor detail rows
+reconcile exactly; the complete original6 PO and6 PXK snapshots remain unchanged
+apart from allowed status/linkage transitions. Every successor binds its predecessor.
+
+The second day's replacement command exposed a genuine8s timeout. Rolled-back
+authenticated profiling proves124 canonical family projections/377 canonical
+evaluations for17 families across3 batches; no failed command receipt or partial
+replacement committed. Migration20261021050300 applies the existing Draft proof
+reuse pattern to Replacement: independently materialize date proof in each of the
+two family SELECTs and readiness assignment, preserving every lock, stale check,
+receipt phase, predicate and8s limit. No proof survives across statement phases.
+The executed call-count regression fails20 before and passes0 canonical family
+rebuilds after; complete K2 SQL163 and security catalog32 PASS. The same rolled-back
+request completes in426ms; after proving no committed receipt, its identical
+command/intent completes through the public API in520ms. This is local measurement,
+not a hosted performance promise. Independent source review clear; dedicated
+concurrency and fresh exact-source CI remain gates. Final migration count is131.
+
+Preserved source discrepancy for business review: secondary-type Recipe3529 for
+Dish2071 (pork-named) explicitly contains Ingredient1037 (ground beef), while the
+primary-type Recipe3528 uses Ingredient1208 (ground pork). Both locked source
+recipes are copied exactly. No name-based substitution or invented recipe repair
+is authorized by the menu sync task.

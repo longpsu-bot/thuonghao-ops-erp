@@ -386,7 +386,7 @@ describe("Planning catch-up runner safety", () => {
     const payload = JSON.parse(Buffer.from(encoded, "base64").toString("utf8"));
     expect(payload.records.recipes).toEqual([recipe]);
     expect(payload.records.recipe_lines).toEqual([]);
-    expect(sql).toMatch(/::jsonb,false,null,null\) as result;/);
+    expect(sql).toMatch(/::jsonb,false,null,null,null\) as result;/);
     expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
   });
   it("retains a private immutable snapshot only when explicitly requested for preview", async () => {
@@ -424,7 +424,7 @@ describe("Planning catch-up runner safety", () => {
     expect(f.options.executeTarget).toHaveBeenCalledTimes(2);
     const [target, sql] = f.options.executeTarget.mock.calls[1];
     expect(target.projectRef).toBe(staging);
-    expect(sql).toMatch(/::jsonb,false,null,null\) as result;/);
+    expect(sql).toMatch(/::jsonb,false,null,null,null\) as result;/);
     expect(result).toMatchObject({
       success: true,
       status: "PREVIEW",
@@ -475,6 +475,9 @@ describe("Planning catch-up runner safety", () => {
   });
   it("uses the immutable reviewed snapshot and proves exact replay after apply", async () => {
     const f = fixture();
+    f.snapshot.records.dishes = [{ legacy_id: "9", dish_status: "ACTIVE" }];
+    f.snapshot.snapshot_checksum = checksumOpsV1MasterSnapshot(f.snapshot);
+    f.persist();
     f.options.executeTarget
       .mockReset()
       .mockResolvedValueOnce(
@@ -495,7 +498,10 @@ describe("Planning catch-up runner safety", () => {
           plan_checksum: planChecksum,
         }),
       );
-    const result = await runPlanningMasterCatchup(f.apply);
+    const result = await runPlanningMasterCatchup({
+      ...f.apply,
+      dishLegacyIds: ["9"],
+    });
     expect(f.options.verifyApply).toHaveBeenCalledWith({
       commitSha,
       cwd: f.options.cwd,
@@ -505,6 +511,9 @@ describe("Planning catch-up runner safety", () => {
     expect(f.options.executeTarget).toHaveBeenCalledTimes(3);
     expect(f.options.executeTarget.mock.calls[1][1]).toBe(
       f.options.executeTarget.mock.calls[2][1],
+    );
+    expect(f.options.executeTarget.mock.calls[1][1]).toContain(
+      "'[\"9\"]'::jsonb",
     );
     expect(result.replay_status).toBe("REPLAYED");
   });

@@ -84,6 +84,32 @@ insert into atlas_planning.attendance_lines (
 from atlas_admin.schools where school_code='v1-school-21';
 create temp table operational_before as select to_jsonb(l) value from atlas_planning.attendance_lines l;
 create temp table evidence(label text primary key,value jsonb);
+savepoint existing_supplier_decisions;
+create temp table supplier_scope_source as select pg_temp.catchup_signed(
+ pg_temp.catchup_fixture() || jsonb_build_object('records',pg_temp.catchup_fixture()->'records' || jsonb_build_object(
+  'suppliers','[{"legacy_id":"71","supplier_code":"v1-supplier-71","supplier_name":"Source Supplier","supplier_status":"ACTIVE"}]'::jsonb,
+  'supplier_eligibilities','[{"legacy_id":"ingredient:1:supplier:71","ingredient_legacy_id":"1","supplier_legacy_id":"71","priority":1},{"legacy_id":"ingredient:2:supplier:71","ingredient_legacy_id":"2","supplier_legacy_id":"71","priority":1}]'::jsonb
+ ))) snapshot;
+do $$
+declare snapshot jsonb:=(select snapshot from supplier_scope_source); kind text; r jsonb; action jsonb;
+begin
+ foreach kind in array array['SUPPLIER','SUPPLIER_ELIGIBILITY'] loop
+  select value into r from jsonb_array_elements(snapshot#>array['records',atlas_legacy.master_import_entity(kind)]) limit 1;
+  action:=atlas_legacy.master_recipe_action(kind,r->>'legacy_id','CREATE',atlas_legacy.master_import_target_id(snapshot,kind,r->>'legacy_id'),atlas_legacy.master_import_values(snapshot,kind,r,atlas_legacy.master_import_target_id(snapshot,kind,r->>'legacy_id')),atlas_legacy.master_snapshot_hash(r));
+  perform atlas_legacy.master_import_write_core(action);
+  perform atlas_legacy.master_import_record_mapping(action,'ee120000-0000-4000-8000-000000000002');
+ end loop;
+ update atlas_admin.supplier_eligibilities set priority=4 where ingredient_id='ee120000-0000-4000-8000-000000000101';
+end $$;
+create temp table supplier_decision_before as select to_jsonb(e) value from atlas_admin.supplier_eligibilities e;
+create temp table supplier_scope_plan as select pg_temp.run_planning_master_catchup(snapshot,false,null,null) value from supplier_scope_source;
+select is((select value->>'success' from supplier_scope_plan),'true','existing Atlas supplier priority does not block unrelated missing Dish imports');
+select is((select jsonb_array_length(pg_temp.planning_catchup_scope(snapshot)#>'{records,supplier_eligibilities}') from supplier_scope_source),1,'only a genuinely new Ingredient imports source supplier decisions');
+select is((select pg_temp.planning_catchup_scope(snapshot)#>>'{records,supplier_eligibilities,0,ingredient_legacy_id}' from supplier_scope_source),'2','existing Ingredient supplier decisions stay outside catch-up scope');
+select is((select pg_temp.run_planning_master_catchup(snapshot,true,value->>'plan_checksum','ee120000-0000-4000-8000-000000000001')->>'status' from supplier_scope_source cross join supplier_scope_plan),'APPLIED','new Ingredient and its source supplier relationship apply together');
+select is((select to_jsonb(e) from atlas_admin.supplier_eligibilities e where ingredient_id='ee120000-0000-4000-8000-000000000101'),(select value from supplier_decision_before),'existing supplier decision remains byte-identical');
+select is((select priority::integer from atlas_admin.supplier_eligibilities where ingredient_id=atlas_legacy.master_import_target_id((select snapshot from supplier_scope_source),'INGREDIENT','2')),1,'new Ingredient retains exact source supplier priority');
+rollback to savepoint existing_supplier_decisions;
 -- One unchanged complete source and unchanged target under both planner modes.
 -- SET LOCAL is confined to this rolled-back fixture transaction.
 create temp table plan_mode_source as select pg_temp.catchup_fixture() snapshot,
@@ -239,6 +265,21 @@ begin
   'units',(records->'units')||jsonb_build_array(jsonb_build_object('legacy_id','Túi','unit_code','v1-unit-67df33ade68a','unit_name','Túi','dimension_code','COUNT','decimal_scale',0,'unit_status','ACTIVE')));
  return pg_temp.catchup_signed(snapshot||jsonb_build_object('snapshot_id','synthetic-owner-zero-bom-tui','records',records,'source_counts',jsonb_build_object('schools',14,'ingredients',4,'dishes',4,'recipes',7,'bill_of_materials',3)));
 end $$;
+
+savepoint explicit_dish_scope;
+select lives_ok($$select pg_temp.planning_catchup_plan(pg_temp.catchup_owner_fixture(),'["2036"]')$$,'explicit Dish planner executes without hidden exceptions');
+create temp table scoped_dish_plan as select pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),false,null,null,'["2036"]') value;
+select is((select value->>'success' from scoped_dish_plan),'true','explicit Dish scope previews the unchanged complete signed source');
+select is((select value->'catchup_dish_ids' from scoped_dish_plan),'["2036"]'::jsonb,'other missing source Dishes stay outside the requested scope');
+select is((select value#>>'{summary,RECIPE}' from scoped_dish_plan),'1','explicit Dish scope keeps only its exact typed Recipe');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),false,null,null,'["2036","2036"]')->>'error_code','CATCHUP_DISH_SCOPE_INVALID','duplicate requested Dish identities fail closed');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),false,null,null,'["missing"]')->>'error_code','CATCHUP_DISH_SCOPE_INVALID','unknown requested Dish identity fails closed');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),false,null,null,'[]')->>'error_code','CATCHUP_DISH_SCOPE_INVALID','empty explicit scope cannot widen into all missing Dishes');
+select is((select pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),true,value->>'plan_checksum','ee120000-0000-4000-8000-000000000001','["2036"]')->>'status' from scoped_dish_plan),'APPLIED','only reviewed Dish scope applies');
+select ok(not exists(select 1 from atlas_legacy.master_data_mappings where object_type='DISH' and legacy_id in ('2034','2041','2062')),'unrequested missing Dish identities remain absent');
+select is((select pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),true,value->>'plan_checksum','ee120000-0000-4000-8000-000000000001','["2036"]')->>'status' from scoped_dish_plan),'REPLAYED','explicit scope replays the original guarded receipt');
+select is((select pg_temp.run_planning_master_catchup(pg_temp.catchup_owner_fixture(),true,value->>'plan_checksum','ee120000-0000-4000-8000-000000000001','["2062"]')->>'error_code' from scoped_dish_plan),'CATCHUP_DISH_SCOPE_DRIFT','replay cannot silently change requested Dish scope');
+rollback to savepoint explicit_dish_scope;
 
 -- Same signed source through the minimal working envelope and the previous
 -- full-envelope behavior. All helper replacement is pg_temp-only and restored.
