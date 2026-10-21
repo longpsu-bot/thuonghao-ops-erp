@@ -25,7 +25,11 @@ import {
   type ConfirmedNeedDraftLine,
   type ConfirmedNeedLine,
 } from "../bridges/confirmedNeed";
-import { draftChanged, historicalQuantity } from "./confirmedNeedDraft";
+import {
+  confirmedNeedUnitLabel,
+  draftChanged,
+  historicalQuantity,
+} from "./confirmedNeedDraft";
 import { parseExactQuantity } from "../procurement/procurementExactQuantity";
 export function ConfirmedNeedTable({
   lines,
@@ -297,7 +301,7 @@ export function ConfirmedNeedTable({
                       color="fg.muted"
                       ml="xs"
                     >
-                      {line.controlled_unit.code}
+                      {confirmedNeedUnitLabel(line.controlled_unit)}
                     </Box>
                   </Text>
                 </Table.Cell>
@@ -324,19 +328,19 @@ export function ConfirmedNeedTable({
                         : line.delivery_location.name
                     }
                     ingredient={line.ingredient.name}
-                    unit={line.controlled_unit.code}
+                    unit={confirmedNeedUnitLabel(line.controlled_unit)}
                     date={line.service_date}
                     source="Xác nhận nhu cầu"
                   />
                   <Text hideFrom="md" textStyle="helper" color="fg.muted">
                     Đề xuất:{" "}
                     {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
-                    {line.controlled_unit.code}
+                    {confirmedNeedUnitLabel(line.controlled_unit)}
                   </Text>
                   <Text textStyle="helper" color="fg.muted" mb="xs">
                     {line.confirmed_quantity_after === null
                       ? "Chưa lưu"
-                      : `Đã lưu: ${exactQuantityDisplay(line.confirmed_quantity_after)} ${line.controlled_unit.code}`}
+                      : `Đã lưu: ${exactQuantityDisplay(line.confirmed_quantity_after)} ${confirmedNeedUnitLabel(line.controlled_unit)}`}
                   </Text>
                   <Box
                     display="grid"
@@ -373,7 +377,7 @@ export function ConfirmedNeedTable({
                       }
                     />
                     <Text textStyle="unitInline" color="fg.muted">
-                      {line.controlled_unit.code}
+                      {confirmedNeedUnitLabel(line.controlled_unit)}
                     </Text>
                   </Box>
                   {historical && (
@@ -396,7 +400,7 @@ export function ConfirmedNeedTable({
                         color="fg.primary"
                         ml="xs"
                       >
-                        {line.controlled_unit.code}
+                        {confirmedNeedUnitLabel(line.controlled_unit)}
                       </Box>
                     </Text>
                   ) : (

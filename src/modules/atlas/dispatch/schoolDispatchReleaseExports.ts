@@ -1,4 +1,5 @@
 import type { Workbook } from "exceljs";
+import { schoolDispatchUnitLabel } from "./schoolDispatchReleaseModel";
 import type { Column, Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import type {
   SchoolDispatchDocument,
@@ -73,7 +74,7 @@ export function buildSchoolDispatchExportData(
     lines: document.lines.map((line) => ({
       ingredientName: line.ingredient_name,
       quantity: line.quantity,
-      unitCode: line.unit_code,
+      unitCode: schoolDispatchUnitLabel(line),
     })),
   };
 }
@@ -249,7 +250,7 @@ function groupedDispatchPresentation(documents: SchoolDispatchDocument[]) {
       const current = rows.get(key);
       rows.set(key, {
         ingredientName: line.ingredient_name,
-        unitCode: line.unit_code,
+        unitCode: schoolDispatchUnitLabel(line),
         quantity: (current?.quantity ?? 0n) + scaledQuantity(line.quantity),
         sources: [...(current?.sources ?? []), { document, line }],
       });
@@ -295,7 +296,7 @@ function addSchoolDispatchSheet(
         ...buildSchoolDispatchExportData(document),
         lines: document.lines.map((line) => ({
           ingredientName: line.ingredient_name,
-          unitCode: line.unit_code,
+          unitCode: schoolDispatchUnitLabel(line),
           quantity: line.quantity,
           sources: [{ document, line }],
         })),

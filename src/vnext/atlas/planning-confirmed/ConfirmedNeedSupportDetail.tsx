@@ -1,3 +1,4 @@
+import { confirmedNeedUnitLabel } from "./confirmedNeedDraft";
 import {
   Box,
   Button,
@@ -373,7 +374,7 @@ export function ConfirmedNeedSupportDetail({
                                 {exactQuantityDisplay(
                                   line.theoretical_quantity,
                                 )}{" "}
-                                {line.controlled_unit.code}
+                                {confirmedNeedUnitLabel(line.controlled_unit)}
                               </Text>
                             )}
                           </>
@@ -391,14 +392,14 @@ export function ConfirmedNeedSupportDetail({
                               {exactQuantityDisplay(
                                 line.proposal_rounding_step,
                               )}{" "}
-                              {line.controlled_unit.code}
+                              {confirmedNeedUnitLabel(line.controlled_unit)}
                             </Text>
                             <Text fontWeight="semibold">
                               Đề xuất vận hành:{" "}
                               {exactQuantityDisplay(
                                 line.proposed_confirmed_quantity,
                               )}{" "}
-                              {line.controlled_unit.code}
+                              {confirmedNeedUnitLabel(line.controlled_unit)}
                             </Text>
                           </>
                         ) : (
@@ -414,7 +415,7 @@ export function ConfirmedNeedSupportDetail({
                             {exactQuantityDisplay(
                               line.effective_policy.planning_step,
                             )}{" "}
-                            {line.controlled_unit.code}
+                            {confirmedNeedUnitLabel(line.controlled_unit)}
                           </Text>
                         ) : (
                           <Text color="status.warning">
@@ -427,7 +428,7 @@ export function ConfirmedNeedSupportDetail({
                             {exactQuantityDisplay(
                               line.confirmed_quantity_after,
                             )}{" "}
-                            {line.controlled_unit.code}
+                            {confirmedNeedUnitLabel(line.controlled_unit)}
                           </Text>
                         )}
                       </Table.Cell>

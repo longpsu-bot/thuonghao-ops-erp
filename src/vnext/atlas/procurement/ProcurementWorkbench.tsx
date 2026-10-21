@@ -1,5 +1,7 @@
 import {
   useAtlasWorkbenchStatus,
+  useAtlasAuthorityRefresh,
+  staleAuthorityMessage,
   type AtlasWorkbenchStatus,
   type AtlasModuleExitHandle,
   type AtlasModuleExitProps,
@@ -94,6 +96,14 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     unsaved: false,
     blocked: false,
   });
+  useAtlasAuthorityRefresh(
+    controller.freshness,
+    (Boolean(selectedKey) && (detailStatus.unsaved || detailStatus.blocked)) ||
+      controller.busy ||
+      controller.loading ||
+      controller.locked,
+    controller.reload,
+  );
   useEffect(() => {
     props.onContextChange?.({
       date: controller.date,
@@ -201,6 +211,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     controller.loading ||
     (controller.stage === "allocation" && Boolean(controller.rangeError));
   const canPrepare =
+    !controller.stale &&
     !multiDay &&
     preparation?.ready &&
     preparation.allowed &&
@@ -544,6 +555,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 {controller.rangeError}
               </Text>
             )}
+            {controller.stale && (
+              <Text role="status" px="md" py="xs">
+                {staleAuthorityMessage}
+              </Text>
+            )}
             {controller.feedback && (
               <ProcurementCommandFeedback
                 feedback={controller.feedback}
@@ -703,7 +719,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                           key={`${selected.family.source_fingerprint}:${controller.revision}`}
                           row={selected}
                           disabled={commandDisabled}
-                          suspendSave={Boolean(pendingContinuation)}
+                          suspendSave={
+                            controller.stale || Boolean(pendingContinuation)
+                          }
                           onSave={(splits) =>
                             void controller.save(selected, splits)
                           }
@@ -721,7 +739,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               ) : (
                 <ProcurementOrdersStage
                   data={controller.orders}
-                  disabled={commandDisabled}
+                  disabled={controller.stale || commandDisabled}
                   search={search}
                   onAction={(order) => void controller.orderAction(order)}
                   onReleaseAll={() => void controller.releaseAllOrders()}

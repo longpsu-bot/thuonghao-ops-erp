@@ -21,9 +21,19 @@ export type SchoolDispatchLine = {
   ingredient_name: string;
   unit_id: string;
   unit_code: string;
+  /** Frozen name on issued documents; absent on legacy snapshots. */
+  unit_name?: string | null;
   quantity: string;
   sources: SchoolDispatchLineSource[];
 };
+
+export function schoolDispatchUnitLabel(line: SchoolDispatchLine) {
+  return /^(?:v1-unit-|atlas[-_:]|unit[-_:])|^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(
+    line.unit_code,
+  )
+    ? line.unit_name?.trim() || line.unit_code
+    : line.unit_code;
+}
 
 export type SchoolDispatchPreview = {
   service_date: string;

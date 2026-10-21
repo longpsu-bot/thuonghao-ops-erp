@@ -1,4 +1,9 @@
 import type { AtlasModuleExitProps } from "../AtlasModuleExit";
+import {
+  useAtlasAuthorityFreshness,
+  useAtlasAuthorityRefresh,
+  staleAuthorityMessage,
+} from "../AtlasModuleExit";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   releaseSchoolDispatchDocumentRequest,
@@ -90,7 +95,10 @@ export function useSchoolPxkWorkbench({
   initialSchoolIds,
   onServiceDateChange,
   schools: externalSchools,
+  onCommitted,
+  freshnessRevision,
 }: SchoolPxkWorkbenchProps) {
+  const freshness = useAtlasAuthorityFreshness(freshnessRevision);
   const [date, setDate] = useState(initialServiceDate);
   const [dateEnd, setDateEnd] = useState(initialServiceDate);
   const [range, setRange] = useState<AtlasOperatorDateRange>({
@@ -149,6 +157,7 @@ export function useSchoolPxkWorkbench({
     useCallback(async (): Promise<SchoolDispatchWorkbenchData | null> => {
       authority.current = null;
       setLoadedScope(null);
+      const readRevision = freshness.capture();
       const intent = ++generation.current;
       setLoading(true);
       setReadError(null);
@@ -197,6 +206,7 @@ export function useSchoolPxkWorkbench({
           return null;
         }
         setData(next);
+        freshness.acknowledge(readRevision);
         setLoadedScope(scope);
         authority.current = scope;
         if (!schoolIds.length)
@@ -243,6 +253,16 @@ export function useSchoolPxkWorkbench({
       authority.current = null;
     };
   }, [read]);
+  useAtlasAuthorityRefresh(
+    freshness,
+    Boolean(note.trim()) ||
+      busy ||
+      loading ||
+      Boolean(lock) ||
+      Boolean(readError) ||
+      Boolean(pendingTransition),
+    read,
+  );
   const rows = data?.rows ?? [];
   const selected = rows.find((r) => schoolPxkRowKey(r) === selectedKey) ?? null;
   const actionAllowed = Boolean(
@@ -255,6 +275,7 @@ export function useSchoolPxkWorkbench({
         selected.allowed_actions.replace)),
   );
   const canRelease =
+    !freshness.stale &&
     actionAllowed &&
     Boolean(authSubject) &&
     loadedScope === scope &&
@@ -399,6 +420,7 @@ export function useSchoolPxkWorkbench({
         return;
       }
       proof.current = request;
+      onCommitted?.();
       const next = await read();
       if (
         !next ||
@@ -431,14 +453,17 @@ export function useSchoolPxkWorkbench({
     )
       return;
     if (proof.current && !provesRelease(next, proof.current)) return;
-    if (
+    const confirmed = Boolean(
       proof.current ||
       (context &&
         provesRelease(next, context.request) &&
         next.rows.find((r) => schoolPxkRowKey(r) === context.rowKey)
-          ?.current_release?.note === context.request.reason_note)
-    )
+          ?.current_release?.note === context.request.reason_note),
+    );
+    if (confirmed) {
       setNote("");
+      onCommitted?.();
+    }
     proof.current = null;
     commandContext.current = null;
     locked.current = false;
@@ -466,10 +491,12 @@ export function useSchoolPxkWorkbench({
     loading,
     busy,
     readError,
-    notice,
+    notice: freshness.stale && !lock ? staleAuthorityMessage : notice,
+    stale: freshness.stale,
     lock,
     canRelease,
     canExportLoaded:
+      !freshness.stale &&
       Boolean(authSubject) &&
       loadedScope === scope &&
       !loading &&

@@ -488,7 +488,9 @@ export function confirmedNeedResultRequiresEligibilityRefresh(
 ) {
   return (
     result.kind === "backend_error" &&
-    result.error.write_certainty === "NO_BUSINESS_WRITE"
+    (result.error.write_certainty === "NO_BUSINESS_WRITE" ||
+      (result.error.write_certainty === "NO_COMMITTED_CHANGE" &&
+        result.error.error_code === "CONFIRMED_NEED_BATCH_NOT_EDITABLE"))
   );
 }
 
@@ -498,10 +500,13 @@ export function confirmedNeedResultMessage(result: AtlasRpcResult) {
       result.response.safe_operator_message ??
       "Đã cập nhật dữ liệu xác nhận nhu cầu."
     );
-  if (result.kind === "backend_error")
+  if (result.kind === "backend_error") {
+    if (result.error.error_code === "CONFIRMED_NEED_BATCH_NOT_EDITABLE")
+      return "Nhu cầu đã thay đổi trạng thái. Hãy tải lại dữ liệu để kiểm tra quyền điều chỉnh hiện tại.";
     return result.error.error_code === "CAPABILITY_DENIED"
       ? "Bạn không có quyền truy cập nhu cầu xác nhận này."
       : result.error.safe_message;
+  }
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   return result.diagnostic.safeMessage;

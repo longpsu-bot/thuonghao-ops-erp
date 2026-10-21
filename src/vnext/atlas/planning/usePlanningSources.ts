@@ -1,4 +1,9 @@
 import type { AtlasModuleExitProps } from "../AtlasModuleExit";
+import {
+  useAtlasAuthorityFreshness,
+  useAtlasAuthorityRefresh,
+  staleAuthorityMessage,
+} from "../AtlasModuleExit";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -163,7 +168,10 @@ export function usePlanningSources({
   initialWeek = initialServiceDate ?? mondayOf(new Date()),
   initialJob = "menu",
   ownerJob,
+  onCommitted,
+  freshnessRevision,
 }: PlanningSourcesProps) {
+  const freshness = useAtlasAuthorityFreshness(freshnessRevision);
   const fixedJob = useRef(ownerJob).current;
   const [week, setWeek] = useState(() => normalizeWeek(initialWeek));
   const [date, setDate] = useState(
@@ -211,6 +219,8 @@ export function usePlanningSources({
   );
   const source: Source = job === "pantry" ? "pantry" : "planning";
   const { loading, error: readError, recovery, outcome } = sourceStates[source];
+  const sourceAuthority = useRef(sourceStates);
+  sourceAuthority.current = sourceStates;
   const locked = recovery !== null;
   const recoveryKind: PlanningRecoveryKind | null =
     recovery ?? (readError ? "READ_FAILURE" : null);
@@ -273,12 +283,21 @@ export function usePlanningSources({
   };
   const load = useCallback(
     async (targetWeek: string, target?: Source, recover = false) => {
+      const readRevision = freshness.capture();
+      let complete = true;
       setPreview(null);
       setImpact(null);
       ++generation.current;
       ++googleGeneration.current;
       setSyncing(false);
       const sources: Source[] = target ? [target] : ["planning", "pantry"];
+      const reconcilesUncertainWrite =
+        recover &&
+        sources.some(
+          (current) =>
+            sourceAuthority.current[current].recovery ===
+            "UNKNOWN_OR_MISSING_READBACK",
+        );
       await Promise.all(
         sources.map(async (current) => {
           const token = ++readGeneration.current[current];
@@ -299,6 +318,7 @@ export function usePlanningSources({
           const b =
             current === "pantry" ? pantryWorkbenchFromResult(result) : null;
           const valid = (p ?? b)?.week_start === targetWeek;
+          if (!valid) complete = false;
           if (valid) {
             if (p) {
               setData(p);
@@ -322,6 +342,10 @@ export function usePlanningSources({
           }));
         }),
       );
+      if (complete) {
+        freshness.acknowledge(readRevision);
+        if (reconcilesUncertainWrite) onCommitted?.();
+      }
     },
     [api, pantryApi, authSubject, resetPlanning, resetPantry],
   );
@@ -413,7 +437,24 @@ export function usePlanningSources({
               .map((error) => `Dòng ${i + 1}: ${error}`),
           );
   const effectiveModes = pantryModesForRows(pantryRows, modes);
-  const canEdit = !locked && !busy && !loading && !readError && !!authority;
+  const canEdit =
+    !freshness.stale &&
+    !locked &&
+    !busy &&
+    !loading &&
+    !readError &&
+    !!authority;
+  useAtlasAuthorityRefresh(
+    freshness,
+    dirty ||
+      busy ||
+      loading ||
+      locked ||
+      Boolean(readError) ||
+      Boolean(preview) ||
+      syncing,
+    () => load(week, source),
+  );
   const exitBlocked =
     busy ||
     Object.values(sourceStates).some((state) => state.recovery !== null);
@@ -731,6 +772,7 @@ export function usePlanningSources({
         if (!stillCurrent()) return;
 
         if (saveResult.kind === "success") {
+          onCommitted?.();
           const readback = planningReadbackFromResult(saveResult);
           if (readback?.week_start === week) {
             ++readGeneration.current.planning;
@@ -775,6 +817,7 @@ export function usePlanningSources({
             return;
           }
           ++readGeneration.current.planning;
+          onCommitted?.();
           setData(readback);
           resetPlanning(readback);
           if (
@@ -989,6 +1032,7 @@ export function usePlanningSources({
             ),
     );
     if (result.kind === "success") {
+      onCommitted?.();
       const pRead =
         job !== "pantry" ? planningReadbackFromResult(result) : data;
       const bRead =
@@ -1048,6 +1092,7 @@ export function usePlanningSources({
     writeBusy.current = false;
     setBusy(false);
     if (result.kind === "success") {
+      onCommitted?.();
       if (job === "menu") {
         clearReview();
         setOutcome(
@@ -1064,6 +1109,7 @@ export function usePlanningSources({
     schools,
     authority,
     recoveryKind,
+    stale: freshness.stale,
     pantryRowErrors,
     data,
     pantryData,
@@ -1086,7 +1132,7 @@ export function usePlanningSources({
     pending,
     locked,
     exitBlocked,
-    outcome,
+    outcome: freshness.stale && !locked ? staleAuthorityMessage : outcome,
     readError,
     loading,
     busy,

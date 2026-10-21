@@ -20,6 +20,17 @@ grouping, source fingerprint, snapshot, scope or successor rule changes.
 
 **Document grain:** service date + School + delivery location
 
+### Human Unit output amendment — 21 October 2026
+
+Preview lines expose current nullable `unit_name`. Future explicit releases capture
+it in immutable `unit_name_snapshot`; released line reads expose that captured
+value as `unit_name`. UI and individual/grouped exports prefer this name only
+when the captured code is technical. Human codes such as `kg` keep their existing
+label. Legacy nulls retain their original code-only rendering without master-data
+backfill. Unit identity, quantities, lineage, fingerprints, release permissions
+and budgets are unchanged. Migration `20261021020818` is additive; application
+rollback may ignore the optional field, while captured history must be retained.
+
 New releases freeze nullable cooking-group ID/name from the single Admin-owned
 current membership. Shaped released reads expose `cooking_group_id` and
 `cooking_group_name`; later master changes cannot rewrite them. See the bounded

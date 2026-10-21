@@ -9,6 +9,18 @@ import {
 } from "./schoolDispatchReleaseExports";
 
 describe("School dispatch release exports", () => {
+  it("prints the frozen human Unit name and preserves legacy code-only history", () => {
+    const document = createReviewSchoolDispatchDocument("RELEASED");
+    document.lines[0]!.unit_code = "v1-unit-count";
+    Object.assign(document.lines[0]!, { unit_name: "Trái" });
+    expect(buildSchoolDispatchExportData(document).lines[0]!.unitCode).toBe(
+      "Trái",
+    );
+    delete (document.lines[0]! as { unit_name?: string }).unit_name;
+    expect(buildSchoolDispatchExportData(document).lines[0]!.unitCode).toBe(
+      "v1-unit-count",
+    );
+  });
   it("allows short Vietnamese Unit labels to print whole at the accepted body font", () => {
     const document = createReviewSchoolDispatchDocument("RELEASED");
     document.lines = ["Cốc", "Quả"].map((unit_code) => ({

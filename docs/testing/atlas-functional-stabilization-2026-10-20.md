@@ -31,7 +31,7 @@ PASS means only the stated scope was actually exercised. API/SQL and controller 
 | --------------------------------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Selected master data: School defaults, Supplier/Ingredient/Dish/base Recipe create/edit | PASS    | 5 master commands (7 including Attendance/Pantry): validation, saved business fields/Unit/policy step, public readback and editor reopen. Full419/422 below. Broader lifecycle/priority/School-group authoring is NOT RUN in browser.                                                                                                                                                                                                                                                                                               |
 | Existing Menu, Attendance, Pantry and Recipe support reads                              | PASS    | 13 October AN PHÚ:2300 students+100 teachers, base3.5/.5kg per100, derived84/12kg match Need/Allocation. Menu/current Recipe reads and explicit empty Pantry warning remain correct.                                                                                                                                                                                                                                                                                                                                                |
-| External Google Menu synchronization                                                    | BLOCKED | Owner confirmed BLOCKED on 21 October 2026 (Asia/Ho_Chi_Minh); no disposable test Sheet/source endpoint has been supplied. Keep the operational source and hosted business data read-only. Next: Owner supplies an isolated test source, then exercise actual sync/validation/recovery there.                                                                                                                                                                                                                                                                                                                                        |
+| External Google Menu synchronization                                                    | BLOCKED | Owner confirmed BLOCKED on 21 October 2026 (Asia/Ho_Chi_Minh); no disposable test Sheet/source endpoint has been supplied. Keep the operational source and hosted business data read-only. Next: Owner supplies an isolated test source, then exercise actual sync/validation/recovery there.                                                                                                                                                                                                                                       |
 | Attendance and same-Ingredient two-purpose Pantry authoring                             | PASS    | Unused26 September2050; explicit teacher0, exact School/Unit IDs, Pantry quantities2/3, receipts, reload and correct missing-Menu readiness blocker. Full419/422.                                                                                                                                                                                                                                                                                                                                                                   |
 | Attendance correction                                                                   | PASS    | Full39483392538 passes exact whole-week Review/Save/reopen:3 active Schools×7 days, target12→13, teacher0, one retained/20 new line IDs, new approval/version/one receipt, prior history/Menu/Pantry preserved. This run later fails Recipe Preview, so only completed Attendance/PXK paths are PASS.                                                                                                                                                                                                                               |
 | First Need generation UI                                                                | PASS    | PR422: native20 September range, one Tạo nhu cầu, CURRENT authority,248 exact displayed rows/304 source memberships, one receipt, unconfirmed Discard, new-document reselect/reopen, unchanged saved19 September review/receipts.                                                                                                                                                                                                                                                                                                   |
@@ -122,3 +122,48 @@ Merged-frontend read-only sweep (Cloudflare Git publication, before final backen
 - **Fresh post-guard actual UI:** hard reload preserves authentication and starts the approved fresh current-day Menu. Reopening populated13 October reads264 confirmed Need lines/AN PHÚ84kg; actual Need→Allocation retains date13 and Thơm84/3/18/4Trái. Allocation→Orders, native12–13 range reads17 POs/14 eligible Drafts; ANH KIỆT search gives1 while publish-all14 remains enabled;512 Gói and715/520/520 Hộp display correctly. Fresh all-status/all-School reconciliation12–13 returns exactly42 rows without timeout and explains existing business blockers. Returning to Orders preserves date/search/selection. The verified publish-all screen is left open; no hosted command is submitted.
 - **Preservation and rollback:** OPS v1/Retool/synced sources, unrelated original branch/stash and Docker data remain untouched. Default/master-rehearsal/task stacks stay stopped, K3 stays running. Original official document snapshots are retained. Final PR421 has no schema/grant/budget/dependency change; its UI rollback is a reviewed source revert through the same required checks/guard. Earlier database repairs are versioned migrations with nullable future metadata, no historical backfill.
 - **Record boundary:** this closeout branch changes only this ledger after source736fe37 was certified/deployed. The production revision remains pinned to that certified source; final run/deployment links are also recorded on merged PR421 rather than deploying a new application solely for journal metadata. Remaining blockers and untested variants are listed above; no broader completion claim is made.
+
+## Full-day follow-up — 21 October 2026
+
+The prior closeout covers its selected variants. A fresh connected full-day run
+reproduced missing retained-owner invalidation: Pantry completion left Need
+blocked; Prepare left retained Need editable as an ordinary Draft; corrected
+Need and replacement PO releases left retained Orders/PXK currentness outdated.
+The backend correctly rejected the stale ordinary Save. These are presentation
+authority defects, not grounds to relax backend release guards or extend budgets.
+
+Bounded repair: successful commits invalidate related retained daily owners;
+clean idle owners reread, while dirty drafts, uncertain outcomes and retryable
+commands preserve existing recovery. No read is triggered by mere activation
+(D-048). Read-start revision tokens prevent an old read from acknowledging a new
+commit. Need day caches and delayed workbook proposals obey the same authority.
+Explicit reconciliation of uncertain commands also invalidates dependents without
+retrying writes. Need's released-batch rejection is localized and requires fresh
+eligibility. Need uses existing human Unit formatting. Future PXK Unit names are
+nullable immutable snapshots; historical code-only documents remain unchanged.
+
+Environment: verified task-authorized E: checkout, clean latest-main61e51d95 start,
+branch fix/full-day-operator-journey. Staging read-only observation:128 migrations,
+tip20261020220030; existing3s/8s statement and8s lock budgets unchanged. Saved Retool
+purchase app reviewed as continuity reference; OPS v1/Retool NO-WRITE preserved.
+All transactional proof uses own atlas_full_day_20261021 database, installed from
+all source migrations, real connected UI/Auth/business commands and a clearly
+labeled synthetic Google transport. Actual hosted Google transport was separately
+read:14 unresolved Dish cells block sync before Save. These require source/catalog
+reconciliation; no invented Dish/Recipe mappings or shared business writes.
+
+Baseline actual UI proof:2050-09-19, two Schools sharing one location,100 students
+per School,8 Need lines, I1 total40kg. Explicit Supplier splitA20/B20, two original
+POs and two School PXKs. Human released-Need correction School1 I1 20→25 yields45;
+explicit reallocationA25/B20, two replacement POs and two replacement PXKs succeed.
+Original full public document snapshots are retained for immutable comparison.
+A fresh repaired browser sweep, final review, exact-source CI and guarded deploy
+are still pending at this checkpoint; do not treat this entry as certification.
+
+Focused evidence: English rejection and technical Unit labels reproduced RED;
+Google commit notification integration proven RED by removing only that seam.
+Dirty Supplier discard regression exposed and repaired a retained status gate.
+Clean cache/race/dirty/UNKNOWN guards and no-activation-read coverage are included.
+PXK SQL test139/139 PASS in a separate empty disposable database, including new
+capture, immutable snapshot, later master rename, historical null and ACL/RLS
+assertions. No test timeout, assertion, security grant or lifecycle was relaxed.

@@ -25,7 +25,7 @@ function setup(
   scenario: Parameters<typeof createProcurementReviewFixture>[0] = "normal",
   owner: Pick<
     ProcurementControllerProps,
-    "ownerStage" | "onOpenOrders" | "initialRange"
+    "ownerStage" | "onOpenOrders" | "initialRange" | "onCommitted"
   > = {},
 ) {
   const fixture = createProcurementReviewFixture(scenario);
@@ -537,9 +537,11 @@ describe("Preparation and PO actions", () => {
     "recovers %s preparation without retrying or changing Allocation identity",
     async (failure) => {
       const onOpenOrders = vi.fn();
+      const onCommitted = vi.fn();
       const { result, prepare, poRead, read } = setup("ready", {
         ownerStage: "allocation",
         onOpenOrders,
+        onCommitted,
       });
       await ready(result);
       if (failure === "unknown") prepare.mockResolvedValueOnce(reviewUnknown);
@@ -554,6 +556,7 @@ describe("Preparation and PO actions", () => {
       await act(async () => result.current.prepare(false));
       expect(prepare).toHaveBeenCalledOnce();
       await act(async () => result.current.reload());
+      expect(onCommitted).toHaveBeenCalledOnce();
       expect(result.current.stage).toBe("allocation");
       expect(result.current.locked).toBe(false);
       expect(onOpenOrders).toHaveBeenCalledExactlyOnceWith(reviewDate);

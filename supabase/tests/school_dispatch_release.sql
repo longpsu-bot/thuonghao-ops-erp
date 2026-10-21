@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(134);
+select plan(139);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -523,6 +523,26 @@ select ok((select (response->>'success')::boolean
     and response->>'document_number' like 'PXK-20260924-%'
   from pxk_results where name='release'),
   'explicit PXK release succeeds and assigns a server-owned official number');
+select is((select response#>>'{rows,0,preview,lines,0,unit_name}' from pxk_results where name='preview'),
+  'Kilôgam','PXK preview exposes the current human Unit name');
+select is((select response#>>'{rows,0,current_release,lines,0,unit_name}' from pxk_results where name='read-released'),
+  'Kilôgam','new PXK freezes the human Unit name');
+select throws_ok($$update atlas_dispatch.school_dispatch_release_lines set unit_name_snapshot='Changed'$$,
+  '23514','School dispatch release history is immutable.','PXK Unit name snapshot is immutable');
+savepoint pxk_unit_history;
+update atlas_admin.units set unit_name='Renamed master' where unit_id='26020000-0000-4000-8000-000000000031';
+select is((select atlas_core.school_dispatch_release_json(school_dispatch_release_id)#>>'{lines,0,unit_name}'
+  from atlas_dispatch.school_dispatch_releases where school_dispatch_release_id=
+    (select (response->>'school_dispatch_release_id')::uuid from pxk_results where name='release')),
+  'Kilôgam','PXK Unit output never follows later master changes');
+set session_replication_role=replica;
+update atlas_dispatch.school_dispatch_release_lines set unit_name_snapshot=null;
+set session_replication_role=origin;
+select ok((select atlas_core.school_dispatch_release_json(school_dispatch_release_id)#>'{lines,0,unit_name}'='null'::jsonb
+  from atlas_dispatch.school_dispatch_releases where school_dispatch_release_id=
+    (select (response->>'school_dispatch_release_id')::uuid from pxk_results where name='release')),
+  'legacy Unit snapshot stays null without live-name backfill');
+rollback to savepoint pxk_unit_history;
 select ok((select release_status='RELEASED' and source_fingerprint is not null
     and school_name_snapshot='Trường Tiểu học Nguyễn Du'
     and school_display_order_snapshot=1

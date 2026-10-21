@@ -1,3 +1,4 @@
+import { confirmedNeedUnitLabel } from "./confirmedNeedDraft";
 import {
   Box,
   Button,
@@ -122,7 +123,9 @@ export function ConfirmedNeedCorrectionPanel({ c }: { c: Controller }) {
                             )}{" "}
                         →{" "}
                         {exactQuantityDisplay(evidence.new_confirmed_quantity)}{" "}
-                        {line?.controlled_unit.code}
+                        {line
+                          ? confirmedNeedUnitLabel(line.controlled_unit)
+                          : ""}
                       </Table.Cell>
                       <Table.Cell>
                         {evidence.difference === null
@@ -237,7 +240,7 @@ export function ConfirmedNeedCorrectionReview({
                     <Table.Row key={line.confirmed_need_line_id}>
                       <Table.Cell>
                         {line.school.name} · {line.ingredient.name} (
-                        {line.controlled_unit.code})
+                        {confirmedNeedUnitLabel(line.controlled_unit)})
                       </Table.Cell>
                       <Table.Cell>
                         {exactQuantityDisplay(

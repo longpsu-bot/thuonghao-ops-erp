@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAtlasAuthorityFreshness } from "../AtlasModuleExit";
 import {
   operatorDateRangeError,
   type AtlasOperatorDateRange,
@@ -49,6 +50,8 @@ export type ProcurementControllerProps = {
   initialStage?: ProcurementStage;
   ownerStage?: ProcurementStage;
   onOpenOrders?: (scope: string | AtlasOperatorDateRange) => void;
+  onCommitted?: () => void;
+  freshnessRevision?: number;
 };
 const uncertain = (): ProcurementFeedback => ({
   kind: "unknown",
@@ -118,7 +121,10 @@ export function useProcurementWorkbench({
   initialStage = "allocation",
   ownerStage,
   onOpenOrders,
+  onCommitted,
+  freshnessRevision,
 }: ProcurementControllerProps) {
+  const freshness = useAtlasAuthorityFreshness(freshnessRevision);
   const fixedStage = useRef(ownerStage).current;
   const initialScope = initialRange ?? {
     start: initialServiceDate,
@@ -158,6 +164,7 @@ export function useProcurementWorkbench({
   const active = useRef(false);
   const retryCommand = useRef<(() => Promise<void>) | null>(null);
   const recoveryStage = useRef<ProcurementStage | null>(null);
+  const recoveryInvalidation = useRef(false);
   const skipPreparedStageRead = useRef(false);
 
   const clearRetry = () => {
@@ -167,6 +174,7 @@ export function useProcurementWorkbench({
   const read = useCallback(
     async (target: ProcurementStage): Promise<boolean | null> => {
       if (operatorDateRangeError({ start: date, end: dateEnd })) return false;
+      const readRevision = freshness.capture();
       const ticket = ++generation.current;
       active.current = true;
       setCurrent(false);
@@ -226,6 +234,7 @@ export function useProcurementWorkbench({
       setBusy(false);
       active.current = false;
       if (ok) {
+        freshness.acknowledge(readRevision);
         setMutationLocked(false);
         setRevision((value) => value + 1);
       } else {
@@ -340,6 +349,10 @@ export function useProcurementWorkbench({
     const target = recoveryStage.current ?? stage;
     const ok = await read(target);
     if (ok) {
+      if (recoveryInvalidation.current) {
+        recoveryInvalidation.current = false;
+        onCommitted?.();
+      }
       setFeedback(null);
       if (recoveryStage.current) await enterOrdersAfterRead(target);
     }
@@ -350,6 +363,7 @@ export function useProcurementWorkbench({
     Boolean(
       authSubject &&
       current &&
+      !freshness.stale &&
       !locked &&
       !active.current &&
       !bulkActive.current &&
@@ -377,8 +391,10 @@ export function useProcurementWorkbench({
         },
       };
     }
+    if (result.kind === "success") onCommitted?.();
     if (ticket !== generation.current) return false;
     const nextFeedback = feedbackFromResult(result);
+    recoveryInvalidation.current = nextFeedback.kind === "unknown";
     setFeedback(nextFeedback);
     if (preparation && ["success", "unknown"].includes(nextFeedback.kind))
       recoveryStage.current = "orders";
@@ -652,6 +668,8 @@ export function useProcurementWorkbench({
     allocation,
     orders,
     current,
+    freshness,
+    stale: freshness.stale,
     loading,
     busy: busy || bulkProgress !== null,
     bulkProgress,

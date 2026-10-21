@@ -11,6 +11,10 @@ import {
   reconciliationRangeError,
 } from "./schoolFulfilmentAuthority";
 import { needsAttention } from "./schoolFulfilmentAttention";
+import {
+  useAtlasAuthorityFreshness,
+  useAtlasAuthorityRefresh,
+} from "../AtlasModuleExit";
 type School = { school_id: string; school_name: string };
 export type SchoolFulfilmentWorkbenchProps = {
   api: SchoolFulfilmentReconciliationApi;
@@ -18,6 +22,7 @@ export type SchoolFulfilmentWorkbenchProps = {
   initialDateStart: string;
   initialDateEnd: string;
   schools?: School[];
+  freshnessRevision?: number;
 };
 export const fulfilmentRowKey = (r: SchoolFulfilmentRow) =>
   JSON.stringify([r.service_date, r.school_id, r.delivery_location_id]);
@@ -27,7 +32,9 @@ export function useSchoolFulfilmentWorkbench({
   initialDateStart,
   initialDateEnd,
   schools: externalSchools,
+  freshnessRevision,
 }: SchoolFulfilmentWorkbenchProps) {
+  const freshness = useAtlasAuthorityFreshness(freshnessRevision);
   const [dateStart, updateStart] = useState(initialDateStart);
   const [dateEnd, updateEnd] = useState(initialDateEnd);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
@@ -59,6 +66,7 @@ export function useSchoolFulfilmentWorkbench({
     setSelection(null);
   };
   const read = useCallback(async () => {
+    const readRevision = freshness.capture();
     const intent = ++generation.current;
     setLoaded(null);
     setSelection(null);
@@ -101,6 +109,7 @@ export function useSchoolFulfilmentWorkbench({
       }
       const data = result.response;
       setLoaded({ scope, data });
+      freshness.acknowledge(readRevision);
       if (!schoolIds.length)
         setCatalogue((previous) => ({
           subject: authSubject,
@@ -132,6 +141,11 @@ export function useSchoolFulfilmentWorkbench({
       generation.current++;
     };
   }, [read]);
+  useAtlasAuthorityRefresh(
+    freshness,
+    loading || Boolean(readError) || Boolean(rangeError),
+    read,
+  );
   const data = loaded?.scope === scope ? loaded.data : null;
   const rows = data?.rows ?? [];
   const visibleRows = rows

@@ -4,6 +4,11 @@ import {
 } from "../atlasOperatorDateRange";
 import type { AtlasOperation } from "../AtlasOperationStatus";
 import type { AtlasModuleExitProps } from "../AtlasModuleExit";
+import {
+  useAtlasAuthorityFreshness,
+  useAtlasAuthorityRefresh,
+  staleAuthorityMessage,
+} from "../AtlasModuleExit";
 import { useConfirmedNeedDraft } from "./useConfirmedNeedDraft";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -90,7 +95,10 @@ export function useConfirmedNeedWorkbench({
   needGenerationApi,
   confirmedNeedApi,
   onContinueAllocation,
+  onCommitted,
+  freshnessRevision,
 }: ConfirmedNeedWorkbenchProps) {
+  const freshness = useAtlasAuthorityFreshness(freshnessRevision);
   const [date, setDate] = useState(initialServiceDate);
   const [range, setRange] = useState<AtlasOperatorDateRange>({
     start: initialServiceDate,
@@ -102,6 +110,7 @@ export function useConfirmedNeedWorkbench({
   const [rangeBusy, setRangeBusy] = useState(false);
   const [, updateDays] = useState(0);
   type Day = {
+    authorityRevision: number;
     preflight: PlanningInputPreflightData | null;
     workbench: ConfirmedNeedWorkbenchData | null;
     drafts: Record<string, ConfirmedNeedDraftLine>;
@@ -149,6 +158,7 @@ export function useConfirmedNeedWorkbench({
   const epoch = useRef(0);
   const inFlight = useRef(false);
   const saveNeedsReadback = useRef(false);
+  const recoveryInvalidation = useRef(false);
   const {
     drafts,
     setDrafts,
@@ -174,6 +184,7 @@ export function useConfirmedNeedWorkbench({
     quantityDirty || Boolean(correctionMode && correctionReason.trim());
   if (loadedDate.current === date)
     days.current[date] = {
+      authorityRevision: freshness.accepted,
       preflight,
       workbench,
       drafts,
@@ -192,6 +203,8 @@ export function useConfirmedNeedWorkbench({
     loadedDate.current = null;
   }, [authSubject, preflightApi, confirmedNeedApi]);
   const shoppingContext = useRef({
+    freshnessRevision: freshness.revision,
+    stale: freshness.stale,
     range,
     allDirty,
     rangeBusy,
@@ -205,6 +218,8 @@ export function useConfirmedNeedWorkbench({
     authSubject,
   });
   shoppingContext.current = {
+    freshnessRevision: freshness.revision,
+    stale: freshness.stale,
     range,
     allDirty,
     rangeBusy,
@@ -246,6 +261,7 @@ export function useConfirmedNeedWorkbench({
   }, []);
   const recover = useCallback(async () => {
     if (inFlight.current || invalidRange.current) return;
+    const readRevision = freshness.capture();
     const requestEpoch = ++epoch.current;
     inFlight.current = true;
     setBusy(true);
@@ -286,6 +302,11 @@ export function useConfirmedNeedWorkbench({
         setDrafts({});
       }
       setLock(null);
+      freshness.acknowledge(readRevision);
+      if (recoveryInvalidation.current) {
+        recoveryInvalidation.current = false;
+        onCommitted?.();
+      }
       saveNeedsReadback.current = false;
       setNotice(null);
       setOperation({ status: "IDLE" });
@@ -320,6 +341,7 @@ export function useConfirmedNeedWorkbench({
       setLock(cached.lock);
       setReadError(cached.readError);
       setCorrectionDraft(cached.correction);
+      freshness.acknowledge(cached.authorityRevision);
       setBusy(false);
       setNotice(null);
       setOperation({ status: "IDLE" });
@@ -343,6 +365,21 @@ export function useConfirmedNeedWorkbench({
     };
   }, [recover]);
   useEffect(() => {
+    for (const [day, cached] of Object.entries(days.current))
+      if (
+        !cached.dirty &&
+        !cached.lock &&
+        cached.authorityRevision !== freshness.revision
+      )
+        delete days.current[day];
+  }, [freshnessRevision]);
+  useAtlasAuthorityRefresh(
+    freshness,
+    allDirty || busy || Boolean(lock) || Boolean(readError) || rangeBusy,
+    recover,
+  );
+  useEffect(() => {
+    const readRevision = freshness.capture();
     const token = ++rangeEpoch.current;
     const pending = shoppingListRangeDates(range).filter(
       (d) => d !== date && !days.current[d],
@@ -379,6 +416,7 @@ export function useConfirmedNeedWorkbench({
             throw new Error(readFailure);
           if (token !== rangeEpoch.current) return;
           days.current[day] = {
+            authorityRevision: readRevision,
             preflight: p,
             workbench: b,
             drafts: Object.fromEntries(
@@ -395,6 +433,7 @@ export function useConfirmedNeedWorkbench({
         } catch (error) {
           if (token !== rangeEpoch.current) return;
           days.current[day] = {
+            authorityRevision: readRevision,
             preflight: null,
             workbench: null,
             drafts: {},
@@ -414,7 +453,14 @@ export function useConfirmedNeedWorkbench({
     return () => {
       rangeEpoch.current++;
     };
-  }, [range, authSubject, preflightApi, confirmedNeedApi, correlation]);
+  }, [
+    range,
+    authSubject,
+    preflightApi,
+    confirmedNeedApi,
+    correlation,
+    freshnessRevision,
+  ]);
   const released =
     workbench?.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
   const sourceCurrent = Boolean(
@@ -435,6 +481,7 @@ export function useConfirmedNeedWorkbench({
       (issue) => issue.code === "CONFIRMED_NEED_BATCH_NOT_REVIEWABLE",
     );
   const editable =
+    !freshness.stale &&
     !rangeError &&
     ((correctionMode && correctionCurrent) ||
       (!correctionMode &&
@@ -452,6 +499,7 @@ export function useConfirmedNeedWorkbench({
     changedLines.length > 0 &&
     !Object.keys(errors).length;
   const canStartCorrection =
+    !freshness.stale &&
     correctionCurrent &&
     !rangeError &&
     !busy &&
@@ -459,6 +507,7 @@ export function useConfirmedNeedWorkbench({
     !dirty &&
     correctionRead?.allowed === true;
   const canContinue =
+    !freshness.stale &&
     !rangeError &&
     (current || correctionCurrent) &&
     !allDirty &&
@@ -468,6 +517,7 @@ export function useConfirmedNeedWorkbench({
     !lock &&
     Boolean(onContinueAllocation);
   const canGenerate = Boolean(
+    !freshness.stale &&
     !rangeError &&
     authSubject &&
     preflight &&
@@ -498,6 +548,7 @@ export function useConfirmedNeedWorkbench({
     setDrafts((d) => ({ ...d, [id]: { ...d[id]!, ...accepted } }));
   };
   const classifyFailure = (r: AtlasRpcResult, generation = false) => {
+    recoveryInvalidation.current = confirmedNeedResultHasUnknownWriteOutcome(r);
     if (generation) {
       const unknown =
         r.kind === "success" || confirmedNeedResultHasUnknownWriteOutcome(r);
@@ -619,7 +670,12 @@ export function useConfirmedNeedWorkbench({
     let correctionCommitted = false;
     try {
       saveNeedsReadback.current = true;
+      recoveryInvalidation.current = true;
       const r = await confirmedNeedApi.save(request);
+      if (r.kind === "success") {
+        recoveryInvalidation.current = false;
+        onCommitted?.();
+      }
       if (epoch.current !== requestEpoch) return;
       const b = confirmedNeedReadbackFromResult(r);
       if (
@@ -697,7 +753,12 @@ export function useConfirmedNeedWorkbench({
       preflight.current_need?.need_generation_run_id ?? null,
     );
     try {
+      recoveryInvalidation.current = true;
       const r = await needGenerationApi.execute(request);
+      if (r.kind === "success") {
+        recoveryInvalidation.current = false;
+        onCommitted?.();
+      }
       if (epoch.current !== requestEpoch) return;
       if (r.kind !== "success") {
         classifyFailure(r, true);
@@ -852,6 +913,11 @@ export function useConfirmedNeedWorkbench({
     setPendingTransition(null);
     applyTransition(next);
   };
+  const requestRefresh = () => {
+    if (busy || invalidRange.current) return;
+    if (dirty) setPendingTransition({ refresh: true });
+    else void recover();
+  };
   useEffect(() => {
     if (!allDirty && !lock && operation.status !== "RUNNING") return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();
@@ -907,6 +973,7 @@ export function useConfirmedNeedWorkbench({
             : null,
         ),
       isCurrent: () =>
+        !shoppingContext.current.stale &&
         !invalidRange.current &&
         !shoppingContext.current.rangeError &&
         shoppingContext.current.authSubject === authSubject &&
@@ -931,7 +998,9 @@ export function useConfirmedNeedWorkbench({
     drafts,
     busy,
     lock,
-    notice,
+    notice: freshness.stale && !lock ? staleAuthorityMessage : notice,
+    stale: freshness.stale,
+    requestRefresh,
     readError,
     search,
     setSearch,
@@ -987,6 +1056,9 @@ export function useConfirmedNeedWorkbench({
           allDirty ||
           rangeBusy ||
           expected.rangeError ||
+          expected.stale ||
+          current.stale ||
+          current.freshnessRevision !== expected.freshnessRevision ||
           current.rangeError ||
           expected.dirty ||
           expected.busy ||
