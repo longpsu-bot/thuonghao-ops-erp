@@ -27,11 +27,19 @@ cutoff failures are preserved separately; no arbitrary elapsed acceptance gate
 or p95/hosted guarantee. Final source review clears business/security/UI boundaries;
 its profiler representation issue is fixed and the complete CLI passes.
 
-Focused frontend **377 tests / 23 files**, TypeScript and UI boundary PASS. Exact-source GitHub
-certification, guarded deployment and fresh disposable/hosted journeys remain
-release gates. Staging's prior authenticated timeout0 rehearsal lease remains
-explicitly disclosed; this task has not changed hosted settings or business rows.
-See [full observations and remaining gates](need-generation-unit-label-improvements-2026-10-21.md).
+Focused frontend **377 tests / 23 files**, TypeScript and UI boundary PASS.
+PR426 merged as `484c34c3`; exact-source and exact-main Frontend/executed Full
+PASS, guarded deployment `39591313934` PASS, 133 migrations. Fresh disposable
+three-day journey PASS (77 zero deltas); actual hosted 23 October original and
+correction/reallocation/replacement PO/two-successor-PXK journey PASS (22 zero
+deltas, two matched Schools, 638 history/lineage checks). One hosted generation
+completes at 4.094 s upstream / 4.270 s origin; workloads differ from the prior
+19-line run, so no hosted percentage claim. Four fresh XLSX/PDF pairs pass 117
+data checks; all 12 PDF pages reviewed, with presentation minors recorded.
+All frozen contents and prior business fields remain exact; only the 19 retained
+Attendance rows' predeclared timestamp refresh is allowed. Staging's prior
+authenticated timeout0 lease remains disclosed; this task changes no hosted
+setting. See [complete evidence and remaining issues](need-generation-unit-label-improvements-2026-10-21.md).
 
 ## Reopened PO release incident — 21 October 2026
 

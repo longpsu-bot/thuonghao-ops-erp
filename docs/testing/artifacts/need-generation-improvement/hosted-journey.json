@@ -1,0 +1,70 @@
+{
+  "status": "PASS",
+  "product_source_sha": "484c34c37eeba5a29108e461eac2cd1e0d9baf29",
+  "environment": "Hosted Atlas Staging, clearly labeled rehearsal; all business commands through actual app",
+  "service_date": "2026-10-23",
+  "schools": ["THUẬN GIAO", "TRỊNH HOÀI ĐỨC"],
+  "student_portions_each": 100,
+  "teacher_portions_each": 0,
+  "other_menu_schools_explicit_zero": 17,
+  "need": {
+    "attempts": 1,
+    "positive_lines": 22,
+    "atomic_contributions": 236,
+    "blocking_issues": 0
+  },
+  "correction": {
+    "school": "THUẬN GIAO",
+    "ingredient": "Đu đủ hường thô",
+    "unit": "kg",
+    "original_quantity": "5.5",
+    "corrected_quantity": "6.5",
+    "explicit_confirmation_and_reallocation": true
+  },
+  "documents": {
+    "original_pos": 5,
+    "replacement_pos": 1,
+    "current_released_pos": 5,
+    "original_dispatches": 2,
+    "successor_dispatches": 2,
+    "current_dispatches": 2,
+    "original_document_rows_verified": 127,
+    "frozen_contents_unchanged": true,
+    "allowed_header_updates": "Original affected PO version/status/updated_at; two original PXK release_status",
+    "explicit_predecessor_links_verified": true
+  },
+  "reconciliation": {
+    "matched_schools": 2,
+    "attention_schools": 0,
+    "current_detail_lines": 22,
+    "exact_zero_delta_lines": 22,
+    "blockers": 0,
+    "captured_human_units": ["kg", "Quả", "Hũ", "Cái"]
+  },
+  "independent_audit": {
+    "assertions": 638,
+    "baseline_rows": 6616,
+    "full_rows_unchanged": 6597,
+    "predeclared_attendance_timestamp_only": 19,
+    "changed_functions_security_metadata_unchanged": 4,
+    "role_memberships_unchanged": 19,
+    "schema_acls_unchanged": true,
+    "distinct_completed_receipts": 24,
+    "receipt_errors": 0
+  },
+  "export_validation": {
+    "xlsx_pdf_pairs": 4,
+    "native_pdf_pages_reviewed": 12,
+    "independent_assertions": 117,
+    "native_excel_visual_review": false,
+    "preview_importer_blank_shared_string_bug": true,
+    "presentation_minors_recorded": true
+  },
+  "limits": [
+    "This certifies the stated journey and scope, not every possible app path.",
+    "No real Supplier messaging or physical goods movement.",
+    "Raw operational snapshots and exports are retained privately, not committed.",
+    "No hosted resource or timeout setting changed; prior authenticated statement_timeout=0 remains disclosed.",
+    "See execution report for deferred presentation issues, unverified PO impact loading behavior and Recipe3529 business review."
+  ]
+}

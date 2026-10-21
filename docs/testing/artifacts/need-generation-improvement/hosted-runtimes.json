@@ -1,0 +1,1088 @@
+{
+  "source_main_sha": "484c34c37eeba5a29108e461eac2cd1e0d9baf29",
+  "environment": "Atlas Staging; ap-southeast-1; PostgreSQL 17.6.1.155",
+  "migrations": {
+    "count": 133,
+    "tip": "20261021083329"
+  },
+  "service_date": "2026-10-23",
+  "observation_window_utc": {
+    "start": "2026-10-21T11:23:44Z",
+    "end": "2026-10-21T12:10:28Z"
+  },
+  "measurement": "Supabase edge_logs response.origin_time and response.headers.x_envoy_upstream_service_time, milliseconds. These are service observations, not isolated SQL duration or browser wall time.",
+  "limits": [
+    "132 rows below the 2000-row query limit; all returned RPC observations retained.",
+    "20 public command requests; 112 reads/previews across navigation, refresh and recovery. Counts alone do not establish redundant work.",
+    "24 distinct completed receipts (including four expected child commands) independently verified; HTTP 200 alone is not business success.",
+    "Weekly-menu source-fetch Edge-function duration was not returned by this query; save_weekly_menu is separately recorded.",
+    "One hosted generation, 22 positive lines / 236 contributions; no hosted percentile or directly comparable percentage improvement.",
+    "No hosted settings changed; prior authenticated statement_timeout=0 rehearsal lease remains disclosed."
+  ],
+  "counts": {
+    "observations": 132,
+    "public_command_requests": 20,
+    "read_or_preview_requests": 112,
+    "completed_receipts_including_children": 24,
+    "receipt_errors": 0,
+    "http_errors": 0
+  },
+  "observations": [
+    {
+      "logged_at_utc": "2026-10-21T11:23:56.572000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_inputs_workbench",
+      "http_status": 200,
+      "origin_ms": 1437,
+      "upstream_ms": 881
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:24:04.742000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/preview_weekly_menu_import",
+      "http_status": 200,
+      "origin_ms": 664,
+      "upstream_ms": 574
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:24:05.632000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/save_weekly_menu",
+      "http_status": 200,
+      "origin_ms": 1359,
+      "upstream_ms": 1019
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:24:29.385000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_inputs_workbench",
+      "http_status": 200,
+      "origin_ms": 725,
+      "upstream_ms": 536
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:24:29.385000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_pantry_source_workbench",
+      "http_status": 200,
+      "origin_ms": 543,
+      "upstream_ms": 463
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:24:49.102000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/preview_attendance_import",
+      "http_status": 200,
+      "origin_ms": 82,
+      "upstream_ms": 36
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:24:49.367000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_source_correction_impact",
+      "http_status": 200,
+      "origin_ms": 67,
+      "upstream_ms": 12
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:25:24.578000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/save_attendance",
+      "http_status": 200,
+      "origin_ms": 2483,
+      "upstream_ms": 2121
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:25:27.457000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_inputs_workbench",
+      "http_status": 200,
+      "origin_ms": 513,
+      "upstream_ms": 400
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:26:23.037000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 443,
+      "upstream_ms": 386
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:26:41.700000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/execute_need_generation",
+      "http_status": 200,
+      "origin_ms": 4270,
+      "upstream_ms": 4094
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:26:46.170000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 355,
+      "upstream_ms": 282
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:27:01.079000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/save_confirmed_needs",
+      "http_status": 200,
+      "origin_ms": 794,
+      "upstream_ms": 732
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:27:16.537000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 549,
+      "upstream_ms": 493
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:15.938000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/save_confirmed_supplier_allocation",
+      "http_status": 200,
+      "origin_ms": 338,
+      "upstream_ms": 215
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:16.369000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 367,
+      "upstream_ms": 290
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:16.439000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 287,
+      "upstream_ms": 170
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:16.824000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 335,
+      "upstream_ms": 192
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:50.237000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/prepare_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2591,
+      "upstream_ms": 2495
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:53.004000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 579,
+      "upstream_ms": 524
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:53.006000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 223,
+      "upstream_ms": 104
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:53.316000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 460,
+      "upstream_ms": 303
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:53.661000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 323,
+      "upstream_ms": 192
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:53.923000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 412,
+      "upstream_ms": 353
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:28:54.161000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 404,
+      "upstream_ms": 351
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:42.386000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 277,
+      "upstream_ms": 205
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:42.764000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 776,
+      "upstream_ms": 625
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:42.872000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 574,
+      "upstream_ms": 450
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:42.891000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 358,
+      "upstream_ms": 227
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:43.354000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 481,
+      "upstream_ms": 349
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:43.636000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 297,
+      "upstream_ms": 219
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:43.982000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 711,
+      "upstream_ms": 657
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:44.030000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 880,
+      "upstream_ms": 817
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:44.114000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 499,
+      "upstream_ms": 358
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:44.120000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 680,
+      "upstream_ms": 583
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:44.711000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 462,
+      "upstream_ms": 404
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:45.009000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 221,
+      "upstream_ms": 177
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:45.302000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 831,
+      "upstream_ms": 781
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:45.331000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 956,
+      "upstream_ms": 896
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:45.395000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 264,
+      "upstream_ms": 216
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:45.397000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 622,
+      "upstream_ms": 565
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:45.746000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 605,
+      "upstream_ms": 555
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:46.380000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 171,
+      "upstream_ms": 115
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:46.485000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 794,
+      "upstream_ms": 734
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:46.648000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 868,
+      "upstream_ms": 817
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:46.742000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 676,
+      "upstream_ms": 627
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:46.749000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 426,
+      "upstream_ms": 365
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:47.275000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 489,
+      "upstream_ms": 436
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:47.615000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 233,
+      "upstream_ms": 147
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:47.886000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 1189,
+      "upstream_ms": 1121
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:47.938000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 1114,
+      "upstream_ms": 1063
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:48.024000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 733,
+      "upstream_ms": 666
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:48.031000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 345,
+      "upstream_ms": 284
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:48.475000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 698,
+      "upstream_ms": 652
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:49.256000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 392,
+      "upstream_ms": 328
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:29:49.300000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 573,
+      "upstream_ms": 518
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:30:28.738000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 1052,
+      "upstream_ms": 937
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:31:02.800000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_dispatch_document",
+      "http_status": 200,
+      "origin_ms": 459,
+      "upstream_ms": 400
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:31:03.362000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 527,
+      "upstream_ms": 459
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:31:03.387000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 789,
+      "upstream_ms": 648
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:31:04.304000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 333,
+      "upstream_ms": 229
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:31:25.012000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_dispatch_document",
+      "http_status": 200,
+      "origin_ms": 226,
+      "upstream_ms": 160
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:31:25.342000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 422,
+      "upstream_ms": 338
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:31:25.367000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 609,
+      "upstream_ms": 541
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:31:26.097000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 206,
+      "upstream_ms": 154
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:32:30.745000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 596,
+      "upstream_ms": 451
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:43.833000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/save_confirmed_needs",
+      "http_status": 200,
+      "origin_ms": 1515,
+      "upstream_ms": 1221
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:45.456000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 663,
+      "upstream_ms": 386
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:45.547000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 2087,
+      "upstream_ms": 1893
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:45.547000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 1903,
+      "upstream_ms": 1840
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:45.548000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2105,
+      "upstream_ms": 1907
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:45.549000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 1418,
+      "upstream_ms": 1360
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:46.203000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 1280,
+      "upstream_ms": 1210
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:47.621000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 698,
+      "upstream_ms": 645
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:33:47.752000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 611,
+      "upstream_ms": 558
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:07.966000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 387,
+      "upstream_ms": 331
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:51.482000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/save_confirmed_supplier_allocation",
+      "http_status": 200,
+      "origin_ms": 2420,
+      "upstream_ms": 2348
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:53.976000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 1343,
+      "upstream_ms": 1282
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:54.086000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 462,
+      "upstream_ms": 417
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:54.087000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 1912,
+      "upstream_ms": 1777
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:54.089000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 1597,
+      "upstream_ms": 1462
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:54.092000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 1461,
+      "upstream_ms": 1315
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:54.627000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 1127,
+      "upstream_ms": 1079
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:55.880000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 966,
+      "upstream_ms": 912
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:34:56.086000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 624,
+      "upstream_ms": 567
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:12.530000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/prepare_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2073,
+      "upstream_ms": 2023
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:14.696000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2553,
+      "upstream_ms": 2497
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:14.811000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2339,
+      "upstream_ms": 2254
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:14.814000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 2277,
+      "upstream_ms": 2218
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:14.815000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 414,
+      "upstream_ms": 370
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:14.816000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 2342,
+      "upstream_ms": 2165
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:15.300000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 1598,
+      "upstream_ms": 1551
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:17.017000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 1344,
+      "upstream_ms": 1307
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:17.232000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 941,
+      "upstream_ms": 883
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:35:17.317000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 872,
+      "upstream_ms": 827
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:36:12.785000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 1768,
+      "upstream_ms": 1481
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:36:14.657000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 625,
+      "upstream_ms": 564
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:36:52.189000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 1421,
+      "upstream_ms": 1354
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:36:59.697000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/create_school_catering_purchase_order_replacement",
+      "http_status": 200,
+      "origin_ms": 1317,
+      "upstream_ms": 1259
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:01.090000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2539,
+      "upstream_ms": 2076
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:01.213000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 976,
+      "upstream_ms": 927
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:01.214000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 2421,
+      "upstream_ms": 898
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:01.216000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 1811,
+      "upstream_ms": 294
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:01.217000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 1182,
+      "upstream_ms": 1128
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:03.096000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 713,
+      "upstream_ms": 607
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:03.710000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 525,
+      "upstream_ms": 455
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:03.936000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 1080,
+      "upstream_ms": 1013
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:23.839000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 1152,
+      "upstream_ms": 1098
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:25.066000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2151,
+      "upstream_ms": 2088
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:25.172000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_supplier_allocation_workbench",
+      "http_status": 200,
+      "origin_ms": 1622,
+      "upstream_ms": 1565
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:25.173000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_input_preflight",
+      "http_status": 200,
+      "origin_ms": 472,
+      "upstream_ms": 421
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:25.178000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 1983,
+      "upstream_ms": 1909
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:25.180000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 2089,
+      "upstream_ms": 2004
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:25.722000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_confirmed_need_review",
+      "http_status": 200,
+      "origin_ms": 1483,
+      "upstream_ms": 1348
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:27.318000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 929,
+      "upstream_ms": 870
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:37:27.344000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 724,
+      "upstream_ms": 638
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:38:06.664000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 1088,
+      "upstream_ms": 986
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:38:35.224000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_dispatch_document",
+      "http_status": 200,
+      "origin_ms": 1265,
+      "upstream_ms": 1193
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:38:36.601000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 1183,
+      "upstream_ms": 1070
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:38:36.644000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 1441,
+      "upstream_ms": 1372
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:38:36.651000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 1212,
+      "upstream_ms": 1107
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:38:38.197000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 653,
+      "upstream_ms": 592
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:42:40.281000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_planning_inputs_workbench",
+      "http_status": 200,
+      "origin_ms": 1294,
+      "upstream_ms": 931
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:42:40.285000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_pantry_source_workbench",
+      "http_status": 200,
+      "origin_ms": 696,
+      "upstream_ms": 374
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:42:59.882000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 970,
+      "upstream_ms": 858
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:43:34.102000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/release_school_dispatch_document",
+      "http_status": 200,
+      "origin_ms": 1027,
+      "upstream_ms": 955
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:43:35.224000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 809,
+      "upstream_ms": 718
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:50:54.928000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 1454,
+      "upstream_ms": 764
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:50:56.520000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 594,
+      "upstream_ms": 433
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:54:11.260000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 817,
+      "upstream_ms": 512
+    },
+    {
+      "logged_at_utc": "2026-10-21T11:58:43.086000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_dispatch_release_workbench",
+      "http_status": 200,
+      "origin_ms": 1659,
+      "upstream_ms": 1364
+    },
+    {
+      "logged_at_utc": "2026-10-21T12:07:30.262000Z",
+      "method": "POST",
+      "path": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 2164,
+      "upstream_ms": 1487
+    }
+  ]
+}
