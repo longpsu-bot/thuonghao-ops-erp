@@ -39,6 +39,17 @@ import {
 
 const QUANTITY_SCALE = 1_000_000n;
 
+const inspectionTableLayout = { paddingLeft: () => 2, paddingRight: () => 2 };
+// Use measured pagination; an oversized unbreakable table can lose rows.
+const dispatchPageBreakBefore: TDocumentDefinitions["pageBreakBefore"] = (
+  node,
+  _following,
+  next,
+) =>
+  node.id === "dispatch-final-inspection" &&
+  node.pageNumbers.length === 1 &&
+  next.some((candidate) => candidate.id === "dispatch-signatures-end");
+
 function scaledQuantity(value: string) {
   const match = value.match(/^(\d+)(?:\.(\d{0,6}))?$/);
   if (!match)
@@ -147,7 +158,7 @@ export function buildSchoolDispatchPdfDefinition(
         ]),
       ],
     },
-    layout: { paddingLeft: () => 2, paddingRight: () => 2 },
+    layout: inspectionTableLayout,
     margin: [0, 8, 0, 0],
   };
   const signatureBlock: Content = {
@@ -200,11 +211,7 @@ export function buildSchoolDispatchPdfDefinition(
   ];
   return {
     pageSize: "A4",
-    // Use measured pagination; an oversized unbreakable table can lose rows.
-    pageBreakBefore: (node, _following, next) =>
-      node.id === "dispatch-final-inspection" &&
-      node.pageNumbers.length === 1 &&
-      next.some((candidate) => candidate.id === "dispatch-signatures-end"),
+    pageBreakBefore: dispatchPageBreakBefore,
     pageOrientation: quantityWidth > 90 ? "landscape" : "portrait",
     pageMargins: [28, 32, 28, 42],
     footer: documentPdfFooter(
@@ -394,12 +401,12 @@ function addSchoolDispatchSheet(
     8,
     quantityWidth,
     7,
-    11,
+    14,
     19,
-    23,
+    20,
   ];
   sheet.pageSetup.orientation = quantityWidth > 18 ? "landscape" : "portrait";
-  // Fixed scale keeps the signature block together at manual page breaks.
+  // Fit the portrait form to its paper width while retaining manual row breaks.
   sheet.pageSetup.fitToPage = quantityWidth <= 18;
   columnWidths.forEach(
     (width, index) => (sheet.getColumn(index + 1).width = width),
@@ -621,8 +628,7 @@ function addSchoolDispatchSheet(
   sheet.getRow(signatureRow).height = 24;
   sheet.getRow(signatureRow + 1).height = 24;
   sheet.getRow(signatureRow + 6).height = 24;
-  // ponytail: conservative native A4/TNR budget; keep the separated roles,
-  // instructions and handwriting rows together. Native print QA verifies it.
+  // Keep the final food rows with the existing roles and handwriting space.
   const rowHeight = (number: number) => sheet.getRow(number).height ?? 20;
   const landscape = sheet.pageSetup.orientation === "landscape";
   const signatureBlockStart = signatureRow - 5;
@@ -634,9 +640,7 @@ function addSchoolDispatchSheet(
     ((landscape ? 841.89 : 595.28) - 0.6 * 72) / (formWidth * 5.25),
   );
   const pageHeight = ((landscape ? 595.28 : 841.89) - 0.9 * 72) / scale - 20;
-  const headerHeight = Array.from({ length: 10 }, (_, i) =>
-    rowHeight(i + 1),
-  ).reduce((a, b) => a + b, 0);
+  const headerHeight = rowHeight(9) + rowHeight(10);
   let remaining = pageHeight;
   for (let number = 1; number < signatureBlockStart; number++) {
     const height = rowHeight(number);
@@ -647,7 +651,7 @@ function addSchoolDispatchSheet(
     rowHeight(signatureBlockStart + i),
   ).reduce((a, b) => a + b, 0);
   if (remaining < signatureHeight + 20)
-    sheet.getRow(signatureBlockStart - 1).addPageBreak();
+    sheet.getRow(Math.max(10, 8 + data.lines.length)).addPageBreak();
   applyDocumentFont(sheet);
   finishDocumentSheet(
     sheet,
@@ -655,6 +659,7 @@ function addSchoolDispatchSheet(
     10,
     `${data.documentNumber} · ${documentStatusLabel(document.status)}`,
   );
+  sheet.pageSetup.printTitlesRow = "9:10";
   prepareDocumentParsingColumns(sheet, 8, 10);
 }
 

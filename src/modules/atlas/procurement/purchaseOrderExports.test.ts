@@ -11,6 +11,22 @@ import {
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("keeps the summary issuer clear of its logo and gives wrapped date labels two full lines", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
+    const summary = workbook.worksheets.find((sheet) =>
+      sheet.name.endsWith(" - Tổng"),
+    )!;
+    expect(summary.getCell("C1").alignment.horizontal).toBe("center");
+    expect(summary.getCell("C2").alignment.horizontal).toBe("center");
+    expect(summary.getRow(7).height).toBeGreaterThanOrEqual(32);
+    for (const sheet of workbook.worksheets.filter((sheet) =>
+      sheet.name.includes("Theo "),
+    ))
+      expect(sheet.getRow(5).height).toBeGreaterThanOrEqual(32);
+  });
   it("exports the frozen human Unit label for imported technical codes", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;

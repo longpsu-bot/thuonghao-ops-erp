@@ -658,7 +658,7 @@ function addDetailSheet(
     [2, 24],
     [3, 8],
     [4, 30],
-    [5, 22],
+    [5, 32],
     [6, wrappedRowHeight(sheet.getCell("A6").text, formWidth, 14, 22)],
     [7, wrappedRowHeight(sheet.getCell("A7").text, formWidth, 14, 22)],
     [8, wrappedRowHeight(sheet.getCell("A8").text, formWidth, 14, 22)],
@@ -808,9 +808,11 @@ function addSummarySheet(
   });
   sheet.mergeCells("C1:F1");
   sheet.getCell("C1").value = companyName;
+  sheet.getCell("C1").alignment = { horizontal: "center" };
   sheet.getCell("C1").font = { name: "Times New Roman", bold: true, size: 14 };
   sheet.mergeCells("C2:F2");
   sheet.getCell("C2").value = companyAddress;
+  sheet.getCell("C2").alignment = { horizontal: "center" };
   sheet.getCell("C2").font = {
     name: "Times New Roman",
     size: 12,
@@ -873,7 +875,7 @@ function addSummarySheet(
             minimum,
           );
   sheet.getRow(3).height = 8;
-  sheet.getRow(7).height = 24;
+  sheet.getRow(7).height = 32;
   sheet.getRow(10).values = summaryHeaders;
   sheet.getRow(10).height = 46;
   styleWorksheetHeader(sheet.getRow(10));

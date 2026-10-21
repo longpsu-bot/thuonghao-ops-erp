@@ -200,7 +200,7 @@ describe("Atlas document presentation boundaries", () => {
     expect(JSON.stringify(sheet.getSheetValues())).toContain(
       "ĐÃ ĐƯỢC THAY THẾ",
     );
-    expect(sheet.pageSetup.printTitlesRow).toBe("1:10");
+    expect(sheet.pageSetup.printTitlesRow).toBe("9:10");
     expect(sheet.headerFooter.oddFooter).toContain(document.document_number);
     const pdf = buildSchoolDispatchPdfDefinition(document);
     expect(pdf.footer).toBeTypeOf("function");

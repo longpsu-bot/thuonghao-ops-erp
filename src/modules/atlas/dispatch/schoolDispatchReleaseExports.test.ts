@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
 import type { Node } from "pdfmake/interfaces";
 import { describe, expect, it } from "vitest";
 import { createReviewSchoolDispatchDocument } from "./reviewSchoolDispatchReleaseApi";
@@ -107,6 +108,38 @@ describe("School dispatch release exports", () => {
         if (typeof first.body[row]![cell] === "object")
           expect(last.body[row]![cell]).not.toBe(first.body[row]![cell]);
     }
+  });
+  it("gives the native Excel inspection label enough width without changing its font", async () => {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(
+      await createSchoolDispatchXlsx(
+        createReviewSchoolDispatchDocument("RELEASED"),
+      ),
+    );
+    const sheet = workbook.worksheets[0]!;
+    expect(sheet.getColumn(6).width).toBeGreaterThanOrEqual(14);
+    expect(sheet.getCell("F10").font).toMatchObject({
+      name: "Times New Roman",
+      size: 16,
+      bold: true,
+    });
+  });
+  it("keeps native width fitting and breaks before final food rows rather than orphaning Excel signatures", async () => {
+    const document = createReviewSchoolDispatchDocument("RELEASED");
+    document.lines = Array.from({ length: 12 }, (_, index) => ({
+      ...document.lines[0]!,
+      ingredient_name: `Thực phẩm dài cần giữ nguyên ${index + 1}`,
+    }));
+    const workbook = new ExcelJS.Workbook();
+    const bytes = await createSchoolDispatchXlsx(document);
+    await workbook.xlsx.load(bytes);
+    const sheet = workbook.worksheets[0]!;
+    expect(sheet.pageSetup.fitToPage).toBe(true);
+    expect(sheet.pageSetup.printTitlesRow).toBe("9:10");
+    // ExcelJS does not restore rowBreaks on read; verify the actual workbook XML.
+    const zip = await JSZip.loadAsync(bytes);
+    const xml = await zip.file("xl/worksheets/sheet1.xml")!.async("string");
+    expect(xml).toMatch(/<brk id="20"[^>]*man="1"/);
   });
   it("prints the frozen human Unit name and preserves legacy code-only history", () => {
     const document = createReviewSchoolDispatchDocument("RELEASED");
@@ -226,7 +259,7 @@ describe("School dispatch release exports", () => {
     expect(sheet.getCell("G5").value).toBe("24/09/2026");
     expect(sheet.getCell("A8").text).toContain("ĐÃ PHÁT HÀNH");
     expect(sheet.getColumn(5).width).toBe(7);
-    expect(sheet.getColumn(6).width).toBe(11);
+    expect(sheet.getColumn(6).width).toBe(14);
     expect(sheet.getColumn(7).width).toBe(19);
     expect(sheet.getCell("D23").value).toBe("3");
     expect(sheet.getCell("A29").value).toBe("Người nhận hàng");
