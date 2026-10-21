@@ -27,6 +27,7 @@ import {
 import {
   SCHOOL_DISPATCH_STATE_LABELS,
   schoolDispatchBlockerLabel,
+  schoolDispatchUnitLabel,
 } from "./schoolDispatchReleaseModel";
 
 function statusColor(status: SchoolFulfilmentComparisonStatus) {
@@ -186,8 +187,9 @@ export function SchoolFulfilmentReconciliationWorkbench({
                     <Stack gap={2}>
                       {row.quantity_totals_by_unit.map((total) => (
                         <Text size="sm" key={total.unit_id}>
-                          {total.unit_code}: PO {total.po_quantity} / PXK{" "}
-                          {total.pxk_quantity} / Δ {total.delta_quantity}
+                          {schoolDispatchUnitLabel(total)}: PO{" "}
+                          {total.po_quantity} / PXK {total.pxk_quantity} / Δ{" "}
+                          {total.delta_quantity}
                         </Text>
                       ))}
                     </Stack>
@@ -256,7 +258,7 @@ export function SchoolFulfilmentReconciliationWorkbench({
                     key={`${row.service_date}:${row.school_id}:${detail.ingredient_id}:${detail.unit_id}`}
                   >
                     <Table.Td>{detail.ingredient_name}</Table.Td>
-                    <Table.Td>{detail.unit_code}</Table.Td>
+                    <Table.Td>{schoolDispatchUnitLabel(detail)}</Table.Td>
                     <Table.Td>{detail.po_quantity}</Table.Td>
                     <Table.Td>{detail.pxk_quantity}</Table.Td>
                     <Table.Td>{detail.delta_quantity}</Table.Td>

@@ -1,5 +1,17 @@
 # Atlas Autopilot — Active Task
 
+**21 October Need runtime / Unit-label authorization:** the Owner approved and
+requested execution of [the bounded improvement plan](../superpowers/plans/2026-10-21-need-generation-unit-label-improvements.md)
+in the verified canonical `E:/Project/OPS ERP/thuonghao-ops-erp` checkout. This
+supersedes older checkout, hosted read-only and generation speed-target horizons
+for this task. Observe runtime without an arbitrary acceptance limit; preserve
+all semantic, security and history checks. Independent review, exact-source CI,
+merge and guarded Staging deployment precede one fresh, clearly labeled hosted
+rehearsal including correction, reallocation and replacement PO/PXKs. Existing
+21 October released evidence is preserved. OPSv1/Retool and synced sources stay
+read-only; no real Supplier communication, physical dispatch, Warehouse work,
+dependency upgrade or speculative redesign is authorized.
+
 **20 October functional stabilization supersession:** the Owner explicitly authorizes the autonomous campaign recorded in [the stabilization ledger](../testing/atlas-functional-stabilization-2026-10-20.md), using the confirmed D: checkout and fresh latest-main repair branches. Prior task-only horizons below are historical. Bounded fixes may proceed through independent review, exact-revision checks, merge and guarded Staging deployment; hosted business data remains read-only and transactional journeys run only in disposable environments. ARCH-002, existing business/security contracts, OPS v1/Retool NO-WRITE and unapproved-module exclusions remain in force.
 
 **19 October B2 authorization (this independent stacked Draft only):** execute

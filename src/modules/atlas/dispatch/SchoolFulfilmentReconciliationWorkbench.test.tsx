@@ -8,7 +8,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { atlasTheme } from "../../../theme";
 import { createReviewAuthState } from "../review/reviewMode";
 import type {
@@ -20,8 +20,16 @@ import { SchoolFulfilmentReconciliationWorkbench } from "./SchoolFulfilmentRecon
 import type { SchoolFulfilmentReconciliationApi } from "./schoolFulfilmentReconciliationApi";
 import type { SchoolFulfilmentWorkbenchData } from "./schoolFulfilmentReconciliationModel";
 
+beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
+
 afterEach(async () => {
-  await act(async () => cleanup());
+  try {
+    await act(async () => vi.runAllTimersAsync());
+    await act(async () => cleanup());
+    expect(vi.getTimerCount()).toBe(0);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 async function reviewData() {

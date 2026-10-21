@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "source_revision": "cb7f6098a80b00c846d5a45cf6edce2e6e231bde",
+  "environment": "Atlas Staging",
+  "project_ref": "rnzxmxiiqgtdevzregff",
+  "service_date": "2026-10-21",
+  "log_window_utc": {
+    "start": "2026-10-21T06:26:00Z",
+    "end": "2026-10-21T07:08:00Z"
+  },
+  "timing_definition": "Supabase edge upstream service time, including hosted service overhead; not database-only or operator wall-clock timing.",
+  "workload": {
+    "positive_schools": 2,
+    "explicit_attendance_rows": 19,
+    "student_portions": 200,
+    "teacher_portions": 0,
+    "positive_need_lines": 19,
+    "original_purchase_orders": 7,
+    "replacement_purchase_orders": 1,
+    "original_dispatches": 2,
+    "replacement_dispatches": 2,
+    "final_matched_schools": 2,
+    "final_attention": 0,
+    "final_zero_delta_lines": 19,
+    "preexisting_history_rows_unchanged": 5277
+  },
+  "calls_in_window": {
+    "all": 139,
+    "reads": 115,
+    "write_attempts": 24,
+    "completed_business_writes": 22,
+    "rolled_back_generation_attempts": 2
+  },
+  "runtime_policy": {
+    "authenticated_statement_timeout": "0",
+    "original_authenticated_statement_timeout": "8s",
+    "scope": "Staging rehearsal",
+    "performance_acceptance_deadline": null,
+    "disposition": "Retain explicitly disclosed rehearsal configuration pending measured operational policy; no automatic restore."
+  },
+  "samples": [
+    {
+      "logged_at_utc": "2026-10-21 06:29:33.455000000",
+      "endpoint": "/rest/v1/rpc/save_attendance",
+      "http_status": 200,
+      "origin_ms": 1715,
+      "upstream_ms": 1639,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:32:18.218000000",
+      "endpoint": "/rest/v1/rpc/save_pantry",
+      "http_status": 200,
+      "origin_ms": 530,
+      "upstream_ms": 328,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:35:58.880000000",
+      "endpoint": "/rest/v1/rpc/save_attendance",
+      "http_status": 200,
+      "origin_ms": 2129,
+      "upstream_ms": 1893,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:36:49.176000000",
+      "endpoint": "/rest/v1/rpc/execute_need_generation",
+      "http_status": 200,
+      "origin_ms": 8117,
+      "upstream_ms": 8042,
+      "outcome": "ROLLED_BACK_RETRYABLE_CONCURRENCY_FAILURE"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:43:31.204000000",
+      "endpoint": "/rest/v1/rpc/execute_need_generation",
+      "http_status": 200,
+      "origin_ms": 8095,
+      "upstream_ms": 8020,
+      "outcome": "ROLLED_BACK_RETRYABLE_CONCURRENCY_FAILURE"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:47:31.260000000",
+      "endpoint": "/rest/v1/rpc/execute_need_generation",
+      "http_status": 200,
+      "origin_ms": 14719,
+      "upstream_ms": 14630,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:48:46.087000000",
+      "endpoint": "/rest/v1/rpc/save_confirmed_needs",
+      "http_status": 200,
+      "origin_ms": 1028,
+      "upstream_ms": 770,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:50:54.308000000",
+      "endpoint": "/rest/v1/rpc/prepare_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2265,
+      "upstream_ms": 2193,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:51:39.126000000",
+      "endpoint": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 312,
+      "upstream_ms": 255,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:51:40.269000000",
+      "endpoint": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 148,
+      "upstream_ms": 94,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:51:41.355000000",
+      "endpoint": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 167,
+      "upstream_ms": 127,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:51:42.345000000",
+      "endpoint": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 326,
+      "upstream_ms": 281,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:51:43.428000000",
+      "endpoint": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 380,
+      "upstream_ms": 298,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:51:44.690000000",
+      "endpoint": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 215,
+      "upstream_ms": 77,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:51:45.861000000",
+      "endpoint": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 240,
+      "upstream_ms": 113,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:53:08.179000000",
+      "endpoint": "/rest/v1/rpc/release_school_dispatch_document",
+      "http_status": 200,
+      "origin_ms": 571,
+      "upstream_ms": 509,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:53:38.209000000",
+      "endpoint": "/rest/v1/rpc/release_school_dispatch_document",
+      "http_status": 200,
+      "origin_ms": 198,
+      "upstream_ms": 139,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:55:29.465000000",
+      "endpoint": "/rest/v1/rpc/save_confirmed_needs",
+      "http_status": 200,
+      "origin_ms": 1549,
+      "upstream_ms": 1215,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:57:01.167000000",
+      "endpoint": "/rest/v1/rpc/save_confirmed_supplier_allocation",
+      "http_status": 200,
+      "origin_ms": 576,
+      "upstream_ms": 427,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:57:48.314000000",
+      "endpoint": "/rest/v1/rpc/prepare_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2144,
+      "upstream_ms": 1848,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:57:50.671000000",
+      "endpoint": "/rest/v1/rpc/get_school_catering_purchase_orders",
+      "http_status": 200,
+      "origin_ms": 2170,
+      "upstream_ms": 2107,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:58:17.474000000",
+      "endpoint": "/rest/v1/rpc/create_school_catering_purchase_order_replacement",
+      "http_status": 200,
+      "origin_ms": 946,
+      "upstream_ms": 893,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 06:59:07.000000000",
+      "endpoint": "/rest/v1/rpc/release_school_catering_purchase_order",
+      "http_status": 200,
+      "origin_ms": 1390,
+      "upstream_ms": 1245,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 07:00:36.918000000",
+      "endpoint": "/rest/v1/rpc/release_school_dispatch_document",
+      "http_status": 200,
+      "origin_ms": 499,
+      "upstream_ms": 441,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 07:01:21.000000000",
+      "endpoint": "/rest/v1/rpc/release_school_dispatch_document",
+      "http_status": 200,
+      "origin_ms": 524,
+      "upstream_ms": 466,
+      "outcome": "SUCCESS"
+    },
+    {
+      "logged_at_utc": "2026-10-21 07:06:50.892000000",
+      "endpoint": "/rest/v1/rpc/get_school_fulfilment_reconciliation_workbench",
+      "http_status": 200,
+      "origin_ms": 1431,
+      "upstream_ms": 1029,
+      "outcome": "SUCCESS"
+    }
+  ],
+  "limitations": [
+    "One successful hosted generation sample, not a latency percentile.",
+    "No contemporaneous CPU/IO/compute-size attribution.",
+    "Read count includes intentional navigation and commit invalidation.",
+    "No live application or database change in this planning task."
+  ]
+}

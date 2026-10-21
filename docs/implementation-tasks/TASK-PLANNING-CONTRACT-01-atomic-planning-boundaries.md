@@ -2,6 +2,15 @@
 
 ## Status
 
+**21 October 2026 runtime observation amendment:** the Owner prioritizes correct
+completion under realistic Supabase conditions and authorizes the
+[Need runtime improvement plan](../superpowers/plans/2026-10-21-need-generation-unit-label-improvements.md).
+Generation test/probe runtimes are observations, not eight-second or four-second
+acceptance gates. Preserve every transactional, receipt, authorization,
+currentness, exact-quantity and immutable-history requirement. Historical timing
+evidence below remains historical; operational transport/resource protection is
+a separate explicit policy, not proof that an otherwise valid result failed.
+
 Implemented on draft branch `codex/planning-contract-01-atomic-planning-boundaries` from required baseline `eae396b104347d5accaffdb373997904248cbad7`. Independent architecture review, draft Supabase Smoke, and merge remain pending. This record does not authorize UI-QUALITY-02AB-UX or deployment.
 
 ## Decision implemented

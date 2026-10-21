@@ -1,0 +1,210 @@
+{
+  "retain_all": true,
+  "not_merged_into_fresh_clone_distribution": [
+    {
+      "file": "comparison-samples.json",
+      "interpretation": "rejected proposal-only candidate; initial pair contended; full fault suite",
+      "samples": [
+        {
+          "pair": 1,
+          "build": "before",
+          "max_ms": 11279.932,
+          "min_ms": 4832.464,
+          "median_ms": 8938.731,
+          "samples_ms": [4832.464, 8938.731, 11279.932],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 1,
+          "build": "after",
+          "max_ms": 67239.864,
+          "min_ms": 3174.056,
+          "median_ms": 43501.696,
+          "samples_ms": [3174.056, 43501.696, 67239.864],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 2,
+          "build": "after",
+          "max_ms": 5084.123,
+          "min_ms": 3834.284,
+          "median_ms": 3888.905,
+          "samples_ms": [3834.284, 3888.905, 5084.123],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 2,
+          "build": "before",
+          "max_ms": 5492.145,
+          "min_ms": 4983.692,
+          "median_ms": 5003.987,
+          "samples_ms": [4983.692, 5003.987, 5492.145],
+          "sample_count": 3,
+          "timings_observational": true
+        }
+      ]
+    },
+    {
+      "file": "paired-comparison-samples.json",
+      "interpretation": "rejected proposal-only candidate; reused rollback heap; includes 120s failure",
+      "samples": [
+        {
+          "pair": 1,
+          "build": "before",
+          "success": true,
+          "max_ms": 10684.841,
+          "min_ms": 4593.543,
+          "median_ms": 7628.373,
+          "samples_ms": [4593.543, 7628.373, 10684.841],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 1,
+          "build": "after",
+          "success": true,
+          "max_ms": 5309.816,
+          "min_ms": 3980.035,
+          "median_ms": 4379.473,
+          "samples_ms": [3980.035, 4379.473, 5309.816],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 2,
+          "build": "after",
+          "success": false,
+          "max_ms": 120000.766,
+          "min_ms": 2982.262,
+          "median_ms": 3073.234,
+          "samples_ms": [2982.262, 3073.234, 120000.766],
+          "sample_count": 3,
+          "timings_observational": true
+        }
+      ]
+    },
+    {
+      "file": "staging-settings-comparison-samples.json",
+      "interpretation": "rejected proposal-only candidate; jit matched off; reused heap; deliberate obsolete-sampler cancellation",
+      "samples": [
+        {
+          "pair": 1,
+          "build": "before",
+          "success": true,
+          "jit": "off",
+          "max_ms": 10877.489,
+          "min_ms": 4802.91,
+          "median_ms": 7699.783,
+          "samples_ms": [4802.91, 7699.783, 10877.489],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 1,
+          "build": "after",
+          "success": true,
+          "jit": "off",
+          "max_ms": 7755.468,
+          "min_ms": 3798.112,
+          "median_ms": 4866.878,
+          "samples_ms": [3798.112, 4866.878, 7755.468],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 2,
+          "build": "after",
+          "success": true,
+          "jit": "off",
+          "max_ms": 3196.252,
+          "min_ms": 2917.088,
+          "median_ms": 3194.336,
+          "samples_ms": [2917.088, 3194.336, 3196.252],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 2,
+          "build": "before",
+          "success": true,
+          "jit": "off",
+          "max_ms": 3435.097,
+          "min_ms": 3189.958,
+          "median_ms": 3387.435,
+          "samples_ms": [3189.958, 3387.435, 3435.097],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 3,
+          "build": "before",
+          "success": false,
+          "jit": "off",
+          "max_ms": 101725.18,
+          "min_ms": 11319.231,
+          "median_ms": 53665.701,
+          "samples_ms": [11319.231, 53665.701, 101725.18],
+          "sample_count": 3,
+          "timings_observational": true
+        }
+      ]
+    },
+    {
+      "file": "source-reuse-comparison-samples.json",
+      "interpretation": "released-source candidate; reused rollback heap; obsolete experimental design stopped; includes successful56.5s and failed baseline160.1s",
+      "samples": [
+        {
+          "pair": 1,
+          "build": "before",
+          "success": true,
+          "jit": "off",
+          "max_ms": 10835.032,
+          "min_ms": 4706.201,
+          "median_ms": 7835.687,
+          "samples_ms": [4706.201, 7835.687, 10835.032],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 1,
+          "build": "after",
+          "success": true,
+          "jit": "off",
+          "max_ms": 5017.604,
+          "min_ms": 3642.805,
+          "median_ms": 3762.594,
+          "samples_ms": [3642.805, 3762.594, 5017.604],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 2,
+          "build": "after",
+          "success": true,
+          "jit": "off",
+          "max_ms": 56511.649,
+          "min_ms": 2956.095,
+          "median_ms": 3010.015,
+          "samples_ms": [2956.095, 3010.015, 56511.649],
+          "sample_count": 3,
+          "timings_observational": true
+        },
+        {
+          "pair": 2,
+          "build": "before",
+          "success": false,
+          "jit": "off",
+          "max_ms": 160116.351,
+          "min_ms": 120000.433,
+          "median_ms": 120000.589,
+          "samples_ms": [120000.433, 120000.589, 160116.351],
+          "sample_count": 3,
+          "timings_observational": true
+        }
+      ]
+    }
+  ]
+}

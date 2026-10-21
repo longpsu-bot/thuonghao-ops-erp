@@ -4,7 +4,10 @@ import {
   type SchoolFulfilmentComparisonStatus,
   type SchoolFulfilmentRow,
 } from "../bridges/schoolFulfilment";
-import { SCHOOL_DISPATCH_STATE_LABELS } from "../bridges/schoolDispatch";
+import {
+  SCHOOL_DISPATCH_STATE_LABELS,
+  schoolDispatchUnitLabel,
+} from "../bridges/schoolDispatch";
 import { formatExactQuantity, formatExactDelta } from "../formatExactQuantity";
 import { fulfilmentRowKey } from "./useSchoolFulfilmentWorkbench";
 import { AtlasTableViewport } from "../AtlasTableViewport";
@@ -132,7 +135,7 @@ export function SchoolFulfilmentTable({
               <Table.Cell minW="var(--atlas-layout-totals-min, 145px)">
                 {row.quantity_totals_by_unit.map((total) => (
                   <Text key={total.unit_id} textStyle="helper">
-                    {total.unit_code} · PO{" "}
+                    {schoolDispatchUnitLabel(total)} · PO{" "}
                     {formatExactQuantity(total.po_quantity)} · PXK{" "}
                     {formatExactQuantity(total.pxk_quantity)} · Δ{" "}
                     {formatExactDelta(total.delta_quantity)}

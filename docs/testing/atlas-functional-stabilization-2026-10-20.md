@@ -2,6 +2,37 @@
 
 Owner authority: this chat authorizes bounded repairs, focused regressions, independent review, exact-revision GitHub certification, merge and guarded Staging deployment. This is the sole current campaign ledger. Earlier detailed plans and failed-attempt chronology remain in its Git history. ARCH-002 / OPS_SYSTEM_MAP v1.0, approved business/security contracts and backend-owned outcomes remain authoritative.
 
+## Need generation and Unit labels — current 21 October improvement
+
+Owner approved [the bounded improvement plan](../superpowers/plans/2026-10-21-need-generation-unit-label-improvements.md)
+and a fresh hosted rehearsal including correction/reallocation/replacement PO/PXK,
+using the verified E: checkout. Earlier hosted-read-only and generation speed-target
+horizons are superseded only for this scope. Existing 21 October released evidence,
+OPSv1/Retool, synced sources and business/security/design principles remain protected.
+
+Implementation on `fix/need-runtime-unit-labels` starts from main `cb7f6098`.
+The initial revision INSERT now materializes its exact released contributions
+within the statement, preserving source predicates, policy, quantities, locks,
+currentness and guards. The proposal-only candidate was rejected after sequential
+plans reproduced repeated source joins. Nullable captured Unit names now reach
+both reconciliation scope paths, summary/detail, authority validation and local
+search through the existing formatter; no historical backfill or grouping change.
+
+Focused SQL **1,043/1,043 PASS** across 12 files. Executed source-scan regression
+reduces 75,392/150,784/226,176 scans to 304/608/912, bounded by source history.
+Five fresh equivalent clones per build, alternating order, completed all 30
+generations: database-command median 3,859.730 → 3,003.547 ms; revised range
+2,659.390–3,678.188 ms. Earlier contended/reused-heap slow successes and actual
+cutoff failures are preserved separately; no arbitrary elapsed acceptance gate
+or p95/hosted guarantee. Final source review clears business/security/UI boundaries;
+its profiler representation issue is fixed and the complete CLI passes.
+
+Focused frontend **377 tests / 23 files**, TypeScript and UI boundary PASS. Exact-source GitHub
+certification, guarded deployment and fresh disposable/hosted journeys remain
+release gates. Staging's prior authenticated timeout0 rehearsal lease remains
+explicitly disclosed; this task has not changed hosted settings or business rows.
+See [full observations and remaining gates](need-generation-unit-label-improvements-2026-10-21.md).
+
 ## Reopened PO release incident — 21 October 2026
 
 **FAIL, repair verification pending. Button placement work is stopped.** Owner reproduced publish-all 0/14 on 12 October 2026. Read-only hosted receipt `395cc49d-3ff1-4087-9b25-d76c50e91a5e` is final `FAILED_NON_RETRYABLE / PREPARATION_BLOCKED`; no PO was released by that attempt. Existing CN batch `69661e86-abb3-4bf4-88a5-4717fe18c472` is REOPENED v6 with its immutable original release. Seventeen POs comprise one released 3F, two stale ordinary Drafts (AN THÀNH ĐÔ and KHÁC), and fourteen individually current Drafts. Canonical whole-date preparation frontier is unacceptable because stale Drafts remain. The existing K2 writer correctly rejects release; the Orders read omitted that same prerequisite and falsely advertised fourteen eligible Drafts. Earlier selected isolated releases PASS, but did not certify this mixed-state case.

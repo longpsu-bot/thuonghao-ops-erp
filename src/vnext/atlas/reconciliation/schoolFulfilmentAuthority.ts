@@ -32,6 +32,7 @@ const total = (value: unknown) =>
   record(value) &&
   typeof value.unit_id === "string" &&
   typeof value.unit_code === "string" &&
+  (value.unit_name == null || typeof value.unit_name === "string") &&
   quantity(value.po_quantity) &&
   quantity(value.pxk_quantity) &&
   quantity(value.delta_quantity);

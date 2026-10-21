@@ -1,7 +1,10 @@
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
 import type { RefObject } from "react";
 import type { SchoolFulfilmentRow } from "../bridges/schoolFulfilment";
-import { SCHOOL_DISPATCH_STATE_LABELS } from "../bridges/schoolDispatch";
+import {
+  SCHOOL_DISPATCH_STATE_LABELS,
+  schoolDispatchUnitLabel,
+} from "../bridges/schoolDispatch";
 import { formatExactQuantity, formatExactDelta } from "../formatExactQuantity";
 import { ComparisonResult, fulfilmentDate } from "./SchoolFulfilmentTable";
 import { OperationalSignals } from "./SchoolFulfilmentFeedback";
@@ -98,7 +101,7 @@ export function SchoolFulfilmentDetail({
                 key={JSON.stringify([line.ingredient_id, line.unit_id])}
               >
                 <Table.Cell>{line.ingredient_name}</Table.Cell>
-                <Table.Cell>{line.unit_code}</Table.Cell>
+                <Table.Cell>{schoolDispatchUnitLabel(line)}</Table.Cell>
                 <Table.Cell textAlign="end" whiteSpace="nowrap">
                   {formatExactQuantity(line.po_quantity)}
                 </Table.Cell>
