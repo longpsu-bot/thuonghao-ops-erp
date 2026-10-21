@@ -255,15 +255,16 @@ select is(actual,atlas_core.school_fulfilment_reconciliation_scope(service_date,
 from reconciliation_parity_scopes where label='reopened';
 create temporary table reopened_before as select pg_temp.scale_business_snapshot() facts,
   (select jsonb_agg(to_jsonb(r) order by command_receipt_id) from atlas_core.command_receipts r) receipts;
-create temporary table reopened_samples(kind text,response jsonb,elapsed_ms numeric,proof_calls bigint,context_calls bigint);
+create temporary table reopened_samples(kind text,response jsonb,elapsed_ms numeric,proof_calls bigint,context_calls bigint,scope_calls bigint);
 grant select,insert on reopened_samples to authenticated;
 create function pg_temp.sample_reopened_read(p_kind text) returns void language plpgsql as $$
-declare started timestamptz:=clock_timestamp(); answer jsonb; prior_calls bigint; prior_context_calls bigint; failure_context text;
+declare started timestamptz:=clock_timestamp(); answer jsonb; prior_calls bigint; prior_context_calls bigint; prior_scope_calls bigint; failure_context text;
 begin
   select coalesce(sum(calls) filter(where funcname='procurement_read_batch_proof'),0),
-    coalesce(sum(calls) filter(where funcname='procurement_read_context'),0)
-  into prior_calls,prior_context_calls from pg_stat_xact_user_functions
-  where schemaname='atlas_core' and funcname in ('procurement_read_batch_proof','procurement_read_context');
+    coalesce(sum(calls) filter(where funcname='procurement_read_context'),0),
+    coalesce(sum(calls) filter(where funcname='procurement_read_school_fulfilment_reconciliation_scope'),0)
+  into prior_calls,prior_context_calls,prior_scope_calls from pg_stat_xact_user_functions
+  where schemaname='atlas_core' and funcname in ('procurement_read_batch_proof','procurement_read_context','procurement_read_school_fulfilment_reconciliation_scope');
   if p_kind='allocation' then
     answer:=atlas_api.get_confirmed_supplier_allocation_workbench(jsonb_build_object(
       'contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','correlation_id',gen_random_uuid(),
@@ -291,13 +292,14 @@ begin
   insert into reopened_samples select p_kind,answer,
     extract(epoch from clock_timestamp()-started)*1000,
     coalesce(sum(calls) filter(where funcname='procurement_read_batch_proof'),0)-prior_calls,
-    coalesce(sum(calls) filter(where funcname='procurement_read_context'),0)-prior_context_calls
+    coalesce(sum(calls) filter(where funcname='procurement_read_context'),0)-prior_context_calls,
+    coalesce(sum(calls) filter(where funcname='procurement_read_school_fulfilment_reconciliation_scope'),0)-prior_scope_calls
   from pg_stat_xact_user_functions
-  where schemaname='atlas_core' and funcname in ('procurement_read_batch_proof','procurement_read_context');
+  where schemaname='atlas_core' and funcname in ('procurement_read_batch_proof','procurement_read_context','procurement_read_school_fulfilment_reconciliation_scope');
 exception when query_canceled then
   get stacked diagnostics failure_context=PG_EXCEPTION_CONTEXT;
   insert into reopened_samples values(p_kind,jsonb_build_object('success',false,'timeout',true,'context',failure_context),
-    extract(epoch from clock_timestamp()-started)*1000,null,null);
+    extract(epoch from clock_timestamp()-started)*1000,null,null,null);
 end;
 $$;
 grant execute on function pg_temp.sample_reopened_read(text) to authenticated;
@@ -318,6 +320,8 @@ select is((select context_calls from reopened_samples where kind='orders'),1::bi
   'whole-date PO prerequisite reuses the one authoritative context per public request');
 select is((select context_calls from reopened_samples where kind='reconciliation'),1::bigint,
   'all-School reconciliation builds one authoritative context per public request');
+select is((select scope_calls from reopened_samples where kind='reconciliation'),4::bigint,
+  'reconciliation computes each authorized School scope exactly once');
 select is((select jsonb_array_length(response->'rows') from reopened_samples where kind='allocation'),
   236,'reopened read retains every family');
 select is((select count(*) from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item

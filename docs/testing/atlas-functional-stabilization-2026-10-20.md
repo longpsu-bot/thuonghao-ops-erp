@@ -218,3 +218,20 @@ show legacy technical Unit codes in its derived summaries; this does not affect
 identities, quantities or immutable PO/PXK output. Compact PXK detail was operated
 by closing the prior detail before selecting the next School. No broad layout,
 performance, refactoring or new Warehouse work is included in this repair.
+
+### Large corrected-day reconciliation follow-up
+
+Sourceb47e209c Frontend CI39533875166 PASS. Full39533875152 exposed the existing
+236-family corrected-day reconciliation crossing8s (8002ms), while Allocation,
+Orders and PXK remained within budget. Unchanged focused scale replay PASS locally,
+so diagnosis added a deterministic scope-call assertion: RED proved8 expensive
+scope calculations for4 authorized Schools. A guarded forward migration
+20261021025100 materializes only the existing authorized `visible` result,
+reusing it for sorting/search. No predicate, authority, lifecycle, quantity,
+permission or timeout changes. GREEN47/47 now proves exactly4 calls, one shared
+request context, exact parity, all blockers, all8s limits and unchanged facts/receipts.
+Local corrected-day reconciliation measured3503ms; this is local evidence, not a
+hosted performance promise. Security catalog32/32 remains PASS; independent review
+clear. Both repaired-day School scopes still reconcile with eight deltas0.
+Final source now contains130 migrations; guarded deployment must apply both new
+versions and verify the exact installed set before closeout.
