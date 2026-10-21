@@ -142,6 +142,14 @@ The final focused frontend suite passes **377 tests / 23 files**; TypeScript,
 UI boundary, formatting and whitespace checks pass. Normal full GitHub CI remains
 the integration gate.
 
+Source `51364404` Frontend CI `39580741934` passes. Executed Full Integration
+`39580763655` reaches the connected reconciliation UI and fails its old oracle:
+the UI correctly shows captured `kg`, while the test still expects
+`v1-unit-disposable-kg`. Exact statuses and quantities match. The corrected oracle
+uses the independently frozen document's Unit name, additionally pins backend
+Unit-name metadata and rejects visible technical codes; no quantity, scope,
+document or history assertion is removed. Changed-source certification is pending.
+
 Staging authenticated `statement_timeout=0` remains the explicitly disclosed
 prior rehearsal lease. This change does not alter it; anon 3s, authenticator
 statement/lock 8s and existing function protections remain distinct. Decide the

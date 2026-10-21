@@ -1408,6 +1408,7 @@ try {
       totals.set(line.unit_id, {
         unit_id: line.unit_id,
         unit_code: line.unit_code,
+        unit_name: line.unit_name,
         quantity: (previous?.quantity ?? 0n) + exact(line.quantity),
       });
     }
@@ -1429,6 +1430,7 @@ try {
         .map((total) => ({
           unit: total.unit_id,
           code: total.unit_code,
+          name: total.unit_name,
           po: exact(total.po_quantity).toString(),
           pxk: exact(total.pxk_quantity).toString(),
           delta: exact(total.delta_quantity).toString(),
@@ -1439,6 +1441,7 @@ try {
         .map((total) => ({
           unit: total.unit_id,
           code: total.unit_code,
+          name: total.unit_name,
           po: total.quantity.toString(),
           pxk: total.quantity.toString(),
           delta: "0",
@@ -1494,13 +1497,14 @@ try {
           .get(document.school_dispatch_release_id)
           .map(
             (total) =>
-              `${total.unit_code} · PO ${displayedQuantity(total.quantity)} · PXK ${displayedQuantity(total.quantity)} · Δ 0`,
+              `${total.unit_name} · PO ${displayedQuantity(total.quantity)} · PXK ${displayedQuantity(total.quantity)} · Δ 0`,
           )
           .sort(),
       }))
       .sort((a, b) => a.school.localeCompare(b.school)),
     "Visible reconciliation status and all exact Unit totals must match the frozen School documents.",
   );
+  assert(!comparisonText.includes(technicalUnitCode));
   assert.deepEqual(
     (await read()).map((order) => ({
       id: order.purchase_order_id,
