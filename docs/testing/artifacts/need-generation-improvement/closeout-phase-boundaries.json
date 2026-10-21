@@ -1,0 +1,119 @@
+{
+  "method": "Transaction-local timing copy of the unchanged orchestration function in owned disposable databases; exact source restored by rollback. Instrumented diagnostic observations, not paired latency samples. Nested function totals are not additive.",
+  "profiles": {
+    "small": {
+      "shape": "small",
+      "instrumented": true,
+      "first_command_ms": 505.595,
+      "nonoverlapping_measured_ms": 499.71,
+      "other_and_instrumentation_ms": 5.885,
+      "first_generation": [
+        {
+          "ms": 1.273,
+          "phase": "atlas_core.planning_contract_01_prepare_top_command"
+        },
+        {
+          "ms": 5.065,
+          "phase": "atlas_core.planning_contract_01_preflight_payload"
+        },
+        {
+          "ms": 29.237,
+          "phase": "atlas_api.evaluate_planning_input_readiness"
+        },
+        {
+          "ms": 8.033,
+          "phase": "atlas_api.request_planning_input_need_generation"
+        },
+        {
+          "ms": 262.312,
+          "phase": "atlas_api.create_need_generation_run"
+        },
+        {
+          "ms": 10.117,
+          "phase": "atlas_api.validate_need_generation_run"
+        },
+        {
+          "ms": 70.368,
+          "phase": "atlas_api.release_need_generation_run"
+        },
+        {
+          "ms": 38.326,
+          "phase": "atlas_core.planning_contract_01_materialize_confirmed_needs"
+        },
+        {
+          "ms": 6.731,
+          "phase": "atlas_core.planning_contract_01_preflight_payload"
+        },
+        {
+          "ms": 2.524,
+          "phase": "pg_catalog.jsonb_build_object"
+        },
+        {
+          "ms": 65.724,
+          "phase": "deferred_constraint_flush"
+        }
+      ],
+      "all_valid_assertions_pass": true,
+      "original_sha256": "7c13c6cb0c4ea8a547b3c1fc6f07259364590fe85a78300284d870aed8496d74",
+      "diagnostic_copy_rolled_back": true,
+      "aggregation_note": "First invocation ends before the next prepare_top_command; exact replay shares command_id and is excluded."
+    },
+    "scale": {
+      "shape": "scale",
+      "instrumented": true,
+      "first_command_ms": 2633.229,
+      "nonoverlapping_measured_ms": 2626.407,
+      "other_and_instrumentation_ms": 6.822,
+      "first_generation": [
+        {
+          "ms": 1.376,
+          "phase": "atlas_core.planning_contract_01_prepare_top_command"
+        },
+        {
+          "ms": 6.107,
+          "phase": "atlas_core.planning_contract_01_preflight_payload"
+        },
+        {
+          "ms": 30.091,
+          "phase": "atlas_api.evaluate_planning_input_readiness"
+        },
+        {
+          "ms": 8.072,
+          "phase": "atlas_api.request_planning_input_need_generation"
+        },
+        {
+          "ms": 1161.879,
+          "phase": "atlas_api.create_need_generation_run"
+        },
+        {
+          "ms": 61.315,
+          "phase": "atlas_api.validate_need_generation_run"
+        },
+        {
+          "ms": 197.915,
+          "phase": "atlas_api.release_need_generation_run"
+        },
+        {
+          "ms": 249.795,
+          "phase": "atlas_core.planning_contract_01_materialize_confirmed_needs"
+        },
+        {
+          "ms": 38.348,
+          "phase": "atlas_core.planning_contract_01_preflight_payload"
+        },
+        {
+          "ms": 28.021,
+          "phase": "pg_catalog.jsonb_build_object"
+        },
+        {
+          "ms": 843.488,
+          "phase": "deferred_constraint_flush"
+        }
+      ],
+      "all_valid_assertions_pass": true,
+      "original_sha256": "7c13c6cb0c4ea8a547b3c1fc6f07259364590fe85a78300284d870aed8496d74",
+      "diagnostic_copy_rolled_back": true,
+      "aggregation_note": "First invocation ends before the next prepare_top_command; exact replay shares command_id and is excluded."
+    }
+  }
+}

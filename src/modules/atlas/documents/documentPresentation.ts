@@ -1,5 +1,6 @@
 import type { Cell, Row, Workbook, Worksheet } from "exceljs";
-import type { TDocumentDefinitions } from "pdfmake/interfaces";
+import type { ContentText, TDocumentDefinitions } from "pdfmake/interfaces";
+import documentArrowsDataUrl from "../../../assets/atlas-document-arrows.ttf?inline";
 
 export const documentFont = "Times New Roman";
 export const companyName = "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO";
@@ -176,6 +177,19 @@ export function documentPdfFooter(
   });
 }
 
+export function documentPdfText(value: string): string | ContentText {
+  if (!/[\u2190-\u21ff]/u.test(value)) return value;
+  return {
+    text: value
+      .split(/([\u2190-\u21ff]+)/u)
+      .map((text) =>
+        /^[\u2190-\u21ff]+$/u.test(text)
+          ? { text, font: "AtlasDocumentArrows" }
+          : text,
+      ),
+  };
+}
+
 export async function renderDocumentPdf(definition: TDocumentDefinitions) {
   const [pdfMake, pdfFonts] = await Promise.all([
     import("pdfmake/build/pdfmake"),
@@ -187,10 +201,29 @@ export async function renderDocumentPdf(definition: TDocumentDefinitions) {
   };
   const virtualFonts = fontModule.default ?? fontModule.vfs;
   if (!virtualFonts) throw new Error("PDF font assets are unavailable.");
+  const fonts = {
+    Roboto: {
+      normal: "Roboto-Regular.ttf",
+      bold: "Roboto-Medium.ttf",
+      italics: "Roboto-Italic.ttf",
+      bolditalics: "Roboto-MediumItalic.ttf",
+    },
+    AtlasDocumentArrows: {
+      normal: "AtlasDocumentArrows.ttf",
+      bold: "AtlasDocumentArrows.ttf",
+      italics: "AtlasDocumentArrows.ttf",
+      bolditalics: "AtlasDocumentArrows.ttf",
+    },
+  };
   return new Promise<Uint8Array>((resolve, reject) => {
     try {
       pdfMake
-        .createPdf(definition, undefined, undefined, virtualFonts)
+        .createPdf(definition, undefined, fonts, {
+          ...virtualFonts,
+          "AtlasDocumentArrows.ttf": documentArrowsDataUrl.slice(
+            documentArrowsDataUrl.indexOf(",") + 1,
+          ),
+        })
         .getBuffer((buffer) => resolve(new Uint8Array(buffer)));
     } catch (error) {
       reject(error);
