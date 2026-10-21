@@ -454,10 +454,31 @@ select is((select response->>'success' from k2_results where name='prepare110'),
   'true','K2 Preparation accepts authentic correction without another Planning release');
 
 insert into k2_requests select 'draft002',pg_temp.k2_replacement_request();
+-- Count actual canonical family rebuilds during a public replacement, then restore.
+create temporary table k2_replacement_family_definition as
+select pg_get_functiondef('atlas_core.school_catering_family_projection(date,uuid,uuid,uuid)'::regprocedure) definition;
+create sequence pg_temp.k2_replacement_family_calls;
+grant usage on sequence pg_temp.k2_replacement_family_calls to atlas_owner,atlas_read_runtime,atlas_procurement_command_runtime;
+do $$
+declare definition text;
+begin
+ select d.definition into definition from k2_replacement_family_definition d;
+ execute replace(definition,'FUNCTION atlas_core.school_catering_family_projection(','FUNCTION pg_temp.k2_original_family_projection(');
+end $$;
+grant execute on function pg_temp.k2_original_family_projection(date,uuid,uuid,uuid) to atlas_owner,atlas_read_runtime,atlas_procurement_command_runtime;
+create or replace function atlas_core.school_catering_family_projection(p_service_date date,p_delivery_location_id uuid,p_ingredient_id uuid,p_unit_id uuid)
+returns jsonb language plpgsql stable set search_path='' as $$
+begin
+ perform nextval('pg_temp.k2_replacement_family_calls');
+ return pg_temp.k2_original_family_projection(p_service_date,p_delivery_location_id,p_ingredient_id,p_unit_id);
+end $$;
 set local role authenticated;
 insert into k2_results select 'draft002',atlas_api.create_school_catering_purchase_order_replacement(request)
 from k2_requests where name='draft002';
 reset role;
+select is((select case when is_called then last_value else 0 end from pg_temp.k2_replacement_family_calls),0::bigint,
+  'replacement reuses statement-local proof instead of rebuilding canonical family proof per Ingredient');
+do $$ begin execute (select definition from k2_replacement_family_definition); end $$;
 select is((select response->>'success' from k2_results where name='draft002'),
   'true','complete replacement Draft for PO-002 is generated through the public command');
 select is((select po.purchase_order_status from atlas_procurement.purchase_orders po

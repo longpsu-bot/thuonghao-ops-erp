@@ -913,17 +913,29 @@ describe("IngredientSupplierWorkbench", () => {
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
     await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
     expect(screen.getByLabelText("Tên nguyên liệu")).toHaveValue("Bí đỏ");
     fireEvent.click(screen.getByRole("tab", { name: "Nhà cung ứng" }));
+    const discardDialog = await screen.findByRole("dialog", {
+      name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+    });
+    await waitFor(() =>
+      expect(discardDialog).toHaveAttribute("data-state", "open"),
+    );
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(discardDialog).getByRole("button", {
         name: "Bỏ thay đổi",
       }),
     );
+    await waitFor(() => expect(discardDialog).not.toBeInTheDocument());
+    expect(screen.getByRole("tab", { name: "Nhà cung ứng" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     await waitFor(() =>
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Nhà cung ứng",
-      ),
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Nhà cung ứng" }),
+      ).toHaveTextContent("Nhà cung ứng"),
     );
   });
 

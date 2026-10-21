@@ -290,3 +290,40 @@ Both bug regressions failed before their fixes. Focused JS49 and rolled-back
 SQL146 assertions pass, including original priority4 vs source1 preservation,
 exact new relationship priority, narrow scope, guarded apply and replay.
 Exact-source CI, apply/readback and the fresh journey are pending at this checkpoint.
+
+The original632f7169 source Full Integration39545746397 PASS. Frontend39545705794
+passed3175 tests but exposed one pre-existing dirty-dialog test race: it reopened
+after `closed` before the canceled dialog unmounted. The test now waits for actual
+exit, opens the exact named dialog, waits for open, then discards and verifies
+Supplier selection/heading. All31 affected tests PASS; no runtime/timeout changes.
+
+Fresh isolated rehearsal uses the exact11 source Dishes,22 Recipes and84 BoM lines,
+two fixture Schools of different types, explicit100/0 portions, explicit quantity
+policies and labeled test Suppliers. The Google transport is a fixture; production
+parser, handler, authenticated commands and database logic are real. Three service
+days generate and confirm24/28/25 lines (77 total), explicitly allocate, release
+6 original POs and issue6 original School PXKs, all with zero reconciliation deltas.
+All three days then receive an explicit1kg post-release quantity correction,
+reallocation,6 replacement POs and6 replacement PXKs. All77 successor detail rows
+reconcile exactly; the complete original6 PO and6 PXK snapshots remain unchanged
+apart from allowed status/linkage transitions. Every successor binds its predecessor.
+
+The second day's replacement command exposed a genuine8s timeout. Rolled-back
+authenticated profiling proves124 canonical family projections/377 canonical
+evaluations for17 families across3 batches; no failed command receipt or partial
+replacement committed. Migration20261021050300 applies the existing Draft proof
+reuse pattern to Replacement: independently materialize date proof in each of the
+two family SELECTs and readiness assignment, preserving every lock, stale check,
+receipt phase, predicate and8s limit. No proof survives across statement phases.
+The executed call-count regression fails20 before and passes0 canonical family
+rebuilds after; complete K2 SQL163 and security catalog32 PASS. The same rolled-back
+request completes in426ms; after proving no committed receipt, its identical
+command/intent completes through the public API in520ms. This is local measurement,
+not a hosted performance promise. Independent source review clear; dedicated
+concurrency and fresh exact-source CI remain gates. Final migration count is131.
+
+Preserved source discrepancy for business review: secondary-type Recipe3529 for
+Dish2071 (pork-named) explicitly contains Ingredient1037 (ground beef), while the
+primary-type Recipe3528 uses Ingredient1208 (ground pork). Both locked source
+recipes are copied exactly. No name-based substitution or invented recipe repair
+is authorized by the menu sync task.
