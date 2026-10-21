@@ -15,7 +15,8 @@ begin
  (select 1 from jsonb_array_elements(scoped->'recipe_lines') l where l.value->>'ingredient_legacy_id'=r.value->>'legacy_id');
  scoped:=jsonb_set(scoped,'{ingredients}',ingredient_ids);
  select coalesce(jsonb_agg(r.value),'[]') into supplier_ids from jsonb_array_elements(records->'supplier_eligibilities') r where exists
- (select 1 from jsonb_array_elements(scoped->'ingredients') i where i.value->>'legacy_id'=r.value->>'ingredient_legacy_id');
+ (select 1 from jsonb_array_elements(scoped->'ingredients') i where i.value->>'legacy_id'=r.value->>'ingredient_legacy_id') and not exists
+ (select 1 from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1' and m.object_type='INGREDIENT' and m.legacy_id=r.value->>'ingredient_legacy_id');
  scoped:=jsonb_set(scoped,'{supplier_eligibilities}',supplier_ids);
  select coalesce(jsonb_agg(r.value),'[]') into supplier_ids from jsonb_array_elements(records->'suppliers') r where exists
  (select 1 from jsonb_array_elements(scoped->'supplier_eligibilities') e where e.value->>'supplier_legacy_id'=r.value->>'legacy_id');
@@ -112,7 +113,7 @@ begin
  return jsonb_build_object('actions',actions,'issues',issues);
 end $$;
 
-create or replace function pg_temp.planning_catchup_plan(snapshot jsonb)
+create or replace function pg_temp.planning_catchup_plan(snapshot jsonb, requested_scope jsonb default null)
 returns jsonb language plpgsql stable set search_path='' as $$
 declare scoped jsonb; composed jsonb; empty_roots jsonb; prior atlas_legacy.import_batches%rowtype; r jsonb; a jsonb; vals jsonb; observed jsonb; target uuid; kind text; key text; action text; actions jsonb:='[]'; issues jsonb:='[]'; extension jsonb; orders jsonb; report jsonb; summary jsonb; plan jsonb; next_tail integer; prior_fp text; mapped boolean; protected_value jsonb; mapping_fp text; plan_fp text;
 begin
@@ -125,7 +126,13 @@ begin
  raise notice using errcode='PZ002',message='CATCHUP_SERVER_SOURCE_CHECKED';
  select * into prior from atlas_legacy.import_batches where source_system='OPS_V1' and snapshot_id=snapshot->>'snapshot_id';
  if found and (prior.snapshot_contract_version<>'ATLAS-PLANNING-CATCHUP.v1' or prior.snapshot_checksum<>snapshot->>'snapshot_checksum') then raise exception 'SNAPSHOT_ID_CONFLICT'; end if;
- scoped:=pg_temp.planning_catchup_scope(snapshot,prior.reconciliation->'catchup_dish_ids');
+ if requested_scope is not null then
+  if jsonb_typeof(requested_scope)<>'array' then raise exception 'CATCHUP_DISH_SCOPE_INVALID'; end if;
+  if jsonb_array_length(requested_scope)=0 or exists(select 1 from jsonb_array_elements(requested_scope) v where jsonb_typeof(v.value)<>'string' or not exists(select 1 from jsonb_array_elements(snapshot#>'{records,dishes}') d where d.value->'legacy_id'=v.value and d.value->>'dish_status'='ACTIVE')) or (select count(*)<>count(distinct value) from jsonb_array_elements(requested_scope)) then raise exception 'CATCHUP_DISH_SCOPE_INVALID'; end if;
+  if prior.import_batch_id is not null and not (requested_scope @> (prior.reconciliation->'catchup_dish_ids') and requested_scope <@ (prior.reconciliation->'catchup_dish_ids')) then raise exception 'CATCHUP_DISH_SCOPE_DRIFT'; end if;
+  if prior.import_batch_id is null and exists(select 1 from jsonb_array_elements_text(requested_scope) v join atlas_legacy.master_data_mappings m on m.source_system='OPS_V1' and m.object_type='DISH' and m.legacy_id=v.value) then raise exception 'CATCHUP_DISH_SCOPE_UNAVAILABLE'; end if;
+ end if;
+ scoped:=pg_temp.planning_catchup_scope(snapshot,coalesce(prior.reconciliation->'catchup_dish_ids',requested_scope));
  raise notice using errcode='PZ007',message='CATCHUP_SERVER_SCOPE_DONE';
  select coalesce(jsonb_agg(i.value),'[]') into issues from jsonb_array_elements(snapshot->'source_diagnostics') i where i.value->>'severity'='BLOCKER' and
  (i.value->>'entity'='schools' or exists(select 1 from jsonb_array_elements(scoped#>array['records',i.value->>'entity']) r where i.value->>'legacy_id' is null or r.value->>'legacy_id'=i.value->>'legacy_id'));
@@ -216,7 +223,7 @@ returns jsonb language sql stable set search_path='' as $$
  'unit_adoption_evidence',(select atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(to_jsonb(e) order by e.recipe_unit_adoption_evidence_id),'[]')) from atlas_legacy.recipe_unit_adoption_evidence e where a.value->>'object_type'='RECIPE_LINE_REVISION' and e.target_recipe_line_revision_id=(a.value->>'target_id')::uuid))),'{}') from jsonb_array_elements(actions) a
 $$;
 
-create or replace function pg_temp.run_planning_master_catchup(snapshot jsonb, apply_requested boolean, expected_plan_checksum text, actor uuid)
+create or replace function pg_temp.run_planning_master_catchup(snapshot jsonb, apply_requested boolean, expected_plan_checksum text, actor uuid, requested_scope jsonb default null)
 returns jsonb language plpgsql volatile set search_path='' as $$
 declare plan jsonb; prior atlas_legacy.import_batches%rowtype; batch uuid; a jsonb; scoped jsonb; result jsonb; protected jsonb; current_values jsonb; error_detail text;
 begin
@@ -226,7 +233,7 @@ begin
    lock table atlas_admin.schools,atlas_admin.ingredients,atlas_admin.suppliers,atlas_admin.supplier_eligibilities,atlas_admin.units,atlas_admin.school_types,atlas_admin.ingredient_types,atlas_admin.ingredient_order_groups,atlas_admin.dish_types,atlas_admin.dishes,atlas_admin.recipes,atlas_admin.recipe_versions,atlas_admin.recipe_lines,atlas_admin.recipe_line_revisions,atlas_legacy.import_batches,atlas_legacy.master_data_mappings,atlas_legacy.recipe_unit_adoption_evidence in share row exclusive mode;
    lock table atlas_planning.weekly_menu_approval_snapshot_lines in share mode;
   end if;
-  plan:=pg_temp.planning_catchup_plan(snapshot);
+  plan:=pg_temp.planning_catchup_plan(snapshot,requested_scope);
   if not apply_requested then return plan||jsonb_build_object('status','PREVIEW','business_writes',0); end if;
   if plan->>'success'<>'true' then return plan||jsonb_build_object('status','BLOCKED'); end if;
   if actor is null or not exists(select 1 from atlas_core.actors where actor_id=actor and actor_status='ACTIVE') then raise exception 'IMPORT_ACTOR_REQUIRED'; end if;
@@ -236,7 +243,7 @@ begin
    return prior.result_payload||jsonb_build_object('status','REPLAYED');
   end if;
   if expected_plan_checksum is distinct from plan->>'plan_checksum' then raise exception 'SOURCE_OR_TARGET_PLAN_DRIFT'; end if;
-  protected:=plan->'protected';scoped:=pg_temp.planning_catchup_scope(snapshot);batch:=gen_random_uuid();
+  protected:=plan->'protected';scoped:=pg_temp.planning_catchup_scope(snapshot,requested_scope);batch:=gen_random_uuid();
   insert into atlas_legacy.import_batches(import_batch_id,source_system,snapshot_id,snapshot_checksum,exported_at,import_status,completed_at,operator_actor_id,execution_database_principal,plan_checksum,snapshot_contract_version,source_counts)
   values(batch,'OPS_V1',snapshot->>'snapshot_id',snapshot->>'snapshot_checksum',(snapshot->>'exported_at')::timestamptz,'COMPLETED',clock_timestamp(),actor,session_user,expected_plan_checksum,'ATLAS-PLANNING-CATCHUP.v1',snapshot->'source_counts');
   for a in select value from jsonb_array_elements(plan->'actions') where value->>'object_type' not in ('DISH','RECIPE','RECIPE_VERSION','RECIPE_LINE','RECIPE_LINE_REVISION') loop perform atlas_legacy.master_import_write_core(a); end loop;
@@ -255,7 +262,7 @@ begin
  exception when others then
   get stacked diagnostics error_detail=PG_EXCEPTION_DETAIL;
   if sqlerrm='SOURCE_DEPENDENCY_BLOCKED' then
-   scoped:=pg_temp.planning_catchup_scope(snapshot);
+   scoped:=pg_temp.planning_catchup_scope(snapshot,requested_scope);
    select jsonb_object_agg(e.key,jsonb_array_length(e.value)) into result from jsonb_each(scoped->'records') e;
   end if;
   return jsonb_build_object('success',false,'status','BLOCKED','error_code',case when sqlerrm ~ '^[A-Z][A-Z0-9_]+$' then sqlerrm else 'CATCHUP_DATABASE_INVARIANT_FAILURE' end,'sqlstate',sqlstate)

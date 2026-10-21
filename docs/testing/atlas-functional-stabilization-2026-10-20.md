@@ -255,3 +255,38 @@ the selected panel. All13 launch cases, explicit visibility, single visible H1,
 aria-current, dismissal and20s budget remain. No runtime behavior changes.
 The entire affected app file24/24 PASS; Ingredients launch6,993ms. Independent
 review clear. A fresh exact-source CI run still gates merge and deployment.
+
+### Menu catalog catch-up — 21 October
+
+Owner requests repair of the remaining14 source cells /11 missing Dish names,
+then a fresh complete original-and-correction journey. Source OPSv1 and Retool
+remain read-only. The bounded catalog repair is authorized; operational testing
+continues only in a disposable environment. No recipe, quantity, substitution,
+allocation or released-document history is inferred or silently rewritten.
+
+The protected read-only extractor run39543952267 proves snapshot
+`ops-v1-planning-catchup-39543952267-1`, checksum
+`46fd559ea4807cb81d6572b12b37c7b47b616d89659e0bc5ddb521ce5ffaeae8`.
+All11 exact source names exist as active Dishes2066–2076 with22 locked typed
+Recipes and84 source BoM lines. Only Ingredients1223/1224 are absent in Atlas.
+Full canonical reconstruction matches the trusted checksum; raw acquisition and
+provenance remain separately recorded in ignored local evidence.
+
+The first bounded preview exposed `SUPPLIER_ELIGIBILITY_DRIFT`: importing a
+missing Dish wrongly included legacy supplier decisions for existing Ingredients.
+The closure now imports supplier relationships only for genuinely new Ingredients;
+current Atlas priorities, eligibility and all existing Ingredient validation remain.
+An optional explicit Dish scope keeps unrelated missing source Dishes outside this
+repair without trimming the signed source. Empty, duplicate, unknown, inactive or
+already imported requested roots fail closed; replay retains original scope and
+fingerprints. Existing unscoped tooling remains compatible. These are session-local
+import helpers, with no persistent schema, permission, lifecycle or UI changes.
+
+Fresh actual Staging preview PASS: exact2066–2076,22 Recipes/versions,84 BoM lines,
+2 Ingredients,1 necessary Supplier and2 supplier relationships;49 Schools are
+`NO_CHANGE`,26 existing Ingredients remain references, no issues. Reviewed plan:
+`a8422829e8425149d604c4c7319830572eb7a0adfb29466092348815da70d668`.
+Both bug regressions failed before their fixes. Focused JS49 and rolled-back
+SQL146 assertions pass, including original priority4 vs source1 preservation,
+exact new relationship priority, narrow scope, guarded apply and replay.
+Exact-source CI, apply/readback and the fresh journey are pending at this checkpoint.

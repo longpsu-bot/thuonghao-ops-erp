@@ -63,9 +63,27 @@ export function assertPlanningSource(snapshot) {
     throw new Error("SOURCE_NOT_PROVEN_READ_ONLY");
 }
 
+function assertDishScope(snapshot, ids) {
+  if (ids == null) return;
+  if (
+    !Array.isArray(ids) ||
+    !ids.length ||
+    new Set(ids).size !== ids.length ||
+    ids.some(
+      (id) =>
+        typeof id !== "string" ||
+        !snapshot.records.dishes.some(
+          (d) => d.legacy_id === id && d.dish_status === "ACTIVE",
+        ),
+    )
+  )
+    throw new Error("CATCHUP_DISH_SCOPE_INVALID");
+}
+
 /** Exact typed identity closure. Existing dependencies are references, never overwrite targets. */
-export function derivePlanningCatchup(snapshot, mappings) {
+export function derivePlanningCatchup(snapshot, mappings, dishLegacyIds) {
   assertPlanningSource(snapshot);
+  assertDishScope(snapshot, dishLegacyIds);
   const typed = new Set();
   for (const m of mappings) {
     const key = `${m.object_type}:${m.legacy_id}`;
@@ -84,7 +102,10 @@ export function derivePlanningCatchup(snapshot, mappings) {
     return rows[0];
   };
   for (const d of source.dishes.filter(
-    (d) => d.dish_status === "ACTIVE" && !typed.has(`DISH:${d.legacy_id}`),
+    (d) =>
+      d.dish_status === "ACTIVE" &&
+      !typed.has(`DISH:${d.legacy_id}`) &&
+      (dishLegacyIds == null || dishLegacyIds.includes(d.legacy_id)),
   )) {
     add("dishes", d.legacy_id);
     add("dish_types", d.dish_type_legacy_id);
@@ -110,8 +131,10 @@ export function derivePlanningCatchup(snapshot, mappings) {
       }
     }
   }
-  for (const e of source.supplier_eligibilities.filter((e) =>
-    records.ingredients.some((i) => i.legacy_id === e.ingredient_legacy_id),
+  for (const e of source.supplier_eligibilities.filter(
+    (e) =>
+      !typed.has(`INGREDIENT:${e.ingredient_legacy_id}`) &&
+      records.ingredients.some((i) => i.legacy_id === e.ingredient_legacy_id),
   )) {
     add("supplier_eligibilities", e.legacy_id);
     add("suppliers", e.supplier_legacy_id);
@@ -163,6 +186,7 @@ export function buildPlanningCatchupSql(
     apply = false,
     planChecksum,
     actorId,
+    dishLegacyIds,
     diagnosticBoundary = false,
   } = {},
 ) {
@@ -171,6 +195,7 @@ export function buildPlanningCatchupSql(
   if (diagnosticBoundary && apply)
     throw new Error("DIAGNOSTIC_BOUNDARY_PREVIEW_ONLY");
   assertPlanningSource(snapshot);
+  assertDishScope(snapshot, dishLegacyIds);
   if (
     apply &&
     (!/^[a-f0-9]{64}$/.test(planChecksum ?? "") ||
@@ -205,7 +230,7 @@ ${diagnosticBoundary ? "set client_connection_check_interval='2s';\n" : ""}\\war
 ${sql}
 \\warn CATCHUP_CLIENT_HELPERS_DONE
 \\warn CATCHUP_CLIENT_QUERY_BEGIN
-select pg_temp.run_planning_master_catchup(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb,${apply},${apply ? `'${planChecksum}'` : "null"},${apply ? `'${actorId}'::uuid` : "null"}) as result;
+select pg_temp.run_planning_master_catchup(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb,${apply},${apply ? `'${planChecksum}'` : "null"},${apply ? `'${actorId}'::uuid` : "null"},${dishLegacyIds == null ? "null" : `'${JSON.stringify(dishLegacyIds).replaceAll("'", "''")}'::jsonb`}) as result;
 \\warn CATCHUP_CLIENT_QUERY_DONE
 `;
 }

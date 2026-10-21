@@ -46,6 +46,7 @@ export async function runPlanningMasterCatchup({
   snapshotOutput,
   planChecksum,
   actorId,
+  dishLegacyIds,
   environment = process.env,
   cwd = process.cwd(),
   verifyPreview = verifyPlanningPreviewCheckout,
@@ -138,6 +139,7 @@ export async function runPlanningMasterCatchup({
       diagnosticBoundary,
       planChecksum,
       actorId,
+      dishLegacyIds,
     }),
   );
   const result = await phase("PLAN_EXECUTION", () =>
@@ -156,6 +158,7 @@ export async function runPlanningMasterCatchup({
           apply: true,
           planChecksum,
           actorId,
+          dishLegacyIds,
         }),
       ),
     );
@@ -283,6 +286,7 @@ async function main() {
         "--snapshot-output",
         "--plan-checksum",
         "--actor-id",
+        "--dish-legacy-ids",
         "--report-dir",
       ].includes(k)
     )
@@ -303,6 +307,9 @@ async function main() {
     snapshotOutput: flags.get("--snapshot-output"),
     planChecksum: flags.get("--plan-checksum"),
     actorId: flags.get("--actor-id"),
+    dishLegacyIds: flags.has("--dish-legacy-ids")
+      ? flags.get("--dish-legacy-ids").split(",")
+      : undefined,
     // Flush fixed markers before spawnSync can block; never print phase data.
     onPhase: (marker) => writeSync(2, `${marker}\n`),
   });
