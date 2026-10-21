@@ -25,6 +25,8 @@ Native PO review also exposes the summary logo covering the start of the issuer 
 
 The initial source's executed Full Integration `39609853563` passes, but this does not certify the changed source. Normal Frontend and executed Full must both pass on the final revision.
 
+Final-source Frontend `39613614684` passes3193tests (two existing skips) and fails only the historical PO worksheet-model hash: the deliberate header layout fixes change that model. The original historical golden is retained unchanged. The amended regression asserts the new exact row heights and both merged ranges' alignment, projects only those already-checked presentation fields back to their previous representation in the in-memory test model, then matches the original full-model hashes for all four modes. PDF-definition hashes remain exact. Every other layout field, quantity, Unit, note, date, Supplier/School identity, hidden source and metadata is still covered by the same baseline. The targeted case fails before and passes after this amendment. This follows the Owner-authorized visual repair scope and the business freeze's explicit statement that PO presentation is not globally frozen; it introduces no document-version or commitment authority.
+
 ## Runtime measurements
 
 [All 30 additional observations](artifacts/need-generation-improvement/closeout-small-comparison.json) use five fresh equivalent clones per build, three daily generations per clone and alternating build order. Every generation, receipt, currentness and valid-path semantic assertion passes (28 assertions per clone). The baseline function body is checked exactly before applying the candidate. All synthetic facts roll back. No runtime is rejected for being slow.
