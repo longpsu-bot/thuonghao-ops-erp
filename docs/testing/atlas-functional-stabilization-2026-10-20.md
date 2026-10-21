@@ -244,3 +244,14 @@ assert the captured human name and printed label, retaining raw Unit identity,
 quantity, source/lineage and reconciliation checks; PDF also forbids the technical
 code in visible output. Independent review clear; final exact-head run still gates
 merge. No application behavior changed in this test follow-up.
+
+Sourcef12430db Full39537301643 PASS, including connected Planning and Procurement
+browser/export evidence. Frontend39537301739 failed the unchanged Ingredients
+launch case at20s; the following Supplier case could not open its launcher.
+Focused phase timing isolated5,741ms in two global launcher control queries;
+scoping them to the banner/dialog reduced that segment to167ms. Reuse the already
+loaded School fields and assert the full34-School fixture; scope the heading to
+the selected panel. All13 launch cases, explicit visibility, single visible H1,
+aria-current, dismissal and20s budget remain. No runtime behavior changes.
+The entire affected app file24/24 PASS; Ingredients launch6,993ms. Independent
+review clear. A fresh exact-source CI run still gates merge and deployment.
