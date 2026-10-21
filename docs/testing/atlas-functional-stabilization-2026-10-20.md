@@ -235,3 +235,12 @@ hosted performance promise. Security catalog32/32 remains PASS; independent revi
 clear. Both repaired-day School scopes still reconcile with eight deltas0.
 Final source now contains130 migrations; guarded deployment must apply both new
 versions and verify the exact installed set before closeout.
+
+Source521fb59f Frontend39535580453 PASS. Full39535580372 passed SQL including
+corrected-day read reuse and connected Planning, then exposed three old PXK
+presentation expectations in the connected Procurement browser check. The issued
+XLSX correctly printedkg rather than the technical Unit code. Expectations now
+assert the captured human name and printed label, retaining raw Unit identity,
+quantity, source/lineage and reconciliation checks; PDF also forbids the technical
+code in visible output. Independent review clear; final exact-head run still gates
+merge. No application behavior changed in this test follow-up.
