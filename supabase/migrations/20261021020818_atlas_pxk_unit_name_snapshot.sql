@@ -1,7 +1,10 @@
 -- Freeze human Unit names on future PXKs; never backfill released history.
 begin;
 create temporary table pxk_unit_schema_lease on commit drop as
-select n.nspname,has_schema_privilege('postgres',n.oid,'CREATE') had_create
+select n.nspname,exists(
+  select 1 from aclexplode(coalesce(n.nspacl,acldefault('n',n.nspowner))) acl
+  where acl.grantee=(select oid from pg_roles where rolname='postgres')
+    and acl.grantor=n.nspowner and acl.privilege_type='CREATE') had_create
 from pg_namespace n where n.nspname in ('atlas_core','atlas_api');
 grant select on pxk_unit_schema_lease to atlas_owner;
 set local role atlas_owner;

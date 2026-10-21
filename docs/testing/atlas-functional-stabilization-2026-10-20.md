@@ -167,3 +167,54 @@ Clean cache/race/dirty/UNKNOWN guards and no-activation-read coverage are includ
 PXK SQL test139/139 PASS in a separate empty disposable database, including new
 capture, immutable snapshot, later master rename, historical null and ACL/RLS
 assertions. No test timeout, assertion, security grant or lifecycle was relaxed.
+
+### Repaired actual connected day — 2050-09-26
+
+PASS through the full requested path: real synthetic-source Menu Preview/Save;
+Attendance100/0 per School; retained Need initially blocked on Pantry; explicit
+whole-week no-additions Save automatically refreshes retained Need to READY;
+generation8 rows and explicit human confirmation; Supplier split20/20; Prepare;
+two original PO and two original PXK releases. Returning to retained Need now
+shows released read-only authority and the explicit correction action without a
+manual Refresh or rejected ordinary Save.
+
+Correction School1 Ingredient1 20→25, with an explicit operational reason and
+one-row review, leaves School2 at20 and produces family45. Allocation reflects
+missing5 and preserves old splits until human SaveA25/B20. Prepare refreshes
+retained Orders to replacement-required; two explicit complete replacement
+Drafts and two PO releases follow. Retained PXK reflects two replacement-required
+scopes without manual Refresh; explicit successor releases complete both Schools.
+Final reconciliation: two matched Schools, eight exact Ingredient deltas0.
+
+| Document      | Original immutable number     | Explicit successor number     |
+| ------------- | ----------------------------- | ----------------------------- |
+| Supplier A PO | PO-20500926-084DAFFC6DDE4251  | PO-20500926-4ED3168FE8104665  |
+| Supplier B PO | PO-20500926-360BCE4C5C424875  | PO-20500926-BC5463205B38461E  |
+| School1 PXK   | PXK-20500926-F51F26DD9B98455B | PXK-20500926-496525BB62654442 |
+| School2 PXK   | PXK-20500926-0E0595C405964400 | PXK-20500926-49A5D51931D2478C |
+
+Exact public readback assertions compare both original PO line/supplier/revision
+snapshots and both complete original PXK documents/lineage (excluding the allowed
+status transition). All remain unchanged. Eight successor line quantities equal
+the sum of explicit covered-source quantities and refer only to current successor
+POs. Each successor names its predecessor and has a distinct official number.
+Durable receipts show one generation, two Need Saves, two Allocation Saves,
+four PO releases and four PXK releases, all COMPLETED, with no rejected Save in
+this repaired day. The actual grouped PXK XLSX downloaded, parsed into five sheets
+and contains human kg labels without technical Unit codes.
+
+Independent source/architecture/security review and follow-up review are clear.
+Focused authority/recovery136 tests, handoff6, security catalog32 and PXK SQL139
+PASS. Initial CI correctly exposed a missing exact pure-helper bridge registration,
+then the migration's inherited-vs-direct CREATE cleanup mistake and four old UI
+assertions. The bridge remains exact (direct View import forbidden); migration
+now restores only the original direct ACLs. UI assertions now explicitly distinguish
+commit refresh from zero-read activation and require Cancel-preserved dirty input
+before explicit discard. No timeouts, assertions or security checks are disabled.
+Final exact-source CI/merge/guard remain pending until linked evidence is recorded.
+
+Live Menu source remains BLOCKED by14 unknown Dish cells. Reconciliation can still
+show legacy technical Unit codes in its derived summaries; this does not affect
+identities, quantities or immutable PO/PXK output. Compact PXK detail was operated
+by closing the prior detail before selecting the next School. No broad layout,
+performance, refactoring or new Warehouse work is included in this repair.
