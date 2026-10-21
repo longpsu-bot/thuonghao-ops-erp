@@ -2,6 +2,16 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("allows the pure Unit contract helper only through a business bridge", () => {
+    const source =
+      'export { shoppingListUnitDisplay } from "@/modules/atlas/planning-inputs/confirmed-needs/shoppingListContract";';
+    expect(
+      checkSources({ "src/vnext/atlas/bridges/confirmedNeed.ts": source }),
+    ).toEqual([]);
+    expect(
+      checkSources({ "src/vnext/atlas/planning-confirmed/View.tsx": source }),
+    ).toHaveLength(1);
+  });
   it("keeps Attendance document exports in connected composition, outside vNext views and business bridges", () => {
     expect(
       checkSources({
