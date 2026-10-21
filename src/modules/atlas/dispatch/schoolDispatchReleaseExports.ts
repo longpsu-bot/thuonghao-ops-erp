@@ -1,6 +1,11 @@
 import type { Workbook } from "exceljs";
 import { schoolDispatchUnitLabel } from "./schoolDispatchReleaseModel";
-import type { Column, Content, TDocumentDefinitions } from "pdfmake/interfaces";
+import type {
+  Column,
+  Content,
+  ContentTable,
+  TDocumentDefinitions,
+} from "pdfmake/interfaces";
 import type {
   SchoolDispatchDocument,
   SchoolDispatchLine,
@@ -19,6 +24,7 @@ import {
   borderRow,
   documentStatusLabel,
   documentPdfFooter,
+  documentPdfText,
   documentFilePart,
   createDocumentZip,
   finishDocumentSheet,
@@ -79,6 +85,10 @@ export function buildSchoolDispatchExportData(
   };
 }
 
+function issuerAddressLabel(address: string) {
+  return /^\s*ĐC\s*:/iu.test(address) ? address : `ĐC: ${address}`;
+}
+
 export function buildSchoolDispatchPdfDefinition(
   document: SchoolDispatchDocument,
 ): TDocumentDefinitions {
@@ -94,8 +104,107 @@ export function buildSchoolDispatchPdfDefinition(
     data.cookingGroupId && data.cookingGroupName
       ? [{ text: `NẤU TẠI: ${data.cookingGroupName}` }]
       : [];
+  const inspectionTable: ContentTable = {
+    table: {
+      headerRows: 2,
+      widths: [22, "*", 35, quantityWidth, 28, 70, 60, 60],
+      heights: 30,
+      body: [
+        [
+          { text: "Stt", bold: true, rowSpan: 2 },
+          { text: "Tên thực phẩm", bold: true, rowSpan: 2 },
+          { text: "Đvt", bold: true, rowSpan: 2 },
+          { text: "Số lượng", bold: true, rowSpan: 2 },
+          { text: "Tình trạng cảm quan", bold: true, colSpan: 2 },
+          {},
+          { text: "Biện pháp xử lý", bold: true, rowSpan: 2 },
+          { text: "Ghi chú", bold: true, rowSpan: 2 },
+        ],
+        [
+          "",
+          "",
+          "",
+          "",
+          { text: "Đạt", bold: true, noWrap: true },
+          { text: "Không đạt", bold: true, noWrap: true },
+          "",
+          "",
+        ],
+        ...data.lines.map((line, index) => [
+          index + 1,
+          line.ingredientName,
+          line.unitCode,
+          {
+            text: formatExactDocumentQuantity(line.quantity).text,
+            fontSize: 15,
+            noWrap: true,
+            alignment: "right" as const,
+          },
+          "",
+          "",
+          "",
+          "",
+        ]),
+      ],
+    },
+    layout: { paddingLeft: () => 2, paddingRight: () => 2 },
+    margin: [0, 8, 0, 0],
+  };
+  const signatureBlock: Content = {
+    columns: [
+      "Người nhận hàng",
+      "Người giao hàng",
+      "Người lập phiếu",
+    ].map<Column>((role) => ({
+      stack: [
+        { text: role, bold: true },
+        { text: "(Ký, ghi họ tên)", italics: true, margin: [0, 4, 0, 0] },
+        { text: " ", margin: [0, 0, 0, 72] },
+      ],
+      alignment: "center" as const,
+    })),
+    margin: [0, 24, 0, 0],
+    unbreakable: true,
+  };
+  const finalInspectionTable = {
+    ...inspectionTable,
+    id: "dispatch-final-inspection",
+    table: {
+      ...inspectionTable.table,
+      widths: Array.isArray(inspectionTable.table.widths)
+        ? [...inspectionTable.table.widths]
+        : inspectionTable.table.widths,
+      body: [
+        // pdfmake mutates row-span headers during layout.
+        ...structuredClone(inspectionTable.table.body.slice(0, 2)),
+        ...inspectionTable.table.body.slice(2).slice(-2),
+      ],
+    },
+  };
+  const inspectionContent: Content[] = [
+    ...(data.lines.length > 2
+      ? [
+          {
+            ...inspectionTable,
+            table: {
+              ...inspectionTable.table,
+              body: inspectionTable.table.body.slice(0, -2),
+            },
+          },
+        ]
+      : []),
+    finalInspectionTable,
+    signatureBlock,
+    // The block's internal positions are virtual; this boundary has its actual page.
+    { id: "dispatch-signatures-end", text: " ", fontSize: 1, lineHeight: 0 },
+  ];
   return {
     pageSize: "A4",
+    // Use measured pagination; an oversized unbreakable table can lose rows.
+    pageBreakBefore: (node, _following, next) =>
+      node.id === "dispatch-final-inspection" &&
+      node.pageNumbers.length === 1 &&
+      next.some((candidate) => candidate.id === "dispatch-signatures-end"),
     pageOrientation: quantityWidth > 90 ? "landscape" : "portrait",
     pageMargins: [28, 32, 28, 42],
     footer: documentPdfFooter(
@@ -113,7 +222,10 @@ export function buildSchoolDispatchPdfDefinition(
           {
             stack: [
               { text: data.issuerName, style: "company" },
-              { text: `ĐC: ${data.issuerAddress}`, style: "address" },
+              {
+                text: issuerAddressLabel(data.issuerAddress),
+                style: "address",
+              },
             ],
             alignment: "center",
           },
@@ -133,78 +245,13 @@ export function buildSchoolDispatchPdfDefinition(
         text: [
           { text: documentStatusLabel(document.status), bold: true },
           ` · Điểm giao: ${data.deliveryLocationName}`,
-          ...(data.note ? [`\nGhi chú: ${data.note}`] : []),
+          ...(data.note ? ["\nGhi chú: ", documentPdfText(data.note)] : []),
           ...(document.predecessor_release_id ? ["\nPhiếu thay thế"] : []),
         ],
         fontSize: 11,
         margin: [0, 3, 0, 0],
       },
-      {
-        table: {
-          headerRows: 2,
-          widths: [22, "*", 35, quantityWidth, 28, 40, 68, 80],
-          heights: 30,
-          dontBreakRows: true,
-          body: [
-            [
-              { text: "Stt", bold: true, rowSpan: 2 },
-              { text: "Tên thực phẩm", bold: true, rowSpan: 2 },
-              { text: "Đvt", bold: true, rowSpan: 2 },
-              { text: "Số lượng", bold: true, rowSpan: 2 },
-              { text: "Tình trạng cảm quan", bold: true, colSpan: 2 },
-              {},
-              { text: "Biện pháp xử lý", bold: true, rowSpan: 2 },
-              { text: "Ghi chú", bold: true, rowSpan: 2 },
-            ],
-            [
-              "",
-              "",
-              "",
-              "",
-              { text: "Đạt", bold: true, noWrap: true },
-              { text: "Không đạt", bold: true, noWrap: true },
-              "",
-              "",
-            ],
-            ...data.lines.map((line, index) => [
-              index + 1,
-              line.ingredientName,
-              line.unitCode,
-              {
-                text: formatExactDocumentQuantity(line.quantity).text,
-                fontSize: 15,
-                noWrap: true,
-                alignment: "right" as const,
-              },
-              "",
-              "",
-              "",
-              "",
-            ]),
-          ],
-        },
-        margin: [0, 8, 0, 0],
-      },
-      {
-        columns: [
-          "Người nhận hàng",
-          "Người giao hàng",
-          "Người lập phiếu",
-        ].map<Column>((role) => ({
-          stack: [
-            { text: role, bold: true },
-            {
-              text: "(Ký, ghi họ tên)",
-              italics: true,
-              margin: [0, 4, 0, 0],
-            },
-            { text: " ", margin: [0, 0, 0, 72] },
-          ],
-          alignment: "center" as const,
-        })),
-        margin: [0, 52, 0, 0],
-        unbreakable: true,
-      },
+      ...inspectionContent,
     ],
     defaultStyle: { font: "Roboto", fontSize: 15 },
     styles: {
@@ -369,7 +416,7 @@ function addSchoolDispatchSheet(
   sheet.getCell("B1").font = { name: "Times New Roman", size: 14, bold: true };
   sheet.getCell("B1").alignment = { horizontal: "center" };
   sheet.mergeCells("B2:H2");
-  sheet.getCell("B2").value = `ĐC: ${data.issuerAddress}`;
+  sheet.getCell("B2").value = issuerAddressLabel(data.issuerAddress);
   sheet.getCell("B2").alignment = { horizontal: "center" };
   sheet.getRow(1).height = wrappedRowHeight(
     data.issuerName,
@@ -378,7 +425,7 @@ function addSchoolDispatchSheet(
     28,
   );
   sheet.getRow(2).height = wrappedRowHeight(
-    `ĐC: ${data.issuerAddress}`,
+    issuerAddressLabel(data.issuerAddress),
     formWidth - 7,
     12,
     24,

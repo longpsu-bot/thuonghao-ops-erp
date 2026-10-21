@@ -20,6 +20,7 @@ import {
   companyAddress,
   documentStatusLabel,
   documentPdfFooter,
+  documentPdfText,
   documentFilePart,
   createDocumentZip,
   finishDocumentSheet,
@@ -486,7 +487,7 @@ export function buildPurchaseOrderPdfDefinition(
                     noWrap: true,
                     alignment: "right" as const,
                   },
-                  note ?? "",
+                  documentPdfText(note ?? ""),
                 ]),
               ),
             ],
@@ -527,7 +528,7 @@ export function buildPurchaseOrderPdfDefinition(
                 alignment: "right",
                 noWrap: true,
               },
-              note ?? "",
+              documentPdfText(note ?? ""),
             ]),
           );
         });

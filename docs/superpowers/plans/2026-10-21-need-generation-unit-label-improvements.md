@@ -95,7 +95,7 @@ Supabase has documented platform request constraints. If a representative operat
 - [x] Preserve the original 14.630 s baseline and both failed attempts. Keep raw sample count, workload geometry, history depth, source SHA, migration set, environment, role/function settings, start time and business outcome together.
 - [x] Remove the local generation assertion `elapsed_ms < 8000`, its eight-second statement cutoff and the four-second target flag from the generation performance fixture. Retain all quantity, membership, currentness, replay, immutable-history and security assertions. Do not disable the suite or globally alter test timeouts.
 - [x] Replace the removed speed assertion with complete receipt/run/source/quantity assertions for every fresh sample. Keep finite nonnegative elapsed-time validation and all timings as diagnostics. CI's hang watchdog must be separately disclosed and must allow the complete semantic test to finish.
-- [ ] Use the existing transaction-local profiler around the public authenticated command. Capture phase boundaries for preflight/source selection, generation/effective composition, validation/release, Confirmed Need materialization, deferred constraint flushes and authoritative readback. Measure trigger self-time and call counts; do not add inclusive nested times together as if independent.
+- [x] Use the existing transaction-local profiler around the public authenticated command. Capture phase boundaries for preflight/source selection, generation/effective composition, validation/release, Confirmed Need materialization, deferred constraint flushes and authoritative readback. Measure trigger self-time and call counts; do not add inclusive nested times together as if independent.
 
 Existing profiler pattern:
 
@@ -109,14 +109,23 @@ from pg_stat_xact_user_functions;
 ```
 
 - [x] Keep phase instrumentation in a disposable database or diagnostic copy. If function statistics miss inlined SQL, inspect nested statement plans there. Never EXPLAIN ANALYZE a hosted business-writing command as a read-only probe.
-- [ ] Compare the existing 19-line/two-School shape, the established 304-contribution/248-line scale fixture and an existing retained-history fixture. Include zero-portion Schools, two School types, direct additions, effective composition changes and regeneration. Record actual cardinalities; do not substitute a tiny empty database.
+- [x] Compare a cardinality-representative 19-line/two-School shape, the established 304-contribution/248-line scale fixture and an existing retained-history fixture. Include zero-portion Schools, two School types, direct additions, effective composition changes and regeneration. Record actual cardinalities; do not substitute a tiny empty database.
 - [x] For each before/after comparison, take five fresh equivalent samples on the same environment, alternating builds where practical. Preserve first-observed and repeated samples separately; do not pretend an idempotent replay measures fresh generation or a warm sample is cold. Report all values and median/range; five samples do not establish p95.
 - [x] Correlate hosted timestamps with available CPU, memory, I/O, temporary-file, connection and lock-wait evidence. Record missing metrics as unknown. Do not infer compute tier or blame hosting from role settings.
 - [x] Publish a ranked phase-cost report and select one bounded root cause for B. If no code inefficiency is established, record that result and move the decision to measured resource capacity.
 
 **Acceptance:** All original semantic checks still execute and pass; slow valid completion is recorded; samples distinguish DB work from service/browser time; diagnosis names evidence and uncertainty. No hosted business write or permanent profiling configuration is required for diagnosis.
 
-**Execution limits:** The dominant initial Confirmed Need INSERT is profiled with actual nested plans, source scans and retained-history bounds. Complete per-phase/trigger cost attribution and five matched samples for the older 19-line shape were not completed; those two broader measurement steps stay unchecked. Existing 19-line hosted history, the matched 248-line fixture, effective-composition/zero-demand semantic suites, a three-day 77-line disposable journey and the fresh 22-line hosted journey are separately evidenced. Available resource correlation is unknown, not a hosting-cause finding.
+**Measurement closeout:** [The remaining-work report](../../testing/journey-closeout-2026-10-21.md)
+adds five equivalent fresh clones per build (15 generations each) for a synthetic
+19-line/two-School/two-type shape, full 79-function profiles, nested plans and
+non-overlapping phase boundaries including the actual final deferred-constraint
+flush. This represents the older cardinality, not its exact historical sources.
+Existing matched 248-line samples, retained-history bounds, semantic suites,
+three-day 77-line disposable journey and fresh 22-line hosted journey remain
+separate evidence. Inlined/sub-millisecond statements are not individually
+attributed; nested inclusive costs are not additive. Hosted resource correlation
+remains unknown. No arbitrary latency gate or hosting-cause claim is introduced.
 
 ## Batch B — reduce proven generation work
 

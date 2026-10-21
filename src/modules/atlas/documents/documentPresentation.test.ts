@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { createReviewPurchaseOrdersFixture } from "../procurement/reviewSchoolCateringProcurementApi";
 import {
@@ -12,7 +13,11 @@ import {
   createSchoolDispatchXlsx,
   buildSchoolDispatchPdfDefinition,
 } from "../dispatch/schoolDispatchReleaseExports";
-import { safeWorksheetName, documentFilePart } from "./documentPresentation";
+import {
+  safeWorksheetName,
+  documentFilePart,
+  renderDocumentPdf,
+} from "./documentPresentation";
 
 async function book(bytes: ExcelJS.Buffer) {
   const workbook = new ExcelJS.Workbook();
@@ -21,6 +26,29 @@ async function book(bytes: ExcelJS.Buffer) {
 }
 
 describe("Atlas document presentation boundaries", () => {
+  it("embeds a printable Unicode arrow from a captured PO note in the actual PDF", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    order.lines[0]!.supplier_note = "Điều chỉnh 5,5 → 6,5 kg";
+    const bytes = await renderDocumentPdf(
+      buildPurchaseOrderPdfDefinition(order, "sum"),
+    );
+    const maps: string[] = [];
+    for (const match of Buffer.from(bytes)
+      .toString("latin1")
+      .matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
+      try {
+        const stream = inflateSync(Buffer.from(match[1]!, "latin1")).toString(
+          "ascii",
+        );
+        if (stream.includes("begincmap")) maps.push(stream);
+      } catch {
+        /* Other PDF streams need no decompression. */
+      }
+    }
+    expect(maps.join("\n")).toContain("<2192>");
+    expect(order.lines[0]!.supplier_note).toBe("Điều chỉnh 5,5 → 6,5 kg");
+  });
   it("renders the same captured PO order and safe filename fragments for fixed facts", () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;

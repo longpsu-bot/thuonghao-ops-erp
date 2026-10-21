@@ -16,6 +16,7 @@ import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
 import { createPlanningStoryFixture } from "./planningStoryFixtures";
 import {
   menuPreview,
+  attendancePreview,
   pantryPreview,
   success,
   unknown,
@@ -64,6 +65,94 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("groups Attendance warnings in Vietnamese while retaining every source reference and unknown detail", async () => {
+    const { fixture } = await show();
+    const preview = attendancePreview();
+    preview.issues.warnings = [
+      {
+        code: "PORTIONS_DIFFER_FROM_DEFAULT",
+        message: "Attendance differs from the current school defaults.",
+        source_row_reference: "paste:row:2",
+      },
+      {
+        code: "PORTIONS_DIFFER_FROM_DEFAULT",
+        message: "Attendance differs from the current school defaults.",
+        source_row_reference: "paste:row:3",
+      },
+      {
+        code: "ZERO_TOTAL_PORTIONS",
+        message:
+          "Student and teacher portions total zero for this school and date.",
+        source_row_reference: "paste:row:4",
+      },
+      {
+        code: "FUTURE_ATTENDANCE_WARNING",
+        message: "A new warning from the source.",
+        source_row_reference: null,
+      },
+    ];
+    fixture.api.previewAttendance = async () => success({ preview });
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(
+      await screen.findByRole("textbox", { name: "Học sinh Trường Nguyễn Du" }),
+      { target: { value: "101" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    const review = await screen.findByRole("complementary", {
+      name: "Xem thay đổi",
+    });
+    const warnings = within(review).getByRole("group", {
+      name: "Cảnh báo sĩ số",
+    });
+    expect(
+      within(warnings).getByText(
+        /Số suất khác mặc định hiện tại của trường.*2 cảnh báo/,
+      ),
+    ).toBeVisible();
+    const details = warnings.querySelectorAll("details");
+    expect(details).toHaveLength(3);
+    details.forEach((detail) =>
+      fireEvent.click(detail.querySelector("summary")!),
+    );
+    for (const reference of ["paste:row:2", "paste:row:3", "paste:row:4"])
+      expect(
+        within(warnings).getByText(reference, { exact: false }),
+      ).toBeInTheDocument();
+    expect(
+      within(warnings).getByText(/FUTURE_ATTENDANCE_WARNING/),
+    ).toBeInTheDocument();
+    expect(
+      within(warnings).getByText(/A new warning from the source/),
+    ).toBeInTheDocument();
+    expect(
+      within(warnings).getByText(/Chưa có vị trí nguồn/),
+    ).toBeInTheDocument();
+    expect(within(review).getByRole("button", { name: "Lưu" })).toBeEnabled();
+  });
+  it("retains an unknown Attendance blocker's original diagnostic", async () => {
+    const { fixture } = await show();
+    const preview = attendancePreview();
+    preview.issues.blockers = [
+      {
+        code: "FUTURE_ATTENDANCE_BLOCKER",
+        message: "Specific source diagnosis for support.",
+        source_row_reference: "paste:row:2",
+      },
+    ];
+    fixture.api.previewAttendance = async () => success({ preview });
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(
+      await screen.findByRole("textbox", { name: "Học sinh Trường Nguyễn Du" }),
+      { target: { value: "101" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    const review = await screen.findByRole("complementary", {
+      name: "Xem thay đổi",
+    });
+    expect(within(review).getByRole("alert")).toHaveTextContent(
+      "Specific source diagnosis for support.",
+    );
+  });
   it("reuses canonical School order across Menu and Attendance without changing row edit identity", async () => {
     const fixture = createPlanningReviewFixture();
     const schools = fixture.planning.schools.slice(0, 3);

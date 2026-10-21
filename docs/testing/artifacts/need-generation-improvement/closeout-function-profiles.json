@@ -1,0 +1,1134 @@
+{
+  "small": {
+    "shape": "small",
+    "first_generation_functions": [
+      {
+        "calls": 109,
+        "self_ms": 263.476017,
+        "funcname": "pa_06e_h0a5b_need_generation_integrity_guard",
+        "total_ms": 263.860734,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 51,
+        "self_ms": 52.390831,
+        "funcname": "pa_06e_h0b1b_confirmed_need_revision_membership_total",
+        "total_ms": 52.390831,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 40.95642,
+        "funcname": "create_need_generation_run",
+        "total_ms": 294.516193,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 1,
+        "self_ms": 32.015227,
+        "funcname": "planning_contract_01_materialize_confirmed_needs",
+        "total_ms": 42.142774,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 48,
+        "self_ms": 21.953573,
+        "funcname": "rmvp_02b_resolve_selected_composition",
+        "total_ms": 26.828297,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 32,
+        "self_ms": 21.716463,
+        "funcname": "planning_contract_02a_recipe_replacement_guard",
+        "total_ms": 21.716463,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 4,
+        "self_ms": 12.739063,
+        "funcname": "rmvp_04_workbench_payload",
+        "total_ms": 12.784368,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 39,
+        "self_ms": 10.005245,
+        "funcname": "pa_06e_h0b1b_confirmed_need_current_source_consistency",
+        "total_ms": 10.005245,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 18,
+        "self_ms": 7.942951,
+        "funcname": "rmvp_03b_source_evidence",
+        "total_ms": 8.984097,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 6.865808,
+        "funcname": "pa_06e_h0a4b_planning_input_integrity_guard",
+        "total_ms": 8.493279,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 5.738455,
+        "funcname": "issue_223_execute_need_generation_v2",
+        "total_ms": 549.266318,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 5,
+        "self_ms": 4.992823,
+        "funcname": "planning_contract_02b_policy_incompatible_batch",
+        "total_ms": 4.992823,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 71,
+        "self_ms": 4.557802,
+        "funcname": "pa_06e_h0b1b_confirmed_need_guard",
+        "total_ms": 4.557802,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 48,
+        "self_ms": 4.006877,
+        "funcname": "rmvp_02b_active_rules",
+        "total_ms": 4.874724,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 3.766972,
+        "funcname": "evaluate_planning_input_readiness",
+        "total_ms": 33.187776,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 32,
+        "self_ms": 3.712267,
+        "funcname": "need_generation_effective_use_guard",
+        "total_ms": 3.712267,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 2,
+        "self_ms": 3.440454,
+        "funcname": "rmvp_03b_all_history_items",
+        "total_ms": 3.440454,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 3.244641,
+        "funcname": "release_need_generation_run",
+        "total_ms": 71.687687,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 1,
+        "self_ms": 3.243744,
+        "funcname": "rmvp_07_approval_release_integrity",
+        "total_ms": 3.243744,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 9,
+        "self_ms": 2.49071,
+        "funcname": "direct_need_evaluation_ready",
+        "total_ms": 2.49071,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 48,
+        "self_ms": 2.270299,
+        "funcname": "recipe_effective_resolve_composition",
+        "total_ms": 29.098596,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 2.2655,
+        "funcname": "rmvp_03b_calculate_issues",
+        "total_ms": 2.324803,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 2.2422,
+        "funcname": "rmvp_03b_workbench_payload",
+        "total_ms": 13.146085,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 4,
+        "self_ms": 2.090493,
+        "funcname": "pantry_02_snapshot_integrity_guard",
+        "total_ms": 2.090493,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 2.063391,
+        "funcname": "request_planning_input_need_generation",
+        "total_ms": 9.111305,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 246,
+        "self_ms": 1.812382,
+        "funcname": "pa_05b_safe_uuid",
+        "total_ms": 1.812382,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.569468,
+        "funcname": "rmvp_03b_finish_success",
+        "total_ms": 29.182698,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 1.51567,
+        "funcname": "rmvp_04_validate_command",
+        "total_ms": 1.677074,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.449665,
+        "funcname": "rmvp_03b_stale_source_types",
+        "total_ms": 1.449665,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.293157,
+        "funcname": "rmvp_03b_history_page",
+        "total_ms": 4.733611,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 38,
+        "self_ms": 1.271256,
+        "funcname": "pa_06e_h1b1_confirmed_need_line_decision_integrity",
+        "total_ms": 1.271256,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 1.270757,
+        "funcname": "validate_need_generation_run",
+        "total_ms": 9.981944,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 4,
+        "self_ms": 1.192356,
+        "funcname": "rmvp_04_record_change",
+        "total_ms": 1.32576,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 4,
+        "self_ms": 1.176248,
+        "funcname": "need_generation_effective_current",
+        "total_ms": 16.290823,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 1.13725,
+        "funcname": "rmvp_03b_bindings_current",
+        "total_ms": 1.13725,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.063447,
+        "funcname": "planning_contract_01_current_need_payload",
+        "total_ms": 1.063447,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.951843,
+        "funcname": "rmvp_03b_record_change",
+        "total_ms": 1.191153,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 12,
+        "self_ms": 0.834636,
+        "funcname": "rmvp_03b_candidate_is_well_formed",
+        "total_ms": 1.041146,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 8,
+        "self_ms": 0.831038,
+        "funcname": "need_generation_effective_capture_guard",
+        "total_ms": 6.677798,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.755634,
+        "funcname": "execute_need_generation",
+        "total_ms": 550.115556,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 12,
+        "self_ms": 0.69663,
+        "funcname": "issue_223_source_date_fingerprint",
+        "total_ms": 0.69663,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.676029,
+        "funcname": "planning_contract_01_finish_receipt",
+        "total_ms": 0.69403,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 106,
+        "self_ms": 0.650631,
+        "funcname": "pa_06e_h0a5b_immutable_evidence_guard",
+        "total_ms": 0.650631,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.630526,
+        "funcname": "pa_06e_h0cb_validate_materialization_request",
+        "total_ms": 0.702931,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.614827,
+        "funcname": "pa_06e_h0a4b_planning_input_set_guard",
+        "total_ms": 0.788735,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.592726,
+        "funcname": "pa_05b_authorize_actor",
+        "total_ms": 0.592726,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.573725,
+        "funcname": "direct_need_legacy_preflight_payload",
+        "total_ms": 5.558147,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.571124,
+        "funcname": "rmvp_03b_validate_command",
+        "total_ms": 0.69373,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 0.566524,
+        "funcname": "rmvp_04_success",
+        "total_ms": 11.595315,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 0.555526,
+        "funcname": "pa_06e_h0a5b_need_generation_run_guard",
+        "total_ms": 0.555526,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 6,
+        "self_ms": 0.499523,
+        "funcname": "planning_contract_01_internal_context",
+        "total_ms": 0.589927,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.477921,
+        "funcname": "pa_06e_h0a4b_planning_input_evaluation_guard",
+        "total_ms": 0.477921,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 96,
+        "self_ms": 0.413523,
+        "funcname": "rmvp_02b_safe_date",
+        "total_ms": 0.413523,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.377517,
+        "funcname": "planning_contract_02b_removed_business_fact_count",
+        "total_ms": 0.377517,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 6,
+        "self_ms": 0.354516,
+        "funcname": "pa_05b_finish_command",
+        "total_ms": 0.354516,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 8,
+        "self_ms": 0.354215,
+        "funcname": "direct_need_effective_mode",
+        "total_ms": 0.354215,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 4,
+        "self_ms": 0.284513,
+        "funcname": "direct_need_snapshot_fingerprint",
+        "total_ms": 0.284513,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.283412,
+        "funcname": "pa_05b_begin_command",
+        "total_ms": 0.437719,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.248712,
+        "funcname": "direct_need_snapshot_complete_only",
+        "total_ms": 0.248712,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 21,
+        "self_ms": 0.247209,
+        "funcname": "rmvp_04_safe_date",
+        "total_ms": 0.247209,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 4,
+        "self_ms": 0.21181,
+        "funcname": "planning_contract_01_legacy_request",
+        "total_ms": 0.21181,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 39,
+        "self_ms": 0.197608,
+        "funcname": "pa_05b_safe_bigint",
+        "total_ms": 0.197608,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.180107,
+        "funcname": "planning_contract_01_preflight_payload",
+        "total_ms": 10.298158,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.175709,
+        "funcname": "issue_223_period_preflight_payload",
+        "total_ms": 4.209087,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.155707,
+        "funcname": "pa_05b_resolve_actor",
+        "total_ms": 0.170208,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 19,
+        "self_ms": 0.146706,
+        "funcname": "pa_06e_h1b1_confirmed_need_line_pointer_guard",
+        "total_ms": 0.146706,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 3,
+        "self_ms": 0.144108,
+        "funcname": "rmvp_04_prepare_command",
+        "total_ms": 0.483923,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 12,
+        "self_ms": 0.131005,
+        "funcname": "rmvp_03b_safe_date",
+        "total_ms": 0.131005,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.122705,
+        "funcname": "rmvp_06_validation_integrity",
+        "total_ms": 0.122705,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.116205,
+        "funcname": "pa_05b_request_hash",
+        "total_ms": 0.116205,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.114005,
+        "funcname": "direct_need_current_complete_source",
+        "total_ms": 0.362717,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.107604,
+        "funcname": "rmvp_03b_prepare_command",
+        "total_ms": 0.22891,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.0851040000000012,
+        "funcname": "rmvp_03a_normalize_text",
+        "total_ms": 0.0851040000000012,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 7,
+        "self_ms": 0.084803,
+        "funcname": "pa_05b_safe_timestamptz",
+        "total_ms": 0.084803,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.075703,
+        "funcname": "rmvp_03b_normalize_text",
+        "total_ms": 0.160807,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.025401,
+        "funcname": "command_receipt_integrity_guard",
+        "total_ms": 0.025401,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.0251020000000002,
+        "funcname": "planning_contract_01_validate_command",
+        "total_ms": 0.0554030000000001,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.025001,
+        "funcname": "planning_contract_01_prepare_top_command",
+        "total_ms": 1.286757,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.008801,
+        "funcname": "pa_05b_current_auth_subject",
+        "total_ms": 0.012101,
+        "schemaname": "atlas_core"
+      }
+    ],
+    "all_valid_assertions_pass": true,
+    "settings": {
+      "jit": "off",
+      "track_functions": "all",
+      "auto_explain_min_duration": "1ms",
+      "instrumented": true,
+      "nested_inclusive_times_not_additive": true
+    }
+  },
+  "scale": {
+    "shape": "scale",
+    "first_generation_functions": [
+      {
+        "calls": 993,
+        "self_ms": 931.841281,
+        "funcname": "pa_06e_h0a5b_need_generation_integrity_guard",
+        "total_ms": 932.156601,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 552,
+        "self_ms": 823.552547,
+        "funcname": "pa_06e_h0b1b_confirmed_need_revision_membership_total",
+        "total_ms": 823.552547,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 369.513555,
+        "funcname": "create_need_generation_run",
+        "total_ms": 1316.629139,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 456,
+        "self_ms": 178.110705,
+        "funcname": "rmvp_02b_resolve_selected_composition",
+        "total_ms": 212.017835,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 175.201596,
+        "funcname": "planning_contract_01_materialize_confirmed_needs",
+        "total_ms": 260.74307,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 497,
+        "self_ms": 127.355497,
+        "funcname": "pa_06e_h0b1b_confirmed_need_current_source_consistency",
+        "total_ms": 127.355497,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 4,
+        "self_ms": 57.170777,
+        "funcname": "rmvp_04_workbench_payload",
+        "total_ms": 57.221683,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 801,
+        "self_ms": 45.613859,
+        "funcname": "pa_06e_h0b1b_confirmed_need_guard",
+        "total_ms": 45.613859,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 304,
+        "self_ms": 35.536057,
+        "funcname": "planning_contract_02a_recipe_replacement_guard",
+        "total_ms": 35.536057,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 456,
+        "self_ms": 27.208948,
+        "funcname": "rmvp_02b_active_rules",
+        "total_ms": 33.90713,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 17.803946,
+        "funcname": "release_need_generation_run",
+        "total_ms": 204.999101,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 304,
+        "self_ms": 17.072631,
+        "funcname": "need_generation_effective_use_guard",
+        "total_ms": 17.072631,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 456,
+        "self_ms": 14.513961,
+        "funcname": "recipe_effective_resolve_composition",
+        "total_ms": 226.531796,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 10.676267,
+        "funcname": "issue_223_execute_need_generation_v2",
+        "total_ms": 2925.397208,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 18,
+        "self_ms": 9.092915,
+        "funcname": "rmvp_03b_source_evidence",
+        "total_ms": 10.00197,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 7.412747,
+        "funcname": "pa_06e_h0a4b_planning_input_integrity_guard",
+        "total_ms": 8.957442,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 496,
+        "self_ms": 6.569346,
+        "funcname": "pa_06e_h1b1_confirmed_need_line_decision_integrity",
+        "total_ms": 6.569346,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 4,
+        "self_ms": 6.15661,
+        "funcname": "need_generation_effective_current",
+        "total_ms": 147.629053,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 883,
+        "self_ms": 6.04379700000001,
+        "funcname": "pa_05b_safe_uuid",
+        "total_ms": 6.04379700000001,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 5,
+        "self_ms": 4.567877,
+        "funcname": "planning_contract_02b_policy_incompatible_batch",
+        "total_ms": 4.567877,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 912,
+        "self_ms": 3.458214,
+        "funcname": "rmvp_02b_safe_date",
+        "total_ms": 3.458214,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 76,
+        "self_ms": 3.316794,
+        "funcname": "need_generation_effective_capture_guard",
+        "total_ms": 44.292378,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 3.213469,
+        "funcname": "rmvp_07_approval_release_integrity",
+        "total_ms": 3.213469,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 3.104491,
+        "funcname": "evaluate_planning_input_readiness",
+        "total_ms": 32.126344,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 2,
+        "self_ms": 3.068487,
+        "funcname": "rmvp_03b_all_history_items",
+        "total_ms": 3.068487,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 990,
+        "self_ms": 2.777846,
+        "funcname": "pa_06e_h0a5b_immutable_evidence_guard",
+        "total_ms": 2.777846,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 9,
+        "self_ms": 2.342044,
+        "funcname": "direct_need_evaluation_ready",
+        "total_ms": 2.342044,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 12,
+        "self_ms": 2.240351,
+        "funcname": "issue_223_source_date_fingerprint",
+        "total_ms": 2.240351,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 2.234555,
+        "funcname": "rmvp_03b_calculate_issues",
+        "total_ms": 2.283159,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.967117,
+        "funcname": "rmvp_03b_workbench_payload",
+        "total_ms": 12.216039,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 4,
+        "self_ms": 1.859411,
+        "funcname": "pantry_02_snapshot_integrity_guard",
+        "total_ms": 1.859411,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 1.682001,
+        "funcname": "request_planning_input_need_generation",
+        "total_ms": 7.871376,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 1,
+        "self_ms": 1.516689,
+        "funcname": "validate_need_generation_run",
+        "total_ms": 54.591702,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.424089,
+        "funcname": "rmvp_03b_finish_success",
+        "total_ms": 27.950591,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 4,
+        "self_ms": 1.300919,
+        "funcname": "rmvp_04_record_change",
+        "total_ms": 1.417133,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.252376,
+        "funcname": "rmvp_03b_stale_source_types",
+        "total_ms": 1.252376,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 1.219774,
+        "funcname": "rmvp_04_validate_command",
+        "total_ms": 1.358983,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.159269,
+        "funcname": "planning_contract_01_finish_receipt",
+        "total_ms": 1.183573,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 1.099267,
+        "funcname": "rmvp_03b_bindings_current",
+        "total_ms": 1.099267,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 1.083085,
+        "funcname": "rmvp_04_success",
+        "total_ms": 31.163915,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 1.067164,
+        "funcname": "rmvp_03b_history_page",
+        "total_ms": 4.135651,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.997468,
+        "funcname": "planning_contract_01_current_need_payload",
+        "total_ms": 0.997468,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.954206,
+        "funcname": "execute_need_generation",
+        "total_ms": 2926.435218,
+        "schemaname": "atlas_api"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.759346,
+        "funcname": "rmvp_03b_record_change",
+        "total_ms": 0.950758,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 12,
+        "self_ms": 0.724244,
+        "funcname": "rmvp_03b_candidate_is_well_formed",
+        "total_ms": 0.909055,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.694601,
+        "funcname": "planning_contract_02b_removed_business_fact_count",
+        "total_ms": 0.694601,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.654897,
+        "funcname": "pa_06e_h0cb_validate_materialization_request",
+        "total_ms": 0.725406,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.620638,
+        "funcname": "pa_05b_authorize_actor",
+        "total_ms": 0.620638,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 3,
+        "self_ms": 0.610737,
+        "funcname": "pa_06e_h0a5b_need_generation_run_guard",
+        "total_ms": 0.610737,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 76,
+        "self_ms": 0.601735,
+        "funcname": "direct_need_effective_mode",
+        "total_ms": 0.601735,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.585244,
+        "funcname": "direct_need_legacy_preflight_payload",
+        "total_ms": 7.686194,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.545832,
+        "funcname": "rmvp_03b_validate_command",
+        "total_ms": 0.657839,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 6,
+        "self_ms": 0.521342,
+        "funcname": "planning_contract_01_internal_context",
+        "total_ms": 0.611149,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 248,
+        "self_ms": 0.483263,
+        "funcname": "pa_06e_h1b1_confirmed_need_line_pointer_guard",
+        "total_ms": 0.483263,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.454628,
+        "funcname": "pa_06e_h0a4b_planning_input_set_guard",
+        "total_ms": 0.620738,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.426126,
+        "funcname": "pa_06e_h0a4b_planning_input_evaluation_guard",
+        "total_ms": 0.426126,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 6,
+        "self_ms": 0.401736,
+        "funcname": "pa_05b_finish_command",
+        "total_ms": 0.401736,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 4,
+        "self_ms": 0.284222,
+        "funcname": "direct_need_snapshot_fingerprint",
+        "total_ms": 0.284222,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.266229,
+        "funcname": "direct_need_snapshot_complete_only",
+        "total_ms": 0.266229,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.264916,
+        "funcname": "pa_05b_begin_command",
+        "total_ms": 0.399924,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.256032,
+        "funcname": "planning_contract_01_preflight_payload",
+        "total_ms": 45.348848,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 4,
+        "self_ms": 0.23192,
+        "funcname": "planning_contract_01_legacy_request",
+        "total_ms": 0.23192,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 21,
+        "self_ms": 0.215314,
+        "funcname": "rmvp_04_safe_date",
+        "total_ms": 0.215314,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 39,
+        "self_ms": 0.18901,
+        "funcname": "pa_05b_safe_bigint",
+        "total_ms": 0.18901,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.173017,
+        "funcname": "issue_223_period_preflight_payload",
+        "total_ms": 4.739687,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.150008,
+        "funcname": "pa_05b_resolve_actor",
+        "total_ms": 0.163409,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.129419,
+        "funcname": "rmvp_06_validation_integrity",
+        "total_ms": 0.129419,
+        "schemaname": "atlas_planning"
+      },
+      {
+        "calls": 3,
+        "self_ms": 0.121508,
+        "funcname": "rmvp_04_prepare_command",
+        "total_ms": 0.445327,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 12,
+        "self_ms": 0.112907,
+        "funcname": "rmvp_03b_safe_date",
+        "total_ms": 0.112907,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.104908,
+        "funcname": "direct_need_current_complete_source",
+        "total_ms": 0.371137,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.104807,
+        "funcname": "rmvp_03b_prepare_command",
+        "total_ms": 0.243415,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.0988059999999999,
+        "funcname": "pa_05b_request_hash",
+        "total_ms": 0.0988059999999999,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 7,
+        "self_ms": 0.076504,
+        "funcname": "pa_05b_safe_timestamptz",
+        "total_ms": 0.076504,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.070104,
+        "funcname": "rmvp_03b_normalize_text",
+        "total_ms": 0.134108,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.0640039999999544,
+        "funcname": "rmvp_03a_normalize_text",
+        "total_ms": 0.0640039999999544,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 2,
+        "self_ms": 0.031005,
+        "funcname": "command_receipt_integrity_guard",
+        "total_ms": 0.031005,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.022602,
+        "funcname": "planning_contract_01_prepare_top_command",
+        "total_ms": 1.261976,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.0217019999999999,
+        "funcname": "planning_contract_01_validate_command",
+        "total_ms": 0.0495030000000001,
+        "schemaname": "atlas_core"
+      },
+      {
+        "calls": 1,
+        "self_ms": 0.00789999999999999,
+        "funcname": "pa_05b_current_auth_subject",
+        "total_ms": 0.0111,
+        "schemaname": "atlas_core"
+      }
+    ],
+    "all_valid_assertions_pass": true,
+    "settings": {
+      "jit": "off",
+      "track_functions": "all",
+      "auto_explain_min_duration": "1ms",
+      "instrumented": true,
+      "nested_inclusive_times_not_additive": true
+    }
+  }
+}

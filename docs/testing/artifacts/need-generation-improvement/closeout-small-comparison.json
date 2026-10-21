@@ -1,0 +1,242 @@
+{
+  "fixture_sha256": "a2df2f9df176db1e110b720446973ec6bc4240a5a23b2a73e38333cc5d20cd0d",
+  "samples": [
+    {
+      "pair": 1,
+      "build": "before",
+      "database": "atlas_closeout_small_before_1",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 571.652,
+      "max_ms": 571.652,
+      "min_ms": 169.192,
+      "median_ms": 189.738,
+      "samples_ms": [169.192, 189.738, 571.652],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 1,
+      "build": "after",
+      "database": "atlas_closeout_small_after_1",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 514.805,
+      "max_ms": 514.805,
+      "min_ms": 168.208,
+      "median_ms": 189.076,
+      "samples_ms": [168.208, 189.076, 514.805],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 2,
+      "build": "after",
+      "database": "atlas_closeout_small_after_2",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 552.108,
+      "max_ms": 552.108,
+      "min_ms": 168.201,
+      "median_ms": 197.314,
+      "samples_ms": [168.201, 197.314, 552.108],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 2,
+      "build": "before",
+      "database": "atlas_closeout_small_before_2",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 605.621,
+      "max_ms": 605.621,
+      "min_ms": 172.266,
+      "median_ms": 187.852,
+      "samples_ms": [172.266, 187.852, 605.621],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 3,
+      "build": "before",
+      "database": "atlas_closeout_small_before_3",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 558.426,
+      "max_ms": 558.426,
+      "min_ms": 165.11,
+      "median_ms": 210.363,
+      "samples_ms": [165.11, 210.363, 558.426],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 3,
+      "build": "after",
+      "database": "atlas_closeout_small_after_3",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 537.529,
+      "max_ms": 537.529,
+      "min_ms": 165.201,
+      "median_ms": 189.913,
+      "samples_ms": [165.201, 189.913, 537.529],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 4,
+      "build": "after",
+      "database": "atlas_closeout_small_after_4",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 569.336,
+      "max_ms": 569.336,
+      "min_ms": 174.007,
+      "median_ms": 195.178,
+      "samples_ms": [174.007, 195.178, 569.336],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 4,
+      "build": "before",
+      "database": "atlas_closeout_small_before_4",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 555.314,
+      "max_ms": 555.314,
+      "min_ms": 167.786,
+      "median_ms": 195.361,
+      "samples_ms": [167.786, 195.361, 555.314],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 5,
+      "build": "before",
+      "database": "atlas_closeout_small_before_5",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 559.519,
+      "max_ms": 559.519,
+      "min_ms": 168.399,
+      "median_ms": 192.277,
+      "samples_ms": [168.399, 192.277, 559.519],
+      "sample_count": 3,
+      "timings_observational": true
+    },
+    {
+      "pair": 5,
+      "build": "after",
+      "database": "atlas_closeout_small_after_5",
+      "success": true,
+      "assertions": 28,
+      "counts": {
+        "runs": 3,
+        "schools": 2,
+        "school_types": 2,
+        "completed_generation_receipts": 3
+      },
+      "first_generation_ms": 527.407,
+      "max_ms": 527.407,
+      "min_ms": 167.486,
+      "median_ms": 187.637,
+      "samples_ms": [167.486, 187.637, 527.407],
+      "sample_count": 3,
+      "timings_observational": true
+    }
+  ],
+  "description": "Synthetic two-School/two-type 19-line shape, not a reconstruction of the earlier hosted date.",
+  "shape": {
+    "schools": 2,
+    "school_types": 2,
+    "positive_groups": 19,
+    "groups_by_school": [9, 10],
+    "atomic_contributions": 32,
+    "daily_dishes_per_school": 4,
+    "recipe_lines_per_dish": 4,
+    "fresh_daily_generations_per_clone": 3,
+    "students": 95,
+    "teachers": 5,
+    "pantry": "explicit no additions"
+  },
+  "method": {
+    "fresh_clones_per_build": 5,
+    "alternating_build_order": true,
+    "jit": "off",
+    "runtime_gate": null,
+    "all_failed_or_slow_samples_retained": true,
+    "no_other_local_test_workload_running": true,
+    "baseline_function_exactly_verified": true
+  },
+  "summary": {
+    "before": {
+      "count": 15,
+      "median_ms": 192.277,
+      "min_ms": 165.11,
+      "max_ms": 605.621
+    },
+    "after": {
+      "count": 15,
+      "median_ms": 189.913,
+      "min_ms": 165.201,
+      "max_ms": 569.336
+    }
+  }
+}

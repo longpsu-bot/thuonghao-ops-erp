@@ -5,6 +5,8 @@ import {
   attendanceReviewChanges,
   menuReviewChanges,
   viDate,
+  planningIssueMessage,
+  type PlanningIssue,
   type MenuLine,
   type AttendanceLine,
 } from "../bridges/planning";
@@ -65,6 +67,13 @@ export function PlanningSourceReview({
         : [],
     ) ?? [];
   const nextChain = correction[0];
+  const attendanceWarnings = new Map<string, PlanningIssue[]>();
+  if (c.job === "attendance")
+    for (const warning of c.preview.issues.warnings) {
+      const group = attendanceWarnings.get(warning.code) ?? [];
+      group.push(warning);
+      attendanceWarnings.set(warning.code, group);
+    }
   return (
     <Box
       as="aside"
@@ -151,11 +160,38 @@ export function PlanningSourceReview({
             {c.job === "pantry" ? pantryIssueCopy(i) : i.message}
           </Text>
         ))}
-        {c.preview.issues.warnings.map((i, n) => (
-          <Text key={n} py="xs" textStyle="helper" color="status.warning">
-            {c.job === "pantry" ? pantryIssueCopy(i) : i.message}
-          </Text>
-        ))}
+        {c.job === "attendance" ? (
+          <Box role="group" aria-label="Cảnh báo sĩ số" py="sm">
+            {[...attendanceWarnings].map(([code, warnings]) => (
+              <Box as="details" key={code} py="xs">
+                <Text
+                  as="summary"
+                  textStyle="helper"
+                  color="status.warning"
+                  cursor="var(--atlas-disclosure-cursor, pointer)"
+                >
+                  {planningIssueMessage(warnings[0]!)} ({warnings.length} cảnh
+                  báo)
+                </Text>
+                {warnings.map((warning, index) => (
+                  <Box key={index} ps="sm" py="xs" textStyle="helper">
+                    <Text>
+                      {warning.source_row_reference ?? "Chưa có vị trí nguồn"} ·{" "}
+                      {warning.code}
+                    </Text>
+                    <Text color="fg.muted">{warning.message}</Text>
+                  </Box>
+                ))}
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          c.preview.issues.warnings.map((i, n) => (
+            <Text key={n} py="xs" textStyle="helper" color="status.warning">
+              {c.job === "pantry" ? pantryIssueCopy(i) : i.message}
+            </Text>
+          ))
+        )}
         {c.impact?.date_impacts.map((d) => (
           <Text key={d.service_date} py="sm" textStyle="helper">
             {viDate(d.service_date)} · {d.operator_message}

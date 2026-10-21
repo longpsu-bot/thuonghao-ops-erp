@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import type { Node } from "pdfmake/interfaces";
 import { describe, expect, it } from "vitest";
 import { createReviewSchoolDispatchDocument } from "./reviewSchoolDispatchReleaseApi";
 import {
@@ -9,6 +10,104 @@ import {
 } from "./schoolDispatchReleaseExports";
 
 describe("School dispatch release exports", () => {
+  it("prints one address prefix in PDF and Excel without changing the captured address", async () => {
+    const document = createReviewSchoolDispatchDocument("RELEASED");
+    document.document_issuer_address = "ĐC: Địa chỉ đã phát hành";
+    const captured = JSON.stringify(document);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await createSchoolDispatchXlsx(document));
+    expect(workbook.worksheets[0]!.getCell("B2").text).toBe(
+      "ĐC: Địa chỉ đã phát hành",
+    );
+    const definition = JSON.stringify(
+      buildSchoolDispatchPdfDefinition(document),
+    );
+    expect(definition).toContain("ĐC: Địa chỉ đã phát hành");
+    expect(definition).not.toContain("ĐC: ĐC:");
+    expect(JSON.stringify(document)).toBe(captured);
+  });
+  it("gives the unwrapped inspection header its measured Roboto15 width", () => {
+    const definition = buildSchoolDispatchPdfDefinition(
+      createReviewSchoolDispatchDocument("RELEASED"),
+    );
+    const table = (
+      definition.content as { table?: { widths: (string | number)[] } }[]
+    ).find((node) => node.table)!.table!;
+    // The bundled bold Roboto15 measures Không đạt at 69.214pt, before padding.
+    expect(table.widths[5]).toBeGreaterThanOrEqual(70);
+    expect(definition.defaultStyle?.fontSize).toBe(15);
+  });
+  it.each([1, 2, 12])(
+    "moves a %i-line document's final table when signatures would be orphaned, while allowing tall rows to paginate",
+    (count) => {
+      const document = createReviewSchoolDispatchDocument("RELEASED");
+      document.lines = Array.from({ length: count }, (_, index) => ({
+        ...document.lines[0]!,
+        ingredient_name: `Thực phẩm ${index + 1}`,
+      }));
+      const definition = buildSchoolDispatchPdfDefinition(document);
+      const content = definition.content as {
+        id?: string;
+        table?: { dontBreakRows?: boolean };
+        unbreakable?: boolean;
+      }[];
+      const tail = content.filter((node) => node.table).at(-1)!;
+      const signatures = content.find(
+        (node) => node.id === "dispatch-signatures-end",
+      )!;
+      const positioned = (node: object, pages: number[]) =>
+        ({ ...node, pageNumbers: pages }) as Node;
+      expect(tail.unbreakable).not.toBe(true);
+      expect(tail.table?.dontBreakRows).not.toBe(true);
+      expect(signatures).toBeDefined();
+      expect(
+        definition.pageBreakBefore?.(
+          positioned(tail, [1]),
+          [],
+          [positioned(signatures, [2])],
+          [],
+        ),
+      ).toBe(true);
+      expect(
+        definition.pageBreakBefore?.(
+          positioned(tail, [1]),
+          [positioned(signatures, [1])],
+          [],
+          [],
+        ),
+      ).toBe(false);
+      expect(
+        definition.pageBreakBefore?.(
+          positioned(tail, [1, 2]),
+          [],
+          [positioned(signatures, [2])],
+          [],
+        ),
+      ).toBe(false);
+      expect(JSON.stringify(content).match(/Thực phẩm \d+/g)).toHaveLength(
+        count,
+      );
+    },
+  );
+  it("gives pdfmake independent continuation headers so its row-span layout cannot erase them", () => {
+    const document = createReviewSchoolDispatchDocument("RELEASED");
+    document.lines = Array.from({ length: 12 }, () => ({
+      ...document.lines[0]!,
+    }));
+    const content = buildSchoolDispatchPdfDefinition(document).content as {
+      table?: { widths: unknown; body: unknown[][] };
+      stack?: { table?: { widths: unknown; body: unknown[][] } }[];
+    }[];
+    const first = content.find((node) => node.table)!.table!;
+    const last = content.filter((node) => node.table).at(-1)!.table!;
+    expect(last.widths).not.toBe(first.widths);
+    for (let row = 0; row < 2; row++) {
+      expect(last.body[row]).not.toBe(first.body[row]);
+      for (let cell = 0; cell < 8; cell++)
+        if (typeof first.body[row]![cell] === "object")
+          expect(last.body[row]![cell]).not.toBe(first.body[row]![cell]);
+    }
+  });
   it("prints the frozen human Unit name and preserves legacy code-only history", () => {
     const document = createReviewSchoolDispatchDocument("RELEASED");
     document.lines[0]!.unit_code = "v1-unit-count";

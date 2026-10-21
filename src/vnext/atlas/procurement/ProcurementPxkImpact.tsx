@@ -22,11 +22,23 @@ export function ProcurementPxkImpact({
   disabled,
   onOpenPxk,
 }: ProcurementPxkImpactProps) {
-  const [read, setRead] = useState<{
+  const [storedRead, setRead] = useState<{
+    api: SchoolDispatchReleaseApi;
+    authSubject: string | null;
+    order: SchoolCateringPurchaseOrder;
+    refresh: number;
     rows: SchoolDispatchWorkbenchRow[];
     error: boolean;
   } | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const read =
+    !disabled &&
+    storedRead?.api === api &&
+    storedRead.authSubject === authSubject &&
+    storedRead.order === order &&
+    storedRead.refresh === refresh
+      ? storedRead
+      : null;
   const scope = order.lines.flatMap((line) =>
     line.school_breakdown.map((school) => ({
       date: line.service_date,
@@ -41,6 +53,7 @@ export function ProcurementPxkImpact({
     let live = true;
     setRead(null);
     if (!authSubject || disabled || !issued || !schoolIds.length) return;
+    const readScope = { api, authSubject, order, refresh };
     void api
       .getWorkbench(
         schoolDispatchReleaseReadRequest(authSubject, crypto.randomUUID(), {
@@ -60,7 +73,7 @@ export function ProcurementPxkImpact({
           response.date_end !== order.service_date ||
           !Array.isArray(response.rows)
         ) {
-          setRead({ rows: [], error: true });
+          setRead({ ...readScope, rows: [], error: true });
           return;
         }
         const rows = (response.rows as SchoolDispatchWorkbenchRow[]).filter(
@@ -80,11 +93,11 @@ export function ProcurementPxkImpact({
               !Array.isArray(row.blockers),
           )
         )
-          setRead({ rows: [], error: true });
-        else setRead({ rows, error: false });
+          setRead({ ...readScope, rows: [], error: true });
+        else setRead({ ...readScope, rows, error: false });
       })
       .catch(() => {
-        if (live) setRead({ rows: [], error: true });
+        if (live) setRead({ ...readScope, rows: [], error: true });
       });
     return () => {
       live = false;
@@ -111,7 +124,11 @@ export function ProcurementPxkImpact({
           kiểm tra quyền và nguồn hiện tại.
         </Text>
       ) : !read ? (
-        <Text role="status">Đang kiểm tra PXK…</Text>
+        <Text role="status">
+          {disabled
+            ? "Chờ thao tác đơn mua hoàn tất để kiểm tra PXK."
+            : "Đang kiểm tra PXK…"}
+        </Text>
       ) : read.rows.length ? (
         read.rows.map((row) => (
           <Box

@@ -1,5 +1,14 @@
 # Atlas Autopilot — Active Task
 
+**21 October remaining-work closeout:** the Owner requested completion. Bounded
+Attendance-warning, PO-impact read-identity and export-presentation repairs are
+implemented on `fix/journey-closeout` from `457f8135`. Independent source review
+is clear after its findings are repaired; focused/static checks and rendered
+edge cases pass. Additional 19-line matched samples and all phase/function
+measurements are recorded in the [journey closeout](../testing/journey-closeout-2026-10-21.md). Exact-source CI and guarded release
+remain pending. No new business writes, Recipe substitution, hosted settings,
+OPSv1/Retool writes or architecture expansion.
+
 **21 October completion:** PR 426 is merged as `484c34c3`; exact-main Frontend
 and executed Full Integration pass; guarded deployment `39591313934` passes with
 133 migrations. The fresh 23 October hosted original → correction → reallocation

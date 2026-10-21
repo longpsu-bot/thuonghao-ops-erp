@@ -12,6 +12,12 @@ deployment and the fresh hosted original/correction/replacement journey **PASS**
 The bounded improvement cycle is complete; remaining presentation and resource
 policy work is explicit below.
 
+The Owner's subsequent request to complete remaining work is tracked in the
+[journey closeout](journey-closeout-2026-10-21.md). It supersedes the deferred
+presentation and measurement items below; the historical observations remain
+intact. Exact-source release and actual-app evidence for that follow-up are
+recorded separately.
+
 ## Bounded changes
 
 Generation completion, exact quantities, receipts, source membership, currentness,

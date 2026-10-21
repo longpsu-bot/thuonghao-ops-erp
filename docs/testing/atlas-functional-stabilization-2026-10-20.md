@@ -2,6 +2,16 @@
 
 Owner authority: this chat authorizes bounded repairs, focused regressions, independent review, exact-revision GitHub certification, merge and guarded Staging deployment. This is the sole current campaign ledger. Earlier detailed plans and failed-attempt chronology remain in its Git history. ARCH-002 / OPS_SYSTEM_MAP v1.0, approved business/security contracts and backend-owned outcomes remain authoritative.
 
+## Remaining-work closeout — 21 October
+
+The Owner requested completion. The bounded [closeout report](journey-closeout-2026-10-21.md)
+records fixes for Attendance warning presentation, PO-impact stale paint and
+PXK/PO exports, with independent review, actual edge-case PDF rendering and
+additional phase/matched-shape measurements. Exact-source CI, guarded release and
+actual-app recheck remain pending. No domain, API, database, dependency or hosted
+setting change is included. Recipe3529 and hosting-resource uncertainty remain
+explicit business/resource decisions.
+
 ## Need generation and Unit labels — current 21 October improvement
 
 Owner approved [the bounded improvement plan](../superpowers/plans/2026-10-21-need-generation-unit-label-improvements.md)
