@@ -1,5 +1,17 @@
 # Atlas Autopilot — Active Task
 
+**21 October completion:** PR 426 is merged as `484c34c3`; exact-main Frontend
+and executed Full Integration pass; guarded deployment `39591313934` passes with
+133 migrations. The fresh 23 October hosted original → correction → reallocation
+→ replacement PO → successor dispatch journey passes for both Schools, all 22
+detail deltas zero. Need completes on its first attempt at 4.094 s upstream /
+4.270 s origin; no arbitrary latency gate or hosted percentage claim. Captured
+Hũ/Quả/Cái labels are visible. All 638 history/lineage and 117 export-data checks
+pass. See [evidence and remaining work](../testing/need-generation-unit-label-improvements-2026-10-21.md)
+for presentation minors, an unverified PO impact-loading observation, Recipe3529
+and the disclosed prior Staging timeout0 lease. No hosted setting change,
+OPSv1/Retool write, real Supplier message or physical shipment.
+
 **21 October Need runtime / Unit-label authorization:** the Owner approved and
 requested execution of [the bounded improvement plan](../superpowers/plans/2026-10-21-need-generation-unit-label-improvements.md)
 in the verified canonical `E:/Project/OPS ERP/thuonghao-ops-erp` checkout. This

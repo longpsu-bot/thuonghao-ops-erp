@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Owner approved execution on 21 October. Bounded implementation and focused validation are in progress; exact-source CI, deployment and the fresh hosted journey remain release gates. See [execution evidence](../../testing/need-generation-unit-label-improvements-2026-10-21.md).
+**Status:** Bounded cycle completed on 21 October: PR426/main `484c34c3`, exact-main Frontend/executed Full, guarded deployment, disposable and actual hosted original/correction/replacement journeys PASS. Two broader measurement follow-ups remain explicitly unchecked below; no universal latency or hosting-cause claim. See [execution evidence](../../testing/need-generation-unit-label-improvements-2026-10-21.md).
 
 **Goal:** Reduce avoidable Need generation work, make operational Unit labels readable, and preserve reliable completion under variable hosted conditions.
 
@@ -92,9 +92,9 @@ Supabase has documented platform request constraints. If a representative operat
 
 **Interfaces:** Existing authenticated `atlas_api.execute_need_generation(jsonb) → jsonb`, RMVP-04.v3. No public request field or business response change.
 
-- [ ] Preserve the original 14.630 s baseline and both failed attempts. Keep raw sample count, workload geometry, history depth, source SHA, migration set, environment, role/function settings, start time and business outcome together.
-- [ ] Remove the local generation assertion `elapsed_ms < 8000`, its eight-second statement cutoff and the four-second target flag from the generation performance fixture. Retain all quantity, membership, currentness, replay, immutable-history and security assertions. Do not disable the suite or globally alter test timeouts.
-- [ ] Replace the removed speed assertion with complete receipt/run/source/quantity assertions for every fresh sample. Keep finite nonnegative elapsed-time validation and all timings as diagnostics. CI's hang watchdog must be separately disclosed and must allow the complete semantic test to finish.
+- [x] Preserve the original 14.630 s baseline and both failed attempts. Keep raw sample count, workload geometry, history depth, source SHA, migration set, environment, role/function settings, start time and business outcome together.
+- [x] Remove the local generation assertion `elapsed_ms < 8000`, its eight-second statement cutoff and the four-second target flag from the generation performance fixture. Retain all quantity, membership, currentness, replay, immutable-history and security assertions. Do not disable the suite or globally alter test timeouts.
+- [x] Replace the removed speed assertion with complete receipt/run/source/quantity assertions for every fresh sample. Keep finite nonnegative elapsed-time validation and all timings as diagnostics. CI's hang watchdog must be separately disclosed and must allow the complete semantic test to finish.
 - [ ] Use the existing transaction-local profiler around the public authenticated command. Capture phase boundaries for preflight/source selection, generation/effective composition, validation/release, Confirmed Need materialization, deferred constraint flushes and authoritative readback. Measure trigger self-time and call counts; do not add inclusive nested times together as if independent.
 
 Existing profiler pattern:
@@ -108,13 +108,15 @@ from pg_stat_xact_user_functions;
 -- Read transaction-local deltas before the fixture rolls back.
 ```
 
-- [ ] Keep phase instrumentation in a disposable database or diagnostic copy. If function statistics miss inlined SQL, inspect nested statement plans there. Never EXPLAIN ANALYZE a hosted business-writing command as a read-only probe.
+- [x] Keep phase instrumentation in a disposable database or diagnostic copy. If function statistics miss inlined SQL, inspect nested statement plans there. Never EXPLAIN ANALYZE a hosted business-writing command as a read-only probe.
 - [ ] Compare the existing 19-line/two-School shape, the established 304-contribution/248-line scale fixture and an existing retained-history fixture. Include zero-portion Schools, two School types, direct additions, effective composition changes and regeneration. Record actual cardinalities; do not substitute a tiny empty database.
-- [ ] For each before/after comparison, take five fresh equivalent samples on the same environment, alternating builds where practical. Preserve first-observed and repeated samples separately; do not pretend an idempotent replay measures fresh generation or a warm sample is cold. Report all values and median/range; five samples do not establish p95.
-- [ ] Correlate hosted timestamps with available CPU, memory, I/O, temporary-file, connection and lock-wait evidence. Record missing metrics as unknown. Do not infer compute tier or blame hosting from role settings.
-- [ ] Publish a ranked phase-cost report and select one bounded root cause for B. If no code inefficiency is established, record that result and move the decision to measured resource capacity.
+- [x] For each before/after comparison, take five fresh equivalent samples on the same environment, alternating builds where practical. Preserve first-observed and repeated samples separately; do not pretend an idempotent replay measures fresh generation or a warm sample is cold. Report all values and median/range; five samples do not establish p95.
+- [x] Correlate hosted timestamps with available CPU, memory, I/O, temporary-file, connection and lock-wait evidence. Record missing metrics as unknown. Do not infer compute tier or blame hosting from role settings.
+- [x] Publish a ranked phase-cost report and select one bounded root cause for B. If no code inefficiency is established, record that result and move the decision to measured resource capacity.
 
 **Acceptance:** All original semantic checks still execute and pass; slow valid completion is recorded; samples distinguish DB work from service/browser time; diagnosis names evidence and uncertainty. No hosted business write or permanent profiling configuration is required for diagnosis.
+
+**Execution limits:** The dominant initial Confirmed Need INSERT is profiled with actual nested plans, source scans and retained-history bounds. Complete per-phase/trigger cost attribution and five matched samples for the older 19-line shape were not completed; those two broader measurement steps stay unchecked. Existing 19-line hosted history, the matched 248-line fixture, effective-composition/zero-demand semantic suites, a three-day 77-line disposable journey and the fresh 22-line hosted journey are separately evidenced. Available resource correlation is unknown, not a hosting-cause finding.
 
 ## Batch B — reduce proven generation work
 
@@ -129,13 +131,13 @@ from pg_stat_xact_user_functions;
 
 **Interfaces:** Preserve the public signature/envelope, returned authoritative workbench, receipt identity and exact legacy compatibility.
 
-- [ ] Map every caller of the measured expensive function and every deferred trigger using it. Write a failing regression demonstrating the specific redundant work or query-plan defect alongside semantic parity.
-- [ ] Choose only the first proven cause from A: repeated source/fingerprint work; repeated exact-context effective composition; per-row validation rescanning the same evidence; an inappropriate query plan; or a measured missing index. These are hypotheses, not established findings.
-- [ ] Prefer existing statement-local materialization and targeted event-local checks. Reuse immutable input only within a phase where its assumptions remain valid. Revalidate across source/version/lock or write boundaries. Do not cache authority between requests, remove integrity checks or mark a mutable function immutable.
-- [ ] Keep the existing generic-plan choice unless paired evidence proves a better scoped alternative. It already addressed one historic fan-out issue; removing it is not an optimization by itself.
-- [ ] Verify exact semantic parity for quantities, ordered memberships, effective Recipe revisions, zero demand, policy versions, regeneration, receipts, stale rejection and concurrent source changes. Normalize only nondeterministic IDs/timestamps when comparing independent fixture copies; retain relationship and cardinality checks.
-- [ ] Compare the same fixtures before/after. Accept a performance claim only when reduced plans/scans/calls or I/O work and repeatable timing evidence support it. If elapsed changes are within hosting noise, report the structural reduction and label latency benefit unproven.
-- [ ] Review and ship this bounded fix before considering another. If the same approach fails twice, preserve the evidence and reconsider the root cause. A fixed eight-second or percentage target is not a reason for another rewrite.
+- [x] Map every caller of the measured expensive function and every deferred trigger using it. Write a failing regression demonstrating the specific redundant work or query-plan defect alongside semantic parity.
+- [x] Choose only the first proven cause from A: repeated source/fingerprint work; repeated exact-context effective composition; per-row validation rescanning the same evidence; an inappropriate query plan; or a measured missing index. These are hypotheses, not established findings.
+- [x] Prefer existing statement-local materialization and targeted event-local checks. Reuse immutable input only within a phase where its assumptions remain valid. Revalidate across source/version/lock or write boundaries. Do not cache authority between requests, remove integrity checks or mark a mutable function immutable.
+- [x] Keep the existing generic-plan choice unless paired evidence proves a better scoped alternative. It already addressed one historic fan-out issue; removing it is not an optimization by itself.
+- [x] Verify exact semantic parity for quantities, ordered memberships, effective Recipe revisions, zero demand, policy versions, regeneration, receipts, stale rejection and concurrent source changes. Normalize only nondeterministic IDs/timestamps when comparing independent fixture copies; retain relationship and cardinality checks.
+- [x] Compare the same fixtures before/after. Accept a performance claim only when reduced plans/scans/calls or I/O work and repeatable timing evidence support it. If elapsed changes are within hosting noise, report the structural reduction and label latency benefit unproven.
+- [x] Review and ship this bounded fix before considering another. If the same approach fails twice, preserve the evidence and reconsider the root cause. A fixed eight-second or percentage target is not a reason for another rewrite.
 
 **Acceptance:** Correct complete operation; demonstrably less avoidable work; no security/history/currentness regression. No requirement to finish under an invented number. A performance-only change without convincing benefit does not merge merely because it passes correctness.
 
@@ -167,14 +169,14 @@ export type SchoolFulfilmentQuantityTotal = {
 };
 ```
 
-- [ ] Add failing SQL/UI cases using a technical code with an actual captured name such as Gói, Hộp or Quả. Cover both summary and expanded detail; retain exact quantities.
-- [ ] Carry nullable unit_name through both the current context-aware and compatibility scope paths. For an existing issued PXK use its captured name; for a prospective scope with no PXK use the backend preview's explicit label. A legacy issued snapshot with no captured name stays unavailable/code-only. Do not fill it from today's Unit master or silently select a different document's label.
-- [ ] Carry that metadata through the comparison helper and grouped totals while grouping only by unit_id. Define descriptive label selection deterministically; do not use differing labels to split one Unit or equal labels to combine different Units.
-- [ ] Render through the existing pure Unit formatter. Normal codes such as kg remain readable; technical codes use the supplied name. Legacy missing metadata keeps the established truthful fallback. Keep technical identity in data and diagnostics.
-- [ ] Validate optional metadata as string/null/absent at the authority boundary; malformed values fail closed. Include the human label in existing local search without fetching a new catalogue.
-- [ ] Prove changing the current Unit master does not rename a released document. Test two distinct Unit IDs with the same human name, missing historical names, unchanged comparison precedence and no business writes/receipts from this read.
-- [ ] Verify current/legacy consumers and compact desktop/narrow layouts; keep keyboard selection/focus, exact decimal formatting and zero deltas.
-- [ ] Run focused reconciliation/formatter tests and SQL tests before normal required CI and review.
+- [x] Add failing SQL/UI cases using a technical code with an actual captured name such as Gói, Hộp or Quả. Cover both summary and expanded detail; retain exact quantities.
+- [x] Carry nullable unit_name through both the current context-aware and compatibility scope paths. For an existing issued PXK use its captured name; for a prospective scope with no PXK use the backend preview's explicit label. A legacy issued snapshot with no captured name stays unavailable/code-only. Do not fill it from today's Unit master or silently select a different document's label.
+- [x] Carry that metadata through the comparison helper and grouped totals while grouping only by unit_id. Define descriptive label selection deterministically; do not use differing labels to split one Unit or equal labels to combine different Units.
+- [x] Render through the existing pure Unit formatter. Normal codes such as kg remain readable; technical codes use the supplied name. Legacy missing metadata keeps the established truthful fallback. Keep technical identity in data and diagnostics.
+- [x] Validate optional metadata as string/null/absent at the authority boundary; malformed values fail closed. Include the human label in existing local search without fetching a new catalogue.
+- [x] Prove changing the current Unit master does not rename a released document. Test two distinct Unit IDs with the same human name, missing historical names, unchanged comparison precedence and no business writes/receipts from this read.
+- [x] Verify current/legacy consumers and compact desktop/narrow layouts; keep keyboard selection/focus, exact decimal formatting and zero deltas.
+- [x] Run focused reconciliation/formatter tests and SQL tests before normal required CI and review.
 
 **Acceptance:** The current hosted rehearsal's non-mass Units are human-readable; identities, totals, blockers and frozen documents remain unchanged. Historical absence is disclosed, not repaired by invention.
 
@@ -182,23 +184,25 @@ export type SchoolFulfilmentQuantityTotal = {
 
 **Inspect:** `src/vnext/atlas/planning-confirmed/useConfirmedNeedWorkbench.ts`, its tests, `ConfirmedNeedCommandFeedback.tsx`, `src/vnext/atlas/AtlasModuleExit.tsx`, related commit-freshness tests and the RPC transport in `src/modules/atlas/connection/atlasRpc.ts`.
 
-- [ ] Trace one operator action from request to committed readback. Label initial load, post-commit invalidation, contextual handoff and explicit refresh separately.
-- [ ] Remove a read only when two requests demonstrably share the same authority revision/scope and one is redundant. Preserve every necessary post-commit refresh, dirty draft and stale-result guard. Do not introduce a global cache or broad controller rewrite.
-- [ ] Test pending generation with a deliberately unresolved promise, then resolve it successfully. Repeat with an uncertain transport outcome. The button stays protected against duplicate submission; data is not shown as successful before authoritative readback.
-- [ ] If waiting feedback needs improvement, show truthful ongoing work and elapsed time in the existing surface. Do not fabricate phase percentages or replace a valid pending command with an error at eight seconds.
-- [ ] If CPU/I/O/connection evidence explains a substantial residual delay, prepare a capacity recommendation with observed limits, estimated cost and expected effect. A larger Supabase instance or region change is a separate Owner decision, not an automatic deployment.
-- [ ] Keep only the trace-supported changes; if the existing pending/recovery UI and read counts are correct, record PASS with no code change.
+- [x] Trace one operator action from request to committed readback. Label initial load, post-commit invalidation, contextual handoff and explicit refresh separately.
+- [x] Remove a read only when two requests demonstrably share the same authority revision/scope and one is redundant. Preserve every necessary post-commit refresh, dirty draft and stale-result guard. Do not introduce a global cache or broad controller rewrite.
+- [x] Test pending generation with a deliberately unresolved promise, then resolve it successfully. Repeat with an uncertain transport outcome. The button stays protected against duplicate submission; data is not shown as successful before authoritative readback.
+- [x] If waiting feedback needs improvement, show truthful ongoing work and elapsed time in the existing surface. Do not fabricate phase percentages or replace a valid pending command with an error at eight seconds.
+- [x] If CPU/I/O/connection evidence explains a substantial residual delay, prepare a capacity recommendation with observed limits, estimated cost and expected effect. A larger Supabase instance or region change is a separate Owner decision, not an automatic deployment.
+- [x] Keep only the trace-supported changes; if the existing pending/recovery UI and read counts are correct, record PASS with no code change.
+
+**Execution disposition:** Existing pending/UNKNOWN recovery and duplicate protection pass without a controller change. No read is removed without evidence of redundancy. No hosting-capacity recommendation is made without correlated resource metrics; both conditional changes are deliberately unnecessary for this bounded cycle.
 
 ## Batch E — release and prove the complete result
 
-- [ ] Use a latest-main bounded branch for each independent repair. Run focused tests during development; normal required Frontend CI and actually executed Supabase integration, independent review and guarded exact-revision Staging deployment remain release gates.
-- [ ] Replay the full original-and-correction journey in a disposable environment, then one explicitly labeled hosted rehearsal at an agreed fresh scope. Do not regenerate or overwrite the already released 21 October evidence to obtain timings.
-- [ ] Cover the two School types and a representative full day. Generate/confirm Need, explicitly allocate, Prepare/release PO, issue dispatch, correct one quantity with reason, reallocate, create/release replacement PO and issue both successor dispatches.
-- [ ] Require zero reconciliation deltas, correct predecessor links, one command outcome per intent and unchanged original document contents/pre-existing history.
-- [ ] Repeat uncertain-outcome recovery and a concurrent source-change rejection in the disposable environment. Download/inspect fresh PO/PXK exports after correction; verify human labels and frozen metadata.
-- [ ] Publish the before/after samples and exact source/environment settings. Separate correctness PASS from measured improvement or unproven hosting variance. Do not rerun a successful certification solely to obtain a faster sample.
-- [ ] Resolve the temporary role-wide timeout lease deliberately after the real authenticated path proves the replacement policy. If role-wide 0 must remain for continued functional testing, disclose its scope and remaining resource exposure; do not restore 8s solely to satisfy an old target.
-- [ ] Update the stabilization ledger with current evidence and remaining work.
+- [x] Use a latest-main bounded branch for each independent repair. Run focused tests during development; normal required Frontend CI and actually executed Supabase integration, independent review and guarded exact-revision Staging deployment remain release gates.
+- [x] Replay the full original-and-correction journey in a disposable environment, then one explicitly labeled hosted rehearsal at an agreed fresh scope. Do not regenerate or overwrite the already released 21 October evidence to obtain timings.
+- [x] Cover the two School types and a representative full day. Generate/confirm Need, explicitly allocate, Prepare/release PO, issue dispatch, correct one quantity with reason, reallocate, create/release replacement PO and issue both successor dispatches.
+- [x] Require zero reconciliation deltas, correct predecessor links, one command outcome per intent and unchanged original document contents/pre-existing history.
+- [x] Repeat uncertain-outcome recovery and a concurrent source-change rejection in the disposable environment. Download/inspect fresh PO/PXK exports after correction; verify human labels and frozen metadata.
+- [x] Publish the before/after samples and exact source/environment settings. Separate correctness PASS from measured improvement or unproven hosting variance. Do not rerun a successful certification solely to obtain a faster sample.
+- [x] Resolve the temporary role-wide timeout lease deliberately after the real authenticated path proves the replacement policy. If role-wide 0 must remain for continued functional testing, disclose its scope and remaining resource exposure; do not restore 8s solely to satisfy an old target.
+- [x] Update the stabilization ledger with current evidence and remaining work.
 
 ## Completion and exclusions
 
