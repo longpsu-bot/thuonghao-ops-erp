@@ -155,3 +155,12 @@ prior rehearsal lease. This change does not alter it; anon 3s, authenticator
 statement/lock 8s and existing function protections remain distinct. Decide the
 longer-term operational resource policy using measured outcomes, not a forced
 eight-second restoration.
+
+Executed Full Integration `39583917118` on `037ca347` passes, including the
+connected reconciliation oracle. Frontend `39583917194` passes 3,181 assertions
+(with two existing skips) but fails an unhandled Mantine transition callback
+after jsdom teardown in the compatibility reconciliation test. Local unmodified
+focused execution did not reproduce the race. Test-scoped controlled timers now
+settle transitions inside React act before cleanup, assert no remaining timers,
+and restore real timers in finally. Focused 16 tests across two files pass;
+product behavior and assertions are unchanged. Fresh normal CI remains required.
