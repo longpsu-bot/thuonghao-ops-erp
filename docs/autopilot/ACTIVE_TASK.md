@@ -1,13 +1,17 @@
 # Atlas Autopilot — Active Task
 
-**21 October remaining-work closeout:** the Owner requested completion. Bounded
-Attendance-warning, PO-impact read-identity and export-presentation repairs are
-implemented on `fix/journey-closeout` from `457f8135`. Independent source review
-is clear after its findings are repaired; focused/static checks and rendered
-edge cases pass. Additional 19-line matched samples and all phase/function
-measurements are recorded in the [journey closeout](../testing/journey-closeout-2026-10-21.md). Exact-source CI and guarded release
-remain pending. No new business writes, Recipe substitution, hosted settings,
-OPSv1/Retool writes or architecture expansion.
+**22 October closeout checkpoint:** the Need/Unit improvements and full hosted
+original/correction/replacement journey pass. Attendance, PO-impact and export
+repairs are reviewed and merged through PR428/429; their actual app checks pass
+apart from a final primary-PXK PDF split-tail defect found during visual QA.
+PR430 fixes that defect as `43f4a2b1`; exact-source Frontend/executed Full,
+main Frontend and guarded Staging deployment pass. Publication is **BLOCKED** by
+three Cloudflare package-manager metadata 503 failures before compilation; the
+app still runs `37390ede`. A same-version verified-checksum setting remedy is
+prepared and awaits explicit Owner approval. The last two actual PDF downloads
+remain pending. The [closeout report](../testing/journey-closeout-2026-10-21.md)
+records all runtime/phase measurements, failures and exact evidence. No business
+facts, Recipe substitutions, OPSv1/Retool writes or architecture expansion.
 
 **21 October completion:** PR 426 is merged as `484c34c3`; exact-main Frontend
 and executed Full Integration pass; guarded deployment `39591313934` passes with

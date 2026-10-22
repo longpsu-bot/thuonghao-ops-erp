@@ -1,16 +1,20 @@
-# Atlas functional stabilization — 20–21 October 2026
+# Atlas functional stabilization — 20–22 October 2026
 
 Owner authority: this chat authorizes bounded repairs, focused regressions, independent review, exact-revision GitHub certification, merge and guarded Staging deployment. This is the sole current campaign ledger. Earlier detailed plans and failed-attempt chronology remain in its Git history. ARCH-002 / OPS_SYSTEM_MAP v1.0, approved business/security contracts and backend-owned outcomes remain authoritative.
 
-## Remaining-work closeout — 21 October
+## Remaining-work checkpoint — 22 October
 
-The Owner requested completion. The bounded [closeout report](journey-closeout-2026-10-21.md)
-records fixes for Attendance warning presentation, PO-impact stale paint and
-PXK/PO exports, with independent review, actual edge-case PDF rendering and
-additional phase/matched-shape measurements. Exact-source CI, guarded release and
-actual-app recheck remain pending. No domain, API, database, dependency or hosted
-setting change is included. Recipe3529 and hosting-resource uncertainty remain
-explicit business/resource decisions.
+The [closeout report](journey-closeout-2026-10-21.md) records the reviewed
+Attendance, PO-impact and export repairs, matched 19-line samples and complete
+phase/function measurements. Exact-source Frontend/executed Full, main Frontend
+and guarded release pass through PR430/`43f4a2b1`. Actual app checks preserve
+22 exact zero deltas, captured Units and frozen documents; 117 fresh export-data
+assertions and 14 native Excel pages pass. Visual QA finds a final primary-PXK
+PDF split-tail defect and its bounded fix is certified/merged, but publication
+is **BLOCKED** by Cloudflare's repeated pnpm metadata 503 failure. The app still
+runs `37390ede`; the final two published PDF checks remain pending. A verified
+same-version checksum setting remedy awaits explicit Owner approval. Recipe3529,
+hosting-resource correlation and the disclosed timeout0 lease remain explicit.
 
 ## Need generation and Unit labels — current 21 October improvement
 
@@ -168,7 +172,7 @@ Merged-frontend read-only sweep (Cloudflare Git publication, before final backen
 - **Exact integration:** reviewed source87b65720, PR checkoutf12740f and merged main736fe37 share treeb5431efb7db6bb4c99411bc5c57ae76cc2a7ff8b. Source FE39493727795/Full39493727572 and merged-main FE39495774035/Full39495774029 PASS. Required independent Product/Architecture/source/security review is clear. No CI bypass, timeout increase, suppressed error or new skipped test.
 - **Fresh final isolated sweep:** actual source736fe37 Planning artifact12299245310 and Procurement12298746863 downloaded to `.git/atlas-main-736-planning-green` / `.git/atlas-main-736-connected-green`. Complete selected journeys PASS:248 Need rows/304 source memberships/one generation receipt,249 decisions/two Save receipts; seven master/source commands and whole-week correction; Adjustment Create/Correct/Cancel with dated2.5/3.75/2.5; one first Prepare/two Drafts; original PO/PXK release/files/reconciliation; dirty range Cancel/focus; Allocation successor/two replacement PO/two PXK successors with complete frozen predecessors retained.
 - **Guarded deployment:** [39498081747](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/39498081747) PASS for exact736fe37789de7b7d5b7e8fc57c7c16a97b1b9783. Independent read-only migration observation127/20261020170700 matches repository127. Frontend build metadata confirms exact SHA/clean connected entry/correct Staging origin after the guard.
-- **Fresh post-guard actual UI:** hard reload preserves authentication and starts the approved fresh current-day Menu. Reopening populated13 October reads264 confirmed Need lines/AN PHÚ84kg; actual Need→Allocation retains date13 and Thơm84/3/18/4Trái. Allocation→Orders, native12–13 range reads17 POs/14 eligible Drafts; ANH KIỆT search gives1 while publish-all14 remains enabled;512 Gói and715/520/520 Hộp display correctly. Fresh all-status/all-School reconciliation12–13 returns exactly42 rows without timeout and explains existing business blockers. Returning to Orders preserves date/search/selection. The verified publish-all screen is left open; no hosted command is submitted.
+- **Fresh post-guard actual UI:** hard reload preserves authentication and starts the approved fresh current-day Menu. Reopening populated13 October reads264 confirmed Need lines/AN PHÚ84kg; actual Need→Allocation retains date13 and Thơm84/3/18/4Trái. Allocation→Orders, native12–13 range reads17 POs/14 eligible Drafts; ANH KIỆT search gives1 while publish-all 14 remains enabled;512 Gói and715/520/520 Hộp display correctly. Fresh all-status/all-School reconciliation12–13 returns exactly42 rows without timeout and explains existing business blockers. Returning to Orders preserves date/search/selection. The verified publish-all screen is left open; no hosted command is submitted.
 - **Preservation and rollback:** OPS v1/Retool/synced sources, unrelated original branch/stash and Docker data remain untouched. Default/master-rehearsal/task stacks stay stopped, K3 stays running. Original official document snapshots are retained. Final PR421 has no schema/grant/budget/dependency change; its UI rollback is a reviewed source revert through the same required checks/guard. Earlier database repairs are versioned migrations with nullable future metadata, no historical backfill.
 - **Record boundary:** this closeout branch changes only this ledger after source736fe37 was certified/deployed. The production revision remains pinned to that certified source; final run/deployment links are also recorded on merged PR421 rather than deploying a new application solely for journal metadata. Remaining blockers and untested variants are listed above; no broader completion claim is made.
 

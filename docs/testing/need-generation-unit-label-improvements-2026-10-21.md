@@ -13,10 +13,13 @@ The bounded improvement cycle is complete; remaining presentation and resource
 policy work is explicit below.
 
 The Owner's subsequent request to complete remaining work is tracked in the
-[journey closeout](journey-closeout-2026-10-21.md). It supersedes the deferred
-presentation and measurement items below; the historical observations remain
-intact. Exact-source release and actual-app evidence for that follow-up are
-recorded separately.
+[journey closeout](journey-closeout-2026-10-21.md). It completes the additional
+19-line/phase measurements and the reviewed presentation/PO-impact repairs;
+historical observations below remain dated evidence. The final PDF split-tail
+amendment is certified, merged and guarded as PR430/`43f4a2b1`, but Cloudflare's
+package-manager metadata 503 blocks frontend publication. A verified same-version
+checksum setting remedy awaits explicit approval; final published PDF rechecks
+remain pending. The earlier complete hosted command journey still passes.
 
 ## Bounded changes
 

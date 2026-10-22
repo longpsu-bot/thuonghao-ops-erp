@@ -1,13 +1,16 @@
 # Atlas Autopilot Mandate
 
-**21 October remaining-work closeout:** the Owner requested completion. Bounded
-Attendance-warning, PO-impact read-identity and export-presentation repairs are
-implemented on `fix/journey-closeout` from `457f8135`. Independent source review
-is clear after its findings are repaired; focused/static checks and rendered
-edge cases pass. Additional 19-line matched samples and all phase/function
-measurements are recorded in the [journey closeout](../testing/journey-closeout-2026-10-21.md). Exact-source CI and guarded release
-remain pending. No new business writes, Recipe substitution, hosted settings,
-OPSv1/Retool writes or architecture expansion.
+**22 October remaining-work checkpoint:** implementation, independent review,
+exact-source Frontend/executed Full and guarded Staging release pass through
+PR430/`43f4a2b1`. Actual app reconciliation has two matched Schools and all 22
+detail deltas zero; eight downloads pass 117 exact-data checks and all 14 native
+Excel pages are reviewed. The final PDF split-tail amendment is not yet live:
+Cloudflare publication is **BLOCKED** by repeated package-manager metadata 503
+errors. A verified same-version checksum pin for its existing build setting
+awaits explicit Owner approval; final actual PDF rechecks remain pending.
+See the [source-qualified closeout](../testing/journey-closeout-2026-10-21.md).
+No automatic new business journey, Recipe substitution, Warehouse work,
+OPSv1/Retool writes, dependency upgrade or speculative architecture change.
 
 **21 October bounded cycle completed:** reviewed PR 426/main `484c34c3`, exact-main
 Frontend/executed Full and guarded Staging deployment pass. Both original and
