@@ -151,6 +151,7 @@ export function catalogVerificationSql(
   const needGenerationApiProconfig = sqlArray([
     'search_path=""',
     "plan_cache_mode=force_generic_plan",
+    "statement_timeout=0",
   ]);
   const purchasePreparationApiProconfig = sqlArray([
     'search_path=""',
@@ -210,7 +211,7 @@ begin
           when p.proname = 'execute_need_generation'
             and pg_get_function_identity_arguments(p.oid) = 'request jsonb'
           then (
-            cardinality(p.proconfig) = 2
+            cardinality(p.proconfig) = 3
             and p.proconfig @> ${needGenerationApiProconfig}
             and p.proconfig <@ ${needGenerationApiProconfig}
           ) is not true
@@ -226,6 +227,12 @@ begin
       )
   ) then
     raise exception 'ATLAS_API_SECURITY_MODE_MISMATCH';
+  end if;
+  select array_agg(setting order by setting)::text[] into actual
+  from pg_roles cross join lateral unnest(rolconfig) setting
+  where rolname = 'authenticated' and setting like 'statement_timeout=%';
+  if actual is distinct from array['statement_timeout=8s']::text[] then
+    raise exception 'ATLAS_AUTHENTICATED_RUNTIME_POLICY_MISMATCH';
   end if;
   select array_agg(format('%s(%s)', p.proname, pg_get_function_identity_arguments(p.oid)) order by p.proname, pg_get_function_identity_arguments(p.oid))::text[] into actual from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api' and has_function_privilege('authenticated', p.oid, 'EXECUTE');
   if actual is distinct from ${authenticatedSignatures} or exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api' and (has_function_privilege('anon', p.oid, 'EXECUTE') or has_function_privilege('service_role', p.oid, 'EXECUTE'))) then

@@ -1,5 +1,16 @@
 # Atlas Autopilot Mandate
 
+**22 October Supabase runtime follow-up active:** the Owner authorizes measured
+timeout investigation, bounded repairs and a full hosted rerun after changes.
+The existing Need command receives a proven function-specific completion policy;
+ordinary authenticated requests regain their existing timeout protection. Preserve
+all business/security checks and released history. No arbitrary duration gate,
+capacity purchase, region move, speculative index/query rewrite or new architecture.
+Local REST/rollback proof and all 45 semantic/policy checks pass; independent review,
+normal exact-source CI and guarded deployment precede the hosted original →
+correction → reallocation → replacement PO → successor dispatch journey. See the
+[runtime investigation](../testing/supabase-runtime-timeouts-2026-10-22.md).
+
 **22 October remaining-work closeout complete:** implementation, independent
 review, exact-source Frontend/executed Full and guarded Staging release pass
 through PR430/`43f4a2b1`. The certified app is published through the separately

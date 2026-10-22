@@ -7,7 +7,14 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 set local track_functions = 'all';
-select plan(43);
+select plan(45);
+select ok((select cardinality(proconfig)=3
+  and proconfig @> array['search_path=""','plan_cache_mode=force_generic_plan','statement_timeout=0']::text[]
+  from pg_proc where oid='atlas_api.execute_need_generation(jsonb)'::regprocedure),
+  'only the governed Need command carries its completion-oriented timeout policy');
+select is((select setting from pg_roles cross join lateral unnest(rolconfig) setting
+  where rolname='authenticated' and setting like 'statement_timeout=%'),
+  'statement_timeout=8s','ordinary authenticated requests retain their existing protection');
 create function pg_temp.ng_id(n bigint) returns uuid language sql immutable as $$
   select ('a7400000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;

@@ -2528,12 +2528,12 @@ describe("Atlas staging hosted evidence", () => {
     expect(sql).toContain(
       "pg_get_function_identity_arguments(p.oid) = 'request jsonb'",
     );
-    expect(sql).toContain("cardinality(p.proconfig) = 2");
+    expect(sql).toContain("cardinality(p.proconfig) = 3");
     expect(sql).toContain(
-      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan', 'statement_timeout=0']::text[]",
     );
     expect(sql).toContain(
-      "p.proconfig <@ array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+      "p.proconfig <@ array['search_path=\"\"', 'plan_cache_mode=force_generic_plan', 'statement_timeout=0']::text[]",
     );
   });
 
@@ -2551,11 +2551,17 @@ describe("Atlas staging hosted evidence", () => {
     expect(sql).toContain("cardinality(p.proconfig) = 2");
   });
 
+  it("rejects a remaining role-wide rehearsal timeout exemption", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain("array['statement_timeout=8s']::text[]");
+    expect(sql).toContain("ATLAS_AUTHENTICATED_RUNTIME_POLICY_MISMATCH");
+  });
+
   it("rejects Need Generation with only the default search path", () => {
     const sql = catalogVerificationSql(readCatalogAuthority());
-    expect(sql).toContain("cardinality(p.proconfig) = 2");
+    expect(sql).toContain("cardinality(p.proconfig) = 3");
     expect(sql).toContain(
-      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan', 'statement_timeout=0']::text[]",
     );
     expect(sql).toContain(") is not true");
   });
@@ -2563,16 +2569,16 @@ describe("Atlas staging hosted evidence", () => {
   it("rejects Need Generation with the wrong planner mode", () => {
     const sql = catalogVerificationSql(readCatalogAuthority());
     expect(sql).toContain(
-      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan', 'statement_timeout=0']::text[]",
     );
     expect(sql).toContain(") is not true");
   });
 
-  it("rejects an undeclared third Need Generation setting", () => {
+  it("rejects an undeclared fourth Need Generation setting", () => {
     const sql = catalogVerificationSql(readCatalogAuthority());
-    expect(sql).toContain("cardinality(p.proconfig) = 2");
+    expect(sql).toContain("cardinality(p.proconfig) = 3");
     expect(sql).toContain(
-      "p.proconfig <@ array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+      "p.proconfig <@ array['search_path=\"\"', 'plan_cache_mode=force_generic_plan', 'statement_timeout=0']::text[]",
     );
   });
 

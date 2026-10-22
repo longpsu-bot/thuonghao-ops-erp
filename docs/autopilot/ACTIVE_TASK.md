@@ -1,5 +1,17 @@
 # Atlas Autopilot — Active Task
 
+**22 October — bounded Supabase runtime investigation active:** Owner requests
+measured runtime/timeout diagnosis, safe repairs and a full hosted journey after
+changes. Scope is the existing Need command's timeout policy, its exact deployment
+verifier/tests and evidence. Preserve all business checks, security, quantities,
+Units, history, ordinary lock protections and Purchase Preparation's existing
+exception. No latency acceptance cutoff, speculative query/index rewrite,
+capacity purchase, region move or architecture expansion. Local REST and rollback
+proof pass; independent review, exact-source CI, guarded deployment and hosted
+original/correction/replacement journey remain required. See the
+[investigation](../testing/supabase-runtime-timeouts-2026-10-22.md). OPSv1/Retool
+remain read-only; Recipe3529 remains an Owner/kitchen factual decision.
+
 **22 October closeout complete:** Need/Unit improvements and the full hosted
 original/correction/replacement journey pass. Reviewed Attendance, PO-impact and
 export repairs are merged through PR428–430. Exact-source Frontend/executed Full,

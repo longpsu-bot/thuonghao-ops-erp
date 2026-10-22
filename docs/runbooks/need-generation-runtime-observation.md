@@ -47,12 +47,27 @@ Record server/upstream time independently of browser wall time. Correlate CPU,
 I/O, memory, lock waits and connection pressure at the same timestamps when
 available; missing resource metrics are unknown, not an excuse to blame hosting.
 
-Staging's authenticated statement timeout was explicitly lifted for the hosted
-rehearsal. Do not silently restore eight seconds or assume unlimited production
-execution. Verify any replacement runtime policy through the actual authenticated
-REST path, including unknown-outcome recovery. Keep lock protections and provider
-limits distinct from application performance targets. Never automatically submit
-a fresh command after a transport timeout; reconcile the existing intent first.
+The temporary Staging role-wide exemption is replaced by migration
+`20261022071412`: only `atlas_api.execute_need_generation(jsonb)` receives
+`statement_timeout=0`; `authenticated` returns to its existing `8s` default.
+PostgREST hoists the function setting across the request transaction, including
+deferred constraints. The existing Purchase Preparation `20s` exception and lock
+protections remain. These are operational settings, not latency acceptance goals.
+Provider/client limits can still end a request; this does not promise unlimited
+hosted execution. Never automatically submit a fresh command after a transport
+timeout; reconcile the existing intent first.
+
+Before deployment, verify the actual authenticated REST path on an owned local
+database with the deployed PostgREST configuration. A nine-second ordinary probe
+must cancel, a scoped probe and its deferred guard must complete, and a following
+ordinary request must still observe `8s`. Exercise the real Need command while
+holding its existing scope advisory lock for less than the unchanged lock timeout:
+the old default must fail with no committed change; the function policy must
+complete the identical intent beyond eight seconds and replay without duplicates.
+Keep these test-only probes out of hosted schemas and product functions. Retain
+the observed durations and transaction counts; do not turn them into speed gates.
+After guarded deployment, verify the exact catalog settings, run the full hosted
+original/correction/replacement journey and compare released-history snapshots.
 
 Rollback uses a reviewed forward migration restoring the prior function
 definition. It changes no business rows. Preserve original PO/PXK snapshots and

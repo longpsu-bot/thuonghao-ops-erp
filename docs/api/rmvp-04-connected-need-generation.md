@@ -45,6 +45,13 @@ aggregate is added. See the [closeout contract](../implementation-tasks/TASK-ATL
 **Capability:** `planning.need_generation.write` for writes; existing `planning.inputs.read` for the read
 **Runtime:** `atlas_need_generation_runtime` (`NOLOGIN NOINHERIT`)
 
+`execute_need_generation(jsonb)` retains its empty search path and generic-plan
+setting. Its function-specific `statement_timeout=0` lets this atomic command
+complete without an arbitrary database duration cutoff; the ordinary authenticated
+request default remains `8s`. PostgREST applies the function policy to deferred
+checks too. Lock protections, provider limits and conservative unknown-outcome
+recovery still apply. The request/response and business authority are unchanged.
+
 ## 1. Boundary
 
 RMVP-04 converts one exact current `NEED_GENERATION_REQUESTED` Planning Input Set into immutable atomic theoretical Ingredient contributions, validates them, releases them, and exposes the existing CMD-15 materialization boundary.
