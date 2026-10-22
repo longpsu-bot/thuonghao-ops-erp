@@ -6,8 +6,9 @@ PR430/`43f4a2b1`. Actual app reconciliation has two matched Schools and all 22
 detail deltas zero; eight downloads pass 117 exact-data checks and all 14 native
 Excel pages are reviewed. The final PDF split-tail amendment is not yet live:
 Cloudflare publication is **BLOCKED** by repeated package-manager metadata 503
-errors. A verified same-version checksum pin for its existing build setting
-awaits explicit Owner approval; final actual PDF rechecks remain pending.
+errors. The approved checksum pin fails because the bootstrap strips it; the
+original setting is restored exactly. A clean certified upload artifact is ready;
+separate Wrangler access consent and final actual PDF rechecks remain pending.
 See the [source-qualified closeout](../testing/journey-closeout-2026-10-21.md).
 No automatic new business journey, Recipe substitution, Warehouse work,
 OPSv1/Retool writes, dependency upgrade or speculative architecture change.

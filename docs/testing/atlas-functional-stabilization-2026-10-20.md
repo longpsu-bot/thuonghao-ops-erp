@@ -13,7 +13,9 @@ assertions and 14 native Excel pages pass. Visual QA finds a final primary-PXK
 PDF split-tail defect and its bounded fix is certified/merged, but publication
 is **BLOCKED** by Cloudflare's repeated pnpm metadata 503 failure. The app still
 runs `37390ede`; the final two published PDF checks remain pending. A verified
-same-version checksum setting remedy awaits explicit Owner approval. Recipe3529,
+same-version checksum setting remedy is approved but fails after Cloudflare strips
+the checksum; its original setting is restored. A clean certified upload artifact
+is ready, pending separate Wrangler access consent. Recipe3529,
 hosting-resource correlation and the disclosed timeout0 lease remain explicit.
 
 ## Need generation and Unit labels — current 21 October improvement

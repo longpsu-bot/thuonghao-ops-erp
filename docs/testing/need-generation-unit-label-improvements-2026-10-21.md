@@ -18,7 +18,9 @@ The Owner's subsequent request to complete remaining work is tracked in the
 historical observations below remain dated evidence. The final PDF split-tail
 amendment is certified, merged and guarded as PR430/`43f4a2b1`, but Cloudflare's
 package-manager metadata 503 blocks frontend publication. A verified same-version
-checksum setting remedy awaits explicit approval; final published PDF rechecks
+checksum setting remedy is approved but fails after the hosting bootstrap strips
+the checksum. Its original setting is restored; a clean certified upload artifact
+is ready pending separate Wrangler access consent. Final published PDF rechecks
 remain pending. The earlier complete hosted command journey still passes.
 
 ## Bounded changes

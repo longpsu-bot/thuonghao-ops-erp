@@ -7,8 +7,10 @@ apart from a final primary-PXK PDF split-tail defect found during visual QA.
 PR430 fixes that defect as `43f4a2b1`; exact-source Frontend/executed Full,
 main Frontend and guarded Staging deployment pass. Publication is **BLOCKED** by
 three Cloudflare package-manager metadata 503 failures before compilation; the
-app still runs `37390ede`. A same-version verified-checksum setting remedy is
-prepared and awaits explicit Owner approval. The last two actual PDF downloads
+app still runs `37390ede`. The Owner-approved checksum pin is stripped by the
+hosting bootstrap and fails; its original setting is restored exactly. A clean
+certified upload artifact is ready, with separate Wrangler access consent pending.
+The last two actual PDF downloads
 remain pending. The [closeout report](../testing/journey-closeout-2026-10-21.md)
 records all runtime/phase measurements, failures and exact evidence. No business
 facts, Recipe substitutions, OPSv1/Retool writes or architecture expansion.
