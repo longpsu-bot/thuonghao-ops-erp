@@ -913,6 +913,14 @@ describe("IngredientSupplierWorkbench", () => {
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
     await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
+    // jsdom needs the real closed-state exit listener before completing CSS exit.
+    await waitFor(() =>
+      expect(
+        !dialog.isConnected || dialog.style.animationFillMode === "forwards",
+      ).toBe(true),
+    );
+    if (dialog.isConnected)
+      fireEvent(dialog, new Event("animationcancel", { bubbles: true }));
     await waitFor(() => expect(dialog).not.toBeInTheDocument());
     expect(screen.getByLabelText("Tên nguyên liệu")).toHaveValue("Bí đỏ");
     fireEvent.click(screen.getByRole("tab", { name: "Nhà cung ứng" }));
@@ -927,6 +935,17 @@ describe("IngredientSupplierWorkbench", () => {
         name: "Bỏ thay đổi",
       }),
     );
+    await waitFor(() =>
+      expect(discardDialog).toHaveAttribute("data-state", "closed"),
+    );
+    await waitFor(() =>
+      expect(
+        !discardDialog.isConnected ||
+          discardDialog.style.animationFillMode === "forwards",
+      ).toBe(true),
+    );
+    if (discardDialog.isConnected)
+      fireEvent(discardDialog, new Event("animationcancel", { bubbles: true }));
     await waitFor(() => expect(discardDialog).not.toBeInTheDocument());
     expect(screen.getByRole("tab", { name: "Nhà cung ứng" })).toHaveAttribute(
       "aria-selected",
