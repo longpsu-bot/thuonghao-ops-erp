@@ -1,15 +1,18 @@
 # Atlas Autopilot Mandate
 
-**22 October Supabase runtime follow-up active:** the Owner authorizes measured
-timeout investigation, bounded repairs and a full hosted rerun after changes.
-The existing Need command receives a proven function-specific completion policy;
-ordinary authenticated requests regain their existing timeout protection. Preserve
-all business/security checks and released history. No arbitrary duration gate,
-capacity purchase, region move, speculative index/query rewrite or new architecture.
-Local REST/rollback proof and all 45 semantic/policy checks pass; independent review,
-normal exact-source CI and guarded deployment precede the hosted original →
-correction → reallocation → replacement PO → successor dispatch journey. See the
-[runtime investigation](../testing/supabase-runtime-timeouts-2026-10-22.md).
+**22 October Supabase runtime follow-up complete:** reviewed PR432 / `db7bfe24`,
+exact-source and main Frontend/executed Full, guarded deployment and automatic
+publication pass. The scoped Need policy restores ordinary timeout protection
+while preserving all business/security/lock checks. The actual hosted original →
+correction → reallocation → replacement PO → successor dispatch journey passes
+for both Schools, all 21 detail deltas zero. All 631 assertions pass; both actual
+PDFs pass data and four-page visual review; 7,205 pre-existing history rows and
+frozen original contents are preserved. Need records 4.419 s database / 4.451 s
+upstream / 4.620 s origin, without a runtime cutoff or speedup claim. Chrome
+resource observations and the remaining metric/source limits are recorded in the
+[runtime closeout](../testing/supabase-runtime-timeouts-2026-10-22.md).
+No automatic next journey, capacity purchase, speculative redesign or OPSv1/Retool
+write. Recipe3529 still requires the Owner/kitchen's factual decision.
 
 **22 October remaining-work closeout complete:** implementation, independent
 review, exact-source Frontend/executed Full and guarded Staging release pass

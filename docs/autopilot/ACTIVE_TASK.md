@@ -1,16 +1,20 @@
 # Atlas Autopilot — Active Task
 
-**22 October — bounded Supabase runtime investigation active:** Owner requests
-measured runtime/timeout diagnosis, safe repairs and a full hosted journey after
-changes. Scope is the existing Need command's timeout policy, its exact deployment
-verifier/tests and evidence. Preserve all business checks, security, quantities,
-Units, history, ordinary lock protections and Purchase Preparation's existing
-exception. No latency acceptance cutoff, speculative query/index rewrite,
-capacity purchase, region move or architecture expansion. Local REST and rollback
-proof pass; independent review, exact-source CI, guarded deployment and hosted
-original/correction/replacement journey remain required. See the
-[investigation](../testing/supabase-runtime-timeouts-2026-10-22.md). OPSv1/Retool
-remain read-only; Recipe3529 remains an Owner/kitchen factual decision.
+**22 October — bounded Supabase runtime closeout complete:** reviewed PR432 /
+`db7bfe24`, exact-source and main Frontend/executed Full, guarded Staging deployment
+and automatic app publication pass. Need now has its scoped completion policy;
+ordinary authenticated requests regain the existing eight-second default and
+lock protection is retained. The actual 20 October original → correction →
+reallocation → replacement PO → successor dispatch journey passes: two Schools,
+21 exact zero deltas, 23 completed receipts and 631 assertions. Both actual PDFs
+pass data/visual review across four pages. All 7,205 pre-existing history rows
+and all frozen original document contents are preserved. Need records 4.419 s
+database / 4.451 s upstream / 4.620 s origin, without a duration acceptance gate
+or speedup claim. Chrome resource inspection is source-qualified; historic
+metrics and two dashboard tiles remain unavailable. See the
+[investigation and closeout](../testing/supabase-runtime-timeouts-2026-10-22.md).
+No automatic new journey or speculative capacity/query change. OPSv1/Retool remain
+read-only; Recipe3529 remains an Owner/kitchen factual decision.
 
 **22 October closeout complete:** Need/Unit improvements and the full hosted
 original/correction/replacement journey pass. Reviewed Attendance, PO-impact and
