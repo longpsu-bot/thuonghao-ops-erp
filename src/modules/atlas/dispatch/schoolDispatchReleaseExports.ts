@@ -40,14 +40,13 @@ import {
 const QUANTITY_SCALE = 1_000_000n;
 
 const inspectionTableLayout = { paddingLeft: () => 2, paddingRight: () => 2 };
-// Use measured pagination; an oversized unbreakable table can lose rows.
+// Move a split tail too; keep oversized tables breakable so no rows are lost.
 const dispatchPageBreakBefore: TDocumentDefinitions["pageBreakBefore"] = (
   node,
   _following,
   next,
 ) =>
   node.id === "dispatch-final-inspection" &&
-  node.pageNumbers.length === 1 &&
   next.some((candidate) => candidate.id === "dispatch-signatures-end");
 
 function scaledQuantity(value: string) {

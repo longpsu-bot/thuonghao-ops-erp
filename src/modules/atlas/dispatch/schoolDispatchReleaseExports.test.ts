@@ -84,6 +84,9 @@ describe("School dispatch release exports", () => {
           [positioned(signatures, [2])],
           [],
         ),
+      ).toBe(true);
+      expect(
+        definition.pageBreakBefore?.(positioned(tail, [1, 2, 3]), [], [], []),
       ).toBe(false);
       expect(JSON.stringify(content).match(/Thực phẩm \d+/g)).toHaveLength(
         count,
