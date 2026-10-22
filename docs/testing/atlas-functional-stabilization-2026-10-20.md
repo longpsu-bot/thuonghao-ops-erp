@@ -2,21 +2,23 @@
 
 Owner authority: this chat authorizes bounded repairs, focused regressions, independent review, exact-revision GitHub certification, merge and guarded Staging deployment. This is the sole current campaign ledger. Earlier detailed plans and failed-attempt chronology remain in its Git history. ARCH-002 / OPS_SYSTEM_MAP v1.0, approved business/security contracts and backend-owned outcomes remain authoritative.
 
-## Remaining-work checkpoint — 22 October
+## Remaining-work closeout complete — 22 October
 
 The [closeout report](journey-closeout-2026-10-21.md) records the reviewed
 Attendance, PO-impact and export repairs, matched 19-line samples and complete
 phase/function measurements. Exact-source Frontend/executed Full, main Frontend
 and guarded release pass through PR430/`43f4a2b1`. Actual app checks preserve
 22 exact zero deltas, captured Units and frozen documents; 117 fresh export-data
-assertions and 14 native Excel pages pass. Visual QA finds a final primary-PXK
-PDF split-tail defect and its bounded fix is certified/merged, but publication
-is **BLOCKED** by Cloudflare's repeated pnpm metadata 503 failure. The app still
-runs `37390ede`; the final two published PDF checks remain pending. A verified
-same-version checksum setting remedy is approved but fails after Cloudflare strips
-the checksum; its original setting is restored. A clean certified upload artifact
-is ready, pending separate Wrangler access consent. Recipe3529,
-hosting-resource correlation and the disclosed timeout0 lease remain explicit.
+assertions and 14 native Excel pages pass. The final primary-PXK split-tail fix is
+published as certified `43f4a2b1` through the separately approved upload route;
+all nine live file hashes match. Both actual successor PDFs pass all four pages'
+data/visual checks; final food rows stay with signatures. Final app reconciliation
+still has all 22 detail deltas zero and the preservation fingerprint is unchanged.
+Cloudflare strips the approved checksum pin and that experiment fails; its
+original setting is restored exactly. Temporary Wrangler access is used only for
+this release, logged out and its task credential removed. Automatic bootstrap
+recovery, Recipe3529, hosting-resource correlation and the disclosed timeout0 lease
+remain explicit; none is silently resolved by the successful upload.
 
 ## Need generation and Unit labels — current 21 October improvement
 

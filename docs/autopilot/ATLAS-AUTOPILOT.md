@@ -1,14 +1,15 @@
 # Atlas Autopilot Mandate
 
-**22 October remaining-work checkpoint:** implementation, independent review,
-exact-source Frontend/executed Full and guarded Staging release pass through
-PR430/`43f4a2b1`. Actual app reconciliation has two matched Schools and all 22
-detail deltas zero; eight downloads pass 117 exact-data checks and all 14 native
-Excel pages are reviewed. The final PDF split-tail amendment is not yet live:
-Cloudflare publication is **BLOCKED** by repeated package-manager metadata 503
-errors. The approved checksum pin fails because the bootstrap strips it; the
-original setting is restored exactly. A clean certified upload artifact is ready;
-separate Wrangler access consent and final actual PDF rechecks remain pending.
+**22 October remaining-work closeout complete:** implementation, independent
+review, exact-source Frontend/executed Full and guarded Staging release pass
+through PR430/`43f4a2b1`. The certified app is published through the separately
+approved upload route; all nine live file hashes match. Both final actual PDFs
+pass data/visual review across four pages; all 14 native Excel pages were also
+reviewed. Two Schools match, all 22 detail deltas are zero, and the final document,
+function/security and migration/role fingerprints match the baseline. The failed
+checksum setting is restored exactly and the temporary Wrangler login is removed.
+Automatic bootstrap recovery and resource-policy evidence remain unproven;
+Recipe3529 requires the Owner/kitchen's factual decision.
 See the [source-qualified closeout](../testing/journey-closeout-2026-10-21.md).
 No automatic new business journey, Recipe substitution, Warehouse work,
 OPSv1/Retool writes, dependency upgrade or speculative architecture change.

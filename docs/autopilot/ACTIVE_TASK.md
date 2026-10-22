@@ -1,19 +1,19 @@
 # Atlas Autopilot — Active Task
 
-**22 October closeout checkpoint:** the Need/Unit improvements and full hosted
-original/correction/replacement journey pass. Attendance, PO-impact and export
-repairs are reviewed and merged through PR428/429; their actual app checks pass
-apart from a final primary-PXK PDF split-tail defect found during visual QA.
-PR430 fixes that defect as `43f4a2b1`; exact-source Frontend/executed Full,
-main Frontend and guarded Staging deployment pass. Publication is **BLOCKED** by
-three Cloudflare package-manager metadata 503 failures before compilation; the
-app still runs `37390ede`. The Owner-approved checksum pin is stripped by the
-hosting bootstrap and fails; its original setting is restored exactly. A clean
-certified upload artifact is ready, with separate Wrangler access consent pending.
-The last two actual PDF downloads
-remain pending. The [closeout report](../testing/journey-closeout-2026-10-21.md)
-records all runtime/phase measurements, failures and exact evidence. No business
-facts, Recipe substitutions, OPSv1/Retool writes or architecture expansion.
+**22 October closeout complete:** Need/Unit improvements and the full hosted
+original/correction/replacement journey pass. Reviewed Attendance, PO-impact and
+export repairs are merged through PR428–430. Exact-source Frontend/executed Full,
+main Frontend and guarded Staging deployment pass. Certified `43f4a2b1` is live
+through an explicitly approved upload to the existing app; all nine live file
+hashes match. Both actual successor PDFs pass data/visual review across four
+pages. Both Schools match and all 22 detail deltas are zero. The final 989-row
+document and 493-function/security/migration fingerprint matches the baseline.
+The failed checksum-setting experiment is restored exactly; the separately
+approved temporary Wrangler login is removed and reports unauthenticated.
+The [closeout report](../testing/journey-closeout-2026-10-21.md) retains runtime
+variation, failed attempts and the automatic-bootstrap/resource-policy limits.
+Recipe3529 still needs a factual Owner/kitchen decision. No new business writes,
+Recipe substitution, OPSv1/Retool writes or architecture expansion in closeout.
 
 **21 October completion:** PR 426 is merged as `484c34c3`; exact-main Frontend
 and executed Full Integration pass; guarded deployment `39591313934` passes with
