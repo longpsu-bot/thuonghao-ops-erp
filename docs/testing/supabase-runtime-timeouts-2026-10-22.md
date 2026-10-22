@@ -1,6 +1,6 @@
 # Supabase runtime and timeout investigation — 22 October 2026
 
-Status: local repair verified; independent review, normal exact-source CI,
+Status: local repair verified and independently reviewed; normal exact-source CI,
 guarded Staging deployment and the hosted journey remain pending.
 
 ## Bounded scope and authority
@@ -106,6 +106,11 @@ baseline and reports four obsolete expectations; focused current-source checks
 exclude that scratch copy. Neither failure is hidden or used to weaken CI.
 
 ## Deployment, hosted journey and remaining evidence
+
+Independent source review reports no Critical or Important implementation issue.
+Its Minor rollback finding is corrected: the runbook now explicitly restores the
+recorded role policy together with the previous function configuration. Source
+review does not substitute for runtime or release certification.
 
 Pending. Before any hosted mutation, retain the 989-row released-document and
 493-function/security/migration snapshot. After deployment, compare only the

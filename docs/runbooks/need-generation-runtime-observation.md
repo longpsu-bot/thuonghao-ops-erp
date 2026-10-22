@@ -70,5 +70,9 @@ After guarded deployment, verify the exact catalog settings, run the full hosted
 original/correction/replacement journey and compare released-history snapshots.
 
 Rollback uses a reviewed forward migration restoring the prior function
-definition. It changes no business rows. Preserve original PO/PXK snapshots and
-repeat the complete original/correction journey after a deployed change.
+configuration and the recorded pre-deployment authenticated role policy together.
+Removing only the function exemption while leaving the role at `8s` can restore
+the original failure. The broad rehearsal exemption is a rollback state, not the
+desired operating policy. Rollback changes no business rows. Preserve original
+PO/PXK snapshots and repeat the complete original/correction journey after a
+deployed change.
