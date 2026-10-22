@@ -70,7 +70,9 @@ do $policy$ begin
  if exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace,
    lateral unnest(p.proconfig) c where n.nspname in ('atlas_api','atlas_core','atlas_planning') and c like 'statement_timeout=%'
    and (p.oid is distinct from to_regprocedure('atlas_api.prepare_school_catering_purchase_orders(jsonb)')
-     or c<>'statement_timeout=20s')) then
+     or c<>'statement_timeout=20s')
+   and (p.oid is distinct from to_regprocedure('atlas_api.execute_need_generation(jsonb)')
+     or c<>'statement_timeout=0')) then
    raise exception 'CORRECTION_FUNCTION_TIMEOUT_POLICY_REJECTED'; end if;
  perform set_config('statement_timeout',(select setting from correction_timeout_policy),true);
  if (select setting::numeric from pg_settings where name='statement_timeout')<>8000 then raise exception 'CORRECTION_NORMAL_TIMEOUT_POLICY_REJECTED'; end if;

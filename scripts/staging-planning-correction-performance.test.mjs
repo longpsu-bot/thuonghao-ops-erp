@@ -79,10 +79,18 @@ test("rollback and persistence share the authenticated transaction-local SQL env
       /set local request.jwt.claims=.*a1010000-0000-4000-8000-000000000101/,
     );
     assert.equal(
-      (sql.match(/atlas_api\.execute_need_generation\(/g) ?? []).length,
+      (sql.match(/atlas_api\.execute_need_generation\(\s*'/g) ?? []).length,
       1,
     );
     assert.match(sql, /pg_db_role_setting/);
+    assert.match(
+      sql,
+      /prepare_school_catering_purchase_orders\(jsonb\)'\)\s+or c<>'statement_timeout=20s'/,
+    );
+    assert.match(
+      sql,
+      /execute_need_generation\(jsonb\)'\)\s+or c<>'statement_timeout=0'/,
+    );
     assert.match(sql, /set constraints all immediate/);
     assert.match(sql, /rpc_ms/);
     assert.match(sql, /constraint_flush_ms/);

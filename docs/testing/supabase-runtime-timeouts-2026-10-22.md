@@ -112,6 +112,18 @@ Its Minor rollback finding is corrected: the runbook now explicitly restores the
 recorded role policy together with the previous function configuration. Source
 review does not substitute for runtime or release certification.
 
+PR [432](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/432) first passes
+Frontend `39740528154`. Executed Full `39740529183` fails at the correction
+certification helper's old function-timeout allowlist, which recognizes only
+Purchase Preparation. That legitimate policy guard is updated to recognize exactly
+Need's `0` as well. An isolated real-SQL probe reproduces the failure, then accepts
+only the approved pair and rejects a wrong Need value, an unrelated API exemption,
+a wrong Preparation value and a missing Need signature. Every probe rolls back.
+The helper's unit check now counts actual invocations separately from its new
+quoted catalog lookup. All 120 affected current-source tests pass. No operational
+timer, assertion, workflow or business check is removed; a new exact-source Full
+run remains mandatory.
+
 Pending. Before any hosted mutation, retain the 989-row released-document and
 493-function/security/migration snapshot. After deployment, compare only the
 declared function configuration and authenticated timeout changes; business rows,
