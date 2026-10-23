@@ -38,7 +38,10 @@ export function AtlasSortableColumnHeader<Key extends string>({
         type="button"
         variant="utility"
         size="sm"
-        minH="var(--atlas-layout-zero, 0)"
+        minH={{
+          base: "var(--atlas-layout-mobile-target, 44px)",
+          lg: "var(--atlas-layout-zero, 0)",
+        }}
         h="var(--atlas-layout-auto, auto)"
         minW="var(--atlas-layout-zero, 0)"
         w="full"

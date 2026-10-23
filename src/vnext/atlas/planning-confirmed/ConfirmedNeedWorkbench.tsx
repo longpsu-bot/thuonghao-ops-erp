@@ -10,7 +10,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import { useEffect, useId, useRef, useState, useImperativeHandle } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
 import {
@@ -45,6 +45,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [detailKey, setDetailKey] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [utilitiesOpen, setUtilitiesOpen] = useState(false);
+  const utilitiesId = useId();
   const [correctionReviewKey, setCorrectionReviewKey] = useState<string | null>(
     null,
   );
@@ -345,6 +347,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               <Flex
                 role="group"
                 aria-label="Tiện ích nhu cầu xác nhận"
+                display={{ base: "grid", lg: "flex" }}
+                gridTemplateColumns="minmax(0, 1fr) auto"
                 px="md"
                 py="xs"
                 gap="sm"
@@ -355,18 +359,25 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 <Flex
                   role="group"
                   aria-label="Ngày trong khoảng"
+                  gridColumn="1 / -1"
                   gap="xs"
                   wrap="wrap"
                 >
                   {dayControls}
                 </Flex>
-                <Text textStyle="helper" color="fg.muted">
+                <Text
+                  textStyle="helper"
+                  color="fg.muted"
+                  gridColumn="1 / -1"
+                  minW="var(--atlas-layout-zero, 0)"
+                >
                   {c.workbench.line_counts.total} dòng ·{" "}
                   {c.workbench.line_counts.needs_review} cần rà soát ·{" "}
                   {c.workbench.line_counts.confirmed} đã xác nhận ·{" "}
                   {c.workbench.line_counts.adjusted} đã điều chỉnh
                 </Text>
                 <Checkbox.Root
+                  minW="var(--atlas-layout-zero, 0)"
                   checked={c.differencesOnly}
                   onCheckedChange={(d) =>
                     c.setDifferencesOnly(d.checked === true)
@@ -381,122 +392,148 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   </Checkbox.Label>
                 </Checkbox.Root>
                 <Button
+                  display={{ base: "inline-flex", lg: "none" }}
                   variant="tertiary"
-                  data-atlas-action-priority="tertiary"
-                  aria-expanded={detailOpen}
-                  onClick={() => setDetailKey(detailOpen ? null : contextKey)}
+                  ms="var(--atlas-layout-auto, auto)"
+                  aria-expanded={utilitiesOpen}
+                  aria-controls={utilitiesId}
+                  onClick={() => setUtilitiesOpen((open) => !open)}
                 >
-                  {detailOpen
-                    ? "Ẩn cách hình thành nhu cầu"
-                    : "Xem cách hình thành nhu cầu"}
+                  Tiện ích
                 </Button>
-                {props.onExportShoppingList && props.onImportShoppingList && (
-                  <Flex gap="sm" wrap="wrap">
-                    <Button
-                      variant="tertiary"
-                      data-atlas-action-priority="tertiary"
-                      disabled={
-                        workbookBusy ||
-                        c.released ||
-                        c.allDirty ||
-                        c.rangeBusy ||
-                        c.busy ||
-                        Boolean(c.lock) ||
-                        !c.editable
-                      }
-                      onClick={() => {
-                        setWorkbookError(null);
-                        setWorkbookBusy(true);
-                        void props.onExportShoppingList!(
-                          c.workbench!,
-                          c.shoppingRangeContext,
-                        )
-                          .catch((error: unknown) =>
-                            setWorkbookError(
-                              error instanceof Error
-                                ? error.message
-                                : "Không thể xuất Phiếu đi chợ. Hãy thử lại.",
-                            ),
-                          )
-                          .finally(() => setWorkbookBusy(false));
-                      }}
-                    >
-                      Xuất Phiếu đi chợ
-                    </Button>
-                    <Button
-                      variant="tertiary"
-                      data-atlas-action-priority="tertiary"
-                      disabled={
-                        workbookBusy ||
-                        c.released ||
-                        c.allDirty ||
-                        c.rangeBusy ||
-                        c.busy ||
-                        Boolean(c.lock) ||
-                        !c.editable
-                      }
-                      onClick={() => workbookInput.current?.click()}
-                    >
-                      Nhập Phiếu đi chợ
-                    </Button>
-                    <input
-                      ref={workbookInput}
-                      type="file"
-                      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                      aria-label="Nhập Phiếu đi chợ .xlsx"
-                      style={{
-                        position: "absolute",
-                        width: 1,
-                        height: 1,
-                        padding: 0,
-                        margin: -1,
-                        overflow: "hidden",
-                        clip: "rect(0, 0, 0, 0)",
-                        whiteSpace: "nowrap",
-                        border: 0,
-                      }}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = "";
-                        if (
-                          !file ||
+                <Flex
+                  id={utilitiesId}
+                  gridColumn="1 / -1"
+                  display={{
+                    base: utilitiesOpen ? "flex" : "none",
+                    lg: "flex",
+                  }}
+                  gap="sm"
+                  wrap="wrap"
+                  flexBasis={{
+                    base: "full",
+                    lg: "var(--atlas-layout-auto, auto)",
+                  }}
+                  ms={{ lg: "var(--atlas-layout-auto, auto)" }}
+                >
+                  <Button
+                    variant="tertiary"
+                    data-atlas-action-priority="tertiary"
+                    aria-expanded={detailOpen}
+                    onClick={() => setDetailKey(detailOpen ? null : contextKey)}
+                  >
+                    {detailOpen
+                      ? "Ẩn cách hình thành nhu cầu"
+                      : "Xem cách hình thành nhu cầu"}
+                  </Button>
+                  {props.onExportShoppingList && props.onImportShoppingList && (
+                    <Flex gap="sm" wrap="wrap">
+                      <Button
+                        variant="tertiary"
+                        data-atlas-action-priority="tertiary"
+                        disabled={
+                          workbookBusy ||
+                          c.released ||
                           c.allDirty ||
                           c.rangeBusy ||
-                          c.released ||
                           c.busy ||
-                          c.lock ||
-                          !c.editable ||
-                          workbookBusy
-                        )
-                          return;
-                        const apply = c.captureShoppingListImport();
-                        setWorkbookError(null);
-                        setWorkbookBusy(true);
-                        void props.onImportShoppingList!(
-                          file,
-                          c.workbench!,
-                          c.drafts,
-                          c.shoppingRangeContext,
-                        )
-                          .then(apply)
-                          .catch((error: unknown) =>
-                            setWorkbookError(
-                              error instanceof Error
-                                ? error.message
-                                : "Không thể nhập Phiếu đi chợ.",
-                            ),
+                          Boolean(c.lock) ||
+                          !c.editable
+                        }
+                        onClick={() => {
+                          setWorkbookError(null);
+                          setWorkbookBusy(true);
+                          void props.onExportShoppingList!(
+                            c.workbench!,
+                            c.shoppingRangeContext,
                           )
-                          .finally(() => setWorkbookBusy(false));
-                      }}
-                    />
-                  </Flex>
-                )}
-                {c.allDirty && props.onExportShoppingList && (
-                  <Text fontSize="sm">
-                    Lưu hoặc tải lại để bỏ thay đổi trước khi xuất/nhập Phiếu đi
-                    chợ.
-                  </Text>
-                )}
+                            .catch((error: unknown) =>
+                              setWorkbookError(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Không thể xuất Phiếu đi chợ. Hãy thử lại.",
+                              ),
+                            )
+                            .finally(() => setWorkbookBusy(false));
+                        }}
+                      >
+                        Xuất Phiếu đi chợ
+                      </Button>
+                      <Button
+                        variant="tertiary"
+                        data-atlas-action-priority="tertiary"
+                        disabled={
+                          workbookBusy ||
+                          c.released ||
+                          c.allDirty ||
+                          c.rangeBusy ||
+                          c.busy ||
+                          Boolean(c.lock) ||
+                          !c.editable
+                        }
+                        onClick={() => workbookInput.current?.click()}
+                      >
+                        Nhập Phiếu đi chợ
+                      </Button>
+                      <input
+                        ref={workbookInput}
+                        type="file"
+                        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        aria-label="Nhập Phiếu đi chợ .xlsx"
+                        style={{
+                          position: "absolute",
+                          width: 1,
+                          height: 1,
+                          padding: 0,
+                          margin: -1,
+                          overflow: "hidden",
+                          clip: "rect(0, 0, 0, 0)",
+                          whiteSpace: "nowrap",
+                          border: 0,
+                        }}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = "";
+                          if (
+                            !file ||
+                            c.allDirty ||
+                            c.rangeBusy ||
+                            c.released ||
+                            c.busy ||
+                            c.lock ||
+                            !c.editable ||
+                            workbookBusy
+                          )
+                            return;
+                          const apply = c.captureShoppingListImport();
+                          setWorkbookError(null);
+                          setWorkbookBusy(true);
+                          void props.onImportShoppingList!(
+                            file,
+                            c.workbench!,
+                            c.drafts,
+                            c.shoppingRangeContext,
+                          )
+                            .then(apply)
+                            .catch((error: unknown) =>
+                              setWorkbookError(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Không thể nhập Phiếu đi chợ.",
+                              ),
+                            )
+                            .finally(() => setWorkbookBusy(false));
+                        }}
+                      />
+                    </Flex>
+                  )}
+                  {c.allDirty && props.onExportShoppingList && (
+                    <Text fontSize="sm">
+                      Lưu hoặc tải lại để bỏ thay đổi trước khi xuất/nhập Phiếu
+                      đi chợ.
+                    </Text>
+                  )}
+                </Flex>
               </Flex>
               {workbookError && (
                 <Text px="md" pb="xs" role="alert" color="status.danger">

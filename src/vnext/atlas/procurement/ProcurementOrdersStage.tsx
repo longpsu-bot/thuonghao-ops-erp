@@ -195,93 +195,109 @@ export function ProcurementOrdersStage({
   if (!data) return null;
   return (
     <Box>
-      <AtlasWorkbar px="md" py="xs" gap="sm" aria-label="Xuất đơn mua đã tải">
+      <AtlasWorkbar
+        px="md"
+        pt="sm"
+        pb="xs"
+        gap="md"
+        alignItems="center"
+        bg="bg.toolbar"
+        aria-label="Thao tác đơn mua đã tải"
+      >
         <Text
           textStyle="helper"
           color="fg.muted"
-          mr="var(--atlas-layout-auto, auto)"
+          flex="1"
+          minW="var(--atlas-layout-zero, 0)"
         >
-          {visible.length} đơn mua theo nhà cung cấp
-          <Text as="span" display="block" textStyle="helper">
-            Xuất các đơn đủ điều kiện trong dữ liệu đã tải, không giới hạn theo
-            tìm kiếm.
-          </Text>
+          {visible.length} đơn mua đang hiển thị
         </Text>
         {onReleaseAll && (
-          <Box>
-            <Button
-              variant="businessPrimary"
-              disabled={disabled || exporting || releaseOrders.length === 0}
-              loading={Boolean(bulkProgress)}
-              onClick={onReleaseAll}
-              aria-describedby={`${detailId}-release-scope`}
-            >
-              Phát hành tất cả PO ({releaseOrders.length})
-            </Button>
-            <Text
-              id={`${detailId}-release-scope`}
-              textStyle="helper"
-              color="fg.muted"
-            >
-              Phát hành các bản nháp đủ điều kiện trong khoảng ngày đã tải;
-              không giới hạn theo tìm kiếm.
-            </Text>
-            {bulkProgress && (
-              <Text role="status" textStyle="helper">
-                Đã xác nhận {bulkProgress.completed}/{bulkProgress.total} PO.
-              </Text>
-            )}
-          </Box>
+          <Button
+            variant="secondary"
+            disabled={disabled || exporting || releaseOrders.length === 0}
+            loading={Boolean(bulkProgress)}
+            onClick={onReleaseAll}
+            aria-describedby={`${detailId}-loaded-scope`}
+          >
+            Phát hành tất cả PO ({releaseOrders.length})
+          </Button>
         )}
-        <Field.Root
-          disabled={disabled || exporting}
-          w={{ base: "full", md: "var(--atlas-layout-auto, auto)" }}
-          flexDirection="row"
+        <AtlasWorkbar
+          aria-label="Xuất đơn mua đã tải"
+          aria-describedby={`${detailId}-loaded-scope`}
+          w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
           alignItems="center"
-          gap="sm"
         >
-          <Field.Label mb="var(--atlas-layout-zero, 0)" whiteSpace="nowrap">
-            Nội dung xuất PO
-          </Field.Label>
-          <NativeSelect.Root
+          <Field.Root
             disabled={disabled || exporting}
-            w="var(--atlas-export-mode-width, 190px)"
+            w={{ base: "full", sm: "var(--atlas-layout-auto, auto)" }}
+            flexDirection="row"
+            alignItems="center"
+            gap="sm"
           >
-            <NativeSelect.Field
-              value={exportMode}
-              onChange={(event) =>
-                setExportMode(event.target.value as ProcurementExportMode)
-              }
+            <Field.Label mb="var(--atlas-layout-zero, 0)" whiteSpace="nowrap">
+              Nội dung xuất PO
+            </Field.Label>
+            <NativeSelect.Root
+              disabled={disabled || exporting}
+              w="var(--atlas-export-mode-width, 190px)"
             >
-              <option value="all">Tất cả</option>
-              <option value="details_ing">Chi tiết theo hàng</option>
-              <option value="details_school">Chi tiết theo trường</option>
-              <option value="sum">Tổng</option>
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
-        {onExportZip && (
-          <AtlasWorkbarActions
-            w={{ base: "full", md: "var(--atlas-layout-auto, auto)" }}
-            minW="var(--atlas-layout-zero, 0)"
-            flexDirection={{ base: "column", md: "row" }}
-            alignItems={{ base: "stretch", md: "center" }}
-          >
-            {(["xlsx", "pdf"] as const).map((format) => (
-              <Button
-                key={format}
-                variant="secondary"
-                loading={exporting}
-                disabled={disabled || exporting || !exportOrders.length}
-                onClick={() => void exportZip(format)}
+              <NativeSelect.Field
+                value={exportMode}
+                onChange={(event) =>
+                  setExportMode(event.target.value as ProcurementExportMode)
+                }
               >
-                Xuất {format.toUpperCase()}
-              </Button>
-            ))}
-          </AtlasWorkbarActions>
-        )}
+                <option value="all">Tất cả</option>
+                <option value="details_ing">Chi tiết theo hàng</option>
+                <option value="details_school">Chi tiết theo trường</option>
+                <option value="sum">Tổng</option>
+              </NativeSelect.Field>
+              <NativeSelect.Indicator />
+            </NativeSelect.Root>
+          </Field.Root>
+          {onExportZip && (
+            <AtlasWorkbarActions
+              w={{ base: "full", sm: "var(--atlas-layout-auto, auto)" }}
+              minW="var(--atlas-layout-zero, 0)"
+              flexShrink="1"
+              flexWrap="nowrap"
+            >
+              {(["xlsx", "pdf"] as const).map((format) => (
+                <Button
+                  key={format}
+                  variant="secondary"
+                  flex={{ base: "1", sm: "var(--atlas-layout-auto, auto)" }}
+                  loading={exporting}
+                  disabled={disabled || exporting || !exportOrders.length}
+                  onClick={() => void exportZip(format)}
+                >
+                  Xuất {format.toUpperCase()}
+                </Button>
+              ))}
+            </AtlasWorkbarActions>
+          )}
+        </AtlasWorkbar>
       </AtlasWorkbar>
+      <Box px="md" pb="sm" bg="bg.toolbar">
+        <Text
+          id={`${detailId}-loaded-scope`}
+          textStyle="helper"
+          color="fg.muted"
+        >
+          {onReleaseAll
+            ? "Phát hành các bản nháp và xuất các đơn"
+            : "Xuất các đơn"}{" "}
+          đủ điều kiện trong dữ liệu đã tải theo khoảng ngày; không giới hạn
+          theo tìm kiếm.
+        </Text>
+        {bulkProgress && (
+          <Text role="status" textStyle="helper">
+            Đã xác nhận {bulkProgress.completed}/{bulkProgress.total} PO.
+          </Text>
+        )}
+      </Box>
       {exportError && (
         <Text px="md" pb="sm" role="alert" color="status.danger">
           {exportError}
