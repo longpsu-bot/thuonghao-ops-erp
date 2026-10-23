@@ -92,7 +92,12 @@ export function DishCatalogue({
         </Box>
       )}
       {compact && (
-        <Box display={{ base: expanded ? "block" : "none", xl: "block" }}>
+        <Box
+          display={{
+            base: expanded || !c.context ? "block" : "none",
+            xl: "block",
+          }}
+        >
           {toolbar}
         </Box>
       )}

@@ -28,7 +28,9 @@ filter, with supporting detail and Shopping List import/export behind the
 keyboard-operable **Tiện ích** disclosure below `lg`; desktop utilities remain
 directly visible. Save/Continue remains in the persistent footer. Recipe import
 and creation stay together in the catalog toolbar, apart from selected-recipe
-actions. Shared sortable headers retain 44px targets below `lg` and compact
+actions. The toolbar remains visible while creating a dish, so importing still
+passes through the existing dirty-discard and inactive-owner safeguards.
+Shared sortable headers retain 44px targets below `lg` and compact
 desktop geometry. This pass changes no command, API, permission, lifecycle,
 calculation, database object or released document; no migration is required.
 
