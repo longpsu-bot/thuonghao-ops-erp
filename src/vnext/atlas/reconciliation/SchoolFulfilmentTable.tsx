@@ -134,9 +134,14 @@ export function SchoolFulfilmentTable({
               </Table.Cell>
               <Table.Cell minW="var(--atlas-layout-totals-min, 145px)">
                 {row.quantity_totals_by_unit.map((total) => (
-                  <Text key={total.unit_id} textStyle="helper">
-                    {schoolDispatchUnitLabel(total)} · PO{" "}
-                    {formatExactQuantity(total.po_quantity)} · PXK{" "}
+                  <Text
+                    key={total.unit_id}
+                    textStyle={{ base: "helper", lg: "quantityInline" }}
+                  >
+                    <Box as="span" textStyle={{ lg: "unitInline" }}>
+                      {schoolDispatchUnitLabel(total)}
+                    </Box>{" "}
+                    · PO {formatExactQuantity(total.po_quantity)} · PXK{" "}
                     {formatExactQuantity(total.pxk_quantity)} · Δ{" "}
                     {formatExactDelta(total.delta_quantity)}
                   </Text>

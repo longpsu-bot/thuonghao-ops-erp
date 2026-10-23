@@ -14,6 +14,7 @@ import {
   type PlanningSourcesProps,
 } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
 export function PlanningAttendanceStage({
   c,
   visibleSchoolIds,
@@ -65,6 +66,7 @@ export function PlanningAttendanceStage({
         <Flex gap="sm" wrap="wrap">
           <Button
             size="sm"
+            h={atlasWorkbarControlHeight}
             disabled={!c.data || !onExportTemplate || templatePending}
             onClick={async () => {
               setTemplatePending(true);
@@ -85,6 +87,7 @@ export function PlanningAttendanceStage({
           </Button>
           <Button
             size="sm"
+            h={atlasWorkbarControlHeight}
             disabled={!c.canEdit}
             onClick={() => setPasteOpen(!pasteOpen)}
           >
@@ -100,8 +103,14 @@ export function PlanningAttendanceStage({
       {pasteOpen && (
         <Box p="sm" bg="bg.subtle">
           <Text textStyle="helper">
-            Mỗi dòng: Trường · Ngày · Học sinh · Giáo viên (cách bằng Tab). Thay
-            thế dữ liệu cả tuần.
+            Mỗi dòng: Trường · Ngày · Học sinh · Giáo viên (cách bằng Tab).{" "}
+            <Text
+              as="span"
+              display={{ base: "inline", lg: "block" }}
+              textStyle={{ base: "helper", lg: "label" }}
+            >
+              Thay thế dữ liệu cả tuần.
+            </Text>
           </Text>
           <Textarea
             aria-label="Dữ liệu dán"
@@ -111,6 +120,7 @@ export function PlanningAttendanceStage({
           />
           <Button
             size="sm"
+            h={atlasWorkbarControlHeight}
             disabled={!paste.trim() || !c.canEdit}
             onClick={() => {
               c.pasteAttendance(paste);

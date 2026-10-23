@@ -17,6 +17,7 @@ import {
 import { useLayoutEffect, useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
 import {
   useAtlasPortalContainer,
   useAtlasWorkbenchActive,
@@ -109,6 +110,7 @@ export function PlanningMenuStage({
               <Popover.Trigger asChild>
                 <Button
                   size="sm"
+                  h={atlasWorkbarControlHeight}
                   variant="businessPrimary"
                   disabled={!c.canEdit || c.syncing}
                 >
@@ -119,6 +121,7 @@ export function PlanningMenuStage({
             ) : (
               <Button
                 size="sm"
+                h={atlasWorkbarControlHeight}
                 variant="businessPrimary"
                 disabled={!c.canEdit || c.syncing}
                 onClick={() =>
