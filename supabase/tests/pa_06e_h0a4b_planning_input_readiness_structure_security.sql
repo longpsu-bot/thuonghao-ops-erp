@@ -51,9 +51,9 @@ select is(
     'attendance_approval_snapshot_id', 'blocking_issue_count',
     'warning_count', 'evaluated_by_actor_id', 'evaluated_at',
     'pantry_need_batch_id', 'pantry_need_batch_version',
-    'pantry_need_approval_snapshot_id'
+    'pantry_need_approval_snapshot_id', 'pantry_absent'
   ]::text[],
-  'planning_input_evaluations has only exact source, count, actor, and Pantry evidence'
+  'planning_input_evaluations has only exact source, count, actor, and Pantry binding or absence evidence'
 );
 
 select is(

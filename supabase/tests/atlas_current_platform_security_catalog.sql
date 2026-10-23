@@ -1816,18 +1816,15 @@ select is(
     'policy_count', 689,
     'policy_catalog_md5', 'd2a7ef8da79571431cbd60b93bd2acdf',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 372,
-    -- Baseline370/hash854e9855 plus exactly the two private context variants
-    -- of existing PO coverage/frontier, independently projected before install.
-    -- Both retain procurement-runtime ownership, definer and empty search path.
-    'private_function_catalog_md5', 'b892806b6558f55461e9f1d56ea604f4',
+    'private_function_count', 373,
+    -- One private stable invoker predicate for optional daily Pantry absence.
+    -- Existing owners, browser grants, RLS and policies remain pinned.
+    'private_function_catalog_md5', '599c58cc86a668bb419ad9b3f14ffcd2',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
-    -- Baseline1909/hash3be94aca plus the two new function owners' EXECUTE
-    -- and only frontier EXECUTE for atlas_read_runtime: three non-grantable rows.
-    -- Browser/public grants and every original row remain pinned.
-    'positive_target_grant_count', 1912,
-    'positive_target_grant_md5', '1211d64964b9d4ff872d6ee04edcce93',
+    -- Three additional private runtime EXECUTE grants; no browser grant.
+    'positive_target_grant_count', 1915,
+    'positive_target_grant_md5', '8f99817c55925fdb414dd36d877eb93c',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

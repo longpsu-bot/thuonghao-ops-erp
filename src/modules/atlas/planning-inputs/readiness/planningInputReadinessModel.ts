@@ -39,6 +39,7 @@ export type ReadinessCandidate = {
 };
 
 export type ReadinessSourceEvidence = {
+  optional_absent?: boolean;
   selection_state: ReadinessSelectionState;
   coverage: "COVERS" | "DOES_NOT_COVER" | "NOT_APPLICABLE";
   source_current: boolean;
@@ -89,7 +90,8 @@ export type ReadinessHistoryItem = {
   history_item_id: string;
   occurred_at: string;
   evaluation?: Omit<ReadinessEvaluation, "issues"> & {
-    historical_pantry_state?: "PRE_PANTRY_NULL_BINDING" | "BOUND";
+    historical_pantry_state?:
+      "PRE_PANTRY_NULL_BINDING" | "OPTIONAL_ABSENT" | "BOUND";
     can_authorize_need_generation_request?: boolean;
     issues: ReadinessIssue[];
   };
@@ -288,6 +290,8 @@ export function readinessExpectation(
 export function pantryReadinessEvidenceLabel(
   evidence: ReadinessSourceEvidence,
 ) {
+  if (evidence.optional_absent)
+    return "Không có bổ sung hoặc hàng đặt riêng; không cần xác nhận.";
   if (
     evidence.selection_state === "MISSING" ||
     evidence.pantry_evidence_kind === "MISSING"

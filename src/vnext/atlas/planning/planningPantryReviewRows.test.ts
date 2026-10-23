@@ -45,18 +45,12 @@ describe("Pantry fact comparison", () => {
       expect(preview).toEqual(original);
     },
   );
-  it("counts the explicit whole-week confirmation as a meaningful change", () => {
+  it("does not present the technical zero-source flag as an operator action", () => {
     const rows = planningPantryReviewRows({
       preview: pantryPreview(),
       pantryData: pantrySnapshot(),
     });
-    expect(rows).toEqual([
-      expect.objectContaining({
-        school: "Toàn tuần",
-        before: "Chưa xác nhận",
-        after: "Không có hàng đặt riêng",
-      }),
-    ]);
+    expect(rows).toEqual([]);
   });
   it("shows a School/date composition-mode change even without changed ingredient lines", () => {
     const preview = {

@@ -437,6 +437,8 @@ export function createPlanningReviewFixture() {
             ...row,
             school_id: row.school_id,
             service_date: row.service_date,
+            ingredient_id: row.ingredient_id,
+            pantry_need_purpose_id: row.pantry_need_purpose_id,
             school_name: school?.school_name ?? "",
             ingredient_name: ingredient?.ingredient_name ?? "",
             delivery_location_name:
@@ -455,6 +457,17 @@ export function createPlanningReviewFixture() {
             comparison: {
               ...preview.comparison,
               new_lines: submitted,
+              omitted_lines: (pantry.batch?.active_lines ?? []).filter(
+                (line) =>
+                  !submitted.some(
+                    (row) =>
+                      row.service_date === line.service_date &&
+                      row.school_id === line.school_id &&
+                      row.ingredient_id === line.ingredient_id &&
+                      row.pantry_need_purpose_id ===
+                        line.pantry_need_purpose_id,
+                  ),
+              ),
               changed_school_dates: submitted.map((row) => ({
                 school_id: row.school_id,
                 service_date: row.service_date,

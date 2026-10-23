@@ -120,6 +120,12 @@ describe("RMVP-03B authoritative model", () => {
 
   it("distinguishes positive, explicit-zero, and missing additional demand", () => {
     expect(
+      pantryReadinessEvidenceLabel({
+        ...evidence("MISSING", null),
+        optional_absent: true,
+      }),
+    ).toBe("Không có bổ sung hoặc hàng đặt riêng; không cần xác nhận.");
+    expect(
       pantryReadinessEvidenceLabel(
         evidence("POSITIVE_LINES", {
           ...candidate,

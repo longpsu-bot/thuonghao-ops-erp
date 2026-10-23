@@ -255,7 +255,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(screen.getByText("Không có trường phù hợp bộ lọc.")).toBeVisible();
     expect(
       screen.queryByText(
-        "Chưa có hàng đặt riêng trong ngày này. Chưa xác nhận cả tuần không có hàng đặt riêng.",
+        "Không có bổ sung hoặc hàng đặt riêng trong ngày này.",
       ),
     ).not.toBeInTheDocument();
   });
@@ -911,13 +911,10 @@ describe("Planning sources Chakra workbench", () => {
     ).toBeVisible();
     fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     expect(
-      await screen.findByRole("checkbox", {
+      screen.queryByRole("checkbox", {
         name: "Xác nhận cả tuần không có hàng đặt riêng",
       }),
-    ).toBeDisabled();
-    expect(
-      screen.getByText("Chọn Tất cả trường để thay đổi xác nhận cho cả tuần."),
-    ).toBeVisible();
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Trường Nguyễn Du" }));
     fireEvent.click(await screen.findByRole("button", { name: "Chọn tất cả" }));
     fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
@@ -1260,12 +1257,11 @@ describe("Planning sources Chakra workbench", () => {
       ).getByText("KG"),
     ).toBeVisible();
     expect(screen.getAllByText("Bếp Trường Nguyễn Du")[0]).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("checkbox", {
+    expect(
+      screen.queryByRole("checkbox", {
         name: "Xác nhận cả tuần không có hàng đặt riêng",
       }),
-    );
-    expect(await screen.findByRole("dialog")).toBeVisible();
+    ).not.toBeInTheDocument();
   });
   it("keeps Pantry School read-only and retains its exact draft through School filtering and Preview", async () => {
     const fixture = createPlanningStoryFixture("pantry_review");

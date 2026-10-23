@@ -1,6 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { usePlanningSources, type PlanningJob } from "./usePlanningSources";
+import { createPlanningStoryFixture } from "./planningStoryFixtures";
 import {
   createPlanningReviewFixture,
   reviewWeek,
@@ -11,6 +12,17 @@ import {
   menuPreview,
 } from "./planningReviewFixtures";
 afterEach(cleanup);
+function addValidPantryDraft(result: {
+  current: ReturnType<typeof usePlanningSources>;
+}) {
+  act(() => result.current.addPantryRow("school-0"));
+  act(() =>
+    result.current.editPantryRow(0, {
+      ingredient_id: "ingredient-1",
+      requested_quantity: "1",
+    }),
+  );
+}
 async function setup() {
   const fixture = createPlanningReviewFixture();
   const props = {
@@ -397,7 +409,7 @@ describe("Planning source safety", () => {
     async (job) => {
       const { result } = await setup();
       act(() => result.current.transition({ job }));
-      act(() => result.current.requestNoAdditions(true));
+      addValidPantryDraft(result);
       for (const next of [
         { job: "attendance" },
         { week: "2026-09-14" },
@@ -693,7 +705,7 @@ describe("Planning source safety", () => {
       act(() => result.current.transition({ job }));
       if (job === "attendance")
         act(() => result.current.editAttendance(0, "student_portions", "0"));
-      if (job === "pantry") act(() => result.current.requestNoAdditions(true));
+      if (job === "pantry") addValidPantryDraft(result);
       const api = job === "pantry" ? fixture.pantryApi : fixture.api;
       const chain = {
         need_generation_run_id: "chain-1",
@@ -809,7 +821,7 @@ describe("Planning source safety", () => {
         act(() => result.current.editAttendance(0, "student_portions", "0"));
         fixture.api.saveCompletedAttendance = async () => unknown;
       } else {
-        act(() => result.current.requestNoAdditions(true));
+        addValidPantryDraft(result);
         fixture.pantryApi.saveCompleted = async () => unknown;
       }
       await act(() => result.current.previewChanges());
@@ -1049,18 +1061,87 @@ describe("Planning source safety", () => {
     act(() => result.current.pasteAttendance("Unknown\t2026-09-07\tx\t0"));
     expect(result.current.errors.length).toBeGreaterThan(0);
   });
-  it("requires an explicit whole-week no-additions decision and protects existing rows", async () => {
-    const { result } = await setup();
+  it("keeps untouched empty additions clean without a confirmation or Save", async () => {
+    const { result, fixture } = await setup();
+    const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
     act(() => result.current.transition({ job: "pantry" }));
-    expect(result.current.noAdditions).toBe(false);
+    expect(result.current.dirty).toBe(false);
+    expect(result.current.candidate).toBe(false);
+    await act(() => result.current.save());
+    expect(save).not.toHaveBeenCalled();
     act(() => result.current.addPantryRow("school-0"));
-    act(() => result.current.requestNoAdditions(true));
-    expect(result.current.pending).not.toBeNull();
-    act(() => result.current.cancelTransition());
     expect(result.current.pantryRows).toHaveLength(1);
-    act(() => result.current.requestNoAdditions(true));
-    act(() => result.current.discardTransition());
-    expect(result.current.noAdditions).toBe(true);
-    expect(result.current.pantryRows).toEqual([]);
+    act(() => result.current.removePantryRow(0));
+    expect(result.current.dirty).toBe(false);
+    expect(result.current.candidate).toBe(false);
+  });
+  it("reviews removal of the last saved addition and allows adding after saved zero", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.pantry.batch =
+      createPlanningStoryFixture("pantry_review").pantry.batch!;
+    fixture.pantry.batch.active_lines = fixture.pantry.batch.active_lines.slice(
+      0,
+      1,
+    );
+    const preview = vi.spyOn(fixture.pantryApi, "preview");
+    const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
+    const { result } = renderHook(() =>
+      usePlanningSources({
+        ...fixture,
+        authSubject: "operator",
+        initialWeek: reviewWeek,
+        initialJob: "pantry",
+      }),
+    );
+    await waitFor(() => expect(result.current.canEdit).toBe(true));
+    expect(result.current.pantryRows).toHaveLength(1);
+    act(() => result.current.removePantryRow(0));
+    expect(result.current.dirty).toBe(true);
+    expect(save).not.toHaveBeenCalled();
+    await act(() => result.current.previewChanges());
+    expect(preview.mock.calls[0]?.[3]).toBe(true);
+    expect(preview.mock.calls[0]?.[4]).toEqual([]);
+    const reviewed = result.current.preview;
+    expect(
+      reviewed &&
+        "no_additions_confirmed" in reviewed &&
+        reviewed.comparison.omitted_lines,
+    ).toHaveLength(1);
+    await act(() => result.current.save());
+    expect(save.mock.calls[0]?.[0].payload).toMatchObject({
+      no_additions_confirmed: true,
+      rows: [],
+    });
+    expect(result.current.dirty).toBe(false);
+    act(() => result.current.addPantryRow("school-0"));
+    expect(result.current.pantryRows).toHaveLength(1);
+    expect(result.current.noAdditions).toBe(false);
+  });
+  it("lets an existing unfinished empty batch complete through review and Save", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.pantry.batch =
+      createPlanningStoryFixture("pantry_zero").pantry.batch!;
+    fixture.pantry.batch.pantry_need_batch_status = "DRAFT";
+    fixture.pantry.batch.no_additions_confirmed = false;
+    const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
+    const { result } = renderHook(() =>
+      usePlanningSources({
+        ...fixture,
+        authSubject: "operator",
+        initialWeek: reviewWeek,
+        initialJob: "pantry",
+      }),
+    );
+    await waitFor(() => expect(result.current.canEdit).toBe(true));
+    expect(result.current.dirty).toBe(false);
+    expect(result.current.candidate).toBe(true);
+    expect(save).not.toHaveBeenCalled();
+    await act(() => result.current.previewChanges());
+    await act(() => result.current.save());
+    expect(save.mock.calls[0]?.[0].payload).toMatchObject({
+      no_additions_confirmed: true,
+      rows: [],
+    });
+    expect(result.current.candidate).toBe(false);
   });
 });

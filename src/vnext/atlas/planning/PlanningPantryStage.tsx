@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Checkbox,
   Field,
   Flex,
   Input,
@@ -141,11 +140,11 @@ export function PlanningPantryStage({
             schools={schools}
             value={targetSchoolId}
             onChange={setAddSchool}
-            disabled={!c.canEdit || c.noAdditions}
+            disabled={!c.canEdit}
           />
         )}
         <Field.Root
-          disabled={!c.canEdit || c.noAdditions || !targetSchoolId}
+          disabled={!c.canEdit || !targetSchoolId}
           w={{ base: "full", md: "var(--atlas-layout-source-width, 270px)" }}
           gap="xs"
         >
@@ -174,9 +173,7 @@ export function PlanningPantryStage({
           ref={addButton}
           size="sm"
           h={atlasWorkbarControlHeight}
-          disabled={
-            !c.canEdit || c.noAdditions || !targetSchoolId || !targetPurpose
-          }
+          disabled={!c.canEdit || !targetSchoolId || !targetPurpose}
           onClick={() =>
             c.addPantryRow(
               targetSchoolId,
@@ -186,24 +183,6 @@ export function PlanningPantryStage({
         >
           + Thêm dòng
         </Button>
-        <Checkbox.Root
-          checked={c.noAdditions}
-          disabled={!c.canEdit || c.schoolIds.length > 0}
-          onCheckedChange={(d) => c.requestNoAdditions(d.checked === true)}
-        >
-          <Checkbox.HiddenInput />
-          <Checkbox.Control>
-            <Checkbox.Indicator />
-          </Checkbox.Control>
-          <Checkbox.Label>
-            Xác nhận cả tuần không có hàng đặt riêng
-          </Checkbox.Label>
-        </Checkbox.Root>
-        {c.schoolIds.length > 0 && (
-          <Text textStyle="helper" color="fg.muted">
-            Chọn Tất cả trường để thay đổi xác nhận cho cả tuần.
-          </Text>
-        )}
       </Flex>
       {!targetPurpose && (
         <Text px="sm" role="status" textStyle="helper" color="status.warning">
@@ -233,9 +212,7 @@ export function PlanningPantryStage({
             ? "Không có trường phù hợp bộ lọc."
             : c.pantryRows.some((row) => row.service_date === c.date)
               ? "Không có hàng đặt riêng khớp bộ lọc trong ngày này."
-              : c.noAdditions
-                ? "Đã chọn xác nhận không có hàng đặt riêng trong cả tuần."
-                : "Chưa có hàng đặt riêng trong ngày này. Chưa xác nhận cả tuần không có hàng đặt riêng."}
+              : "Không có bổ sung hoặc hàng đặt riêng trong ngày này."}
         </Text>
       )}
       <AtlasTableViewport

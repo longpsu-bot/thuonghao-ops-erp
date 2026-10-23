@@ -1043,7 +1043,7 @@ describe("Atlas staging dry-run and workflow", () => {
       ),
     ).toHaveLength(2);
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(126);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(127);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "pnpm",
       args: [
@@ -1090,6 +1090,7 @@ describe("Atlas staging dry-run and workflow", () => {
       ],
     });
     for (const suite of [
+      "atlas_optional_pantry.sql",
       "pantry_b1_two_source.sql",
       "pantry_b1_composition.sql",
     ]) {

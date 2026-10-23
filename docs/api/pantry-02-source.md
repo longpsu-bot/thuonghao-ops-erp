@@ -1,5 +1,11 @@
 # PANTRY-02 Pantry Source API Contract
 
+**23 October forward amendment:** the active workbench removes the recurring
+no-additions control. Untouched absent weeks need no Pantry command. Clearing
+saved rows still uses reviewed consequential Save with the existing explicit-zero
+payload. All v1–v4 payloads and immutable snapshots remain compatible. See the
+[approved amendment](../implementation-tasks/TASK-ATLAS-OPTIONAL-WEEKLY-ADDITIONS.md).
+
 **Current operator model — 18 October Owner amendment:** exactly two creation
 choices, Bổ sung (`planning_identified_supplement`) and Hàng đặt riêng
 (`school_requested_supplement`). The second label supersedes earlier wording

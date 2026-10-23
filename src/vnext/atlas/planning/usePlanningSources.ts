@@ -79,7 +79,6 @@ export type PlanningTransition = {
   date?: string;
   schoolIds?: string[];
   refresh?: boolean;
-  noAdditions?: boolean;
 };
 export type PlanningSourcesProps = AtlasModuleExitProps & {
   api: Pick<
@@ -190,7 +189,7 @@ export function usePlanningSources({
   const [attendanceRows, setAttendanceRows] = useState<AttendanceDraft[]>([]);
   const [pantryRows, setPantryRows] = useState<PantryDraftRow[]>([]);
   const [modes, setModes] = useState<PantrySchoolDateMode[]>([]);
-  const [noAdditions, setNoAdditions] = useState(false);
+  const noAdditions = pantryRows.length === 0;
   const [menuSource, setMenuSource] = useState({
     type: "GOOGLE_SHEET",
     name: "",
@@ -271,7 +270,6 @@ export function usePlanningSources({
   const resetPantry = useCallback((b: PantryWorkbenchData | null) => {
     setPantryRows(pantryRowsFromBatch(b?.batch ?? null));
     setModes(b?.batch?.school_date_modes ?? b?.school_date_modes ?? []);
-    setNoAdditions(b?.batch?.no_additions_confirmed ?? false);
   }, []);
   const resetDrafts = (
     p: PlanningInputsWorkbenchData | null,
@@ -389,7 +387,6 @@ export function usePlanningSources({
         : JSON.stringify([
             pantryRows,
             pantryModesForRows(pantryRows, modes),
-            noAdditions,
           ]) !==
           JSON.stringify([
             pantryRowsFromBatch(pantryData?.batch ?? null),
@@ -399,7 +396,6 @@ export function usePlanningSources({
                 pantryData?.school_date_modes ??
                 [],
             ),
-            pantryData?.batch?.no_additions_confirmed ?? false,
           ]);
   const candidate =
     dirty ||
@@ -407,7 +403,10 @@ export function usePlanningSources({
       attendanceNeedsConfirmation(
         data?.attendance ?? null,
         data?.default_attendance_preview ?? [],
-      ));
+      )) ||
+    (job === "pantry" &&
+      !!pantryData?.batch &&
+      pantryData.batch.pantry_need_batch_status !== "APPROVED");
   const pantryRowErrors = pantryRows.map((r) => ({
     ingredient: !r.ingredient_id ? "Chọn nguyên liệu." : "",
     quantity: !r.requested_quantity.trim() ? "Nhập số lượng." : "",
@@ -468,12 +467,6 @@ export function usePlanningSources({
     setSyncing(false);
     setBusy(false);
     clearReview();
-    if (next.noAdditions !== undefined) {
-      setPantryRows([]);
-      setModes([]);
-      setNoAdditions(next.noAdditions);
-      return;
-    }
     resetDrafts(data, pantryData);
     if (
       next.job === "menu" ||
@@ -507,7 +500,6 @@ export function usePlanningSources({
       !next.week &&
       !next.job &&
       !next.refresh &&
-      next.noAdditions === undefined &&
       (next.schoolIds || next.date)
     ) {
       clearReview();
@@ -561,7 +553,6 @@ export function usePlanningSources({
     );
     if (
       !canEdit ||
-      noAdditions ||
       !purpose ||
       !pantryData?.schools.some(
         (s) => s.school_id === schoolId && s.school_status === "ACTIVE",
@@ -604,14 +595,6 @@ export function usePlanningSources({
       ),
       { school_id: schoolId, service_date: date, direct_need_mode: mode },
     ]);
-  };
-  const requestNoAdditions = (value: boolean) => {
-    if (!canEdit || job !== "pantry" || schoolIds.length > 0) return;
-    if (value && pantryRows.length) setPending({ noAdditions: true });
-    else {
-      markEdit();
-      setNoAdditions(value);
-    }
   };
   const syncGoogle = async (id: string) => {
     if (
@@ -1154,7 +1137,6 @@ export function usePlanningSources({
     editPantryRow,
     removePantryRow,
     setMode,
-    requestNoAdditions,
     syncGoogle,
     menuSyncIssues,
     dismissMenuNotification: () => setMenuNotification(null),

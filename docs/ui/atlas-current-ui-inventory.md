@@ -14,6 +14,18 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 ## Current workspace amendment — 8 October 2026
 
+**Optional additions — 23 October 2026:** The Owner approved removal of the
+recurring weekly no-additions checkbox and its bulk-clear transition. Untouched
+empty weeks need no action. Row removal still shows the saved quantity in review
+and requires Save; saved empty weeks can accept new rows normally. Existing
+unfinished batches retain completion through review/Save. The
+[backend policy amendment](../implementation-tasks/TASK-ATLAS-OPTIONAL-WEEKLY-ADDITIONS.md)
+records verified daily absence without fabricated Pantry approvals and protects
+correction/history boundaries. Desktop fixture checks at 1366/1440/1920px confirm
+the 40px Add action, no overflow and no recurring confirmation control.
+This supersedes the pending Product-review note in the earlier presentation pass
+below. Mobile layout work remains deferred.
+
 **Desktop typography/action refinement — 23 October 2026:** The Owner limited
 this follow-up to desktop. At `lg` and above, reconciliation PO/PXK/delta totals
 use the existing 14px semibold tabular quantity role, with Units retained at

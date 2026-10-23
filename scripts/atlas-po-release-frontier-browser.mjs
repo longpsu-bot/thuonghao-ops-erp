@@ -273,7 +273,7 @@ and l.ingredient_id='a7400000-0000-4000-8000-000000002002' and r.is_current and 
   await until(
     () =>
       evaluate(
-        `document.body.innerText.includes('1 đơn mua theo nhà cung cấp')&&[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Phát hành cho NCC'&&b.disabled)`,
+        `document.body.innerText.includes('1 đơn mua đang hiển thị')&&[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Phát hành cho NCC'&&b.disabled)`,
       ),
     "FRONTIER_FILTERED_DISABLED_UI",
   );

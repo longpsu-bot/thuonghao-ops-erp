@@ -1,12 +1,10 @@
 import { Button, Dialog } from "@chakra-ui/react";
 export function PlanningDirtyExitDialog({
   open,
-  wholeWeek,
   onCancel,
   onDiscard,
 }: {
   open: boolean;
-  wholeWeek: boolean;
   onCancel: () => void;
   onDiscard: () => void;
 }) {
@@ -30,16 +28,9 @@ export function PlanningDirtyExitDialog({
         >
           <Dialog.Header>
             <Dialog.Title>
-              {wholeWeek
-                ? "Bỏ các dòng hàng đặt riêng của cả tuần?"
-                : "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?"}
+              Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?
             </Dialog.Title>
           </Dialog.Header>
-          {wholeWeek && (
-            <Dialog.Body>
-              Xác nhận cả tuần không có hàng đặt riêng sẽ bỏ các dòng đang có.
-            </Dialog.Body>
-          )}
           <Dialog.Footer flexWrap="wrap">
             <Button onClick={onCancel}>Tiếp tục chỉnh sửa</Button>
             <Button variant="destructive" onClick={onDiscard}>

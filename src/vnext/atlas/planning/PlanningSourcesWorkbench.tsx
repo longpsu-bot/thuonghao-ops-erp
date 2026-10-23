@@ -406,7 +406,6 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
             )}
             <PlanningDirtyExitDialog
               open={!!c.pending}
-              wholeWeek={c.pending?.noAdditions === true}
               onCancel={c.cancelTransition}
               onDiscard={c.discardTransition}
             />
