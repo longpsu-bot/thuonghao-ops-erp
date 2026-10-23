@@ -14,6 +14,24 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 ## Current workspace amendment — 8 October 2026
 
+**Action-layout follow-up — 23 October 2026:** The Owner-approved review follow-up
+stacks Allocation Close/Save actions below `lg` and lets the complete source-acceptance
+label wrap within the available width, including narrow desktop detail panes.
+Change Order detail emphasizes **Sửa lệnh**, with **Hủy lệnh** separated as a quiet
+danger action; its explicit destructive confirmation remains unchanged.
+School defaults show visible/total results when filtering reduces the list and
+scope the active count to those results. Unsaved and hidden-unsaved counts retain
+their whole-workbench scope. The secondary School tab bar is hidden when neither
+optional configuration view is supported; its panel keeps its accessible name,
+and supported cooking/dispatch tabs remain available.
+All 95 focused School, allocation, change-order, cooking and dispatch tests pass.
+Fixture browser review verifies School/Change Order hierarchy and keyboard focus
+at 360/1366px, plus Allocation containment at 360/650/1366/1440/1920px. Narrow
+Allocation buttons are at least 44px; desktop actions align at 40px. Typecheck,
+changed-file formatting and the layout scan pass. This claims no hosted rollout.
+No API, permission, command, quantity, lifecycle, database or migration changes;
+rollback reverts this frontend/documentation change without altering business data.
+
 **Button layout refinement — 23 October 2026:** The Owner approved a bounded
 presentation pass over the PO action band and similar workbench utilities.
 POs group the visible count, secondary bulk release and export controls on a

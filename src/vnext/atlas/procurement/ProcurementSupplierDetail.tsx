@@ -575,6 +575,8 @@ export function ProcurementSupplierDetail({
         bottom="var(--atlas-layout-zero, 0)"
         zIndex="var(--atlas-layout-footer-layer, 2)"
         justify="space-between"
+        direction={{ base: "column", lg: "row" }}
+        align="stretch"
         gap="sm"
         p="md"
         bg="bg.toolbar"
@@ -595,6 +597,11 @@ export function ProcurementSupplierDetail({
         <Button
           variant="businessPrimary"
           disabled={!canSave}
+          flex={{ base: "none", lg: "1" }}
+          minW="var(--atlas-layout-zero, 0)"
+          h="var(--atlas-layout-auto, auto)"
+          py="xs"
+          whiteSpace="normal"
           minH={{
             base: "var(--atlas-layout-mobile-target, 44px)",
             lg: "control",
