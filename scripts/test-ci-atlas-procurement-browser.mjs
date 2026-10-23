@@ -658,7 +658,7 @@ try {
     `(()=>{const input=document.querySelector('input[placeholder="Nhà cung ứng, số đơn, nguyên liệu, trường"]');const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;setter.call(input,${JSON.stringify(searchName)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`,
   );
   await until(
-    async () => (await text()).includes("1 đơn mua theo nhà cung cấp"),
+    async () => (await text()).includes("1 đơn mua đang hiển thị"),
     "FILTER",
   );
   assert(
