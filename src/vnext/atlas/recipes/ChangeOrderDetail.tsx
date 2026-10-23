@@ -108,13 +108,25 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
       <Text mt="sm">{r.reason_note}</Text>
       <Flex mt="md" gap="sm" wrap="wrap">
         {row.can_correct && (
-          <Button onClick={() => c.openCorrection(row)} disabled={!c.canAct}>
+          <Button
+            variant="businessPrimary"
+            onClick={() => c.openCorrection(row)}
+            disabled={!c.canAct}
+          >
             Sửa lệnh
           </Button>
         )}
         {row.can_cancel && (
           <Button
-            variant="destructive"
+            variant="tertiary"
+            ms="var(--atlas-layout-auto, auto)"
+            color="status.danger"
+            _hover={{
+              bg: "bg.danger",
+              color: "status.danger",
+              borderColor: "border.danger",
+            }}
+            _active={{ bg: "bg.danger" }}
             onClick={() => c.openCancel(row)}
             disabled={!c.canAct}
           >

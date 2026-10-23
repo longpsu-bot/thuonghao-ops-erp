@@ -70,7 +70,8 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
     Boolean(c.error) ||
     c.lock === "unknown" ||
     c.lock === "readback";
-  const activeCount = c.schools.filter(
+  const filtered = c.visibleSchools.length !== c.schools.length;
+  const activeCount = c.visibleSchools.filter(
     (school) => school.school_status === "ACTIVE",
   ).length;
 
@@ -85,8 +86,10 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
           </Text>
         ) : (
           <Text textStyle="helper" color="fg.muted">
-            {c.schools.length} trường · {activeCount} đang hoạt động ·{" "}
-            {c.dirtyCount} thay đổi chưa lưu
+            {filtered ? `${c.visibleSchools.length} / ` : ""}
+            {c.schools.length} trường · {activeCount} đang hoạt động
+            {filtered ? " trong kết quả" : ""} · {c.dirtyCount} thay đổi chưa
+            lưu
             {c.hiddenDirtyCount > 0
               ? ` · ${c.hiddenDirtyCount} thay đổi ngoài bộ lọc`
               : ""}
@@ -141,7 +144,11 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         </Heading>
       </Box>
       <Tabs.Root value={view} onValueChange={({ value }) => setView(value)}>
-        <Tabs.List aria-label="Thiết lập trường học" {...atlasSecondaryTabList}>
+        <Tabs.List
+          aria-label="Thiết lập trường học"
+          {...atlasSecondaryTabList}
+          display={c.cookingSupported || c.dispatchSupported ? "flex" : "none"}
+        >
           <Tabs.Trigger value="defaults" {...atlasSecondaryTabTrigger}>
             Sĩ số mặc định
           </Tabs.Trigger>

@@ -107,6 +107,44 @@ const teacher = (name = "Trường Trung học Beta") =>
   screen.getByLabelText(`Giáo viên mặc định — ${name}`);
 
 describe("Chakra School default portions workbench", () => {
+  it("omits single-option navigation while retaining a named default workplane", async () => {
+    await renderReady(apiWith().api);
+    expect(
+      screen.queryByRole("tablist", { name: "Thiết lập trường học" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("tabpanel", { name: "Sĩ số mặc định" }),
+    ).toBeVisible();
+  });
+
+  it("scopes result and active counts to search and type filters", async () => {
+    const connected = apiWith();
+    await renderReady(connected.api);
+    expect(screen.getByText(/2 trường · 1 đang hoạt động/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Tìm trường"), {
+      target: { value: "Ánh Dương" },
+    });
+    expect(
+      screen.getByText(/1 \/ 2 trường · 0 đang hoạt động trong kết quả/),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Tìm trường"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByLabelText("Loại trường"), {
+      target: { value: "Trung học" },
+    });
+    expect(
+      screen.getByText(/1 \/ 2 trường · 1 đang hoạt động trong kết quả/),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Tìm trường"), {
+      target: { value: "không tồn tại" },
+    });
+    expect(
+      screen.getByText(/0 \/ 2 trường · 0 đang hoạt động trong kết quả/),
+    ).toBeInTheDocument();
+    expect(connected.updateSchoolDefaultsBulk).not.toHaveBeenCalled();
+  });
+
   it("keeps all five sort actions and the School order visible in the narrow composition", async () => {
     await renderReady(apiWith().api);
     for (const label of [
@@ -406,6 +444,11 @@ describe("Chakra School default portions workbench", () => {
       target: { value: "beta" },
     });
     expect(screen.getByText(/1 thay đổi ngoài bộ lọc/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /1 \/ 2 trường · 1 đang hoạt động trong kết quả · 2 thay đổi chưa lưu/,
+      ),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
     await waitFor(() =>
