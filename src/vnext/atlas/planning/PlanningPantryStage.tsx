@@ -17,6 +17,7 @@ import { PantrySchoolChooser } from "./PantrySchoolChooser";
 import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
 import { pantryIssueCopy } from "./pantryIssueCopy";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 
@@ -172,6 +173,7 @@ export function PlanningPantryStage({
         <Button
           ref={addButton}
           size="sm"
+          h={atlasWorkbarControlHeight}
           disabled={
             !c.canEdit || c.noAdditions || !targetSchoolId || !targetPurpose
           }

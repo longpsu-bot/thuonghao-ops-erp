@@ -373,10 +373,9 @@ describe("read-only reconciliation operator workbench", () => {
     show("MIXED_UNITS");
     await openFirst();
     expect(
-      within(table()).getByText("kg · PO 10 · PXK 20 · Δ -10"),
-    ).toBeVisible();
-    expect(
-      within(table()).getByText("cái · PO 20 · PXK 10 · Δ +10"),
+      within(table()).getByRole("cell", {
+        name: "kg · PO 10 · PXK 20 · Δ -10 cái · PO 20 · PXK 10 · Δ +10",
+      }),
     ).toBeVisible();
     const detail = screen.getByRole("table", { name: "Chi tiết nguyên liệu" });
     expect(within(detail).getAllByText("Bí đỏ")).toHaveLength(2);

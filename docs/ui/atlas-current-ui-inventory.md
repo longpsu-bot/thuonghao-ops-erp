@@ -14,6 +14,23 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 ## Current workspace amendment — 8 October 2026
 
+**Desktop typography/action refinement — 23 October 2026:** The Owner limited
+this follow-up to desktop. At `lg` and above, reconciliation PO/PXK/delta totals
+use the existing 14px semibold tabular quantity role, with Units retained at
+13px regular. Attendance's whole-week paste replacement notice becomes a
+separate 14px semibold line; its format instruction stays helper text.
+Menu sync, Attendance import/paste and Pantry Add actions reuse the shared
+40px desktop control height, preserving the existing 44px narrow target.
+Fixture review at 1366/1440/1920px confirms those heights, quantity/Unit roles,
+and no document overflow. The existing Change Order desktop date field has no
+year/calendar overlap at those widths and needs no layout change in this pass.
+All 71 focused Planning/Reconciliation tests pass, with typecheck, formatting,
+copy validation, type/layout scan and independent review passing.
+The weekly zero-additions requirement is under Product review and is unchanged
+by this presentation pass; its checkbox, guards, review and Save behavior remain.
+No source, quantity, API, authorization, lifecycle, database or migration changes.
+Rollback reverts these frontend/documentation changes without altering data.
+
 **Action-layout follow-up — 23 October 2026:** The Owner-approved review follow-up
 stacks Allocation Close/Save actions below `lg` and lets the complete source-acceptance
 label wrap within the available width, including narrow desktop detail panes.
