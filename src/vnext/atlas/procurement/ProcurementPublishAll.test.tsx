@@ -80,8 +80,10 @@ describe("Publish all loaded eligible POs", () => {
     );
     expect(releaseAll).toHaveBeenCalledOnce();
     expect(
-      screen.getByText(/Phát hành các bản nháp.*không giới hạn theo tìm kiếm/),
-    ).toBeInTheDocument();
+      screen.getByRole("button", { name: "Phát hành tất cả PO (2)" }),
+    ).toHaveAccessibleDescription(
+      /Phát hành các bản nháp.*không giới hạn theo tìm kiếm/,
+    );
   });
   it("releases only eligible current drafts once, using each exact version and revision", async () => {
     const h = hook();

@@ -34,6 +34,16 @@ Shared sortable headers retain 44px targets below `lg` and compact
 desktop geometry. This pass changes no command, API, permission, lifecycle,
 calculation, database object or released document; no migration is required.
 
+**PO typography refinement — 23 October 2026:** The Owner-approved follow-up
+uses existing v3 roles: the visible count is a 14px semibold label; the 13px
+loaded-scope explanation emphasizes that search does not restrict bulk actions
+and has a 75ch maximum reading width. Missing School detail remains informational,
+using a 14px body explanation with a semibold **Lưu ý đối chiếu:** lead-in and
+a 70ch maximum width. Ingredient names remain regular, quantities use the existing
+14px semibold tabular role, and adjacent Units use the existing 13px regular
+role. Dates, document metadata and delivery locations retain helper styling.
+No global typography token or operational meaning changes.
+
 **Owner copy amendment — 13 October 2026:** The launcher is **Chức năng**, its
 search is **Tìm chức năng**, and the open-tab list is **Màn hình đang mở**.
 This explicitly requested wording refinement replaces the literal Workbench

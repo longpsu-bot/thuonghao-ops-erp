@@ -205,8 +205,8 @@ export function ProcurementOrdersStage({
         aria-label="Thao tác đơn mua đã tải"
       >
         <Text
-          textStyle="helper"
-          color="fg.muted"
+          textStyle="label"
+          color="fg.secondary"
           flex="1"
           minW="var(--atlas-layout-zero, 0)"
         >
@@ -284,13 +284,16 @@ export function ProcurementOrdersStage({
         <Text
           id={`${detailId}-loaded-scope`}
           textStyle="helper"
-          color="fg.muted"
+          color="fg.secondary"
+          maxW="75ch"
         >
           {onReleaseAll
             ? "Phát hành các bản nháp và xuất các đơn"
             : "Xuất các đơn"}{" "}
-          đủ điều kiện trong dữ liệu đã tải theo khoảng ngày; không giới hạn
-          theo tìm kiếm.
+          đủ điều kiện trong dữ liệu đã tải theo khoảng ngày;{" "}
+          <Box as="span" fontWeight="semibold">
+            không giới hạn theo tìm kiếm.
+          </Box>
         </Text>
         {bulkProgress && (
           <Text role="status" textStyle="helper">
@@ -612,7 +615,10 @@ export function ProcurementOrdersStage({
                 />
               )}
               {selected.lines.some((line) => !line.school_breakdown.length) && (
-                <Text color="fg.muted" textStyle="helper">
+                <Text color="fg.secondary" textStyle="body" maxW="70ch">
+                  <Box as="span" fontWeight="semibold">
+                    Lưu ý đối chiếu:
+                  </Box>{" "}
                   Chưa có chi tiết trường nhận để đối chiếu cho một số dòng.
                   Điểm giao không thay thế thông tin trường nhận.
                 </Text>
@@ -642,16 +648,18 @@ export function ProcurementOrdersStage({
                       maxW="var(--atlas-orders-document-width, 1100px)"
                     >
                       <Box>
-                        <Text fontWeight="semibold">
+                        <Text textStyle="body">
                           {line.ingredient.ingredient_name}
                         </Text>
-                        <Text
-                          mt="xs"
-                          fontVariantNumeric="tabular-nums"
-                          fontWeight="semibold"
-                        >
+                        <Text mt="xs" textStyle="quantityInline">
                           {quantity(line.ordered_quantity)}{" "}
-                          {purchaseOrderLineUnitLabel(selected.status, line)}
+                          <Text
+                            as="span"
+                            textStyle="unitInline"
+                            color="fg.secondary"
+                          >
+                            {purchaseOrderLineUnitLabel(selected.status, line)}
+                          </Text>
                         </Text>
                         <Text mt="xs" textStyle="helper" color="fg.muted">
                           Điểm giao: {line.delivery_location.location_name}
@@ -673,13 +681,19 @@ export function ProcurementOrdersStage({
                             </Box>
                             <Text
                               whiteSpace="nowrap"
-                              fontVariantNumeric="tabular-nums"
+                              textStyle="quantityInline"
                             >
                               {quantity(school.ordered_quantity)}{" "}
-                              {purchaseOrderLineUnitLabel(
-                                selected.status,
-                                line,
-                              )}
+                              <Text
+                                as="span"
+                                textStyle="unitInline"
+                                color="fg.secondary"
+                              >
+                                {purchaseOrderLineUnitLabel(
+                                  selected.status,
+                                  line,
+                                )}
+                              </Text>
                             </Text>
                           </Flex>
                         ))}
