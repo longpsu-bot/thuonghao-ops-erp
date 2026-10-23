@@ -65,6 +65,10 @@ function show(
 async function quantity() {
   return screen.findByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" });
 }
+function openUtilities() {
+  const button = screen.getByRole("button", { name: "Tiện ích" });
+  if (button.getAttribute("aria-expanded") === "false") fireEvent.click(button);
+}
 
 describe("K3 explicit released correction UI", () => {
   it("requires a reason and a separate exact-quantity review before writing", async () => {
@@ -149,6 +153,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       };
     });
     await quantity();
+    openUtilities();
     fireEvent.click(
       screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
     );
@@ -182,6 +187,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       delete f.need.grouped_requirements[0]!.source_breakdown;
     });
     await quantity();
+    openUtilities();
     fireEvent.click(
       screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
     );
@@ -554,6 +560,22 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(
       within(utilities).getByRole("group", { name: "Ngày trong khoảng" }),
     ).toBeVisible();
+    const disclosure = within(utilities).getByRole("button", {
+      name: "Tiện ích",
+    });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    const controls = document.getElementById(
+      disclosure.getAttribute("aria-controls")!,
+    );
+    expect(controls).toContainElement(
+      within(utilities).getByRole("button", {
+        name: "Xuất Phiếu đi chợ",
+        hidden: true,
+      }),
+    );
+    disclosure.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
     expect(
       within(utilities).getByRole("button", { name: "Xuất Phiếu đi chợ" }),
     ).toHaveAttribute("data-atlas-action-priority", "tertiary");
@@ -570,6 +592,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(
       within(footer).getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     ).toHaveAttribute("data-atlas-action-priority", "primary");
+    await userEvent.keyboard("{Enter}");
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveFocus();
   });
 
   it("styles a valid adjustment as a decision and only invalid input as danger", async () => {
@@ -717,6 +742,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     });
     await quantity();
 
+    openUtilities();
     fireEvent.click(screen.getByRole("button", { name: "Xuất Phiếu đi chợ" }));
     await waitFor(() => expect(onExportShoppingList).toHaveBeenCalledTimes(1));
     fireEvent.change(screen.getByLabelText("Nhập Phiếu đi chợ .xlsx"), {
@@ -770,6 +796,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     await quantity();
     h.f.need.pagination.has_more = true;
     h.f.need.pagination.total_groups = 26;
+    openUtilities();
     fireEvent.click(
       screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
     );
@@ -874,6 +901,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(row).not.toHaveTextContent("Làm tròn:");
     expect(row).not.toHaveTextContent("Bước xác nhận:");
     expect(input).toHaveValue("0,1");
+    openUtilities();
     fireEvent.click(
       screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
     );
@@ -908,6 +936,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       fixture.need.pagination.total_groups = 2;
     });
     await quantity();
+    openUtilities();
     fireEvent.click(
       screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
     );
@@ -1175,6 +1204,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     const h = show();
     await quantity();
     expect(h.detail).not.toHaveBeenCalled();
+    openUtilities();
     fireEvent.click(
       screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
     );

@@ -14,6 +14,37 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 ## Current workspace amendment — 8 October 2026
 
+**Button layout refinement — 23 October 2026:** The Owner approved a bounded
+presentation pass over the PO action band and similar workbench utilities.
+POs group the visible count, secondary bulk release and export controls on a
+shared baseline, followed by one loaded-period scope explanation and any bulk
+progress. Search still changes only the visible list; release/export eligibility
+and the complete loaded scope are unchanged. PXK exports use the same compact
+grouping and retain their loaded-scope explanation. Narrow layouts keep paired
+export buttons together and preserve 44px targets.
+
+Confirmed Need retains visible date controls, counts and the unsaved-change
+filter, with supporting detail and Shopping List import/export behind the
+keyboard-operable **Tiện ích** disclosure below `lg`; desktop utilities remain
+directly visible. Save/Continue remains in the persistent footer. Recipe import
+and creation stay together in the catalog toolbar, apart from selected-recipe
+actions. The toolbar remains visible while creating a dish, so importing still
+passes through the existing dirty-discard and inactive-owner safeguards.
+Shared sortable headers retain 44px targets below `lg` and compact
+desktop geometry. This pass changes no command, API, permission, lifecycle,
+calculation, database object or released document; no migration is required.
+
+**PO typography refinement — 23 October 2026:** The Owner-approved follow-up
+uses existing v3 roles: the visible count is a 14px semibold label; the 13px
+loaded-scope explanation emphasizes that search does not restrict bulk actions
+and has a 75ch maximum reading width. Missing School detail remains informational,
+using a 14px body explanation with a semibold **Lưu ý đối chiếu:** lead-in and
+a 70ch maximum width. Ingredient names remain regular, quantities use the existing
+14px semibold tabular role, and adjacent Units use the existing 13px regular
+role. Dates, document metadata and delivery locations retain helper styling.
+Reading widths use Atlas's typed CSS-variable fallback pattern. No global
+typography token or operational meaning changes.
+
 **Owner copy amendment — 13 October 2026:** The launcher is **Chức năng**, its
 search is **Tìm chức năng**, and the open-tab list is **Màn hình đang mở**.
 This explicitly requested wording refinement replaces the literal Workbench

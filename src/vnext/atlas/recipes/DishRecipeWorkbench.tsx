@@ -147,12 +147,19 @@ export function DishRecipeWorkbench(
           <NativeSelect.Indicator />
         </NativeSelect.Root>
       </Field.Root>
-      <AtlasWorkbarActions>
+      <AtlasWorkbarActions flexShrink="1" minW="var(--atlas-layout-zero, 0)">
         <AtlasRefreshButton
           loading={c.loading}
           disabled={c.refreshDisabled}
           onClick={() => c.transition({ kind: "refresh" })}
         />
+        <Button
+          variant="secondary"
+          disabled={!c.canCommand}
+          onClick={() => c.transition({ kind: "import" })}
+        >
+          Nhập từ Excel
+        </Button>
         <Button
           variant={open ? "secondary" : "businessPrimary"}
           disabled={!c.canCommand}
@@ -206,14 +213,6 @@ export function DishRecipeWorkbench(
             {c.visibleDishes.length} món
           </Text>
         )}
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={!c.canCommand}
-          onClick={() => c.transition({ kind: "import" })}
-        >
-          Nhập từ Excel
-        </Button>
       </Flex>
       <Grid
         templateColumns={{

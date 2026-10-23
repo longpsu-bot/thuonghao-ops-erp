@@ -157,6 +157,7 @@ it("blocks shopping callbacks and refresh on the retained authority until the ra
     )!,
   );
   expect(await screen.findByText("Chọn tối đa 7 ngày.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Tiện ích" }));
   for (const name of [
     "Xuất Phiếu đi chợ",
     "Nhập Phiếu đi chợ",

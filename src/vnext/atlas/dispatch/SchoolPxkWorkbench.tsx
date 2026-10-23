@@ -331,6 +331,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
         justify="space-between"
         wrap="wrap"
         flexShrink="0"
+        bg="bg.toolbar"
       >
         <Text textStyle="helper" color="fg.muted">
           {(["READY", "REPLACEMENT_REQUIRED", "BLOCKED", "CURRENT"] as const)
@@ -343,21 +344,32 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
         {(props.onExportGroupedXlsx || props.onExportZip) && (
           <AtlasWorkbar
             aria-label="Xuất phiếu đã tải"
-            justifyContent="flex-end"
+            w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
+            alignItems="center"
           >
-            <Text textStyle="helper" color="fg.muted" w="full">
-              Xuất các phiếu đủ điều kiện trong dữ liệu đã tải, không giới hạn
-              theo tìm kiếm.
-            </Text>
             {props.onExportZip && (
               <Field.Root
                 w={{
                   base: "full",
-                  md: "var(--atlas-export-mode-width, 230px)",
+                  md: "var(--atlas-layout-auto, auto)",
                 }}
+                flexDirection={{ base: "column", md: "row" }}
+                alignItems={{ base: "stretch", md: "center" }}
+                gap="sm"
               >
-                <Field.Label>Nhóm file xuất kho</Field.Label>
-                <NativeSelect.Root disabled={!c.canExportLoaded || exporting}>
+                <Field.Label
+                  mb="var(--atlas-layout-zero, 0)"
+                  whiteSpace="nowrap"
+                >
+                  Nhóm file xuất kho
+                </Field.Label>
+                <NativeSelect.Root
+                  disabled={!c.canExportLoaded || exporting}
+                  w={{
+                    base: "full",
+                    md: "var(--atlas-export-mode-width, 230px)",
+                  }}
+                >
                   <NativeSelect.Field
                     value={exportMode}
                     onChange={(event) =>
@@ -371,7 +383,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
                 </NativeSelect.Root>
               </Field.Root>
             )}
-            <AtlasWorkbarActions>
+            <AtlasWorkbarActions flexShrink="1" flexWrap="nowrap">
               {props.onExportGroupedXlsx && (
                 <Button
                   variant="secondary"
@@ -395,6 +407,12 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
               )}
             </AtlasWorkbarActions>
           </AtlasWorkbar>
+        )}
+        {(props.onExportGroupedXlsx || props.onExportZip) && (
+          <Text textStyle="helper" color="fg.muted" w="full">
+            Xuất các phiếu đủ điều kiện trong dữ liệu đã tải, không giới hạn
+            theo tìm kiếm.
+          </Text>
         )}
       </Flex>
       {exportError && (

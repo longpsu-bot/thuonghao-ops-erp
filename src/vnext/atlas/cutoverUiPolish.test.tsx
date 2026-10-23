@@ -173,6 +173,7 @@ describe("Atlas pre-cutover UI polish", () => {
         hidden: true,
       }),
     );
+    fireEvent.click(utilityActions.getByRole("button", { name: "Tiện ích" }));
     expect(
       utilityActions.getByRole("button", {
         name: "Xuất Phiếu đi chợ",
