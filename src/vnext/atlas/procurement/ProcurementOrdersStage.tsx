@@ -285,7 +285,7 @@ export function ProcurementOrdersStage({
           id={`${detailId}-loaded-scope`}
           textStyle="helper"
           color="fg.secondary"
-          maxW="75ch"
+          maxW="var(--atlas-po-scope-measure, 75ch)"
         >
           {onReleaseAll
             ? "Phát hành các bản nháp và xuất các đơn"
@@ -615,7 +615,11 @@ export function ProcurementOrdersStage({
                 />
               )}
               {selected.lines.some((line) => !line.school_breakdown.length) && (
-                <Text color="fg.secondary" textStyle="body" maxW="70ch">
+                <Text
+                  color="fg.secondary"
+                  textStyle="body"
+                  maxW="var(--atlas-po-guidance-measure, 70ch)"
+                >
                   <Box as="span" fontWeight="semibold">
                     Lưu ý đối chiếu:
                   </Box>{" "}

@@ -42,7 +42,8 @@ using a 14px body explanation with a semibold **Lưu ý đối chiếu:** lead-i
 a 70ch maximum width. Ingredient names remain regular, quantities use the existing
 14px semibold tabular role, and adjacent Units use the existing 13px regular
 role. Dates, document metadata and delivery locations retain helper styling.
-No global typography token or operational meaning changes.
+Reading widths use Atlas's typed CSS-variable fallback pattern. No global
+typography token or operational meaning changes.
 
 **Owner copy amendment — 13 October 2026:** The launcher is **Chức năng**, its
 search is **Tìm chức năng**, and the open-tab list is **Màn hình đang mở**.
