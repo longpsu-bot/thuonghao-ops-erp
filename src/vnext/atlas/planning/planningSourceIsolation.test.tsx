@@ -9,6 +9,17 @@ import {
   stale,
 } from "./planningReviewFixtures";
 afterEach(cleanup);
+function addValidPantryDraft(result: {
+  current: ReturnType<typeof usePlanningSources>;
+}) {
+  act(() => result.current.addPantryRow("school-0"));
+  act(() =>
+    result.current.editPantryRow(0, {
+      ingredient_id: "ingredient-1",
+      requested_quantity: "1",
+    }),
+  );
+}
 async function menuWithPreview() {
   const fixture = createPlanningReviewFixture();
   const hook = renderHook(() =>
@@ -44,7 +55,7 @@ it.each(["menu", "attendance", "pantry"] as PlanningJob[])(
     if (job === "menu") await act(() => result.current.syncGoogle("google-1"));
     else if (job === "attendance")
       act(() => result.current.editAttendance(0, "student_portions", "0"));
-    else act(() => result.current.requestNoAdditions(true));
+    else addValidPantryDraft(result);
     if (job === "menu") {
       expect(result.current.candidate).toBe(false);
       expect(result.current.preview).toBeNull();
@@ -124,7 +135,7 @@ it.each(["menu", "pantry"] as PlanningJob[])(
   },
 );
 
-it("guards the whole-week decision under a subset, including clearing it", async () => {
+it("keeps an untouched empty week clean through School filtering", async () => {
   const f = createPlanningReviewFixture();
   const { result } = renderHook(() =>
     usePlanningSources({
@@ -136,13 +147,12 @@ it("guards the whole-week decision under a subset, including clearing it", async
   );
   await waitFor(() => expect(result.current.canEdit).toBe(true));
   act(() => result.current.transition({ schoolIds: ["school-0"] }));
-  act(() => result.current.requestNoAdditions(true));
-  expect(result.current.noAdditions).toBe(false);
+  expect(result.current.pantryRows).toEqual([]);
   expect(result.current.dirty).toBe(false);
   expect(result.current.pending).toBeNull();
   act(() => result.current.transition({ schoolIds: [] }));
-  act(() => result.current.requestNoAdditions(true));
-  expect(result.current.noAdditions).toBe(true);
+  expect(result.current.dirty).toBe(false);
+  expect(result.current.candidate).toBe(false);
 });
 
 it.each([
@@ -239,7 +249,7 @@ it.each(["menu", "pantry"] as PlanningJob[])(
     await waitFor(() => expect(result.current.canEdit).toBe(true));
     expect(result.current.readError).toBe("");
     if (job === "menu") await act(() => result.current.syncGoogle("google-1"));
-    else act(() => result.current.requestNoAdditions(true));
+    else addValidPantryDraft(result);
     await act(async () =>
       resolve(success({ workbench: job === "pantry" ? f.planning : f.pantry })),
     );

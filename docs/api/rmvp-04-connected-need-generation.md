@@ -1,5 +1,12 @@
 # RMVP-04 Connected Need Generation API Contract
 
+**23 October forward amendment:** daily execution may use exact Menu/Attendance
+and backend-verified Pantry absence when no batch exists for the week. No empty
+source Save or approval is fabricated. Existing batches, source corrections,
+released documents and historical null bindings keep their guards. First-source
+Save checks every affected absence-based date, including existing commitments
+on other dates in the week. See the [approved amendment](../implementation-tasks/TASK-ATLAS-OPTIONAL-WEEKLY-ADDITIONS.md).
+
 ## B1 Product source disclosure — 18 October 2026
 
 [Owner approval](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/400#issuecomment-6249057414)

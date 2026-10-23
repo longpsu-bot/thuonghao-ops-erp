@@ -1,5 +1,12 @@
 # PD-01.6 — Planning Domain Need Generation Contract
 
+**23 October Owner amendment:** daily Recipe Need may carry a null Pantry triple
+only through an immutable backend-verified `pantry_absent` evaluation. No Pantry
+batch of any status may overlap that date. Menu/Attendance bindings remain exact,
+historical null evaluations remain non-authorizing, and later additions require
+the existing correction path. This supersedes the mandatory Pantry triple below
+only for this case; see the [approved amendment](../implementation-tasks/TASK-ATLAS-OPTIONAL-WEEKLY-ADDITIONS.md).
+
 **Status:** MVP contract v0.5; H0A5b and PANTRY-NG-02 persistence merged; RMVP-04 connected command/read/application implementation is in draft review
 
 **Domain:** Planning

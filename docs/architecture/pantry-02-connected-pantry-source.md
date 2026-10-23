@@ -1,5 +1,11 @@
 # PANTRY-02 — Connected Planning-Owned Pantry Source
 
+**23 October Owner amendment:** the active daily workflow does not require a
+weekly no-additions confirmation. An untouched week is optional only when no
+Pantry batch exists; existing sources retain exact Save and approval guards.
+The [approved amendment](../implementation-tasks/TASK-ATLAS-OPTIONAL-WEEKLY-ADDITIONS.md)
+supersedes the mandatory explicit-zero statements below for this bounded case.
+
 ## Outcome
 
 PANTRY-02 connects Pantry as the third source tab inside the existing Vietnamese `Nguồn kế hoạch` workbench. It implements manual Atlas capture, authoritative preview, complete draft replacement, validation, immutable approval, reasoned reopen, and reapproval for one explicit Monday-start week.

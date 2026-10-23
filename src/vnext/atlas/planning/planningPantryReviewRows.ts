@@ -76,17 +76,6 @@ export function planningPantryReviewRows(
     ];
   });
   if ("no_additions_confirmed" in preview) {
-    const priorZero = c.pantryData?.batch?.no_additions_confirmed ?? false;
-    if (priorZero !== preview.no_additions_confirmed)
-      rows.push({
-        school: "Toàn tuần",
-        context: "Xác nhận hàng đặt riêng",
-        before: priorZero ? "Không có hàng đặt riêng" : "Chưa xác nhận",
-        after: preview.no_additions_confirmed
-          ? "Không có hàng đặt riêng"
-          : "Chưa xác nhận",
-        action: "Đổi",
-      });
     const label = {
       ADDITIVE: "Cộng với thực đơn",
       COMPLETE: "Danh sách đầy đủ",

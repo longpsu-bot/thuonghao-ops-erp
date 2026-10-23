@@ -1,5 +1,13 @@
 # RMVP-03B Planning Input Readiness API Contract
 
+**23 October forward amendment:** daily readiness accepts a null Pantry candidate
+when no Pantry batch exists for the date and Menu/Attendance are exact/current.
+The backend records `pantry_absent` on the READY evaluation; historical null rows
+default false. Reads add `source_evidence.pantry.optional_absent`; history uses
+`OPTIONAL_ABSENT` for this new evidence. Any existing unfinished batch still
+blocks. Historical multi-day semantics remain unchanged. See the
+[approved amendment](../implementation-tasks/TASK-ATLAS-OPTIONAL-WEEKLY-ADDITIONS.md).
+
 - **Status:** Implemented on draft PR; pending independent review and merge
 - **Product Owner approval:** 31/07/2026
 - **Contract version:** `RMVP-03B.v1`
