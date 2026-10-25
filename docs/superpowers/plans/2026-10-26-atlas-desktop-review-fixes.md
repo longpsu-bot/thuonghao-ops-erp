@@ -33,11 +33,11 @@ test, `recipes/ChangeOrderEditor.tsx`, `recipes/ChangeOrderWorkbench.tsx`.
 
 Files: `recipes/ChangeOrderDetail.tsx`, `planning/PlanningPantryStage.tsx`.
 
-- [ ] F3: 14px body/label roles for desktop decision values/state; keep 13px
+- [x] F3: 14px body/label roles for desktop decision values/state; keep 13px
       supporting labels/audit metadata and existing narrow roles.
-- [ ] F8: visible desktop School chooser label and prerequisite instruction,
+- [x] F8: visible desktop School chooser label and prerequisite instruction,
       with actual Add/Save conditions unchanged.
-- [ ] Check desktop typography/entry behavior and narrow preservation.
+- [x] Check desktop typography/entry behavior and narrow preservation.
 
 ## Batch 3 — desktop read errors
 
@@ -66,3 +66,9 @@ render correctly. The before/after 360px Change Order capture is pixel-identical
 no narrow layout change is introduced. Formatting and whitespace checks pass.
 The field-grid indentation changes only because its existing contents now share
 one desktop scrolling container with target blockers.
+
+Batch 2: desktop decision facts compute to 14px at 1366/1440/1920px and remain
+13px at 360px. The Pantry label/instruction is visible on desktop; Add is disabled
+before School selection and enabled after the existing keyboard selection. The
+narrow Pantry before/after capture is pixel-identical. Four focused existing
+Pantry source/School/prerequisite tests pass. No overflow is measured.

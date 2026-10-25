@@ -135,13 +135,25 @@ export function PlanningPantryStage({
             </Text>
           </Box>
         ) : (
-          <PantrySchoolChooser
-            inputRef={addSchoolInput}
-            schools={schools}
-            value={targetSchoolId}
-            onChange={setAddSchool}
-            disabled={!c.canEdit}
-          />
+          <Field.Root
+            display={{ base: "contents", lg: "flex" }}
+            w={{
+              base: "full",
+              md: "var(--atlas-layout-add-school-width, 220px)",
+            }}
+            gap="xs"
+          >
+            <Field.Label display={{ base: "none", lg: "block" }}>
+              Trường cần thêm hàng
+            </Field.Label>
+            <PantrySchoolChooser
+              inputRef={addSchoolInput}
+              schools={schools}
+              value={targetSchoolId}
+              onChange={setAddSchool}
+              disabled={!c.canEdit}
+            />
+          </Field.Root>
         )}
         <Field.Root
           disabled={!c.canEdit || !targetSchoolId}
@@ -184,6 +196,17 @@ export function PlanningPantryStage({
           + Thêm dòng
         </Button>
       </Flex>
+      {!targetSchoolId && (
+        <Text
+          display={{ base: "none", lg: "block" }}
+          px="sm"
+          pb="sm"
+          textStyle="helper"
+          color="fg.muted"
+        >
+          Chọn trường cần thêm hàng để bật Thêm dòng.
+        </Text>
+      )}
       {!targetPurpose && (
         <Text px="sm" role="status" textStyle="helper" color="status.warning">
           Nguồn đã chọn chưa có trong danh mục đang hoạt động. Hãy tải lại danh
