@@ -31,6 +31,7 @@ import {
 } from "../bridges/procurement";
 import { ProcurementAllocationTable } from "./ProcurementAllocationTable";
 import { ProcurementCommandFeedback } from "./ProcurementCommandFeedback";
+import { ProcurementNotice } from "./ProcurementNotice";
 import {
   ProcurementOrdersStage,
   type ProcurementExport,
@@ -544,21 +545,20 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               </AtlasWorkbarActions>
             </AtlasWorkbar>
             {controller.rangeError && (
-              <Text
+              <ProcurementNotice
                 id={`${ownerId}-range-error`}
                 role="alert"
-                textStyle="helper"
-                color="status.danger"
-                px="md"
-                py="xs"
+                tone="danger"
+                mx="md"
+                my="sm"
               >
                 {controller.rangeError}
-              </Text>
+              </ProcurementNotice>
             )}
             {controller.stale && (
-              <Text role="status" px="md" py="xs">
+              <ProcurementNotice role="status" mx="md" my="sm">
                 {staleAuthorityMessage}
-              </Text>
+              </ProcurementNotice>
             )}
             {controller.feedback && (
               <ProcurementCommandFeedback
@@ -569,9 +569,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               />
             )}
             {controller.readError && (
-              <Box role="alert" p="md">
-                <Text color="status.warning">
-                  ⚠ Không tải được dữ liệu hiện tại: {controller.readError}
+              <ProcurementNotice tone="danger" role="alert" mx="md" my="sm">
+                <Text>
+                  Không tải được dữ liệu hiện tại: {controller.readError}
                 </Text>
                 {controller.feedback?.kind !== "unknown" && (
                   <Button
@@ -582,7 +582,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     Tải lại dữ liệu hiện tại
                   </Button>
                 )}
-              </Box>
+              </ProcurementNotice>
             )}
             {controller.loading && (
               <Text role="status" px="md" py="sm" color="fg.muted">
@@ -596,16 +596,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               {controller.stage === "allocation" ? (
                 controller.allocation && (
                   <>
-                    {sourceMessages.map((message) => (
-                      <Text
-                        px="md"
-                        pb="sm"
-                        key={message}
-                        color="status.warning"
-                      >
-                        ⚠ {message}
-                      </Text>
-                    ))}
+                    {sourceMessages.length > 0 && (
+                      <ProcurementNotice mx="md" my="sm">
+                        {sourceMessages.map((message) => (
+                          <Text key={message}>{message}</Text>
+                        ))}
+                      </ProcurementNotice>
+                    )}
                     <Grid
                       data-testid="procurement-master-detail"
                       style={
