@@ -66,6 +66,47 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("does not present a pending initial read as zero PXK counts", () => {
+    const api = createSchoolPxkReviewFixture("READY");
+    api.getWorkbench = vi.fn(() => new Promise(() => {}));
+    render(
+      <AtlasVNextProvider>
+        <SchoolPxkWorkbench
+          api={api}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+        />
+      </AtlasVNextProvider>,
+    );
+    expect(screen.getByText("Đang tải số lượng phiếu…")).toBeInTheDocument();
+    expect(screen.queryByText(/Cần phát hành 0 ·/)).not.toBeInTheDocument();
+  });
+
+  it("qualifies counts after failed refresh and restores them after successful recovery", async () => {
+    const h = show("CURRENT");
+    const summary =
+      "Cần phát hành 0 · Cần thay thế 0 · Bị chặn 0 · Đã phát hành 1";
+    expect(await screen.findByText(summary)).toBeInTheDocument();
+    h.read.mockImplementationOnce(
+      createSchoolPxkReviewFixture("READ_FAILURE").getWorkbench,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
+    expect(
+      await screen.findByText(
+        "Chưa xác định số lượng phiếu. Hãy tải lại dữ liệu.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(summary)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Xem phiếu" }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Thử tải lại dữ liệu" }),
+    );
+    expect(await screen.findByText(summary)).toBeInTheDocument();
+    expect(h.write).not.toHaveBeenCalled();
+  });
+
   it("retains the selected loaded document and export after an invalid range edit", async () => {
     const h = show("CURRENT");
     await open("Xem phiếu");
@@ -571,6 +612,10 @@ describe("School PXK operator table and attached detail", () => {
         screen.queryByRole("button", { name: "Tải lại để xác nhận" }),
       ).not.toBeInTheDocument();
       expect(document.body.textContent).not.toContain("CAPABILITY_DENIED");
+      expect(
+        screen.getByText("Chưa xác định số lượng phiếu. Hãy tải lại dữ liệu."),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/Cần phát hành 0 ·/)).not.toBeInTheDocument();
     },
   );
   it("history is collapsed, immutable superseded contents remain readable and exportable", async () => {
@@ -610,6 +655,11 @@ describe("School PXK operator table and attached detail", () => {
     show("EMPTY");
     expect(
       await screen.findByText("Không có phiếu xuất kho trong phạm vi đã chọn."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Cần phát hành 0 · Cần thay thế 0 · Bị chặn 0 · Đã phát hành 0",
+      ),
     ).toBeInTheDocument();
   });
 });

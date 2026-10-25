@@ -335,12 +335,20 @@ export function ChangeOrderWorkbench(
             maxH={{
               lg: "var(--atlas-layout-detail-height, calc(100dvh - 280px))",
             }}
-            overflowY="auto"
+            display={{ lg: c.draft ? "flex" : "block" }}
+            flexDirection={{ lg: "column" }}
+            minH={{ lg: "var(--atlas-layout-zero, 0)" }}
+            overflowY={{ base: "auto", lg: c.draft ? "hidden" : "auto" }}
             borderLeftWidth="var(--atlas-layout-edge, 1px)"
             borderColor="border.subtle"
             minW="var(--atlas-layout-zero, 0)"
           >
-            <Flex justify="space-between" align="center" gap="sm">
+            <Flex
+              justify="space-between"
+              align="center"
+              gap="sm"
+              flexShrink="0"
+            >
               <Heading as="h2" textStyle="section">
                 {c.draft
                   ? c.editing
