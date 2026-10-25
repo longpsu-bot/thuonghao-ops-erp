@@ -68,7 +68,7 @@ async function open(label = "Phát hành") {
 describe("School PXK operator table and attached detail", () => {
   it("does not present a pending initial read as zero PXK counts", () => {
     const api = createSchoolPxkReviewFixture("READY");
-    api.getWorkbench = vi.fn(() => new Promise(() => {}));
+    api.getWorkbench = vi.fn(() => new Promise<never>(() => {}));
     render(
       <AtlasVNextProvider>
         <SchoolPxkWorkbench

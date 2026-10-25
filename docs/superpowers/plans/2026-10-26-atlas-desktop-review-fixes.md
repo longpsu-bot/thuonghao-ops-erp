@@ -44,11 +44,11 @@ Files: `recipes/ChangeOrderDetail.tsx`, `planning/PlanningPantryStage.tsx`.
 Files: `planning/PlanningSourcesWorkbench.tsx`,
 `recipes/DishRecipeWorkbench.tsx`, `reconciliation/SchoolFulfilmentFeedback.tsx`.
 
-- [ ] F6: existing desktop danger anatomy with icon/edge, safe message and retry.
+- [x] F6: existing desktop danger anatomy with icon/edge, safe message and retry.
       Preserve notice/lock behavior, live regions, IDs, callbacks and narrow UI.
-- [ ] Run focused affected checks, TypeScript, changed-file formatting, UI
+- [x] Run focused affected checks, TypeScript, changed-file formatting, UI
       boundary and whitespace checks.
-- [ ] Review 1366/1440/1920px captures and narrow preservation; obtain independent
+- [x] Review 1366/1440/1920px captures and narrow preservation; obtain independent
       rendered/source review, update UI inventory/evidence, push and open a PR.
 
 ## Evidence and results
@@ -72,3 +72,26 @@ Batch 2: desktop decision facts compute to 14px at 1366/1440/1920px and remain
 before School selection and enabled after the existing keyboard selection. The
 narrow Pantry before/after capture is pixel-identical. Four focused existing
 Pantry source/School/prerequisite tests pass. No overflow is measured.
+
+Batch 3: all five read-error views (Menu, Attendance, Pantry, Recipes and
+Reconciliation) have the existing 3px danger edge and visible icon at
+1366/1440/1920px with no document overflow. Their 360px error captures remain
+pixel-identical to the baseline. Exact 390/768px preservation is not claimed.
+TypeScript, the vNext boundary scan, changed-file formatting and whitespace pass.
+The pending-read test fixture needed an explicit `Promise<never>` return type;
+this changes no runtime behavior or assertion.
+
+Affected-suite evidence: the initial two-worker run has 88 passing cases and six
+existing interaction tests exceeding their unchanged five-second budgets. A
+focused serial run of exactly those six passes in 14.34s total test time; no
+timeout, assertion, test configuration or business code is changed to obtain it.
+The 70 PXK and four Pantry checks above remain separate focused evidence.
+Normal GitHub Actions owns the fresh complete frontend certificate.
+
+Independent source/render review finds no actionable defect or scope/security
+violation. It confirms preserved release/export/preview/recovery guards and
+unchanged narrow styles, with only final evidence/commit/CI gates outstanding.
+The [portable evidence](../../ui/evidence/atlas-desktop-review-fixes-20261026)
+contains the before/after desktop captures and measured preservation checks.
+The raw form diff includes field-grid indentation; `git diff -w` isolates the
+small container and footer changes. F4/F5/F7 remain deferred, as requested.
