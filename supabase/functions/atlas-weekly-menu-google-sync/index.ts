@@ -70,8 +70,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 async function safeJson(response: Response): Promise<unknown> {
   try {
     return await response.json();
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof SyntaxError) return null;
+    throw error;
   }
 }
 
@@ -244,130 +245,203 @@ export function createGoogleSyncHandler(
         true,
       );
     }
-    const userResponse = await dependencies.fetch(
-      `${supabaseUrl}/auth/v1/user`,
-      {
-        headers: { apikey: apiKey, Authorization: authorization },
-      },
-    );
-    const userBody = await safeJson(userResponse);
-    if (
-      !userResponse.ok ||
-      !isRecord(userBody) ||
-      typeof userBody.id !== "string"
-    ) {
-      return failure(
-        401,
-        "SESSION_EXPIRED",
-        "The Atlas session is missing or expired.",
-        correlationId,
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 35_000);
+    const signal = AbortSignal.any([request.signal, controller.signal]);
+    try {
+      signal.throwIfAborted();
+      const userResponse = await dependencies.fetch(
+        `${supabaseUrl}/auth/v1/user`,
+        {
+          headers: { apikey: apiKey, Authorization: authorization },
+          signal,
+        },
       );
-    }
-    const atlasResponse = await dependencies.fetch(
-      `${supabaseUrl}/rest/v1/rpc/get_planning_inputs_workbench`,
-      {
-        method: "POST",
-        headers: atlasHeaders(apiKey, authorization),
-        body: JSON.stringify({
-          request: {
-            contract_version: "RMVP-03A.v1",
-            requested_by_auth_subject: userBody.id,
-            correlation_id: correlationId,
-            payload: {
-              week_start: weekStart,
-              google_connector_source_id: sourceId,
+      if (!userResponse.ok) {
+        await userResponse.body?.cancel();
+        const unauthenticated = [401, 403].includes(userResponse.status);
+        const retryable =
+          userResponse.status === 429 || userResponse.status >= 500;
+        return failure(
+          unauthenticated ? 401 : retryable ? 503 : 502,
+          unauthenticated ? "SESSION_EXPIRED" : "CONNECTOR_UNAVAILABLE",
+          unauthenticated
+            ? "The Atlas session is missing or expired."
+            : "The Atlas authentication service is currently unavailable.",
+          correlationId,
+          retryable,
+        );
+      }
+      const userBody = await safeJson(userResponse);
+      signal.throwIfAborted();
+      if (!isRecord(userBody) || typeof userBody.id !== "string") {
+        return failure(
+          502,
+          "CONNECTOR_UNAVAILABLE",
+          "The Atlas authentication service returned an invalid response.",
+          correlationId,
+        );
+      }
+      const atlasResponse = await dependencies.fetch(
+        `${supabaseUrl}/rest/v1/rpc/get_planning_inputs_workbench`,
+        {
+          method: "POST",
+          headers: atlasHeaders(apiKey, authorization),
+          signal,
+          body: JSON.stringify({
+            request: {
+              contract_version: "RMVP-03A.v1",
+              requested_by_auth_subject: userBody.id,
+              correlation_id: correlationId,
+              payload: {
+                week_start: weekStart,
+                google_connector_source_id: sourceId,
+              },
             },
-          },
-        }),
-      },
-    );
-    const atlasBody = await safeJson(atlasResponse);
-    if (
-      !atlasResponse.ok ||
-      !isRecord(atlasBody) ||
-      atlasBody.success !== true
-    ) {
-      const atlasCode =
-        isRecord(atlasBody) && typeof atlasBody.error_code === "string"
-          ? atlasBody.error_code
-          : "CONNECTOR_AUTHORIZATION_FAILED";
-      const denied =
-        atlasCode === "CAPABILITY_DENIED" || atlasCode === "SCOPE_DENIED";
-      return failure(
-        denied ? 403 : 404,
-        denied ? "CAPABILITY_DENIED" : "GOOGLE_SOURCE_UNAVAILABLE",
-        denied
-          ? "You are not authorized to read Planning inputs."
-          : "The configured Google Sheet source is unknown or inactive.",
-        correlationId,
+          }),
+        },
       );
-    }
-    const sourceValue = atlasBody.google_connector_source;
-    if (!isRecord(sourceValue) || sourceValue.source_status !== "ACTIVE") {
-      return failure(
-        404,
-        "GOOGLE_SOURCE_UNAVAILABLE",
-        "The configured Google Sheet source is unknown or inactive.",
-        correlationId,
-      );
-    }
-    const source = sourceValue as unknown as GoogleSource;
-    if (
-      source.weekly_menu_google_source_id !== sourceId ||
-      typeof source.spreadsheet_id !== "string" ||
-      typeof source.sheet_name_pattern !== "string" ||
-      typeof source.range_a1_template !== "string"
-    ) {
-      return failure(
-        502,
-        "MALFORMED_ATLAS_SOURCE",
-        "Atlas returned malformed connector configuration.",
-        correlationId,
-      );
-    }
-    const range = configuredRange(source, weekStart);
-    if (!range.valid) {
-      return failure(
-        422,
-        "CONFIGURED_RANGE_INVALID",
-        "The configured Google Sheet range is invalid.",
-        correlationId,
-      );
-    }
+      if (atlasResponse.status === 429 || atlasResponse.status >= 500) {
+        await atlasResponse.body?.cancel();
+        return failure(
+          503,
+          "CONNECTOR_UNAVAILABLE",
+          "The Atlas Planning service is temporarily unavailable.",
+          correlationId,
+          true,
+        );
+      }
+      if (atlasResponse.status === 401) {
+        await atlasResponse.body?.cancel();
+        return failure(
+          401,
+          "SESSION_EXPIRED",
+          "The Atlas session is missing or expired.",
+          correlationId,
+        );
+      }
+      const atlasBody = await safeJson(atlasResponse);
+      signal.throwIfAborted();
+      if (
+        !atlasResponse.ok ||
+        !isRecord(atlasBody) ||
+        atlasBody.success !== true
+      ) {
+        const atlasCode =
+          isRecord(atlasBody) && typeof atlasBody.error_code === "string"
+            ? atlasBody.error_code
+            : "CONNECTOR_AUTHORIZATION_FAILED";
+        const denied =
+          atlasResponse.status === 403 ||
+          atlasCode === "CAPABILITY_DENIED" ||
+          atlasCode === "SCOPE_DENIED";
+        const missing = atlasCode === "GOOGLE_SOURCE_UNAVAILABLE";
+        return failure(
+          denied ? 403 : missing ? 404 : 502,
+          denied
+            ? "CAPABILITY_DENIED"
+            : missing
+              ? "GOOGLE_SOURCE_UNAVAILABLE"
+              : "CONNECTOR_UNAVAILABLE",
+          denied
+            ? "You are not authorized to read Planning inputs."
+            : missing
+              ? "The configured Google Sheet source is unknown or inactive."
+              : "The Atlas Planning service returned an invalid response.",
+          correlationId,
+        );
+      }
+      const sourceValue = atlasBody.google_connector_source;
+      if (isRecord(sourceValue) && sourceValue.source_status === "INACTIVE") {
+        return failure(
+          404,
+          "GOOGLE_SOURCE_UNAVAILABLE",
+          "The configured Google Sheet source is unknown or inactive.",
+          correlationId,
+        );
+      }
+      if (!isRecord(sourceValue) || sourceValue.source_status !== "ACTIVE") {
+        return failure(
+          502,
+          "MALFORMED_ATLAS_SOURCE",
+          "Atlas returned malformed connector configuration.",
+          correlationId,
+        );
+      }
+      const source = sourceValue as unknown as GoogleSource;
+      if (
+        source.weekly_menu_google_source_id !== sourceId ||
+        typeof source.spreadsheet_id !== "string" ||
+        typeof source.sheet_name_pattern !== "string" ||
+        typeof source.range_a1_template !== "string"
+      ) {
+        return failure(
+          502,
+          "MALFORMED_ATLAS_SOURCE",
+          "Atlas returned malformed connector configuration.",
+          correlationId,
+        );
+      }
+      const range = configuredRange(source, weekStart);
+      if (!range.valid) {
+        return failure(
+          422,
+          "CONFIGURED_RANGE_INVALID",
+          "The configured Google Sheet range is invalid.",
+          correlationId,
+        );
+      }
 
-    const webApp = await readWeeklyMenuWebApp({
-      url: dependencies.env.get("GOOGLE_APPS_SCRIPT_WEBAPP_URL"),
-      secret: dependencies.env.get("GOOGLE_APPS_SCRIPT_SECRET"),
-      spreadsheetId: source.spreadsheet_id,
-      sheetName: range.sheetName,
-      range: range.range,
-      weekStart,
-      requestId: correlationId,
-      fetchImpl: dependencies.fetch,
-    });
-    if (!webApp.ok)
-      return failure(
-        webApp.status,
-        webApp.code,
-        webApp.message,
-        correlationId,
-        webApp.retryable,
-      );
-    const values = webApp.values;
-    return safeResponse(200, {
-      success: true,
-      source: {
-        source_id: source.weekly_menu_google_source_id,
-        source_code: source.source_code,
-        source_name: source.source_name,
-        sheet_name: range.sheetName,
+      const webApp = await readWeeklyMenuWebApp({
+        url: dependencies.env.get("GOOGLE_APPS_SCRIPT_WEBAPP_URL"),
+        secret: dependencies.env.get("GOOGLE_APPS_SCRIPT_SECRET"),
+        spreadsheetId: source.spreadsheet_id,
+        sheetName: range.sheetName,
         range: range.range,
-      },
-      fetched_at: dependencies.now().toISOString(),
-      rows: values,
-      warnings: [],
-      correlation_id: correlationId,
-    });
+        weekStart,
+        requestId: correlationId,
+        fetchImpl: dependencies.fetch,
+        signal,
+      });
+      signal.throwIfAborted();
+      if (!webApp.ok)
+        return failure(
+          webApp.status,
+          webApp.code,
+          webApp.message,
+          correlationId,
+          webApp.retryable,
+        );
+      const values = webApp.values;
+      return safeResponse(200, {
+        success: true,
+        source: {
+          source_id: source.weekly_menu_google_source_id,
+          source_code: source.source_code,
+          source_name: source.source_name,
+          sheet_name: range.sheetName,
+          range: range.range,
+        },
+        fetched_at: dependencies.now().toISOString(),
+        rows: values,
+        warnings: [],
+        correlation_id: correlationId,
+      });
+    } catch {
+      return failure(
+        503,
+        controller.signal.aborted
+          ? "CONNECTOR_TIMEOUT"
+          : "CONNECTOR_UNAVAILABLE",
+        controller.signal.aborted
+          ? "The Menu source read exceeded its time limit; retry the explicit synchronization."
+          : "The Menu source read was interrupted; retry the explicit synchronization.",
+        correlationId,
+        true,
+      );
+    } finally {
+      clearTimeout(timer);
+    }
   };
 }
 

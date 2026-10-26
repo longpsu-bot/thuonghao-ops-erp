@@ -9,11 +9,44 @@ import {
   mondayOf,
   planningPreviewFromResult,
   planningResultMessage,
+  planningGoogleSyncMessage,
   planningIssueMessage,
   viDate,
 } from "./planningInputsModel";
 
 describe("Planning input model", () => {
+  it("keeps unknown connector details out of Vietnamese recovery copy", () => {
+    const message = planningGoogleSyncMessage({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "FUTURE_CODE",
+        safe_message: "private upstream detail",
+      },
+    });
+    expect(message).toContain("Tải lại dữ liệu rồi thử lại");
+    expect(message).toContain("Dữ liệu chưa được lưu");
+    expect(message).not.toContain("private upstream");
+    expect(message).toBe(message.normalize("NFC"));
+  });
+
+  it.each(["auth_error", "transport_error", "client_error"] as const)(
+    "gives an action for connector %s without claiming a Save",
+    (kind) => {
+      const message = planningGoogleSyncMessage({
+        kind,
+        diagnostic: {
+          code: "SESSION_REQUIRED",
+          safeMessage: "private upstream detail",
+        },
+      });
+      expect(message).toMatch(
+        /Đăng nhập lại|Kiểm tra kết nối|Liên hệ người quản trị/,
+      );
+      expect(message).toContain("Dữ liệu chưa được lưu");
+      expect(message).not.toContain("private upstream");
+    },
+  );
   it.each(["INVALID_DISH_ID", "UNKNOWN_DISH", "AMBIGUOUS_DISH", "FUTURE_CODE"])(
     "uses Vietnamese issue-code copy without exposing raw backend text for %s",
     (code) => {

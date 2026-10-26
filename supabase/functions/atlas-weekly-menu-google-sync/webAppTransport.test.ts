@@ -30,6 +30,56 @@ const success = (extra = {}) =>
 const read = (fetchImpl: typeof fetch, extra = {}) =>
   readWeeklyMenuWebApp({ url, secret, ...expected, fetchImpl, ...extra });
 describe("Apps Script server transport", () => {
+  it("cancels a streamed response body when its parent is aborted", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn<typeof fetch>(
+      async (_input, init) =>
+        new Response(
+          new ReadableStream({
+            start(stream) {
+              init?.signal?.addEventListener(
+                "abort",
+                () => stream.error(init.signal?.reason),
+                {
+                  once: true,
+                },
+              );
+            },
+          }),
+        ),
+    );
+    const pending = read(fetchMock, { signal: controller.signal });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    controller.abort();
+    expect(await pending).toMatchObject({ ok: false, retryable: true });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+  it("propagates parent cancellation through the allowed redirect GET", async () => {
+    const controller = new AbortController();
+    let getSignal: AbortSignal | null | undefined;
+    const fetchMock = vi.fn<typeof fetch>(async (_input, init) => {
+      if (init?.method === "POST")
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location:
+              "https://script.googleusercontent.com/macros/echo?key=test",
+          },
+        });
+      getSignal = init?.signal;
+      return new Promise<Response>((_resolve, reject) =>
+        getSignal?.addEventListener("abort", () => reject(getSignal?.reason), {
+          once: true,
+        }),
+      );
+    });
+    const pending = read(fetchMock, { signal: controller.signal });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    controller.abort();
+    expect(getSignal?.aborted).toBe(true);
+    expect(await pending).toMatchObject({ ok: false, retryable: true });
+    expect(JSON.stringify(fetchMock.mock.calls[1])).not.toContain(secret);
+  });
   it("POSTs only the bounded request and never an Atlas JWT or caller range", async () => {
     const f = vi.fn<typeof fetch>(async () => success());
     expect(await read(f)).toEqual({ ok: true, values: rows });

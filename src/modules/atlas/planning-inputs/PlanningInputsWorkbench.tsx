@@ -40,6 +40,7 @@ import {
   planningPreviewFromResult,
   planningReadbackFromResult,
   planningResultMessage,
+  planningGoogleSyncMessage as googleResultMessage,
   planningSourceSaveOutcome,
   planningWorkbenchFromResult,
   viDate,
@@ -238,31 +239,6 @@ function confirmedNeedWorkflowState(preflight?: PlanningInputPreflightData) {
   if (preflight.downstream_currentness === "NOT_GENERATED")
     return { status: "Sẵn sàng", tone: "ok" as const };
   return { status: "Cần xử lý", tone: "warning" as const };
-}
-
-function googleResultMessage(result: AtlasRpcResult) {
-  if (result.kind === "success")
-    return "Đã tải nguồn Google Sheet để xem trước.";
-  if (result.kind === "auth_error")
-    return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
-  if (result.kind === "transport_error")
-    return "Không thể kết nối bộ đồng bộ Google Sheet.";
-  if (result.kind === "client_error")
-    return "Bộ đồng bộ Google Sheet chưa sẵn sàng trong môi trường này.";
-  const messages: Record<string, string> = {
-    CAPABILITY_DENIED: "Bạn không có quyền đọc nguồn Kế hoạch.",
-    GOOGLE_SOURCE_UNAVAILABLE:
-      "Nguồn Google Sheet không tồn tại hoặc đã ngừng hoạt động.",
-    WEEKLY_SHEET_MISSING: "Không tìm thấy trang tính của tuần đã chọn.",
-    EMPTY_SHEET: "Trang tính của tuần đã chọn không có dữ liệu.",
-    GOOGLE_CREDENTIAL_MISSING:
-      "Bộ đồng bộ chưa được cấu hình thông tin xác thực Google.",
-    SPREADSHEET_INACCESSIBLE: "Bộ đồng bộ không thể đọc bảng tính đã cấu hình.",
-    GOOGLE_UPSTREAM_RETRYABLE:
-      "Google Sheets tạm thời không sẵn sàng. Có thể thử lại.",
-    CONNECTOR_UNAVAILABLE: "Bộ đồng bộ Google Sheet hiện không sẵn sàng.",
-  };
-  return messages[result.error.error_code] ?? result.error.safe_message;
 }
 
 function recordValue(value: JsonValue | undefined) {
