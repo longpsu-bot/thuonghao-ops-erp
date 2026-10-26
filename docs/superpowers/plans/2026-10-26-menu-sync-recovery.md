@@ -63,3 +63,24 @@ Rollback is a source revert. No database migration or data rollback applies.
 - This is implementation and local evidence only. Full routine validation runs
   in GitHub Actions after the Draft PR opens. No hosted acceptance, deployment,
   migration or Warehouse work was performed.
+
+## PR #441 review and CI follow-up — 26 October 2026
+
+The Owner subsequently authorized review, readiness and merge of PR #441 if
+CI and review pass. This extends the original Draft-only endpoint; deployment
+remains prohibited and Warehouse remains paused.
+
+- Initial head `2a862f75`: Supabase Integration passed; Frontend CI
+  [40264438920](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40264438920)
+  failed one retained `AtlasApp.test.tsx` assertion of the old Vietnamese copy
+  (3,234 other tests passed, two skipped). The failure was reproduced locally.
+  The affected six scenarios now assert the full next action and no-save notice.
+  This test file is included in the bounded follow-up scope.
+- Independent review found no standards/security blocker, but found that unknown
+  prototype property names could bypass the shared Vietnamese fallback. Three
+  new regressions failed before the own-property lookup guard was added.
+- Both affected test files now pass all 40 tests; application TypeScript,
+  changed-file formatting and diff whitespace checks pass. No tests were
+  disabled, weakened or skipped to clear the CI failure.
+- Fresh GitHub Actions on the follow-up head remain the readiness/merge gate.
+  These local results do not establish deployment or hosted acceptance.

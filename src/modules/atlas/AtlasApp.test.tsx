@@ -468,18 +468,27 @@ describe("Atlas master-data shell", () => {
     const cases = [
       [
         "google_source_unavailable",
-        "Nguồn Google Sheet không tồn tại hoặc đã ngừng hoạt động.",
+        "Nguồn Google Sheet không tồn tại hoặc đã ngừng hoạt động. Liên hệ người quản trị để kiểm tra nguồn.",
       ],
-      ["google_empty_sheet", "Trang tính của tuần đã chọn không có dữ liệu."],
-      ["google_sheet_missing", "Không tìm thấy trang tính của tuần đã chọn."],
+      [
+        "google_empty_sheet",
+        "Trang tính của tuần đã chọn không có dữ liệu. Kiểm tra Google Sheet rồi đồng bộ lại.",
+      ],
+      [
+        "google_sheet_missing",
+        "Không tìm thấy trang tính của tuần đã chọn. Kiểm tra tên trang tính và tuần phục vụ rồi đồng bộ lại.",
+      ],
       [
         "google_connector_unavailable",
-        "Bộ đồng bộ Google Sheet hiện không sẵn sàng.",
+        "Bộ đồng bộ Google Sheet hiện không sẵn sàng. Thử lại sau; nếu lỗi vẫn còn, liên hệ người quản trị.",
       ],
-      ["google_permission_denied", "Bạn không có quyền đọc nguồn Kế hoạch."],
+      [
+        "google_permission_denied",
+        "Không có quyền đọc nguồn Kế hoạch. Liên hệ người quản trị để kiểm tra quyền truy cập.",
+      ],
       [
         "google_retryable",
-        "Google Sheets tạm thời không sẵn sàng. Có thể thử lại.",
+        "Google Sheets tạm thời không sẵn sàng. Chờ một lát rồi đồng bộ lại.",
       ],
     ] as const;
     for (const [value, message] of cases) {
@@ -489,7 +498,9 @@ describe("Atlas master-data shell", () => {
       });
       await waitFor(() => expect(sync).toBeEnabled());
       fireEvent.click(sync);
-      expect(await screen.findByText(message)).toBeInTheDocument();
+      expect(
+        await screen.findByText(`${message} Dữ liệu chưa được lưu.`),
+      ).toBeInTheDocument();
     }
 
     fireEvent.change(scenario, { target: { value: "google_session_lost" } });

@@ -321,9 +321,9 @@ export function planningGoogleSyncMessage(result: AtlasRpcResult): string {
       CONNECTOR_TIMEOUT:
         "Đồng bộ Google Sheet chưa hoàn tất trong thời gian chờ. Thử đồng bộ lại.",
     };
-    message =
-      messages[result.error.error_code] ??
-      "Không thể đồng bộ Google Sheet. Tải lại dữ liệu rồi thử lại; nếu vẫn lỗi, liên hệ người quản trị.";
+    message = Object.hasOwn(messages, result.error.error_code)
+      ? messages[result.error.error_code]!
+      : "Không thể đồng bộ Google Sheet. Tải lại dữ liệu rồi thử lại; nếu vẫn lỗi, liên hệ người quản trị.";
   }
   return message + " Dữ liệu chưa được lưu.";
 }

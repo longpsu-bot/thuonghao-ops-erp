@@ -15,20 +15,23 @@ import {
 } from "./planningInputsModel";
 
 describe("Planning input model", () => {
-  it("keeps unknown connector details out of Vietnamese recovery copy", () => {
-    const message = planningGoogleSyncMessage({
-      kind: "backend_error",
-      error: {
-        success: false,
-        error_code: "FUTURE_CODE",
-        safe_message: "private upstream detail",
-      },
-    });
-    expect(message).toContain("Tải lại dữ liệu rồi thử lại");
-    expect(message).toContain("Dữ liệu chưa được lưu");
-    expect(message).not.toContain("private upstream");
-    expect(message).toBe(message.normalize("NFC"));
-  });
+  it.each(["FUTURE_CODE", "constructor", "toString", "__proto__"])(
+    "keeps unknown connector code %s out of Vietnamese recovery copy",
+    (code) => {
+      const message = planningGoogleSyncMessage({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: code,
+          safe_message: "private upstream detail",
+        },
+      });
+      expect(message).toContain("Tải lại dữ liệu rồi thử lại");
+      expect(message).toContain("Dữ liệu chưa được lưu");
+      expect(message).not.toContain("private upstream");
+      expect(message).toBe(message.normalize("NFC"));
+    },
+  );
 
   it.each(["auth_error", "transport_error", "client_error"] as const)(
     "gives an action for connector %s without claiming a Save",
