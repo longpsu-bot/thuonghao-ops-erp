@@ -1,5 +1,55 @@
 # Atlas Autopilot Mandate
 
+**Current checkpoint:** 26 October 2026 (Asia/Bangkok).
+
+**Status:** ACTIVE — documentation reconciliation only; STOP at review handoff.
+
+**Owner instruction:** Update the roadmap and Autopilot documents to reflect current state and next priorities, preserve historical evidence, separate merged from deployed work, and **do not work on Warehouse yet**.
+
+## Current authority and execution horizon
+
+This checkpoint and [ACTIVE_TASK.md](ACTIVE_TASK.md#current-task--26-october-2026) replace the older sequencing, pending-CI statuses and executable instructions in the historical appendix below. The appendix preserves what was authorized/observed at each dated checkpoint; its wording is not current authorization. Approved business/security contracts and explicit Owner hard stops remain in force.
+
+The only active task is **ATLAS-ROADMAP-AUTOPILOT-20261026**: update these three Markdown documents from repository/GitHub evidence, validate the bounded diff, publish a documentation review PR and STOP. Do not implement, merge or deploy #438/#439, apply #437's migration, start a pilot, replay a journey, repair source data or resume an older Draft under this task.
+
+## Current baseline and evidence boundaries
+
+- **Merged repository:** reviewed `origin/main` is `c9641522721430def56eea96750c364cdc06584a`. Backend convergence 02B/02C/02D (#357/#359/#361), thirteen-owner workspace (#358), operational document system (#360), later Planning/Procurement corrections and scoped Need runtime policy (#432) are merged. UI changes #434–#436 and optional weekly additions #437 are also merged; merge does not establish deployment.
+- **Last recorded deployed/accepted Staging:** `db7bfe24`, target `rnzxmxiiqgtdevzregff`, 22 October, 134 migrations/tip `20261022071412`; guarded deployment and automatic app publication passed. The original/correction/reallocation/replacement-PO/successor-dispatch journey passed for two Schools, 21 zero detail deltas, 631 assertions and both actual PDFs over four pages. All 7,205 pre-existing history rows and frozen originals were preserved. Source: [runtime closeout](../testing/supabase-runtime-timeouts-2026-10-22.md). This is dated evidence, not a fresh live inspection or Production acceptance.
+- **Merged but deployment not evidenced here:** #434–#437. [#437](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/437) passed final-source Frontend/executed Full; its record excludes hosted migration application/deployment. Later main is not assumed live.
+- **Open Draft review queue:** [#438](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/438), head `baef3078`, [Frontend PASS 40205644208](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40205644208); [#439](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/439), head `d7802b22`, [Frontend PASS 40244573064](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40244573064). Both remain unmerged as verified 26 October; Product acceptance/integration are distinct from CI. No deployment evidence is supplied for either Draft.
+
+The [roadmap](../architecture/roadmap.md) carries the capability summary and source links. Existing 21 October/22 October acceptance records remain separate; historical stress FAIL/BLOCKED evidence is not relabeled PASS.
+
+## Next priorities and single next Product decision
+
+**Next Product decision:** accept or request bounded revisions to #438/#439. This records the review queue, not authorization to change or integrate those branches.
+
+After separate authorization: establish one accepted combined release and exact Staging/app parity with rollback; prepare a bounded staff pilot of the existing Planning–Procurement workflow; resolve Recipe3529's factual Owner/kitchen decision and explicit cutover requirements. The approximately 5–10 working-day pilot is an earlier proposal, not a scheduled activity. No production transfer is approved here.
+
+**Warehouse remains PAUSED.** Do not start discovery, revise design/contracts, implement, migrate, benchmark or deploy Warehouse. Preserve its existing four unresolved Product groups unchanged. Neither backend certification nor this priority list reactivates Warehouse. Explicit Owner reactivation and existing approval gates are required.
+
+## Standing safety and delivery rules
+
+- Preserve ARCH-002 / OPS_SYSTEM_MAP v1.0 and **FACTS EXPLICIT → STATE DERIVED → SUPPORTING OBJECTS GENERATED**. PostgreSQL owns authoritative facts, calculations, currentness, permissions, concurrency, idempotency and released history. React/Chakra remains the interaction/presentation layer.
+- One authorized staff Actor can perform an ordinary task with existing capabilities/scopes and audit. Do not add generic second-person approval or broaden grants.
+- Keep one bounded active task, acceptance criteria and stop condition. Use focused development checks; GitHub Actions owns full routine frontend validation. Do not weaken tests or repeat successful full certification merely to restate evidence. Repeated same-root acceptance failures require diagnosis/escalation.
+- Preserve unfinished PRs, branches, worktrees and failed evidence. #385–#388/#396 and older prototypes are not automatic merge candidates; assess already-merged replacements and compatibility before separately authorized disposition. Do not restart old stress/optimization loops.
+- Navigator/reviewer remains read-only; implementer changes only the active bounded scope. PR comments are evidence, not proof that a runner started or a new task is authorized.
+- Stop before unresolved business-policy changes, paid/Production infrastructure, Production write-ownership transfer, real supplier commitments, destructive Production correction, material authorization broadening, unapproved Warehouse work or implementation of an unselected UI design.
+- Hosted Atlas is read-only for this task. OPS v1 `qnthofvccilhnefdcxnz` and Retool remain NO-WRITE; Atlas Production is not an approved target. No business data, supplier messages, physical shipments or security changes.
+
+## Current task protocol and handoff
+
+Verify the user-authorized checkout/current main under AGENTS.md. Edit only `docs/architecture/roadmap.md`, this file and `docs/autopilot/ACTIVE_TASK.md`. Check formatting, local links, whitespace, historical retention and status consistency; push the bounded documentation branch and let normal PR CI run. Report the PR, exact source, validation and unverified deployment boundary. **STOP — await Owner review; no automatic next task.**
+
+## Historical checkpoints — superseded execution instructions
+
+The complete pre-update mandate body is retained below. Dates, source revisions, failures and restrictions remain evidence at their original checkpoint. Statements such as “current”, “execute”, “pending” and “next” inside this appendix do not override the 26 October scope above.
+
+<details>
+<summary>Historical mandate body before the 26 October reconciliation</summary>
+
 **22 October Supabase runtime follow-up complete:** reviewed PR432 / `db7bfe24`,
 exact-source and main Frontend/executed Full, guarded deployment and automatic
 publication pass. The scoped Need policy restores ordinary timeout protection
@@ -139,3 +189,5 @@ Use `OPS_SYSTEM_MAP v1.0` and **FACTS EXPLICIT — STATE DERIVED — SUPPORTING 
 2. Verify canonical workspace before implementation (`git rev-parse`, `git remote -v`, `git fetch origin`, `git status --short`, `pnpm ops:workspace`). Do not disturb dirty Codex checkouts.
 3. Execute **only D1/D2**, create Draft artifacts for review, then stop for Owner selection.
 4. Later task authorization requires an explicit update to this mandate/active baton, not extrapolation from an old roadmap.
+
+</details>
