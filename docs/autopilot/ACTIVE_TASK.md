@@ -1,5 +1,68 @@
 # Atlas Autopilot — Active Task
 
+## Current task — 26 October 2026
+
+**Task:** ATLAS-ROADMAP-AUTOPILOT-20261026 — documentation reconciliation.
+
+**Status:** Documentation review handoff; no application task activated.
+
+**Owner authorization:** Update the roadmap and Autopilot documents, preserve historical evidence, separate merged from deployed work, and **do not work on Warehouse yet**.
+
+**Verified starting main:** `c9641522721430def56eea96750c364cdc06584a`.
+
+**Authorized checkout:** `E:/Project/OPS ERP/thuonghao-ops-erp`; clean, origin matches the real repository, HEAD equals fetched `origin/main`. The workspace script's older D-drive warning does not replace the explicit task-authorized checkout.
+
+This is the sole active documentation task. The historical appendix preserves previous instructions/checkpoints, including failures; none is a current instruction to resume implementation. The [current mandate](ATLAS-AUTOPILOT.md#current-authority-and-execution-horizon) and AGENTS.md govern.
+
+## Allowed scope and acceptance
+
+Allowed files:
+
+- `docs/architecture/roadmap.md`
+- `docs/autopilot/ATLAS-AUTOPILOT.md`
+- `docs/autopilot/ACTIVE_TASK.md`
+
+Acceptance:
+
+- Replace the obsolete 02B/School-follow-up active gates with the reviewed baseline and current review queue.
+- Record convergence #357/#359/#361, thirteen-owner workspace #358 and document system #360 as merged; retain each record's validation/performance limits.
+- Separate last recorded accepted Staging from later merged #434–#437 and open Draft #438/#439. Preserve source, target, date and CI references without claiming a fresh deployment inspection.
+- Record Product review → separately authorized release/parity → bounded staff pilot/data decisions as priorities, without activating those tasks.
+- Keep Warehouse paused, including discovery/design and implementation. Preserve its undecided choices without editing its documents.
+- Preserve old Autopilot bodies as historical evidence; do not turn past FAIL/BLOCKED or limited observations into general acceptance.
+- Pass changed-file formatting, relative-link and whitespace checks; inspect the three-file diff. Publish one documentation review PR; normal frontend CI remains a separate PR gate.
+
+No application code, migration, API/contract, dependency, lifecycle, calculation, permission/RLS, hosted setting/data, release, merge, pilot, physical operation, OPSv1/Retool write or Warehouse work is included. Security/business authority and released documents remain unchanged. Rollback is a revert of these Markdown edits; no database rollback or data repair applies.
+
+## Evidence at the 26 October review
+
+| Layer                             | Recorded result and boundary                                                                                                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Merged main                       | `c9641522`, including #437 optional additions. Its final-source Frontend/executed Full passed; the PR records no hosted migration application/deployment.                                                          |
+| Last recorded Staging/app release | `db7bfe24`, 22 October; `rnzxmxiiqgtdevzregff`, 134 migrations/tip `20261022071412`, guarded deployment and automatic app publication. See [runtime closeout](../testing/supabase-runtime-timeouts-2026-10-22.md). |
+| Accepted hosted journey           | Two Schools, 21 zero detail deltas, 631 assertions, both actual PDFs/four pages, all 7,205 prior history rows and frozen originals preserved. Bounded Staging acceptance.                                          |
+| #438                              | Open Draft at `baef3078`; [Frontend PASS 40205644208](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40205644208). Product/integration gates remain separate; no deployment evidenced.              |
+| #439                              | Open Draft at `d7802b22`; [Frontend PASS 40244573064](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40244573064). Product/integration gates remain separate; no deployment evidenced.              |
+
+The [roadmap](../architecture/roadmap.md) carries the full queue/capability summary. No live migration/app inspection was performed for this documentation task. A release task must verify exact combined-source certification, target, migration/app parity and rollback before claiming newer work live.
+
+## Next Product decision and stop condition
+
+**Next decision:** Product acceptance or bounded revisions for [#438](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/438) and [#439](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/439). This handoff does not authorize edits to, merge of, or deployment from those branches.
+
+Later priorities need separate bounded authorization: an accepted release with Staging/app parity; a staff pilot of existing Planning–Procurement with agreed completion criteria; factual Recipe3529 resolution and explicit production-cutover readiness. The earlier 5–10 working-day estimate is not a scheduled/started pilot. Preserve old Drafts and failed stress evidence; assess overlap with merged replacements before disposition.
+
+**Warehouse: PAUSED by explicit Owner instruction.** No discovery, design revision, implementation, migrations, benchmarks or deployment; no automatic reactivation after handoff. The four Product groups remain undecided and unchanged.
+
+Endpoint: checked three-file documentation diff and a review PR with normal CI evidence, then **STOP — await Owner review**. No next journey, runtime repair, deployment, source-data correction, pilot or Warehouse work follows automatically.
+
+## Historical active-task record — superseded execution instructions
+
+The entire pre-update body is preserved below. Its “current”, “Task A”, “pending”, “next” and executable passages describe earlier authorizations only. Failures, screenshots/DOM limitations, revisions and migration observations remain qualified to those checkpoints. They do not override the 26 October task above.
+
+<details>
+<summary>Historical active-task body before the 26 October reconciliation</summary>
+
 **22 October — bounded Supabase runtime closeout complete:** reviewed PR432 /
 `db7bfe24`, exact-source and main Frontend/executed Full, guarded Staging deployment
 and automatic app publication pass. Need now has its scoped completion policy;
@@ -185,3 +248,5 @@ The historical 14 October Warehouse baton is preserved by Git history. This chan
 ## Required handoff
 
 Return exact current baseline, verified canonical workspace, skill-source/provenance results, 2–3 visual directions, populated screenshots, top critical UX defects, conflicts/unknowns and a **STOP — AWAIT OWNER VISUAL SELECTION** verdict. Do not autonomously continue into a runtime implementation or another task.
+
+</details>

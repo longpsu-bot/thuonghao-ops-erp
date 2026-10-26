@@ -1,185 +1,77 @@
 # Atlas Roadmap
 
-**Purpose:** Concise delivery order and current status. Detailed contracts, decisions and implementation records remain the scope authority.
+**Reviewed:** 26 October 2026 (Asia/Bangkok). Repository baseline: `c9641522721430def56eea96750c364cdc06584a`, latest verified `origin/main`.
 
-**Accepted business baseline:** `010871bebb43f3883c77c5b9bf6954282053c93d` (PR #355).
-
-## Status legend
-
-- ✅ Complete / merged
-- 🟡 Current gate
-- ⬜ Not started
-- ↘️ Deferred / separately governed
+**Purpose:** Current delivery order and evidence boundaries. Approved contracts and explicit Owner instructions govern scope. This task reconciles documentation only; Warehouse remains paused.
 
 ## Governing direction
 
-- ✅ ARCH-001 — OPS ERP Business Architecture
-- ✅ ARCH-002 — Atlas System Map
-- ✅ Atlas Vision
-- ✅ Workflow-led, contract-constrained, backend-authoritative delivery
-- ✅ [ATLAS-MODEL-PRINCIPLE-01](../decisions/decision-atlas-model-convergence.md) — **facts explicit, state derived, supporting objects generated**
-- ✅ [Authority map through Procurement](atlas-authority-map-through-procurement.md)
-- ✅ [Planning–Procurement Business Freeze](planning-procurement-business-freeze.md) — COMPLETE; Owner-approved business/application contract, merged PR #356
+ARCH-001, ARCH-002, the [Atlas Vision](atlas-vision.md), [authority map through Procurement](atlas-authority-map-through-procurement.md), and [Planning–Procurement business freeze](planning-procurement-business-freeze.md) remain authority. Apply **FACTS EXPLICIT → STATE DERIVED → SUPPORTING OBJECTS GENERATED** and workflow-led, contract-constrained, backend-authoritative delivery. Later approved amendments retain their bounded scope; this update changes no business contract.
 
-Normal delivery shorthand:
+**Merged** means repository implementation; **deployed** requires an exact target/revision record; **accepted** means only the recorded operator journey and checks. Green Draft CI establishes neither merge nor deployment. This is a dated review, not a live environment inspection.
 
-```text
-operator job
-→ minimum contract
-→ authoritative backend
-→ connected UI
-→ operator/Product review
-```
+## Merged repository baseline
 
-Do not create persisted lifecycle/status machinery or operator ceremony merely because an object can conceptually have a state.
+| Area                           | Repository state at reviewed main                                                                                                                                                                                                                                      |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Master Data / Recipes          | Connected catalogues, Recipe/BOM authoring, adjustments, effective composition and traceability. Model convergence #258 and effective composition for Need #377 are merged. Recipe3529 still needs a factual Owner/kitchen decision.                                   |
+| Planning                       | Menu synchronization, Attendance, Pantry sources, derived readiness/currentness, Need Generation, Confirmed Need, Shopping List V2 A+, and traceable correction/successor support. Pantry displays Bổ sung and Hàng đặt riêng under the approved two-source amendment. |
+| Procurement / School documents | Explicit supplier splits and Save, advisory recommendation/rebalance, atomic purchase preparation, immutable supplier PO release, replacement POs, School PXK successors, reconciliation and exports. School PXK does not establish Warehouse receipt or stock.        |
+| Persistent workspace           | Thirteen persistent workbench owners (#358), guarded drafts/close/sign-out and the later selected C presentation. Older eleven-owner acceptance remains historical evidence.                                                                                           |
+| Backend convergence            | 02B (#357), 02C (#359), and 02D clean-bootstrap/disposable authenticated-API certification (#361) merged. Their dated records retain performance failures, failed attempts and certification limits; these are no longer pending roadmap gates.                        |
+| Operational documents          | PO/PXK document and School cooking-group work merged in #360, followed by October export and actual-app PDF repairs. This does not certify every future document/template or physical dispatch.                                                                        |
+| Latest changes                 | Scoped Need runtime policy (#432), recorded hosted closeout (#433), action layout/Allocation hierarchy/typography (#434–#436), and optional weekly additions (#437) are merged. Merge supplies no deployment evidence for #434–#437.                                   |
 
-## Repository implementation through Procurement
+[02B](../implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02B.md), [02C](../implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02C.md), [02D](../implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02D.md), and [document-system](../implementation-tasks/TASK-ATLAS-DOCUMENT-SYSTEM-01.md) records preserve the original source-qualified results.
 
-### Master Data / Recipe
+The [optional-additions amendment](../implementation-tasks/TASK-ATLAS-OPTIONAL-WEEKLY-ADDITIONS.md) merged through [#437](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/437): daily Need can use backend-verified Pantry absence when no batch exists. Existing unfinished batches still block; removing saved additions still requires reviewed Save. Frontend and executed Full Integration passed on final source `96e82ac7`. The PR records no hosted migration application or deployment.
 
-- ✅ Master Data foundation and connected Admin workflows
-- ✅ Recipe/BOM authoring and Change Orders
-- ✅ Canonical typed Recipe roots generated with Dish creation
-- ✅ Effective Recipe contract and atomic two-scope Dish copy — PR #257
-- ✅ ATLAS-MODEL-CONVERGENCE-01 — PR #258 merged as `11408a0b0ed5d3938321c90f38fd8a2f9c1ad587`
-- ✅ Repository convergence acceptance: **56 / 56 PASS**
-- ✅ A07 true SYSTEM_DISH command context incorporated into #258; component PR #259 closed as superseded
-- ✅ A12 per-revision legacy issuance truth incorporated into #258; component PR #260 closed as superseded
+## Last recorded deployed and accepted Staging baseline
 
-### Planning
+| Evidence boundary     | Last recorded result                                                                                                                                                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Target / application  | Atlas Staging `rnzxmxiiqgtdevzregff`; [connected app](https://thuonghao-ops-erp.pages.dev/). OPS v1 is not an Atlas deployment target.                                                                                                                             |
+| Exact deployed source | `db7bfe24`, 22 October; guarded [deployment 39744741438](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/39744741438), 134 migrations, tip `20261022071412`; automatic app publication recorded.                                                     |
+| Certification         | Exact-main Frontend and executed Full Integration passed. The scoped Need policy restores ordinary authenticated eight-second protection and retains lock/security checks; Need runtime is observed without an arbitrary duration gate.                            |
+| Hosted acceptance     | Original → correction → reallocation → replacement PO → successor dispatch: two Schools, all 21 detail deltas zero, 631 assertions and both actual PDFs over four rendered pages pass. All 7,205 pre-existing history rows and frozen original contents preserved. |
+| Limits                | Bounded Staging evidence; no real Supplier communication, physical shipment or Production cutover. Resource observations justify no capacity change or general speedup claim. Later main/Draft work is not implied deployed.                                       |
 
-- ✅ Weekly Menu
-- ✅ Attendance, including default-derived working proposals and explicit zero
-- ✅ Pantry, including explicit no-additions
-- ✅ Derived Planning readiness/currentness
-- ✅ Atomic Need Generation and bound calculation/source evidence
-- ✅ Selective Confirmed Need continuity
-- ✅ Confirmed Need Save and Release boundary
-- ✅ Shopping List V2 A+ hosted acceptance: whole-workbook quantity-only local proposals; explicit Save remains required
+Sources: [22 October runtime/journey closeout](../testing/supabase-runtime-timeouts-2026-10-22.md), [earlier journey/export closeout](../testing/journey-closeout-2026-10-21.md). Current deployment parity was not re-inspected on 26 October; verify it before a separately authorized release or pilot.
 
-Normal Planning route:
+## Current review queue
 
-```text
-Menu / Attendance / Pantry
-→ consequential Save
-→ derived readiness/currentness
-→ Need Generation
-→ Confirmed Need decision
-→ Save → Tiếp tục phân bổ NCC (navigation only)
-→ exact Allocation Save → atomic purchase preparation
-→ independent supplier PO release
-```
+Verified on GitHub on 26 October: both remain **open Drafts, unmerged**. Independent source/render review is reported on each PR; Product acceptance and integration remain separate gates.
 
-### Procurement
+| PR                                                                | Bounded change                                                                                                             | Exact-head Frontend CI                                                                                           | Deployment                              |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| [#438](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/438) | Procurement status hierarchy and warning/error surfaces                                                                    | PASS at `baef3078`; [run 40205644208](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40205644208) | No deployment evidenced for this Draft. |
+| [#439](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/439) | Truthful pending/failed PXK counts, desktop Change Order reason/actions and bounded desktop readability/error improvements | PASS at `d7802b22`; [run 40244573064](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40244573064) | No deployment evidenced for this Draft. |
 
-- ✅ Generated purchase review remains advisory
-- ✅ Exact saved supplier splits are explicit human decisions
-- ✅ Rebalance is advisory until Apply + Save
-- ✅ Purchase preparation composes release/Handoff/promotion/PO-draft support atomically
-- ✅ PO draft/successor support is generated
-- ✅ PO freshness/release eligibility is derived
-- ✅ Each official PO release is an explicit supplier commitment with immutable released content
+Older open Drafts, including #385–#388/#396 and earlier UI prototypes, remain preserved. Assess exact compatibility and already-merged replacements before any disposition. Historical FAIL/BLOCKED evidence is not converted to PASS by the later bounded journey; do not automatically merge, rerun or discard those Drafts.
 
-### Persistent Workspace v2
+## Next priorities — planning, not execution authorization
 
-- ✅ D-048 production implementation merged in PR #351
-- ✅ Persistent mounted workbenches with local context, guarded close/sign-out and bounded Need → Procurement handoff
-- ✅ Eleven operator-job owners and connected hosted workspace acceptance; [D-048](../decisions/decision-atlas-persistent-workspace.md) ownership preserved
+1. **Complete Product review of #438/#439.** Resolve only demonstrated remaining issues; retain exact-head CI and compatibility review before integration. This documentation task does not merge them.
+2. **Establish one accepted release and explicit deployment parity.** On separate authorization, record the selected combined source, required certification, Staging migration tip, app artifact revision and rollback. Include #437's migration/UI dependency; do not label current main deployed without evidence.
+3. **Prepare a bounded staff pilot of the existing Planning–Procurement workflow.** The earlier approximately 5–10 working-day proposal remains a planning estimate, not a scheduled/completed pilot. Agree scope, staff, data, document acceptance and completion criteria before starting; use observed friction to prioritize improvements.
+4. **Resolve factual data and cutover decisions.** Recipe3529's pork-name/ground-beef discrepancy needs the Owner/kitchen's factual answer. Preserve source history. Production adoption requires explicit scope/ownership approval, reconciliation, staff readiness and rollback; this roadmap authorizes none of those writes or commitments.
 
-**Composition supersession — 8 October 2026 (Draft PR #358):** [D-048](../decisions/decision-atlas-persistent-workspace.md) now defines **13 persistent owners**: separate Thực đơn, Sĩ số and Hàng đặt riêng (formerly Bổ sung), plus the existing jobs. Local-state/guard ownership and business/backend contracts are unchanged. Earlier eleven-owner hosted acceptance remains historical; this amendment claims no hosted rollout.
+[ACTIVE_TASK.md](../autopilot/ACTIVE_TASK.md) defines the sole active task and stop condition: documentation update and review handoff. The priorities above do not start another task.
 
-## Current gate — 02B Draft PR / Owner review
+## Warehouse — PAUSED by Owner, 26 October
 
-### Accepted connected baseline
-
-Atlas Staging project: `rnzxmxiiqgtdevzregff`
-
-Current technical identifiers verified read-only on 7 October 2026; the Owner supplied completed connected rehearsal and Shopping List acceptance:
-
-```text
-migration tip:         20261006112515_atlas_recipe_purchase_unit_read
-migration lineage:     92 hosted / 92 repository migrations
-hosted commit:         010871bebb43f3883c77c5b9bf6954282053c93d
-hosted target:         rnzxmxiiqgtdevzregff
-operator rehearsal:    accepted through Procurement; PO read/context and PXK/reconciliation smoke limits retained
-Shopping List:         ATLAS_SHOPPING_LIST_V2 / A+; accepted hosted import/discard; no immediate business writes
-presentation baseline: Atlas Design Language v3; 13-owner composition authorized in Draft #358 (hosted acceptance remains the historical 11-owner baseline)
-```
-
-The [connected Staging app](https://thuonghao-ops-erp.pages.dev/) serves the accepted main baseline. The [canonical freeze](planning-procurement-business-freeze.md#21-accepted-hosted-evidence) records the later completed Owner acceptance and supersedes the dated pending rehearsal status without rewriting historical observations. This documentation task performs no business writes or deployment.
-
-### Current sequence
-
-```text
-✅ Staging parity + read-only verification
-→ ✅ persistent connected Staging deployment
-→ ✅ connected Planning / Procurement rehearsal + Shopping List V2 A+ acceptance
-→ ✅ Product decision: PLANNING_PROCUREMENT_BUSINESS_FREEZE = APPROVED
-→ ✅ PLANNING-PROCUREMENT-BUSINESS-FREEZE-01 documentation merged #356
-→ 🟡 ATLAS-BACKEND-CONVERGENCE-02B implementation COMPLETE / Draft PR / Owner review
-→ parallel product and backend lanes below
-```
-
-### Review-data rule
-
-Hosted review data should be **minimal and purpose-built**:
-
-- reuse existing managed Staging identity/reference data where safe;
-- create only the smallest business facts needed for the operator journey under review;
-- do not recreate the full catering business model as a synthetic seed graph;
-- do not invent canonical Recipe content merely to satisfy code paths;
-- distinguish missing business data from missing technical support;
-- prefer operator-authored review facts over increasingly elaborate fixture packages.
-
-Storybook and GitHub Pages are developer/mock evidence only. The preferred Product Owner review surface is the persistent connected hosted Atlas Staging application.
-
-## Parallel / next lanes after freeze PR
-
-- ⬜ Staff usage of Atlas v3 for approximately **5–10 working days** → `ATLAS-UX-POLISH-02`, using observed workflow/legibility evidence.
-- ⬜ `ATLAS-DOCUMENT-SYSTEM-01` → PO, PXK, Dispatch, Attendance/import templates, common layout/branding/signature/header/footer and grouped-export rules → later document presentation freeze.
-- 🟡 [ATLAS-BACKEND-CONVERGENCE-02B](../implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02B.md) implementation COMPLETE, Draft PR/Owner review: D01/D02 reuse preserves catalog posture; D03 retained for disjoint privileges; complete-command evidence proves and corrects Handoff precision; zero retirements. Required final-head CI and Owner review govern readiness.
-- ⬜ `ATLAS-BACKEND-CONVERGENCE-02C` → `02D`, under separate bounded approvals and the merged [#353 / 02A audit](atlas-backend-convergence-02a-audit.md). Neither has started.
-
-UI and document tracks may proceed in parallel with backend convergence; their completion is not a prerequisite absent an actual dependency. The Owner separately authorized 02B; 02C/02D remain separately governed future work. Class A–D [change control](planning-procurement-business-freeze.md#23-change-control-after-freeze) governs all tracks. Design Language v3 and A+ are current presentation baselines, open to compatible explicit review; business semantics remain frozen.
-
-## Next domain after backend certification
-
-### Warehouse
-
-⬜ Warehouse has not started.
-
-Documentation only: [minimum receiving packet](warehouse-receiving-minimum-design.md) is READY FOR PRODUCT REVIEW; [the decision](../decisions/decision-atlas-warehouse-receiving-minimum.md) is PROPOSED with four UNDECIDED Product groups. Final explicit Warehouse design approval is required before implementation; merging the packet does not authorize code.
-
-Start only after the freeze PR and a backend baseline sufficiently certified for the new Warehouse domain boundary. This record designs no Warehouse contract or stock behavior; existing bounded School PXK is not Warehouse implementation.
-
-Use thin operational slices:
-
-```text
-receiving job
-→ workflow exploration
-→ minimum receiving contract
-→ authoritative backend
-→ connected hosted UI
-→ operator review
-```
-
-Do not pre-build a generic warehouse-management lifecycle.
+**Do not work on Warehouse yet.** No Warehouse discovery, design revision, contract, migration, implementation, benchmark, deployment or automatic promotion is active. The existing [minimum receiving packet](warehouse-receiving-minimum-design.md) retains four UNDECIDED Product groups and an [unapproved implementation decision](../decisions/decision-atlas-warehouse-receiving-minimum.md). Leave them unchanged. Warehouse is not the next executable task; future work requires explicit Owner reactivation and existing approval gates.
 
 ## Deferred / separately governed
 
-- ↘️ Attendance XLSX-assisted bulk authoring
-- ↘️ Multi-day Shopping List UI beyond the current exact-day workbench
-- ↘️ `DISH-RICE-01` Menu-derived rice accompaniment until Product semantics are defined
-- ↘️ Conditional supplier-removal semantics until a concrete operator case requires it
-- ↘️ Production/QA and Dispatch expansion
-- ↘️ Any additional compatibility retirement that is not required by the normal operator path
+Attendance XLSX-assisted authoring, multi-day Shopping List UI, DISH-RICE-01 semantics, supplier-removal/cancellation policy, Dispatch expansion, Production/QA, Finance/Accounting and optional compatibility retirement remain outside this task. No broad performance/capacity program or old correction stress loop is activated.
 
-## Environment boundary
+## Historical evidence and environment boundaries
 
-- Planning/Procurement business freeze is COMPLETE, merged PR #356. Accepted hosted evidence has the limits stated in the canonical freeze. 02B performs no Staging writes or deployment.
-- Live OPS project `qnthofvccilhnefdcxnz` is a forbidden Atlas deployment target.
-- OPS v1 / Retool remains operational continuity and workflow evidence, not Atlas architecture authority.
+The accepted pre-freeze baseline remains `010871bebb43f3883c77c5b9bf6954282053c93d` (#355), followed by freeze #356. The 7 October observation recorded 92 hosted/repository migrations, tip `20261006112515_atlas_recipe_purchase_unit_read`, and the then eleven-owner hosted acceptance. These dated facts remain in the [canonical freeze](planning-procurement-business-freeze.md#21-accepted-hosted-evidence) and Git history; they are not current deployment claims. The 21 October and 22 October journeys retain their distinct 22-delta and 21-delta evidence without combining them.
+
+For this documentation task, hosted systems are read-only. OPS v1 `qnthofvccilhnefdcxnz` and Retool remain NO-WRITE; Atlas Production is not an approved target. Preserve immutable quantities, source lineage, capability/scope checks, RLS, receipts and historical documents. Use minimal purpose-built review data only within separate authorization; do not invent Recipe facts to make a journey pass.
 
 ## Update rule
 
-Keep this roadmap short. Record only current delivery order, completed major gates, active blockers and explicitly deferred work. Historical PR-by-PR detail belongs in implementation records and Git history, not in the active roadmap.
+Keep the current roadmap concise. Separate merged, deployed and accepted evidence with date, revision, target and source. Preserve failed/limited evidence in implementation/testing records and Git history. Never promote queued priorities or dated historical instructions into execution authority.
