@@ -35,6 +35,61 @@ async function setup() {
   return { ...hook, fixture };
 }
 describe("Planning source safety", () => {
+  it.each([
+    ["WEEKLY_SHEET_MISSING", /Kiểm tra.*tuần/],
+    ["CAPABILITY_DENIED", /Liên hệ.*quyền/],
+    ["CONNECTOR_UNAVAILABLE", /Thử lại/],
+    ["CONNECTOR_TIMEOUT", /Thử.*lại/],
+    ["GOOGLE_CREDENTIAL_MISSING", /Liên hệ.*quản trị/],
+  ] as const)(
+    "shows actionable Vietnamese recovery for %s without Preview or Save",
+    async (code, action) => {
+      const { result, fixture } = await setup();
+      const preview = vi.spyOn(fixture.api, "previewMenu");
+      const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+      const rows = structuredClone(result.current.menuRows);
+      fixture.api.syncMenuFromGoogle = vi.fn(async () => ({
+        kind: "backend_error" as const,
+        error: {
+          success: false as const,
+          error_code: code,
+          safe_message: "private upstream detail",
+        },
+      }));
+      await act(() => result.current.syncGoogle("google-1"));
+      expect(result.current.outcome).toMatch(action);
+      expect(result.current.outcome).toContain("Dữ liệu chưa được lưu");
+      expect(result.current.outcome).not.toContain("private upstream");
+      expect(result.current.menuRows).toEqual(rows);
+      expect(result.current.busy).toBe(false);
+      expect(result.current.syncing).toBe(false);
+      expect(fixture.api.syncMenuFromGoogle).toHaveBeenCalledOnce();
+      expect(preview).not.toHaveBeenCalled();
+      expect(save).not.toHaveBeenCalled();
+    },
+  );
+
+  it("allows an explicit successful sync after a temporary source outage", async () => {
+    const { result, fixture } = await setup();
+    const fetch = fixture.api.syncMenuFromGoogle;
+    const save = vi.spyOn(fixture.api, "saveCompletedMenu");
+    fixture.api.syncMenuFromGoogle = async () => ({
+      kind: "backend_error" as const,
+      error: {
+        success: false as const,
+        error_code: "CONNECTOR_UNAVAILABLE",
+        safe_message: "unavailable",
+      },
+    });
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(result.current.outcome).toContain("Thử lại");
+    expect(save).not.toHaveBeenCalled();
+    fixture.api.syncMenuFromGoogle = fetch;
+    await act(() => result.current.syncGoogle("google-1"));
+    expect(save).toHaveBeenCalledOnce();
+    expect(result.current.recoveryKind).toBeNull();
+    expect(result.current.busy).toBe(false);
+  });
   it("B1 inherits a source once and preserves same-Ingredient sources through Save/readback and deletion", async () => {
     const { result, fixture } = await setup();
     fixture.pantry.purposes = [

@@ -19,6 +19,7 @@ import {
   planningReadbackFromResult,
   pantryReadbackFromResult,
   planningResultMessage,
+  planningGoogleSyncMessage,
   planningIssueMessage,
   parseMenuMatrix,
   parseAttendancePaste,
@@ -642,7 +643,7 @@ export function usePlanningSources({
       );
       if (!stillCurrent()) return;
       if (result.kind !== "success") {
-        setOutcome("Không tải được Google Sheet. Dữ liệu chưa được lưu.");
+        setOutcome(planningGoogleSyncMessage(result));
         return;
       }
       const source = result.response.source;

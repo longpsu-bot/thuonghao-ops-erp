@@ -272,6 +272,62 @@ export function planningClockSkewMessage(result: AtlasRpcResult) {
   return "Thời gian trên thiết bị có thể chưa khớp. Hãy kiểm tra đồng hồ, tải lại dữ liệu rồi thử lại.";
 }
 
+export function planningGoogleSyncMessage(result: AtlasRpcResult): string {
+  if (result.kind === "success")
+    return "Đã tải nguồn Google Sheet để xem trước.";
+  let message: string;
+  if (result.kind === "auth_error") {
+    message = "Phiên làm việc đã hết. Đăng nhập lại rồi đồng bộ lại.";
+  } else if (result.kind === "transport_error") {
+    message =
+      "Không thể kết nối bộ đồng bộ Google Sheet. Kiểm tra kết nối rồi thử lại.";
+  } else if (result.kind === "client_error") {
+    message =
+      "Bộ đồng bộ Google Sheet chưa sẵn sàng trong môi trường này. Liên hệ người quản trị.";
+  } else {
+    const messages: Record<string, string> = {
+      SESSION_REQUIRED: "Phiên làm việc đã hết. Đăng nhập lại rồi đồng bộ lại.",
+      SESSION_EXPIRED: "Phiên làm việc đã hết. Đăng nhập lại rồi đồng bộ lại.",
+      CAPABILITY_DENIED:
+        "Không có quyền đọc nguồn Kế hoạch. Liên hệ người quản trị để kiểm tra quyền truy cập.",
+      SCOPE_DENIED:
+        "Không có quyền đọc nguồn Kế hoạch. Liên hệ người quản trị để kiểm tra quyền truy cập.",
+      GOOGLE_SOURCE_UNAVAILABLE:
+        "Nguồn Google Sheet không tồn tại hoặc đã ngừng hoạt động. Liên hệ người quản trị để kiểm tra nguồn.",
+      WEEKLY_SHEET_MISSING:
+        "Không tìm thấy trang tính của tuần đã chọn. Kiểm tra tên trang tính và tuần phục vụ rồi đồng bộ lại.",
+      EMPTY_SHEET:
+        "Trang tính của tuần đã chọn không có dữ liệu. Kiểm tra Google Sheet rồi đồng bộ lại.",
+      GOOGLE_CREDENTIAL_MISSING:
+        "Bộ đồng bộ chưa được cấu hình thông tin xác thực Google. Liên hệ người quản trị.",
+      GOOGLE_AUTH_FAILED:
+        "Bộ đồng bộ không xác thực được với Google Sheet. Liên hệ người quản trị.",
+      GOOGLE_WEBAPP_NOT_CONFIGURED:
+        "Bộ đồng bộ Google Sheet chưa được cấu hình hợp lệ. Liên hệ người quản trị.",
+      SPREADSHEET_INACCESSIBLE:
+        "Bộ đồng bộ không thể đọc bảng tính đã cấu hình. Liên hệ người quản trị để kiểm tra quyền truy cập.",
+      CONFIGURED_RANGE_INVALID:
+        "Cấu hình vùng đọc Google Sheet không hợp lệ. Liên hệ người quản trị.",
+      RESPONSE_SIZE_LIMIT:
+        "Dữ liệu Google Sheet vượt giới hạn đọc. Liên hệ người quản trị để kiểm tra vùng dữ liệu.",
+      GOOGLE_SOURCE_EVIDENCE_MISMATCH:
+        "Dữ liệu trả về không khớp nguồn hoặc tuần đã chọn. Tải lại dữ liệu Atlas rồi đồng bộ lại.",
+      MALFORMED_ATLAS_SOURCE:
+        "Atlas trả về cấu hình nguồn Google Sheet không hợp lệ. Tải lại dữ liệu; nếu lỗi vẫn còn, liên hệ người quản trị.",
+      GOOGLE_UPSTREAM_RETRYABLE:
+        "Google Sheets tạm thời không sẵn sàng. Chờ một lát rồi đồng bộ lại.",
+      CONNECTOR_UNAVAILABLE:
+        "Bộ đồng bộ Google Sheet hiện không sẵn sàng. Thử lại sau; nếu lỗi vẫn còn, liên hệ người quản trị.",
+      CONNECTOR_TIMEOUT:
+        "Đồng bộ Google Sheet chưa hoàn tất trong thời gian chờ. Thử đồng bộ lại.",
+    };
+    message = Object.hasOwn(messages, result.error.error_code)
+      ? messages[result.error.error_code]!
+      : "Không thể đồng bộ Google Sheet. Tải lại dữ liệu rồi thử lại; nếu vẫn lỗi, liên hệ người quản trị.";
+  }
+  return message + " Dữ liệu chưa được lưu.";
+}
+
 export function planningResultMessage(result: AtlasRpcResult): string {
   if (result.kind === "success") {
     const backendMessage =

@@ -17,6 +17,7 @@ type ReadOptions = {
   weekStart: string;
   requestId: string;
   fetchImpl: typeof fetch;
+  signal?: AbortSignal;
 };
 const maximumBytes = 1_500_000;
 const fail = (
@@ -115,11 +116,15 @@ export async function readWeeklyMenuWebApp(
     );
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, controller.signal])
+    : controller.signal;
   try {
+    signal.throwIfAborted();
     let response = await options.fetchImpl(target.href, {
       method: "POST",
       redirect: "manual",
-      signal: controller.signal,
+      signal,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -132,6 +137,7 @@ export async function readWeeklyMenuWebApp(
         secret: options.secret,
       }),
     });
+    signal.throwIfAborted();
     // Only Google's documented one-time ContentService response location. The
     // second request is a fresh GET, with no incoming JWT, shared secret or body.
     if (response.status === 302 || response.status === 303) {
@@ -146,7 +152,7 @@ export async function readWeeklyMenuWebApp(
       response = await options.fetchImpl(location.href, {
         method: "GET",
         redirect: "manual",
-        signal: controller.signal,
+        signal,
         headers: { Accept: "application/json" },
       });
     }
@@ -169,6 +175,7 @@ export async function readWeeklyMenuWebApp(
       );
     }
     const data = await boundedJson(response);
+    signal.throwIfAborted();
     if (!record(data))
       return fail(
         502,

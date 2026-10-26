@@ -91,6 +91,305 @@ function handler(fetchMock = successfulFetch(), hasCredential = true) {
 }
 
 describe("atlas-weekly-menu-google-sync", () => {
+  it.each(["auth", "atlas"] as const)(
+    "classifies temporary %s outages without inventing session or source failures",
+    async (stage) => {
+      for (const status of [429, 500, 503]) {
+        const fetchMock = vi.fn<typeof fetch>(async (input) =>
+          stage === "atlas" && String(input).endsWith("/auth/v1/user")
+            ? json({ id: "user-1" })
+            : json({ message: "private upstream detail" }, status),
+        );
+        const response = await handler(fetchMock).handle(request());
+        expect(response.status).toBe(503);
+        expect(await response.json()).toMatchObject({
+          error_code: "CONNECTOR_UNAVAILABLE",
+          retryable: true,
+          correlation_id: correlationId,
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(stage === "auth" ? 1 : 2);
+      }
+    },
+  );
+
+  it.each(["auth", "atlas"] as const)(
+    "returns a safe correlated envelope when the %s fetch rejects",
+    async (stage) => {
+      const fetchMock = vi.fn<typeof fetch>(async (input) => {
+        if (stage === "atlas" && String(input).endsWith("/auth/v1/user"))
+          return json({ id: "user-1" });
+        throw new TypeError("private credential: test-webapp-secret");
+      });
+      const response = await handler(fetchMock).handle(request());
+      expect(response.status).toBe(503);
+      const body = await response.json();
+      expect(body).toMatchObject({
+        error_code: "CONNECTOR_UNAVAILABLE",
+        retryable: true,
+        correlation_id: correlationId,
+      });
+      expect(JSON.stringify(body)).not.toContain("test-webapp-secret");
+      expect(fetchMock).toHaveBeenCalledTimes(stage === "auth" ? 1 : 2);
+    },
+  );
+
+  it.each([401, 403])(
+    "retains actual Auth HTTP %s rejection",
+    async (status) => {
+      const response = await handler(
+        vi.fn<typeof fetch>(async () => json({}, status)),
+      ).handle(request());
+      expect(response.status).toBe(401);
+      expect(await response.json()).toMatchObject({
+        error_code: "SESSION_EXPIRED",
+        retryable: false,
+      });
+    },
+  );
+
+  it.each(["CAPABILITY_DENIED", "SCOPE_DENIED"])(
+    "retains %s without reading Google",
+    async (code) => {
+      const fetchMock = vi.fn<typeof fetch>(async (input) =>
+        String(input).endsWith("/auth/v1/user")
+          ? json({ id: "user-1" })
+          : json({ success: false, error_code: code }),
+      );
+      const response = await handler(fetchMock).handle(request());
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({
+        error_code: "CAPABILITY_DENIED",
+        retryable: false,
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each(["auth", "atlas"] as const)(
+    "does not turn a malformed %s response into expired session or missing source",
+    async (stage) => {
+      const response = await handler(
+        vi.fn<typeof fetch>(async (input) =>
+          stage === "atlas" && String(input).endsWith("/auth/v1/user")
+            ? json({ id: "user-1" })
+            : new Response("private malformed response"),
+        ),
+      ).handle(request());
+      expect(response.status).toBe(502);
+      const body = await response.json();
+      expect(body.error_code).toBe("CONNECTOR_UNAVAILABLE");
+      expect(JSON.stringify(body)).not.toContain("private malformed");
+    },
+  );
+
+  it.each(["auth", "atlas"] as const)(
+    "classifies a broken %s body stream as a retryable network failure",
+    async (stage) => {
+      const fetchMock = vi.fn<typeof fetch>(async (input) => {
+        if (stage === "atlas" && String(input).endsWith("/auth/v1/user"))
+          return json({ id: "user-1" });
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(new TypeError("private broken stream detail"));
+            },
+          }),
+        );
+      });
+      const response = await handler(fetchMock).handle(request());
+      expect(response.status).toBe(503);
+      const body = await response.json();
+      expect(body).toMatchObject({
+        error_code: "CONNECTOR_UNAVAILABLE",
+        retryable: true,
+        correlation_id: correlationId,
+      });
+      expect(JSON.stringify(body)).not.toContain("private broken");
+    },
+  );
+
+  it.each([
+    { label: "absent", value: undefined },
+    { label: "null", value: null },
+    { label: "array", value: [] },
+    { label: "missing status", value: {} },
+    { label: "unknown status", value: { ...source, source_status: "UNKNOWN" } },
+  ])(
+    "rejects malformed successful Atlas source evidence $label without inventing absence",
+    async ({ value: google_connector_source }) => {
+      const fetchMock = vi.fn<typeof fetch>(async (input) =>
+        String(input).endsWith("/auth/v1/user")
+          ? json({ id: "user-1" })
+          : json({ success: true, google_connector_source }),
+      );
+      const response = await handler(fetchMock).handle(request());
+      expect(response.status).toBe(502);
+      expect(await response.json()).toMatchObject({
+        error_code: "MALFORMED_ATLAS_SOURCE",
+        retryable: false,
+        correlation_id: correlationId,
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each(["auth", "atlas"] as const)(
+    "bounds a stalled %s read and clears the deadline timer",
+    async (stage) => {
+      vi.useFakeTimers();
+      try {
+        let stalledSignal: AbortSignal | null | undefined;
+        const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+          if (stage === "atlas" && String(input).endsWith("/auth/v1/user"))
+            return json({ id: "user-1" });
+          stalledSignal = init?.signal;
+          return new Promise<Response>((_resolve, reject) =>
+            stalledSignal?.addEventListener(
+              "abort",
+              () => reject(stalledSignal?.reason),
+              { once: true },
+            ),
+          );
+        });
+        const pending = handler(fetchMock).handle(request());
+        await vi.advanceTimersByTimeAsync(0);
+        expect(stalledSignal).toBeInstanceOf(AbortSignal);
+        await vi.advanceTimersByTimeAsync(35_000);
+        const response = await pending;
+        expect(await response.json()).toMatchObject({
+          error_code: "CONNECTOR_TIMEOUT",
+          retryable: true,
+          correlation_id: correlationId,
+        });
+        expect(stalledSignal?.aborted).toBe(true);
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
+  it.each(["auth", "atlas"] as const)(
+    "bounds a stalled %s response body as well as its headers",
+    async (stage) => {
+      vi.useFakeTimers();
+      try {
+        const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+          if (stage === "atlas" && String(input).endsWith("/auth/v1/user"))
+            return json({ id: "user-1" });
+          return new Response(
+            new ReadableStream({
+              start(controller) {
+                init?.signal?.addEventListener(
+                  "abort",
+                  () => controller.error(init.signal?.reason),
+                  { once: true },
+                );
+              },
+            }),
+          );
+        });
+        const pending = handler(fetchMock).handle(request());
+        await vi.advanceTimersByTimeAsync(35_000);
+        expect(await (await pending).json()).toMatchObject({
+          error_code: "CONNECTOR_TIMEOUT",
+          retryable: true,
+          correlation_id: correlationId,
+        });
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
+  it("clears the shared deadline after a successful read", async () => {
+    vi.useFakeTimers();
+    try {
+      expect((await handler().handle(request())).status).toBe(200);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps one deadline across Auth, Atlas and Google rather than resetting it", async () => {
+    vi.useFakeTimers();
+    try {
+      let googleSignal: AbortSignal | null | undefined;
+      const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+        const url = String(input);
+        if (url.endsWith("/auth/v1/user"))
+          return new Promise<Response>((resolve) =>
+            setTimeout(() => resolve(json({ id: "user-1" })), 10_000),
+          );
+        if (url.includes("/rpc/"))
+          return json({ success: true, google_connector_source: source });
+        googleSignal = init?.signal;
+        return new Promise<Response>((_resolve, reject) =>
+          googleSignal?.addEventListener(
+            "abort",
+            () => reject(googleSignal?.reason),
+            {
+              once: true,
+            },
+          ),
+        );
+      });
+      const pending = handler(fetchMock).handle(request());
+      let settled = false;
+      void pending.then(() => {
+        settled = true;
+      });
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(googleSignal).toBeInstanceOf(AbortSignal);
+      await vi.advanceTimersByTimeAsync(24_999);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(await (await pending).json()).toMatchObject({
+        error_code: "CONNECTOR_TIMEOUT",
+        retryable: true,
+      });
+      expect(googleSignal?.aborted).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("cancels an in-flight read when the incoming request is aborted", async () => {
+    const controller = new AbortController();
+    let upstreamSignal: AbortSignal | null | undefined;
+    const fetchMock = vi.fn<typeof fetch>(async (_input, init) => {
+      upstreamSignal = init?.signal;
+      return new Promise<Response>((_resolve, reject) =>
+        upstreamSignal?.addEventListener(
+          "abort",
+          () => reject(upstreamSignal?.reason),
+          {
+            once: true,
+          },
+        ),
+      );
+    });
+    const pending = handler(fetchMock).handle(
+      new Request(request(), { signal: controller.signal }),
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+    // Flush request.json() before checking the first network stage.
+    await vi.waitFor(() => expect(upstreamSignal).toBeInstanceOf(AbortSignal));
+    controller.abort();
+    const response = await pending;
+    expect(upstreamSignal?.aborted).toBe(true);
+    expect(await response.json()).toMatchObject({
+      error_code: "CONNECTOR_UNAVAILABLE",
+      retryable: true,
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("rejects a missing bearer token before any external call", async () => {
     const fetchMock = successfulFetch();
     const handle = createGoogleSyncHandler({

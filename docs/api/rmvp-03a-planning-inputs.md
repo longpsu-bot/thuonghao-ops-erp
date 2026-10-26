@@ -1,5 +1,45 @@
 # RMVP-03A Planning Inputs API Contract
 
+## Menu-sync recovery amendment — 26 October 2026
+
+Owner-authorized implementation scope:
+[Menu-sync recovery](../superpowers/plans/2026-10-26-menu-sync-recovery.md).
+Browser payloads and success envelopes are unchanged. This amendment changes no
+Planning Save, business lifecycle, source identity, grants/RLS or Warehouse rule.
+
+The Edge reader uses one **35-second network budget**, including Auth validation,
+the authorized Atlas source read, Google POST, its allowed redirect GET and
+response bodies. Google retains its **30-second sublimit**; the browser retains
+its **45-second invocation timeout**. Incoming cancellation propagates upstream.
+These are connector read limits, not Need Generation runtime policies.
+
+| Failure                                     | Safe HTTP / error result                                               |
+| ------------------------------------------- | ---------------------------------------------------------------------- |
+| Auth or Atlas HTTP 429 / 5xx                | 503 `CONNECTOR_UNAVAILABLE`, retryable                                 |
+| Genuine Auth rejection / Atlas HTTP 401     | 401 `SESSION_EXPIRED`, non-retryable                                   |
+| Atlas capability/scope denial               | 403 `CAPABILITY_DENIED`, non-retryable                                 |
+| Explicit unknown/inactive configured source | 404 `GOOGLE_SOURCE_UNAVAILABLE`, non-retryable                         |
+| Malformed Auth/Atlas reply                  | 502 `CONNECTOR_UNAVAILABLE` or `MALFORMED_ATLAS_SOURCE`, non-retryable |
+| Network exception or incoming cancellation  | 503 `CONNECTOR_UNAVAILABLE`, retryable                                 |
+| Shared connector deadline expires           | 503 `CONNECTOR_TIMEOUT`, retryable                                     |
+
+Responses retain the correlation ID and safe envelope; upstream bodies, tokens
+and credentials never enter diagnostics or user-facing copy. Existing Google
+error categories, byte/range limits and redirect credential isolation remain.
+Retryable means an explicit retry of this read, never an automatic new Save.
+
+Both Menu clients use shared Vietnamese recovery copy with the next action and
+notice that the failed fetch did not save data. Known cases distinguish session,
+permission, missing weekly sheet/source, configuration, temporary outage and
+timeout. Unknown error codes use a safe Vietnamese fallback rather than raw
+upstream text. Failed fetch preserves existing local rows and cannot reach
+Preview or Save; a later explicit valid synchronization follows the unchanged
+fetch → Preview → canonical Save/readback path and existing correction guards.
+
+Implementation and local tests do not establish hosted deployment or acceptance.
+This task opens a Draft PR only; Warehouse remains paused and no deployment is
+authorized.
+
 ## Operational School ordering amendment — 11/10/2026
 
 Owner-authorized Planning presentation uses `display_order ASC, school_name,
