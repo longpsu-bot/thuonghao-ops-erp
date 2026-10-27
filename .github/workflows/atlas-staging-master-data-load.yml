@@ -17,7 +17,7 @@ on:
         required: false
         type: string
       planning_preview:
-        description: Preview only the bounded Planning master catch-up at this exact review head
+        description: Run the bounded Planning master catch-up instead of the full master load; apply=false is preview-only
         required: true
         type: boolean
         default: false
@@ -121,27 +121,41 @@ jobs:
 
   planning-preview:
     if: ${{ inputs.planning_preview }}
-    name: Read-only bounded Planning catch-up preview
+    name: Guarded bounded Planning catch-up preview or apply
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     environment: atlas-staging
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commit_sha }}
           fetch-depth: 0
-      - name: Verify exact review head and preview-only request
+      - name: Verify exact authorized checkout and request
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
           APPLY_REQUESTED: ${{ inputs.apply }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          EXPECTED_PROJECT: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary }}
         run: |
           set -euo pipefail
-          test "$APPLY_REQUESTED" = "false"
           [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           test "$GITHUB_SHA" = "$REQUESTED_SHA"
           test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
           git fetch --no-tags origin main:refs/remotes/origin/main
-          git merge-base --is-ancestor origin/main HEAD
+          case "$APPLY_REQUESTED" in
+            true)
+              test "$DIAGNOSTIC_BOUNDARY" = "false"
+              test "$GITHUB_REF" = "refs/heads/main"
+              test "$CONFIRMED_TARGET" = "$EXPECTED_PROJECT"
+              test "$EXPECTED_PROJECT" = "rnzxmxiiqgtdevzregff"
+              test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"
+              ;;
+            false)
+              git merge-base --is-ancestor origin/main HEAD
+              ;;
+            *) exit 1 ;;
+          esac
           test -z "$(git status --porcelain)"
       - uses: pnpm/action-setup@v4
         with:
@@ -169,10 +183,13 @@ jobs:
           cat /etc/ssl/certs/ca-certificates.crt "$ca" > "$bundle"
           echo "ATLAS_STAGING_CA_BUNDLE=$bundle" >> "$GITHUB_ENV"
           pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
-      - name: Fresh read-only V1 snapshot and deterministic dependency-closed preview
+      - name: Fresh read-only V1 snapshot and deterministic dependency-closed plan
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
           DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary }}
+          REVIEWED_DISH_LEGACY_IDS: "2065,2077,2078,2079,2080,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2093,2094,2095,2097"
           ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
@@ -180,11 +197,27 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -m 700 "$RUNNER_TEMP/planning-preview"
-          args=(--commit-sha "$REQUESTED_SHA" --report-dir "$RUNNER_TEMP/planning-preview")
+          args=(--commit-sha "$REQUESTED_SHA" --report-dir "$RUNNER_TEMP/planning-preview" --dish-legacy-ids "$REVIEWED_DISH_LEGACY_IDS")
+          snapshot="$RUNNER_TEMP/planning-source.json"
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            args+=(--snapshot-output "$snapshot")
+          fi
           if [ "$DIAGNOSTIC_BOUNDARY" = "true" ]; then
             args+=(--diagnostic-boundary)
           fi
           node scripts/run-planning-master-catchup.mjs "${args[@]}"
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            plan_checksum="$(node --input-type=module -e 'import { readFileSync } from "node:fs"; const value=JSON.parse(readFileSync(process.argv[1], "utf8")).plan_checksum; if (!/^[a-f0-9]{64}$/.test(value ?? "")) process.exit(1); process.stdout.write(value)' "$RUNNER_TEMP/planning-preview/planning-master-plan.json")"
+            actor_id="$(node --input-type=module -e "import { deterministicV1Uuid } from './scripts/atlas-staging-v1-reference-transform.mjs'; process.stdout.write(deterministicV1Uuid('atlas-staging-master-import-actor'))")"
+            node scripts/run-planning-master-catchup.mjs \
+              --commit-sha "$REQUESTED_SHA" \
+              --snapshot-file "$snapshot" \
+              --plan-checksum "$plan_checksum" \
+              --actor-id "$actor_id" \
+              --dish-legacy-ids "$REVIEWED_DISH_LEGACY_IDS" \
+              --apply --target-project-ref "$CONFIRMED_TARGET" \
+              > "$RUNNER_TEMP/planning-preview/planning-master-apply.json"
+          fi
       - name: Read-only real Google fetch, strict parse and Preview
         if: always()
         env:
@@ -204,10 +237,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.diagnostic_boundary && 'planning-master-diagnostic-preview' || 'planning-master-preview' }}-${{ inputs.commit_sha }}
+          name: ${{ inputs.apply && 'planning-master-apply' || inputs.diagnostic_boundary && 'planning-master-diagnostic-preview' || 'planning-master-preview' }}-${{ inputs.commit_sha }}
           path: |
             ${{ runner.temp }}/planning-preview/planning-master-plan.json
             ${{ runner.temp }}/planning-preview/${{ inputs.diagnostic_boundary && 'planning-master-diagnostic-report.tsv' || 'planning-master-report.tsv' }}
+            ${{ runner.temp }}/planning-preview/planning-master-apply.json
             ${{ runner.temp }}/planning-preview/weekly-menu-read-only.json
           if-no-files-found: ignore
           retention-days: 7
@@ -216,3 +250,4 @@ jobs:
         run: |
           rm -f supabase/.temp/pooler-url supabase/.temp/project-ref
           rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
+          rm -f "$RUNNER_TEMP/planning-source.json"

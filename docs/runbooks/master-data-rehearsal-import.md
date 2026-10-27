@@ -120,6 +120,22 @@ Rehearsal data remains separate from production acceptance. The future final v1 
 
 The hosted master-load target uses PostgreSQL wire transport because the full snapshot exceeds the Management API query-body limit. The workflow links only the protected Staging project using the existing database password, validates the saved project reference and session-pooler URL, and streams the unchanged package/SQL over stdin. It requires verified TLS and the pinned public Supabase CA. A transport failure during apply is an uncertain outcome: inspect the private import receipt before any further execution; never blindly replay a newly extracted snapshot to hide the failure. The raw source remains memory-only, is not a workflow artifact, and is never printed.
 
+### Bounded Planning core-data catch-up — 27 October 2026
+
+Use the bounded Planning path instead of the broad full-load path for the Owner-authorized 19-Dish convergence. Dispatch **Atlas Staging Master Data Load** from exact current `main` with:
+
+- `commit_sha`: exact current-main SHA;
+- `planning_preview`: `true`;
+- `apply`: `true` only after the workflow change has passed CI/review and merged;
+- `diagnostic_boundary`: `false` for apply;
+- `target_project_ref`: `rnzxmxiiqgtdevzregff` for apply.
+
+The reviewed Dish legacy scope is fixed in the workflow as `2065,2077,2078,2079,2080,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2093,2094,2095,2097`; do not expand it at dispatch. The existing catch-up planner closes only their required Recipe/BOM, Ingredient, Unit, catalogue, Supplier and eligibility dependencies plus canonical School order. It does not import daily Menu, Attendance, Need, Procurement, Dispatch or Warehouse facts.
+
+The apply job extracts one fresh read-only OPS-v1 snapshot to an owner-only runner-temporary file, generates the preview and checksum, and applies that exact file/checksum with the existing deterministic active migration Actor. It automatically requires current-main cleanliness, exact Staging target, full migration parity, transactional readback and identical replay. The Google check remains read-only and calls neither Save nor Approve. Only `planning-master-plan.json`, `planning-master-report.tsv`, `planning-master-apply.json` and `weekly-menu-read-only.json` may be uploaded; the raw snapshot is deleted in final cleanup.
+
+Inspect the artifact and logs before claiming data applied. Require `success=true`, apply status `APPLIED`, `replay_status=REPLAYED`, matching source/plan checksums, unchanged operational/unrelated fingerprints and zero unknown/ambiguous Weekly Menu identities. Then dispatch a fresh `apply=false` bounded preview from exact current `main`; expected business actions are `NO_CHANGE` plus the accepted `SOURCE_RECIPE_EMPTY` INFO for Dish `2065`. Any timeout during apply is an uncertain outcome: do not start a new extract or retry until the existing private receipt/readback has been inspected.
+
 ## OPS-v1 Recipe Unit adoption evidence
 
 The normalized snapshot must continue to preserve each raw BoM

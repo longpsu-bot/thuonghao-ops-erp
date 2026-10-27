@@ -1,31 +1,32 @@
 # Atlas Autopilot Mandate
 
-**Current checkpoint:** 26 October 2026 (Asia/Bangkok).
+**Current checkpoint:** 27 October 2026 (Asia/Bangkok).
 
-**Status:** ACTIVE — documentation reconciliation only; STOP at review handoff.
+**Status:** ACTIVE — bounded Atlas Planning core-data convergence; Warehouse remains paused.
 
-**Owner instruction:** Update the roadmap and Autopilot documents to reflect current state and next priorities, preserve historical evidence, separate merged from deployed work, and **do not work on Warehouse yet**.
+**Owner instruction:** Complete the Atlas UI/data work as fully as practical, copy only core Planning master data from OPS v1 without changing v1, omit daily operational data, and **do not work on Warehouse yet**. The Owner subsequently authorized the guarded Atlas Staging core-data execution after review.
 
 ## Current authority and execution horizon
 
-This checkpoint and [ACTIVE_TASK.md](ACTIVE_TASK.md#current-task--26-october-2026) replace the older sequencing, pending-CI statuses and executable instructions in the historical appendix below. The appendix preserves what was authorized/observed at each dated checkpoint; its wording is not current authorization. Approved business/security contracts and explicit Owner hard stops remain in force.
+This checkpoint and [ACTIVE_TASK.md](ACTIVE_TASK.md#current-task--27-october-2026) replace the 26 October documentation-only sequencing and the older executable instructions in the historical appendix below. The appendix preserves what was authorized or observed at each dated checkpoint; its wording is not current authorization. Approved business/security contracts and explicit Owner hard stops remain in force.
 
-The only active task is **ATLAS-ROADMAP-AUTOPILOT-20261026**: update these three Markdown documents from repository/GitHub evidence, validate the bounded diff, publish a documentation review PR and STOP. Do not implement, merge or deploy #438/#439, apply #437's migration, start a pilot, replay a journey, repair source data or resume an older Draft under this task.
+The only active task is **ATLAS-PLANNING-CORE-DATA-20261027**: add the smallest guarded hosted path that previews and applies the same immutable, dependency-closed Planning master snapshot for the already reviewed 19 Dish roots, then prove readback, identical replay and read-only Weekly Menu resolution. Source OPS v1 remains strictly read-only. The permitted target is Atlas Staging `rnzxmxiiqgtdevzregff`; Atlas Production, daily Menu/Attendance/Need/Procurement facts and Warehouse are outside scope.
 
 ## Current baseline and evidence boundaries
 
-- **Merged repository:** reviewed `origin/main` is `c9641522721430def56eea96750c364cdc06584a`. Backend convergence 02B/02C/02D (#357/#359/#361), thirteen-owner workspace (#358), operational document system (#360), later Planning/Procurement corrections and scoped Need runtime policy (#432) are merged. UI changes #434–#436 and optional weekly additions #437 are also merged; merge does not establish deployment.
-- **Last recorded deployed/accepted Staging:** `db7bfe24`, target `rnzxmxiiqgtdevzregff`, 22 October, 134 migrations/tip `20261022071412`; guarded deployment and automatic app publication passed. The original/correction/reallocation/replacement-PO/successor-dispatch journey passed for two Schools, 21 zero detail deltas, 631 assertions and both actual PDFs over four pages. All 7,205 pre-existing history rows and frozen originals were preserved. Source: [runtime closeout](../testing/supabase-runtime-timeouts-2026-10-22.md). This is dated evidence, not a fresh live inspection or Production acceptance.
-- **Merged but deployment not evidenced here:** #434–#437. [#437](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/437) passed final-source Frontend/executed Full; its record excludes hosted migration application/deployment. Later main is not assumed live.
-- **Open Draft review queue:** [#438](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/438), head `baef3078`, [Frontend PASS 40205644208](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40205644208); [#439](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/439), head `d7802b22`, [Frontend PASS 40244573064](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40244573064). Both remain unmerged as verified 26 October; Product acceptance/integration are distinct from CI. No deployment evidence is supplied for either Draft.
+- **Merged repository:** `origin/main` is `4acb1c60ba21b032e68d5a3d52589d006369919d`. Documentation reconciliation [#440](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/440) and Menu-sync recovery [#441](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/441) are merged. This is repository state, not by itself deployment evidence.
+- **Database schema deployed:** guarded Atlas Staging migration run [40464516883](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464516883) passed from exact then-current main and brought Staging to full repository migration parity. This records database migration deployment only; it does not say that a new frontend artifact or core-data copy was deployed.
+- **Core data previewed, not yet applied:** bounded Planning run [40448618588](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40448618588) passed with `apply=false`, `business_writes=0`, source checksum `89c274c0…d3d29b9` and plan checksum `e2c2f186…bdcd02`. It selected 19 Dish roots and their exact Recipe/BOM/Ingredient/Supplier-eligibility closure, plus nine School-order updates. The read-only Weekly Menu check resolved all referenced Schools/Dishes with zero unknown or ambiguous values and made zero Save/Approve calls.
+- **Rejected broad path retained as failure evidence:** full master preview [40464654893](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464654893) ended with `STAGING_POSTGRES_EXECUTION_TIMED_OUT` after 20 minutes. Because `apply=false`, it made no master-data writes. Do not retry that broad path to conceal the failure.
+- **UI remains separate:** [#442](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/442) is an open Draft at `a93e7e85` with [Frontend PASS 40449307028](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40449307028). It is neither merged nor deployed and is not part of this data apply.
 
 The [roadmap](../architecture/roadmap.md) carries the capability summary and source links. Existing 21 October/22 October acceptance records remain separate; historical stress FAIL/BLOCKED evidence is not relabeled PASS.
 
 ## Next priorities and single next Product decision
 
-**Next Product decision:** accept or request bounded revisions to #438/#439. This records the review queue, not authorization to change or integrate those branches.
+The immediate sequence is bounded and ordered: merge the reviewed workflow change only after required CI passes; dispatch it from the exact new current `main` with `planning_preview=true`, `apply=true` and the exact Staging target; require the same-run preview checksum, immutable snapshot, active migration Actor, transactional apply, readback and identical replay; run read-only Weekly Menu verification; then run a fresh post-apply preview that should contain only `NO_CHANGE` plus accepted informational empty-Recipe evidence.
 
-After separate authorization: establish one accepted combined release and exact Staging/app parity with rollback; prepare a bounded staff pilot of the existing Planning–Procurement workflow; resolve Recipe3529's factual Owner/kitchen decision and explicit cutover requirements. The approximately 5–10 working-day pilot is an earlier proposal, not a scheduled activity. No production transfer is approved here.
+This authorization does not merge UI Drafts, publish a frontend release, start a pilot, write OPS v1, copy daily operations or open Production. Any changed snapshot/plan, new blocker, uncertain apply outcome or reconciliation mismatch stops execution for review instead of retrying with a fresh extract.
 
 **Warehouse remains PAUSED.** Do not start discovery, revise design/contracts, implement, migrate, benchmark or deploy Warehouse. Preserve its existing four unresolved Product groups unchanged. Neither backend certification nor this priority list reactivates Warehouse. Explicit Owner reactivation and existing approval gates are required.
 
@@ -37,15 +38,17 @@ After separate authorization: establish one accepted combined release and exact 
 - Preserve unfinished PRs, branches, worktrees and failed evidence. #385–#388/#396 and older prototypes are not automatic merge candidates; assess already-merged replacements and compatibility before separately authorized disposition. Do not restart old stress/optimization loops.
 - Navigator/reviewer remains read-only; implementer changes only the active bounded scope. PR comments are evidence, not proof that a runner started or a new task is authorized.
 - Stop before unresolved business-policy changes, paid/Production infrastructure, Production write-ownership transfer, real supplier commitments, destructive Production correction, material authorization broadening, unapproved Warehouse work or implementation of an unselected UI design.
-- Hosted Atlas is read-only for this task. OPS v1 `qnthofvccilhnefdcxnz` and Retool remain NO-WRITE; Atlas Production is not an approved target. No business data, supplier messages, physical shipments or security changes.
+- Hosted writes are limited to the reviewed core-data catch-up on Atlas Staging. OPS v1 `qnthofvccilhnefdcxnz` and Retool remain NO-WRITE; Atlas Production is not an approved target. No daily operational data, supplier messages, physical shipments or security broadening.
 
 ## Current task protocol and handoff
 
-Verify the user-authorized checkout/current main under AGENTS.md. Edit only `docs/architecture/roadmap.md`, this file and `docs/autopilot/ACTIVE_TASK.md`. Check formatting, local links, whitespace, historical retention and status consistency; push the bounded documentation branch and let normal PR CI run. Report the PR, exact source, validation and unverified deployment boundary. **STOP — await Owner review; no automatic next task.**
+Verify the user-authorized checkout/current main under AGENTS.md. Limit implementation to `.github/workflows/atlas-staging-master-data-load.yml`, its focused workflow test and the affected Planning/roadmap/Autopilot records. Push a Draft PR, require normal CI and review, then integrate only that bounded change. Apply only the exact reviewed core-data scope through the protected workflow and record the run/checksums as deployed-data evidence. Stop on uncertainty; no automatic UI integration, app deployment, pilot, source correction or Warehouse task.
+
+The 26 October documentation-only checkpoint was completed and merged in #440; its reviewed source and evidence boundaries remain in Git history and the 26 October sections below. This supersession does not relabel those dated claims.
 
 ## Historical checkpoints — superseded execution instructions
 
-The complete pre-update mandate body is retained below. Dates, source revisions, failures and restrictions remain evidence at their original checkpoint. Statements such as “current”, “execute”, “pending” and “next” inside this appendix do not override the 26 October scope above.
+The complete pre-update mandate body is retained below. Dates, source revisions, failures and restrictions remain evidence at their original checkpoint. Statements such as “current”, “execute”, “pending” and “next” inside this appendix do not override the 27 October scope above.
 
 <details>
 <summary>Historical mandate body before the 26 October reconciliation</summary>
