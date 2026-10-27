@@ -143,6 +143,17 @@ describe("Procurement vNext operator workbench", () => {
     ).toBeVisible();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+  it("keeps the safe preferred-Supplier default consistent with preparation readiness", async () => {
+    show();
+    await action();
+    expect(screen.getByText(/Cần xử lý 0/)).toHaveTextContent("Đã đủ 1");
+    expect(
+      screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByText("Tổng phân bổ chưa khớp nhu cầu."),
+    ).not.toBeInTheDocument();
+  });
   it("opens and closes a clean derived default without any business command", async () => {
     const { fixture, save, read } = show();
     const prepare = vi.spyOn(
