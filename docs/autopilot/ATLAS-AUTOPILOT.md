@@ -2,7 +2,7 @@
 
 **Current checkpoint:** 27 October 2026 (Asia/Bangkok).
 
-**Status:** ACTIVE — bounded Atlas Planning core-data convergence; Warehouse remains paused.
+**Status:** COMPLETE — Atlas Planning core data applied and replay-verified on Staging; Warehouse remains paused.
 
 **Owner instruction:** Complete the Atlas UI/data work as fully as practical, copy only core Planning master data from OPS v1 without changing v1, omit daily operational data, and **do not work on Warehouse yet**. The Owner subsequently authorized the guarded Atlas Staging core-data execution after review.
 
@@ -10,13 +10,15 @@
 
 This checkpoint and [ACTIVE_TASK.md](ACTIVE_TASK.md#current-task--27-october-2026) replace the 26 October documentation-only sequencing and the older executable instructions in the historical appendix below. The appendix preserves what was authorized or observed at each dated checkpoint; its wording is not current authorization. Approved business/security contracts and explicit Owner hard stops remain in force.
 
-The only active task is **ATLAS-PLANNING-CORE-DATA-20261027**: add the smallest guarded hosted path that previews and applies the same immutable, dependency-closed Planning master snapshot for the already reviewed 19 Dish roots, then prove readback, identical replay and read-only Weekly Menu resolution. Source OPS v1 remains strictly read-only. The permitted target is Atlas Staging `rnzxmxiiqgtdevzregff`; Atlas Production, daily Menu/Attendance/Need/Procurement facts and Warehouse are outside scope.
+The bounded task **ATLAS-PLANNING-CORE-DATA-20261027** is complete: the protected path previewed and applied the same immutable, dependency-closed Planning master snapshot for the reviewed 19 Dish roots, then proved readback, identical replay and read-only Weekly Menu resolution. Source OPS v1 remained strictly read-only. The only target was Atlas Staging `rnzxmxiiqgtdevzregff`; Atlas Production, daily Menu/Attendance/Need/Procurement facts and Warehouse stayed outside scope. No implementation task is automatically active after the documentation closeout.
 
 ## Current baseline and evidence boundaries
 
-- **Merged repository:** `origin/main` is `4acb1c60ba21b032e68d5a3d52589d006369919d`. Documentation reconciliation [#440](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/440) and Menu-sync recovery [#441](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/441) are merged. This is repository state, not by itself deployment evidence.
+- **Merged repository:** `origin/main` is `9a0148480ad8250faef249f606382fe10a00a32e`. Documentation reconciliation #440, Menu-sync recovery #441 and guarded Planning workflow [#443](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/443) are merged. This is repository state, not by itself deployment evidence.
 - **Database schema deployed:** guarded Atlas Staging migration run [40464516883](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464516883) passed from exact then-current main and brought Staging to full repository migration parity. This records database migration deployment only; it does not say that a new frontend artifact or core-data copy was deployed.
-- **Core data previewed, not yet applied:** bounded Planning run [40448618588](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40448618588) passed with `apply=false`, `business_writes=0`, source checksum `89c274c0…d3d29b9` and plan checksum `e2c2f186…bdcd02`. It selected 19 Dish roots and their exact Recipe/BOM/Ingredient/Supplier-eligibility closure, plus nine School-order updates. The read-only Weekly Menu check resolved all referenced Schools/Dishes with zero unknown or ambiguous values and made zero Save/Approve calls.
+- **Historical pre-apply preview:** bounded Planning run [40448618588](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40448618588) passed with `apply=false`, `business_writes=0`, source checksum `89c274c0…d3d29b9` and plan checksum `e2c2f186…bdcd02`. It selected 19 Dish roots and their exact Recipe/BOM/Ingredient/Supplier-eligibility closure, plus nine School-order updates.
+- **Core data applied and replay-verified:** exact-main run [40470127924](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40470127924) passed with `APPLIED` and `REPLAYED`; preview/apply plan checksum `ae864068…780274` and snapshot checksum `8f48d5a3…cebf48` matched. Operational and unrelated master fingerprints were unchanged. Weekly Menu returned HTTP 200, 158 rows, 546 assignments, 24 resolved Schools, zero unknown/ambiguous references, Menu unchanged and zero Save/Approve calls.
+- **Fresh-snapshot guard verified:** post-apply run [40470447170](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40470447170) failed closed with `CATCHUP_DISH_SCOPE_UNAVAILABLE` because all 19 requested Dish IDs now have typed mappings. This prevents a new snapshot from recalculating applied masters. Its independent Weekly Menu read still passed; the supported convergence proof is the apply run's identical same-snapshot replay.
 - **Rejected broad path retained as failure evidence:** full master preview [40464654893](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464654893) ended with `STAGING_POSTGRES_EXECUTION_TIMED_OUT` after 20 minutes. Because `apply=false`, it made no master-data writes. Do not retry that broad path to conceal the failure.
 - **UI remains separate:** [#442](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/442) is an open Draft at `a93e7e85` with [Frontend PASS 40449307028](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40449307028). It is neither merged nor deployed and is not part of this data apply.
 
@@ -24,9 +26,9 @@ The [roadmap](../architecture/roadmap.md) carries the capability summary and sou
 
 ## Next priorities and single next Product decision
 
-The immediate sequence is bounded and ordered: merge the reviewed workflow change only after required CI passes; dispatch it from the exact new current `main` with `planning_preview=true`, `apply=true` and the exact Staging target; require the same-run preview checksum, immutable snapshot, active migration Actor, transactional apply, readback and identical replay; run read-only Weekly Menu verification; then run a fresh post-apply preview that should contain only `NO_CHANGE` plus accepted informational empty-Recipe evidence.
+The bounded core-data sequence is complete. Do not rerun it with a fresh snapshot merely to obtain a green preview: the typed-mapping guard is expected to reject that request. A future factual source change requires a new task, reviewed scope and correction strategy that preserves existing receipts/UUIDs/history.
 
-This authorization does not merge UI Drafts, publish a frontend release, start a pilot, write OPS v1, copy daily operations or open Production. Any changed snapshot/plan, new blocker, uncertain apply outcome or reconciliation mismatch stops execution for review instead of retrying with a fresh extract.
+**Next Product decision:** accept or request bounded revisions to UI Draft #442. This does not automatically merge it, publish a frontend release, start a pilot, write OPS v1, copy daily operations or open Production.
 
 **Warehouse remains PAUSED.** Do not start discovery, revise design/contracts, implement, migrate, benchmark or deploy Warehouse. Preserve its existing four unresolved Product groups unchanged. Neither backend certification nor this priority list reactivates Warehouse. Explicit Owner reactivation and existing approval gates are required.
 
@@ -42,7 +44,7 @@ This authorization does not merge UI Drafts, publish a frontend release, start a
 
 ## Current task protocol and handoff
 
-Verify the user-authorized checkout/current main under AGENTS.md. Limit implementation to `.github/workflows/atlas-staging-master-data-load.yml`, its focused workflow test and the affected Planning/roadmap/Autopilot records. Push a Draft PR, require normal CI and review, then integrate only that bounded change. Apply only the exact reviewed core-data scope through the protected workflow and record the run/checksums as deployed-data evidence. Stop on uncertainty; no automatic UI integration, app deployment, pilot, source correction or Warehouse task.
+Record the applied-data evidence and failed-closed fresh-snapshot guard in the affected Planning/roadmap/Autopilot records, publish a documentation-only closeout PR and stop. No automatic UI integration, app deployment, pilot, source correction or Warehouse task.
 
 The 26 October documentation-only checkpoint was completed and merged in #440; its reviewed source and evidence boundaries remain in Git history and the 26 October sections below. This supersession does not relabel those dated claims.
 
