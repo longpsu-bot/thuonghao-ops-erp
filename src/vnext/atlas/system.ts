@@ -5,7 +5,7 @@ import {
   defineRecipe,
 } from "@chakra-ui/react";
 
-const fontFamily = 'Inter, "Segoe UI", Arial, sans-serif';
+const fontFamily = '"Atlas Inter", Inter, "Segoe UI", Arial, sans-serif';
 const pressed = {
   transform: "translateY(var(--atlas-layout-button-press, 1px))",
 } as const;
@@ -161,7 +161,7 @@ export const atlasSystem = createSystem(
       tokens: {
         fonts: { body: { value: fontFamily }, heading: { value: fontFamily } },
         fontSizes: { module: { value: "15px" } },
-        fontWeights: { emphasis: { value: "650" } },
+        fontWeights: { emphasis: { value: "600" } },
         // Wada-inspired sRGB anchors with accessible tints and shades; no runtime generation.
         colors: {
           white: { value: "#FFFFFF" },
@@ -344,14 +344,27 @@ export const atlasSystem = createSystem(
         },
       },
       textStyles: {
-        brand: { value: { fontSize: "28px", fontWeight: "650" } },
-        brandCompact: { value: { fontSize: "20px", fontWeight: "650" } },
+        brand: {
+          value: {
+            fontSize: "28px",
+            fontWeight: "semibold",
+            letterSpacing: "0.06em",
+          },
+        },
+        brandCompact: {
+          value: {
+            fontSize: "20px",
+            fontWeight: "semibold",
+            letterSpacing: "0.06em",
+          },
+        },
         quantity: { value: { fontSize: "22px", fontWeight: "600" } },
         workbenchTitle: {
           value: {
-            fontSize: { base: "22px", lg: "24px" },
-            fontWeight: "650",
+            fontSize: { base: "24px", lg: "26px" },
+            fontWeight: "semibold",
             lineHeight: "1.3",
+            letterSpacing: "-0.025em",
           },
         },
         section: {
@@ -361,21 +374,28 @@ export const atlasSystem = createSystem(
             lineHeight: "1.4",
           },
         },
-        body: { value: { fontSize: "14px", lineHeight: "1.5" } },
-        table: { value: { fontSize: "14px", lineHeight: "1.4" } },
+        body: {
+          value: { fontSize: { base: "15px", lg: "14px" }, lineHeight: "1.5" },
+        },
+        table: {
+          value: { fontSize: { base: "15px", lg: "14px" }, lineHeight: "1.5" },
+        },
+        input: {
+          value: { fontSize: { base: "16px", lg: "14px" }, lineHeight: "1.5" },
+        },
         label: {
           value: {
             fontSize: "14px",
-            fontWeight: "semibold",
-            lineHeight: "1.4",
+            fontWeight: "medium",
+            lineHeight: "1.5",
           },
         },
-        helper: { value: { fontSize: "13px", lineHeight: "1.5" } },
+        helper: { value: { fontSize: "13px", lineHeight: "1.6" } },
         quantityInline: {
           value: {
-            fontSize: "14px",
+            fontSize: { base: "15px", lg: "14px" },
             fontWeight: "semibold",
-            lineHeight: "1.4",
+            lineHeight: "1.5",
             fontVariantNumeric: "tabular-nums",
           },
         },
@@ -383,7 +403,7 @@ export const atlasSystem = createSystem(
           value: {
             fontSize: "13px",
             fontWeight: "normal",
-            lineHeight: "1.4",
+            lineHeight: "1.5",
           },
         },
       },
@@ -424,7 +444,7 @@ export const atlasSystem = createSystem(
           base: control,
           variants: {
             variant: { outline: control },
-            size: { md: { h: "control", px: "sm", textStyle: "body" } },
+            size: { md: { h: "control", px: "sm", textStyle: "input" } },
           },
           defaultVariants: { size: "md" },
         },
@@ -437,7 +457,7 @@ export const atlasSystem = createSystem(
                 minH: "var(--atlas-layout-textarea-min, 60px)",
               },
             },
-            size: { md: { px: "sm", py: "xs", textStyle: "body" } },
+            size: { md: { px: "sm", py: "xs", textStyle: "input" } },
           },
           defaultVariants: { size: "md", variant: "outline" },
         },
@@ -636,7 +656,7 @@ export const atlasSystem = createSystem(
               h: "control",
               minH: mobileTargetHeight,
               px: "sm",
-              textStyle: "body",
+              textStyle: "input",
             },
             segment: {
               _focusVisible: focus,
@@ -660,7 +680,7 @@ export const atlasSystem = createSystem(
             variant: { outline: { field: control } },
             size: {
               md: {
-                field: { h: "control", ps: "sm", pe: "xl", textStyle: "body" },
+                field: { h: "control", ps: "sm", pe: "xl", textStyle: "input" },
               },
             },
           },

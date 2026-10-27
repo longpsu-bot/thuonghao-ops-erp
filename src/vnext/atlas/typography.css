@@ -1,0 +1,12 @@
+@font-face {
+  font-family: "Atlas Inter";
+  src: url("../../assets/InterVariable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+.atlas-vnext {
+  font-optical-sizing: auto;
+  font-synthesis: none;
+}

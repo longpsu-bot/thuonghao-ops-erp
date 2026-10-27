@@ -108,11 +108,40 @@ describe("Atlas v3 color and typography floors", () => {
   });
   it("keeps operational typography large enough for repeated scanning", () => {
     const styles = atlasSystem._config.theme?.textStyles;
-    for (const name of ["table", "label", "quantityInline"])
-      expect(styles?.[name]?.value).toMatchObject({ fontSize: "14px" });
+    for (const name of ["body", "table", "quantityInline"])
+      expect(styles?.[name]?.value).toMatchObject({
+        fontSize: { base: "15px", lg: "14px" },
+        lineHeight: "1.5",
+      });
     for (const name of ["helper", "unitInline"])
       expect(styles?.[name]?.value).toMatchObject({ fontSize: "13px" });
-    expect(styles?.label?.value).toMatchObject({ fontWeight: "semibold" });
+    expect(styles?.label?.value).toMatchObject({
+      fontSize: "14px",
+      fontWeight: "medium",
+      lineHeight: "1.5",
+    });
+    expect(styles?.workbenchTitle?.value).toMatchObject({
+      fontSize: { base: "24px", lg: "26px" },
+      fontWeight: "semibold",
+      lineHeight: "1.3",
+    });
+  });
+  it("keeps editable text at 16px on phones without inflating desktop controls", () => {
+    expect(atlasSystem._config.theme?.textStyles?.input?.value).toMatchObject({
+      fontSize: { base: "16px", lg: "14px" },
+    });
+    expect(atlasSystem.getRecipe("input").variants?.size?.md).toMatchObject({
+      textStyle: "input",
+    });
+    expect(atlasSystem.getRecipe("textarea").variants?.size?.md).toMatchObject({
+      textStyle: "input",
+    });
+    expect(
+      atlasSystem.getSlotRecipe("nativeSelect").variants?.size?.md?.field,
+    ).toMatchObject({ textStyle: "input" });
+    expect(
+      atlasSystem.getSlotRecipe("dateInput").base?.segmentGroup,
+    ).toMatchObject({ textStyle: "input" });
   });
   it("keeps resting input boundaries and error indication explicit", () => {
     const control = {

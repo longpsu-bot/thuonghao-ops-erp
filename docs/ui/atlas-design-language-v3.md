@@ -21,7 +21,8 @@ The owner's atmosphere correction supersedes the first v3 pass's charcoal shell 
 The Owner requested and approved a bounded Sanzo Wada palette trial in the
 canonical E-drive checkout. For this trial only, warm ivory neutrals supersede
 the achromatic-neutral rule below. Existing semantic roles, white working tables,
-typography, geometry, selection indicators and contrast floors still apply.
+geometry, selection indicators and contrast floors still apply. Typography is
+refined in the follow-up below.
 This is a separately reviewable frontend change, without merge or deployment
 authorization; it does not resume the completed core-data task or Warehouse.
 
@@ -35,8 +36,8 @@ and small attention markers (`#9B4937`). This is a Wada-inspired adaptation,
 not a claim to reproduce one numbered historical combination. The coral and
 mustard reference tones are not used as ordinary text on white.
 
-Scope is `src/vnext/atlas/system.ts`, its existing contrast tests, and this record.
-All consumers inherit the shared primitives; no component override, provider,
+Initial palette scope was `src/vnext/atlas/system.ts`, its existing contrast tests,
+and this record. All consumers inherit the shared primitives; no provider replacement,
 dependency, palette switch, business handler, API, permission or stored data
 changes. Success, Danger and Info retain their independent existing palettes.
 Acceptance requires monotonic scales, white workplanes, warm structural layers,
@@ -53,8 +54,48 @@ results; hosted workflows, exports and full CVD simulation were not re-certified
 Full routine frontend validation remains GitHub Actions' responsibility.
 
 The [mobile contact sheet](../testing/artifacts/atlas-sanzo-wada/contact-sheet.png)
-combines four existing 360×800 fixture captures and the trial swatches. It is
+combines four current 390×844 fixture captures at 2× resolution and the trial swatches. It is
 stored with this PR so it can be opened from a phone with repository access.
+
+### Typography follow-up — 27 October 2026
+
+After reviewing the palette contact sheet, the Owner requested a substantial
+typography improvement. This bounded follow-up supersedes the old type sizes
+below while keeping the Wada trial colors and existing workbench structure.
+
+The old stack named Inter without shipping a face: Chromium actually rendered
+Segoe UI, including Bold for 650-weight headings. The shared provider now imports
+one self-hosted, unmodified [Inter v4.1 variable face](../../src/assets/Inter.md),
+with its OFL license, full glyph coverage, optical sizing and `font-display: swap`.
+There is no runtime font CDN or package dependency. The asset adds 352,240 bytes
+before transport compression and remains cacheable by the existing Vite build.
+
+- Job titles: 24px on narrow layouts / 26px desktop, weight 600, 1.3 line height,
+  restrained -0.025em tracking.
+- Body, table and inline quantity text: 15px narrow / 14px desktop, 1.5 line height;
+  existing tabular numerals remain.
+- Labels: 14px/500, 1.5 line height. Context summaries use normal weight and
+  secondary foreground so they no longer compete with titles.
+- Helper text: 13px, 1.6 line height. Phone input/select/date text: 16px, retaining
+  14px desktop controls and all existing target heights and keyboard behavior.
+
+Scope extends to shared type styles/tests, the task-context presentation, the
+provider's CSS import, the local face/license/provenance, and preview artifacts.
+No business handlers, data, API, permission, palette, navigation or export changes.
+Rollback reverts this frontend/docs follow-up; there is no database migration.
+
+Verification: 139 focused theme/provider/reference/date/shell tests and four
+task-context assertions pass. Chromium checks cover four workbenches at six
+viewports (the five palette sizes plus 390×844), with the expected loaded face,
+title/input sizes and no page errors or document-level overflow. A rendered
+62-glyph Vietnamese probe uses only the custom Inter face; visible keyboard focus
+and a deliberately blocked-font fallback pass. Mechanical typography scan and
+the vNext boundary check pass. A focused production Vite build passes and includes
+byte-identical font and full OFL license assets. Independent review's license
+distribution finding is fixed and its follow-up review has no remaining findings. See the
+[before/after comparison](../testing/artifacts/atlas-sanzo-wada/typography-comparison.png).
+Physical iOS/Android text rendering and focus zoom, hosted workflows and exports
+were not re-certified. Full routine validation remains owned by GitHub Actions.
 
 The remaining color description records the pre-trial v3 baseline.
 
