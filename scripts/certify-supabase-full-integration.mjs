@@ -56,6 +56,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "atlas_planning_school_order.sql",
   "atlas_planning_tui_count_unit.sql",
   "atlas_staging_school_order_forward_correction.sql",
+  "atlas_staging_ingredient_name_forward_correction.sql",
   "rmvp_02a_connected_recipes_bom.sql",
   "master_data_rehearsal_recipe_import.sql",
   "rmvp_02b_recipe_adjustments_effective_bom.sql",
@@ -121,11 +122,16 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
         command: "node",
         args: Object.freeze(["scripts/test-local-planning-master-catchup.mjs"]),
       })
-    : file === "atlas_staging_school_order_forward_correction.sql"
+    : [
+          "atlas_staging_school_order_forward_correction.sql",
+          "atlas_staging_ingredient_name_forward_correction.sql",
+        ].includes(file)
       ? Object.freeze({
           command: "node",
           args: Object.freeze([
-            "scripts/test-local-school-order-forward-correction.mjs",
+            file === "atlas_staging_school_order_forward_correction.sql"
+              ? "scripts/test-local-school-order-forward-correction.mjs"
+              : "scripts/test-local-ingredient-name-forward-correction.mjs",
           ]),
         })
       : file === "staging_count_unit_policies.sql"

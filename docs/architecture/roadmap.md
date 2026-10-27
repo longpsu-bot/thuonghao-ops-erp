@@ -1,6 +1,6 @@
 # Atlas Roadmap
 
-**Reviewed:** 27 October 2026 (Asia/Bangkok). Repository baseline: `9a0148480ad8250faef249f606382fe10a00a32e`, latest verified `origin/main`.
+**Reviewed:** 27 October 2026 (Asia/Bangkok). Repository baseline: `40270e6c7195b9fc6e21afac54c2a089584471bb`, latest verified `origin/main` before the current Draft branch.
 
 **Purpose:** Current delivery order and evidence boundaries. Approved contracts and explicit Owner instructions govern scope. Bounded Planning core-data convergence on Atlas Staging is complete; Warehouse remains paused.
 
@@ -52,6 +52,12 @@ The Owner authorized a dependency-closed copy of core School/effective Dish/Reci
 | **Fresh post-apply check**   | Run [40470447170](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40470447170) intentionally failed closed with `CATCHUP_DISH_SCOPE_UNAVAILABLE`: the 19 Dish IDs now have typed mappings, so a new snapshot cannot silently recalculate them. Its independent Weekly Menu shadow still passed. The same-snapshot `REPLAYED` result in the apply run is the supported convergence proof.                                                                                                                                 |
 | **Frontend/UI deployment**   | No new app deployment is authorized by this data task. UI Draft #442 remains unmerged and undeployed despite green CI.                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
+## Current data-fidelity Draft — not merged or deployed
+
+A fresh read-only semantic comparison after the completed catch-up found the core datasets complete: 49 Schools, 738 Dishes, 1,476 effective Recipes and 4,493 Recipe lines match OPS v1. Recipe-line quantity, operational Unit and note comparisons found zero differences. The 78 raw BOM Unit differences are the approved purchase-Unit adoption cases and retain evidence. Of 357 referenced Ingredients, Unit and order step match; exactly eight names remain stale in Atlas.
+
+The bounded [data-fidelity task](../implementation-tasks/TASK-ATLAS-V1-DATA-FIDELITY-01.md) prepares a forward correction for those eight names and removes migration-only `v1-*` references from affected operator labels while retaining the codes internally and for search. Its repository state is the `codex/atlas-v1-data-fidelity` Draft branch. It is **not merged**, has **not been applied to Atlas Staging**, and has **not deployed the frontend**. The workflow defaults to preview and cannot apply without a separate exact-main, exact-target, checksum-bound manual request.
+
 ## Current review queue
 
 Verified on GitHub on 26 October: both remain **open Drafts, unmerged**. Independent source/render review is reported on each PR; Product acceptance and integration remain separate gates.
@@ -65,12 +71,13 @@ Older open Drafts, including #385–#388/#396 and earlier UI prototypes, remain 
 
 ## Next priorities
 
-1. **Close the bounded core-data task.** Core data is applied and replay-verified on Staging. Preserve the receipt, checksums and failed-closed fresh-snapshot guard; do not rerun or broaden the importer without a new factual source change and review.
-2. **Keep UI work independently reviewable.** #442 is green but remains Draft, unmerged and undeployed. Product may accept it or request bounded revisions next. #438/#439 and older Drafts retain their own Product/compatibility gates; this data closeout does not integrate them.
-3. **Prepare a bounded staff pilot only after data and release parity are explicit.** The earlier approximately 5–10 working-day proposal remains an estimate, not a scheduled/completed pilot. Agree scope, staff, data, document acceptance and completion criteria before starting.
-4. **Resolve factual data and cutover decisions.** Recipe3529's pork-name/ground-beef discrepancy needs the Owner/kitchen's factual answer. Preserve source history. Production adoption requires explicit scope/ownership approval, reconciliation, staff readiness and rollback; this roadmap authorizes none of those writes or commitments.
+1. **Review the bounded fidelity Draft.** Require normal Frontend and Supabase CI plus product/architecture review. Merge does not authorize the Staging correction or frontend deployment; keep the manual workflow at preview unless the Owner separately authorizes apply.
+2. **Preserve the completed core-data evidence.** Keep the original apply receipt, checksums and failed-closed fresh-snapshot guard. Do not rerun the broad importer, rebuild identities or convert the eight-name correction into a general synchronization path.
+3. **Keep UI work independently reviewable.** #442 remains Draft, unmerged and undeployed. #438/#439 and older Drafts retain their own Product/compatibility gates; this fidelity task does not integrate them.
+4. **Prepare a bounded staff pilot only after data and release parity are explicit.** The earlier approximately 5–10 working-day proposal remains an estimate, not a scheduled/completed pilot. Agree scope, staff, data, document acceptance and completion criteria before starting.
+5. **Resolve remaining factual and cutover decisions.** Recipe3529's pork-name/ground-beef discrepancy still needs the Owner/kitchen's factual answer. Production adoption requires explicit scope/ownership approval, reconciliation, staff readiness and rollback; this roadmap authorizes none of those writes or commitments.
 
-[ACTIVE_TASK.md](../autopilot/ACTIVE_TASK.md) records the completed task and stop condition. No implementation priority is active after this closeout; the next step is an explicit Product decision on #442.
+[ACTIVE_TASK.md](../autopilot/ACTIVE_TASK.md) records the current Draft review boundary. No hosted apply, merge, frontend deployment or follow-on task is automatic.
 
 ## Warehouse — PAUSED by Owner, 26 October
 

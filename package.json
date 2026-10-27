@@ -51,7 +51,8 @@
     "ops:v1:master:snapshot": "node scripts/extract-ops-v1-master-snapshot.mjs",
     "local:master-data:rehearsal:preview": "node scripts/run-local-master-data-rehearsal.mjs",
     "local:master-data:rehearsal:apply": "node scripts/run-local-master-data-rehearsal.mjs --apply",
-    "atlas:staging:master:load": "node scripts/import-atlas-staging-master-data.mjs"
+    "atlas:staging:master:load": "node scripts/import-atlas-staging-master-data.mjs",
+    "atlas:staging:ingredient-name:correct": "node scripts/correct-atlas-staging-ingredient-names.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "3.37.0",

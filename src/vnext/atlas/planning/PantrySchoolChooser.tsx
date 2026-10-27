@@ -13,6 +13,7 @@ import {
 } from "../AtlasVNextProvider";
 import type { PantrySchool } from "../bridges/planning";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
+import { operatorMasterReference } from "../masterDataPresentation";
 
 /** Add-time target only: typing cannot reassign existing Pantry lines. */
 export function PantrySchoolChooser({
@@ -220,8 +221,10 @@ export function PantrySchoolChooser({
                 >
                   <Text fontWeight="medium">{school.school_name}</Text>
                   <Text textStyle="helper" color="fg.muted">
-                    {school.default_delivery_location.location_name} ·{" "}
-                    {school.school_code}
+                    {school.default_delivery_location.location_name}
+                    {operatorMasterReference(school.school_code)
+                      ? ` · ${school.school_code}`
+                      : ""}
                     {school.school_status === "ACTIVE"
                       ? ""
                       : " · Ngừng hoạt động"}

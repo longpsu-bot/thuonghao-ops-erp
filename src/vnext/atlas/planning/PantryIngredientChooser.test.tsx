@@ -94,6 +94,36 @@ it("searches permitted internal references and supports pointer selection withou
   expect(change).toHaveBeenCalledExactlyOnceWith("ingredient-400");
 });
 
+it("keeps imported technical references searchable without exposing them as option labels", async () => {
+  const change = vi.fn();
+  const imported: PantryIngredient = {
+    ...ingredients[0]!,
+    ingredient_id: "ingredient-imported",
+    ingredient_code: "v1-ingredient-931",
+    ingredient_name: "Chả giò xốp Cholimex 2kg",
+    purchase_unit: {
+      unit_id: "unit-package",
+      unit_code: "v1-unit-469606e98b7e",
+      unit_name: "Gói",
+    },
+  };
+  render(
+    <AtlasVNextProvider>
+      <PantryIngredientChooser
+        label="Nguyên liệu"
+        ingredients={[imported]}
+        value=""
+        onChange={change}
+      />
+    </AtlasVNextProvider>,
+  );
+  await userEvent.type(screen.getByRole("combobox"), "v1-ingredient-931");
+  const option = screen.getByRole("option");
+  expect(option).toHaveTextContent("Chả giò xốp Cholimex 2kg");
+  expect(option).toHaveTextContent("Gói");
+  expect(option).not.toHaveTextContent("v1-");
+});
+
 it("retains the query and highlighted UUID through catalog reordering and blocks newly inactive results", async () => {
   const change = vi.fn();
   const rows = ingredients.slice(400);

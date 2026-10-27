@@ -2,19 +2,21 @@
 
 **Current checkpoint:** 27 October 2026 (Asia/Bangkok).
 
-**Status:** COMPLETE — Atlas Planning core data applied and replay-verified on Staging; Warehouse remains paused.
+**Status:** REVIEW — bounded data-fidelity implementation is being prepared as a Draft; no Staging apply or frontend deployment is authorized. Warehouse remains paused.
 
-**Owner instruction:** Complete the Atlas UI/data work as fully as practical, copy only core Planning master data from OPS v1 without changing v1, omit daily operational data, and **do not work on Warehouse yet**. The Owner subsequently authorized the guarded Atlas Staging core-data execution after review.
+**Owner instruction:** Complete the Atlas UI/data work as fully as practical, keep Atlas core data on the same factual page as OPS v1 without changing v1, omit daily operational data, and **do not work on Warehouse yet**. After the guarded core-data execution, the Owner approved a bounded forward-correction implementation for the remaining Ingredient-name and technical-label issues, but did not authorize deployment.
 
 ## Current authority and execution horizon
 
 This checkpoint and [ACTIVE_TASK.md](ACTIVE_TASK.md#current-task--27-october-2026) replace the 26 October documentation-only sequencing and the older executable instructions in the historical appendix below. The appendix preserves what was authorized or observed at each dated checkpoint; its wording is not current authorization. Approved business/security contracts and explicit Owner hard stops remain in force.
 
-The bounded task **ATLAS-PLANNING-CORE-DATA-20261027** is complete: the protected path previewed and applied the same immutable, dependency-closed Planning master snapshot for the reviewed 19 Dish roots, then proved readback, identical replay and read-only Weekly Menu resolution. Source OPS v1 remained strictly read-only. The only target was Atlas Staging `rnzxmxiiqgtdevzregff`; Atlas Production, daily Menu/Attendance/Need/Procurement facts and Warehouse stayed outside scope. No implementation task is automatically active after the documentation closeout.
+The completed task **ATLAS-PLANNING-CORE-DATA-20261027** remains closed: its protected path previewed and applied the same immutable, dependency-closed Planning master snapshot for the reviewed 19 Dish roots, then proved readback, identical replay and read-only Weekly Menu resolution. Do not restart its broad importer.
+
+The sole current repository task is **ATLAS-V1-DATA-FIDELITY-01**: prepare an independently reviewable Draft that corrects exactly eight stale Ingredient names through a guarded forward-correction path and hides migration-only `v1-*` labels from the affected operator UI. This task ends at Draft review. It does not authorize merge, Staging apply, frontend publication or another data scope.
 
 ## Current baseline and evidence boundaries
 
-- **Merged repository:** `origin/main` is `9a0148480ad8250faef249f606382fe10a00a32e`. Documentation reconciliation #440, Menu-sync recovery #441 and guarded Planning workflow [#443](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/443) are merged. This is repository state, not by itself deployment evidence.
+- **Merged repository:** the verified task base is `40270e6c7195b9fc6e21afac54c2a089584471bb`. Documentation reconciliation #440, Menu-sync recovery #441 and guarded Planning workflow [#443](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/443) are merged. The current fidelity implementation is a Draft branch only. Repository state is not by itself deployment evidence.
 - **Database schema deployed:** guarded Atlas Staging migration run [40464516883](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464516883) passed from exact then-current main and brought Staging to full repository migration parity. This records database migration deployment only; it does not say that a new frontend artifact or core-data copy was deployed.
 - **Historical pre-apply preview:** bounded Planning run [40448618588](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40448618588) passed with `apply=false`, `business_writes=0`, source checksum `89c274c0…d3d29b9` and plan checksum `e2c2f186…bdcd02`. It selected 19 Dish roots and their exact Recipe/BOM/Ingredient/Supplier-eligibility closure, plus nine School-order updates.
 - **Core data applied and replay-verified:** exact-main run [40470127924](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40470127924) passed with `APPLIED` and `REPLAYED`; preview/apply plan checksum `ae864068…780274` and snapshot checksum `8f48d5a3…cebf48` matched. Operational and unrelated master fingerprints were unchanged. Weekly Menu returned HTTP 200, 158 rows, 546 assignments, 24 resolved Schools, zero unknown/ambiguous references, Menu unchanged and zero Save/Approve calls.
@@ -26,9 +28,9 @@ The [roadmap](../architecture/roadmap.md) carries the capability summary and sou
 
 ## Next priorities and single next Product decision
 
-The bounded core-data sequence is complete. Do not rerun it with a fresh snapshot merely to obtain a green preview: the typed-mapping guard is expected to reject that request. A future factual source change requires a new task, reviewed scope and correction strategy that preserves existing receipts/UUIDs/history.
+The broad core-data sequence is complete. Do not rerun it with a fresh snapshot merely to obtain a green preview: the typed-mapping guard is expected to reject that request. Review the bounded fidelity Draft and its focused evidence. Even after merge, a manual Staging preview/apply remains a separate Owner decision and must preserve existing receipts/UUIDs/history.
 
-**Next Product decision:** accept or request bounded revisions to UI Draft #442. This does not automatically merge it, publish a frontend release, start a pilot, write OPS v1, copy daily operations or open Production.
+**Next Product decision:** accept or request bounded revisions to the fidelity Draft. #442 remains separate. This does not automatically merge either Draft, apply the correction, publish a frontend release, start a pilot, write OPS v1, copy daily operations or open Production.
 
 **Warehouse remains PAUSED.** Do not start discovery, revise design/contracts, implement, migrate, benchmark or deploy Warehouse. Preserve its existing four unresolved Product groups unchanged. Neither backend certification nor this priority list reactivates Warehouse. Explicit Owner reactivation and existing approval gates are required.
 

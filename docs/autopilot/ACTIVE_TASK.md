@@ -2,46 +2,46 @@
 
 ## Current task — 27 October 2026
 
-**Task:** ATLAS-PLANNING-CORE-DATA-20261027 — guarded Planning master convergence on Atlas Staging.
+**Task:** ATLAS-V1-DATA-FIDELITY-01 — bounded Ingredient-name forward correction and operator-label cleanup.
 
-**Status:** COMPLETE — guarded apply, readback, replay and Weekly Menu acceptance passed; documentation closeout only.
+**Status:** REVIEW — implementation and focused local verification are in progress for a Draft PR. Nothing in this task is merged, deployed or applied to Atlas Staging.
 
-**Owner authorization:** Complete the Atlas UI/data work, port only core School/effective Dish/Recipe data from OPS v1 without changing v1, omit daily operations, and **do not work on Warehouse yet**. The Owner then authorized the safest complete guarded Staging execution.
+**Owner authorization:** Keep Atlas data factually aligned with OPS v1, correct the observed note/Unit/name usability problems without changing v1, implement the safest complete solution, and **do not work on Warehouse yet**. The current instruction authorizes implementation and a Draft PR, not hosted apply or deployment.
 
-**Verified closeout main:** `9a0148480ad8250faef249f606382fe10a00a32e`.
+**Verified task base:** `40270e6c7195b9fc6e21afac54c2a089584471bb`, fetched `origin/main` before branch creation.
 
 **Authorized checkout:** `E:/Project/OPS ERP/thuonghao-ops-erp`; clean, origin matches the real repository, HEAD equals fetched `origin/main`. The workspace script's older D-drive warning does not replace the explicit task-authorized checkout.
 
-This was the sole active implementation task and is now at documentation closeout. The historical appendix preserves previous instructions/checkpoints, including failures; none is a current instruction to resume unrelated work. The [current mandate](ATLAS-AUTOPILOT.md#current-authority-and-execution-horizon) and AGENTS.md govern.
+This is the sole active implementation task. The historical appendix preserves previous instructions/checkpoints, including failures; none is a current instruction to resume unrelated work. The [current mandate](ATLAS-AUTOPILOT.md#current-authority-and-execution-horizon) and AGENTS.md govern.
 
 ## Allowed scope and acceptance
 
 Expected files:
 
-- `.github/workflows/atlas-staging-master-data-load.yml`
-- `scripts/atlas-staging-master-load-workflow.test.mjs`
-- `scripts/verify-planning-weekly-menu.mjs`
-- `scripts/verify-planning-weekly-menu.test.mjs`
-- `docs/implementation-tasks/TASK-ATLAS-PLANNING-MASTER-RANGE-01.md`
-- `docs/runbooks/master-data-rehearsal-import.md`
+- `.github/workflows/atlas-staging-ingredient-name-forward-correction.yml`
+- `scripts/correct-atlas-staging-ingredient-names.mjs`
+- `scripts/test-local-ingredient-name-forward-correction.mjs`
+- `supabase/packages/atlas-staging-ingredient-name-forward-correction.sql`
+- `supabase/tests/atlas_staging_ingredient_name_forward_correction.sql`
+- affected Pantry/School presentation files and focused tests
+- `docs/implementation-tasks/TASK-ATLAS-V1-DATA-FIDELITY-01.md`
 - `docs/architecture/roadmap.md`
 - `docs/autopilot/ATLAS-AUTOPILOT.md`
 - `docs/autopilot/ACTIVE_TASK.md`
 
 Acceptance:
 
-- Reuse the existing Planning catch-up runner; do not add a second importer or dependency.
-- Keep preview read-only. Apply must require exact current `main`, exact Staging target, full migration parity, the immutable same-run snapshot and plan checksum, and the existing active migration Actor.
-- Hard-bound the hosted apply to Dish legacy IDs `2065,2077,2078,2079,2080,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2093,2094,2095,2097`; dependencies close mechanically under existing contracts.
-- Require transactional apply, authoritative readback, identical replay and a read-only real Google Weekly Menu check. Upload only safe reports. Use both an in-step exit trap and final `always()` cleanup for the raw snapshot; forced runner termination ultimately relies on hosted ephemeral-runner disposal.
-- Record merged, migration-deployed, data-previewed and data-applied states separately. Do not call core data applied until the hosted run succeeds and the artifact is inspected.
-- Preserve the empty source Recipe for Dish `2065` as typed root evidence only; do not invent a Recipe version/BOM.
+- Read only OPS v1 Ingredient IDs 931, 962, 1040, 1041, 1047, 1053, 1067 and 1154; fail if their reviewed names or supporting facts drift.
+- Preserve UUIDs, technical codes, classification, purchase Unit, order step, lifecycle and all Recipe/operational facts. No reset, cascade or broad reload.
+- Keep preview read-only. A future apply must require exact current `main`, exact Staging target, full migration parity, the preview checksum, authenticated readback and identical replay.
+- Retain technical references internally and in search, but do not render imported `v1-*` School, Ingredient or Unit codes as operator labels in the affected surfaces.
+- Record Draft, merged, Staging-applied and frontend-deployed states separately.
 - Keep OPS v1 strictly read-only, exclude all daily operational data and keep Warehouse paused.
-- Pass focused tests and formatting; publish one Draft PR and require normal CI/product review before merge.
+- Pass focused Node, React and rollback-only PostgreSQL tests; publish one Draft PR and stop for normal CI/product review.
 
-No new schema migration, API/contract, dependency, lifecycle, calculation, permission/RLS, frontend release, daily operational copy, pilot, physical operation, OPS-v1/Retool write or Warehouse work is included. Security/business authority and released documents remain unchanged. Master apply has no destructive rollback: preserve receipts/UUIDs/history and use a separately reviewed forward correction if reconciliation later finds a factual error.
+No new schema migration, API/contract, dependency, lifecycle, calculation, permission/RLS, frontend release, daily operational copy, pilot, physical operation, OPS-v1/Retool write or Warehouse work is included. Security/business authority and released documents remain unchanged. Any later hosted apply has no destructive rollback: preserve receipts/UUIDs/history and use another reviewed forward correction if a factual reversal is required.
 
-## Evidence at the 27 October execution checkpoint
+## Completed predecessor evidence — retained unchanged
 
 | Layer                     | Recorded result and boundary                                                                                                                                                                                                                                                                                                              |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,11 +58,11 @@ The [roadmap](../architecture/roadmap.md) carries the full queue/capability summ
 
 ## Next Product decision and stop condition
 
-No further core-data execution is active. Preserve PR #443, run 40470127924, its safe artifact/checksums and failed-closed run 40470447170 as the source-qualified closeout. A future factual correction requires new authorization and a forward correction; do not replay a fresh extract over these mapped roots.
+Stop after the Draft PR is pushed and normal CI/review status is reported. Do not merge, run the hosted preview/apply workflow or deploy the frontend without a new explicit instruction. Preserve PR #443, run 40470127924, its safe artifact/checksums and failed-closed run 40470447170 as the source-qualified predecessor closeout; do not replay a fresh extract over mapped roots.
 
 **Warehouse: PAUSED by explicit Owner instruction.** No discovery, design revision, implementation, migrations, benchmarks or deployment; no automatic reactivation after handoff. The four Product groups remain undecided and unchanged.
 
-Endpoint reached: core-data apply/readback/replay succeeded and Weekly Menu remained read-only with zero unresolved School/Dish identities. The attempted fresh-snapshot preview failed closed by design after mappings existed; this is guard evidence, not a reconciliation failure. No UI merge, frontend deployment, pilot, source correction or Warehouse work follows automatically.
+Endpoint for this task: a reviewable Draft with focused evidence. The earlier core-data apply/readback/replay remains successful and Weekly Menu remains source-qualified read-only evidence. No merge, source correction execution, frontend deployment, pilot or Warehouse work follows automatically.
 
 The 26 October documentation-only task completed through #440. Its exact `c9641522` review evidence remains in that PR/Git history and is not relabeled by this active supersession.
 

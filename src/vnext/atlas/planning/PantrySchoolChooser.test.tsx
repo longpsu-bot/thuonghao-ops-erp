@@ -135,3 +135,20 @@ it("retains highlighted UUID through reorder and rejects removed, inactive or di
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument(),
   );
 });
+
+it("keeps an imported School reference searchable without showing it to operators", async () => {
+  const change = vi.fn();
+  const imported: PantrySchool = {
+    ...schools[0]!,
+    school_id: "school-imported",
+    school_code: "v1-school-11",
+    school_name: "ĐẤT CUỐC",
+  };
+  render(<Example change={change} catalog={[imported]} />);
+  const input = screen.getByRole("combobox");
+  fireEvent.focus(input);
+  fireEvent.change(input, { target: { value: "v1-school-11" } });
+  const option = await screen.findByRole("option");
+  expect(option).toHaveTextContent("ĐẤT CUỐC");
+  expect(option).not.toHaveTextContent("v1-school-11");
+});

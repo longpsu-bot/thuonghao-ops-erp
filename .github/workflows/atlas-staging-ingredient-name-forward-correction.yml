@@ -1,0 +1,111 @@
+name: Atlas Staging Ingredient Name Forward Correction
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full SHA at current origin/main
+        required: true
+        type: string
+      apply:
+        description: Apply the reviewed eight-name correction
+        required: true
+        type: boolean
+        default: false
+      target_project_ref:
+        description: Exact Atlas Staging project confirmation for apply
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-staging-ingredient-name-forward-correction
+  cancel-in-progress: false
+
+jobs:
+  correct:
+    name: Preview or apply bounded Ingredient-name correction
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: atlas-staging
+    steps:
+      - name: Check out requested exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Verify exact current main
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
+          test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"
+          test -z "$(git status --porcelain)"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare verified exact Staging transport
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+          EXPECTED_PROJECT: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$EXPECTED_PROJECT" = "rnzxmxiiqgtdevzregff"
+          command -v psql >/dev/null
+          ca="$RUNNER_TEMP/supabase-root-ca.crt"
+          curl --fail --silent --show-error --proto '=https' \
+            'https://supabase-downloads.s3.ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt' \
+            --output "$ca"
+          echo "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  $ca" | sha256sum --check --status
+          bundle="$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
+          cat /etc/ssl/certs/ca-certificates.crt "$ca" > "$bundle"
+          echo "ATLAS_STAGING_CA_BUNDLE=$bundle" >> "$GITHUB_ENV"
+          pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
+      - name: Read exact v1 scope, preview, and optionally apply
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--commit-sha "$REQUESTED_SHA")
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            test "$CONFIRMED_TARGET" = "$ATLAS_STAGING_PROJECT_REF"
+            args+=(--apply --target-project-ref "$CONFIRMED_TARGET")
+          fi
+          node scripts/correct-atlas-staging-ingredient-names.mjs "${args[@]}" \
+            > "$RUNNER_TEMP/ingredient-name-correction.json"
+      - name: Save bounded review result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ingredient-name-correction-${{ inputs.commit_sha }}
+          path: ${{ runner.temp }}/ingredient-name-correction.json
+          retention-days: 7
+      - name: Remove transient transport metadata
+        if: always()
+        shell: bash
+        run: |
+          rm -f supabase/.temp/pooler-url supabase/.temp/project-ref
+          rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"

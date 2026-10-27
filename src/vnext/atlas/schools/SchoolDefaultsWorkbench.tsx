@@ -39,6 +39,7 @@ import {
 } from "../atlasTableSort";
 import type { SchoolMasterData } from "../bridges/schoolMasterData";
 import { parsePortionDraft } from "./schoolDefaultsModel";
+import { operatorMasterReference } from "../masterDataPresentation";
 import {
   useSchoolDefaultsWorkbench,
   type SchoolDefaultsWorkbenchProps,
@@ -478,7 +479,10 @@ function SchoolDefaultsTable({
                       textStyle="helper"
                       color={dirty ? "fg.primary" : "fg.muted"}
                     >
-                      {school.school_code} · {school.customer_name}
+                      {operatorMasterReference(school.school_code)
+                        ? `${school.school_code} · `
+                        : ""}
+                      {school.customer_name}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
