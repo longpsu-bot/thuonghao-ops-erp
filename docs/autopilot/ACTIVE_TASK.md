@@ -4,7 +4,7 @@
 
 **Task:** ATLAS-V1-DATA-FIDELITY-01 — bounded Ingredient-name forward correction and operator-label cleanup.
 
-**Status:** REVIEW — implementation and focused local verification are in progress for a Draft PR. Nothing in this task is merged, deployed or applied to Atlas Staging.
+**Status:** REVIEW — implementation and focused local verification are complete in [Draft PR #445](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/445), which is awaiting normal CI and review. Nothing in this task is merged, deployed or applied to Atlas Staging.
 
 **Owner authorization:** Keep Atlas data factually aligned with OPS v1, correct the observed note/Unit/name usability problems without changing v1, implement the safest complete solution, and **do not work on Warehouse yet**. The current instruction authorizes implementation and a Draft PR, not hosted apply or deployment.
 

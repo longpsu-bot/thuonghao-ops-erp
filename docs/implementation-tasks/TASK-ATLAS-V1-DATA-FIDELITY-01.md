@@ -1,6 +1,6 @@
 # ATLAS-V1-DATA-FIDELITY-01 — bounded v1 master-data fidelity correction
 
-**Status:** Draft implementation for review. Not merged, not deployed, and not applied to Atlas Staging.
+**Status:** [Draft PR #445](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/445) is open for review. It is not merged, not deployed, and not applied to Atlas Staging.
 
 **Date:** 27 October 2026 (Asia/Bangkok).
 

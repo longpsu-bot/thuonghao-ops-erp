@@ -2,7 +2,7 @@
 
 **Current checkpoint:** 27 October 2026 (Asia/Bangkok).
 
-**Status:** REVIEW — bounded data-fidelity implementation is being prepared as a Draft; no Staging apply or frontend deployment is authorized. Warehouse remains paused.
+**Status:** REVIEW — bounded data-fidelity [Draft #445](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/445) is open; no Staging apply or frontend deployment is authorized. Warehouse remains paused.
 
 **Owner instruction:** Complete the Atlas UI/data work as fully as practical, keep Atlas core data on the same factual page as OPS v1 without changing v1, omit daily operational data, and **do not work on Warehouse yet**. After the guarded core-data execution, the Owner approved a bounded forward-correction implementation for the remaining Ingredient-name and technical-label issues, but did not authorize deployment.
 
@@ -16,7 +16,7 @@ The sole current repository task is **ATLAS-V1-DATA-FIDELITY-01**: prepare an in
 
 ## Current baseline and evidence boundaries
 
-- **Merged repository:** the verified task base is `40270e6c7195b9fc6e21afac54c2a089584471bb`. Documentation reconciliation #440, Menu-sync recovery #441 and guarded Planning workflow [#443](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/443) are merged. The current fidelity implementation is a Draft branch only. Repository state is not by itself deployment evidence.
+- **Merged repository:** the verified task base is `40270e6c7195b9fc6e21afac54c2a089584471bb`. Documentation reconciliation #440, Menu-sync recovery #441 and guarded Planning workflow [#443](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/443) are merged. The current fidelity implementation is [Draft #445](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/445), not merged. Repository state is not by itself deployment evidence.
 - **Database schema deployed:** guarded Atlas Staging migration run [40464516883](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464516883) passed from exact then-current main and brought Staging to full repository migration parity. This records database migration deployment only; it does not say that a new frontend artifact or core-data copy was deployed.
 - **Historical pre-apply preview:** bounded Planning run [40448618588](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40448618588) passed with `apply=false`, `business_writes=0`, source checksum `89c274c0…d3d29b9` and plan checksum `e2c2f186…bdcd02`. It selected 19 Dish roots and their exact Recipe/BOM/Ingredient/Supplier-eligibility closure, plus nine School-order updates.
 - **Core data applied and replay-verified:** exact-main run [40470127924](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40470127924) passed with `APPLIED` and `REPLAYED`; preview/apply plan checksum `ae864068…780274` and snapshot checksum `8f48d5a3…cebf48` matched. Operational and unrelated master fingerprints were unchanged. Weekly Menu returned HTTP 200, 158 rows, 546 assignments, 24 resolved Schools, zero unknown/ambiguous references, Menu unchanged and zero Save/Approve calls.
