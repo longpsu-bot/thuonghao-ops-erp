@@ -52,6 +52,10 @@ Independent read-only review found no actionable issues. These are local fixture
 results; hosted workflows, exports and full CVD simulation were not re-certified.
 Full routine frontend validation remains GitHub Actions' responsibility.
 
+The [mobile contact sheet](../testing/artifacts/atlas-sanzo-wada/contact-sheet.png)
+combines four existing 360×800 fixture captures and the trial swatches. It is
+stored with this PR so it can be opened from a phone with repository access.
+
 The remaining color description records the pre-trial v3 baseline.
 
 Stable sRGB primitives in `src/vnext/atlas/system.ts` → semantic tokens → Chakra recipes → components. Applications use meaning, never primitive colors or arbitrary hex values. The existing isolated Atlas Chakra system and provider remain in place.
