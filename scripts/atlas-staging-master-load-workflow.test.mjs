@@ -52,6 +52,7 @@ describe("protected hosted master load workflow", () => {
       'REVIEWED_DISH_LEGACY_IDS: "2065,2077,2078,2079,2080,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2093,2094,2095,2097"',
     );
     expect(planningPreview).toContain('--snapshot-output "$snapshot"');
+    expect(planningPreview).toContain("trap 'rm -f \"$snapshot\"' EXIT");
     expect(planningPreview).toContain(
       "deterministicV1Uuid('atlas-staging-master-import-actor')",
     );

@@ -199,6 +199,7 @@ jobs:
           mkdir -m 700 "$RUNNER_TEMP/planning-preview"
           args=(--commit-sha "$REQUESTED_SHA" --report-dir "$RUNNER_TEMP/planning-preview" --dish-legacy-ids "$REVIEWED_DISH_LEGACY_IDS")
           snapshot="$RUNNER_TEMP/planning-source.json"
+          trap 'rm -f "$snapshot"' EXIT
           if [ "$APPLY_REQUESTED" = "true" ]; then
             args+=(--snapshot-output "$snapshot")
           fi

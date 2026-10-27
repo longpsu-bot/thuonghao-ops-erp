@@ -20,6 +20,8 @@ Expected files:
 
 - `.github/workflows/atlas-staging-master-data-load.yml`
 - `scripts/atlas-staging-master-load-workflow.test.mjs`
+- `scripts/verify-planning-weekly-menu.mjs`
+- `scripts/verify-planning-weekly-menu.test.mjs`
 - `docs/implementation-tasks/TASK-ATLAS-PLANNING-MASTER-RANGE-01.md`
 - `docs/runbooks/master-data-rehearsal-import.md`
 - `docs/architecture/roadmap.md`
@@ -31,7 +33,7 @@ Acceptance:
 - Reuse the existing Planning catch-up runner; do not add a second importer or dependency.
 - Keep preview read-only. Apply must require exact current `main`, exact Staging target, full migration parity, the immutable same-run snapshot and plan checksum, and the existing active migration Actor.
 - Hard-bound the hosted apply to Dish legacy IDs `2065,2077,2078,2079,2080,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2093,2094,2095,2097`; dependencies close mechanically under existing contracts.
-- Require transactional apply, authoritative readback, identical replay and a read-only real Google Weekly Menu check. Upload only safe reports; delete the raw snapshot from runner temp on every outcome.
+- Require transactional apply, authoritative readback, identical replay and a read-only real Google Weekly Menu check. Upload only safe reports. Use both an in-step exit trap and final `always()` cleanup for the raw snapshot; forced runner termination ultimately relies on hosted ephemeral-runner disposal.
 - Record merged, migration-deployed, data-previewed and data-applied states separately. Do not call core data applied until the hosted run succeeds and the artifact is inspected.
 - Preserve the empty source Recipe for Dish `2065` as typed root evidence only; do not invent a Recipe version/BOM.
 - Keep OPS v1 strictly read-only, exclude all daily operational data and keep Warehouse paused.
