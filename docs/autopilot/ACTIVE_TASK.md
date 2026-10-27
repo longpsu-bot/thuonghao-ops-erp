@@ -1,64 +1,72 @@
 # Atlas Autopilot — Active Task
 
-## Current task — 26 October 2026
+## Current task — 27 October 2026
 
-**Task:** ATLAS-ROADMAP-AUTOPILOT-20261026 — documentation reconciliation.
+**Task:** ATLAS-PLANNING-CORE-DATA-20261027 — guarded Planning master convergence on Atlas Staging.
 
-**Status:** Documentation review handoff; no application task activated.
+**Status:** Workflow implementation and review; apply only after merge and required CI.
 
-**Owner authorization:** Update the roadmap and Autopilot documents, preserve historical evidence, separate merged from deployed work, and **do not work on Warehouse yet**.
+**Owner authorization:** Complete the Atlas UI/data work, port only core School/effective Dish/Recipe data from OPS v1 without changing v1, omit daily operations, and **do not work on Warehouse yet**. The Owner then authorized the safest complete guarded Staging execution.
 
-**Verified starting main:** `c9641522721430def56eea96750c364cdc06584a`.
+**Verified starting main:** `4acb1c60ba21b032e68d5a3d52589d006369919d`.
 
 **Authorized checkout:** `E:/Project/OPS ERP/thuonghao-ops-erp`; clean, origin matches the real repository, HEAD equals fetched `origin/main`. The workspace script's older D-drive warning does not replace the explicit task-authorized checkout.
 
-This is the sole active documentation task. The historical appendix preserves previous instructions/checkpoints, including failures; none is a current instruction to resume implementation. The [current mandate](ATLAS-AUTOPILOT.md#current-authority-and-execution-horizon) and AGENTS.md govern.
+This is the sole active implementation task. The historical appendix preserves previous instructions/checkpoints, including failures; none is a current instruction to resume unrelated work. The [current mandate](ATLAS-AUTOPILOT.md#current-authority-and-execution-horizon) and AGENTS.md govern.
 
 ## Allowed scope and acceptance
 
-Allowed files:
+Expected files:
 
+- `.github/workflows/atlas-staging-master-data-load.yml`
+- `scripts/atlas-staging-master-load-workflow.test.mjs`
+- `scripts/verify-planning-weekly-menu.mjs`
+- `scripts/verify-planning-weekly-menu.test.mjs`
+- `docs/implementation-tasks/TASK-ATLAS-PLANNING-MASTER-RANGE-01.md`
+- `docs/runbooks/master-data-rehearsal-import.md`
 - `docs/architecture/roadmap.md`
 - `docs/autopilot/ATLAS-AUTOPILOT.md`
 - `docs/autopilot/ACTIVE_TASK.md`
 
 Acceptance:
 
-- Replace the obsolete 02B/School-follow-up active gates with the reviewed baseline and current review queue.
-- Record convergence #357/#359/#361, thirteen-owner workspace #358 and document system #360 as merged; retain each record's validation/performance limits.
-- Separate last recorded accepted Staging from later merged #434–#437 and open Draft #438/#439. Preserve source, target, date and CI references without claiming a fresh deployment inspection.
-- Record Product review → separately authorized release/parity → bounded staff pilot/data decisions as priorities, without activating those tasks.
-- Keep Warehouse paused, including discovery/design and implementation. Preserve its undecided choices without editing its documents.
-- Preserve old Autopilot bodies as historical evidence; do not turn past FAIL/BLOCKED or limited observations into general acceptance.
-- Pass changed-file formatting, relative-link and whitespace checks; inspect the three-file diff. Publish one documentation review PR; normal frontend CI remains a separate PR gate.
+- Reuse the existing Planning catch-up runner; do not add a second importer or dependency.
+- Keep preview read-only. Apply must require exact current `main`, exact Staging target, full migration parity, the immutable same-run snapshot and plan checksum, and the existing active migration Actor.
+- Hard-bound the hosted apply to Dish legacy IDs `2065,2077,2078,2079,2080,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2093,2094,2095,2097`; dependencies close mechanically under existing contracts.
+- Require transactional apply, authoritative readback, identical replay and a read-only real Google Weekly Menu check. Upload only safe reports. Use both an in-step exit trap and final `always()` cleanup for the raw snapshot; forced runner termination ultimately relies on hosted ephemeral-runner disposal.
+- Record merged, migration-deployed, data-previewed and data-applied states separately. Do not call core data applied until the hosted run succeeds and the artifact is inspected.
+- Preserve the empty source Recipe for Dish `2065` as typed root evidence only; do not invent a Recipe version/BOM.
+- Keep OPS v1 strictly read-only, exclude all daily operational data and keep Warehouse paused.
+- Pass focused tests and formatting; publish one Draft PR and require normal CI/product review before merge.
 
-No application code, migration, API/contract, dependency, lifecycle, calculation, permission/RLS, hosted setting/data, release, merge, pilot, physical operation, OPSv1/Retool write or Warehouse work is included. Security/business authority and released documents remain unchanged. Rollback is a revert of these Markdown edits; no database rollback or data repair applies.
+No new schema migration, API/contract, dependency, lifecycle, calculation, permission/RLS, frontend release, daily operational copy, pilot, physical operation, OPS-v1/Retool write or Warehouse work is included. Security/business authority and released documents remain unchanged. Master apply has no destructive rollback: preserve receipts/UUIDs/history and use a separately reviewed forward correction if reconciliation later finds a factual error.
 
-## Evidence at the 26 October review
+## Evidence at the 27 October execution checkpoint
 
-| Layer                             | Recorded result and boundary                                                                                                                                                                                       |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Merged main                       | `c9641522`, including #437 optional additions. Its final-source Frontend/executed Full passed; the PR records no hosted migration application/deployment.                                                          |
-| Last recorded Staging/app release | `db7bfe24`, 22 October; `rnzxmxiiqgtdevzregff`, 134 migrations/tip `20261022071412`, guarded deployment and automatic app publication. See [runtime closeout](../testing/supabase-runtime-timeouts-2026-10-22.md). |
-| Accepted hosted journey           | Two Schools, 21 zero detail deltas, 631 assertions, both actual PDFs/four pages, all 7,205 prior history rows and frozen originals preserved. Bounded Staging acceptance.                                          |
-| #438                              | Open Draft at `baef3078`; [Frontend PASS 40205644208](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40205644208). Product/integration gates remain separate; no deployment evidenced.              |
-| #439                              | Open Draft at `d7802b22`; [Frontend PASS 40244573064](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40244573064). Product/integration gates remain separate; no deployment evidenced.              |
+| Layer                     | Recorded result and boundary                                                                                                                                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Merged repository         | `4acb1c60`; #440 documentation reconciliation and #441 Menu-sync recovery are merged. Merge does not establish deployment.                                                                                                                              |
+| Database migrations       | Atlas Staging run [40464516883](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464516883) passed and established full repository migration parity. This is a database-schema deployment, not a core-data apply or frontend deployment. |
+| Bounded core-data preview | Run [40448618588](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40448618588) passed with `apply=false` and zero writes; 19 Dish roots, their exact dependency closure and nine School-order updates were planned.                       |
+| Broad full-load preview   | Run [40464654893](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464654893) failed safely with `STAGING_POSTGRES_EXECUTION_TIMED_OUT`; `apply=false`, so no master writes.                                                             |
+| Core-data apply           | **NOT YET APPLIED** at this checkpoint. The workflow change must merge and CI pass first.                                                                                                                                                               |
+| Separate UI Draft         | #442 at `a93e7e85`; Frontend CI passed. It remains Draft, unmerged and undeployed.                                                                                                                                                                      |
 
-The [roadmap](../architecture/roadmap.md) carries the full queue/capability summary. No live migration/app inspection was performed for this documentation task. A release task must verify exact combined-source certification, target, migration/app parity and rollback before claiming newer work live.
+The [roadmap](../architecture/roadmap.md) carries the full queue/capability summary. The migration and preview workflow runs above are direct hosted evidence; they do not imply application publication or Production readiness.
 
 ## Next Product decision and stop condition
 
-**Next decision:** Product acceptance or bounded revisions for [#438](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/438) and [#439](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/439). This handoff does not authorize edits to, merge of, or deployment from those branches.
-
-Later priorities need separate bounded authorization: an accepted release with Staging/app parity; a staff pilot of existing Planning–Procurement with agreed completion criteria; factual Recipe3529 resolution and explicit production-cutover readiness. The earlier 5–10 working-day estimate is not a scheduled/started pilot. Preserve old Drafts and failed stress evidence; assess overlap with merged replacements before disposition.
+After the workflow PR passes review and CI, merge that PR, fetch the exact new main SHA and dispatch the Planning path with `planning_preview=true`, `apply=true`, `diagnostic_boundary=false` and target `rnzxmxiiqgtdevzregff`. Inspect the safe artifact for `APPLIED`, reconciled readback and `REPLAYED`, then dispatch a fresh `apply=false` post-apply preview. A changed plan, blocker, timeout/uncertain apply or non-`NO_CHANGE` replay stops the task.
 
 **Warehouse: PAUSED by explicit Owner instruction.** No discovery, design revision, implementation, migrations, benchmarks or deployment; no automatic reactivation after handoff. The four Product groups remain undecided and unchanged.
 
-Endpoint: checked three-file documentation diff and a review PR with normal CI evidence, then **STOP — await Owner review**. No next journey, runtime repair, deployment, source-data correction, pilot or Warehouse work follows automatically.
+Endpoint: core-data apply and replay succeed, Weekly Menu remains read-only with zero unresolved School/Dish identities, a post-apply preview is converged, and the final evidence explicitly distinguishes merge, migration deployment and data apply. No UI merge, frontend deployment, pilot, source correction or Warehouse work follows automatically.
+
+The 26 October documentation-only task completed through #440. Its exact `c9641522` review evidence remains in that PR/Git history and is not relabeled by this active supersession.
 
 ## Historical active-task record — superseded execution instructions
 
-The entire pre-update body is preserved below. Its “current”, “Task A”, “pending”, “next” and executable passages describe earlier authorizations only. Failures, screenshots/DOM limitations, revisions and migration observations remain qualified to those checkpoints. They do not override the 26 October task above.
+The entire pre-update body is preserved below. Its “current”, “Task A”, “pending”, “next” and executable passages describe earlier authorizations only. Failures, screenshots/DOM limitations, revisions and migration observations remain qualified to those checkpoints. They do not override the 27 October task above.
 
 <details>
 <summary>Historical active-task body before the 26 October reconciliation</summary>

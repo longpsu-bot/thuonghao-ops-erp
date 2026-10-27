@@ -1,8 +1,8 @@
 # Atlas Roadmap
 
-**Reviewed:** 26 October 2026 (Asia/Bangkok). Repository baseline: `c9641522721430def56eea96750c364cdc06584a`, latest verified `origin/main`.
+**Reviewed:** 27 October 2026 (Asia/Bangkok). Repository baseline: `4acb1c60ba21b032e68d5a3d52589d006369919d`, latest verified `origin/main`.
 
-**Purpose:** Current delivery order and evidence boundaries. Approved contracts and explicit Owner instructions govern scope. This task reconciles documentation only; Warehouse remains paused.
+**Purpose:** Current delivery order and evidence boundaries. Approved contracts and explicit Owner instructions govern scope. The active task is bounded Planning core-data convergence on Atlas Staging; Warehouse remains paused.
 
 ## Governing direction
 
@@ -12,15 +12,15 @@ ARCH-001, ARCH-002, the [Atlas Vision](atlas-vision.md), [authority map through 
 
 ## Merged repository baseline
 
-| Area                           | Repository state at reviewed main                                                                                                                                                                                                                                      |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Master Data / Recipes          | Connected catalogues, Recipe/BOM authoring, adjustments, effective composition and traceability. Model convergence #258 and effective composition for Need #377 are merged. Recipe3529 still needs a factual Owner/kitchen decision.                                   |
-| Planning                       | Menu synchronization, Attendance, Pantry sources, derived readiness/currentness, Need Generation, Confirmed Need, Shopping List V2 A+, and traceable correction/successor support. Pantry displays Bổ sung and Hàng đặt riêng under the approved two-source amendment. |
-| Procurement / School documents | Explicit supplier splits and Save, advisory recommendation/rebalance, atomic purchase preparation, immutable supplier PO release, replacement POs, School PXK successors, reconciliation and exports. School PXK does not establish Warehouse receipt or stock.        |
-| Persistent workspace           | Thirteen persistent workbench owners (#358), guarded drafts/close/sign-out and the later selected C presentation. Older eleven-owner acceptance remains historical evidence.                                                                                           |
-| Backend convergence            | 02B (#357), 02C (#359), and 02D clean-bootstrap/disposable authenticated-API certification (#361) merged. Their dated records retain performance failures, failed attempts and certification limits; these are no longer pending roadmap gates.                        |
-| Operational documents          | PO/PXK document and School cooking-group work merged in #360, followed by October export and actual-app PDF repairs. This does not certify every future document/template or physical dispatch.                                                                        |
-| Latest changes                 | Scoped Need runtime policy (#432), recorded hosted closeout (#433), action layout/Allocation hierarchy/typography (#434–#436), and optional weekly additions (#437) are merged. Merge supplies no deployment evidence for #434–#437.                                   |
+| Area                           | Repository state at reviewed main                                                                                                                                                                                                                                                            |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Master Data / Recipes          | Connected catalogues, Recipe/BOM authoring, adjustments, effective composition and traceability. Model convergence #258 and effective composition for Need #377 are merged. Recipe3529 still needs a factual Owner/kitchen decision.                                                         |
+| Planning                       | Menu synchronization, Attendance, Pantry sources, derived readiness/currentness, Need Generation, Confirmed Need, Shopping List V2 A+, and traceable correction/successor support. Pantry displays Bổ sung and Hàng đặt riêng under the approved two-source amendment.                       |
+| Procurement / School documents | Explicit supplier splits and Save, advisory recommendation/rebalance, atomic purchase preparation, immutable supplier PO release, replacement POs, School PXK successors, reconciliation and exports. School PXK does not establish Warehouse receipt or stock.                              |
+| Persistent workspace           | Thirteen persistent workbench owners (#358), guarded drafts/close/sign-out and the later selected C presentation. Older eleven-owner acceptance remains historical evidence.                                                                                                                 |
+| Backend convergence            | 02B (#357), 02C (#359), and 02D clean-bootstrap/disposable authenticated-API certification (#361) merged. Their dated records retain performance failures, failed attempts and certification limits; these are no longer pending roadmap gates.                                              |
+| Operational documents          | PO/PXK document and School cooking-group work merged in #360, followed by October export and actual-app PDF repairs. This does not certify every future document/template or physical dispatch.                                                                                              |
+| Latest changes                 | Scoped Need runtime policy (#432), recorded hosted closeout (#433), action layout/Allocation hierarchy/typography (#434–#436), optional weekly additions (#437), roadmap reconciliation (#440) and Menu-sync outage recovery (#441) are merged. Merge alone supplies no deployment evidence. |
 
 [02B](../implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02B.md), [02C](../implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02C.md), [02D](../implementation-tasks/TASK-ATLAS-BACKEND-CONVERGENCE-02D.md), and [document-system](../implementation-tasks/TASK-ATLAS-DOCUMENT-SYSTEM-01.md) records preserve the original source-qualified results.
 
@@ -36,7 +36,20 @@ The [optional-additions amendment](../implementation-tasks/TASK-ATLAS-OPTIONAL-W
 | Hosted acceptance     | Original → correction → reallocation → replacement PO → successor dispatch: two Schools, all 21 detail deltas zero, 631 assertions and both actual PDFs over four rendered pages pass. All 7,205 pre-existing history rows and frozen original contents preserved. |
 | Limits                | Bounded Staging evidence; no real Supplier communication, physical shipment or Production cutover. Resource observations justify no capacity change or general speedup claim. Later main/Draft work is not implied deployed.                                       |
 
-Sources: [22 October runtime/journey closeout](../testing/supabase-runtime-timeouts-2026-10-22.md), [earlier journey/export closeout](../testing/journey-closeout-2026-10-21.md). Current deployment parity was not re-inspected on 26 October; verify it before a separately authorized release or pilot.
+Sources: [22 October runtime/journey closeout](../testing/supabase-runtime-timeouts-2026-10-22.md), [earlier journey/export closeout](../testing/journey-closeout-2026-10-21.md). On 27 October, guarded migration run [40464516883](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464516883) brought Atlas Staging to full repository migration parity at then-current main. That is newer database-schema evidence; it does not establish a new frontend deployment or core-data apply.
+
+## Active Planning core-data convergence
+
+The Owner authorized a dependency-closed copy of core School/effective Dish/Recipe facts from read-only OPS v1 into Atlas Staging. It includes only the Units, Ingredients, reference catalogues, Suppliers and eligibility facts required by those Recipes. It excludes daily Menu, Attendance, Need, Procurement, Dispatch and Warehouse facts.
+
+| State                        | Evidence and boundary                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Merged**                   | Current `main` is `4acb1c60`; it contains #440 and #441. The guarded same-run Planning apply workflow is not merged yet.                                                                                                                                                                                                                                                                |
+| **Database schema deployed** | Run [40464516883](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464516883) passed. No core business rows were copied by that migration deployment.                                                                                                                                                                                                                    |
+| **Core data previewed**      | Run [40448618588](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40448618588) passed with `apply=false`, `business_writes=0`. It planned 19 Dish roots, 38 Recipe roots, 37 Recipe versions, 93 Recipe lines/revisions, seven Ingredients, eleven Supplier eligibilities and nine School-order updates. Weekly Menu resolution was zero-unknown/ambiguous and read-only. |
+| **Broad preview failed**     | Full-load run [40464654893](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40464654893) timed out safely with `apply=false`; no master writes. It is retained as failure evidence and is not the selected apply route.                                                                                                                                                   |
+| **Core data applied**        | **Not yet.** Claim this only after the bounded workflow is merged, exact-current-main apply succeeds, authoritative readback reconciles, identical replay returns `REPLAYED`, and a fresh post-apply preview converges.                                                                                                                                                                 |
+| **Frontend/UI deployment**   | No new app deployment is authorized by this data task. UI Draft #442 remains unmerged and undeployed despite green CI.                                                                                                                                                                                                                                                                  |
 
 ## Current review queue
 
@@ -49,14 +62,14 @@ Verified on GitHub on 26 October: both remain **open Drafts, unmerged**. Indepen
 
 Older open Drafts, including #385–#388/#396 and earlier UI prototypes, remain preserved. Assess exact compatibility and already-merged replacements before any disposition. Historical FAIL/BLOCKED evidence is not converted to PASS by the later bounded journey; do not automatically merge, rerun or discard those Drafts.
 
-## Next priorities — planning, not execution authorization
+## Next priorities
 
-1. **Complete Product review of #438/#439.** Resolve only demonstrated remaining issues; retain exact-head CI and compatibility review before integration. This documentation task does not merge them.
-2. **Establish one accepted release and explicit deployment parity.** On separate authorization, record the selected combined source, required certification, Staging migration tip, app artifact revision and rollback. Include #437's migration/UI dependency; do not label current main deployed without evidence.
-3. **Prepare a bounded staff pilot of the existing Planning–Procurement workflow.** The earlier approximately 5–10 working-day proposal remains a planning estimate, not a scheduled/completed pilot. Agree scope, staff, data, document acceptance and completion criteria before starting; use observed friction to prioritize improvements.
+1. **Finish the bounded core-data convergence.** Merge the guarded workflow only after CI/product review, apply the exact same-run immutable snapshot/plan for the reviewed 19 Dish roots, inspect safe readback/replay evidence, then prove a clean post-apply preview. Stop on any changed plan, blocker, uncertain result or reconciliation mismatch.
+2. **Keep UI work independently reviewable.** #442 is green but remains Draft, unmerged and undeployed. #438/#439 and older Drafts retain their own Product/compatibility gates; this data task does not integrate them.
+3. **Prepare a bounded staff pilot only after data and release parity are explicit.** The earlier approximately 5–10 working-day proposal remains an estimate, not a scheduled/completed pilot. Agree scope, staff, data, document acceptance and completion criteria before starting.
 4. **Resolve factual data and cutover decisions.** Recipe3529's pork-name/ground-beef discrepancy needs the Owner/kitchen's factual answer. Preserve source history. Production adoption requires explicit scope/ownership approval, reconciliation, staff readiness and rollback; this roadmap authorizes none of those writes or commitments.
 
-[ACTIVE_TASK.md](../autopilot/ACTIVE_TASK.md) defines the sole active task and stop condition: documentation update and review handoff. The priorities above do not start another task.
+[ACTIVE_TASK.md](../autopilot/ACTIVE_TASK.md) defines the sole active task and stop condition. Only priority 1 is active.
 
 ## Warehouse — PAUSED by Owner, 26 October
 
@@ -70,7 +83,7 @@ Attendance XLSX-assisted authoring, multi-day Shopping List UI, DISH-RICE-01 sem
 
 The accepted pre-freeze baseline remains `010871bebb43f3883c77c5b9bf6954282053c93d` (#355), followed by freeze #356. The 7 October observation recorded 92 hosted/repository migrations, tip `20261006112515_atlas_recipe_purchase_unit_read`, and the then eleven-owner hosted acceptance. These dated facts remain in the [canonical freeze](planning-procurement-business-freeze.md#21-accepted-hosted-evidence) and Git history; they are not current deployment claims. The 21 October and 22 October journeys retain their distinct 22-delta and 21-delta evidence without combining them.
 
-For this documentation task, hosted systems are read-only. OPS v1 `qnthofvccilhnefdcxnz` and Retool remain NO-WRITE; Atlas Production is not an approved target. Preserve immutable quantities, source lineage, capability/scope checks, RLS, receipts and historical documents. Use minimal purpose-built review data only within separate authorization; do not invent Recipe facts to make a journey pass.
+Hosted writes are limited to the authorized core-data catch-up on Atlas Staging. OPS v1 `qnthofvccilhnefdcxnz` and Retool remain NO-WRITE; Atlas Production is not an approved target. Preserve immutable quantities, source lineage, capability/scope checks, RLS, receipts and historical documents. Do not invent Recipe facts to make a journey pass.
 
 ## Update rule
 
