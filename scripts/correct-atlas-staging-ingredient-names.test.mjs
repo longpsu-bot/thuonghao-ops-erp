@@ -7,6 +7,7 @@ import {
   buildIngredientNameCorrectionSql,
   buildIngredientNameSourceSql,
   extractReviewedIngredientSnapshot,
+  ingredientNameCorrectionMigrationVersions,
   runIngredientNameCorrection,
 } from "./correct-atlas-staging-ingredient-names.mjs";
 import {
@@ -71,6 +72,9 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
       /\n\s+(push|pull_request|schedule|release|workflow_run):/,
     );
     expect(workflow).toContain("default: false");
+    expect(workflow).toMatch(
+      /plan_checksum:\s*\n\s+description:[^\n]+\n\s+required: false/,
+    );
     expect(workflow).toContain("environment: atlas-staging");
     expect(workflow).toContain("contents: read");
     expect(workflow).toContain("ref: ${{ inputs.commit_sha }}");
@@ -81,7 +85,10 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
       'test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"',
     );
     expect(workflow).toContain(
-      'args+=(--apply --target-project-ref "$CONFIRMED_TARGET")',
+      'args+=(--apply --target-project-ref "$CONFIRMED_TARGET" --plan-checksum "$REVIEWED_PLAN_CHECKSUM")',
+    );
+    expect(workflow).toContain(
+      '[[ "$REVIEWED_PLAN_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]',
     );
     expect(workflow).not.toMatch(/db reset|db push|production/i);
   });
@@ -135,6 +142,10 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
 
   it("pins the eight reviewed identities, prior names and current v1 source names", () => {
     const payload = buildIngredientNameCorrectionPayload(snapshot());
+    expect(payload.expected_migration_versions).toEqual(
+      ingredientNameCorrectionMigrationVersions(),
+    );
+    expect(payload.expected_migration_versions).toHaveLength(135);
     expect(
       payload.records.map((row) => [
         row.legacy_id,
@@ -190,6 +201,7 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
       plan_checksum: "b".repeat(64),
       correction_id: payload.correction_id,
       source_snapshot_checksum: snapshot().snapshot_checksum,
+      migration_versions_checksum: payload.migration_versions_checksum,
       update_count: 8,
       no_change_count: 0,
       report: expected.map(([legacy_id, before, after]) => ({
@@ -232,9 +244,38 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
     expect(calls).toHaveLength(1);
 
     calls.length = 0;
+    await expect(
+      runIngredientNameCorrection({
+        commitSha: "a".repeat(40),
+        apply: true,
+        targetConfirmation: target,
+        environment: env,
+        verifyCheckout,
+        extractSnapshot,
+        executeTarget,
+      }),
+    ).rejects.toThrow(/REVIEWED_PLAN_CHECKSUM_REQUIRED/);
+    expect(calls).toHaveLength(0);
+
+    await expect(
+      runIngredientNameCorrection({
+        commitSha: "a".repeat(40),
+        apply: true,
+        planChecksum: "c".repeat(64),
+        targetConfirmation: target,
+        environment: env,
+        verifyCheckout,
+        extractSnapshot,
+        executeTarget,
+      }),
+    ).rejects.toThrow(/REVIEWED_PLAN_CHECKSUM_DRIFT/);
+    expect(calls).toHaveLength(1);
+
+    calls.length = 0;
     const applied = await runIngredientNameCorrection({
       commitSha: "a".repeat(40),
       apply: true,
+      planChecksum: plan.plan_checksum,
       targetConfirmation: target,
       environment: env,
       verifyCheckout,

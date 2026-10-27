@@ -1,5 +1,5 @@
 begin;
-select plan(18);
+select plan(22);
 -- FIXTURE
 \ir ../packages/atlas-staging-ingredient-name-forward-correction.sql
 
@@ -92,6 +92,52 @@ select is(
  'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW','source payload drift fails closed'
 );
 
+create temp table replaced_migration as
+ select min(version) original_version from supabase_migrations.schema_migrations;
+update supabase_migrations.schema_migrations set version='00000000000000'
+where version=(select original_version from replaced_migration);
+select is(
+ pg_temp.run_ingredient_name_forward_correction(
+  (select value from fixture),false,null,'ops-v1-ingredient-name-forward-correction-20261027-v1'
+ )->>'error_code',
+ 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW','same-count and same-tip migration substitution fails closed'
+);
+update supabase_migrations.schema_migrations set version=(select original_version from replaced_migration)
+where version='00000000000000';
+
+update atlas_legacy.master_data_mappings set last_seen_import_batch_id=null
+where source_system='OPS_V1' and object_type='INGREDIENT';
+select is(
+ pg_temp.run_ingredient_name_forward_correction(
+  f.value,true,e.value->>'plan_checksum','ops-v1-ingredient-name-forward-correction-20261027-v1'
+ )->>'error_code',
+ 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW','reviewed plan rejects last-seen batch drift'
+) from fixture f cross join evidence e where e.label='preview';
+update atlas_legacy.master_data_mappings set last_seen_import_batch_id='a1100000-0000-4000-8000-000000000001'
+where source_system='OPS_V1' and object_type='INGREDIENT';
+
+update atlas_legacy.master_data_mappings set last_source_fingerprint=repeat('c',64)
+where source_system='OPS_V1' and object_type='INGREDIENT';
+select is(
+ pg_temp.run_ingredient_name_forward_correction(
+  f.value,true,e.value->>'plan_checksum','ops-v1-ingredient-name-forward-correction-20261027-v1'
+ )->>'error_code',
+ 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW','reviewed plan rejects source-fingerprint drift'
+) from fixture f cross join evidence e where e.label='preview';
+update atlas_legacy.master_data_mappings set last_source_fingerprint=repeat('a',64)
+where source_system='OPS_V1' and object_type='INGREDIENT';
+
+update atlas_legacy.master_data_mappings set last_target_version=2
+where source_system='OPS_V1' and object_type='INGREDIENT';
+select is(
+ pg_temp.run_ingredient_name_forward_correction(
+  f.value,true,e.value->>'plan_checksum','ops-v1-ingredient-name-forward-correction-20261027-v1'
+ )->>'error_code',
+ 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW','reviewed plan rejects target-version drift'
+) from fixture f cross join evidence e where e.label='preview';
+update atlas_legacy.master_data_mappings set last_target_version=1
+where source_system='OPS_V1' and object_type='INGREDIENT';
+
 insert into evidence
 select 'apply',pg_temp.run_ingredient_name_forward_correction(
  f.value,true,e.value->>'plan_checksum','ops-v1-ingredient-name-forward-correction-20261027-v1'
@@ -103,7 +149,7 @@ select is(
  8::bigint,'corrected names read back with one version advance'
 );
 select is(
- (select count(*) from atlas_legacy.master_data_mappings m join lateral jsonb_array_elements((select value->'records' from fixture)) r on r.value->>'legacy_id'=m.legacy_id where m.last_source_fingerprint=r.value->>'source_fingerprint' and m.last_target_version=2),
+ (select count(*) from atlas_legacy.master_data_mappings m join lateral jsonb_array_elements((select value->'records' from fixture)) r on r.value->>'legacy_id'=m.legacy_id where m.last_seen_import_batch_id=(select import_batch_id from atlas_legacy.import_batches where snapshot_id='ops-v1-ingredient-name-forward-correction-20261027-v1') and m.last_source_fingerprint=r.value->>'source_fingerprint' and m.last_target_version=2),
  8::bigint,'typed mappings retain current source fingerprints and versions'
 );
 select is((select count(*) from atlas_legacy.import_batches),2::bigint,'one correction receipt is retained');

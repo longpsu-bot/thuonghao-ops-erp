@@ -53,7 +53,7 @@ declare
  receipt atlas_legacy.import_batches%rowtype; item jsonb; plan jsonb; report jsonb:='[]'; protected jsonb;
  target uuid; current_row atlas_admin.ingredients%rowtype; mapping atlas_legacy.master_data_mappings%rowtype;
  ids text[]; batch uuid:=gen_random_uuid(); changed integer:=0; mapped integer:=0; result jsonb; target_fingerprints jsonb;
- phase text:='INPUT';
+ phase text:='INPUT'; installed_migrations jsonb;
 begin
  begin
   if current_user<>'postgres' or session_user<>'postgres' or requested_correction_id is distinct from correction
@@ -61,6 +61,11 @@ begin
    or payload->>'source_project_ref' is distinct from 'qnthofvccilhnefdcxnz'
    or payload->>'correction_id' is distinct from correction
    or payload->>'source_snapshot_checksum' !~ '^[0-9a-f]{64}$'
+   or payload->>'migration_versions_checksum' !~ '^[0-9a-f]{64}$'
+   or jsonb_typeof(payload->'expected_migration_versions') is distinct from 'array'
+   or jsonb_array_length(payload->'expected_migration_versions')<>135
+   or payload#>>'{expected_migration_versions,134}' is distinct from '20261023122829'
+   or payload->>'migration_versions_checksum' is distinct from atlas_legacy.master_snapshot_hash(payload->'expected_migration_versions')
    or jsonb_typeof(payload->'records') is distinct from 'array'
    or jsonb_array_length(payload->'records')<>8
   then raise exception 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW'; end if;
@@ -85,8 +90,9 @@ begin
    execute format('lock table %I.%I in share row exclusive mode',item->>'nspname',item->>'relname');
   end loop;
   lock table supabase_migrations.schema_migrations in share mode;
-  if (select count(*) from supabase_migrations.schema_migrations)<>135
-   or (select max(version) from supabase_migrations.schema_migrations)<>'20261023122829'
+  select coalesce(jsonb_agg(version order by version),'[]'::jsonb) into installed_migrations
+  from supabase_migrations.schema_migrations;
+  if installed_migrations is distinct from payload->'expected_migration_versions'
    or not exists(select 1 from atlas_core.actors where actor_id=actor and actor_type='MIGRATION' and actor_status='ACTIVE')
   then raise exception 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW'; end if;
   phase:='RECEIPT';
@@ -139,13 +145,17 @@ begin
    report:=report||jsonb_build_array(jsonb_build_object(
     'legacy_id',item->>'legacy_id','ingredient_id',target,
     'current_name',current_row.ingredient_name,'proposed_name',item->>'expected_after_name',
-    'current_version',current_row.version,'source_fingerprint',item->>'source_fingerprint','action','UPDATE'
+    'current_version',current_row.version,'source_fingerprint',item->>'source_fingerprint',
+    'current_last_seen_import_batch_id',mapping.last_seen_import_batch_id,
+    'current_last_source_fingerprint',mapping.last_source_fingerprint,
+    'current_last_target_version',mapping.last_target_version,'action','UPDATE'
    ));
   end loop;
   phase:='PLAN';
   plan:=jsonb_build_object(
    'success',true,'status','PREVIEW','correction_id',correction,
    'source_snapshot_checksum',payload->>'source_snapshot_checksum',
+   'migration_versions_checksum',payload->>'migration_versions_checksum',
    'update_count',8,'no_change_count',0,'report',report,
    'protected_fingerprints',protected
   );
@@ -182,6 +192,7 @@ begin
    left join atlas_legacy.master_data_mappings m on m.source_system='OPS_V1' and m.object_type='INGREDIENT' and m.legacy_id=r.value->>'legacy_id'
    left join atlas_admin.ingredients i on i.ingredient_id=m.ingredient_id
    where i.ingredient_name is distinct from r.value->>'expected_after_name'
+    or m.last_seen_import_batch_id is distinct from batch
     or m.last_source_fingerprint is distinct from r.value->>'source_fingerprint'
     or m.last_target_version is distinct from i.version
   ) then raise exception 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW'; end if;

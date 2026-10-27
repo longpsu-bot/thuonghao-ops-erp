@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { executeAtlasStagingPostgres } from "./atlas-staging-postgres-transport.mjs";
@@ -11,6 +11,7 @@ import {
   canonicalizeUnitSourceLabel,
 } from "./ops-v1-master-snapshot-contract.mjs";
 import { redactAtlasStagingDiagnostic } from "./atlas-staging-contract.mjs";
+import { migrationVersionsFromFilenames } from "./verify-atlas-staging.mjs";
 
 const STAGING = "rnzxmxiiqgtdevzregff";
 const SOURCE = "qnthofvccilhnefdcxnz";
@@ -76,7 +77,16 @@ function sourceRecord(row) {
   };
 }
 
-export function buildIngredientNameCorrectionPayload(snapshot) {
+export function ingredientNameCorrectionMigrationVersions(cwd = process.cwd()) {
+  return migrationVersionsFromFilenames(
+    readdirSync(resolve(cwd, "supabase/migrations")),
+  );
+}
+
+export function buildIngredientNameCorrectionPayload(
+  snapshot,
+  { migrationVersions = ingredientNameCorrectionMigrationVersions() } = {},
+) {
   if (
     snapshot?.source_project_ref !== SOURCE ||
     !SHA256.test(String(snapshot.snapshot_checksum ?? "")) ||
@@ -104,11 +114,18 @@ export function buildIngredientNameCorrectionPayload(snapshot) {
     },
   );
   if (rows.length !== records.length) fail("SOURCE_SCOPE_DRIFT");
+  if (
+    migrationVersions.length !== 135 ||
+    migrationVersions.at(-1) !== "20261023122829"
+  )
+    fail("REPOSITORY_MIGRATION_SCOPE_DRIFT");
   return {
     contract_version: CONTRACT,
     source_project_ref: SOURCE,
     correction_id: CORRECTION_ID,
     source_snapshot_checksum: snapshot.snapshot_checksum,
+    expected_migration_versions: migrationVersions,
+    migration_versions_checksum: hash(canonicalMasterJson(migrationVersions)),
     records,
   };
 }
@@ -244,6 +261,8 @@ function validatePlan(result, payload, statuses) {
     !statuses.includes(result.status) ||
     result.correction_id !== CORRECTION_ID ||
     result.source_snapshot_checksum !== payload.source_snapshot_checksum ||
+    result.migration_versions_checksum !==
+      payload.migration_versions_checksum ||
     !SHA256.test(String(result.plan_checksum ?? "")) ||
     result.update_count !== 8 ||
     result.no_change_count !== 0 ||
@@ -339,6 +358,7 @@ async function authenticatedIngredientReadback(
 export async function runIngredientNameCorrection({
   commitSha,
   apply = false,
+  planChecksum,
   targetConfirmation,
   environment = process.env,
   cwd = process.cwd(),
@@ -348,6 +368,9 @@ export async function runIngredientNameCorrection({
   verifyReadback,
   fetchImpl = fetch,
 } = {}) {
+  if (apply && !SHA256.test(String(planChecksum ?? "")))
+    fail("REVIEWED_PLAN_CHECKSUM_REQUIRED");
+  if (!apply && planChecksum != null) fail("PLAN_CHECKSUM_APPLY_ONLY");
   const authority = validateV1ReferenceImportRequest({
     environment,
     applyRequested: apply,
@@ -360,7 +383,9 @@ export async function runIngredientNameCorrection({
     accessToken: authority.targetAccessToken,
     fetchImpl,
   });
-  const payload = buildIngredientNameCorrectionPayload(snapshot);
+  const payload = buildIngredientNameCorrectionPayload(snapshot, {
+    migrationVersions: ingredientNameCorrectionMigrationVersions(cwd),
+  });
   const target = {
     projectRef: authority.targetProjectRef,
     supabaseUrl: authority.targetSupabaseUrl,
@@ -386,12 +411,13 @@ export async function runIngredientNameCorrection({
     );
   const preview = validatePlan(await call(false), payload, ["PREVIEW"]);
   if (!apply) return preview;
+  if (preview.plan_checksum !== planChecksum)
+    fail("REVIEWED_PLAN_CHECKSUM_DRIFT");
   await verifyCheckout({ commitSha, cwd });
-  const applied = validatePlan(
-    await call(true, preview.plan_checksum),
-    payload,
-    ["APPLIED", "REPLAYED"],
-  );
+  const applied = validatePlan(await call(true, planChecksum), payload, [
+    "APPLIED",
+    "REPLAYED",
+  ]);
   if (
     applied.reconciled !== true ||
     applied.operational_data_unchanged !== true ||
@@ -399,11 +425,9 @@ export async function runIngredientNameCorrection({
     applied.updated_count !== 8
   )
     fail("APPLY_READBACK_DRIFT");
-  const replay = validatePlan(
-    await call(true, preview.plan_checksum),
-    payload,
-    ["REPLAYED"],
-  );
+  const replay = validatePlan(await call(true, planChecksum), payload, [
+    "REPLAYED",
+  ]);
   if (replay.reconciled !== true) fail("REPLAY_DRIFT");
   const readback = await (
     verifyReadback ??
@@ -425,7 +449,12 @@ async function main() {
     const flag = args[index];
     if (
       flags.has(flag) ||
-      !["--commit-sha", "--target-project-ref", "--apply"].includes(flag)
+      ![
+        "--commit-sha",
+        "--target-project-ref",
+        "--plan-checksum",
+        "--apply",
+      ].includes(flag)
     )
       fail("INVALID_ARGUMENT");
     if (flag === "--apply") flags.set(flag, true);
@@ -434,6 +463,7 @@ async function main() {
   const result = await runIngredientNameCorrection({
     commitSha: flags.get("--commit-sha"),
     apply: flags.has("--apply"),
+    planChecksum: flags.get("--plan-checksum"),
     targetConfirmation: flags.get("--target-project-ref"),
   });
   console.log(JSON.stringify(result, null, 2));

@@ -33,7 +33,7 @@ Acceptance:
 
 - Read only OPS v1 Ingredient IDs 931, 962, 1040, 1041, 1047, 1053, 1067 and 1154; fail if their reviewed names or supporting facts drift.
 - Preserve UUIDs, technical codes, classification, purchase Unit, order step, lifecycle and all Recipe/operational facts. No reset, cascade or broad reload.
-- Keep preview read-only. A future apply must require exact current `main`, exact Staging target, full migration parity, the preview checksum, authenticated readback and identical replay.
+- Keep preview read-only. A future apply must require exact current `main`, exact Staging target, full migration parity, a checksum supplied from a separately completed and reviewed preview, authenticated readback and identical replay.
 - Retain technical references internally and in search, but do not render imported `v1-*` School, Ingredient or Unit codes as operator labels in the affected surfaces.
 - Record Draft, merged, Staging-applied and frontend-deployed states separately.
 - Keep OPS v1 strictly read-only, exclude all daily operational data and keep Warehouse paused.

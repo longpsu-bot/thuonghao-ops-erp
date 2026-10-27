@@ -12,6 +12,10 @@ on:
         required: true
         type: boolean
         default: false
+      plan_checksum:
+        description: Exact checksum from a separately reviewed preview artifact; required for apply
+        required: false
+        type: string
       target_project_ref:
         description: Exact Atlas Staging project confirmation for apply
         required: false
@@ -79,6 +83,7 @@ jobs:
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
           APPLY_REQUESTED: ${{ inputs.apply }}
+          REVIEWED_PLAN_CHECKSUM: ${{ inputs.plan_checksum }}
           CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
           ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
@@ -93,7 +98,8 @@ jobs:
           args=(--commit-sha "$REQUESTED_SHA")
           if [ "$APPLY_REQUESTED" = "true" ]; then
             test "$CONFIRMED_TARGET" = "$ATLAS_STAGING_PROJECT_REF"
-            args+=(--apply --target-project-ref "$CONFIRMED_TARGET")
+            [[ "$REVIEWED_PLAN_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
+            args+=(--apply --target-project-ref "$CONFIRMED_TARGET" --plan-checksum "$REVIEWED_PLAN_CHECKSUM")
           fi
           node scripts/correct-atlas-staging-ingredient-names.mjs "${args[@]}" \
             > "$RUNNER_TEMP/ingredient-name-correction.json"

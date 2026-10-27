@@ -47,12 +47,12 @@ The eight reviewed name corrections are:
 
 ## Safety and acceptance
 
-The package fails closed unless the exact source project, eight legacy IDs, reviewed source names, current Atlas names, typed identities, current target versions, Ingredient classification, Unit, order step and status all match. Apply additionally requires the exact current `origin/main`, exact Staging target confirmation and the preview plan checksum. Platform fingerprints cover all unrelated master and operational tables; only the eight names, their versions, allowed mapping bookkeeping and one correction receipt may change. Authenticated readback and identical replay are mandatory for any future apply.
+The package fails closed unless the exact source project, eight legacy IDs, reviewed source names, current Atlas names, complete repository migration sequence, typed identities, current target versions, Ingredient classification, Unit, order step and status all match. Apply additionally requires the exact current `origin/main`, exact Staging target confirmation and a checksum copied from a separately completed and reviewed preview artifact. The recomputed plan binds current mapping bookkeeping and must match that external checksum. Platform fingerprints cover all unrelated master and operational tables; only the eight names, their versions, allowed mapping bookkeeping and one correction receipt may change. Authenticated readback and identical replay are mandatory for any future apply.
 
 Acceptance requires focused tests to prove:
 
 1. the source query is bounded and read-only;
-2. source, target, mapping, migration or checksum drift is rejected;
+2. source, target, mapping-bookkeeping, full migration history or reviewed-checksum drift is rejected;
 3. preview writes nothing;
 4. apply updates exactly eight names and no other business fact;
 5. replay is idempotent; and
