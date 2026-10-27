@@ -16,6 +16,44 @@ The owner's atmosphere correction supersedes the first v3 pass's charcoal shell 
 
 ## Color architecture
 
+### Sanzo Wada palette trial — 27 October 2026
+
+The Owner requested and approved a bounded Sanzo Wada palette trial in the
+canonical E-drive checkout. For this trial only, warm ivory neutrals supersede
+the achromatic-neutral rule below. Existing semantic roles, white working tables,
+typography, geometry, selection indicators and contrast floors still apply.
+This is a separately reviewable frontend change, without merge or deployment
+authorization; it does not resume the completed core-data task or Warehouse.
+
+The [digital Wada color dictionary](https://colorcombinations.org/colors/)
+provides the reference anchors: Deep Slate Green `#112F2C` (navigation), Glaucous
+Green `#B4CDC2` (light Brand), Yellow Ocher `#E2B540` (supporting warning tone)
+and Grenadine Pink `#F48067` (supporting attention tone). Ivory Buff `#EBD3A2`
+informs the lighter ivory workspace `#F1EBDC` and toolbar `#FAF7F0`.
+Accessible derived shades carry actions (`#245B50`), warning text (`#56400E`)
+and small attention markers (`#9B4937`). This is a Wada-inspired adaptation,
+not a claim to reproduce one numbered historical combination. The coral and
+mustard reference tones are not used as ordinary text on white.
+
+Scope is `src/vnext/atlas/system.ts`, its existing contrast tests, and this record.
+All consumers inherit the shared primitives; no component override, provider,
+dependency, palette switch, business handler, API, permission or stored data
+changes. Success, Danger and Info retain their independent existing palettes.
+Acceptance requires monotonic scales, white workplanes, warm structural layers,
+the existing text/control/focus contrast floors, and fixture-based desktop/mobile
+review. Rollback reverts these frontend/docs changes; no migration is involved.
+
+Local verification: 111 focused theme/provider/design-reference/shell tests pass;
+formatting, the vNext boundary check and whitespace check pass. The local fixture
+review covers Menu, Supplier Allocation, Recipes and School defaults at
+1920×1080, 1440×900, 1366×768, 650×900 and 360×800, with no page errors or
+document-level horizontal overflow. Shared computed colors match the trial.
+Independent read-only review found no actionable issues. These are local fixture
+results; hosted workflows, exports and full CVD simulation were not re-certified.
+Full routine frontend validation remains GitHub Actions' responsibility.
+
+The remaining color description records the pre-trial v3 baseline.
+
 Stable sRGB primitives in `src/vnext/atlas/system.ts` → semantic tokens → Chakra recipes → components. Applications use meaning, never primitive colors or arbitrary hex values. The existing isolated Atlas Chakra system and provider remain in place.
 
 Neutral has 25/50/100/200/300/400/500/600/700/800/900/950 steps. It is achromatic: R=G=B, with orderly perceptual lightness. Large working surfaces carry no green chroma. White is the working plane; darker neutral layers and structural edges organize it.
