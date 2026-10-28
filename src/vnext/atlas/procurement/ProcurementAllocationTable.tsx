@@ -190,14 +190,28 @@ export function ProcurementAllocationTable({
               "& tbody tr": {
                 display: "grid",
                 gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+                gridTemplateAreas: showServiceDate
+                  ? '"recipient recipient" "ingredient ingredient" "date quantity" "supplier supplier" "issue issue" "action action"'
+                  : '"recipient recipient" "ingredient ingredient" "quantity issue" "supplier supplier" "action action"',
                 columnGap: "var(--atlas-spacing-sm)",
                 borderBottom: "1px solid var(--atlas-colors-border-subtle)",
               },
-              "& td": { display: "block", minWidth: 0, border: "none" },
-              "& td[data-allocation-recipient-cell], & td[data-allocation-ingredient-cell], & td[data-allocation-supplier-cell], & td[data-allocation-action-cell]":
-                {
-                  gridColumn: "1 / -1",
-                },
+              "& td": {
+                display: "block",
+                minWidth: 0,
+                border: "none",
+                borderInlineEndWidth: 0,
+              },
+              "& td::after": { display: "none" },
+              "& td[data-allocation-recipient-cell]": { gridArea: "recipient" },
+              "& td[data-allocation-ingredient-cell]": {
+                gridArea: "ingredient",
+              },
+              "& td[data-allocation-date-cell]": { gridArea: "date" },
+              "& td[data-allocation-quantity-cell]": { gridArea: "quantity" },
+              "& td[data-allocation-supplier-cell]": { gridArea: "supplier" },
+              "& td[data-allocation-issue-cell]": { gridArea: "issue" },
+              "& td[data-allocation-action-cell]": { gridArea: "action" },
             },
             ...(selectedKey
               ? {
@@ -216,6 +230,7 @@ export function ProcurementAllocationTable({
                       minWidth: 0,
                       padding: 0,
                       border: "none",
+                      borderInlineEndWidth: 0,
                     },
                     "& td[data-allocation-recipient-cell], & td[data-allocation-ingredient-cell]":
                       {

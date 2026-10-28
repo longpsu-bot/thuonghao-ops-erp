@@ -197,6 +197,39 @@ Review the [desktop row comparison](../testing/artifacts/atlas-sanzo-wada/alloca
 and [phone row comparison](../testing/artifacts/atlas-sanzo-wada/allocation-row-alignment-phone.png).
 Earlier comparisons preserve their earlier checkpoints.
 
+### Allocation further review — 28 October 2026
+
+A broader independent review found defects beyond aligned rows: opening the phone
+editor scrolled the workbench scope out of view; automatic mobile cell placement
+orphaned status; Add/Remove lost keyboard focus; and the 131px footer, nested
+frame and expanded empty notes consumed the editing area. The Owner selected
+empty notes on demand, with saved notes visible.
+
+The selected workbench now fits its existing owner viewport and preserves the
+scope header. Phone editing uses one working plane and a 77px action row. Empty
+notes open inline below `xl`; saved notes remain visible and clearing an opened
+note does not collapse it. Add, Remove and note disclosure have explicit focus
+destinations. Mobile list fields have defined grid areas and no desktop cell
+separators. The local Tabs content spacing variable removes an unintended 16px
+inset. Shared recipes, palette, typography, desktop columns, exact arithmetic,
+notes, eligibility, command/recovery guards and backend authority are retained.
+
+Verification covers seven Chromium widths from 360 to 1920px, with visible
+scope, zero outer-panel scroll and no document overflow. At 390px the editor is
+368px wide instead of 348px. Focused workbench/editor/table checks and affected
+navigation/UNKNOWN regressions pass, including saved-note visibility and focus
+after removing the only draft Supplier. Typecheck, formatting, boundary and
+whitespace checks pass. No browser Save or hosted write was performed.
+
+The [full review and qualified findings](../../.impeccable/critique/2026-10-28T09-28-48Z__procurement-procurementsupplierdetail-tsx-6ed0547c.md)
+records the baseline 27/40 design assessment and subsequent corrections. See the
+[phone editor comparison](../testing/artifacts/atlas-sanzo-wada/allocation-review-more-phone.png)
+and [phone list comparison](../testing/artifacts/atlas-sanzo-wada/allocation-review-more-list.png).
+Physical devices, screen-reader speech, high Supplier counts and hosted workflows
+remain unchecked. Fixture date/warning inconsistencies remain preserved and are
+not treated as calculation bugs. This is a frontend/test/docs revertible change
+with no migration; Draft review does not authorize merge or manual deployment.
+
 The remaining color description records the pre-trial v3 baseline.
 
 Stable sRGB primitives in `src/vnext/atlas/system.ts` → semantic tokens → Chakra recipes → components. Applications use meaning, never primitive colors or arbitrary hex values. The existing isolated Atlas Chakra system and provider remain in place.

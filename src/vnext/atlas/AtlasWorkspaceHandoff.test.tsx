@@ -127,6 +127,9 @@ it("preserves dirty Supplier detail after a sibling commit, suspends Save and st
   const h = show();
   await open("Phân bổ NCC");
   fireEvent.click(await allocationAction());
+  fireEvent.click(
+    screen.getByRole("button", { name: "Thêm ghi chú cho NCC An Phú" }),
+  );
   const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
   fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
   await open("Thực đơn");
@@ -204,6 +207,9 @@ it("Need returns to Procurement's dirty selected Supplier detail with its note a
   fireEvent.change(search, { target: { value: "Gạo" } });
   const selected = await allocationAction();
   fireEvent.click(selected);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Thêm ghi chú cho NCC An Phú" }),
+  );
   const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
   fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
   await planning();

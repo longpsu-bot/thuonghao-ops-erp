@@ -251,6 +251,9 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
   fireEvent.click(
     await screen.findByRole("button", { name: /Xem phân bổ Gạo thơm/ }),
   );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Thêm ghi chú cho NCC An Phú" }),
+  );
   const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
   fireEvent.change(note, {
     target: { value: "Giữ ghi chú của phạm vi đang mở" },

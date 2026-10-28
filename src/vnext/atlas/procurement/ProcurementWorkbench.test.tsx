@@ -67,6 +67,13 @@ const openAllocationSorts = () => {
   if (disclosure.getAttribute("aria-expanded") === "false")
     fireEvent.click(disclosure);
 };
+const openSupplierNote = (name: string) => {
+  const disclosure = screen.queryByRole("button", {
+    name: `Thêm ghi chú cho ${name}`,
+  });
+  if (disclosure) fireEvent.click(disclosure);
+  return screen.getByRole("textbox", { name: `Ghi chú cho ${name}` });
+};
 const workbar = () =>
   document.querySelector<HTMLElement>("[data-atlas-workbar]")!;
 const workbarControl = <Element extends HTMLElement>(selector: string) =>
@@ -317,9 +324,7 @@ describe("Procurement vNext operator workbench", () => {
       range: { start: reviewDate, end: reviewDate },
       stage: "allocation",
     });
-    const note = screen.getByRole("textbox", {
-      name: "Ghi chú cho NCC An Phú",
-    });
+    const note = openSupplierNote("NCC An Phú");
     fireEvent.change(note, { target: { value: "Giao sớm" } });
     expect(report).toHaveBeenLastCalledWith(
       expect.objectContaining({ unsaved: true }),
@@ -539,10 +544,9 @@ describe("Procurement vNext operator workbench", () => {
       );
       fireEvent.click(await action());
       if (state !== "selected") {
-        fireEvent.change(
-          screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-          { target: { value: "Giao trước 05:30" } },
-        );
+        fireEvent.change(openSupplierNote("NCC An Phú"), {
+          target: { value: "Giao trước 05:30" },
+        });
         fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
       }
       if (state === "locked")
@@ -714,12 +718,9 @@ describe("Procurement vNext operator workbench", () => {
   it("saves a note-only decision and adopts the authoritative note readback", async () => {
     const { save, read, fixture } = show("manual_split");
     fireEvent.click(await action());
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-      {
-        target: { value: "  Giao trước 05:30  " },
-      },
-    );
+    fireEvent.change(openSupplierNote("NCC An Phú"), {
+      target: { value: "  Giao trước 05:30  " },
+    });
     const authority = structuredClone(fixture.allocation);
     authority.rows[0]!.splits[0]!.supplier_note = "Giao trước 05:30";
     read.mockResolvedValueOnce(reviewSuccess(authority));
@@ -731,9 +732,7 @@ describe("Procurement vNext operator workbench", () => {
       supplier_note: "Giao trước 05:30",
     });
     await waitFor(() =>
-      expect(
-        screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-      ).toHaveValue("Giao trước 05:30"),
+      expect(openSupplierNote("NCC An Phú")).toHaveValue("Giao trước 05:30"),
     );
     expect(
       screen.queryByText("Đang chỉnh sửa · chưa lưu"),
@@ -742,10 +741,9 @@ describe("Procurement vNext operator workbench", () => {
   it("shows a safe failed recovery read alongside UNKNOWN until authority returns", async () => {
     const { read, save } = show("unknown");
     fireEvent.click(await action());
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-      { target: { value: "Giao trước 05:30" } },
-    );
+    fireEvent.change(openSupplierNote("NCC An Phú"), {
+      target: { value: "Giao trước 05:30" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     const recovery = await screen.findByRole("button", {
       name: "Tải lại để xác nhận",
@@ -783,10 +781,9 @@ describe("Procurement vNext operator workbench", () => {
       screen.queryByText(/Không tải được dữ liệu hiện tại:/),
     ).not.toBeInTheDocument();
     fireEvent.click(await action());
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-      { target: { value: "Giao trước 05:30" } },
-    );
+    fireEvent.change(openSupplierNote("NCC An Phú"), {
+      target: { value: "Giao trước 05:30" },
+    });
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
     expect(save).toHaveBeenCalledTimes(1);
   });
@@ -1113,10 +1110,9 @@ describe("Procurement vNext operator workbench", () => {
   it("unknown Save shows labeled recovery and disables routine refresh and mutation", async () => {
     const { save } = show("unknown");
     fireEvent.click(await action());
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-      { target: { value: "Giao trước 05:30" } },
-    );
+    fireEvent.change(openSupplierNote("NCC An Phú"), {
+      target: { value: "Giao trước 05:30" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     expect(
       await screen.findByRole("button", { name: "Tải lại để xác nhận" }),

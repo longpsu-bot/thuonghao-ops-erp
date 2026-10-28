@@ -84,6 +84,23 @@ export function ProcurementSupplierDetail({
         ]
       : [];
   const [draft, setDraft] = useState<SupplierSplitInput[]>(() => baseline);
+  const [openNotes, setOpenNotes] = useState(() =>
+    baseline
+      .filter((split) => split.supplier_note)
+      .map((split) => split.supplier_id),
+  );
+  const fields = useRef(
+    new Map<string, HTMLInputElement | HTMLTextAreaElement>(),
+  );
+  const pendingFocus = useRef<string | null>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (pendingFocus.current === null) return;
+    const target =
+      fields.current.get(pendingFocus.current) ?? addButton.current;
+    pendingFocus.current = null;
+    target?.focus();
+  }, [draft, openNotes]);
   const recipient = allocationRecipient(row);
   const [added, setAdded] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
@@ -94,9 +111,7 @@ export function ProcurementSupplierDetail({
   const closeButton = useRef<HTMLButtonElement>(null);
   const cancelButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    heading.current?.focus();
-    if (window.matchMedia?.("(max-width: 63.99rem)").matches)
-      heading.current?.scrollIntoView?.({ block: "start" });
+    heading.current?.focus({ preventScroll: true });
   }, []);
   const total = sumExactQuantities(
     draft.map((split) => split.allocated_quantity),
@@ -271,13 +286,18 @@ export function ProcurementSupplierDetail({
         } as CSSProperties
       }
       minW="var(--atlas-layout-zero, 0)"
+      minH="var(--atlas-layout-zero, 0)"
+      h={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
       alignSelf="start"
       bg="bg.workbench"
       borderColor="border.subtle"
-      borderWidth="var(--atlas-layout-edge, 1px)"
-      borderRadius="workbench"
+      borderWidth={{
+        base: "var(--atlas-layout-zero, 0)",
+        lg: "var(--atlas-layout-edge, 1px)",
+      }}
+      borderRadius={{ base: "var(--atlas-layout-zero, 0)", lg: "workbench" }}
       maxH={{
-        base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
+        base: "full",
         xl: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
       }}
     >
@@ -393,6 +413,8 @@ export function ProcurementSupplierDetail({
             (item) => item.supplier_id === split.supplier_id,
           )!;
           const invalid = parseExactQuantity(split.allocated_quantity) === null;
+          const noteOpen = openNotes.includes(split.supplier_id);
+          const noteId = `${quantityContextId}-${split.supplier_id}-note`;
           return (
             <Box
               key={split.supplier_id}
@@ -453,6 +475,11 @@ export function ProcurementSupplierDetail({
                   alignItems="center"
                 >
                   <Input
+                    ref={(element) => {
+                      const key = `${split.supplier_id}:quantity`;
+                      if (element) fields.current.set(key, element);
+                      else fields.current.delete(key);
+                    }}
                     aria-label={`Phân bổ ${supplier.supplier_name}`}
                     aria-describedby={`${quantityContextId}-need ${quantityContextId}-${split.supplier_id}-supplier ${quantityContextId}-${split.supplier_id}-baseline`}
                     aria-invalid={invalid}
@@ -483,13 +510,20 @@ export function ProcurementSupplierDetail({
                       aria-label={`Xóa ${supplier.supplier_name}`}
                       title={`Xóa ${supplier.supplier_name}`}
                       disabled={locked}
-                      onClick={() =>
+                      onClick={() => {
+                        const index = draft.findIndex(
+                          (value) => value.supplier_id === split.supplier_id,
+                        );
+                        const adjacent = draft[index + 1] ?? draft[index - 1];
+                        pendingFocus.current = adjacent
+                          ? `${adjacent.supplier_id}:quantity`
+                          : "";
                         setDraft((values) =>
                           values.filter(
                             (value) => value.supplier_id !== split.supplier_id,
                           ),
-                        )
-                      }
+                        );
+                      }}
                       minH={{
                         base: "var(--atlas-layout-mobile-target, 44px)",
                         lg: "compact",
@@ -510,10 +544,41 @@ export function ProcurementSupplierDetail({
                 gridColumn={{ lg: "1 / -1", xl: "3" }}
                 invalid={(split.supplier_note ?? "").length > 500}
               >
-                <Field.Label display={{ base: "flex", xl: "none" }}>
+                {!noteOpen && (
+                  <Button
+                    variant="utility"
+                    size="sm"
+                    display={{ base: "inline-flex", xl: "none" }}
+                    alignSelf="start"
+                    px="var(--atlas-layout-zero, 0)"
+                    fontWeight="normal"
+                    minH="var(--atlas-layout-mobile-target, 44px)"
+                    aria-label={`Thêm ghi chú cho ${supplier.supplier_name}`}
+                    aria-expanded="false"
+                    aria-controls={noteId}
+                    disabled={locked}
+                    onClick={() => {
+                      pendingFocus.current = `${split.supplier_id}:note`;
+                      setOpenNotes((ids) => [...ids, split.supplier_id]);
+                    }}
+                  >
+                    Thêm ghi chú
+                  </Button>
+                )}
+                <Field.Label
+                  htmlFor={noteId}
+                  display={{ base: noteOpen ? "flex" : "none", xl: "none" }}
+                >
                   Ghi chú cho NCC
                 </Field.Label>
                 <Textarea
+                  id={noteId}
+                  ref={(element) => {
+                    const key = `${split.supplier_id}:note`;
+                    if (element) fields.current.set(key, element);
+                    else fields.current.delete(key);
+                  }}
+                  display={{ base: noteOpen ? "block" : "none", xl: "block" }}
                   w="full"
                   minW="var(--atlas-layout-zero, 0)"
                   aria-label={`Ghi chú cho ${supplier.supplier_name}`}
@@ -522,15 +587,20 @@ export function ProcurementSupplierDetail({
                   rows={2}
                   resize="vertical"
                   disabled={locked}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    setOpenNotes((ids) =>
+                      ids.includes(split.supplier_id)
+                        ? ids
+                        : [...ids, split.supplier_id],
+                    );
                     setDraft((values) =>
                       values.map((value) =>
                         value.supplier_id === split.supplier_id
                           ? { ...value, supplier_note: event.target.value }
                           : value,
                       ),
-                    )
-                  }
+                    );
+                  }}
                 />
                 {(split.supplier_note ?? "").length > 500 && (
                   <Field.ErrorText>Tối đa 500 ký tự.</Field.ErrorText>
@@ -541,6 +611,7 @@ export function ProcurementSupplierDetail({
         })}
         <Box>
           <Button
+            ref={addButton}
             size="sm"
             variant="secondary"
             disabled={locked || available.length === 0}
@@ -584,6 +655,7 @@ export function ProcurementSupplierDetail({
                   )
                 }
                 onClick={() => {
+                  pendingFocus.current = `${supplierId}:quantity`;
                   setDraft((values) => [
                     ...values,
                     {
@@ -641,7 +713,7 @@ export function ProcurementSupplierDetail({
         bottom="var(--atlas-layout-zero, 0)"
         zIndex="var(--atlas-layout-footer-layer, 2)"
         justify="space-between"
-        direction={{ base: "column", lg: "row" }}
+        direction="row"
         align="stretch"
         gap="sm"
         p="md"
@@ -663,7 +735,7 @@ export function ProcurementSupplierDetail({
         <Button
           variant="businessPrimary"
           disabled={!canSave}
-          flex={{ base: "none", lg: "1" }}
+          flex="1"
           minW="var(--atlas-layout-zero, 0)"
           h="var(--atlas-layout-auto, auto)"
           py="xs"

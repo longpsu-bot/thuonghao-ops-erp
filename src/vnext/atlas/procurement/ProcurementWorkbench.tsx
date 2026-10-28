@@ -258,11 +258,14 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       borderWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
+      h={selected ? "full" : undefined}
     >
       <Grid
         templateColumns="minmax(0, 1fr)"
         templateRows="auto minmax(0, 1fr)"
         alignContent="start"
+        h={selected ? "full" : undefined}
+        minH="var(--atlas-layout-zero, 0)"
       >
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh công việc mua hàng"
@@ -291,7 +294,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               : []),
           ]}
         />
-        <Box minW="var(--atlas-layout-zero, 0)" bg="bg.workbench">
+        <Box
+          minW="var(--atlas-layout-zero, 0)"
+          minH="var(--atlas-layout-zero, 0)"
+          bg="bg.workbench"
+        >
           {pendingContinuation && (
             <Box p="sm" bg="bg.info" role="status">
               <Text mb="xs">
@@ -328,6 +335,15 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             </Box>
           )}
           <Tabs.Root
+            css={{
+              "--tabs-content-padding": "var(--atlas-layout-zero, 0)",
+              "&[data-orientation=horizontal]": {
+                display: selected ? "flex" : "block",
+              },
+            }}
+            flexDirection="column"
+            h={selected ? "full" : undefined}
+            minH="var(--atlas-layout-zero, 0)"
             value={controller.stage}
             onValueChange={({ value }) => {
               if (selected) return;
@@ -599,6 +615,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             <Tabs.Content
               value={controller.stage}
               p="var(--atlas-layout-zero, 0)"
+              pt="var(--atlas-layout-zero, 0)"
+              pb="var(--atlas-layout-zero, 0)"
+              flex={selected ? "1" : undefined}
+              minH="var(--atlas-layout-zero, 0)"
             >
               {controller.stage === "allocation" ? (
                 controller.allocation && (
@@ -621,8 +641,14 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                         } as CSSProperties
                       }
                       minW="var(--atlas-layout-zero, 0)"
+                      minH="var(--atlas-layout-zero, 0)"
+                      h={selected ? "full" : undefined}
                       gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
-                      p={selected ? "sm" : "var(--atlas-layout-zero, 0)"}
+                      p={
+                        selected
+                          ? { base: "var(--atlas-layout-zero, 0)", lg: "sm" }
+                          : "var(--atlas-layout-zero, 0)"
+                      }
                       templateColumns={{
                         base: "minmax(0, 1fr)",
                         lg: selected

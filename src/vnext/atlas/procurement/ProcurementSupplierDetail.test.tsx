@@ -33,7 +33,50 @@ const quantity = (name: string, value: string) =>
   fireEvent.change(screen.getByRole("textbox", { name: `Phân bổ ${name}` }), {
     target: { value },
   });
+const openSupplierNote = (name: string) => {
+  const disclosure = screen.queryByRole("button", {
+    name: `Thêm ghi chú cho ${name}`,
+  });
+  if (disclosure) fireEvent.click(disclosure);
+  return screen.getByRole("textbox", { name: `Ghi chú cho ${name}` });
+};
 describe("Supplier decisions", () => {
+  it("opens an empty note on demand and moves focus into its field", () => {
+    const row = reviewFamily("manual_split");
+    row.splits[1]!.supplier_note = "Bao riêng";
+    const { onSave } = show(row);
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú cho NCC Bình Minh" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
+    ).not.toBeInTheDocument();
+    const note = openSupplierNote("NCC An Phú");
+    expect(note).toHaveFocus();
+    fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
+    fireEvent.change(note, { target: { value: "" } });
+    expect(note).toBeVisible();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+  });
+  it("returns focus to Add after removing the only draft supplier", () => {
+    const row = reviewFamily("manual_split");
+    row.splits = [];
+    row.recommendation = null;
+    show(row);
+    click("+ Thêm nhà cung ứng");
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
+      { target: { value: "supplier-c" } },
+    );
+    click("Thêm");
+    const remove = screen.getByRole("button", { name: "Xóa NCC Thành Công" });
+    remove.focus();
+    fireEvent.click(remove);
+    expect(
+      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+    ).toHaveFocus();
+  });
   it("requires explicit acceptance of a stale source even when the saved split is unchanged", () => {
     const row = reviewFamily("manual_split");
     row.state = "NEEDS_REALLOCATION";
@@ -70,7 +113,7 @@ describe("Supplier decisions", () => {
     expect(onSave).not.toHaveBeenCalled();
   });
   it.each([true, false])(
-    "brings the new editor into view only on narrow screens (%s)",
+    "focuses the editor without scrolling away its scope (%s)",
     (narrow) => {
       const original = HTMLElement.prototype.scrollIntoView;
       const scroll = vi.fn();
@@ -84,8 +127,7 @@ describe("Supplier decisions", () => {
         expect(
           screen.getByRole("heading", { level: 2, name: "Gạo thơm" }),
         ).toHaveFocus();
-        if (narrow) expect(scroll).toHaveBeenCalledWith({ block: "start" });
-        else expect(scroll).not.toHaveBeenCalled();
+        expect(scroll).not.toHaveBeenCalled();
         expect(onSave).not.toHaveBeenCalled();
       } finally {
         if (original) HTMLElement.prototype.scrollIntoView = original;
@@ -101,9 +143,7 @@ describe("Supplier decisions", () => {
       const row = reviewFamily("manual_split");
       row.splits[0]!.supplier_note = `Giao sớm${suffix}`;
       const { onSave } = show(row);
-      const note = screen.getByRole("textbox", {
-        name: "Ghi chú cho NCC An Phú",
-      });
+      const note = openSupplierNote("NCC An Phú");
       expect(
         screen.getByRole("button", { name: "Lưu phân bổ" }),
       ).toBeDisabled();
@@ -130,9 +170,7 @@ describe("Supplier decisions", () => {
     const row = reviewFamily("manual_split");
     row.splits[0]!.supplier_note = "Loại 500g/gói";
     const { onSave, onClose } = show(row);
-    const note = screen.getByRole("textbox", {
-      name: "Ghi chú cho NCC An Phú",
-    });
+    const note = openSupplierNote("NCC An Phú");
     expect(note).toHaveValue("Loại 500g/gói");
     fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeInTheDocument();
@@ -242,9 +280,7 @@ describe("Supplier decisions", () => {
   });
   it("saves a real note override with exact quantities and restores semantic baseline", () => {
     const { onSave } = show();
-    const note = screen.getByRole("textbox", {
-      name: "Ghi chú cho NCC An Phú",
-    });
+    const note = openSupplierNote("NCC An Phú");
     fireEvent.change(note, { target: { value: "Giao sớm" } });
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
@@ -328,9 +364,7 @@ describe("Supplier decisions", () => {
   });
   it("lets an operator split the seeded default and return to it without losing its note", () => {
     show();
-    const note = screen.getByRole("textbox", {
-      name: "Ghi chú cho NCC An Phú",
-    });
+    const note = openSupplierNote("NCC An Phú");
     fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
     quantity("NCC An Phú", "40");
     click("+ Thêm nhà cung ứng");
@@ -346,9 +380,7 @@ describe("Supplier decisions", () => {
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("100");
-    expect(
-      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-    ).toHaveValue("Giao trước 05:30");
+    expect(openSupplierNote("NCC An Phú")).toHaveValue("Giao trước 05:30");
     expect(
       screen.queryByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
     ).not.toBeInTheDocument();
@@ -365,9 +397,9 @@ describe("Supplier decisions", () => {
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("72");
-    expect(
-      screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-    ).toHaveValue("Rau non, không lấy bó già");
+    expect(openSupplierNote("NCC An Phú")).toHaveValue(
+      "Rau non, không lấy bó già",
+    );
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
     click("Lưu phân bổ");
     expect(onSave).toHaveBeenCalledWith(
@@ -410,15 +442,19 @@ describe("Supplier decisions", () => {
     click("Thêm");
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC Thành Công" }),
-    ).toHaveValue("");
+    ).toHaveFocus();
     expect(
-      screen.getByRole("textbox", { name: "Ghi chú cho NCC Thành Công" }),
+      screen.getByRole("textbox", { name: "Phân bổ NCC Thành Công" }),
     ).toHaveValue("");
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "Ghi chú cho NCC Thành Công" }),
-      { target: { value: "Only this supplier" } },
-    );
+    expect(openSupplierNote("NCC Thành Công")).toHaveValue("");
+    fireEvent.change(openSupplierNote("NCC Thành Công"), {
+      target: { value: "Only this supplier" },
+    });
+    screen.getByRole("button", { name: "Xóa NCC Thành Công" }).focus();
     click("Xóa NCC Thành Công");
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+    ).toHaveFocus();
     expect(
       screen.queryByRole("textbox", { name: "Phân bổ NCC Thành Công" }),
     ).not.toBeInTheDocument();

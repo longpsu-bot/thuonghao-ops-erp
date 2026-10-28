@@ -75,6 +75,9 @@ it.each(["unknown", "retryable_failure"] as const)(
         name: /^(Thay đổi|Phân bổ NCC|Xem phân bổ) Gạo thơm · /,
       }),
     );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Thêm ghi chú cho NCC An Phú" }),
+    );
     fireEvent.change(
       screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
       { target: { value: "Giao trước 05:30" } },
