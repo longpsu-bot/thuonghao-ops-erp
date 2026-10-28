@@ -215,13 +215,22 @@ it("Need returns to Procurement's dirty selected Supplier detail with its note a
     note,
   );
   expect(note).toHaveValue("Giao trước 05:30");
-  expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
+  expect(search).toBeInTheDocument();
+  expect(search).not.toBeVisible();
   expect(search).toHaveValue("Gạo");
   expect(selected).toHaveAttribute("aria-expanded", "true");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(
     screen.getByRole("tab", { name: /Phân bổ NCC.*Chưa lưu/ }),
   ).toBeVisible();
+  expect(h.allocationRead).toHaveBeenCalledOnce();
+  fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Bỏ thay đổi và đóng" }),
+  );
+  expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
+  expect(search).toBeVisible();
+  expect(search).toHaveValue("Gạo");
   expect(h.allocationRead).toHaveBeenCalledOnce();
 }, 15000);
 

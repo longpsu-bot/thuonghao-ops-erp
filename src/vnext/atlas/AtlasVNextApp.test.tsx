@@ -245,6 +245,9 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
   await nav("Phân bổ NCC");
   await screen.findByRole("button", { name: /Xem phân bổ Gạo thơm/ });
   await selectRange("2026-09-07", "2026-09-09");
+  const allocationRange = screen.getByRole("button", {
+    name: "Mở lịch — Khoảng ngày",
+  });
   fireEvent.click(
     await screen.findByRole("button", { name: /Xem phân bổ Gạo thơm/ }),
   );
@@ -273,9 +276,9 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
   expect(
     screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
   ).toHaveValue("Giữ ghi chú của phạm vi đang mở");
-  expect(
-    screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
-  ).toHaveTextContent("07/09/2026 — 09/09/2026");
+  expect(allocationRange).toBeInTheDocument();
+  expect(allocationRange).toHaveTextContent("07/09/2026 — 09/09/2026");
+  expect(allocationRange).not.toBeVisible();
   expect(allocation).toHaveBeenCalledTimes(readsBeforeNavigation);
   expect(save).not.toHaveBeenCalled();
 }, 60000);

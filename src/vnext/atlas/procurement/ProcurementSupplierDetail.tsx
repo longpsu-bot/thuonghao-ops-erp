@@ -61,6 +61,7 @@ export function ProcurementSupplierDetail({
   returnFocusEl?: () => HTMLElement | null;
 }) {
   const quantityContextId = useId();
+  const supplierColumns = "minmax(0, 1fr) 228px minmax(260px, 1.4fr)";
   const eligible = (id: string) =>
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
   const saved = row.splits.filter((split) => eligible(split.supplier_id));
@@ -370,118 +371,148 @@ export function ProcurementSupplierDetail({
         {draft.length === 0 && (
           <Text color="fg.muted">Chưa có nhà cung ứng trong bản nháp.</Text>
         )}
+        {draft.length > 0 && (
+          <Box
+            aria-hidden="true"
+            display={{ base: "none", xl: "grid" }}
+            gridTemplateColumns={supplierColumns}
+            gap="md"
+            pb="xs"
+            borderBottomWidth="var(--atlas-layout-edge, 1px)"
+            borderColor="border.subtle"
+            textStyle="label"
+            color="fg.secondary"
+          >
+            <Text>Nhà cung ứng</Text>
+            <Text>Phân bổ</Text>
+            <Text>Ghi chú cho NCC</Text>
+          </Box>
+        )}
         {draft.map((split) => {
           const supplier = row.eligible_suppliers.find(
             (item) => item.supplier_id === split.supplier_id,
           )!;
           const invalid = parseExactQuantity(split.allocated_quantity) === null;
           return (
-            <Field.Root
+            <Box
               key={split.supplier_id}
-              invalid={invalid}
+              role="group"
+              aria-labelledby={`${quantityContextId}-${split.supplier_id}-supplier`}
               display="grid"
               gridTemplateColumns={{
                 base: "minmax(0, 1fr)",
-                lg: "minmax(0, 1fr) minmax(140px, 180px) minmax(0, 1.4fr)",
+                lg: "minmax(0, 1fr) 228px",
+                xl: supplierColumns,
               }}
-              columnGap="lg"
-              rowGap="xs"
+              alignItems="start"
+              columnGap="md"
+              rowGap="sm"
               pb="md"
               borderBottomWidth="var(--atlas-layout-edge, 1px)"
               borderColor="border.subtle"
             >
-              <Field.Label
-                id={`${quantityContextId}-${split.supplier_id}-supplier`}
-                overflowWrap="anywhere"
-                fontWeight="semibold"
-                gridColumn={{ lg: "1" }}
-                gridRow={{ lg: "1" }}
-              >
-                {supplier.supplier_name}
-              </Field.Label>
-              <Text
-                id={`${quantityContextId}-${split.supplier_id}-baseline`}
-                textStyle="helper"
-                color="fg.muted"
-                gridColumn={{ lg: "1" }}
-                gridRow={{ lg: "2" }}
-              >
-                {saved.some((value) => value.supplier_id === split.supplier_id)
-                  ? "Đã lưu"
-                  : derived?.supplier.supplier_id === split.supplier_id
-                    ? "Mặc định"
-                    : "Dòng mới"}
-                :{" "}
-                {quantity(
-                  baseline.find(
+              <Stack gap="xs">
+                <Text
+                  id={`${quantityContextId}-${split.supplier_id}-supplier`}
+                  overflowWrap="anywhere"
+                  textStyle="label"
+                  fontWeight="semibold"
+                >
+                  {supplier.supplier_name}
+                </Text>
+                <Text
+                  id={`${quantityContextId}-${split.supplier_id}-baseline`}
+                  textStyle="helper"
+                  color="fg.muted"
+                >
+                  {saved.some(
                     (value) => value.supplier_id === split.supplier_id,
-                  )?.allocated_quantity ?? "0",
-                )}{" "}
-                {allocationFamilyUnitLabel(row)}
-              </Text>
-              <Flex
-                gap="xs"
-                w="full"
-                align="center"
-                gridColumn={{ lg: "2" }}
-                gridRow={{ lg: "1 / span 2" }}
-              >
-                <Input
-                  aria-label={`Phân bổ ${supplier.supplier_name}`}
-                  aria-describedby={`${quantityContextId}-need ${quantityContextId}-${split.supplier_id}-supplier ${quantityContextId}-${split.supplier_id}-baseline`}
-                  aria-invalid={invalid}
-                  inputMode="decimal"
-                  textAlign="end"
-                  fontVariantNumeric="tabular-nums"
-                  value={split.allocated_quantity}
-                  disabled={locked}
-                  onChange={(event) =>
-                    setDraft((values) =>
-                      values.map((value) =>
-                        value.supplier_id === split.supplier_id
-                          ? { ...value, allocated_quantity: event.target.value }
-                          : value,
-                      ),
-                    )
-                  }
-                  minW="var(--atlas-layout-zero, 0)"
-                />
-                <Text>{allocationFamilyUnitLabel(row)}</Text>
-                {added.includes(split.supplier_id) && (
-                  <IconButton
-                    size="sm"
-                    variant="tertiary"
-                    aria-label={`Xóa ${supplier.supplier_name}`}
-                    title={`Xóa ${supplier.supplier_name}`}
+                  )
+                    ? "Đã lưu"
+                    : derived?.supplier.supplier_id === split.supplier_id
+                      ? "Mặc định"
+                      : "Dòng mới"}
+                  :{" "}
+                  {quantity(
+                    baseline.find(
+                      (value) => value.supplier_id === split.supplier_id,
+                    )?.allocated_quantity ?? "0",
+                  )}{" "}
+                  {allocationFamilyUnitLabel(row)}
+                </Text>
+              </Stack>
+              <Field.Root invalid={invalid} minW="var(--atlas-layout-zero, 0)">
+                <Field.Label display={{ base: "flex", xl: "none" }}>
+                  Phân bổ
+                </Field.Label>
+                <Box
+                  display="grid"
+                  gridTemplateColumns="minmax(0, 1fr) max-content var(--atlas-layout-mobile-target, 44px)"
+                  gap="xs"
+                  w="full"
+                  alignItems="center"
+                >
+                  <Input
+                    aria-label={`Phân bổ ${supplier.supplier_name}`}
+                    aria-describedby={`${quantityContextId}-need ${quantityContextId}-${split.supplier_id}-supplier ${quantityContextId}-${split.supplier_id}-baseline`}
+                    aria-invalid={invalid}
+                    inputMode="decimal"
+                    textAlign="end"
+                    fontVariantNumeric="tabular-nums"
+                    value={split.allocated_quantity}
                     disabled={locked}
-                    onClick={() =>
+                    onChange={(event) =>
                       setDraft((values) =>
-                        values.filter(
-                          (value) => value.supplier_id !== split.supplier_id,
+                        values.map((value) =>
+                          value.supplier_id === split.supplier_id
+                            ? {
+                                ...value,
+                                allocated_quantity: event.target.value,
+                              }
+                            : value,
                         ),
                       )
                     }
-                    minH={{
-                      base: "var(--atlas-layout-mobile-target, 44px)",
-                      lg: "compact",
-                    }}
-                  >
-                    <Trash aria-hidden="true" />
-                  </IconButton>
+                    minW="var(--atlas-layout-zero, 0)"
+                  />
+                  <Text>{allocationFamilyUnitLabel(row)}</Text>
+                  {added.includes(split.supplier_id) && (
+                    <IconButton
+                      size="sm"
+                      variant="tertiary"
+                      aria-label={`Xóa ${supplier.supplier_name}`}
+                      title={`Xóa ${supplier.supplier_name}`}
+                      disabled={locked}
+                      onClick={() =>
+                        setDraft((values) =>
+                          values.filter(
+                            (value) => value.supplier_id !== split.supplier_id,
+                          ),
+                        )
+                      }
+                      minH={{
+                        base: "var(--atlas-layout-mobile-target, 44px)",
+                        lg: "compact",
+                      }}
+                    >
+                      <Trash aria-hidden="true" />
+                    </IconButton>
+                  )}
+                </Box>
+                {invalid && (
+                  <Field.ErrorText>
+                    Nhập số không âm, tối đa 6 chữ số thập phân.
+                  </Field.ErrorText>
                 )}
-              </Flex>
-              {invalid && (
-                <Field.ErrorText gridColumn={{ lg: "2" }}>
-                  Nhập số không âm, tối đa 6 chữ số thập phân.
-                </Field.ErrorText>
-              )}
+              </Field.Root>
               <Field.Root
-                mt={{ base: "xs", lg: "var(--atlas-layout-zero, 0)" }}
-                gridColumn={{ lg: "3" }}
-                gridRow={{ lg: "1 / span 3" }}
+                minW="var(--atlas-layout-zero, 0)"
+                gridColumn={{ lg: "1 / -1", xl: "3" }}
                 invalid={(split.supplier_note ?? "").length > 500}
               >
-                <Field.Label textStyle="helper">Ghi chú cho NCC</Field.Label>
+                <Field.Label display={{ base: "flex", xl: "none" }}>
+                  Ghi chú cho NCC
+                </Field.Label>
                 <Textarea
                   w="full"
                   minW="var(--atlas-layout-zero, 0)"
@@ -505,7 +536,7 @@ export function ProcurementSupplierDetail({
                   <Field.ErrorText>Tối đa 500 ký tự.</Field.ErrorText>
                 )}
               </Field.Root>
-            </Field.Root>
+            </Box>
           );
         })}
         <Box>

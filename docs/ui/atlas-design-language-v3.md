@@ -160,6 +160,43 @@ Review the matched
 [desktop composition comparison](../testing/artifacts/atlas-sanzo-wada/allocation-layout-review.png)
 and [phone comparison](../testing/artifacts/atlas-sanzo-wada/allocation-phone-review.png).
 
+### Allocation row alignment correction — 28 October 2026
+
+The Owner's screenshot identified a defect missed by the preceding internal
+review: supplier identity, quantity and note controls occupied incompatible grid
+rows. The quantity spanned two rows while the note spanned three, so controls
+started at different heights and repeated labels obscured the column hierarchy.
+
+Wide editors now use one shared column heading and identical tracks for every
+Supplier. Identity and saved baseline form one group; quantity and note controls
+share their top edge. A reserved removal-control track keeps numeric inputs the
+same width for saved and newly added Suppliers. All content shares the selected
+need's left inset. At 1024px the note moves beneath identity and quantity; at
+narrow widths each Supplier is one linear block with local field labels and a
+single divider. No additional enclosure or visual level is introduced.
+
+This correction changes only `ProcurementSupplierDetail.tsx`, affected navigation
+test expectations, this record and review images. Scope controls remain mounted
+and hidden while editing: navigation tests now verify retained values in that
+state and search restoration after guarded close. Supplier-specific accessible
+names, context descriptions, exact quantities, eligibility, Save/exit guards,
+permissions and all backend contracts remain unchanged. There is no migration;
+rollback reverts this frontend/test/docs follow-up.
+
+Browser verification covers 1920, 1440, 1366, 1024, 768, 650, 390 and 360px widths
+without page errors or document overflow. Wide quantity/note top edges match
+exactly. Added-row input widths, invalid quantities, long-name wrapping, keyboard
+order, accessible context and dirty Cancel/Discard pass at 1440, 1024, 390 and
+360px. Save was not invoked. The layout detector reports no findings; the
+independent visual follow-up passes. Physical devices and hosted operational
+workflows remain unchecked; normal full validation belongs to GitHub Actions.
+The 29 Supplier editor tests and both affected navigation regressions pass;
+typecheck, formatting, the vNext boundary and whitespace checks also pass.
+
+Review the [desktop row comparison](../testing/artifacts/atlas-sanzo-wada/allocation-row-alignment.png)
+and [phone row comparison](../testing/artifacts/atlas-sanzo-wada/allocation-row-alignment-phone.png).
+Earlier comparisons preserve their earlier checkpoints.
+
 The remaining color description records the pre-trial v3 baseline.
 
 Stable sRGB primitives in `src/vnext/atlas/system.ts` → semantic tokens → Chakra recipes → components. Applications use meaning, never primitive colors or arbitrary hex values. The existing isolated Atlas Chakra system and provider remain in place.
