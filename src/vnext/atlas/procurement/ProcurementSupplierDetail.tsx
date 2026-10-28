@@ -19,7 +19,6 @@ import {
 } from "@chakra-ui/react";
 import { Info, Trash } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
-import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import type { CSSProperties } from "react";
 import {
   procurementOperatorMessages,
@@ -272,7 +271,7 @@ export function ProcurementSupplierDetail({
       }
       minW="var(--atlas-layout-zero, 0)"
       alignSelf="start"
-      bg="bg.subtle"
+      bg="bg.workbench"
       borderColor="border.subtle"
       borderWidth="var(--atlas-layout-edge, 1px)"
       borderRadius="workbench"
@@ -281,7 +280,7 @@ export function ProcurementSupplierDetail({
         xl: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
       }}
     >
-      <Box p="md" pb="sm" flexShrink="0">
+      <Box id={`${quantityContextId}-need`} p="md" pb="sm" flexShrink="0">
         <Heading
           as="h2"
           textStyle="section"
@@ -309,8 +308,18 @@ export function ProcurementSupplierDetail({
         flexShrink="0"
       >
         {reconciliationQuantity && reconciliationOutcome ? (
-          <Flex aria-label={reconciliation} align="baseline" wrap="wrap">
-            <Text as="span" textStyle="quantityInline" color="fg.default">
+          <Flex
+            aria-label={reconciliation}
+            align="baseline"
+            wrap="wrap"
+            gap="xs"
+          >
+            <Text
+              as="span"
+              textStyle="quantity"
+              fontVariantNumeric="tabular-nums"
+              color="fg.default"
+            >
               {reconciliationQuantity}
             </Text>
             <Text as="span" textStyle="unitInline" color="fg.muted" ml="xs">
@@ -367,20 +376,36 @@ export function ProcurementSupplierDetail({
           )!;
           const invalid = parseExactQuantity(split.allocated_quantity) === null;
           return (
-            <Field.Root key={split.supplier_id} invalid={invalid}>
-              <Field.Label overflowWrap="anywhere">
+            <Field.Root
+              key={split.supplier_id}
+              invalid={invalid}
+              display="grid"
+              gridTemplateColumns={{
+                base: "minmax(0, 1fr)",
+                lg: "minmax(0, 1fr) minmax(140px, 180px) minmax(0, 1.4fr)",
+              }}
+              columnGap="lg"
+              rowGap="xs"
+              pb="md"
+              borderBottomWidth="var(--atlas-layout-edge, 1px)"
+              borderColor="border.subtle"
+            >
+              <Field.Label
+                id={`${quantityContextId}-${split.supplier_id}-supplier`}
+                overflowWrap="anywhere"
+                fontWeight="semibold"
+                gridColumn={{ lg: "1" }}
+                gridRow={{ lg: "1" }}
+              >
                 {supplier.supplier_name}
               </Field.Label>
-              <AtlasQuantityContext
-                id={`${quantityContextId}-${split.supplier_id}`}
-                recipient={recipient.primary}
-                location={recipient.secondary ?? undefined}
-                ingredient={row.ingredient_name}
-                date={row.service_date}
-                unit={allocationFamilyUnitLabel(row)}
-                source={supplier.supplier_name}
-              />
-              <Text textStyle="helper" color="fg.muted">
+              <Text
+                id={`${quantityContextId}-${split.supplier_id}-baseline`}
+                textStyle="helper"
+                color="fg.muted"
+                gridColumn={{ lg: "1" }}
+                gridRow={{ lg: "2" }}
+              >
                 {saved.some((value) => value.supplier_id === split.supplier_id)
                   ? "Đã lưu"
                   : derived?.supplier.supplier_id === split.supplier_id
@@ -394,12 +419,20 @@ export function ProcurementSupplierDetail({
                 )}{" "}
                 {allocationFamilyUnitLabel(row)}
               </Text>
-              <Flex gap="xs" w="full" align="center">
+              <Flex
+                gap="xs"
+                w="full"
+                align="center"
+                gridColumn={{ lg: "2" }}
+                gridRow={{ lg: "1 / span 2" }}
+              >
                 <Input
                   aria-label={`Phân bổ ${supplier.supplier_name}`}
-                  aria-describedby={`${quantityContextId}-${split.supplier_id}`}
+                  aria-describedby={`${quantityContextId}-need ${quantityContextId}-${split.supplier_id}-supplier ${quantityContextId}-${split.supplier_id}-baseline`}
                   aria-invalid={invalid}
                   inputMode="decimal"
+                  textAlign="end"
+                  fontVariantNumeric="tabular-nums"
                   value={split.allocated_quantity}
                   disabled={locked}
                   onChange={(event) =>
@@ -438,12 +471,14 @@ export function ProcurementSupplierDetail({
                 )}
               </Flex>
               {invalid && (
-                <Field.ErrorText>
+                <Field.ErrorText gridColumn={{ lg: "2" }}>
                   Nhập số không âm, tối đa 6 chữ số thập phân.
                 </Field.ErrorText>
               )}
               <Field.Root
-                mt="xs"
+                mt={{ base: "xs", lg: "var(--atlas-layout-zero, 0)" }}
+                gridColumn={{ lg: "3" }}
+                gridRow={{ lg: "1 / span 3" }}
                 invalid={(split.supplier_note ?? "").length > 500}
               >
                 <Field.Label textStyle="helper">Ghi chú cho NCC</Field.Label>

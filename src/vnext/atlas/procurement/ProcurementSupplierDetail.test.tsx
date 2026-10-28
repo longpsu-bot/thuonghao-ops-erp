@@ -188,6 +188,12 @@ describe("Supplier decisions", () => {
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveAccessibleDescription(/NCC An Phú/);
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveAccessibleDescription(/Gạo thơm.*Nguyễn Du.*NCC An Phú.*60 kg/);
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+    ).toHaveAccessibleDescription(/Gạo thơm.*Nguyễn Du.*NCC Bình Minh.*40 kg/);
     quantity("NCC An Phú", "59.999999");
     expect(
       screen.getByRole("status", { name: "Cân đối phân bổ" }),

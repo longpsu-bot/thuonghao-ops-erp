@@ -120,6 +120,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     props.schools ?? [],
   );
   const rowTrigger = useRef<HTMLButtonElement | null>(null);
+  const restoreRowFocus = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const compactFilters = useRef<HTMLDivElement>(null);
   const compactFilterTrigger = useRef<HTMLButtonElement>(null);
@@ -135,6 +136,12 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     }
     previousStage.current = controller.stage;
   }, [controller.stage]);
+  useEffect(() => {
+    if (!selectedKey && restoreRowFocus.current) {
+      restoreRowFocus.current = false;
+      rowTrigger.current?.focus();
+    }
+  }, [selectedKey]);
   useEffect(() => {
     if (props.schools) {
       setCatalogue(props.schools);
@@ -200,8 +207,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     },
   }));
   const closeDetail = () => {
+    restoreRowFocus.current = true;
     setSelectedKey(null);
-    rowTrigger.current?.focus();
   };
   const preparation = controller.allocation?.preparation;
   const multiDay = controller.date !== controller.dateEnd;
@@ -362,7 +369,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               </Box>
             )}
             <AtlasWorkbar
-              display="grid"
+              display={selected ? "none" : "grid"}
               role="group"
               aria-label="Phạm vi mua hàng"
               bg="bg.toolbar"
@@ -619,14 +626,26 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                       templateColumns={{
                         base: "minmax(0, 1fr)",
                         lg: selected
-                          ? "minmax(0, 1fr) minmax(360px, 420px)"
+                          ? "var(--atlas-allocation-directory-width, 340px) minmax(0, 1fr)"
                           : "minmax(0, 1fr)",
                       }}
                     >
                       <ProcurementAllocationTable
                         tools={
-                          <>
-                            <Text textStyle="helper" color="fg.muted">
+                          <Flex
+                            role="group"
+                            aria-label="Tổng hợp và lệnh mua hàng"
+                            flex="1"
+                            minW="var(--atlas-layout-zero, 0)"
+                            align="center"
+                            gap="sm"
+                            wrap="wrap"
+                          >
+                            <Text
+                              textStyle="helper"
+                              color="fg.muted"
+                              flex={{ base: "0 1 auto", md: "1" }}
+                            >
                               Cần xử lý{" "}
                               {
                                 rows.filter(
@@ -644,60 +663,72 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                                 ).length
                               }
                             </Text>
-                            {canPrepare && (
-                              <Box maxW="var(--atlas-layout-preparation-help-width, 520px)">
-                                <Button
-                                  variant="businessPrimary"
-                                  aria-describedby={`${ownerId}-preparation-help`}
-                                  onClick={() =>
-                                    void controller.prepare(Boolean(selected))
-                                  }
-                                >
-                                  Chuẩn bị đơn mua
-                                </Button>
-                                <Text
-                                  id={`${ownerId}-preparation-help`}
-                                  textStyle="helper"
-                                  color="fg.muted"
-                                  mt="xs"
-                                >
-                                  Có thể chốt nhu cầu, chuyển sang Thu mua và
-                                  tạo hoặc cập nhật đơn mua nháp. Chỉ Phát hành
-                                  đơn mua mới cam kết với nhà cung ứng.
-                                </Text>
-                              </Box>
-                            )}
-                            {multiDay && (
-                              <Text textStyle="helper" color="fg.muted">
-                                Chọn 1 ngày để chuẩn bị đơn mua.
-                              </Text>
-                            )}
-                            {props.ownerStage === "allocation" &&
-                              props.onOpenOrders && (
-                                <Button
-                                  variant="secondary"
-                                  disabled={
-                                    Boolean(selected) ||
-                                    controller.busy ||
-                                    Boolean(controller.rangeError)
-                                  }
-                                  onClick={controller.openOrders}
-                                >
-                                  Xem đơn mua
-                                </Button>
+                            <Flex
+                              minW="var(--atlas-layout-zero, 0)"
+                              align={{ base: "stretch", md: "center" }}
+                              gap="sm"
+                              wrap="wrap"
+                              flex={{ base: "0 1 auto", md: "initial" }}
+                            >
+                              {canPrepare && (
+                                <Box maxW="var(--atlas-layout-preparation-help-width, 520px)">
+                                  <Button
+                                    variant="businessPrimary"
+                                    aria-describedby={`${ownerId}-preparation-help`}
+                                    onClick={() =>
+                                      void controller.prepare(Boolean(selected))
+                                    }
+                                  >
+                                    Chuẩn bị đơn mua
+                                  </Button>
+                                  <Text
+                                    id={`${ownerId}-preparation-help`}
+                                    textStyle="helper"
+                                    color="fg.muted"
+                                    mt="xs"
+                                  >
+                                    Có thể chốt nhu cầu, chuyển sang Thu mua và
+                                    tạo hoặc cập nhật đơn mua nháp. Chỉ Phát
+                                    hành đơn mua mới cam kết với nhà cung ứng.
+                                  </Text>
+                                </Box>
                               )}
+                              {multiDay && (
+                                <Text textStyle="helper" color="fg.muted">
+                                  Chọn 1 ngày để chuẩn bị đơn mua.
+                                </Text>
+                              )}
+                              {props.ownerStage === "allocation" &&
+                                props.onOpenOrders && (
+                                  <Button
+                                    variant="secondary"
+                                    disabled={
+                                      Boolean(selected) ||
+                                      controller.busy ||
+                                      Boolean(controller.rangeError)
+                                    }
+                                    onClick={controller.openOrders}
+                                  >
+                                    Xem đơn mua
+                                  </Button>
+                                )}
+                            </Flex>
                             {!selected &&
                               !multiDay &&
                               !(preparation?.ready && preparation.allowed) &&
                               preparation && (
-                                <Text textStyle="helper" color="status.warning">
+                                <Text
+                                  textStyle="helper"
+                                  color="status.warning"
+                                  width="full"
+                                >
                                   {procurementOperatorMessages(
                                     preparation.blockers,
                                     "Hoàn tất phân bổ trước khi lên đơn.",
                                   ).join(" ")}
                                 </Text>
                               )}
-                          </>
+                          </Flex>
                         }
                         rows={visible}
                         showServiceDate={multiDay}

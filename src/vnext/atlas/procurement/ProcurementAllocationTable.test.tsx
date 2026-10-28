@@ -58,7 +58,52 @@ function visibleIssues() {
     );
 }
 
+function openSorts() {
+  const disclosure = screen.getByRole("button", { name: "Sắp xếp" });
+  if (disclosure.getAttribute("aria-expanded") === "false")
+    fireEvent.click(disclosure);
+}
+
 describe("Procurement allocation issue sorting", () => {
+  it("labels each narrow record field while keeping every sort action available", () => {
+    render(
+      <AtlasVNextProvider>
+        <ProcurementAllocationTable
+          rows={[row("first", "Bí đỏ", "UNALLOCATED", "2")]}
+          selectedKey={null}
+          disabled={false}
+          onSelect={() => {}}
+        />
+      </AtlasVNextProvider>,
+    );
+
+    openSorts();
+    const record = screen.getByText("Bí đỏ").closest("tr")!;
+    for (const [cell, label] of [
+      ["recipient", "Trường / điểm giao"],
+      ["ingredient", "Nguyên liệu"],
+      ["quantity", "Nhu cầu"],
+      ["supplier", "Nhà cung ứng"],
+      ["issue", "Tình trạng / vấn đề"],
+    ] as const)
+      expect(
+        within(
+          record.querySelector(`[data-allocation-${cell}-cell]`)!,
+        ).getByText(label),
+      ).toBeInTheDocument();
+
+    for (const label of [
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+    ])
+      expect(
+        screen.getByRole("button", { name: `Sắp xếp theo ${label}` }),
+      ).toBeEnabled();
+  });
+
   it("keeps all five sort actions reachable, resets canonical order and returns the exact family", () => {
     const first = row(
       "first",
@@ -77,6 +122,7 @@ describe("Procurement allocation issue sorting", () => {
         />
       </AtlasVNextProvider>,
     );
+    openSorts();
     for (const label of [
       "Trường / điểm giao",
       "Nguyên liệu",
@@ -128,6 +174,7 @@ describe("Procurement allocation issue sorting", () => {
         />
       </AtlasVNextProvider>,
     );
+    openSorts();
     expect(
       screen.getByRole("button", { name: "Sắp xếp theo Nguyên liệu" }),
     ).toBeVisible();
@@ -184,6 +231,7 @@ describe("Procurement allocation issue sorting", () => {
       </AtlasVNextProvider>,
     );
 
+    openSorts();
     expect(visibleIssues()).toEqual(["Thiếu 1 kg", "Chưa phân bổ", "Đủ"]);
     const sort = screen.getByRole("button", {
       name: "Sắp xếp theo Tình trạng / vấn đề",
@@ -229,6 +277,7 @@ describe("Procurement allocation issue sorting", () => {
       </AtlasVNextProvider>,
     );
 
+    openSorts();
     const table = screen.getByRole("table", { name: "Phân bổ nhà cung ứng" });
     expect(
       within(table)

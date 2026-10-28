@@ -97,6 +97,69 @@ distribution finding is fixed and its follow-up review has no remaining findings
 Physical iOS/Android text rendering and focus zoom, hosted workflows and exports
 were not re-certified. Full routine validation remains owned by GitHub Actions.
 
+### Allocation composition follow-up — 28 October 2026
+
+The Owner rejected cosmetic type/layout changes as too generic and requested a
+more purposeful design pass. Supplier Allocation is the bounded reference screen:
+the composition must explain which confirmed need is selected, how its exact
+quantity is distributed, and where the current action belongs.
+
+The existing selected layout gave most width to a directory while squeezing the
+allocation editor into 360–420px. The new desktop composition assigns 340px to
+the need directory and the remaining width to the allocation workplane. Supplier
+identity, exact quantity and notes align in columns. The existing reconciliation
+quantity uses the larger quantity role so it leads the decision; supporting
+location/date and notes retain quieter typography. The working plane is white;
+selection and structural dividers carry the visual distinctions.
+
+The non-scrolling selected-need header owns the common Ingredient, School,
+location and date once. Supplier rows no longer repeat that whole block on a
+phone. Each quantity keeps its own visible Supplier, saved baseline and Unit;
+its accessible description references the common header plus those individual
+facts. Both suppliers' full descriptions are covered by focused assertions and
+rendered ID/visibility checks. No quantity context is inferred or dropped.
+
+On phones the selected editor occupies the working area and Close returns to the
+list. The list uses explicit stacked field labels and discoverable sorting
+instead of presenting clipped desktop columns. Counts and existing commands are
+grouped into one command strip. These changes are a bounded supersession of the
+old Allocation presentation, not a new workflow or a redesign of other owners.
+
+The already-locked scope toolbar remains mounted but leaves the composition while
+editing; Close restores it and returns focus to the original row after rendering.
+On phones the sort disclosure exposes all five existing three-state sort axes
+without permanently displacing the record with a second control band.
+
+Scope is the Allocation workbench/table/editor presentation, directly affected
+tests and review artifacts. Existing commands, exact arithmetic, supplier
+eligibility, statuses, dirty/exit/Save guards, focus restoration and source facts
+remain authoritative. No new visual metrics, lifecycle, business action, API,
+dependency, data write or Warehouse work is introduced. Earlier UI records remain
+historical. The normal desktop allocation list retains its table density.
+
+The synthetic fixture currently shows an aggregate mismatch warning alongside a
+balanced row, and its workbench date and selected source date differ. Presentation
+must preserve those displayed facts; this visual pass does not reconcile them or
+claim hosted operational evidence. Rollback reverts this frontend/docs follow-up;
+there is no migration. Draft review remains the endpoint, without merge or manual
+deployment authorization.
+
+Verification: 70 focused Allocation table/workbench/supplier-detail tests,
+typecheck, formatting, boundary and whitespace checks pass. Rendered list,
+selected and balanced-draft views pass at the six typography review sizes;
+additional 768px and 1024px breakpoint checks pass. The existing 60/40 fixture
+baseline was locally edited to 55/45 without Save: the balance stays 100/100,
+Cancel retains the draft, and Discard/Close restores exact row focus and scope
+controls. Sort disclosure visibility and all five ascending/descending/default
+cycles pass in the browser. No page errors or document-level overflow were found.
+At 1440px the selected editor is 1042px wide beside the 340px directory.
+Independent visual finish review found no material issues. Physical phones,
+hosted workflows and live-data density are not certified by these fixtures.
+
+Review the matched
+[desktop composition comparison](../testing/artifacts/atlas-sanzo-wada/allocation-layout-review.png)
+and [phone comparison](../testing/artifacts/atlas-sanzo-wada/allocation-phone-review.png).
+
 The remaining color description records the pre-trial v3 baseline.
 
 Stable sRGB primitives in `src/vnext/atlas/system.ts` → semantic tokens → Chakra recipes → components. Applications use meaning, never primitive colors or arbitrary hex values. The existing isolated Atlas Chakra system and provider remain in place.

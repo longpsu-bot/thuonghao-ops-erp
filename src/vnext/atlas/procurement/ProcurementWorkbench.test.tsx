@@ -62,6 +62,15 @@ const openFilters = () => {
   if (disclosure.getAttribute("aria-expanded") === "false")
     fireEvent.click(disclosure);
 };
+const openAllocationSorts = () => {
+  const disclosure = screen.getByRole("button", { name: "Sắp xếp" });
+  if (disclosure.getAttribute("aria-expanded") === "false")
+    fireEvent.click(disclosure);
+};
+const workbar = () =>
+  document.querySelector<HTMLElement>("[data-atlas-workbar]")!;
+const workbarControl = <Element extends HTMLElement>(selector: string) =>
+  workbar().querySelector<Element>(selector)!;
 describe("Procurement vNext operator workbench", () => {
   it("guards a retained dirty allocation before applying the continued School/date context", async () => {
     const fixture = createProcurementReviewFixture("manual_split");
@@ -422,10 +431,11 @@ describe("Procurement vNext operator workbench", () => {
     });
     fireEvent.click(disclosure);
     fireEvent.click(await action());
-    expect(disclosure).toBeEnabled();
-    fireEvent.click(disclosure);
-    expect(disclosure).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("combobox", { name: "Ngoại lệ" })).toBeDisabled();
+    expect(workbar()).not.toBeVisible();
+    expect(disclosure).not.toBeVisible();
+    expect(
+      workbarControl<HTMLSelectElement>('select[aria-label="Ngoại lệ"]'),
+    ).toBeDisabled();
   });
 
   it("tabs from the expanded 390px filter trigger into revealed controls", async () => {
@@ -501,7 +511,7 @@ describe("Procurement vNext operator workbench", () => {
   });
 
   it.each(["busy", "locked", "selected"] as const)(
-    "keeps the 390px onward path reversible when Procurement is %s",
+    "collapses but retains the locked 390px scope controls when Procurement is %s",
     async (state) => {
       Object.defineProperty(window, "innerWidth", {
         configurable: true,
@@ -537,24 +547,15 @@ describe("Procurement vNext operator workbench", () => {
       }
       if (state === "locked")
         await screen.findByRole("button", { name: "Tải lại để xác nhận" });
-      await waitFor(() =>
-        expect(
-          screen.getByRole("button", { name: "Làm mới dữ liệu" }),
-        ).toBeDisabled(),
-      );
-
-      const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
-      fireEvent.click(disclosure);
-      disclosure.focus();
-      await userEvent.tab();
-      expect(disclosure).not.toHaveFocus();
-      const onward = document.activeElement as HTMLElement;
+      await waitFor(() => expect(workbar()).not.toBeVisible());
       expect(
-        disclosure.compareDocumentPosition(onward) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-      await userEvent.tab({ shift: true });
-      expect(disclosure).toHaveFocus();
+        workbarControl<HTMLButtonElement>(
+          'button[aria-label="Làm mới dữ liệu"]',
+        ),
+      ).toBeDisabled();
+      expect(
+        screen.getByRole("region", { name: "Phân bổ Gạo thơm" }),
+      ).toBeVisible();
     },
   );
 
@@ -588,11 +589,14 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(await action());
     const input = screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" });
     fireEvent.change(input, { target: { value: "48,500001" } });
+    expect(workbar()).not.toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Mở lịch — Khoảng ngày" }),
+      workbarControl<HTMLButtonElement>(
+        'button[aria-label="Mở lịch — Khoảng ngày"]',
+      ),
     ).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "Tất cả trường" }),
+      workbarControl<HTMLButtonElement>('button[title="Tất cả trường"]'),
     ).toBeDisabled();
     const orders = screen.getByRole("tab", { name: "Đơn mua" });
     expect(orders).toBeDisabled();
@@ -601,10 +605,14 @@ describe("Procurement vNext operator workbench", () => {
       "aria-selected",
       "true",
     );
-    expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Ngoại lệ" })).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+      workbarControl<HTMLInputElement>('input[aria-label="Tìm kiếm"]'),
+    ).toBeDisabled();
+    expect(
+      workbarControl<HTMLSelectElement>('select[aria-label="Ngoại lệ"]'),
+    ).toBeDisabled();
+    expect(
+      workbarControl<HTMLButtonElement>('button[aria-label="Làm mới dữ liệu"]'),
     ).toBeDisabled();
     expect(read).toHaveBeenCalledTimes(1);
     expect(poRead).not.toHaveBeenCalled();
@@ -755,7 +763,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(screen.getByText(/Chưa xác nhận kết quả/)).toBeVisible();
     expect(recovery).toBeEnabled();
     expect(
-      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+      workbarControl<HTMLButtonElement>('button[aria-label="Làm mới dữ liệu"]'),
     ).toBeDisabled();
     expect(
       screen.queryByRole("button", { name: "Lưu phân bổ" }),
@@ -796,6 +804,7 @@ describe("Procurement vNext operator workbench", () => {
     const table = screen.getByRole("table", {
       name: "Phân bổ nhà cung ứng",
     });
+    openAllocationSorts();
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
@@ -916,9 +925,22 @@ describe("Procurement vNext operator workbench", () => {
       background: "var(--atlas-colors-bg-selected)",
     });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(trigger).toBeDisabled();
     expect(row.querySelector("[data-selection-indicator]")).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     expect(trigger).toHaveFocus();
+    expect(trigger).toBeEnabled();
+    openAllocationSorts();
+    for (const label of [
+      "Trường / điểm giao",
+      "Nguyên liệu",
+      "Nhu cầu",
+      "Nhà cung ứng",
+      "Tình trạng / vấn đề",
+    ])
+      expect(
+        screen.getByRole("button", { name: `Sắp xếp theo ${label}` }),
+      ).toBeEnabled();
   });
   it("discard/reopen restores the authoritative draft", async () => {
     show("manual_split");
@@ -1063,8 +1085,12 @@ describe("Procurement vNext operator workbench", () => {
       "preparePurchaseOrders",
     );
     const trigger = await action();
+    const commandStrip = screen.getByRole("group", {
+      name: "Tổng hợp và lệnh mua hàng",
+    });
+    expect(commandStrip).toHaveTextContent("Cần xử lý 0 · Đã đủ 1");
     expect(
-      screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+      within(commandStrip).getByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).toBeEnabled();
     expect(
       screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
@@ -1097,7 +1123,7 @@ describe("Procurement vNext operator workbench", () => {
     ).toBeEnabled();
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+      workbarControl<HTMLButtonElement>('button[aria-label="Làm mới dữ liệu"]'),
     ).toBeDisabled();
     expect(save).toHaveBeenCalledTimes(1);
   });
