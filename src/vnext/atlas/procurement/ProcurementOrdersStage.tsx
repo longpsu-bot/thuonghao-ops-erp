@@ -19,6 +19,7 @@ import {
 } from "../bridges/procurement";
 import { formatExactQuantityForOperator as quantity } from "./procurementExactQuantity";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
+import { ProcurementNotice } from "./ProcurementNotice";
 import {
   ProcurementPxkImpact,
   type ProcurementPxkImpactProps,
@@ -302,18 +303,20 @@ export function ProcurementOrdersStage({
         )}
       </Box>
       {exportError && (
-        <Text px="md" pb="sm" role="alert" color="status.danger">
+        <ProcurementNotice tone="danger" role="alert" mx="md" mb="sm">
           {exportError}
-        </Text>
+        </ProcurementNotice>
       )}
-      {procurementOperatorMessages(
-        [...(data?.blockers ?? []), ...(data?.warnings ?? [])],
-        "Có điều kiện cần kiểm tra trước khi tiếp tục.",
-      ).map((message) => (
-        <Text key={message} px="md" pb="sm" color="status.warning">
-          ⚠ {message}
-        </Text>
-      ))}
+      {Boolean(data?.blockers?.length || data?.warnings?.length) && (
+        <ProcurementNotice mx="md" mb="sm">
+          {procurementOperatorMessages(
+            [...(data?.blockers ?? []), ...(data?.warnings ?? [])],
+            "Có điều kiện cần kiểm tra trước khi tiếp tục.",
+          ).map((message) => (
+            <Text key={message}>{message}</Text>
+          ))}
+        </ProcurementNotice>
+      )}
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
@@ -400,8 +403,7 @@ export function ProcurementOrdersStage({
                 <Text>{order.lines.length} dòng</Text>
               </Flex>
               <Text
-                textStyle="helper"
-                fontWeight="normal"
+                textStyle="label"
                 color={
                   [
                     "DRAFT_STALE",
@@ -409,7 +411,7 @@ export function ProcurementOrdersStage({
                     "CANCELLATION_REQUIRED",
                   ].includes(order.commitment_state)
                     ? "status.warning"
-                    : "fg.muted"
+                    : "fg.secondary"
                 }
               >
                 {stateLabel[order.commitment_state]}
@@ -487,7 +489,21 @@ export function ProcurementOrdersStage({
                     {selected.supplier.supplier_name}
                   </Heading>
                   <Text color="fg.muted" textStyle="helper" mt="xs">
-                    Ngày dùng {dateLabel(selected.service_date)} ·{" "}
+                    Ngày dùng {dateLabel(selected.service_date)}
+                  </Text>
+                  <Text
+                    textStyle="label"
+                    mt="xs"
+                    color={
+                      [
+                        "DRAFT_STALE",
+                        "REPLACEMENT_REQUIRED",
+                        "CANCELLATION_REQUIRED",
+                      ].includes(selected.commitment_state)
+                        ? "status.warning"
+                        : "fg.secondary"
+                    }
+                  >
                     {stateLabel[selected.commitment_state]}
                   </Text>
                 </Box>
@@ -583,28 +599,35 @@ export function ProcurementOrdersStage({
               minH="var(--atlas-layout-zero, 0)"
               flex="1"
             >
-              {selected.commitment_state === "DRAFT_STALE" && (
-                <Text color="status.warning">
-                  ⚠ Bản nháp cần tạo lại theo phân bổ hiện tại trước khi phát
-                  hành.
-                </Text>
+              {([
+                "DRAFT_STALE",
+                "REPLACEMENT_REQUIRED",
+                "CANCELLATION_REQUIRED",
+              ].includes(selected.commitment_state) ||
+                messages.length > 0) && (
+                <ProcurementNotice>
+                  {selected.commitment_state === "DRAFT_STALE" && (
+                    <Text>
+                      Bản nháp cần tạo lại theo phân bổ hiện tại trước khi phát
+                      hành.
+                    </Text>
+                  )}
+                  {selected.commitment_state === "REPLACEMENT_REQUIRED" && (
+                    <Text>
+                      Đơn đã phát hành được giữ nguyên. Tạo và kiểm tra đơn thay
+                      thế đầy đủ.
+                    </Text>
+                  )}
+                  {selected.commitment_state === "CANCELLATION_REQUIRED" && (
+                    <Text>
+                      Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.
+                    </Text>
+                  )}
+                  {messages.map((message) => (
+                    <Text key={message}>{message}</Text>
+                  ))}
+                </ProcurementNotice>
               )}
-              {selected.commitment_state === "REPLACEMENT_REQUIRED" && (
-                <Text color="status.warning">
-                  ⚠ Đơn đã phát hành được giữ nguyên. Tạo và kiểm tra đơn thay
-                  thế đầy đủ.
-                </Text>
-              )}
-              {selected.commitment_state === "CANCELLATION_REQUIRED" && (
-                <Text color="status.warning">
-                  ⚠ Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.
-                </Text>
-              )}
-              {messages.map((message) => (
-                <Text key={message} color="status.warning">
-                  ⚠ {message}
-                </Text>
-              ))}
               {schoolDispatchApi && (
                 <ProcurementPxkImpact
                   api={schoolDispatchApi}

@@ -14,6 +14,16 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 ## Current workspace amendment — 8 October 2026
 
+**Procurement readability — 25 October 2026:** The bounded
+[review and implementation record](atlas-ui-readability-review-2026-10-25.md)
+promotes PO state in the supplier rail and selected header to the existing 14px
+semibold role, keeping date/number metadata at 13px. Related PO/Allocation
+guidance uses the existing warning anatomy; range/read/export failures use the
+existing danger anatomy. Message meaning, live-region roles, recovery controls,
+actions, permissions, quantities and API contracts remain unchanged. Fixture
+checks cover five viewport widths, normal/stale/error states and search/focus
+recovery. No migration or hosted rollout is included.
+
 **Optional additions — 23 October 2026:** The Owner approved removal of the
 recurring weekly no-additions checkbox and its bulk-clear transition. Untouched
 empty weeks need no action. Row removal still shows the saved quantity in review
