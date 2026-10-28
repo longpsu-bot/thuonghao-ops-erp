@@ -1,0 +1,37 @@
+[
+  {
+    "width": 1366,
+    "facts": ["14px", "14px", "14px", "14px", "14px"],
+    "overflow": 0
+  },
+  {
+    "width": 1440,
+    "facts": ["14px", "14px", "14px", "14px", "14px"],
+    "overflow": 0
+  },
+  {
+    "width": 1920,
+    "facts": ["14px", "14px", "14px", "14px", "14px"],
+    "overflow": 0
+  },
+  {
+    "width": 360,
+    "facts": ["13px", "13px", "13px", "13px", "13px"],
+    "overflow": 0
+  },
+  {
+    "desktopSchoolLabelVisible": true,
+    "instructionVisible": true,
+    "addInitiallyDisabled": true
+  },
+  {
+    "addEnabledAfterSchool": true
+  },
+  {
+    "pantryNarrowPixelsEqual": true,
+    "narrowViewport": {
+      "width": 360,
+      "height": 800
+    }
+  }
+]

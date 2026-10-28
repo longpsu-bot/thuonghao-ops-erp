@@ -1,0 +1,65 @@
+[
+  {
+    "case": "desktop-reason",
+    "width": 1366,
+    "topHit": true,
+    "bottomHit": true,
+    "rect": {
+      "x": 953,
+      "y": 598.75,
+      "width": 387,
+      "height": 60,
+      "top": 598.75,
+      "right": 1340,
+      "bottom": 658.75,
+      "left": 953
+    }
+  },
+  {
+    "case": "desktop-reason",
+    "width": 1440,
+    "topHit": true,
+    "bottomHit": true,
+    "rect": {
+      "x": 1027,
+      "y": 675.75,
+      "width": 387,
+      "height": 60,
+      "top": 675.75,
+      "right": 1414,
+      "bottom": 735.75,
+      "left": 1027
+    }
+  },
+  {
+    "case": "desktop-reason",
+    "width": 1920,
+    "topHit": true,
+    "bottomHit": true,
+    "rect": {
+      "x": 1507,
+      "y": 675.75,
+      "width": 387,
+      "height": 60,
+      "top": 675.75,
+      "right": 1894,
+      "bottom": 735.75,
+      "left": 1507
+    }
+  },
+  {
+    "case": "pxk-loading",
+    "expected": true,
+    "falseZero": false
+  },
+  {
+    "case": "pxk-error",
+    "expected": true,
+    "falseZero": false
+  },
+  {
+    "case": "pxk-ready",
+    "expected": true,
+    "falseZero": false
+  }
+]

@@ -84,7 +84,7 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
               <Text as="dt" textStyle="helper" color="fg.muted">
                 {label}
               </Text>
-              <Text as="dd" textStyle="helper">
+              <Text as="dd" textStyle={{ base: "helper", lg: "body" }}>
                 {value}
               </Text>
             </Box>
@@ -99,10 +99,10 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
           {unit ?? ""}
         </Text>
       )}
-      <Text mt="sm" textStyle="helper">
+      <Text mt="sm" textStyle={{ base: "helper", lg: "body" }}>
         {periodLabel(r.effective_from, r.effective_to)}
       </Text>
-      <Text mt="xs" textStyle="helper">
+      <Text mt="xs" textStyle={{ base: "helper", lg: "label" }}>
         {temporalLabels[row.temporal_state]}
       </Text>
       <Text mt="sm">{r.reason_note}</Text>

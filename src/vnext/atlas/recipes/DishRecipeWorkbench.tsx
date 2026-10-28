@@ -5,10 +5,12 @@ import {
   Flex,
   Grid,
   Heading,
+  Icon,
   Input,
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useImperativeHandle, type Ref } from "react";
 import type { RecipeJobHandle } from "./useChangeOrderWorkbench";
 import {
@@ -170,13 +172,30 @@ export function DishRecipeWorkbench(
       </AtlasWorkbarActions>
     </AtlasWorkbar>
   );
+  const readFailure = Boolean(c.error && !c.lock);
   const feedback = !modal && (c.notice || c.error) && (
-    <Box py="sm" role={c.lock || c.error ? "alert" : "status"}>
+    <Box
+      py="sm"
+      role={c.lock || c.error ? "alert" : "status"}
+      layerStyle={readFailure ? { lg: "feedbackDanger" } : undefined}
+      px={readFailure ? { lg: "sm" } : undefined}
+    >
       <Text
         color={
           c.lock ? "status.warning" : c.error ? "status.danger" : "fg.default"
         }
       >
+        {readFailure && (
+          <Icon
+            asChild
+            display={{ base: "none", lg: "inline-flex" }}
+            boxSize="5"
+            mr="sm"
+            verticalAlign="text-bottom"
+          >
+            <WarningCircle aria-hidden="true" />
+          </Icon>
+        )}
         {c.notice ?? c.error}
       </Text>
       {(c.lock || c.error) && (

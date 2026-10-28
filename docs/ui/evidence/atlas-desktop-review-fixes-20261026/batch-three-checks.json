@@ -1,0 +1,147 @@
+[
+  {
+    "id": "planning",
+    "width": 1366,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "planning",
+    "width": 1440,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "planning",
+    "width": 1920,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "planning",
+    "narrowPixelsEqual": true,
+    "narrowViewport": {
+      "width": 360,
+      "height": 800
+    }
+  },
+  {
+    "id": "attendance",
+    "width": 1366,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "attendance",
+    "width": 1440,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "attendance",
+    "width": 1920,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "attendance",
+    "narrowPixelsEqual": true,
+    "narrowViewport": {
+      "width": 360,
+      "height": 800
+    }
+  },
+  {
+    "id": "pantry",
+    "width": 1366,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "pantry",
+    "width": 1440,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "pantry",
+    "width": 1920,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "pantry",
+    "narrowPixelsEqual": true,
+    "narrowViewport": {
+      "width": 360,
+      "height": 800
+    }
+  },
+  {
+    "id": "recipes",
+    "width": 1366,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "recipes",
+    "width": 1440,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "recipes",
+    "width": 1920,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "recipes",
+    "narrowPixelsEqual": true,
+    "narrowViewport": {
+      "width": 360,
+      "height": 800
+    }
+  },
+  {
+    "id": "reconciliation",
+    "width": 1366,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "reconciliation",
+    "width": 1440,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "reconciliation",
+    "width": 1920,
+    "border": "3px",
+    "icon": true,
+    "overflow": 0
+  },
+  {
+    "id": "reconciliation",
+    "narrowPixelsEqual": true,
+    "narrowViewport": {
+      "width": 360,
+      "height": 800
+    }
+  }
+]

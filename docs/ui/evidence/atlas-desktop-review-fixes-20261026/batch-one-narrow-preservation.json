@@ -1,0 +1,41 @@
+{
+  "measurements": [
+    {
+      "name": "before",
+      "measure": {
+        "textarea": {
+          "x": 27,
+          "y": 650.125,
+          "width": 307,
+          "height": 60,
+          "top": 650.125,
+          "right": 334,
+          "bottom": 710.125,
+          "left": 27
+        },
+        "form": "block"
+      }
+    },
+    {
+      "name": "after",
+      "measure": {
+        "textarea": {
+          "x": 27,
+          "y": 650.125,
+          "width": 307,
+          "height": 60,
+          "top": 650.125,
+          "right": 334,
+          "bottom": 710.125,
+          "left": 27
+        },
+        "form": "block"
+      }
+    }
+  ],
+  "pixelsEqual": true,
+  "narrowViewport": {
+    "width": 360,
+    "height": 800
+  }
+}

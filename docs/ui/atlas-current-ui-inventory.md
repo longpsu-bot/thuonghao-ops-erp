@@ -14,6 +14,18 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 ## Current workspace amendment — 8 October 2026
 
+**Desktop review fixes — 26 October 2026:** The Owner-approved
+[three-batch follow-up](../superpowers/plans/2026-10-26-atlas-desktop-review-fixes.md)
+distinguishes loading/failed PXK reads from confirmed zero counts and separates
+the desktop Change Order field scroller from its action footer. Desktop decision
+facts use existing 14px roles; Pantry shows its add-time School label and
+prerequisite; ordinary read errors in Planning, Recipes and Reconciliation reuse
+the existing danger anatomy. All action/preview/recovery guards and business
+contracts remain unchanged. The count correction applies at all widths; visual
+changes are `lg`-only, with measured 360px preservation. Supplier field widths
+(F4) and mobile-only F5/F7 remain deferred. No migration or hosted rollout is
+included; frontend reversion needs no data rollback.
+
 **Optional additions — 23 October 2026:** The Owner approved removal of the
 recurring weekly no-additions checkbox and its bulk-clear transition. Untouched
 empty weeks need no action. Row removal still shows the saved quantity in review

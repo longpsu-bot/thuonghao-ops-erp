@@ -334,12 +334,23 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
         bg="bg.toolbar"
       >
         <Text textStyle="helper" color="fg.muted">
-          {(["READY", "REPLACEMENT_REQUIRED", "BLOCKED", "CURRENT"] as const)
-            .map(
-              (s) =>
-                `${pxkLabels[s]} ${c.rows.filter((r) => r.state === s).length}`,
-            )
-            .join(" · ")}
+          {c.loading
+            ? "Đang tải số lượng phiếu…"
+            : c.readError
+              ? "Chưa xác định số lượng phiếu. Hãy tải lại dữ liệu."
+              : (
+                  [
+                    "READY",
+                    "REPLACEMENT_REQUIRED",
+                    "BLOCKED",
+                    "CURRENT",
+                  ] as const
+                )
+                  .map(
+                    (s) =>
+                      `${pxkLabels[s]} ${c.rows.filter((r) => r.state === s).length}`,
+                  )
+                  .join(" · ")}
         </Text>
         {(props.onExportGroupedXlsx || props.onExportZip) && (
           <AtlasWorkbar

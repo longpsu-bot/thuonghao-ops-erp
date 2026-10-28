@@ -1,4 +1,5 @@
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Icon, Text } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { schoolDispatchBlockerLabel } from "../bridges/schoolDispatch";
 function schoolFulfilmentBlockerLabel(code: string) {
   return code === "PXK_REPLACEMENT_REQUIRED"
@@ -49,8 +50,26 @@ export function SchoolFulfilmentFeedback({
 }) {
   if (!error) return null;
   return (
-    <Flex p="md" gap="sm" align="center" wrap="wrap" bg="bg.danger">
+    <Flex
+      p={{ base: "md", lg: "sm" }}
+      gap="sm"
+      align="center"
+      wrap="wrap"
+      bg="bg.danger"
+      layerStyle={{ lg: "feedbackDanger" }}
+      mx={{ lg: "md" }}
+      my={{ lg: "sm" }}
+    >
       <Text role="alert" color="status.danger">
+        <Icon
+          asChild
+          display={{ base: "none", lg: "inline-flex" }}
+          boxSize="5"
+          mr="sm"
+          verticalAlign="text-bottom"
+        >
+          <WarningCircle aria-hidden="true" />
+        </Icon>
         {error}
       </Text>
       <Button disabled={loading} onClick={onRetry}>

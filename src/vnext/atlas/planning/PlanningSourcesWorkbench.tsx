@@ -4,11 +4,13 @@ import {
   Field,
   Flex,
   Grid,
+  Icon,
   Input,
   NativeSelect,
   Tabs,
   Text,
 } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import type { CSSProperties } from "react";
@@ -106,6 +108,20 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
     : "Tất cả trường";
   const dateSummary = viDate(c.date);
   const weekSummary = `${viDate(c.week)} – ${viDate(days[6]!)}`;
+  const recoveryButton = (c.locked || c.readError) && (
+    <Button
+      m={{ base: "sm", lg: c.readError ? "var(--atlas-layout-zero, 0)" : "sm" }}
+      mt={{ lg: "sm" }}
+      disabled={c.loading}
+      onClick={() => void c.recover()}
+    >
+      {c.recoveryKind === "READ_FAILURE"
+        ? "Thử tải lại dữ liệu"
+        : c.recoveryKind === "STALE"
+          ? "Tải lại dữ liệu hiện tại"
+          : "Tải lại để xác nhận"}
+    </Button>
+  );
   const sourceContent = c.authority ? (
     <Grid
       data-testid="planning-source-editor-review"
@@ -368,23 +384,34 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                   {c.outcome}
                 </Text>
               )}
-            {c.readError && (
-              <Text role="alert" p="sm" color="status.danger">
-                {c.readError}
-              </Text>
-            )}
-            {(c.locked || c.readError) && (
-              <Button
-                m="sm"
-                disabled={c.loading}
-                onClick={() => void c.recover()}
+            {c.readError ? (
+              <Box
+                display={{ base: "contents", lg: "block" }}
+                layerStyle={{ lg: "feedbackDanger" }}
+                mx={{ lg: "md" }}
+                my={{ lg: "sm" }}
+                p={{ lg: "sm" }}
               >
-                {c.recoveryKind === "READ_FAILURE"
-                  ? "Thử tải lại dữ liệu"
-                  : c.recoveryKind === "STALE"
-                    ? "Tải lại dữ liệu hiện tại"
-                    : "Tải lại để xác nhận"}
-              </Button>
+                <Text
+                  role="alert"
+                  p={{ base: "sm", lg: "var(--atlas-layout-zero, 0)" }}
+                  color="status.danger"
+                >
+                  <Icon
+                    asChild
+                    display={{ base: "none", lg: "inline-flex" }}
+                    boxSize="5"
+                    mr="sm"
+                    verticalAlign="text-bottom"
+                  >
+                    <WarningCircle aria-hidden="true" />
+                  </Icon>
+                  {c.readError}
+                </Text>
+                {recoveryButton}
+              </Box>
+            ) : (
+              recoveryButton
             )}
             {(c.job === "attendance" ? c.errors : []).map((error, i) => (
               <Text
