@@ -40,9 +40,9 @@ export function ChangeSelect({
   children: ReactNode;
 }) {
   return (
-    <Field.Root>
+    <Field.Root minW="var(--atlas-layout-zero, 0)">
       <Field.Label>{label}</Field.Label>
-      <NativeSelect.Root disabled={disabled}>
+      <NativeSelect.Root disabled={disabled} minW="var(--atlas-layout-zero, 0)">
         <NativeSelect.Field
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -109,7 +109,14 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
         void c.runPreview();
       }}
     >
-      <Grid templateColumns="repeat(2, minmax(0, 1fr))" gap="sm" mt="sm">
+      <Grid
+        templateColumns={{
+          base: "minmax(0, 1fr)",
+          md: "repeat(2, minmax(0, 1fr))",
+        }}
+        gap="sm"
+        mt="sm"
+      >
         <ChangeSelect
           label="Điều chỉnh"
           value={d.object}
@@ -294,6 +301,7 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
         )}
         {needsQuantity(d) && (
           <Field.Root
+            minW="var(--atlas-layout-zero, 0)"
             invalid={Boolean(d.quantity && parseQuantity(d.quantity) === null)}
           >
             <Field.Label>Định lượng mới</Field.Label>
@@ -327,6 +335,7 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
                 onChange={(e) => update({ quantity: e.target.value })}
               />
               <Field.HelperText
+                flexShrink="0"
                 display="flex"
                 alignItems="center"
                 mt="var(--atlas-layout-zero, 0)"
@@ -367,7 +376,13 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
             <Text as="legend" textStyle="helper">
               Kiểm tra tác động
             </Text>
-            <Grid templateColumns="repeat(2, minmax(0, 1fr))" gap="sm">
+            <Grid
+              templateColumns={{
+                base: "minmax(0, 1fr)",
+                md: "repeat(2, minmax(0, 1fr))",
+              }}
+              gap="sm"
+            >
               {d.audience === "all" && (
                 <ChangeSelect
                   label="Trường kiểm tra"

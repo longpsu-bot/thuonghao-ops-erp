@@ -105,11 +105,14 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
           borderRadius="workbench"
           maxW="var(--atlas-layout-review-width, 920px)"
           maxH="var(--atlas-layout-review-height, 92dvh)"
+          overflow="hidden"
+          display="flex"
+          flexDirection="column"
         >
-          <Dialog.Header>
+          <Dialog.Header flexShrink="0">
             <Dialog.Title>Xem tác động</Dialog.Title>
           </Dialog.Header>
-          <Dialog.Body overflowY="auto">
+          <Dialog.Body overflowY="auto" minH="var(--atlas-layout-zero, 0)">
             {c.lock && c.message && (
               <Text role="alert" mb="sm">
                 {c.message}
@@ -204,7 +207,7 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
               </>
             )}
           </Dialog.Body>
-          <Dialog.Footer flexWrap="wrap">
+          <Dialog.Footer flexWrap="wrap" flexShrink="0">
             <Button
               ref={back}
               onClick={c.backToEdit}
@@ -260,11 +263,15 @@ export function ChangeOrderCancel({ c }: { c: ChangeOrderController }) {
           color="fg.default"
           mx="md"
           borderRadius="workbench"
+          maxH="var(--atlas-layout-dialog-height, 90dvh)"
+          overflow="hidden"
+          display="flex"
+          flexDirection="column"
         >
-          <Dialog.Header>
+          <Dialog.Header flexShrink="0">
             <Dialog.Title>Hủy lệnh</Dialog.Title>
           </Dialog.Header>
-          <Dialog.Body>
+          <Dialog.Body overflowY="auto" minH="var(--atlas-layout-zero, 0)">
             {c.message && (
               <Text role="alert" color="status.danger" mb="sm">
                 {c.message}
@@ -288,7 +295,7 @@ export function ChangeOrderCancel({ c }: { c: ChangeOrderController }) {
               Lịch sử lệnh được giữ nguyên. Lệnh ngừng áp dụng từ ngày đã chọn.
             </Text>
           </Dialog.Body>
-          <Dialog.Footer flexWrap="wrap">
+          <Dialog.Footer flexWrap="wrap" flexShrink="0">
             <Button ref={back} disabled={c.busy} onClick={c.closeCancel}>
               Tiếp tục xem lệnh
             </Button>

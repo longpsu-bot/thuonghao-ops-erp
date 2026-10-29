@@ -68,6 +68,34 @@ describe("Công thức operator workbench", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tạo món mới" })).toBeDisabled();
   });
+  it("keeps search, import, creation and count immediate while secondary filters use a focused disclosure", async () => {
+    await setup();
+
+    expect(screen.getByLabelText("Tìm món")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Nhập từ Excel" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Tạo món mới" })).toBeEnabled();
+    expect(screen.getByText("12 món")).toBeInTheDocument();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveAttribute("aria-controls", "recipe-filters");
+    expect(
+      screen.getByText("Trạng thái: Tất cả · Loại món: Tất cả"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(disclosure);
+    await waitFor(() =>
+      expect(screen.getByLabelText("Trạng thái")).toHaveFocus(),
+    );
+    fireEvent.change(screen.getByLabelText("Trạng thái"), {
+      target: { value: "INACTIVE" },
+    });
+    fireEvent.click(disclosure);
+
+    expect(
+      screen.getByText("Trạng thái: Ngừng dùng · Loại món: Tất cả"),
+    ).toBeInTheDocument();
+  });
   it("adds the Ingredient purchase Unit instead of the first active Unit and saves exact readback", async () => {
     const f = await setup("DISH_ACTIVE_EDITABLE", ({ data }) => {
       Object.assign(data.ingredients[3], {
@@ -218,16 +246,16 @@ describe("Công thức operator workbench", () => {
       within(row).getByRole("button", { name: /Sửa công thức/ }),
     ).toHaveTextContent("Sửa công thức");
   });
-  it("keeps the mobile chooser available when a dirty Dish transition is cancelled", async () => {
+  it("keeps the selected mobile workplane and dirty draft when closing is cancelled", async () => {
     await setup();
     await select();
     fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
       target: { value: "2,25" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Chọn món khác" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Sửa công thức Thịt heo kho" }),
-    );
+    expect(
+      screen.queryByRole("table", { name: "Danh mục món" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
@@ -238,15 +266,10 @@ describe("Công thức operator workbench", () => {
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
-    expect(
-      screen.getByRole("button", { name: "Thu gọn danh sách món" }),
-    ).toHaveAttribute("aria-expanded", "true");
-    expect(
-      screen.getByRole("button", { name: "Sửa công thức Thịt heo kho" }),
-    ).toBeVisible();
+    expect(screen.getByLabelText("Không gian công thức")).toBeVisible();
     expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("2,25");
   });
-  it("restores the full catalogue after closing the compact Dish navigator", async () => {
+  it("replaces the catalogue with the selected mobile workplane and restores it on close", async () => {
     await setup();
     const columns = () =>
       within(screen.getByRole("table", { name: "Danh mục món" }))
@@ -266,18 +289,7 @@ describe("Công thức operator workbench", () => {
     expect(
       screen.queryByRole("table", { name: "Danh mục món" }),
     ).not.toBeInTheDocument();
-    const navigator = screen.getByRole("list", { name: "Điều hướng món" });
-    fireEvent.click(screen.getByRole("button", { name: "Chọn món khác" }));
-    expect(
-      within(navigator).getByRole("button", {
-        name: "Sửa công thức Canh bí đỏ thịt bằm",
-      }),
-    ).toHaveAttribute("aria-pressed", "true");
-    expect(
-      within(navigator).getByRole("button", {
-        name: "Sửa công thức Thịt heo kho",
-      }),
-    ).toBeEnabled();
+    expect(screen.getByLabelText("Không gian công thức")).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
     expect(columns()).toEqual([
       "Món",
@@ -374,13 +386,10 @@ describe("Công thức operator workbench", () => {
     ).not.toBeInTheDocument();
     expect(read).not.toHaveBeenCalled();
   });
-  it("selects a row accessibly, opens base/effective and preserves focus on close", async () => {
+  it("opens the selected workplane accessibly and restores row focus on close", async () => {
     await setup();
     await select();
-    const button = screen.getByRole("button", {
-      name: "Sửa công thức Canh bí đỏ thịt bằm",
-    });
-    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Không gian công thức")).toHaveFocus();
     expect(
       screen.getByRole("heading", { name: "Công thức hiệu lực" }),
     ).toBeInTheDocument();
