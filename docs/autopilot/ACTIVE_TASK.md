@@ -1,6 +1,41 @@
 # Atlas Autopilot — Active Task
 
-## Current task — 27 October 2026
+## Current task — 29 October 2026
+
+**Task:** ATLAS-WORKBENCH-HIERARCHY-20261029 — apply the approved Allocation hierarchy across every active Atlas workbench and shared page.
+
+**Status:** ACTIVE — inventory/baseline complete; sequential implementation families in progress.
+
+**Owner authorization:** “approve, please proceed for every workbench and page”.
+The Owner accepted PR #446 as the visual reference; it is merged as `777d3237`.
+The canonical E-drive checkout is verified clean and based on latest main before
+task work. Work proceeds on `codex/atlas-workbench-hierarchy-rollout`.
+
+**Bounded capability:** view composition, responsive hierarchy, alignment,
+supporting-detail disclosure and focus within the existing thirteen owners and
+their reachable views/dialogs, plus shell/session pages. The
+[approved rollout specification](../ui/atlas-workbench-hierarchy-rollout.md) and
+[sequential plan](../superpowers/plans/2026-10-29-atlas-workbench-hierarchy-rollout.md)
+define expected files, five implementation families and final acceptance.
+
+Keep palette, typography roles, provider/system, existing public props,
+controllers, APIs, exact calculations, identities, Units, command payloads,
+permissions and persistent-owner/dirty/UNKNOWN contracts intact. Workers edit
+only their bounded family and tests; navigator/review remains read-only. Each
+family is reviewed and committed before another implementation worker starts.
+
+Acceptance requires all thirteen owners/shared pages accounted for, seven-width
+rendered coverage, representative selected/edit/review states, preserved focus
+and guards, focused regressions, documentation and latest-head Frontend CI.
+Publish a complete reviewable PR and phone-accessible evidence. This rollout
+does not authorize merge, manual deployment, hosted writes or data work.
+
+**Warehouse Receiving remains PAUSED.** Existing PXK and reconciliation UI are
+Dispatch owners, not Warehouse reactivation. No backend, database, export-format,
+dependency, business-policy or source-data changes. Rollback is a frontend/test/
+documentation revert with no migration.
+
+## Previous completed task — 27 October 2026
 
 **Task:** ATLAS-PLANNING-CORE-DATA-20261027 — guarded Planning master convergence on Atlas Staging.
 

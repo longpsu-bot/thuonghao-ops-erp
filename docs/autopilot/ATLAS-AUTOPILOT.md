@@ -1,8 +1,29 @@
 # Atlas Autopilot Mandate
 
-**Current checkpoint:** 27 October 2026 (Asia/Bangkok).
+**Current checkpoint:** 29 October 2026 (Asia/Bangkok).
 
-**Status:** COMPLETE — Atlas Planning core data applied and replay-verified on Staging; Warehouse remains paused.
+**Status:** ACTIVE — approved Atlas workbench hierarchy rollout; core-data work remains complete and Warehouse Receiving remains paused.
+
+## Current UI execution horizon
+
+The Owner approved “proceed for every workbench and page” after accepting and
+merging Allocation reference #446 (`777d3237`). Execute the
+[bounded UI specification](../ui/atlas-workbench-hierarchy-rollout.md) and its
+[sequential plan](../superpowers/plans/2026-10-29-atlas-workbench-hierarchy-rollout.md)
+across thirteen active owners and shared pages. Use the verified canonical
+E-drive checkout on the dedicated rollout branch, with one implementation family
+and read-only review at a time. Do not pause between authorized families for
+repeated approval.
+
+The horizon ends with complete coverage, focused checks, independent review,
+phone-accessible evidence and a reviewable PR with latest-head Frontend CI.
+Preserve business/backend authority and existing guards. No merge, manual
+deployment, hosted write, source-data correction, dependency or API change is
+implied. Warehouse Receiving remains paused; existing PXK/reconciliation view
+work does not reopen it. The completed data-task record below remains evidence,
+not executable authorization to repeat an import.
+
+## Previous completed core-data mandate — 27 October 2026
 
 **Owner instruction:** Complete the Atlas UI/data work as fully as practical, copy only core Planning master data from OPS v1 without changing v1, omit daily operational data, and **do not work on Warehouse yet**. The Owner subsequently authorized the guarded Atlas Staging core-data execution after review.
 
