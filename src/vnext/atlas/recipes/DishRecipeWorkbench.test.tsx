@@ -289,6 +289,9 @@ describe("Công thức operator workbench", () => {
     expect(
       screen.queryByRole("table", { name: "Danh mục món" }),
     ).not.toBeInTheDocument();
+    screen
+      .getAllByText("12 món")
+      .forEach((count) => expect(count).not.toBeVisible());
     expect(screen.getByLabelText("Không gian công thức")).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
     expect(columns()).toEqual([

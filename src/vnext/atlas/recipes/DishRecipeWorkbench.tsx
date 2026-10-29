@@ -253,7 +253,11 @@ export function DishRecipeWorkbench(
         color="fg.muted"
       >
         Trạng thái:{" "}
-        {c.statusFilter === "ALL" ? "Tất cả" : dishStatusLabel[c.statusFilter]}{" "}
+        {c.statusFilter === "ALL"
+          ? "Tất cả"
+          : (Object.entries(dishStatusLabel).find(
+              ([value]) => value === c.statusFilter,
+            )?.[1] ?? "Không xác định")}{" "}
         · Loại món:{" "}
         {c.typeFilter
           ? (c.catalog.dish_types.find(
@@ -333,7 +337,13 @@ export function DishRecipeWorkbench(
       )}
       {!open && catalogueToolbar}
       {!open && <Box px="md">{feedback}</Box>}
-      <Flex px="md" py="xs" justify="space-between" align="center">
+      <Flex
+        display={open ? "none" : "flex"}
+        px="md"
+        py="xs"
+        justify="space-between"
+        align="center"
+      >
         {!c.loading && !c.error && (
           <Text textStyle="helper" color="fg.muted">
             {c.visibleDishes.length} món
@@ -354,6 +364,19 @@ export function DishRecipeWorkbench(
           display={{ base: open ? "none" : "block", xl: "block" }}
           minW="var(--atlas-layout-zero, 0)"
         >
+          {open && !c.loading && !c.error && (
+            <Flex
+              display={{ base: "none", xl: "flex" }}
+              px="sm"
+              py="xs"
+              justify="space-between"
+              align="center"
+            >
+              <Text textStyle="helper" color="fg.muted">
+                {c.visibleDishes.length} món
+              </Text>
+            </Flex>
+          )}
           <DishCatalogue
             c={c}
             compact={open}

@@ -78,7 +78,9 @@ export function SchoolFulfilmentWorkbench(
       ? "Cần xử lý"
       : c.filter === "all"
         ? "Tất cả"
-        : (SCHOOL_FULFILMENT_STATUS_LABELS[c.filter] ?? "Tất cả");
+        : (Object.entries(SCHOOL_FULFILMENT_STATUS_LABELS).find(
+            ([value]) => value === c.filter,
+          )?.[1] ?? "Tất cả");
   return (
     <Box
       as="section"

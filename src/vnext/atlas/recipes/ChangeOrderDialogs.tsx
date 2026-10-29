@@ -5,11 +5,14 @@ import {
   Button,
   Dialog,
   Field,
+  Flex,
   Grid,
+  Icon,
   Table,
   Text,
   Textarea,
 } from "@chakra-ui/react";
+import { Warning, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import type {
   EffectiveCompositionResult,
@@ -19,6 +22,42 @@ import type { ChangeOrderController } from "./useChangeOrderWorkbench";
 import { ChangeSelect } from "./ChangeOrderEditor";
 import { periodLabel, validDate, vietnamLocalDate } from "./changeOrderModel";
 import { recipeIssueCopy } from "./recipeIssueCopy";
+
+function RecipeIssueFeedback({
+  kind,
+  message,
+  mt = "xs",
+}: {
+  kind: "blocker" | "warning";
+  message: string;
+  mt?: "xs" | "sm";
+}) {
+  const blocked = kind === "blocker";
+  return (
+    <Box
+      role={blocked ? "alert" : "status"}
+      aria-label={blocked ? "Điều kiện chặn lưu" : "Cảnh báo tác động"}
+      layerStyle={blocked ? "feedbackDanger" : "feedbackWarning"}
+      borderRadius="control"
+      p="xs"
+      mt={mt}
+    >
+      <Flex align="flex-start" gap="xs">
+        <Icon asChild flexShrink="0" mt="var(--atlas-layout-icon-offset, 2px)">
+          {blocked ? (
+            <WarningCircle aria-hidden="true" />
+          ) : (
+            <Warning aria-hidden="true" />
+          )}
+        </Icon>
+        <Text textStyle="helper" color="fg.default">
+          {message}
+        </Text>
+      </Flex>
+    </Box>
+  );
+}
+
 export function ChangeComposition({
   title,
   value,
@@ -76,9 +115,11 @@ export function ChangeComposition({
         </Table.Body>
       </Table.Root>
       {value.blockers.map((b, i) => (
-        <Text key={i} role="alert">
-          {recipeIssueCopy(b)}
-        </Text>
+        <RecipeIssueFeedback
+          key={i}
+          kind="blocker"
+          message={recipeIssueCopy(b)}
+        />
       ))}
     </Box>
   );
@@ -146,14 +187,20 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
                   />
                 </Grid>
                 {p.warnings.map((w, i) => (
-                  <Text mt="sm" key={i} role="status" color="status.warning">
-                    {recipeIssueCopy(w)}
-                  </Text>
+                  <RecipeIssueFeedback
+                    key={i}
+                    kind="warning"
+                    message={recipeIssueCopy(w)}
+                    mt="sm"
+                  />
                 ))}
                 {p.blockers.map((b, i) => (
-                  <Text mt="sm" key={i} role="alert" color="status.danger">
-                    {recipeIssueCopy(b)}
-                  </Text>
+                  <RecipeIssueFeedback
+                    key={i}
+                    kind="blocker"
+                    message={recipeIssueCopy(b)}
+                    mt="sm"
+                  />
                 ))}
                 {p.school_id === null && (
                   <Box as="details" mt="md">

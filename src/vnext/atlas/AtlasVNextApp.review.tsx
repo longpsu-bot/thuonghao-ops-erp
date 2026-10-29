@@ -17,6 +17,7 @@ import {
 import { Capacity } from "./AtlasWorkspaceCapacity.stories";
 import { createConfirmedNeedReviewFixture } from "./planning-confirmed/confirmedNeedReviewFixtures";
 import { createRecipeReviewFixture } from "./recipes/recipeReviewFixtures";
+import { createChangeOrderFixture } from "./recipes/changeOrderReviewFixtures";
 import {
   createSchoolPxkReviewFixture,
   pxkData,
@@ -228,6 +229,12 @@ function Review() {
       recipe.data.ingredients[3].purchase_unit_id = null;
       recipe.data.ingredients[3].purchase_unit_name = null;
       fixture.recipe = recipe.api;
+    }
+    if (scenario === "blockedChangeOrderPreview") {
+      // Opt-in local presentation fixture only; production entrypoints and
+      // default review behavior remain unchanged.
+      fixture.recipeAdjustment =
+        createChangeOrderFixture("PREVIEW_BLOCKED").api;
     }
     if (scenario === "invalidMenuCell") {
       fixture.planning.syncMenuFromGoogle = async () =>

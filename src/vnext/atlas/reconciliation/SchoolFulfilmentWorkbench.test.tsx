@@ -254,11 +254,14 @@ describe("read-only reconciliation operator workbench", () => {
         .getAllByRole("row")
         .slice(1)
         .map((r) => {
-          const school = within(r).getAllByRole("cell")[1];
-          return (
-            school.querySelector("p:not([data-narrow-label])")?.textContent +
-            school.querySelector("[data-row-secondary]")?.textContent
-          );
+          const school = within(r).getAllByRole("cell").at(1);
+          if (!school) throw new Error("Expected the School identity cell");
+          const primary =
+            school.querySelector("p:not([data-narrow-label])")?.textContent ??
+            "";
+          const secondary =
+            school.querySelector("[data-row-secondary]")?.textContent ?? "";
+          return primary + secondary;
         });
     expect(names()).toEqual(
       rows.slice(1).map((r) => r.school_name + r.delivery_location_name),

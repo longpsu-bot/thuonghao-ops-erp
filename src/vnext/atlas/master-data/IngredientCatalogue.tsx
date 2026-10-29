@@ -193,9 +193,7 @@ export function IngredientCatalogue({
                       key={label}
                       display={{
                         lg:
-                          detailOpen &&
-                          label !== "Thao tác" &&
-                          label !== "Trạng thái"
+                          detailOpen && label !== "Thao tác"
                             ? "none"
                             : "table-cell",
                       }}

@@ -789,9 +789,11 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     await editor();
     fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
     const dialog = await screen.findByRole("dialog");
-    expect(
-      within(dialog).getByText("Nguyên liệu bị trùng trong công thức."),
-    ).toBeInTheDocument();
+    const blocker = within(dialog).getByRole("alert", {
+      name: "Điều kiện chặn lưu",
+    });
+    expect(blocker).toHaveTextContent("Nguyên liệu bị trùng trong công thức.");
+    expect(blocker.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(
       within(dialog).queryByRole("button", { name: "Lưu lệnh điều chỉnh" }),
     ).not.toBeInTheDocument();
@@ -807,6 +809,22 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     expect(screen.getByLabelText("Lý do điều chỉnh")).toHaveValue(
       "Điều chỉnh theo thực đơn",
     );
+  });
+  it("warning Preview uses warning anatomy without changing Save eligibility", async () => {
+    await setup("PREVIEW_WARNING");
+    await editor();
+    fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
+    const dialog = await screen.findByRole("dialog", { name: "Xem tác động" });
+    const warning = within(dialog).getByRole("status", {
+      name: "Cảnh báo tác động",
+    });
+    expect(warning).toHaveTextContent(
+      "Có lệnh khác áp dụng sau giai đoạn này.",
+    );
+    expect(warning.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(
+      within(dialog).getByRole("button", { name: "Lưu lệnh điều chỉnh" }),
+    ).toBeEnabled();
   });
   it("renders immutable legacy history without inventing attribution and cancel uses a focused dialog", async () => {
     await setup("LEGACY_UNATTRIBUTED_HISTORY");
