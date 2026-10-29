@@ -5,7 +5,7 @@ import {
   defineRecipe,
 } from "@chakra-ui/react";
 
-const fontFamily = 'Inter, "Segoe UI", Arial, sans-serif';
+const fontFamily = '"Atlas Inter", Inter, "Segoe UI", Arial, sans-serif';
 const pressed = {
   transform: "translateY(var(--atlas-layout-button-press, 1px))",
 } as const;
@@ -161,41 +161,41 @@ export const atlasSystem = createSystem(
       tokens: {
         fonts: { body: { value: fontFamily }, heading: { value: fontFamily } },
         fontSizes: { module: { value: "15px" } },
-        fontWeights: { emphasis: { value: "650" } },
-        // Fixed sRGB scales designed in OKLCH; no runtime generation.
+        fontWeights: { emphasis: { value: "600" } },
+        // Wada-inspired sRGB anchors with accessible tints and shades; no runtime generation.
         colors: {
           white: { value: "#FFFFFF" },
           neutral: {
-            25: { value: "#FDFDFD" },
-            50: { value: "#FAFAFA" },
-            100: { value: "#F1F1F1" },
-            200: { value: "#E3E3E3" },
-            300: { value: "#D0D0D0" },
-            400: { value: "#929292" },
-            500: { value: "#707070" },
-            600: { value: "#555555" },
-            700: { value: "#3E3E3E" },
-            800: { value: "#292929" },
-            900: { value: "#1C1C1C" },
-            950: { value: "#111111" },
+            25: { value: "#FDFCF9" },
+            50: { value: "#FAF7F0" },
+            100: { value: "#F1EBDC" },
+            200: { value: "#E2D9C5" },
+            300: { value: "#CCC1A9" },
+            400: { value: "#8A8477" },
+            500: { value: "#686459" },
+            600: { value: "#504D44" },
+            700: { value: "#3B3932" },
+            800: { value: "#282923" },
+            900: { value: "#1C211D" },
+            950: { value: "#111713" },
           },
           brand: {
-            50: { value: "#EFFAF5" },
-            100: { value: "#DDF2EA" },
-            200: { value: "#B8DED0" },
-            300: { value: "#8EC5B1" },
-            400: { value: "#5FA58E" },
-            500: { value: "#1B8E70" },
-            600: { value: "#0F644E" },
-            700: { value: "#0A513F" },
-            800: { value: "#0A4233" },
-            900: { value: "#0A3327" },
-            950: { value: "#041B14" },
+            50: { value: "#F1F7F3" },
+            100: { value: "#E0ECE3" },
+            200: { value: "#B4CDC2" },
+            300: { value: "#92B3A5" },
+            400: { value: "#689582" },
+            500: { value: "#3F7A64" },
+            600: { value: "#245B50" },
+            700: { value: "#1C4B43" },
+            800: { value: "#173D37" },
+            900: { value: "#112F2C" },
+            950: { value: "#091E1B" },
           },
           clay: {
-            200: { value: "#D8B5A6" },
-            500: { value: "#985535" },
-            700: { value: "#6E351A" },
+            200: { value: "#F48067" },
+            500: { value: "#9B4937" },
+            700: { value: "#743226" },
           },
           success: {
             50: { value: "#F0F8EC" },
@@ -205,11 +205,11 @@ export const atlasSystem = createSystem(
             700: { value: "#2E481E" },
           },
           warning: {
-            50: { value: "#FCF4E7" },
-            200: { value: "#F0D2AB" },
-            500: { value: "#A9792E" },
-            600: { value: "#7D5408" },
-            700: { value: "#593C08" },
+            50: { value: "#FCF5E3" },
+            200: { value: "#E2B540" },
+            500: { value: "#96731E" },
+            600: { value: "#76570F" },
+            700: { value: "#56400E" },
           },
           danger: {
             50: { value: "#FEF4F3" },
@@ -344,14 +344,27 @@ export const atlasSystem = createSystem(
         },
       },
       textStyles: {
-        brand: { value: { fontSize: "28px", fontWeight: "650" } },
-        brandCompact: { value: { fontSize: "20px", fontWeight: "650" } },
+        brand: {
+          value: {
+            fontSize: "28px",
+            fontWeight: "semibold",
+            letterSpacing: "0.06em",
+          },
+        },
+        brandCompact: {
+          value: {
+            fontSize: "20px",
+            fontWeight: "semibold",
+            letterSpacing: "0.06em",
+          },
+        },
         quantity: { value: { fontSize: "22px", fontWeight: "600" } },
         workbenchTitle: {
           value: {
-            fontSize: { base: "22px", lg: "24px" },
-            fontWeight: "650",
+            fontSize: { base: "24px", lg: "26px" },
+            fontWeight: "semibold",
             lineHeight: "1.3",
+            letterSpacing: "-0.025em",
           },
         },
         section: {
@@ -361,21 +374,28 @@ export const atlasSystem = createSystem(
             lineHeight: "1.4",
           },
         },
-        body: { value: { fontSize: "14px", lineHeight: "1.5" } },
-        table: { value: { fontSize: "14px", lineHeight: "1.4" } },
+        body: {
+          value: { fontSize: { base: "15px", lg: "14px" }, lineHeight: "1.5" },
+        },
+        table: {
+          value: { fontSize: { base: "15px", lg: "14px" }, lineHeight: "1.5" },
+        },
+        input: {
+          value: { fontSize: { base: "16px", lg: "14px" }, lineHeight: "1.5" },
+        },
         label: {
           value: {
             fontSize: "14px",
-            fontWeight: "semibold",
-            lineHeight: "1.4",
+            fontWeight: "medium",
+            lineHeight: "1.5",
           },
         },
-        helper: { value: { fontSize: "13px", lineHeight: "1.5" } },
+        helper: { value: { fontSize: "13px", lineHeight: "1.6" } },
         quantityInline: {
           value: {
-            fontSize: "14px",
+            fontSize: { base: "15px", lg: "14px" },
             fontWeight: "semibold",
-            lineHeight: "1.4",
+            lineHeight: "1.5",
             fontVariantNumeric: "tabular-nums",
           },
         },
@@ -383,7 +403,7 @@ export const atlasSystem = createSystem(
           value: {
             fontSize: "13px",
             fontWeight: "normal",
-            lineHeight: "1.4",
+            lineHeight: "1.5",
           },
         },
       },
@@ -424,7 +444,7 @@ export const atlasSystem = createSystem(
           base: control,
           variants: {
             variant: { outline: control },
-            size: { md: { h: "control", px: "sm", textStyle: "body" } },
+            size: { md: { h: "control", px: "sm", textStyle: "input" } },
           },
           defaultVariants: { size: "md" },
         },
@@ -437,7 +457,7 @@ export const atlasSystem = createSystem(
                 minH: "var(--atlas-layout-textarea-min, 60px)",
               },
             },
-            size: { md: { px: "sm", py: "xs", textStyle: "body" } },
+            size: { md: { px: "sm", py: "xs", textStyle: "input" } },
           },
           defaultVariants: { size: "md", variant: "outline" },
         },
@@ -636,7 +656,7 @@ export const atlasSystem = createSystem(
               h: "control",
               minH: mobileTargetHeight,
               px: "sm",
-              textStyle: "body",
+              textStyle: "input",
             },
             segment: {
               _focusVisible: focus,
@@ -660,7 +680,7 @@ export const atlasSystem = createSystem(
             variant: { outline: { field: control } },
             size: {
               md: {
-                field: { h: "control", ps: "sm", pe: "xl", textStyle: "body" },
+                field: { h: "control", ps: "sm", pe: "xl", textStyle: "input" },
               },
             },
           },

@@ -349,6 +349,9 @@ it("retains Allocation's dirty supplier detail and Orders search with independen
       name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm/,
     }),
   );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Thêm ghi chú cho NCC An Phú" }),
+  );
   const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
   fireEvent.change(note, { target: { value: "Giao sớm" } });
   const allocationOwner = owner("Phân bổ NCC");

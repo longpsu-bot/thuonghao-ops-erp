@@ -40,8 +40,6 @@ describe("Atlas v3 color and typography floors", () => {
         const value = color(`${family}.${step}`),
           current = luminance(value);
         expect(current, `${family}.${step}`).toBeLessThan(previous);
-        if (family === "neutral")
-          expect(new Set(value.slice(1).match(/../g)).size).toBe(1);
         previous = current;
       }
     }
@@ -53,8 +51,15 @@ describe("Atlas v3 color and typography floors", () => {
       "bg.tableHeader",
     ];
     expect(new Set(planes.map(color)).size).toBe(3);
-    for (const name of planes)
-      expect(new Set(color(name).slice(1).match(/../g)).size).toBe(1);
+    expect(color("bg.workbench")).toBe("#FFFFFF");
+    for (const name of planes.filter((name) => name !== "bg.workbench")) {
+      const [r, g, b] = color(name)
+        .slice(1)
+        .match(/../g)!
+        .map((v) => parseInt(v, 16));
+      expect(r, name).toBeGreaterThan(g);
+      expect(g, name).toBeGreaterThan(b);
+    }
     expect(color("fg.primary")).toBe(color("neutral.900"));
     expect(color("bg.workspace")).toBe(color("neutral.100"));
     expect(color("bg.navigation")).toBe(color("brand.900"));
@@ -65,6 +70,14 @@ describe("Atlas v3 color and typography floors", () => {
     ["fg.secondary", "bg.workbench", 7],
     ["fg.muted", "bg.workbench", 4.5],
     ["fg.placeholder", "bg.workbench", 4.5],
+    ["fg.primary", "bg.workspace", 7],
+    ["fg.secondary", "bg.toolbar", 7],
+    ["fg.muted", "bg.workspace", 4.5],
+    ["fg.placeholder", "bg.toolbar", 4.5],
+    ["fg.attention", "bg.toolbar", 4.5],
+    ["fg.inverse", "bg.navigation", 7],
+    ["fg.navBrand", "bg.navigation", 4.5],
+    ["fg.navMuted", "bg.navigation", 4.5],
     ["border.default", "bg.workbench", 3],
     ["border.strong", "bg.toolbar", 3],
     ["border.strong", "bg.workbench", 3],
@@ -95,11 +108,40 @@ describe("Atlas v3 color and typography floors", () => {
   });
   it("keeps operational typography large enough for repeated scanning", () => {
     const styles = atlasSystem._config.theme?.textStyles;
-    for (const name of ["table", "label", "quantityInline"])
-      expect(styles?.[name]?.value).toMatchObject({ fontSize: "14px" });
+    for (const name of ["body", "table", "quantityInline"])
+      expect(styles?.[name]?.value).toMatchObject({
+        fontSize: { base: "15px", lg: "14px" },
+        lineHeight: "1.5",
+      });
     for (const name of ["helper", "unitInline"])
       expect(styles?.[name]?.value).toMatchObject({ fontSize: "13px" });
-    expect(styles?.label?.value).toMatchObject({ fontWeight: "semibold" });
+    expect(styles?.label?.value).toMatchObject({
+      fontSize: "14px",
+      fontWeight: "medium",
+      lineHeight: "1.5",
+    });
+    expect(styles?.workbenchTitle?.value).toMatchObject({
+      fontSize: { base: "24px", lg: "26px" },
+      fontWeight: "semibold",
+      lineHeight: "1.3",
+    });
+  });
+  it("keeps editable text at 16px on phones without inflating desktop controls", () => {
+    expect(atlasSystem._config.theme?.textStyles?.input?.value).toMatchObject({
+      fontSize: { base: "16px", lg: "14px" },
+    });
+    expect(atlasSystem.getRecipe("input").variants?.size?.md).toMatchObject({
+      textStyle: "input",
+    });
+    expect(atlasSystem.getRecipe("textarea").variants?.size?.md).toMatchObject({
+      textStyle: "input",
+    });
+    expect(
+      atlasSystem.getSlotRecipe("nativeSelect").variants?.size?.md?.field,
+    ).toMatchObject({ textStyle: "input" });
+    expect(
+      atlasSystem.getSlotRecipe("dateInput").base?.segmentGroup,
+    ).toMatchObject({ textStyle: "input" });
   });
   it("keeps resting input boundaries and error indication explicit", () => {
     const control = {

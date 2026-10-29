@@ -7,6 +7,7 @@ import {
   type RefObject,
 } from "react";
 import { atlasSystem } from "./system";
+import "./typography.css";
 
 const AtlasPortalContainerContext =
   createContext<RefObject<HTMLDivElement | null> | null>(null);

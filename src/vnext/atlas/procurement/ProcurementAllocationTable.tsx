@@ -8,7 +8,7 @@ import {
   type AllocationFamilyRow,
 } from "../bridges/procurement";
 import { AtlasTableViewport } from "../AtlasTableViewport";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import {
   atlasDefaultSort,
   nextAtlasSort,
@@ -73,6 +73,8 @@ export function ProcurementAllocationTable({
 }) {
   type SortKey = "ingredient" | "school" | "need" | "supplier" | "issue";
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
+  const [sortsOpen, setSortsOpen] = useState(false);
+  const sortsId = useId();
   const suppliers = (row: AllocationFamilyRow) => {
     const derived = derivedDefaultAllocation(row);
     return row.splits.length
@@ -121,35 +123,58 @@ export function ProcurementAllocationTable({
   const onSort = (key: SortKey) =>
     setSort((current) => nextAtlasSort(current, key));
   return (
-    <Box minW="var(--atlas-layout-zero, 0)">
+    <Box
+      minW="var(--atlas-layout-zero, 0)"
+      css={
+        selectedKey
+          ? { "@media(max-width:63.99rem)": { display: "none" } }
+          : undefined
+      }
+    >
       {tools && (
         <Flex
           px="md"
-          py="xs"
+          py="sm"
           gap="sm"
           align="center"
           wrap="wrap"
-          justify="space-between"
           bg="bg.toolbar"
+          borderBottomWidth="var(--atlas-layout-edge, 1px)"
+          borderColor="border.subtle"
         >
           {tools}
         </Flex>
       )}
+      <Button
+        display={{ base: "inline-flex", md: "none" }}
+        variant="secondary"
+        size="sm"
+        mx="sm"
+        my="xs"
+        minH="var(--atlas-layout-mobile-target, 44px)"
+        aria-expanded={sortsOpen}
+        aria-controls={sortsId}
+        onClick={() => setSortsOpen((open) => !open)}
+      >
+        Sắp xếp
+      </Button>
       <AtlasTableViewport
         label="Bảng phân bổ nhà cung ứng"
         maxH={{
-          base: selectedKey
-            ? "var(--atlas-allocation-directory-selected-height, 35dvh)"
-            : "var(--atlas-layout-table-mobile-height, 50dvh)",
+          base: "var(--atlas-layout-table-mobile-height, 50dvh)",
           lg: "var(--atlas-procurement-desktop-surface-max-height, calc(100dvh - 400px))",
         }}
       >
         <Table.Root
           aria-label="Phân bổ nhà cung ứng"
-          minW={{
-            base: "var(--atlas-layout-zero, 0)",
-            md: "var(--atlas-allocation-table-width, 1120px)",
-          }}
+          minW={
+            selectedKey
+              ? "var(--atlas-layout-zero, 0)"
+              : {
+                  base: "var(--atlas-layout-zero, 0)",
+                  md: "var(--atlas-allocation-table-width, 1120px)",
+                }
+          }
           w="full"
           tableLayout="fixed"
           size="sm"
@@ -165,14 +190,59 @@ export function ProcurementAllocationTable({
               "& tbody tr": {
                 display: "grid",
                 gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+                gridTemplateAreas: showServiceDate
+                  ? '"recipient recipient" "ingredient ingredient" "date quantity" "supplier supplier" "issue issue" "action action"'
+                  : '"recipient recipient" "ingredient ingredient" "quantity issue" "supplier supplier" "action action"',
+                columnGap: "var(--atlas-spacing-sm)",
                 borderBottom: "1px solid var(--atlas-colors-border-subtle)",
               },
-              "& td": { display: "block", minWidth: 0, border: "none" },
-              "& td[data-allocation-quantity]": { gridColumn: "1 / -1" },
-              "& td:first-of-type, & td:nth-of-type(2)": {
-                gridColumn: "1 / -1",
+              "& td": {
+                display: "block",
+                minWidth: 0,
+                border: "none",
+                borderInlineEndWidth: 0,
               },
+              "& td::after": { display: "none" },
+              "& td[data-allocation-recipient-cell]": { gridArea: "recipient" },
+              "& td[data-allocation-ingredient-cell]": {
+                gridArea: "ingredient",
+              },
+              "& td[data-allocation-date-cell]": { gridArea: "date" },
+              "& td[data-allocation-quantity-cell]": { gridArea: "quantity" },
+              "& td[data-allocation-supplier-cell]": { gridArea: "supplier" },
+              "& td[data-allocation-issue-cell]": { gridArea: "issue" },
+              "& td[data-allocation-action-cell]": { gridArea: "action" },
             },
+            ...(selectedKey
+              ? {
+                  "@media(min-width:64rem)": {
+                    "& colgroup, & thead": { display: "none" },
+                    "& tbody": { display: "block" },
+                    "& tbody tr": {
+                      display: "grid",
+                      gridTemplateColumns: "minmax(0, 1fr) auto",
+                      columnGap: "var(--atlas-spacing-sm)",
+                      rowGap: "var(--atlas-spacing-xs)",
+                      padding: "var(--atlas-spacing-sm)",
+                    },
+                    "& td": {
+                      display: "block",
+                      minWidth: 0,
+                      padding: 0,
+                      border: "none",
+                      borderInlineEndWidth: 0,
+                    },
+                    "& td[data-allocation-recipient-cell], & td[data-allocation-ingredient-cell]":
+                      {
+                        gridColumn: "1 / -1",
+                      },
+                    "& td[data-allocation-date-cell], & td[data-allocation-supplier-cell], & td[data-allocation-action-cell]":
+                      {
+                        display: "none",
+                      },
+                  },
+                }
+              : {}),
           }}
         >
           <Table.ColumnGroup>
@@ -186,7 +256,43 @@ export function ProcurementAllocationTable({
             <Table.Column w="var(--atlas-allocation-issue-width, 170px)" />
             <Table.Column w="var(--atlas-allocation-action-width, 148px)" />
           </Table.ColumnGroup>
-          <Table.Header css={atlasNarrowSortableHeader}>
+          <Table.Header
+            id={sortsId}
+            display={{
+              base: sortsOpen ? "table-header-group" : "none",
+              md: "table-header-group",
+            }}
+            css={{
+              ...atlasNarrowSortableHeader,
+              "@media(max-width:47.99rem)": {
+                ...atlasNarrowSortableHeader["@media(max-width:47.99rem)"],
+                display: sortsOpen ? "block" : "none",
+                overflowX: "visible",
+                "& tr": {
+                  display: "flex",
+                  flexWrap: "wrap",
+                  width: "100%",
+                  minWidth: "var(--atlas-layout-zero, 0)",
+                  gap: "var(--atlas-spacing-xs)",
+                  padding: "var(--atlas-spacing-xs) var(--atlas-spacing-sm)",
+                },
+                "& th": {
+                  display: "block",
+                  flex: "1 1 calc(50% - var(--atlas-spacing-xs))",
+                  minWidth: "var(--atlas-layout-zero, 0)",
+                  padding: 0,
+                  whiteSpace: "normal",
+                },
+                "& th[data-allocation-static-header]": { display: "none" },
+                "& button": {
+                  minHeight: "var(--atlas-layout-mobile-target, 44px)",
+                  minWidth: "var(--atlas-layout-zero, 0)",
+                  width: "100%",
+                  whiteSpace: "normal",
+                },
+              },
+            }}
+          >
             <Table.Row>
               {(
                 [
@@ -222,6 +328,7 @@ export function ProcurementAllocationTable({
                 ) : (
                   <Table.ColumnHeader
                     key={label}
+                    data-allocation-static-header=""
                     position={
                       label === "Thao tác"
                         ? { base: "static", md: "sticky" }
@@ -264,6 +371,7 @@ export function ProcurementAllocationTable({
                   data-attention={attention || undefined}
                 >
                   <Table.Cell
+                    data-allocation-recipient-cell=""
                     data-sticky-column=""
                     position={{ base: "relative", md: "sticky" }}
                     left="var(--atlas-layout-zero, 0)"
@@ -272,6 +380,15 @@ export function ProcurementAllocationTable({
                     verticalAlign="top"
                     overflowWrap="anywhere"
                   >
+                    <Text
+                      display={
+                        selectedKey ? "block" : { base: "block", md: "none" }
+                      }
+                      textStyle="helper"
+                      color="fg.muted"
+                    >
+                      Trường / điểm giao
+                    </Text>
                     {selectedKey === key && (
                       <Box data-selection-indicator="" aria-hidden="true" />
                     )}
@@ -288,37 +405,61 @@ export function ProcurementAllocationTable({
                       </Text>
                     )}
                   </Table.Cell>
-                  <Table.Cell>
+                  <Table.Cell data-allocation-ingredient-cell="">
+                    <Text
+                      display={
+                        selectedKey ? "block" : { base: "block", md: "none" }
+                      }
+                      textStyle="helper"
+                      color="fg.muted"
+                    >
+                      Nguyên liệu
+                    </Text>
                     <Text data-allocation-ingredient fontWeight="semibold">
                       {row.ingredient_name}
                     </Text>
                   </Table.Cell>
                   {showServiceDate && (
-                    <Table.Cell>
+                    <Table.Cell
+                      data-allocation-date-cell=""
+                      gridColumn={{ base: "1", md: "auto" }}
+                    >
+                      <Text textStyle="helper" color="fg.muted" hideFrom="md">
+                        Ngày dùng
+                      </Text>
                       <Text
                         data-allocation-date
                         textStyle="helper"
                         color="fg.muted"
                       >
-                        <Box as="span" hideFrom="md">
-                          Ngày dùng{" "}
-                        </Box>
                         {row.service_date.split("-").reverse().join("/")}
                       </Text>
                     </Table.Cell>
                   )}
                   <Table.Cell
-                    data-allocation-quantity
+                    data-allocation-quantity=""
+                    data-allocation-quantity-cell=""
+                    gridColumn={{
+                      base: showServiceDate ? "2" : "1",
+                      md: "auto",
+                    }}
                     textAlign={{ base: "left", md: "right" }}
                   >
+                    <Text
+                      display={
+                        selectedKey ? "block" : { base: "block", md: "none" }
+                      }
+                      textStyle="helper"
+                      color="fg.muted"
+                      textAlign="start"
+                    >
+                      Nhu cầu
+                    </Text>
                     <Text
                       textStyle="quantityInline"
                       whiteSpace={{ base: "normal", md: "nowrap" }}
                       overflowWrap="anywhere"
                     >
-                      <Box as="span" hideFrom="md">
-                        Nhu cầu:{" "}
-                      </Box>{" "}
                       {quantity(need)}{" "}
                       <Box
                         as="span"
@@ -331,7 +472,14 @@ export function ProcurementAllocationTable({
                       </Box>
                     </Text>
                   </Table.Cell>
-                  <Table.Cell>
+                  <Table.Cell data-allocation-supplier-cell="">
+                    <Text
+                      display={{ base: "block", md: "none" }}
+                      textStyle="helper"
+                      color="fg.muted"
+                    >
+                      Nhà cung ứng
+                    </Text>
                     {row.splits.length ? (
                       row.splits.map((split) => split.supplier_name).join(", ")
                     ) : derived ? (
@@ -351,7 +499,22 @@ export function ProcurementAllocationTable({
                       "—"
                     )}
                   </Table.Cell>
-                  <Table.Cell>
+                  <Table.Cell
+                    data-allocation-issue-cell=""
+                    gridColumn={{
+                      base: showServiceDate ? "1 / -1" : "2",
+                      md: "auto",
+                    }}
+                  >
+                    <Text
+                      display={
+                        selectedKey ? "block" : { base: "block", md: "none" }
+                      }
+                      textStyle="helper"
+                      color="fg.muted"
+                    >
+                      Tình trạng / vấn đề
+                    </Text>
                     <Text
                       data-allocation-issue
                       color={
@@ -373,6 +536,7 @@ export function ProcurementAllocationTable({
                     </Text>
                   </Table.Cell>
                   <Table.Cell
+                    data-allocation-action-cell=""
                     data-sticky-column=""
                     position={{ base: "static", md: "sticky" }}
                     right="var(--atlas-layout-zero, 0)"
@@ -387,9 +551,7 @@ export function ProcurementAllocationTable({
                       px="xs"
                       aria-label={`${action} ${row.ingredient_name} · ${recipient.primary}${recipient.secondary ? ` · ${recipient.secondary}` : ""}${showServiceDate ? ` · ${row.service_date.split("-").reverse().join("/")}` : ""}`}
                       aria-expanded={selectedKey === key}
-                      disabled={
-                        disabled || Boolean(selectedKey && selectedKey !== key)
-                      }
+                      disabled={disabled || Boolean(selectedKey)}
                       onClick={(event) => onSelect(row, event.currentTarget)}
                       minH={{
                         base: "var(--atlas-layout-mobile-target, 44px)",

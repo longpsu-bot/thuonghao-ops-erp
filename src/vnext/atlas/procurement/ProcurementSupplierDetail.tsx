@@ -19,7 +19,6 @@ import {
 } from "@chakra-ui/react";
 import { Info, Trash } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
-import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import type { CSSProperties } from "react";
 import {
   procurementOperatorMessages,
@@ -62,6 +61,7 @@ export function ProcurementSupplierDetail({
   returnFocusEl?: () => HTMLElement | null;
 }) {
   const quantityContextId = useId();
+  const supplierColumns = "minmax(0, 1fr) 228px minmax(260px, 1.4fr)";
   const eligible = (id: string) =>
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
   const saved = row.splits.filter((split) => eligible(split.supplier_id));
@@ -84,6 +84,23 @@ export function ProcurementSupplierDetail({
         ]
       : [];
   const [draft, setDraft] = useState<SupplierSplitInput[]>(() => baseline);
+  const [openNotes, setOpenNotes] = useState(() =>
+    baseline
+      .filter((split) => split.supplier_note)
+      .map((split) => split.supplier_id),
+  );
+  const fields = useRef(
+    new Map<string, HTMLInputElement | HTMLTextAreaElement>(),
+  );
+  const pendingFocus = useRef<string | null>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (pendingFocus.current === null) return;
+    const target =
+      fields.current.get(pendingFocus.current) ?? addButton.current;
+    pendingFocus.current = null;
+    target?.focus();
+  }, [draft, openNotes]);
   const recipient = allocationRecipient(row);
   const [added, setAdded] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
@@ -94,9 +111,7 @@ export function ProcurementSupplierDetail({
   const closeButton = useRef<HTMLButtonElement>(null);
   const cancelButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    heading.current?.focus();
-    if (window.matchMedia?.("(max-width: 63.99rem)").matches)
-      heading.current?.scrollIntoView?.({ block: "start" });
+    heading.current?.focus({ preventScroll: true });
   }, []);
   const total = sumExactQuantities(
     draft.map((split) => split.allocated_quantity),
@@ -271,17 +286,22 @@ export function ProcurementSupplierDetail({
         } as CSSProperties
       }
       minW="var(--atlas-layout-zero, 0)"
+      minH="var(--atlas-layout-zero, 0)"
+      h={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
       alignSelf="start"
-      bg="bg.subtle"
+      bg="bg.workbench"
       borderColor="border.subtle"
-      borderWidth="var(--atlas-layout-edge, 1px)"
-      borderRadius="workbench"
+      borderWidth={{
+        base: "var(--atlas-layout-zero, 0)",
+        lg: "var(--atlas-layout-edge, 1px)",
+      }}
+      borderRadius={{ base: "var(--atlas-layout-zero, 0)", lg: "workbench" }}
       maxH={{
-        base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
+        base: "full",
         xl: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
       }}
     >
-      <Box p="md" pb="sm" flexShrink="0">
+      <Box id={`${quantityContextId}-need`} p="md" pb="sm" flexShrink="0">
         <Heading
           as="h2"
           textStyle="section"
@@ -309,8 +329,18 @@ export function ProcurementSupplierDetail({
         flexShrink="0"
       >
         {reconciliationQuantity && reconciliationOutcome ? (
-          <Flex aria-label={reconciliation} align="baseline" wrap="wrap">
-            <Text as="span" textStyle="quantityInline" color="fg.default">
+          <Flex
+            aria-label={reconciliation}
+            align="baseline"
+            wrap="wrap"
+            gap="xs"
+          >
+            <Text
+              as="span"
+              textStyle="quantity"
+              fontVariantNumeric="tabular-nums"
+              color="fg.default"
+            >
               {reconciliationQuantity}
             </Text>
             <Text as="span" textStyle="unitInline" color="fg.muted" ml="xs">
@@ -361,93 +391,194 @@ export function ProcurementSupplierDetail({
         {draft.length === 0 && (
           <Text color="fg.muted">Chưa có nhà cung ứng trong bản nháp.</Text>
         )}
+        {draft.length > 0 && (
+          <Box
+            aria-hidden="true"
+            display={{ base: "none", xl: "grid" }}
+            gridTemplateColumns={supplierColumns}
+            gap="md"
+            pb="xs"
+            borderBottomWidth="var(--atlas-layout-edge, 1px)"
+            borderColor="border.subtle"
+            textStyle="label"
+            color="fg.secondary"
+          >
+            <Text>Nhà cung ứng</Text>
+            <Text>Phân bổ</Text>
+            <Text>Ghi chú cho NCC</Text>
+          </Box>
+        )}
         {draft.map((split) => {
           const supplier = row.eligible_suppliers.find(
             (item) => item.supplier_id === split.supplier_id,
           )!;
           const invalid = parseExactQuantity(split.allocated_quantity) === null;
+          const noteOpen = openNotes.includes(split.supplier_id);
+          const noteId = `${quantityContextId}-${split.supplier_id}-note`;
           return (
-            <Field.Root key={split.supplier_id} invalid={invalid}>
-              <Field.Label overflowWrap="anywhere">
-                {supplier.supplier_name}
-              </Field.Label>
-              <AtlasQuantityContext
-                id={`${quantityContextId}-${split.supplier_id}`}
-                recipient={recipient.primary}
-                location={recipient.secondary ?? undefined}
-                ingredient={row.ingredient_name}
-                date={row.service_date}
-                unit={allocationFamilyUnitLabel(row)}
-                source={supplier.supplier_name}
-              />
-              <Text textStyle="helper" color="fg.muted">
-                {saved.some((value) => value.supplier_id === split.supplier_id)
-                  ? "Đã lưu"
-                  : derived?.supplier.supplier_id === split.supplier_id
-                    ? "Mặc định"
-                    : "Dòng mới"}
-                :{" "}
-                {quantity(
-                  baseline.find(
+            <Box
+              key={split.supplier_id}
+              role="group"
+              aria-labelledby={`${quantityContextId}-${split.supplier_id}-supplier`}
+              display="grid"
+              gridTemplateColumns={{
+                base: "minmax(0, 1fr)",
+                lg: "minmax(0, 1fr) 228px",
+                xl: supplierColumns,
+              }}
+              alignItems="start"
+              columnGap="md"
+              rowGap="sm"
+              pb="md"
+              borderBottomWidth="var(--atlas-layout-edge, 1px)"
+              borderColor="border.subtle"
+            >
+              <Stack gap="xs">
+                <Text
+                  id={`${quantityContextId}-${split.supplier_id}-supplier`}
+                  overflowWrap="anywhere"
+                  textStyle="label"
+                  fontWeight="semibold"
+                >
+                  {supplier.supplier_name}
+                </Text>
+                <Text
+                  id={`${quantityContextId}-${split.supplier_id}-baseline`}
+                  textStyle="helper"
+                  color="fg.muted"
+                >
+                  {saved.some(
                     (value) => value.supplier_id === split.supplier_id,
-                  )?.allocated_quantity ?? "0",
-                )}{" "}
-                {allocationFamilyUnitLabel(row)}
-              </Text>
-              <Flex gap="xs" w="full" align="center">
-                <Input
-                  aria-label={`Phân bổ ${supplier.supplier_name}`}
-                  aria-describedby={`${quantityContextId}-${split.supplier_id}`}
-                  aria-invalid={invalid}
-                  inputMode="decimal"
-                  value={split.allocated_quantity}
-                  disabled={locked}
-                  onChange={(event) =>
-                    setDraft((values) =>
-                      values.map((value) =>
-                        value.supplier_id === split.supplier_id
-                          ? { ...value, allocated_quantity: event.target.value }
-                          : value,
-                      ),
-                    )
-                  }
-                  minW="var(--atlas-layout-zero, 0)"
-                />
-                <Text>{allocationFamilyUnitLabel(row)}</Text>
-                {added.includes(split.supplier_id) && (
-                  <IconButton
-                    size="sm"
-                    variant="tertiary"
-                    aria-label={`Xóa ${supplier.supplier_name}`}
-                    title={`Xóa ${supplier.supplier_name}`}
+                  )
+                    ? "Đã lưu"
+                    : derived?.supplier.supplier_id === split.supplier_id
+                      ? "Mặc định"
+                      : "Dòng mới"}
+                  :{" "}
+                  {quantity(
+                    baseline.find(
+                      (value) => value.supplier_id === split.supplier_id,
+                    )?.allocated_quantity ?? "0",
+                  )}{" "}
+                  {allocationFamilyUnitLabel(row)}
+                </Text>
+              </Stack>
+              <Field.Root invalid={invalid} minW="var(--atlas-layout-zero, 0)">
+                <Field.Label display={{ base: "flex", xl: "none" }}>
+                  Phân bổ
+                </Field.Label>
+                <Box
+                  display="grid"
+                  gridTemplateColumns="minmax(0, 1fr) max-content var(--atlas-layout-mobile-target, 44px)"
+                  gap="xs"
+                  w="full"
+                  alignItems="center"
+                >
+                  <Input
+                    ref={(element) => {
+                      const key = `${split.supplier_id}:quantity`;
+                      if (element) fields.current.set(key, element);
+                      else fields.current.delete(key);
+                    }}
+                    aria-label={`Phân bổ ${supplier.supplier_name}`}
+                    aria-describedby={`${quantityContextId}-need ${quantityContextId}-${split.supplier_id}-supplier ${quantityContextId}-${split.supplier_id}-baseline`}
+                    aria-invalid={invalid}
+                    inputMode="decimal"
+                    textAlign="end"
+                    fontVariantNumeric="tabular-nums"
+                    value={split.allocated_quantity}
                     disabled={locked}
-                    onClick={() =>
+                    onChange={(event) =>
                       setDraft((values) =>
-                        values.filter(
-                          (value) => value.supplier_id !== split.supplier_id,
+                        values.map((value) =>
+                          value.supplier_id === split.supplier_id
+                            ? {
+                                ...value,
+                                allocated_quantity: event.target.value,
+                              }
+                            : value,
                         ),
                       )
                     }
-                    minH={{
-                      base: "var(--atlas-layout-mobile-target, 44px)",
-                      lg: "compact",
-                    }}
-                  >
-                    <Trash aria-hidden="true" />
-                  </IconButton>
+                    minW="var(--atlas-layout-zero, 0)"
+                  />
+                  <Text>{allocationFamilyUnitLabel(row)}</Text>
+                  {added.includes(split.supplier_id) && (
+                    <IconButton
+                      size="sm"
+                      variant="tertiary"
+                      aria-label={`Xóa ${supplier.supplier_name}`}
+                      title={`Xóa ${supplier.supplier_name}`}
+                      disabled={locked}
+                      onClick={() => {
+                        const index = draft.findIndex(
+                          (value) => value.supplier_id === split.supplier_id,
+                        );
+                        const adjacent = draft[index + 1] ?? draft[index - 1];
+                        pendingFocus.current = adjacent
+                          ? `${adjacent.supplier_id}:quantity`
+                          : "";
+                        setDraft((values) =>
+                          values.filter(
+                            (value) => value.supplier_id !== split.supplier_id,
+                          ),
+                        );
+                      }}
+                      minH={{
+                        base: "var(--atlas-layout-mobile-target, 44px)",
+                        lg: "compact",
+                      }}
+                    >
+                      <Trash aria-hidden="true" />
+                    </IconButton>
+                  )}
+                </Box>
+                {invalid && (
+                  <Field.ErrorText>
+                    Nhập số không âm, tối đa 6 chữ số thập phân.
+                  </Field.ErrorText>
                 )}
-              </Flex>
-              {invalid && (
-                <Field.ErrorText>
-                  Nhập số không âm, tối đa 6 chữ số thập phân.
-                </Field.ErrorText>
-              )}
+              </Field.Root>
               <Field.Root
-                mt="xs"
+                minW="var(--atlas-layout-zero, 0)"
+                gridColumn={{ lg: "1 / -1", xl: "3" }}
                 invalid={(split.supplier_note ?? "").length > 500}
               >
-                <Field.Label textStyle="helper">Ghi chú cho NCC</Field.Label>
+                {!noteOpen && (
+                  <Button
+                    variant="utility"
+                    size="sm"
+                    display={{ base: "inline-flex", xl: "none" }}
+                    alignSelf="start"
+                    px="var(--atlas-layout-zero, 0)"
+                    fontWeight="normal"
+                    minH="var(--atlas-layout-mobile-target, 44px)"
+                    aria-label={`Thêm ghi chú cho ${supplier.supplier_name}`}
+                    aria-expanded="false"
+                    aria-controls={noteId}
+                    disabled={locked}
+                    onClick={() => {
+                      pendingFocus.current = `${split.supplier_id}:note`;
+                      setOpenNotes((ids) => [...ids, split.supplier_id]);
+                    }}
+                  >
+                    Thêm ghi chú
+                  </Button>
+                )}
+                <Field.Label
+                  htmlFor={noteId}
+                  display={{ base: noteOpen ? "flex" : "none", xl: "none" }}
+                >
+                  Ghi chú cho NCC
+                </Field.Label>
                 <Textarea
+                  id={noteId}
+                  ref={(element) => {
+                    const key = `${split.supplier_id}:note`;
+                    if (element) fields.current.set(key, element);
+                    else fields.current.delete(key);
+                  }}
+                  display={{ base: noteOpen ? "block" : "none", xl: "block" }}
                   w="full"
                   minW="var(--atlas-layout-zero, 0)"
                   aria-label={`Ghi chú cho ${supplier.supplier_name}`}
@@ -456,25 +587,31 @@ export function ProcurementSupplierDetail({
                   rows={2}
                   resize="vertical"
                   disabled={locked}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    setOpenNotes((ids) =>
+                      ids.includes(split.supplier_id)
+                        ? ids
+                        : [...ids, split.supplier_id],
+                    );
                     setDraft((values) =>
                       values.map((value) =>
                         value.supplier_id === split.supplier_id
                           ? { ...value, supplier_note: event.target.value }
                           : value,
                       ),
-                    )
-                  }
+                    );
+                  }}
                 />
                 {(split.supplier_note ?? "").length > 500 && (
                   <Field.ErrorText>Tối đa 500 ký tự.</Field.ErrorText>
                 )}
               </Field.Root>
-            </Field.Root>
+            </Box>
           );
         })}
         <Box>
           <Button
+            ref={addButton}
             size="sm"
             variant="secondary"
             disabled={locked || available.length === 0}
@@ -518,6 +655,7 @@ export function ProcurementSupplierDetail({
                   )
                 }
                 onClick={() => {
+                  pendingFocus.current = `${supplierId}:quantity`;
                   setDraft((values) => [
                     ...values,
                     {
@@ -575,7 +713,7 @@ export function ProcurementSupplierDetail({
         bottom="var(--atlas-layout-zero, 0)"
         zIndex="var(--atlas-layout-footer-layer, 2)"
         justify="space-between"
-        direction={{ base: "column", lg: "row" }}
+        direction="row"
         align="stretch"
         gap="sm"
         p="md"
@@ -597,7 +735,7 @@ export function ProcurementSupplierDetail({
         <Button
           variant="businessPrimary"
           disabled={!canSave}
-          flex={{ base: "none", lg: "1" }}
+          flex="1"
           minW="var(--atlas-layout-zero, 0)"
           h="var(--atlas-layout-auto, auto)"
           py="xs"
