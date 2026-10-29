@@ -43,6 +43,40 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it("keeps the selected document while narrow loaded-scope utilities open and focuses the first utility", () => {
+    const fixture = createProcurementReviewFixture("po_draft");
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+          onReleaseAll={vi.fn()}
+          onExportZip={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+
+    const selected = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    const disclosure = screen.getByRole("button", {
+      name: "Tiện ích đơn mua",
+    });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(disclosure);
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    const utilities = document.getElementById(
+      disclosure.getAttribute("aria-controls")!,
+    );
+    expect(utilities).toContainElement(document.activeElement as HTMLElement);
+    expect(selected).toBeVisible();
+    expect(
+      within(selected).getByRole("button", { name: "Phát hành cho NCC" }),
+    ).toBeEnabled();
+  });
+
   it("opens the authoritative predecessor and successor without issuing another command", () => {
     const fixture = createProcurementReviewFixture("po_released");
     const current = fixture.orders.purchase_orders[0]!;

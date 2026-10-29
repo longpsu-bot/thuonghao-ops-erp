@@ -414,7 +414,16 @@ describe("Procurement vNext operator workbench", () => {
     show("ready");
     await action();
 
-    expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBeEnabled();
+    const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
+    expect(search).toBeEnabled();
+    expect(search.closest('[data-scope="field"]')).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
+    expect(search).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
     const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
     expect(disclosure).toHaveAttribute("aria-expanded", "false");
     expect(disclosure).toHaveAttribute("aria-controls", "procurement-filters");

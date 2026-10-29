@@ -34,6 +34,7 @@ afterEach(() => {
 function show(
   scenario: SchoolFulfilmentScenario = "ALL",
   api = createSchoolFulfilmentReviewFixture(scenario),
+  expandedFilters = true,
 ) {
   const read = vi.spyOn(api, "getWorkbench");
   render(
@@ -46,6 +47,8 @@ function show(
       />
     </AtlasVNextProvider>,
   );
+  if (expandedFilters)
+    fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   return { read, api };
 }
 const table = () =>
@@ -62,6 +65,34 @@ async function openFirst() {
   return buttons[0];
 }
 describe("read-only reconciliation operator workbench", () => {
+  it("keeps narrow search immediate and focuses the disclosed scope filters", async () => {
+    show("ALL", createSchoolFulfilmentReviewFixture("ALL"), false);
+    await screen.findAllByRole("button", { name: "Xem đối chiếu" });
+
+    const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
+    const searchField = search.closest('[data-scope="field"]');
+    expect(searchField).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
+    expect(search).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("Tình trạng: Cần xử lý")).toBeVisible();
+
+    fireEvent.click(disclosure);
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    const filters = document.getElementById(
+      disclosure.getAttribute("aria-controls")!,
+    );
+    expect(filters).toContainElement(document.activeElement as HTMLElement);
+    expect(screen.getByText("Từ ngày")).toBeVisible();
+    expect(screen.getByText("Đến ngày")).toBeVisible();
+  });
+
   it("shows captured Unit names in summary and detail and searches them locally", async () => {
     const total = {
       unit_id: "unit-packet",
@@ -93,6 +124,7 @@ describe("read-only reconciliation operator workbench", () => {
     const detail = screen.getByRole("table", { name: "Chi tiết nguyên liệu" });
     expect(within(detail).getByText("Gói")).toBeVisible();
     expect(detail).not.toHaveTextContent("v1-unit-packet");
+    fireEvent.click(screen.getByRole("button", { name: "Đóng chi tiết" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
       target: { value: "goi" },
     });
@@ -221,8 +253,8 @@ describe("read-only reconciliation operator workbench", () => {
       await screen.findByText("Cần xử lý 0 · Khớp 1");
       expect(within(table()).queryByText("Khớp")).toBeNull();
       filter("all");
-      await openFirst();
       expect(within(table()).getByText("Khớp")).toBeVisible();
+      await openFirst();
       if (warnings.length) {
         const detail = screen.getByRole("region", {
           name: "Chi tiết đối chiếu",
@@ -340,8 +372,9 @@ describe("read-only reconciliation operator workbench", () => {
   ] as const)("uses backend %s label", async (status, label) => {
     const h = show(status);
     filter("all");
-    await openFirst();
+    await screen.findAllByRole("button", { name: "Xem đối chiếu" });
     expect(within(table()).getAllByRole("cell")[2]).toHaveTextContent(label);
+    await openFirst();
     expect(h.read).toHaveBeenCalledTimes(1);
   });
   it("opens attached detail with row semantics, human identity, and returns focus", async () => {
@@ -371,12 +404,13 @@ describe("read-only reconciliation operator workbench", () => {
   });
   it("shows exact backend quantities and keeps the same Ingredient in distinct Units", async () => {
     show("MIXED_UNITS");
-    await openFirst();
+    await screen.findAllByRole("button", { name: "Xem đối chiếu" });
     expect(
       within(table()).getByRole("cell", {
         name: "kg · PO 10 · PXK 20 · Δ -10 cái · PO 20 · PXK 10 · Δ +10",
       }),
     ).toBeVisible();
+    await openFirst();
     const detail = screen.getByRole("table", { name: "Chi tiết nguyên liệu" });
     expect(within(detail).getAllByText("Bí đỏ")).toHaveLength(2);
     expect(within(detail).getByText("-10")).toBeVisible();
@@ -395,8 +429,9 @@ describe("read-only reconciliation operator workbench", () => {
     };
     show("OK", api);
     filter("all");
-    await openFirst();
+    await screen.findAllByRole("button", { name: "Xem đối chiếu" });
     expect(within(table()).getByText("Khớp")).toBeVisible();
+    await openFirst();
     expect(screen.getByText("+900719925474099312345,123456")).toBeVisible();
   });
   it("keeps OK comparison separate from operational blockers and safe warning copy", async () => {

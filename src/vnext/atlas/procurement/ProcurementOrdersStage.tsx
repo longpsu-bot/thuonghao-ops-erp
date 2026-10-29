@@ -23,6 +23,7 @@ import {
   ProcurementPxkImpact,
   type ProcurementPxkImpactProps,
 } from "./ProcurementPxkImpact";
+import { focusFirstCompactFilter } from "../compactFilterFocus";
 
 export type ProcurementExportMode =
   "all" | "details_ing" | "details_school" | "sum";
@@ -99,6 +100,8 @@ export function ProcurementOrdersStage({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportMode, setExportMode] = useState<ProcurementExportMode>("all");
+  const [utilitiesOpen, setUtilitiesOpen] = useState(false);
+  const utilities = useRef<HTMLDivElement>(null);
   const exportOrders = (data?.purchase_orders ?? []).filter(canExport);
   const releaseOrders = (data?.purchase_orders ?? []).filter(
     canReleasePurchaseOrder,
@@ -135,6 +138,9 @@ export function ProcurementOrdersStage({
     if (selectedId) heading.current?.focus();
     setExportError(null);
   }, [selectedId]);
+  useEffect(() => {
+    if (utilitiesOpen) focusFirstCompactFilter(utilities.current);
+  }, [utilitiesOpen]);
   const primary =
     selected?.status === "DRAFT"
       ? selected.commitment_state === "DRAFT_STALE"
@@ -212,23 +218,41 @@ export function ProcurementOrdersStage({
         >
           {visible.length} đơn mua đang hiển thị
         </Text>
-        {onReleaseAll && (
+        {(onReleaseAll || onExportZip) && (
           <Button
+            display={{ base: "inline-flex", lg: "none" }}
             variant="secondary"
-            disabled={disabled || exporting || releaseOrders.length === 0}
-            loading={Boolean(bulkProgress)}
-            onClick={onReleaseAll}
-            aria-describedby={`${detailId}-loaded-scope`}
+            aria-expanded={utilitiesOpen}
+            aria-controls={`${detailId}-loaded-utilities`}
+            onClick={() => setUtilitiesOpen((open) => !open)}
           >
-            Phát hành tất cả PO ({releaseOrders.length})
+            Tiện ích đơn mua
           </Button>
         )}
         <AtlasWorkbar
-          aria-label="Xuất đơn mua đã tải"
+          ref={utilities}
+          id={`${detailId}-loaded-utilities`}
+          aria-label="Tiện ích đơn mua đã tải"
           aria-describedby={`${detailId}-loaded-scope`}
+          display={{
+            base: utilitiesOpen ? "flex" : "none",
+            lg: "flex",
+          }}
           w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
-          alignItems="center"
+          alignItems={{ base: "stretch", lg: "center" }}
+          flexDirection={{ base: "column", lg: "row" }}
         >
+          {onReleaseAll && (
+            <Button
+              variant="secondary"
+              disabled={disabled || exporting || releaseOrders.length === 0}
+              loading={Boolean(bulkProgress)}
+              onClick={onReleaseAll}
+              aria-describedby={`${detailId}-loaded-scope`}
+            >
+              Phát hành tất cả PO ({releaseOrders.length})
+            </Button>
+          )}
           <Field.Root
             disabled={disabled || exporting}
             w={{ base: "full", sm: "var(--atlas-layout-auto, auto)" }}
@@ -280,7 +304,12 @@ export function ProcurementOrdersStage({
           )}
         </AtlasWorkbar>
       </AtlasWorkbar>
-      <Box px="md" pb="sm" bg="bg.toolbar">
+      <Box
+        px="md"
+        pb="sm"
+        bg="bg.toolbar"
+        display={{ base: utilitiesOpen ? "block" : "none", lg: "block" }}
+      >
         <Text
           id={`${detailId}-loaded-scope`}
           textStyle="helper"

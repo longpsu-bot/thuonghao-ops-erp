@@ -33,7 +33,11 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-function show(scenario: SchoolPxkScenario = "READY", expandedFilters = true) {
+function show(
+  scenario: SchoolPxkScenario = "READY",
+  expandedFilters = true,
+  expandedUtilities = true,
+) {
   const api = createSchoolPxkReviewFixture(scenario);
   const read = vi.spyOn(api, "getWorkbench");
   const write = vi.spyOn(api, "releaseDocument");
@@ -58,6 +62,12 @@ function show(scenario: SchoolPxkScenario = "READY", expandedFilters = true) {
     const filters = screen.queryByRole("button", { name: "Bộ lọc" });
     if (filters) fireEvent.click(filters);
   }
+  if (expandedUtilities) {
+    const utilities = screen.queryByRole("button", {
+      name: "Tiện ích phiếu xuất kho",
+    });
+    if (utilities) fireEvent.click(utilities);
+  }
   return { api, read, write, xlsx, pdf, groupedXlsx, zip };
 }
 async function open(label = "Phát hành") {
@@ -66,6 +76,24 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("keeps the selected document while narrow loaded-scope utilities open and focuses the first utility", async () => {
+    show("CURRENT", true, false);
+    await open("Xem phiếu");
+    const detail = screen.getByRole("region", { name: "Nội dung phiếu" });
+    const disclosure = screen.getByRole("button", {
+      name: "Tiện ích phiếu xuất kho",
+    });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(disclosure);
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    const utilities = document.getElementById(
+      disclosure.getAttribute("aria-controls")!,
+    );
+    expect(utilities).toContainElement(document.activeElement as HTMLElement);
+    expect(detail).toBeVisible();
+    expect(within(detail).getByText("PXK-20260924-0001")).toBeVisible();
+  });
+
   it("retains the selected loaded document and export after an invalid range edit", async () => {
     const h = show("CURRENT");
     await open("Xem phiếu");
@@ -140,6 +168,9 @@ describe("School PXK operator table and attached detail", () => {
         />
       </AtlasVNextProvider>,
     );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiện ích phiếu xuất kho" }),
+    );
     await open("Tạo phiếu thay thế");
     const button = screen.getByRole("button", {
       name: "Xuất ZIP",
@@ -162,15 +193,22 @@ describe("School PXK operator table and attached detail", () => {
   it("keeps compact search immediate and discloses the exact date, School and state filters", async () => {
     show("READY", false);
     await open();
+    const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
+    expect(search.closest('[data-scope="field"]')).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
+    expect(search).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
     const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
     expect(disclosure).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBeEnabled();
     expect(
       screen.queryByRole("combobox", { name: "Tình trạng" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByText("Ngày 24/09/2026 · Tất cả trường · Tình trạng: Tất cả"),
-    ).toBeVisible();
+    expect(screen.getByText("Tình trạng: Tất cả")).toBeVisible();
     fireEvent.click(disclosure);
     const state = screen.getByRole("combobox", { name: "Tình trạng" });
     fireEvent.change(state, { target: { value: "BLOCKED" } });
@@ -180,10 +218,6 @@ describe("School PXK operator table and attached detail", () => {
   });
   it("names keyboard table scrolling and describes row action identity without changing the action", async () => {
     show();
-    const action = await open();
-    expect(action).toHaveAccessibleDescription(
-      /Trường Tiểu học Nguyễn Du.*Bếp chính/,
-    );
     const viewport = screen.getByRole("region", {
       name: "Bảng phiếu xuất kho theo trường",
     });
@@ -191,6 +225,15 @@ describe("School PXK operator table and attached detail", () => {
     expect(viewport).toContainElement(
       screen.getByRole("table", { name: "Phiếu xuất kho theo trường" }),
     );
+    const action = await open();
+    expect(action).toHaveAccessibleDescription(
+      /Trường Tiểu học Nguyễn Du.*Bếp chính/,
+    );
+    expect(
+      screen.queryByRole("region", {
+        name: "Bảng phiếu xuất kho theo trường",
+      }),
+    ).not.toBeInTheDocument();
     const lines = screen.getByRole("region", { name: "Bảng Nội dung dự kiến" });
     expect(lines).toHaveAttribute("tabindex", "0");
     expect(lines).toContainElement(

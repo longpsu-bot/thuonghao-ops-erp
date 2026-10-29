@@ -13,8 +13,14 @@ import { ProcurementOrdersStage } from "./ProcurementOrdersStage";
 import { reviewOrder, reviewDate } from "./procurementReviewFixtures";
 
 afterEach(cleanup);
-const bulk = () =>
-  within(screen.getByRole("group", { name: "Xuất đơn mua đã tải" }));
+const bulk = () => {
+  const disclosure = screen.queryByRole("button", {
+    name: "Tiện ích đơn mua",
+  });
+  if (disclosure?.getAttribute("aria-expanded") === "false")
+    fireEvent.click(disclosure);
+  return within(screen.getByRole("group", { name: "Tiện ích đơn mua đã tải" }));
+};
 const selectedExports = () =>
   within(screen.getByRole("region", { name: /^Chi tiết đơn mua/ }));
 describe("loaded PO presentation exports", () => {
@@ -45,7 +51,7 @@ describe("loaded PO presentation exports", () => {
         </AtlasVNextProvider>,
       );
       fireEvent.change(
-        screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
+        bulk().getByRole("combobox", { name: "Nội dung xuất PO" }),
         { target: { value: mode } },
       );
       fireEvent.click(bulk().getByRole("button", { name: "Xuất PDF" }));
@@ -120,7 +126,7 @@ describe("loaded PO presentation exports", () => {
       </AtlasVNextProvider>,
     );
     fireEvent.change(
-      screen.getByRole("combobox", { name: "Nội dung xuất PO" }),
+      bulk().getByRole("combobox", { name: "Nội dung xuất PO" }),
       { target: { value: "details_ing" } },
     );
     fireEvent.click(bulk().getByRole("button", { name: "Xuất XLSX" }));
