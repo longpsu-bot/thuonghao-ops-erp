@@ -115,8 +115,10 @@ visibility is proved by Chromium. A separate initial targeted run passed the
 actual inactive observer case. These separate runs are not a combined all-green
 certification suite. Final source typecheck, changed-file formatting, UI boundary
 and whitespace checks passed; Impeccable's mechanical scan returned no findings.
-The scoped final Product/source/render confirmation and exact-head GitHub Actions
-remain integration gates.
+The scoped final source/render confirmation passed: all five assigned findings
+are closed, with no new Critical or Important finding. The nonblocking compact
+PXK marker alignment is retained under the ruling below. Exact-head GitHub
+Actions and the owner's final Product review remain integration gates.
 
 ## Review, regression and contract evidence
 
@@ -160,15 +162,16 @@ SQL, calculations, source identities/facts, lifecycle, eligibility, precedence,
 permissions/RLS, dependencies, persistent owner lifetime and export formats are
 unchanged. This UI rollout does not certify new backend/security behavior.
 
-## Five implementation rulings
+## Six implementation rulings
 
-| Ruling                                                                            | Reason                                                                                                                                                            | Reversal cost if wrong                                                          |
-| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Explicit canonical E checkout, isolated rollout branch and sequential writers     | Preserve the authorized real repository and avoid concurrent ownership collisions; the workspace script's older D warning is superseded by explicit authorization | Workspace/branch rework; no business-data correction                            |
-| One visual capability across thirteen owners; Dispatch included, Receiving paused | Apply the accepted hierarchy to existing jobs without reopening Warehouse or changing module boundaries                                                           | Split the PR or restore bounded view changes                                    |
-| Endpoint is a reviewable PR; no automatic merge/deploy                            | Owner review and latest-head CI remain required integration gates                                                                                                 | A later release needs separate execution; no layout rework                      |
-| Latest approval supersedes earlier presentation-only narrow editor geometry       | One selected/review workplane must retain identity and recovery actions on phones; broad desktop planes use appropriate bounded rails                             | Reversible geometry change; guards and data stay protected                      |
-| Check owner horizontal drift as well as document overflow                         | A shell owner can drift while the document appears contained; intentional wide table scrolling belongs inside the table viewport                                  | Narrow a legitimate assertion exception or correct local layout; no data change |
+| Ruling                                                                            | Reason                                                                                                                                                            | Reversal cost if wrong                                                                       |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Explicit canonical E checkout, isolated rollout branch and sequential writers     | Preserve the authorized real repository and avoid concurrent ownership collisions; the workspace script's older D warning is superseded by explicit authorization | Workspace/branch rework; no business-data correction                                         |
+| One visual capability across thirteen owners; Dispatch included, Receiving paused | Apply the accepted hierarchy to existing jobs without reopening Warehouse or changing module boundaries                                                           | Split the PR or restore bounded view changes                                                 |
+| Endpoint is a reviewable PR; no automatic merge/deploy                            | Owner review and latest-head CI remain required integration gates                                                                                                 | A later release needs separate execution; no layout rework                                   |
+| Latest approval supersedes earlier presentation-only narrow editor geometry       | One selected/review workplane must retain identity and recovery actions on phones; broad desktop planes use appropriate bounded rails                             | Reversible geometry change; guards and data stay protected                                   |
+| Check owner horizontal drift as well as document overflow                         | A shell owner can drift while the document appears contained; intentional wide table scrolling belongs inside the table viewport                                  | Narrow a legitimate assertion exception or correct local layout; no data change              |
+| Retain the nonblocking compact PXK selection-marker alignment for this review     | The marker touches the identity's starting axis, but the identity remains readable and the action usable; final scoped review accepts the bounded rollout         | A small compact-only padding refinement and focused pixel recapture; no data or guard change |
 
 ## Limits and handoff
 
