@@ -19,6 +19,7 @@ import { AtlasTableViewport } from "../AtlasTableViewport";
 import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
 import { pantryIssueCopy } from "./pantryIssueCopy";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
+import { operatorUnitLabel } from "../masterDataPresentation";
 
 function PantryFeedback({
   error,
@@ -376,12 +377,18 @@ export function PlanningPantryStage({
                                   "Chọn nguyên liệu"
                                 }
                                 date={r.service_date}
-                                unit={ingredient?.purchase_unit.unit_code}
+                                unit={
+                                  ingredient
+                                    ? operatorUnitLabel(
+                                        ingredient.purchase_unit,
+                                      )
+                                    : undefined
+                                }
                                 source={sourceLabel(r.pantry_need_purpose_id)}
                               />
                               <Text textStyle="helper" color="fg.muted" mb="xs">
                                 {saved
-                                  ? `Đã lưu${saved.ingredient_id !== r.ingredient_id ? ` ${saved.ingredient_name}` : ""}: ${saved.requested_quantity} ${saved.unit_code}`
+                                  ? `Đã lưu${saved.ingredient_id !== r.ingredient_id ? ` ${saved.ingredient_name}` : ""}: ${saved.requested_quantity} ${operatorUnitLabel(saved)}`
                                   : "Dòng mới · chưa lưu"}
                               </Text>
                               <Field.Root invalid={!!errors.quantity}>
@@ -403,7 +410,11 @@ export function PlanningPantryStage({
                                     }
                                   />
                                   <Text textStyle="unitInline">
-                                    {ingredient?.purchase_unit.unit_code}
+                                    {ingredient
+                                      ? operatorUnitLabel(
+                                          ingredient.purchase_unit,
+                                        )
+                                      : undefined}
                                   </Text>
                                 </Flex>
                                 <PantryFeedback error={errors.quantity} />

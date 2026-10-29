@@ -90,15 +90,14 @@ function apiWith({
 async function renderReady(
   api: SchoolMasterDataApi,
   authSubject = "operator-1",
+  expectedSchool = "Trường Tiểu học Ánh Dương",
 ) {
   render(
     <AtlasVNextProvider>
       <SchoolDefaultsWorkbench authSubject={authSubject} api={api} />
     </AtlasVNextProvider>,
   );
-  expect(
-    await screen.findByText("Trường Tiểu học Ánh Dương"),
-  ).toBeInTheDocument();
+  expect(await screen.findByText(expectedSchool)).toBeInTheDocument();
 }
 
 const student = (name = "Trường Tiểu học Ánh Dương") =>
@@ -107,6 +106,20 @@ const teacher = (name = "Trường Trung học Beta") =>
   screen.getByLabelText(`Giáo viên mặc định — ${name}`);
 
 describe("Chakra School default portions workbench", () => {
+  it("shows the customer but not an imported technical School code", async () => {
+    const imported = {
+      ...schools[0]!,
+      school_code: "v1-school-2",
+    };
+    await renderReady(
+      apiWith({ reads: [success([imported])] }).api,
+      "operator-1",
+      imported.school_name,
+    );
+    expect(screen.getByText("Cụm trường Beta")).toBeVisible();
+    expect(screen.queryByText(/v1-school-2/)).not.toBeInTheDocument();
+  });
+
   it("omits single-option navigation while retaining a named default workplane", async () => {
     await renderReady(apiWith().api);
     expect(
