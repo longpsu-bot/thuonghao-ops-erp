@@ -577,7 +577,7 @@ describe("Planning sources Chakra workbench", () => {
       document.getElementById(disclosure.getAttribute("aria-controls")!),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Tuần 07/09/2026 · Ngày 07/09/2026 · Tất cả trường"),
+      screen.getByText("Tuần 07/09/2026 – 13/09/2026"),
     ).toBeInTheDocument();
 
     fireEvent.click(disclosure);
@@ -586,7 +586,10 @@ describe("Planning sources Chakra workbench", () => {
     });
     fireEvent.click(disclosure);
     expect(
-      screen.getByText("Tuần 07/09/2026 · Ngày 08/09/2026 · Tất cả trường"),
+      screen.getByText("Tuần 07/09/2026 – 13/09/2026"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Tóm tắt công việc: 08/09/2026 · Tất cả trường"),
     ).toBeInTheDocument();
   });
 
@@ -1044,10 +1047,28 @@ describe("Planning sources Chakra workbench", () => {
     expect(attendanceViewport).toHaveAttribute("tabindex", "0");
     expect(attendanceViewport).toContainElement(attendanceTable);
     expect(attendanceTable).toHaveStyle({
-      minWidth: "var(--atlas-attendance-table-width, 630px)",
+      minWidth: "var(--atlas-layout-zero, 0)",
       width: "100%",
       tableLayout: "fixed",
     });
+    const attendanceRow = within(attendanceTable).getByRole("row", {
+      name: /Trường Nguyễn Du/,
+    });
+    expect(
+      within(
+        attendanceRow.querySelector('[data-attendance-field="student"]')!,
+      ).getByText("Học sinh"),
+    ).toBeInTheDocument();
+    expect(
+      within(
+        attendanceRow.querySelector('[data-attendance-field="teacher"]')!,
+      ).getByText("Giáo viên"),
+    ).toBeInTheDocument();
+    expect(
+      within(
+        attendanceRow.querySelector('[data-attendance-field="total"]')!,
+      ).getByText("Tổng"),
+    ).toBeInTheDocument();
     fireEvent.change(input, { target: { value: "0" } });
     expect(input).toHaveValue("0");
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();

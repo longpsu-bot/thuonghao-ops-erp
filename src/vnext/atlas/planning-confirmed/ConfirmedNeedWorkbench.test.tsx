@@ -296,7 +296,11 @@ describe("Confirmed Need Chakra operator surface", () => {
       within(context).getByRole("heading", { level: 1 }),
     ).toHaveAccessibleDescription("Lập nhu cầu");
     expect(context).toHaveTextContent("Xác nhận nhu cầu");
-    expect(context).toHaveTextContent("Tất cả trường");
+    expect(
+      within(context).getByLabelText(
+        "Tóm tắt công việc: 07/09/2026 · Tất cả trường",
+      ),
+    ).toBeInTheDocument();
 
     const viewport = screen.getByRole("region", {
       name: "Bảng xác nhận nhu cầu",
@@ -407,9 +411,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       "aria-controls",
       "confirmed-need-filters",
     );
-    expect(
-      screen.getByText("Ngày 07/09/2026 · Tất cả trường · Tình trạng: Tất cả"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Tình trạng: Tất cả")).toBeInTheDocument();
 
     fireEvent.click(disclosure);
     expect(disclosure).toHaveAttribute("aria-expanded", "true");
@@ -908,6 +910,13 @@ describe("Confirmed Need Chakra operator surface", () => {
     const evidence = await screen.findByRole("table", {
       name: "Cách hình thành nhu cầu",
     });
+    const persistentActions = screen.getByRole("group", {
+      name: "Thao tác xác nhận nhu cầu",
+    });
+    expect(
+      evidence.compareDocumentPosition(persistentActions) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       screen.getByRole("heading", {
         level: 2,

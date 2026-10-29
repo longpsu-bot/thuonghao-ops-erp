@@ -123,7 +123,10 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
       }}
       alignItems="stretch"
     >
-      <Box minW="var(--atlas-layout-zero, 0)">
+      <Box
+        minW="var(--atlas-layout-zero, 0)"
+        display={{ base: reviewOpen ? "none" : "block", lg: "block" }}
+      >
         {c.job === "menu" ? (
           <PlanningMenuStage c={c} visibleSchoolIds={visibleSchoolIds} />
         ) : c.job === "attendance" ? (
@@ -223,7 +226,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               templateColumns={{
                 base: "minmax(0, 1fr) auto auto",
                 md: "repeat(2, minmax(0, 1fr))",
-                xl: "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
+                lg: "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
               }}
             >
               <Box
@@ -355,7 +358,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 textStyle="helper"
                 color="fg.muted"
               >
-                Tuần {viDate(c.week)} · Ngày {dateSummary} · {scopeSummary}
+                Tuần {weekSummary}
               </Text>
             </AtlasWorkbar>
             {c.outcome &&

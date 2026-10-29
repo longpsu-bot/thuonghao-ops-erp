@@ -144,10 +144,67 @@ export function PlanningAttendanceStage({
         <Table.Root
           aria-label="Sĩ số theo trường"
           tableLayout="fixed"
-          w="var(--atlas-attendance-table-width, 630px)"
-          minW="var(--atlas-attendance-table-width, 630px)"
+          w={{
+            base: "full",
+            md: "var(--atlas-attendance-table-width, 630px)",
+          }}
+          minW={{
+            base: "var(--atlas-layout-zero, 0)",
+            md: "var(--atlas-attendance-table-width, 630px)",
+          }}
           size="sm"
           stickyHeader
+          css={{
+            "@media(max-width:47.99rem)": {
+              "& colgroup": { display: "none" },
+              "& thead": {
+                position: "absolute",
+                width: "1px",
+                height: "1px",
+                overflow: "hidden",
+                clip: "rect(0, 0, 0, 0)",
+                whiteSpace: "nowrap",
+              },
+              "& tbody": { display: "block" },
+              "& tr": {
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gridTemplateAreas:
+                  '"school school" "student teacher" "total total"',
+                columnGap: "var(--atlas-spacing-sm)",
+                rowGap: "var(--atlas-spacing-xs)",
+                padding: "var(--atlas-spacing-sm)",
+                borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+              },
+              "& td": {
+                display: "block",
+                minWidth: 0,
+                padding: 0,
+                border: 0,
+              },
+              "& td::after": { display: "none" },
+              '& td[data-attendance-field="school"]': {
+                gridArea: "school",
+                paddingBlockEnd: "var(--atlas-spacing-xs)",
+                fontWeight: "600",
+              },
+              '& td[data-attendance-field="student"]': {
+                gridArea: "student",
+              },
+              '& td[data-attendance-field="teacher"]': {
+                gridArea: "teacher",
+              },
+              '& td[data-attendance-field="total"]': {
+                gridArea: "total",
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                paddingBlockStart: "var(--atlas-spacing-xs)",
+                textAlign: "start",
+              },
+              "& input": { width: "100%" },
+            },
+          }}
         >
           <Table.ColumnGroup>
             <Table.Column w="var(--atlas-attendance-school-width, 300px)" />
@@ -174,10 +231,21 @@ export function PlanningAttendanceStage({
                   ?.school_name ?? "Trường chưa nhận diện";
               return (
                 <Table.Row key={`${r.school_id}:${r.service_date}:${index}`}>
-                  <Table.Cell>{name}</Table.Cell>
+                  <Table.Cell data-attendance-field="school">{name}</Table.Cell>
                   {(["student_portions", "teacher_portions"] as const).map(
                     (field, i) => (
-                      <Table.Cell key={field}>
+                      <Table.Cell
+                        key={field}
+                        data-attendance-field={i === 0 ? "student" : "teacher"}
+                      >
+                        <Text
+                          hideFrom="md"
+                          textStyle="helper"
+                          color="fg.muted"
+                          mb="xs"
+                        >
+                          {i === 0 ? "Học sinh" : "Giáo viên"}
+                        </Text>
                         <Input
                           aria-label={`${i === 0 ? "Học sinh" : "Giáo viên"} ${name}`}
                           inputMode="numeric"
@@ -193,11 +261,17 @@ export function PlanningAttendanceStage({
                       </Table.Cell>
                     ),
                   )}
-                  <Table.Cell textAlign="right">
-                    {validCount(r.student_portions) &&
-                    validCount(r.teacher_portions)
-                      ? Number(r.student_portions) + Number(r.teacher_portions)
-                      : "—"}
+                  <Table.Cell data-attendance-field="total" textAlign="right">
+                    <Text hideFrom="md" textStyle="helper" color="fg.muted">
+                      Tổng
+                    </Text>
+                    <Text as="span" fontWeight="semibold">
+                      {validCount(r.student_portions) &&
+                      validCount(r.teacher_portions)
+                        ? Number(r.student_portions) +
+                          Number(r.teacher_portions)
+                        : "—"}
+                    </Text>
                   </Table.Cell>
                 </Table.Row>
               );
