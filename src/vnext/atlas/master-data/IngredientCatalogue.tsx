@@ -1,6 +1,6 @@
 import {
   AtlasSortableColumnHeader,
-  atlasNarrowSortableHeader,
+  atlasRecordSortHeader,
 } from "../AtlasSortableColumnHeader";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { Fragment, useState } from "react";
@@ -111,6 +111,20 @@ export function IngredientCatalogue({
               },
             }}
           >
+            <Table.Caption
+              hideFrom="md"
+              captionSide="top"
+              textAlign="start"
+              px="sm"
+              pt="sm"
+              pb="var(--atlas-layout-zero, 0)"
+              mt="var(--atlas-layout-zero, 0)"
+              fontWeight="semibold"
+              color="fg.default"
+              bg="bg.toolbar"
+            >
+              Sắp xếp
+            </Table.Caption>
             <Table.ColumnGroup>
               <Table.Column
                 w={
@@ -150,7 +164,7 @@ export function IngredientCatalogue({
                 }
               />
             </Table.ColumnGroup>
-            <Table.Header css={atlasNarrowSortableHeader}>
+            <Table.Header css={atlasRecordSortHeader}>
               <Table.Row>
                 {(
                   [

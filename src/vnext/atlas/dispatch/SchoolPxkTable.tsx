@@ -55,10 +55,12 @@ export function SchoolPxkTable({
           w="full"
           minW={{
             base: "var(--atlas-layout-zero, 0)",
-            lg: "var(--atlas-pxk-table-width, 810px)",
+            lg: selectedKey
+              ? "var(--atlas-layout-zero, 0)"
+              : "var(--atlas-pxk-table-width, 810px)",
           }}
           css={{
-            "@media(max-width:63.99rem)": {
+            [selectedKey ? "&" : "@media(max-width:63.99rem)"]: {
               "& colgroup": { display: "none" },
               "& thead": {
                 position: "absolute",
@@ -86,6 +88,13 @@ export function SchoolPxkTable({
                 border: 0,
               },
               "& td::after": { display: "none" },
+              ...(selectedKey
+                ? {
+                    '& td[data-pxk-field="content"]': { display: "none" },
+                    "& [data-narrow-label]": { display: "block" },
+                    "& button": { width: "100%" },
+                  }
+                : {}),
               '& td[data-pxk-field="school"]': { gridArea: "school" },
               '& td[data-pxk-field="content"]': { gridArea: "content" },
               '& td[data-pxk-field="document"]': { gridArea: "document" },

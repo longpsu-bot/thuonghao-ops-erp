@@ -76,6 +76,30 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("retains exact directory actions across selection and returns Close focus to the latest origin", async () => {
+    const connected = show("MULTIPLE_SCHOOLS");
+    await screen.findAllByRole("button", { name: "Xem phiếu" });
+    const directory = screen.getByRole("table", {
+      name: "Phiếu xuất kho theo trường",
+    });
+    const actions = within(directory).getAllByRole("button");
+    expect(actions.length).toBeGreaterThan(1);
+    fireEvent.click(actions[0]!);
+    // jsdom uses the narrow hidden-directory fallback; desktop visibility is browser-verified.
+    expect(within(directory).getAllByRole("button", { hidden: true })[1]).toBe(
+      actions[1],
+    );
+    fireEvent.click(actions[1]!);
+    expect(actions[1]!.closest("tr")).toHaveAttribute("aria-selected", "true");
+    const selected = screen.getByRole("region", { name: "Nội dung phiếu" });
+    fireEvent.click(
+      within(selected).getByRole("button", { name: "Đóng chi tiết" }),
+    );
+    await waitFor(() => expect(actions[1]).toHaveFocus());
+    expect(connected.read).toHaveBeenCalledOnce();
+    expect(connected.write).not.toHaveBeenCalled();
+  });
+
   it("presents the complete PXK row as one labelled narrow record with its long action", async () => {
     show("REPLACEMENT_REQUIRED", false, false);
     const action = await screen.findByRole("button", {

@@ -207,6 +207,7 @@ export function DishCatalogue({
             minW="var(--atlas-layout-zero, 0)"
             css={{
               "@media (max-width: 47.99rem)": {
+                "& td::after": { display: "none" },
                 "& colgroup": { display: "none" },
                 "& tbody, & tr, & td": { display: "block", width: "100%" },
                 "& td": {

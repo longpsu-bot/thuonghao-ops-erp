@@ -65,6 +65,29 @@ async function openFirst() {
   return buttons[0];
 }
 describe("read-only reconciliation operator workbench", () => {
+  it("retains exact directory actions across selection and returns Close focus to the latest origin", async () => {
+    const connected = show("ALL");
+    await screen.findAllByRole("button", { name: "Xem đối chiếu" });
+    const directory = screen.getByRole("table", {
+      name: "Đối chiếu theo trường",
+    });
+    const actions = within(directory).getAllByRole("button");
+    expect(actions.length).toBeGreaterThan(1);
+    fireEvent.click(actions[0]!);
+    // jsdom uses the narrow hidden-directory fallback; desktop visibility is browser-verified.
+    expect(within(directory).getAllByRole("button", { hidden: true })[1]).toBe(
+      actions[1],
+    );
+    fireEvent.click(actions[1]!);
+    expect(actions[1]!.closest("tr")).toHaveAttribute("aria-selected", "true");
+    const selected = screen.getByRole("region", { name: "Chi tiết đối chiếu" });
+    fireEvent.click(
+      within(selected).getByRole("button", { name: "Đóng chi tiết" }),
+    );
+    await waitFor(() => expect(actions[1]).toHaveFocus());
+    expect(connected.read).toHaveBeenCalledOnce();
+  });
+
   it("presents complete comparison evidence and action in one labelled narrow record", async () => {
     show(
       "MIXED_UNITS",
@@ -420,9 +443,14 @@ describe("read-only reconciliation operator workbench", () => {
   });
   it("opens attached detail with row semantics, human identity, and returns focus", async () => {
     show("MISMATCH");
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
     const trigger = await openFirst();
     const detail = screen.getByRole("region", { name: "Chi tiết đối chiếu" });
     expect(detail).toHaveFocus();
+    expect(focus.mock.calls[focus.mock.instances.indexOf(detail)]).toEqual([
+      { preventScroll: true },
+    ]);
+    focus.mockRestore();
     expect(trigger.closest("tr")).toHaveAttribute("aria-selected", "true");
     expect(
       trigger.closest("tr")?.querySelector("[data-selection-indicator]"),

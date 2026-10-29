@@ -25,7 +25,7 @@ import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import {
   AtlasSortableColumnHeader,
-  atlasNarrowSortableHeader,
+  atlasRecordSortHeader,
 } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { AtlasTaskContext } from "../AtlasTaskContext";
@@ -389,6 +389,21 @@ function SchoolDefaultsTable({
           }}
           display={{ base: "block", md: "table" }}
         >
+          <Table.Caption
+            display={{ base: "block", md: "none" }}
+            w="full"
+            captionSide="top"
+            textAlign="start"
+            px="sm"
+            pt="sm"
+            pb="var(--atlas-layout-zero, 0)"
+            mt="var(--atlas-layout-zero, 0)"
+            fontWeight="semibold"
+            color="fg.default"
+            bg="bg.toolbar"
+          >
+            Sắp xếp
+          </Table.Caption>
           <Table.ColumnGroup
             display={{ base: "none", md: "table-column-group" }}
           >
@@ -399,7 +414,7 @@ function SchoolDefaultsTable({
             <Table.Column w="var(--atlas-school-defaults-width, 220px)" />
             <Table.Column />
           </Table.ColumnGroup>
-          <Table.Header css={atlasNarrowSortableHeader}>
+          <Table.Header css={atlasRecordSortHeader}>
             <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
               <AtlasSortableColumnHeader
                 label="#"

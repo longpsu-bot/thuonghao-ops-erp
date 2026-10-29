@@ -48,9 +48,16 @@ export function SchoolFulfilmentWorkbench(
     if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
   }, [filtersOpen]);
   useEffect(() => {
-    if (selectedKey && selectedKey !== previousKey.current)
-      detail.current?.focus();
-    else if (
+    if (selectedKey && selectedKey !== previousKey.current) {
+      const owner = detail.current?.closest<HTMLElement>(
+        '[role="tabpanel"][aria-label]',
+      );
+      if (!owner?.hidden && !owner?.hasAttribute("inert")) {
+        if (owner && window.matchMedia?.("(max-width: 63.99rem)").matches)
+          owner.scrollTop = 0;
+        detail.current?.focus({ preventScroll: true });
+      }
+    } else if (
       !selectedKey &&
       previousKey.current &&
       (document.activeElement === document.body ||

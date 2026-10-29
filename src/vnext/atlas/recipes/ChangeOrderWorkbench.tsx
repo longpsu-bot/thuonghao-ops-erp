@@ -331,6 +331,7 @@ export function ChangeOrderWorkbench(
                           "1px solid var(--atlas-colors-border-subtle)",
                       },
                       "& td": { display: "block", border: "none" },
+                      "& td::after": { display: "none" },
                       "& td:first-of-type": { fontWeight: "semibold" },
                       "& td:nth-of-type(n + 2):nth-of-type(-n + 5)": {
                         gridColumn: "1 / -1",
@@ -351,6 +352,7 @@ export function ChangeOrderWorkbench(
                     borderBottom: "1px solid var(--atlas-colors-border-subtle)",
                   },
                   "& td": { display: "block", border: "none" },
+                  "& td::after": { display: "none" },
                   "& td:first-of-type": { fontWeight: "semibold" },
                   "& td:nth-of-type(n + 2):nth-of-type(-n + 5)": {
                     gridColumn: "1 / -1",

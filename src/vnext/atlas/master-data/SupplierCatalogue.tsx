@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { SupplierMasterData } from "../bridges/ingredientSupplierMasterData";
 import {
   AtlasSortableColumnHeader,
-  atlasNarrowSortableHeader,
+  atlasRecordSortHeader,
 } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
@@ -93,12 +93,27 @@ export function SupplierCatalogue({
                 borderBottom: "1px solid var(--atlas-colors-border-subtle)",
               },
               "& td": { display: "block", border: "none" },
+              "& td::after": { display: "none" },
               "& td:first-of-type, & td:nth-of-type(3)": {
                 gridColumn: "1 / -1",
               },
             },
           }}
         >
+          <Table.Caption
+            hideFrom="md"
+            captionSide="top"
+            textAlign="start"
+            px="sm"
+            pt="sm"
+            pb="var(--atlas-layout-zero, 0)"
+            mt="var(--atlas-layout-zero, 0)"
+            fontWeight="semibold"
+            color="fg.default"
+            bg="bg.toolbar"
+          >
+            Sắp xếp
+          </Table.Caption>
           <Table.ColumnGroup>
             <Table.Column
               w={
@@ -131,7 +146,7 @@ export function SupplierCatalogue({
               }
             />
           </Table.ColumnGroup>
-          <Table.Header css={atlasNarrowSortableHeader}>
+          <Table.Header css={atlasRecordSortHeader}>
             <Table.Row>
               <AtlasSortableColumnHeader
                 label="Nhà cung ứng"

@@ -245,6 +245,9 @@ describe("IngredientSupplierWorkbench", () => {
   it("keeps all five Ingredient sort actions reachable and retains unsaved edits across sorting", async () => {
     renderWorkbench();
     await ready();
+    expect(screen.getByText("Sắp xếp", { exact: true }).tagName).toBe(
+      "CAPTION",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
     fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
       target: { value: "Bí mật chưa lưu" },
@@ -296,6 +299,9 @@ describe("IngredientSupplierWorkbench", () => {
     );
     await screen.findByRole("button", { name: "Xem / sửa NCC Minh Tâm" });
     const table = screen.getByRole("table", { name: "Danh mục nhà cung ứng" });
+    expect(within(table).getByText("Sắp xếp", { exact: true }).tagName).toBe(
+      "CAPTION",
+    );
     expect(
       within(table)
         .getAllByRole("columnheader")
@@ -791,6 +797,50 @@ describe("IngredientSupplierWorkbench", () => {
     owner.scrollTop = 140;
     fireEvent.click(screen.getByRole("button", { name: "Quay lại chỉnh sửa" }));
     expect(owner.scrollTop).toBe(140);
+  });
+
+  it("defers actual hidden and inert first entry until activation exactly once", async () => {
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
+    render(
+      <AtlasVNextProvider>
+        <div
+          data-testid="deferred-owner"
+          role="tabpanel"
+          aria-label="Nguyên liệu"
+        >
+          <IngredientSupplierWorkbench
+            authSubject="operator-1"
+            api={createApi()}
+          />
+        </div>
+      </AtlasVNextProvider>,
+    );
+    await ready();
+    const owner = screen.getByTestId("deferred-owner");
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    const priority = screen.getByRole("button", { name: "Ưu tiên NCC" });
+    owner.hidden = true;
+    owner.setAttribute("inert", "");
+    owner.scrollTop = 240;
+    // Queue the real view entry while its persistent owner is inactive.
+    fireEvent.click(priority);
+    expect(owner.scrollTop).toBe(240);
+    owner.hidden = false;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(owner.scrollTop).toBe(240);
+    owner.removeAttribute("inert");
+    await waitFor(() => expect(owner.scrollTop).toBe(0));
+    owner.scrollTop = 170;
+    fireEvent.click(
+      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+    );
+    expect(owner.scrollTop).toBe(170);
+    owner.hidden = true;
+    owner.setAttribute("inert", "");
+    owner.hidden = false;
+    owner.removeAttribute("inert");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(owner.scrollTop).toBe(170);
   });
 
   it("creates an Ingredient from business fields only and offers active catalogues", async () => {

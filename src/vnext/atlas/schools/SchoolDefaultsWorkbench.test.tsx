@@ -177,6 +177,9 @@ describe("Chakra School default portions workbench", () => {
 
   it("keeps all five sort actions and the School order visible in the narrow composition", async () => {
     await renderReady(apiWith().api);
+    expect(screen.getByText("Sắp xếp", { exact: true }).tagName).toBe(
+      "CAPTION",
+    );
     for (const label of [
       "#",
       "Trường",

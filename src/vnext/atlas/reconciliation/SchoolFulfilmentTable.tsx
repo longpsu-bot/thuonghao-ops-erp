@@ -58,14 +58,18 @@ export function SchoolFulfilmentTable({
         tableLayout="fixed"
         w={{
           base: "full",
-          lg: "var(--atlas-reconciliation-table-width, 1020px)",
+          lg: selectedKey
+            ? "full"
+            : "var(--atlas-reconciliation-table-width, 1020px)",
         }}
         minW={{
           base: "var(--atlas-layout-zero, 0)",
-          lg: "var(--atlas-reconciliation-table-width, 1020px)",
+          lg: selectedKey
+            ? "var(--atlas-layout-zero, 0)"
+            : "var(--atlas-reconciliation-table-width, 1020px)",
         }}
         css={{
-          "@media(max-width:63.99rem)": {
+          [selectedKey ? "&" : "@media(max-width:63.99rem)"]: {
             "& colgroup": { display: "none" },
             "& thead": {
               position: "absolute",
@@ -93,6 +97,15 @@ export function SchoolFulfilmentTable({
               border: 0,
             },
             "& td::after": { display: "none" },
+            ...(selectedKey
+              ? {
+                  '& td[data-reconciliation-field="quantity"]': {
+                    display: "none",
+                  },
+                  "& [data-narrow-label]": { display: "block" },
+                  "& button": { width: "100%" },
+                }
+              : {}),
             '& td[data-reconciliation-field="date"]': {
               gridArea: "date",
               display: "flex",
@@ -110,6 +123,7 @@ export function SchoolFulfilmentTable({
             },
             '& td[data-reconciliation-field="quantity"]': {
               gridArea: "quantity",
+              display: selectedKey ? "none" : "block",
             },
             '& td[data-reconciliation-field="action"]': {
               gridArea: "action",
