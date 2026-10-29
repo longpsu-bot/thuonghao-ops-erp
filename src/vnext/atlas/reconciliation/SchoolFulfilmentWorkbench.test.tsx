@@ -65,6 +65,38 @@ async function openFirst() {
   return buttons[0];
 }
 describe("read-only reconciliation operator workbench", () => {
+  it("presents complete comparison evidence and action in one labelled narrow record", async () => {
+    show(
+      "MIXED_UNITS",
+      createSchoolFulfilmentReviewFixture("MIXED_UNITS"),
+      false,
+    );
+    const action = (
+      await screen.findAllByRole("button", { name: "Xem đối chiếu" })
+    )[0]!;
+    const row = action.closest("tr")!;
+
+    expect(row).toHaveAttribute("data-narrow-record", "reconciliation");
+    for (const label of [
+      "Ngày",
+      "Trường / điểm giao",
+      "Đối chiếu",
+      "PO / PXK",
+      "Số lượng",
+    ])
+      expect(
+        row.querySelector(`[data-narrow-label="${label}"]`),
+      ).not.toBeNull();
+    expect(row).toHaveTextContent("Trường Tiểu học Nguyễn Du");
+    expect(row).toHaveTextContent("Lệch số lượng");
+    expect(row).toHaveTextContent("kg · PO 10 · PXK 20 · Δ -10");
+    expect(row).toHaveTextContent("cái · PO 20 · PXK 10 · Δ +10");
+    expect(action).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
+  });
+
   it("keeps narrow search immediate and focuses the disclosed scope filters", async () => {
     show("ALL", createSchoolFulfilmentReviewFixture("ALL"), false);
     await screen.findAllByRole("button", { name: "Xem đối chiếu" });
@@ -221,7 +253,13 @@ describe("read-only reconciliation operator workbench", () => {
       within(table())
         .getAllByRole("row")
         .slice(1)
-        .map((r) => within(r).getAllByRole("cell")[1].textContent);
+        .map((r) => {
+          const school = within(r).getAllByRole("cell")[1];
+          return (
+            school.querySelector("p:not([data-narrow-label])")?.textContent +
+            school.querySelector("[data-row-secondary]")?.textContent
+          );
+        });
     expect(names()).toEqual(
       rows.slice(1).map((r) => r.school_name + r.delivery_location_name),
     );

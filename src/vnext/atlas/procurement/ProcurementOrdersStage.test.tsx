@@ -43,6 +43,42 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it("replaces the narrow directory with the selected PO and restores focus only after Close reveals it", () => {
+    const fixture = createProcurementReviewFixture("po_draft");
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    const directory = screen.getByRole("navigation", {
+      name: "Đơn mua theo nhà cung cấp",
+    });
+    const trigger = within(directory).getByRole("button", {
+      name: /^Xem đơn NCC An Phú/,
+    });
+    let directoryStateAtFocus: string | null = null;
+    const focus = trigger.focus.bind(trigger);
+    vi.spyOn(trigger, "focus").mockImplementation(() => {
+      directoryStateAtFocus = directory.getAttribute("data-narrow-selected");
+      focus();
+    });
+
+    expect(directory).toHaveAttribute("data-narrow-selected", "true");
+    expect(
+      screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+
+    expect(directory).toHaveAttribute("data-narrow-selected", "false");
+    expect(directoryStateAtFocus).toBe("false");
+    expect(trigger).toHaveFocus();
+  });
+
   it("keeps the selected document while narrow loaded-scope utilities open and focuses the first utility", () => {
     const fixture = createProcurementReviewFixture("po_draft");
     render(

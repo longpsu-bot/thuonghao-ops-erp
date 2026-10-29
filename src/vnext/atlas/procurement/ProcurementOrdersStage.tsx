@@ -107,6 +107,7 @@ export function ProcurementOrdersStage({
     canReleasePurchaseOrder,
   );
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const pendingFocusId = useRef<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const visible = (data?.purchase_orders ?? []).filter((order) =>
     [
@@ -136,6 +137,14 @@ export function ProcurementOrdersStage({
   }, [data, search, selectedId]);
   useEffect(() => {
     if (selectedId) heading.current?.focus();
+    if (selectedId === null && pendingFocusId.current) {
+      const id = pendingFocusId.current;
+      pendingFocusId.current = null;
+      const origin =
+        railButtons.current.get(id) ??
+        (trigger.current?.isConnected ? trigger.current : null);
+      origin?.focus();
+    }
     setExportError(null);
   }, [selectedId]);
   useEffect(() => {
@@ -355,6 +364,7 @@ export function ProcurementOrdersStage({
         <Flex
           as="nav"
           aria-label="Đơn mua theo nhà cung cấp"
+          data-narrow-selected={selected ? "true" : "false"}
           direction={{ base: "row", lg: "column" }}
           overflow="auto"
           maxH={{
@@ -364,6 +374,11 @@ export function ProcurementOrdersStage({
           gap="xs"
           minW="var(--atlas-layout-zero, 0)"
           alignSelf="start"
+          css={
+            selected
+              ? { "@media(max-width:63.99rem)": { display: "none" } }
+              : undefined
+          }
         >
           {visible.map((order) => (
             <Button
@@ -524,11 +539,8 @@ export function ProcurementOrdersStage({
                   variant="tertiary"
                   flexShrink="var(--atlas-layout-zero, 0)"
                   onClick={() => {
+                    pendingFocusId.current = selected.purchase_order_id;
                     setSelectedId(null);
-                    const origin = trigger.current?.isConnected
-                      ? trigger.current
-                      : railButtons.current.get(selected.purchase_order_id);
-                    origin?.focus();
                   }}
                 >
                   Đóng

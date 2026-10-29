@@ -76,6 +76,33 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("presents the complete PXK row as one labelled narrow record with its long action", async () => {
+    show("REPLACEMENT_REQUIRED", false, false);
+    const action = await screen.findByRole("button", {
+      name: "Tạo phiếu thay thế",
+    });
+    const row = action.closest("tr")!;
+
+    expect(row).toHaveAttribute("data-narrow-record", "pxk");
+    for (const label of [
+      "Trường / điểm giao",
+      "Nội dung",
+      "Phiếu hiện hành",
+      "Trạng thái",
+    ])
+      expect(
+        row.querySelector(`[data-narrow-label="${label}"]`),
+      ).not.toBeNull();
+    expect(row).toHaveTextContent("Trường Tiểu học Nguyễn Du");
+    expect(row).toHaveTextContent("Bếp chính · 24/09/2026");
+    expect(row).toHaveTextContent("PXK-20260924-0001");
+    expect(row).toHaveTextContent("Gạo thơm · 100 kg");
+    expect(action).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
+  });
+
   it("keeps the selected document while narrow loaded-scope utilities open and focuses the first utility", async () => {
     show("CURRENT", true, false);
     await open("Xem phiếu");

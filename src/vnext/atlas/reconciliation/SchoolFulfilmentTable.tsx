@@ -56,8 +56,66 @@ export function SchoolFulfilmentTable({
         size="sm"
         stickyHeader
         tableLayout="fixed"
-        w="var(--atlas-reconciliation-table-width, 1020px)"
-        minW="var(--atlas-reconciliation-table-width, 1020px)"
+        w={{
+          base: "full",
+          lg: "var(--atlas-reconciliation-table-width, 1020px)",
+        }}
+        minW={{
+          base: "var(--atlas-layout-zero, 0)",
+          lg: "var(--atlas-reconciliation-table-width, 1020px)",
+        }}
+        css={{
+          "@media(max-width:63.99rem)": {
+            "& colgroup": { display: "none" },
+            "& thead": {
+              position: "absolute",
+              width: "1px",
+              height: "1px",
+              overflow: "hidden",
+              clip: "rect(0, 0, 0, 0)",
+              whiteSpace: "nowrap",
+            },
+            "& tbody": { display: "block" },
+            "& tbody tr": {
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gridTemplateAreas:
+                '"school school" "date date" "result result" "documents documents" "quantity quantity" "action action"',
+              columnGap: "var(--atlas-spacing-sm)",
+              rowGap: "var(--atlas-spacing-sm)",
+              padding: "var(--atlas-spacing-sm)",
+              borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+            },
+            "& td": {
+              display: "block",
+              minWidth: 0,
+              padding: 0,
+              border: 0,
+            },
+            "& td::after": { display: "none" },
+            '& td[data-reconciliation-field="date"]': {
+              gridArea: "date",
+              display: "flex",
+              alignItems: "baseline",
+              gap: "var(--atlas-spacing-xs)",
+            },
+            '& td[data-reconciliation-field="school"]': {
+              gridArea: "school",
+            },
+            '& td[data-reconciliation-field="result"]': {
+              gridArea: "result",
+            },
+            '& td[data-reconciliation-field="documents"]': {
+              gridArea: "documents",
+            },
+            '& td[data-reconciliation-field="quantity"]': {
+              gridArea: "quantity",
+            },
+            '& td[data-reconciliation-field="action"]': {
+              gridArea: "action",
+            },
+          },
+        }}
       >
         <Table.ColumnGroup>
           <Table.Column w="var(--atlas-reconciliation-date-width, 110px)" />
@@ -86,22 +144,65 @@ export function SchoolFulfilmentTable({
             <Table.Row
               key={fulfilmentRowKey(row)}
               aria-selected={selectedKey === fulfilmentRowKey(row)}
+              data-narrow-record="reconciliation"
             >
-              <Table.Cell position="relative" whiteSpace="nowrap">
+              <Table.Cell
+                data-reconciliation-field="date"
+                position="relative"
+                whiteSpace="nowrap"
+              >
                 {selectedKey === fulfilmentRowKey(row) && (
                   <Box data-selection-indicator="" aria-hidden="true" />
                 )}
-                <Text textStyle="helper">
+                <Text
+                  data-narrow-label="Ngày"
+                  aria-hidden="true"
+                  hideFrom="lg"
+                  textStyle="helper"
+                  color="fg.muted"
+                >
+                  Ngày
+                </Text>
+                <Text
+                  textStyle="helper"
+                  color={{ base: "fg.muted", lg: "fg.default" }}
+                >
                   {fulfilmentDate(row.service_date)}
                 </Text>
               </Table.Cell>
-              <Table.Cell minW="var(--atlas-layout-school-min, 145px)">
+              <Table.Cell
+                data-reconciliation-field="school"
+                minW="var(--atlas-layout-school-min, 145px)"
+              >
+                <Text
+                  data-narrow-label="Trường / điểm giao"
+                  aria-hidden="true"
+                  hideFrom="lg"
+                  textStyle="helper"
+                  color="fg.muted"
+                  mb="xs"
+                >
+                  Trường / điểm giao
+                </Text>
                 <Text fontWeight="semibold">{row.school_name}</Text>
                 <Text data-row-secondary textStyle="helper" color="fg.muted">
                   {row.delivery_location_name}
                 </Text>
               </Table.Cell>
-              <Table.Cell minW="var(--atlas-layout-comparison-min, 105px)">
+              <Table.Cell
+                data-reconciliation-field="result"
+                minW="var(--atlas-layout-comparison-min, 105px)"
+              >
+                <Text
+                  data-narrow-label="Đối chiếu"
+                  aria-hidden="true"
+                  hideFrom="lg"
+                  textStyle="helper"
+                  color="fg.muted"
+                  mb="xs"
+                >
+                  Đối chiếu
+                </Text>
                 <ComparisonResult status={row.comparison_status} />
                 {(row.pxk_state === "REPLACEMENT_REQUIRED" ||
                   row.pxk_state === "BLOCKED" ||
@@ -119,7 +220,20 @@ export function SchoolFulfilmentTable({
                   </Text>
                 )}
               </Table.Cell>
-              <Table.Cell minW="var(--atlas-layout-documents-min, 120px)">
+              <Table.Cell
+                data-reconciliation-field="documents"
+                minW="var(--atlas-layout-documents-min, 120px)"
+              >
+                <Text
+                  data-narrow-label="PO / PXK"
+                  aria-hidden="true"
+                  hideFrom="lg"
+                  textStyle="helper"
+                  color="fg.muted"
+                  mb="xs"
+                >
+                  PO / PXK
+                </Text>
                 <Text textStyle="helper" overflowWrap="anywhere">
                   {row.purchase_order_numbers.join(" · ") || "Chưa có PO"}
                 </Text>
@@ -132,7 +246,20 @@ export function SchoolFulfilmentTable({
                   {row.pxk_document_number || "Chưa có PXK"}
                 </Text>
               </Table.Cell>
-              <Table.Cell minW="var(--atlas-layout-totals-min, 145px)">
+              <Table.Cell
+                data-reconciliation-field="quantity"
+                minW="var(--atlas-layout-totals-min, 145px)"
+              >
+                <Text
+                  data-narrow-label="Số lượng"
+                  aria-hidden="true"
+                  hideFrom="lg"
+                  textStyle="helper"
+                  color="fg.muted"
+                  mb="xs"
+                >
+                  Số lượng
+                </Text>
                 {row.quantity_totals_by_unit.map((total) => (
                   <Text
                     key={total.unit_id}
@@ -147,11 +274,16 @@ export function SchoolFulfilmentTable({
                   </Text>
                 ))}
               </Table.Cell>
-              <Table.Cell minW="var(--atlas-layout-row-action-min, 88px)">
+              <Table.Cell
+                data-reconciliation-field="action"
+                minW="var(--atlas-layout-row-action-min, 88px)"
+              >
                 <Button
                   variant="tertiary"
                   size="sm"
                   whiteSpace="normal"
+                  minW="var(--atlas-layout-zero, 0)"
+                  w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
                   onClick={(event) => onSelect(row, event.currentTarget)}
                 >
                   Xem đối chiếu
