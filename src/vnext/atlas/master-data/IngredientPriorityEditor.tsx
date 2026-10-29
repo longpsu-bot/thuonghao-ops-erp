@@ -17,9 +17,17 @@ export function IngredientPriorityEditor({
   c: IngredientSupplierWorkbenchController;
 }) {
   const panel = useRef<HTMLElement>(null);
+  const addedSupplier = useRef<HTMLSelectElement>(null);
+  const focusAddedSupplier = useRef(false);
   useEffect(() => {
-    if (c.activeSurface?.kind === "priorities") panel.current?.focus();
+    if (c.activeSurface?.kind === "priorities")
+      panel.current?.focus({ preventScroll: true });
   }, [c.activeSurface]);
+  useEffect(() => {
+    if (!focusAddedSupplier.current) return;
+    focusAddedSupplier.current = false;
+    addedSupplier.current?.focus();
+  }, [c.priorities.length]);
   if (c.activeSurface?.kind !== "priorities" || !c.selectedIngredient)
     return null;
   const disabled = c.saving || c.loading || Boolean(c.lock);
@@ -34,6 +42,7 @@ export function IngredientPriorityEditor({
     const supplier = unusedActiveSuppliers[0];
     const ranks = new Set(c.priorities.map((item) => item.priority));
     const priority = [1, 2, 3, 4, 5, 6].find((rank) => !ranks.has(rank)) ?? 1;
+    focusAddedSupplier.current = true;
     c.setPriorities([
       ...c.priorities,
       { supplierId: supplier?.supplier_id ?? "", priority },
@@ -45,14 +54,26 @@ export function IngredientPriorityEditor({
       ref={panel}
       tabIndex={-1}
       aria-label="Ưu tiên nhà cung ứng"
-      bg="bg.subtle"
-      borderLeftWidth="var(--atlas-layout-edge, 1px)"
-      borderColor="border.subtle"
+      bg="bg.workbench"
       minW="var(--atlas-layout-zero, 0)"
+      minH="var(--atlas-layout-zero, 0)"
+      maxH={{
+        lg: "var(--atlas-layout-master-workplane-height, calc(100dvh - 340px))",
+      }}
+      overflow={{ lg: "hidden" }}
       display="flex"
       flexDirection="column"
     >
-      <Flex p="md" justify="space-between" align="start" gap="sm">
+      <Flex
+        px="md"
+        py="sm"
+        justify="space-between"
+        align="start"
+        gap="sm"
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+        flexShrink="0"
+      >
         <Box>
           <Text textStyle="helper" color="fg.muted">
             Ưu tiên nhà cung ứng
@@ -69,15 +90,15 @@ export function IngredientPriorityEditor({
           variant="tertiary"
           aria-label="Đóng chi tiết"
           onClick={c.requestClose}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "compact",
+          }}
         >
           Đóng
         </Button>
       </Flex>
-      <Box
-        px="md"
-        overflowY="auto"
-        maxH="var(--atlas-layout-priority-height, calc(100dvh - 430px))"
-      >
+      <Box p="md" overflowY="auto" minH="var(--atlas-layout-zero, 0)" flex="1">
         {!c.priorities.length && <Text>Chưa có nhà cung ứng ưu tiên.</Text>}
         {c.priorities.map((row, index) => {
           const selected = c.suppliers.find(
@@ -91,8 +112,14 @@ export function IngredientPriorityEditor({
           return (
             <Box
               key={`${index}-${row.supplierId}`}
-              mb="md"
-              pb="md"
+              display="grid"
+              gridTemplateColumns={{
+                base: "minmax(0, 1fr)",
+                md: "minmax(0, 1fr) minmax(120px, 180px) auto",
+              }}
+              gap="sm"
+              alignItems="end"
+              py="sm"
               borderBottomWidth="var(--atlas-layout-edge, 1px)"
               borderColor="border.subtle"
             >
@@ -108,6 +135,11 @@ export function IngredientPriorityEditor({
                 <Field.Label>Nhà cung ứng</Field.Label>
                 <NativeSelect.Root>
                   <NativeSelect.Field
+                    ref={
+                      index === c.priorities.length - 1
+                        ? addedSupplier
+                        : undefined
+                    }
                     aria-label={`Nhà cung ứng ưu tiên ${index + 1}`}
                     value={row.supplierId}
                     onChange={(e) =>
@@ -135,13 +167,13 @@ export function IngredientPriorityEditor({
                   </NativeSelect.Field>
                   <NativeSelect.Indicator />
                 </NativeSelect.Root>
+                {selected?.supplier_status !== "ACTIVE" && (
+                  <Text color="status.warning" textStyle="helper">
+                    Ngừng hợp tác
+                  </Text>
+                )}
               </Field.Root>
-              {selected?.supplier_status !== "ACTIVE" && (
-                <Text color="status.warning" textStyle="helper" mt="xs">
-                  Ngừng hợp tác
-                </Text>
-              )}
-              <Field.Root mt="sm" disabled={disabled}>
+              <Field.Root disabled={disabled}>
                 <Field.Label>Mức ưu tiên</Field.Label>
                 <Input
                   aria-label={`Mức ưu tiên ${index + 1}`}
@@ -159,7 +191,6 @@ export function IngredientPriorityEditor({
                 />
               </Field.Root>
               <Button
-                mt="sm"
                 size="sm"
                 variant="tertiary"
                 disabled={disabled}
@@ -186,7 +217,14 @@ export function IngredientPriorityEditor({
           </Text>
         ))}
       </Box>
-      <Flex mt="var(--atlas-layout-auto, auto)" p="md" gap="sm" wrap="wrap">
+      <Flex
+        p="md"
+        gap="sm"
+        wrap="wrap"
+        borderTopWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+        flexShrink="0"
+      >
         <Button
           variant="secondary"
           disabled={

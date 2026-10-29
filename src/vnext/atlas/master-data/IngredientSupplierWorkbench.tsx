@@ -178,8 +178,8 @@ export function IngredientSupplierWorkbench({
               {c.job === "ingredients" ? (
                 <IngredientToolbar
                   c={c}
-                  onCreate={() => {
-                    rowTrigger.current = null;
+                  onCreate={(trigger) => {
+                    rowTrigger.current = trigger;
                     c.requestIngredient("NEW");
                   }}
                 />
@@ -231,10 +231,11 @@ export function IngredientSupplierWorkbench({
                 style={
                   {
                     "--atlas-master-detail-columns":
-                      "minmax(0, 1fr) minmax(360px, 420px)",
+                      "minmax(320px, 340px) minmax(0, 1fr)",
                   } as CSSProperties
                 }
                 mt="sm"
+                columnGap={{ lg: detailOpen ? "md" : undefined }}
                 templateColumns={{
                   base: "minmax(0, 1fr)",
                   lg: detailOpen
@@ -308,7 +309,7 @@ function IngredientToolbar({
   onCreate,
 }: {
   c: ReturnType<typeof useIngredientSupplierWorkbench>;
-  onCreate: () => void;
+  onCreate: (trigger: HTMLButtonElement) => void;
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const compactFilters = useRef<HTMLSelectElement>(null);
@@ -424,7 +425,7 @@ function IngredientToolbar({
             c.activeSurface || c.review ? "secondary" : "businessPrimary"
           }
           disabled={Boolean(c.lock)}
-          onClick={onCreate}
+          onClick={(event) => onCreate(event.currentTarget)}
         >
           Tạo nguyên liệu
         </Button>

@@ -49,13 +49,21 @@ export function SupplierCatalogue({
   const onSort = (key: SortKey) =>
     setSort((current) => nextAtlasSort(current, key));
   return (
-    <Box minW="var(--atlas-layout-zero, 0)">
+    <Box
+      data-testid="supplier-catalogue"
+      data-selected-presentation={detailOpen ? "identity-rail" : undefined}
+      display="block"
+      css={
+        detailOpen
+          ? { "@media(max-width: 61.99rem)": { display: "none" } }
+          : undefined
+      }
+      minW="var(--atlas-layout-zero, 0)"
+    >
       <AtlasTableViewport
         label="Bảng danh mục nhà cung ứng"
         maxH={{
-          base: detailOpen
-            ? "var(--atlas-supplier-list-selected-height, 35dvh)"
-            : "var(--atlas-supplier-list-height, 60dvh)",
+          base: "var(--atlas-supplier-list-height, 60dvh)",
           lg: "var(--atlas-layout-catalog-height, calc(100dvh - 290px))",
         }}
       >
@@ -63,7 +71,9 @@ export function SupplierCatalogue({
           aria-label="Danh mục nhà cung ứng"
           minW={{
             base: "var(--atlas-layout-zero, 0)",
-            md: "var(--atlas-supplier-table-width, 860px)",
+            md: detailOpen
+              ? "var(--atlas-layout-zero, 0)"
+              : "var(--atlas-supplier-table-width, 860px)",
           }}
           w="full"
           tableLayout="fixed"
@@ -90,12 +100,36 @@ export function SupplierCatalogue({
           }}
         >
           <Table.ColumnGroup>
-            <Table.Column w="var(--atlas-supplier-name-width, 30%)" />
-            <Table.Column w="var(--atlas-supplier-status-width, 20%)" />
-            <Table.Column />
-            <Table.Column />
-            <Table.Column />
-            <Table.Column w="var(--atlas-supplier-action-width, 96px)" />
+            <Table.Column
+              w={
+                detailOpen
+                  ? "var(--atlas-master-rail-name-width, 48%)"
+                  : "var(--atlas-supplier-name-width, 30%)"
+              }
+            />
+            <Table.Column
+              w={
+                detailOpen
+                  ? "var(--atlas-master-rail-status-width, 26%)"
+                  : "var(--atlas-supplier-status-width, 20%)"
+              }
+            />
+            <Table.Column
+              display={{ lg: detailOpen ? "none" : "table-column" }}
+            />
+            <Table.Column
+              display={{ lg: detailOpen ? "none" : "table-column" }}
+            />
+            <Table.Column
+              display={{ lg: detailOpen ? "none" : "table-column" }}
+            />
+            <Table.Column
+              w={
+                detailOpen
+                  ? "var(--atlas-master-rail-action-width, 26%)"
+                  : "var(--atlas-supplier-action-width, 96px)"
+              }
+            />
           </Table.ColumnGroup>
           <Table.Header css={atlasNarrowSortableHeader}>
             <Table.Row>
@@ -116,12 +150,21 @@ export function SupplierCatalogue({
               />
               <AtlasSortableColumnHeader
                 label="Người liên hệ"
+                display={{ lg: detailOpen ? "none" : "table-cell" }}
                 columnKey="contact"
                 sort={sort}
                 onSort={onSort}
               />
-              <Table.ColumnHeader>Điện thoại</Table.ColumnHeader>
-              <Table.ColumnHeader>Email</Table.ColumnHeader>
+              <Table.ColumnHeader
+                display={{ lg: detailOpen ? "none" : "table-cell" }}
+              >
+                Điện thoại
+              </Table.ColumnHeader>
+              <Table.ColumnHeader
+                display={{ lg: detailOpen ? "none" : "table-cell" }}
+              >
+                Email
+              </Table.ColumnHeader>
               <Table.ColumnHeader
                 position={{ base: "static", md: "sticky" }}
                 right="var(--atlas-layout-zero, 0)"
@@ -152,21 +195,31 @@ export function SupplierCatalogue({
                   <Text fontWeight="semibold">{item.supplier_name}</Text>
                 </Table.Cell>
                 <Table.Cell>
-                  <Badge variant={status[item.supplier_status].variant}>
+                  <Badge
+                    variant={status[item.supplier_status].variant}
+                    whiteSpace={detailOpen ? "normal" : undefined}
+                  >
                     {status[item.supplier_status].label}
                   </Badge>
                 </Table.Cell>
-                <Table.Cell>
+                <Table.Cell
+                  display={{ lg: detailOpen ? "none" : "table-cell" }}
+                >
                   <Text color="fg.muted">
                     {item.contact_name || "Chưa có người liên hệ"}
                   </Text>
                 </Table.Cell>
-                <Table.Cell>
+                <Table.Cell
+                  display={{ lg: detailOpen ? "none" : "table-cell" }}
+                >
                   <Text color="fg.muted">
                     {item.contact_phone || "Chưa có số điện thoại"}
                   </Text>
                 </Table.Cell>
-                <Table.Cell overflowWrap="anywhere">
+                <Table.Cell
+                  display={{ lg: detailOpen ? "none" : "table-cell" }}
+                  overflowWrap="anywhere"
+                >
                   <Text color="fg.muted">
                     {item.contact_email || "Chưa có email"}
                   </Text>
@@ -182,11 +235,12 @@ export function SupplierCatalogue({
                     size="sm"
                     variant="tableAction"
                     aria-label={`Xem / sửa ${item.supplier_name}`}
+                    aria-expanded={item.supplier_id === selectedId}
                     onClick={(event) =>
                       onSelect(item.supplier_id, event.currentTarget)
                     }
                   >
-                    Xem / sửa
+                    {detailOpen ? "Xem" : "Xem / sửa"}
                   </Button>
                 </Table.Cell>
               </Table.Row>

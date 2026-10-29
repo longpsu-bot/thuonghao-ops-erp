@@ -71,7 +71,7 @@ export function SchoolGroupMemberships({
     );
   return (
     <Box
-      p="md"
+      py="md"
       borderTopWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.subtle"
     >
@@ -197,6 +197,10 @@ export function SchoolGroupMemberships({
                   <Button
                     size="sm"
                     variant="businessPrimary"
+                    minH={{
+                      base: "var(--atlas-layout-mobile-target, 44px)",
+                      lg: "compact",
+                    }}
                     disabled={disabled || Boolean(c.lock)}
                     aria-label={`Lưu ${title} — ${school.school_name}`}
                     onClick={() => void save(school)}
@@ -206,6 +210,10 @@ export function SchoolGroupMemberships({
                   <Button
                     size="sm"
                     variant="tertiary"
+                    minH={{
+                      base: "var(--atlas-layout-mobile-target, 44px)",
+                      lg: "compact",
+                    }}
                     disabled={disabled}
                     aria-label={`Hoàn tác ${title} — ${school.school_name}`}
                     onClick={() => edit(school, savedId(school))}

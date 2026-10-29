@@ -465,7 +465,7 @@ describe("IngredientSupplierWorkbench", () => {
       expect.objectContaining({ unsaved: true, blocked: true }),
     );
   });
-  it("keeps the catalogue primary beside a task-sized editor and returns focus to the exact Ingredient action", async () => {
+  it("uses an identity rail beside the broad editor and returns focus to the exact Ingredient action", async () => {
     renderWorkbench();
     await ready();
     const context = screen.getByRole("region", {
@@ -489,14 +489,35 @@ describe("IngredientSupplierWorkbench", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("ingredient-supplier-master-detail")).toHaveStyle(
       {
-        "--atlas-master-detail-columns": "minmax(0, 1fr) minmax(360px, 420px)",
+        "--atlas-master-detail-columns": "minmax(320px, 340px) minmax(0, 1fr)",
       },
+    );
+    expect(screen.getByTestId("ingredient-catalogue")).toHaveAttribute(
+      "data-selected-presentation",
+      "identity-rail",
     );
     expect(
       screen.getByRole("complementary", { name: "Chi tiết nguyên liệu" }),
     ).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "Đóng chi tiết" }));
     await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("returns focus to the Ingredient Create command after closing a new record", async () => {
+    renderWorkbench();
+    await ready();
+    const create = screen.getByRole("button", { name: "Tạo nguyên liệu" });
+
+    fireEvent.click(create);
+    const detail = screen.getByRole("complementary", {
+      name: "Chi tiết nguyên liệu",
+    });
+    expect(detail).toHaveFocus();
+    fireEvent.click(
+      within(detail).getByRole("button", { name: "Đóng chi tiết" }),
+    );
+
+    await waitFor(() => expect(create).toHaveFocus());
   });
 
   it("shows module context and the current job heading before local job tabs", async () => {
@@ -637,7 +658,7 @@ describe("IngredientSupplierWorkbench", () => {
     expect(document.body).not.toHaveTextContent("0 nguyên liệu");
   });
 
-  it("keeps the selected Ingredient catalogue row visible in a stationary attached detail split", async () => {
+  it("keeps the selected Ingredient identity visible in the stationary directory rail", async () => {
     renderWorkbench();
     await ready();
     const selectedName = screen.getByText("Bí mật");
@@ -648,6 +669,10 @@ describe("IngredientSupplierWorkbench", () => {
     const split = screen.getByTestId("ingredient-supplier-master-detail");
     expect(split).toHaveAttribute("data-detail-open", "true");
     expect(split).not.toHaveAttribute("data-detail-animation", "true");
+    expect(screen.getByTestId("ingredient-catalogue")).toHaveAttribute(
+      "data-selected-presentation",
+      "identity-rail",
+    );
     expect(
       screen.getByRole("table", { name: "Danh mục nguyên liệu" }),
     ).toBeVisible();
@@ -662,7 +687,7 @@ describe("IngredientSupplierWorkbench", () => {
     );
   });
 
-  it("opens Ingredient creation in the same attached detail region with the catalogue mounted", async () => {
+  it("opens Ingredient creation beside the mounted identity directory", async () => {
     renderWorkbench();
     await ready();
 
@@ -675,6 +700,21 @@ describe("IngredientSupplierWorkbench", () => {
       screen.getByRole("region", { name: "Chi tiết nguyên liệu" }),
     ).toHaveTextContent("Tạo nguyên liệu");
     expect(screen.getByRole("button", { name: "Đóng chi tiết" })).toBeVisible();
+  });
+
+  it("focuses the Supplier selector added to the priority editor", async () => {
+    renderWorkbench();
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ưu tiên NCC" }));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("Nhà cung ứng ưu tiên 2")).toHaveFocus(),
+    );
   });
 
   it("creates an Ingredient from business fields only and offers active catalogues", async () => {
