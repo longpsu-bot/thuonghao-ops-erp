@@ -17,7 +17,10 @@ import type {
 import { IngredientSupplierWorkbench } from "./IngredientSupplierWorkbench";
 import { createIngredientSupplierReviewFixture } from "./ingredientSupplierReviewFixtures";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const ingredients = [
   {
@@ -715,6 +718,79 @@ describe("IngredientSupplierWorkbench", () => {
     await waitFor(() =>
       expect(screen.getByLabelText("Nhà cung ứng ưu tiên 2")).toHaveFocus(),
     );
+  });
+
+  it("restores only the active narrow owner start on Priority and Review entry", async () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({
+        matches: true,
+        media: "(max-width: 61.99rem)",
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }),
+    );
+    render(
+      <AtlasVNextProvider>
+        <div
+          data-testid="inactive-master-owner"
+          role="tabpanel"
+          aria-label="Nhà cung ứng"
+          hidden
+          inert
+        />
+        <div
+          data-testid="active-master-owner"
+          role="tabpanel"
+          aria-label="Nguyên liệu"
+        >
+          <IngredientSupplierWorkbench
+            authSubject="operator-1"
+            api={createApi()}
+          />
+        </div>
+      </AtlasVNextProvider>,
+    );
+    await ready();
+    const owner = screen.getByTestId("active-master-owner");
+    const inactiveOwner = screen.getByTestId("inactive-master-owner");
+    owner.scrollTop = 240;
+    inactiveOwner.scrollTop = 190;
+
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ưu tiên NCC" }));
+
+    expect(owner.scrollTop).toBe(0);
+    expect(inactiveOwner.scrollTop).toBe(190);
+    owner.scrollTop = 170;
+    fireEvent.click(
+      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+    );
+    expect(owner.scrollTop).toBe(170);
+    fireEvent.click(screen.getByRole("button", { name: "Gỡ NCC Minh Tâm" }));
+    expect(owner.scrollTop).toBe(170);
+    fireEvent.click(screen.getByRole("button", { name: "Đóng chi tiết" }));
+
+    const row = screen.getByRole("button", { name: "Xem / sửa Bí mật" });
+    await waitFor(() => expect(row).toHaveFocus());
+    fireEvent.click(row);
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: {
+        value: "Rau muống sơ chế theo quy cách bếp trung tâm khu vực phía Bắc",
+      },
+    });
+    owner.scrollTop = 260;
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+
+    expect(owner.scrollTop).toBe(0);
+    expect(inactiveOwner.scrollTop).toBe(190);
+    owner.scrollTop = 140;
+    fireEvent.click(screen.getByRole("button", { name: "Quay lại chỉnh sửa" }));
+    expect(owner.scrollTop).toBe(140);
   });
 
   it("creates an Ingredient from business fields only and offers active catalogues", async () => {

@@ -1,4 +1,10 @@
-import { useEffect, useImperativeHandle, useRef, useState } from "react";
+import {
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { CSSProperties } from "react";
 import {
   useAtlasWorkbenchStatus,
@@ -84,7 +90,38 @@ export function IngredientSupplierWorkbench({
           : null;
   const rowTrigger = useRef<HTMLButtonElement | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const workbench = useRef<HTMLElement>(null);
   const wasDetailOpen = useRef(false);
+  const narrowEntryKey = c.review
+    ? `review:${c.review.kind}:${detailId}`
+    : detailKind === "priorities"
+      ? `priorities:${detailId}`
+      : null;
+  useLayoutEffect(() => {
+    if (
+      !narrowEntryKey ||
+      !window.matchMedia?.("(max-width: 61.99rem)").matches
+    )
+      return;
+    const owner = workbench.current?.closest<HTMLElement>(
+      '[role="tabpanel"][aria-label]',
+    );
+    if (!owner) return;
+    const restoreOwnerStart = () => {
+      if (owner.hidden || owner.hasAttribute("inert")) return false;
+      owner.scrollTop = 0;
+      return true;
+    };
+    if (restoreOwnerStart()) return;
+    const observer = new MutationObserver(() => {
+      if (restoreOwnerStart()) observer.disconnect();
+    });
+    observer.observe(owner, {
+      attributes: true,
+      attributeFilter: ["hidden", "inert"],
+    });
+    return () => observer.disconnect();
+  }, [narrowEntryKey]);
   useEffect(() => {
     if (wasDetailOpen.current && !detailOpen) {
       const trigger = rowTrigger.current;
@@ -116,6 +153,7 @@ export function IngredientSupplierWorkbench({
       : `${c.visibleSuppliers.length} / ${c.suppliers.length}`;
   return (
     <Box
+      ref={workbench}
       as="section"
       aria-label={label}
       bg="bg.workbench"
