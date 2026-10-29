@@ -4,7 +4,7 @@
 
 **Task:** ATLAS-WORKBENCH-HIERARCHY-20261029 — apply the approved Allocation hierarchy across every active Atlas workbench and shared page.
 
-**Status:** ACTIVE — inventory/baseline complete; sequential implementation families in progress.
+**Status:** IN_REVIEW — implementation, independent family review and local evidence delivered; PR/latest-head CI and final Product/architecture review remain.
 
 **Owner authorization:** “approve, please proceed for every workbench and page”.
 The Owner accepted PR #446 as the visual reference; it is merged as `777d3237`.
@@ -16,19 +16,34 @@ supporting-detail disclosure and focus within the existing thirteen owners and
 their reachable views/dialogs, plus shell/session pages. The
 [approved rollout specification](../ui/atlas-workbench-hierarchy-rollout.md) and
 [sequential plan](../superpowers/plans/2026-10-29-atlas-workbench-hierarchy-rollout.md)
-define expected files, five implementation families and final acceptance.
+define expected files, five implementation families and final acceptance. The
+[public coverage record](../testing/artifacts/atlas-workbench-hierarchy/coverage.md)
+and [phone gallery](../testing/artifacts/atlas-workbench-hierarchy/README.md)
+account for all thirteen owners, review-only cases, reachable support surfaces,
+actual capture dimensions and remaining limits.
 
 Keep palette, typography roles, provider/system, existing public props,
 controllers, APIs, exact calculations, identities, Units, command payloads,
 permissions and persistent-owner/dirty/UNKNOWN contracts intact. Workers edit
-only their bounded family and tests; navigator/review remains read-only. Each
-family is reviewed and committed before another implementation worker starts.
+only their bounded family and tests; navigator/review remains read-only. The
+sequential families are implemented and independently passed, including scoped
+review corrections. No further implementation family starts automatically.
 
 Acceptance requires all thirteen owners/shared pages accounted for, seven-width
 rendered coverage, representative selected/edit/review states, preserved focus
 and guards, focused regressions, documentation and latest-head Frontend CI.
-Publish a complete reviewable PR and phone-accessible evidence. This rollout
-does not authorize merge, manual deployment, hosted writes or data work.
+Local matrix evidence records 175 PASS states across the seven required sizes;
+family support checks are separately qualified. Final source/test checkpoint
+`5ab69bf3` passes typecheck. The owner run's 103 passes/one stale visibility
+assertion and exact test-only closure (2 passed/12 skipped) are preserved in
+coverage; no combined all-green rerun is claimed.
+
+**Remaining integration gate:** publish the branch/reviewable PR, verify public
+gallery access and latest-head `Frontend CI / Format, typecheck, test, build`,
+then complete Product/architecture review. CI/PR are pending at this checkpoint;
+no PR number is invented. The [branch](https://github.com/longpsu-bot/thuonghao-ops-erp/tree/codex/atlas-workbench-hierarchy-rollout)
+identifies the handoff destination. This rollout does not authorize automatic
+merge, manual deployment, hosted writes, data work or a next implementation task.
 
 **Warehouse Receiving remains PAUSED.** Existing PXK and reconciliation UI are
 Dispatch owners, not Warehouse reactivation. No backend, database, export-format,

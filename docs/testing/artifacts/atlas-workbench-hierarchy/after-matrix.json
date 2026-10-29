@@ -1,0 +1,4601 @@
+[
+  {
+    "id": "menu",
+    "label": "Thực đơn",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Thực đơn",
+        "x": 27,
+        "y": 121.59375,
+        "width": 109.65625,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 321.796875,
+        "width": 1898,
+        "height": 1164,
+        "bottom": 1485.796875
+      }
+    ]
+  },
+  {
+    "id": "attendance",
+    "label": "Sĩ số",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số",
+        "x": 27,
+        "y": 121.59375,
+        "width": 55.734375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 319,
+        "width": 1898,
+        "height": 1791,
+        "bottom": 2110
+      }
+    ]
+  },
+  {
+    "id": "pantry",
+    "label": "Hàng đặt riêng",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Hàng đặt riêng",
+        "x": 27,
+        "y": 121.59375,
+        "width": 167.734375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 399,
+        "width": 1898,
+        "height": 42,
+        "bottom": 441
+      }
+    ]
+  },
+  {
+    "id": "need",
+    "label": "Xác nhận nhu cầu",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Xác nhận nhu cầu",
+        "x": 27,
+        "y": 121.59375,
+        "width": 203.328125,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 311,
+        "width": 1898,
+        "height": 517.28125,
+        "bottom": 828.28125
+      }
+    ]
+  },
+  {
+    "id": "allocation",
+    "label": "Phân bổ NCC",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phân bổ NCC",
+        "x": 27,
+        "y": 121.59375,
+        "width": 153.984375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 350.796875,
+        "width": 1898,
+        "height": 101.796875,
+        "bottom": 452.59375
+      }
+    ]
+  },
+  {
+    "id": "orders",
+    "label": "Đơn mua",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đơn mua",
+        "x": 27,
+        "y": 121.59375,
+        "width": 103.71875,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 80,
+        "bottom": 247
+      },
+      {
+        "x": 11,
+        "y": 247,
+        "width": 1898,
+        "height": 56,
+        "bottom": 303
+      },
+      {
+        "x": 1157.203125,
+        "y": 257,
+        "width": 735.796875,
+        "height": 40,
+        "bottom": 297
+      }
+    ],
+    "tables": []
+  },
+  {
+    "id": "pxk",
+    "label": "Phiếu xuất kho",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phiếu xuất kho",
+        "x": 27,
+        "y": 121.59375,
+        "width": 168.40625,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 87,
+        "bottom": 254
+      },
+      {
+        "x": 27,
+        "y": 294.796875,
+        "width": 1866,
+        "height": 40,
+        "bottom": 334.796875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 371.59375,
+        "width": 1898,
+        "height": 96.796875,
+        "bottom": 468.390625
+      }
+    ]
+  },
+  {
+    "id": "reconciliation",
+    "label": "Đối chiếu PO / Phiếu xuất kho",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đối chiếu PO / Phiếu xuất kho",
+        "x": 27,
+        "y": 121,
+        "width": 335.265625,
+        "height": 33.796875,
+        "bottom": 154.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 87,
+        "bottom": 254
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 325.59375,
+        "width": 1898,
+        "height": 96.796875,
+        "bottom": 422.390625
+      }
+    ]
+  },
+  {
+    "id": "menu",
+    "label": "Thực đơn",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Thực đơn",
+        "x": 27,
+        "y": 121.59375,
+        "width": 109.65625,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 321.796875,
+        "width": 1418,
+        "height": 1164,
+        "bottom": 1485.796875
+      }
+    ]
+  },
+  {
+    "id": "attendance",
+    "label": "Sĩ số",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số",
+        "x": 27,
+        "y": 121.59375,
+        "width": 55.734375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 319,
+        "width": 1418,
+        "height": 1791,
+        "bottom": 2110
+      }
+    ]
+  },
+  {
+    "id": "pantry",
+    "label": "Hàng đặt riêng",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Hàng đặt riêng",
+        "x": 27,
+        "y": 121.59375,
+        "width": 167.734375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 399,
+        "width": 1418,
+        "height": 42,
+        "bottom": 441
+      }
+    ]
+  },
+  {
+    "id": "need",
+    "label": "Xác nhận nhu cầu",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Xác nhận nhu cầu",
+        "x": 27,
+        "y": 121.59375,
+        "width": 203.328125,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 311,
+        "width": 1418,
+        "height": 517.28125,
+        "bottom": 828.28125
+      }
+    ]
+  },
+  {
+    "id": "allocation",
+    "label": "Phân bổ NCC",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phân bổ NCC",
+        "x": 27,
+        "y": 121.59375,
+        "width": 153.984375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 350.796875,
+        "width": 1418,
+        "height": 101.796875,
+        "bottom": 452.59375
+      }
+    ]
+  },
+  {
+    "id": "orders",
+    "label": "Đơn mua",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đơn mua",
+        "x": 27,
+        "y": 121.59375,
+        "width": 103.71875,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 80,
+        "bottom": 247
+      },
+      {
+        "x": 11,
+        "y": 247,
+        "width": 1418,
+        "height": 56,
+        "bottom": 303
+      },
+      {
+        "x": 677.203125,
+        "y": 257,
+        "width": 735.796875,
+        "height": 40,
+        "bottom": 297
+      }
+    ],
+    "tables": []
+  },
+  {
+    "id": "pxk",
+    "label": "Phiếu xuất kho",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phiếu xuất kho",
+        "x": 27,
+        "y": 121.59375,
+        "width": 168.40625,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 87,
+        "bottom": 254
+      },
+      {
+        "x": 27,
+        "y": 294.796875,
+        "width": 1386,
+        "height": 40,
+        "bottom": 334.796875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 371.59375,
+        "width": 1418,
+        "height": 96.796875,
+        "bottom": 468.390625
+      }
+    ]
+  },
+  {
+    "id": "reconciliation",
+    "label": "Đối chiếu PO / Phiếu xuất kho",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đối chiếu PO / Phiếu xuất kho",
+        "x": 27,
+        "y": 121,
+        "width": 335.265625,
+        "height": 33.796875,
+        "bottom": 154.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 87,
+        "bottom": 254
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 325.59375,
+        "width": 1418,
+        "height": 117.390625,
+        "bottom": 442.984375
+      }
+    ]
+  },
+  {
+    "id": "menu",
+    "label": "Thực đơn",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Thực đơn",
+        "x": 27,
+        "y": 121.59375,
+        "width": 109.65625,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 321.796875,
+        "width": 1344,
+        "height": 1164,
+        "bottom": 1485.796875
+      }
+    ]
+  },
+  {
+    "id": "attendance",
+    "label": "Sĩ số",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số",
+        "x": 27,
+        "y": 121.59375,
+        "width": 55.734375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 319,
+        "width": 1344,
+        "height": 1791,
+        "bottom": 2110
+      }
+    ]
+  },
+  {
+    "id": "pantry",
+    "label": "Hàng đặt riêng",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Hàng đặt riêng",
+        "x": 27,
+        "y": 121.59375,
+        "width": 167.734375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 399,
+        "width": 1344,
+        "height": 42,
+        "bottom": 441
+      }
+    ]
+  },
+  {
+    "id": "need",
+    "label": "Xác nhận nhu cầu",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Xác nhận nhu cầu",
+        "x": 27,
+        "y": 121.59375,
+        "width": 203.328125,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 311,
+        "width": 1344,
+        "height": 517.28125,
+        "bottom": 828.28125
+      }
+    ]
+  },
+  {
+    "id": "allocation",
+    "label": "Phân bổ NCC",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phân bổ NCC",
+        "x": 27,
+        "y": 121.59375,
+        "width": 153.984375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 350.796875,
+        "width": 1344,
+        "height": 101.796875,
+        "bottom": 452.59375
+      }
+    ]
+  },
+  {
+    "id": "orders",
+    "label": "Đơn mua",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đơn mua",
+        "x": 27,
+        "y": 121.59375,
+        "width": 103.71875,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 80,
+        "bottom": 247
+      },
+      {
+        "x": 11,
+        "y": 247,
+        "width": 1344,
+        "height": 56,
+        "bottom": 303
+      },
+      {
+        "x": 603.203125,
+        "y": 257,
+        "width": 735.796875,
+        "height": 40,
+        "bottom": 297
+      }
+    ],
+    "tables": []
+  },
+  {
+    "id": "pxk",
+    "label": "Phiếu xuất kho",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phiếu xuất kho",
+        "x": 27,
+        "y": 121.59375,
+        "width": 168.40625,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 87,
+        "bottom": 254
+      },
+      {
+        "x": 27,
+        "y": 294.796875,
+        "width": 1312,
+        "height": 40,
+        "bottom": 334.796875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 371.59375,
+        "width": 1344,
+        "height": 96.796875,
+        "bottom": 468.390625
+      }
+    ]
+  },
+  {
+    "id": "reconciliation",
+    "label": "Đối chiếu PO / Phiếu xuất kho",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đối chiếu PO / Phiếu xuất kho",
+        "x": 27,
+        "y": 121,
+        "width": 335.265625,
+        "height": 33.796875,
+        "bottom": 154.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 87,
+        "bottom": 254
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 325.59375,
+        "width": 1344,
+        "height": 117.390625,
+        "bottom": 442.984375
+      }
+    ]
+  },
+  {
+    "id": "menu",
+    "label": "Thực đơn",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Thực đơn",
+        "x": 27,
+        "y": 121.59375,
+        "width": 109.65625,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 321.796875,
+        "width": 1120,
+        "height": 1164,
+        "bottom": 1485.796875
+      }
+    ]
+  },
+  {
+    "id": "attendance",
+    "label": "Sĩ số",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số",
+        "x": 27,
+        "y": 121.59375,
+        "width": 55.734375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 319,
+        "width": 1002,
+        "height": 1791,
+        "bottom": 2110
+      }
+    ]
+  },
+  {
+    "id": "pantry",
+    "label": "Hàng đặt riêng",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Hàng đặt riêng",
+        "x": 27,
+        "y": 121.59375,
+        "width": 167.734375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 399,
+        "width": 1156,
+        "height": 42,
+        "bottom": 441
+      }
+    ]
+  },
+  {
+    "id": "need",
+    "label": "Xác nhận nhu cầu",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Xác nhận nhu cầu",
+        "x": 27,
+        "y": 121.59375,
+        "width": 203.328125,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 816,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 357,
+        "width": 1120,
+        "height": 517.28125,
+        "bottom": 874.28125
+      }
+    ]
+  },
+  {
+    "id": "allocation",
+    "label": "Phân bổ NCC",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phân bổ NCC",
+        "x": 27,
+        "y": 121.59375,
+        "width": 153.984375,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 219,
+        "bottom": 386
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 477.796875,
+        "width": 1120,
+        "height": 102,
+        "bottom": 579.796875
+      }
+    ]
+  },
+  {
+    "id": "orders",
+    "label": "Đơn mua",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đơn mua",
+        "x": 27,
+        "y": 121.59375,
+        "width": 103.71875,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 130,
+        "bottom": 297
+      },
+      {
+        "x": 11,
+        "y": 297,
+        "width": 1002,
+        "height": 56,
+        "bottom": 353
+      },
+      {
+        "x": 261.203125,
+        "y": 307,
+        "width": 735.796875,
+        "height": 40,
+        "bottom": 347
+      }
+    ],
+    "tables": []
+  },
+  {
+    "id": "pxk",
+    "label": "Phiếu xuất kho",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phiếu xuất kho",
+        "x": 27,
+        "y": 121.59375,
+        "width": 168.40625,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 214,
+        "bottom": 381
+      },
+      {
+        "x": 27,
+        "y": 421.796875,
+        "width": 970,
+        "height": 40,
+        "bottom": 461.796875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 498.59375,
+        "width": 1002,
+        "height": 96.796875,
+        "bottom": 595.390625
+      }
+    ]
+  },
+  {
+    "id": "reconciliation",
+    "label": "Đối chiếu PO / Phiếu xuất kho",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đối chiếu PO / Phiếu xuất kho",
+        "x": 27,
+        "y": 121,
+        "width": 335.265625,
+        "height": 33.796875,
+        "bottom": 154.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 235,
+        "bottom": 402
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 473.59375,
+        "width": 1020,
+        "height": 117.390625,
+        "bottom": 590.984375
+      }
+    ]
+  },
+  {
+    "id": "menu",
+    "label": "Thực đơn",
+    "width": 650,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Thực đơn",
+        "x": 21,
+        "y": 129,
+        "width": 101.9375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 410.78125,
+        "width": 1120,
+        "height": 1215,
+        "bottom": 1625.78125
+      }
+    ]
+  },
+  {
+    "id": "attendance",
+    "label": "Sĩ số",
+    "width": 650,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số",
+        "x": 21,
+        "y": 129,
+        "width": 51.84375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 357.984375,
+        "width": 628,
+        "height": 5306.296875,
+        "bottom": 5664.28125
+      }
+    ]
+  },
+  {
+    "id": "pantry",
+    "label": "Hàng đặt riêng",
+    "width": 650,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Hàng đặt riêng",
+        "x": 21,
+        "y": 129,
+        "width": 156.03125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 547.484375,
+        "width": 628,
+        "height": 0,
+        "bottom": 547.484375
+      }
+    ]
+  },
+  {
+    "id": "need",
+    "label": "Xác nhận nhu cầu",
+    "width": 650,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Xác nhận nhu cầu",
+        "x": 21,
+        "y": 129,
+        "width": 189.171875,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 890,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 434.78125,
+        "width": 1552,
+        "height": 968.34375,
+        "bottom": 1403.125
+      }
+    ]
+  },
+  {
+    "id": "allocation",
+    "label": "Phân bổ NCC",
+    "width": 650,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phân bổ NCC",
+        "x": 21,
+        "y": 129,
+        "width": 142.984375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 445.78125,
+        "width": 628,
+        "height": 298.984375,
+        "bottom": 744.765625
+      }
+    ]
+  },
+  {
+    "id": "orders",
+    "label": "Đơn mua",
+    "width": 650,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đơn mua",
+        "x": 21,
+        "y": 129,
+        "width": 96.3125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 95.796875,
+        "bottom": 293.984375
+      },
+      {
+        "x": 11,
+        "y": 293.984375,
+        "width": 628,
+        "height": 60,
+        "bottom": 353.984375
+      }
+    ],
+    "tables": []
+  },
+  {
+    "id": "pxk",
+    "label": "Phiếu xuất kho",
+    "width": 650,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phiếu xuất kho",
+        "x": 21,
+        "y": 129,
+        "width": 156.625,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 94.796875,
+        "bottom": 292.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 356.984375,
+        "width": 628,
+        "height": 303.578125,
+        "bottom": 660.5625
+      }
+    ]
+  },
+  {
+    "id": "reconciliation",
+    "label": "Đối chiếu PO / Phiếu xuất kho",
+    "width": 650,
+    "height": 900,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đối chiếu PO / Phiếu xuất kho",
+        "x": 21,
+        "y": 129,
+        "width": 311.75,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 94.796875,
+        "bottom": 292.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 364.578125,
+        "width": 628,
+        "height": 371.171875,
+        "bottom": 735.75
+      }
+    ]
+  },
+  {
+    "id": "menu",
+    "label": "Thực đơn",
+    "width": 390,
+    "height": 844,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Thực đơn",
+        "x": 21,
+        "y": 129,
+        "width": 101.9375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 410.78125,
+        "width": 1120,
+        "height": 1215,
+        "bottom": 1625.78125
+      }
+    ]
+  },
+  {
+    "id": "attendance",
+    "label": "Sĩ số",
+    "width": 390,
+    "height": 844,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số",
+        "x": 21,
+        "y": 129,
+        "width": 51.84375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 388.78125,
+        "width": 368,
+        "height": 5306.296875,
+        "bottom": 5695.078125
+      }
+    ]
+  },
+  {
+    "id": "pantry",
+    "label": "Hàng đặt riêng",
+    "width": 390,
+    "height": 844,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Hàng đặt riêng",
+        "x": 21,
+        "y": 129,
+        "width": 156.03125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 569.984375,
+        "width": 368,
+        "height": 0,
+        "bottom": 569.984375
+      }
+    ]
+  },
+  {
+    "id": "need",
+    "label": "Xác nhận nhu cầu",
+    "width": 390,
+    "height": 844,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Xác nhận nhu cầu",
+        "x": 21,
+        "y": 129,
+        "width": 189.171875,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 880,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 455.578125,
+        "width": 1292,
+        "height": 968.34375,
+        "bottom": 1423.921875
+      }
+    ]
+  },
+  {
+    "id": "allocation",
+    "label": "Phân bổ NCC",
+    "width": 390,
+    "height": 844,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phân bổ NCC",
+        "x": 21,
+        "y": 129,
+        "width": 142.984375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 445.78125,
+        "width": 368,
+        "height": 298.984375,
+        "bottom": 744.765625
+      }
+    ]
+  },
+  {
+    "id": "orders",
+    "label": "Đơn mua",
+    "width": 390,
+    "height": 844,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đơn mua",
+        "x": 21,
+        "y": 129,
+        "width": 96.3125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 95.796875,
+        "bottom": 293.984375
+      },
+      {
+        "x": 11,
+        "y": 293.984375,
+        "width": 368,
+        "height": 60,
+        "bottom": 353.984375
+      }
+    ],
+    "tables": []
+  },
+  {
+    "id": "pxk",
+    "label": "Phiếu xuất kho",
+    "width": 390,
+    "height": 844,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phiếu xuất kho",
+        "x": 21,
+        "y": 129,
+        "width": 156.625,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 94.796875,
+        "bottom": 292.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 408.578125,
+        "width": 368,
+        "height": 303.578125,
+        "bottom": 712.15625
+      }
+    ]
+  },
+  {
+    "id": "reconciliation",
+    "label": "Đối chiếu PO / Phiếu xuất kho",
+    "width": 390,
+    "height": 844,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đối chiếu PO / Phiếu xuất kho",
+        "x": 21,
+        "y": 129,
+        "width": 311.75,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 94.796875,
+        "bottom": 292.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 385.375,
+        "width": 368,
+        "height": 371.171875,
+        "bottom": 756.546875
+      }
+    ]
+  },
+  {
+    "id": "menu",
+    "label": "Thực đơn",
+    "width": 360,
+    "height": 800,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Thực đơn",
+        "x": 21,
+        "y": 129,
+        "width": 101.9375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 672,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 410.78125,
+        "width": 1120,
+        "height": 1215,
+        "bottom": 1625.78125
+      }
+    ]
+  },
+  {
+    "id": "attendance",
+    "label": "Sĩ số",
+    "width": 360,
+    "height": 800,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số",
+        "x": 21,
+        "y": 129,
+        "width": 51.84375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 672,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 388.78125,
+        "width": 338,
+        "height": 5306.296875,
+        "bottom": 5695.078125
+      }
+    ]
+  },
+  {
+    "id": "pantry",
+    "label": "Hàng đặt riêng",
+    "width": 360,
+    "height": 800,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Hàng đặt riêng",
+        "x": 21,
+        "y": 129,
+        "width": 156.03125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 672,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 569.984375,
+        "width": 338,
+        "height": 0,
+        "bottom": 569.984375
+      }
+    ]
+  },
+  {
+    "id": "need",
+    "label": "Xác nhận nhu cầu",
+    "width": 360,
+    "height": 800,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Xác nhận nhu cầu",
+        "x": 21,
+        "y": 129,
+        "width": 189.171875,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 856,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 455.578125,
+        "width": 1262,
+        "height": 1093.125,
+        "bottom": 1548.703125
+      }
+    ]
+  },
+  {
+    "id": "allocation",
+    "label": "Phân bổ NCC",
+    "width": 360,
+    "height": 800,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phân bổ NCC",
+        "x": 21,
+        "y": 129,
+        "width": 142.984375,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 672,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 95.796875,
+        "bottom": 293.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 445.78125,
+        "width": 338,
+        "height": 298.984375,
+        "bottom": 744.765625
+      }
+    ]
+  },
+  {
+    "id": "orders",
+    "label": "Đơn mua",
+    "width": 360,
+    "height": 800,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đơn mua",
+        "x": 21,
+        "y": 129,
+        "width": 96.3125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 672,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 95.796875,
+        "bottom": 293.984375
+      },
+      {
+        "x": 11,
+        "y": 293.984375,
+        "width": 338,
+        "height": 60,
+        "bottom": 353.984375
+      }
+    ],
+    "tables": []
+  },
+  {
+    "id": "pxk",
+    "label": "Phiếu xuất kho",
+    "width": 360,
+    "height": 800,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Phiếu xuất kho",
+        "x": 21,
+        "y": 129,
+        "width": 156.625,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 672,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 94.796875,
+        "bottom": 292.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 408.578125,
+        "width": 338,
+        "height": 303.578125,
+        "bottom": 712.15625
+      }
+    ]
+  },
+  {
+    "id": "reconciliation",
+    "label": "Đối chiếu PO / Phiếu xuất kho",
+    "width": 360,
+    "height": 800,
+    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Đối chiếu PO / Phiếu xuất kho",
+        "x": 21,
+        "y": 147,
+        "width": 311.75,
+        "height": 31.1875,
+        "bottom": 178.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 136,
+      "width": 340,
+      "height": 654,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 654,
+      "content": 654,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 216.1875,
+        "width": 338,
+        "height": 94.796875,
+        "bottom": 310.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 403.375,
+        "width": 338,
+        "height": 371.171875,
+        "bottom": 774.546875
+      }
+    ]
+  },
+  {
+    "id": "schools",
+    "label": "Trường học",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "6ffa679d1f176b5194e297c3fdacee52db0cc751",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số mặc định",
+        "x": 27,
+        "y": 121,
+        "width": 167,
+        "height": 33.796875,
+        "bottom": 154.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 183,
+        "width": 1898,
+        "height": 91,
+        "bottom": 274
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 326,
+        "width": 1898,
+        "height": 1917.890625,
+        "bottom": 2243.890625
+      }
+    ]
+  },
+  {
+    "id": "schools",
+    "label": "Trường học",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "6ffa679d1f176b5194e297c3fdacee52db0cc751",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số mặc định",
+        "x": 27,
+        "y": 121,
+        "width": 167,
+        "height": 33.796875,
+        "bottom": 154.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 183,
+        "width": 1418,
+        "height": 91,
+        "bottom": 274
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 326,
+        "width": 1418,
+        "height": 1938.890625,
+        "bottom": 2264.890625
+      }
+    ]
+  },
+  {
+    "id": "schools",
+    "label": "Trường học",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "6ffa679d1f176b5194e297c3fdacee52db0cc751",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số mặc định",
+        "x": 27,
+        "y": 121,
+        "width": 167,
+        "height": 33.796875,
+        "bottom": 154.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 183,
+        "width": 1344,
+        "height": 91,
+        "bottom": 274
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 326,
+        "width": 1344,
+        "height": 1959.890625,
+        "bottom": 2285.890625
+      }
+    ]
+  },
+  {
+    "id": "schools",
+    "label": "Trường học",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "6ffa679d1f176b5194e297c3fdacee52db0cc751",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số mặc định",
+        "x": 27,
+        "y": 121,
+        "width": 167,
+        "height": 33.796875,
+        "bottom": 154.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 183,
+        "width": 1002,
+        "height": 91,
+        "bottom": 274
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 326,
+        "width": 1002,
+        "height": 2001.890625,
+        "bottom": 2327.890625
+      }
+    ]
+  },
+  {
+    "id": "schools",
+    "label": "Trường học",
+    "width": 650,
+    "height": 900,
+    "captureHead": "6ffa679d1f176b5194e297c3fdacee52db0cc751",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số mặc định",
+        "x": 21,
+        "y": 129,
+        "width": 155.328125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 865,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 214.1875,
+        "width": 628,
+        "height": 172,
+        "bottom": 386.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 442.1875,
+        "width": 628,
+        "height": 9839.375,
+        "bottom": 10281.5625
+      }
+    ]
+  },
+  {
+    "id": "schools",
+    "label": "Trường học",
+    "width": 390,
+    "height": 844,
+    "captureHead": "6ffa679d1f176b5194e297c3fdacee52db0cc751",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số mặc định",
+        "x": 21,
+        "y": 129,
+        "width": 155.328125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 832,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 214.1875,
+        "width": 368,
+        "height": 172,
+        "bottom": 386.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 442.1875,
+        "width": 368,
+        "height": 9861.875,
+        "bottom": 10304.0625
+      }
+    ]
+  },
+  {
+    "id": "schools",
+    "label": "Trường học",
+    "width": 360,
+    "height": 800,
+    "captureHead": "6ffa679d1f176b5194e297c3fdacee52db0cc751",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Sĩ số mặc định",
+        "x": 21,
+        "y": 129,
+        "width": 155.328125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 826,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 235.1875,
+        "width": 338,
+        "height": 172,
+        "bottom": 407.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 463.1875,
+        "width": 338,
+        "height": 9884.375,
+        "bottom": 10347.5625
+      }
+    ]
+  },
+  {
+    "id": "ingredients",
+    "label": "Nguyên liệu",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nguyên liệu",
+        "x": 27,
+        "y": 121.59375,
+        "width": 135.3125,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 269,
+        "width": 1898,
+        "height": 19773.875,
+        "bottom": 20042.875
+      }
+    ]
+  },
+  {
+    "id": "suppliers",
+    "label": "Nhà cung ứng",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nhà cung ứng",
+        "x": 27,
+        "y": 121.59375,
+        "width": 160.921875,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1898,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 269,
+        "width": 1898,
+        "height": 1860,
+        "bottom": 2129
+      }
+    ]
+  },
+  {
+    "id": "ingredients",
+    "label": "Nguyên liệu",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nguyên liệu",
+        "x": 27,
+        "y": 121.59375,
+        "width": 135.3125,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 269,
+        "width": 1418,
+        "height": 19782.203125,
+        "bottom": 20051.203125
+      }
+    ]
+  },
+  {
+    "id": "suppliers",
+    "label": "Nhà cung ứng",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nhà cung ứng",
+        "x": 27,
+        "y": 121.59375,
+        "width": 160.921875,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1418,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 269,
+        "width": 1418,
+        "height": 1860,
+        "bottom": 2129
+      }
+    ]
+  },
+  {
+    "id": "ingredients",
+    "label": "Nguyên liệu",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nguyên liệu",
+        "x": 27,
+        "y": 121.59375,
+        "width": 135.3125,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 269,
+        "width": 1344,
+        "height": 19782.203125,
+        "bottom": 20051.203125
+      }
+    ]
+  },
+  {
+    "id": "suppliers",
+    "label": "Nhà cung ứng",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nhà cung ứng",
+        "x": 27,
+        "y": 121.59375,
+        "width": 160.921875,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1344,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 269,
+        "width": 1344,
+        "height": 1860,
+        "bottom": 2129
+      }
+    ]
+  },
+  {
+    "id": "ingredients",
+    "label": "Nguyên liệu",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nguyên liệu",
+        "x": 27,
+        "y": 121.59375,
+        "width": 135.3125,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 269,
+        "width": 1002,
+        "height": 19811.40625,
+        "bottom": 20080.40625
+      }
+    ]
+  },
+  {
+    "id": "suppliers",
+    "label": "Nhà cung ứng",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nhà cung ứng",
+        "x": 27,
+        "y": 121.59375,
+        "width": 160.921875,
+        "height": 33.796875,
+        "bottom": 155.390625
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 167,
+        "width": 1002,
+        "height": 92,
+        "bottom": 259
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 269,
+        "width": 1002,
+        "height": 2064,
+        "bottom": 2333
+      }
+    ]
+  },
+  {
+    "id": "ingredients",
+    "label": "Nguyên liệu",
+    "width": 650,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nguyên liệu",
+        "x": 21,
+        "y": 129,
+        "width": 125.953125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 119,
+        "bottom": 317.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 327.1875,
+        "width": 628,
+        "height": 65365.875,
+        "bottom": 65693.0625
+      }
+    ]
+  },
+  {
+    "id": "suppliers",
+    "label": "Nhà cung ứng",
+    "width": 650,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nhà cung ứng",
+        "x": 21,
+        "y": 129,
+        "width": 149.625,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 777,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 628,
+        "height": 146,
+        "bottom": 344.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 354.1875,
+        "width": 628,
+        "height": 7273,
+        "bottom": 7627.1875
+      }
+    ]
+  },
+  {
+    "id": "ingredients",
+    "label": "Nguyên liệu",
+    "width": 390,
+    "height": 844,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nguyên liệu",
+        "x": 21,
+        "y": 129,
+        "width": 125.953125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 717,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 119,
+        "bottom": 317.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 327.1875,
+        "width": 368,
+        "height": 66389.875,
+        "bottom": 66717.0625
+      }
+    ]
+  },
+  {
+    "id": "suppliers",
+    "label": "Nhà cung ứng",
+    "width": 390,
+    "height": 844,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nhà cung ứng",
+        "x": 21,
+        "y": 129,
+        "width": 149.625,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 744,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 368,
+        "height": 146,
+        "bottom": 344.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 354.1875,
+        "width": 368,
+        "height": 7273,
+        "bottom": 7627.1875
+      }
+    ]
+  },
+  {
+    "id": "ingredients",
+    "label": "Nguyên liệu",
+    "width": 360,
+    "height": 800,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nguyên liệu",
+        "x": 21,
+        "y": 129,
+        "width": 125.953125,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 690,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 119,
+        "bottom": 317.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 327.1875,
+        "width": 338,
+        "height": 66629.875,
+        "bottom": 66957.0625
+      }
+    ]
+  },
+  {
+    "id": "suppliers",
+    "label": "Nhà cung ứng",
+    "width": 360,
+    "height": 800,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Nhà cung ứng",
+        "x": 21,
+        "y": 129,
+        "width": 149.625,
+        "height": 31.1875,
+        "bottom": 160.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 717,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 11,
+        "y": 198.1875,
+        "width": 338,
+        "height": 146,
+        "bottom": 344.1875
+      }
+    ],
+    "tables": [
+      {
+        "x": 11,
+        "y": 354.1875,
+        "width": 338,
+        "height": 7385.5,
+        "bottom": 7739.6875
+      }
+    ]
+  },
+  {
+    "id": "changes",
+    "label": "Lệnh điều chỉnh",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Lệnh điều chỉnh",
+        "x": 26,
+        "y": 120,
+        "width": 181.234375,
+        "height": 33.796875,
+        "bottom": 153.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 166,
+        "width": 1900,
+        "height": 87,
+        "bottom": 253
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 253,
+        "width": 1900,
+        "height": 104,
+        "bottom": 357
+      }
+    ]
+  },
+  {
+    "id": "changes",
+    "label": "Lệnh điều chỉnh",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Lệnh điều chỉnh",
+        "x": 26,
+        "y": 120,
+        "width": 181.234375,
+        "height": 33.796875,
+        "bottom": 153.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 166,
+        "width": 1420,
+        "height": 87,
+        "bottom": 253
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 253,
+        "width": 1420,
+        "height": 110,
+        "bottom": 363
+      }
+    ]
+  },
+  {
+    "id": "changes",
+    "label": "Lệnh điều chỉnh",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Lệnh điều chỉnh",
+        "x": 26,
+        "y": 120,
+        "width": 181.234375,
+        "height": 33.796875,
+        "bottom": 153.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 648,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 166,
+        "width": 1346,
+        "height": 87,
+        "bottom": 253
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 253,
+        "width": 1346,
+        "height": 110,
+        "bottom": 363
+      }
+    ]
+  },
+  {
+    "id": "changes",
+    "label": "Lệnh điều chỉnh",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Lệnh điều chỉnh",
+        "x": 26,
+        "y": 120,
+        "width": 181.234375,
+        "height": 33.796875,
+        "bottom": 153.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 780,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 166,
+        "width": 1004,
+        "height": 87,
+        "bottom": 253
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 253,
+        "width": 1004,
+        "height": 110,
+        "bottom": 363
+      }
+    ]
+  },
+  {
+    "id": "changes",
+    "label": "Lệnh điều chỉnh",
+    "width": 650,
+    "height": 900,
+    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Lệnh điều chỉnh",
+        "x": 20,
+        "y": 128,
+        "width": 168.65625,
+        "height": 31.1875,
+        "bottom": 159.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 197.1875,
+        "width": 630,
+        "height": 148.796875,
+        "bottom": 345.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 345.984375,
+        "width": 630,
+        "height": 207,
+        "bottom": 552.984375
+      }
+    ]
+  },
+  {
+    "id": "changes",
+    "label": "Lệnh điều chỉnh",
+    "width": 390,
+    "height": 844,
+    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Lệnh điều chỉnh",
+        "x": 20,
+        "y": 128,
+        "width": 168.65625,
+        "height": 31.1875,
+        "bottom": 159.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 197.1875,
+        "width": 370,
+        "height": 148.796875,
+        "bottom": 345.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 345.984375,
+        "width": 370,
+        "height": 207,
+        "bottom": 552.984375
+      }
+    ]
+  },
+  {
+    "id": "changes",
+    "label": "Lệnh điều chỉnh",
+    "width": 360,
+    "height": 800,
+    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Lệnh điều chỉnh",
+        "x": 20,
+        "y": 128,
+        "width": 168.65625,
+        "height": 31.1875,
+        "bottom": 159.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 672,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 197.1875,
+        "width": 340,
+        "height": 148.796875,
+        "bottom": 345.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 345.984375,
+        "width": 340,
+        "height": 229.5,
+        "bottom": 575.484375
+      }
+    ]
+  },
+  {
+    "id": "recipes",
+    "label": "Công thức",
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Công thức",
+        "x": 26,
+        "y": 120,
+        "width": 120.53125,
+        "height": 33.796875,
+        "bottom": 153.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1900,
+      "height": 960,
+      "bottom": 1070,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 960,
+      "content": 960,
+      "clientWidth": 1900,
+      "contentWidth": 1900
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 166,
+        "width": 1900,
+        "height": 87,
+        "bottom": 253
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 285.796875,
+        "width": 1900,
+        "height": 630,
+        "bottom": 915.796875
+      }
+    ]
+  },
+  {
+    "id": "recipes",
+    "label": "Công thức",
+    "width": 1440,
+    "height": 900,
+    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Công thức",
+        "x": 26,
+        "y": 120,
+        "width": 120.53125,
+        "height": 33.796875,
+        "bottom": 153.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1420,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 786,
+      "clientWidth": 1420,
+      "contentWidth": 1420
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 166,
+        "width": 1420,
+        "height": 87,
+        "bottom": 253
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 285.796875,
+        "width": 1420,
+        "height": 630,
+        "bottom": 915.796875
+      }
+    ]
+  },
+  {
+    "id": "recipes",
+    "label": "Công thức",
+    "width": 1366,
+    "height": 768,
+    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Công thức",
+        "x": 26,
+        "y": 120,
+        "width": 120.53125,
+        "height": 33.796875,
+        "bottom": 153.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1346,
+      "height": 648,
+      "bottom": 758,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 648,
+      "content": 654,
+      "clientWidth": 1346,
+      "contentWidth": 1346
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 166,
+        "width": 1346,
+        "height": 87,
+        "bottom": 253
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 285.796875,
+        "width": 1346,
+        "height": 630,
+        "bottom": 915.796875
+      }
+    ]
+  },
+  {
+    "id": "recipes",
+    "label": "Công thức",
+    "width": 1024,
+    "height": 900,
+    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Công thức",
+        "x": 26,
+        "y": 120,
+        "width": 120.53125,
+        "height": 33.796875,
+        "bottom": 153.796875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 110,
+      "width": 1004,
+      "height": 780,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 780,
+      "content": 786,
+      "clientWidth": 1004,
+      "contentWidth": 1004
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 166,
+        "width": 1004,
+        "height": 87,
+        "bottom": 253
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 285.796875,
+        "width": 1004,
+        "height": 630,
+        "bottom": 915.796875
+      }
+    ]
+  },
+  {
+    "id": "recipes",
+    "label": "Công thức",
+    "width": 650,
+    "height": 900,
+    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Công thức",
+        "x": 20,
+        "y": 128,
+        "width": 111.9375,
+        "height": 31.1875,
+        "bottom": 159.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 630,
+      "height": 772,
+      "bottom": 890,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 772,
+      "content": 772,
+      "clientWidth": 630,
+      "contentWidth": 630
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 197.1875,
+        "width": 630,
+        "height": 148.796875,
+        "bottom": 345.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 378.78125,
+        "width": 630,
+        "height": 2559.5625,
+        "bottom": 2938.34375
+      }
+    ]
+  },
+  {
+    "id": "recipes",
+    "label": "Công thức",
+    "width": 390,
+    "height": 844,
+    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Công thức",
+        "x": 20,
+        "y": 128,
+        "width": 111.9375,
+        "height": 31.1875,
+        "bottom": 159.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 370,
+      "height": 716,
+      "bottom": 834,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 716,
+      "content": 716,
+      "clientWidth": 370,
+      "contentWidth": 370
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 197.1875,
+        "width": 370,
+        "height": 148.796875,
+        "bottom": 345.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 378.78125,
+        "width": 370,
+        "height": 2559.5625,
+        "bottom": 2938.34375
+      }
+    ]
+  },
+  {
+    "id": "recipes",
+    "label": "Công thức",
+    "width": 360,
+    "height": 800,
+    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "errors": [],
+    "documentOverflow": false,
+    "visibleH1": [
+      {
+        "text": "Công thức",
+        "x": 20,
+        "y": 128,
+        "width": 111.9375,
+        "height": 31.1875,
+        "bottom": 159.1875
+      }
+    ],
+    "panel": {
+      "x": 10,
+      "y": 118,
+      "width": 340,
+      "height": 672,
+      "bottom": 790,
+      "scroll": 0,
+      "scrollX": 0,
+      "client": 672,
+      "content": 672,
+      "clientWidth": 340,
+      "contentWidth": 340
+    },
+    "workbars": [
+      {
+        "x": 10,
+        "y": 197.1875,
+        "width": 340,
+        "height": 148.796875,
+        "bottom": 345.984375
+      }
+    ],
+    "tables": [
+      {
+        "x": 10,
+        "y": 378.78125,
+        "width": 340,
+        "height": 2559.5625,
+        "bottom": 2938.34375
+      }
+    ]
+  }
+]

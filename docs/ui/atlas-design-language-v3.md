@@ -16,6 +16,43 @@ The owner's atmosphere correction supersedes the first v3 pass's charcoal shell 
 
 ## Color architecture
 
+### Workbench hierarchy amendment — 29 October 2026
+
+The approved [hierarchy rollout](atlas-workbench-hierarchy-rollout.md) applies
+the accepted Allocation spatial principles to thirteen existing owners and
+shared pages while retaining the Wada adaptation, self-hosted Inter, semantic
+tokens, provider, recipes and type roles. The [phone gallery](../testing/artifacts/atlas-workbench-hierarchy/README.md)
+and [qualified coverage](../testing/artifacts/atlas-workbench-hierarchy/coverage.md)
+record the delivered review checkpoint and 175 seven-width matrix states.
+Allocation and satisfactory shared shell/sign-in needed review only.
+
+This amendment supersedes older presentation-only narrow editor geometry and
+phone-stacked Review composition below. Keep one principal white workplane;
+selected/review content replaces narrow directories where the job requires it.
+Desktop uses bounded identity rails with a broad document/editor, at the
+job-appropriate breakpoint. Keep scope in view, peer controls aligned, and
+identity/header, locally scrolling body and proportionate actions distinct.
+Phone Attendance/PXK/reconciliation records expose labeled facts; intentional
+wide comparisons remain locally scrollable. Check owner horizontal drift as
+well as document overflow. Do not force every owner into one template.
+
+Stable modal captures show opaque white content with reachable fixed headers
+and footers, including 360 × 500 stress cases. Change Order feedback uses the
+existing danger/warning foreground, icon, rail/border and subtle status surface;
+blockers suppress Save and warnings retain eligibility. Final blocker foreground
+is rendered; final warning anatomy is source/direct-test covered, with no
+runtime warning image claimed. Preserve exact copy, Units, dates, versions,
+precedence, loaded scope, permissions and dirty/UNKNOWN/exit contracts.
+
+Implementation/local evidence is **IN_REVIEW** at source/test checkpoint
+`5ab69bf3`, with typecheck passed and focused regression outcomes qualified in
+coverage. PR/latest-head CI and final Product/architecture review remain pending;
+there is no merge/deployment claim. Physical-device/virtual-keyboard and AT
+speech certification, hosted workflows and live-data density remain outside the
+fixture proof. No migration or data effect; rollback is a frontend/test/docs
+revert. Historical geometry/captures below remain dated evidence. Warehouse
+Receiving stays paused and no further implementation starts automatically.
+
 ### Sanzo Wada palette trial — 27 October 2026
 
 The Owner requested and approved a bounded Sanzo Wada palette trial in the

@@ -1,0 +1,163 @@
+[
+  {
+    "width": 1920,
+    "height": 1080,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "overflow": false,
+    "ownerScrollX": 0,
+    "h1": {
+      "x": 27,
+      "y": 121.59375,
+      "w": 55.734375,
+      "h": 33.796875,
+      "bottom": 155.390625
+    },
+    "review": {
+      "x": 882.09375,
+      "y": 275,
+      "w": 137.296875,
+      "h": 25.1875,
+      "bottom": 300.1875
+    },
+    "focusLabel": "Xem thay đổi"
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "overflow": false,
+    "ownerScrollX": 0,
+    "h1": {
+      "x": 27,
+      "y": 121.59375,
+      "w": 55.734375,
+      "h": 33.796875,
+      "bottom": 155.390625
+    },
+    "review": {
+      "x": 666.09375,
+      "y": 275,
+      "w": 137.296875,
+      "h": 25.1875,
+      "bottom": 300.1875
+    },
+    "focusLabel": "Xem thay đổi"
+  },
+  {
+    "width": 1366,
+    "height": 768,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "overflow": false,
+    "ownerScrollX": 0,
+    "h1": {
+      "x": 27,
+      "y": 121.59375,
+      "w": 55.734375,
+      "h": 33.796875,
+      "bottom": 155.390625
+    },
+    "review": {
+      "x": 632.796875,
+      "y": 275,
+      "w": 137.296875,
+      "h": 25.1875,
+      "bottom": 300.1875
+    },
+    "focusLabel": "Xem thay đổi"
+  },
+  {
+    "width": 1024,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "overflow": false,
+    "ownerScrollX": 0,
+    "h1": {
+      "x": 27,
+      "y": 121.59375,
+      "w": 55.734375,
+      "h": 33.796875,
+      "bottom": 155.390625
+    },
+    "review": {
+      "x": 478.890625,
+      "y": 275,
+      "w": 137.296875,
+      "h": 25.1875,
+      "bottom": 300.1875
+    },
+    "focusLabel": "Xem thay đổi"
+  },
+  {
+    "width": 650,
+    "height": 900,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "overflow": false,
+    "ownerScrollX": 0,
+    "h1": {
+      "x": 21,
+      "y": 129,
+      "w": 51.84375,
+      "h": 31.1875,
+      "bottom": 160.1875
+    },
+    "review": {
+      "x": 27,
+      "y": 310.984375,
+      "w": 137.296875,
+      "h": 25.1875,
+      "bottom": 336.171875
+    },
+    "focusLabel": "Xem thay đổi"
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "overflow": false,
+    "ownerScrollX": 0,
+    "h1": {
+      "x": 21,
+      "y": 129,
+      "w": 51.84375,
+      "h": 31.1875,
+      "bottom": 160.1875
+    },
+    "review": {
+      "x": 27,
+      "y": 310.984375,
+      "w": 137.296875,
+      "h": 25.1875,
+      "bottom": 336.171875
+    },
+    "focusLabel": "Xem thay đổi"
+  },
+  {
+    "width": 360,
+    "height": 800,
+    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "errors": [],
+    "overflow": false,
+    "ownerScrollX": 0,
+    "h1": {
+      "x": 21,
+      "y": 129,
+      "w": 51.84375,
+      "h": 31.1875,
+      "bottom": 160.1875
+    },
+    "review": {
+      "x": 27,
+      "y": 310.984375,
+      "w": 137.296875,
+      "h": 25.1875,
+      "bottom": 336.171875
+    },
+    "focusLabel": "Xem thay đổi"
+  }
+]

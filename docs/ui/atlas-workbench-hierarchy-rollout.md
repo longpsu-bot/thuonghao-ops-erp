@@ -4,6 +4,37 @@
 
 **Reference:** merged [#446](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/446), `777d3237`.
 
+## Delivery checkpoint — 29 October 2026
+
+**IN_REVIEW:** implementation, independent family review and local evidence are
+delivered on `codex/atlas-workbench-hierarchy-rollout`; final source/test
+checkpoint `5ab69bf3`. See the [phone gallery](../testing/artifacts/atlas-workbench-hierarchy/README.md)
+and [thirteen-owner coverage, provenance and limitations](../testing/artifacts/atlas-workbench-hierarchy/coverage.md).
+Public gallery access after push, PR publication, latest-head Frontend CI and
+final Product/architecture review remain integration gates. No merge or
+deployment is claimed or automatically authorized.
+
+The matrix records 175 PASS states: 91 normal/default, 56 selected, 21 shared
+and seven Attendance Review states at the seven required viewports. Additional
+family support/dialog/transition checks have their own dimensions and narrower
+coverage. Accepted Allocation and satisfactory shared shell/sign-in remain
+review-only. Session variants beyond sign-in retain source/direct-test coverage.
+
+Source-head typecheck, UI boundary and whitespace checks passed. The focused
+owner run recorded 103 passing tests and one stale visible-search assertion;
+its test-only correction passed the exact complete journey rerun (2 passed,
+12 skipped), without weakening identities, values, reads, no-write assertions,
+guards or timeout. This is not one all-green combined run; GitHub Actions owns
+the full routine validation. No backend/API/model/controller/SQL, quantity,
+lifecycle, permission, dependency or export-format change is included.
+
+The latest Owner approval supersedes earlier presentation-only narrow selected
+editor geometry and phone-stacked Review composition. Narrow selected/review
+surfaces use one workplane with reachable identity and recovery actions;
+desktop keeps job-appropriate bounded rails and broad documents/editors. Existing
+guards, exact Units, loaded-scope explanations, persistent owners and business
+authority remain controlling. Historical screenshots retain their dated meaning.
+
 ## Scope
 
 Apply the accepted Allocation hierarchy to the thirteen production owners in
