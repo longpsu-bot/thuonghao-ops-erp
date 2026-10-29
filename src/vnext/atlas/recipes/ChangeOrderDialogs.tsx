@@ -50,9 +50,7 @@ function RecipeIssueFeedback({
             <Warning aria-hidden="true" />
           )}
         </Icon>
-        <Text textStyle="helper" color="fg.default">
-          {message}
-        </Text>
+        <Text textStyle="helper">{message}</Text>
       </Flex>
     </Box>
   );
