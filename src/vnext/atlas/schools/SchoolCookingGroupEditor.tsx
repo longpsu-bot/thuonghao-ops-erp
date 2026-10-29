@@ -24,7 +24,7 @@ export function SchoolCookingGroupEditor({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <Box px="md" pb="sm">
+    <Box px={{ base: "sm", md: "md" }} pb="sm">
       {!embedded && (
         <Button
           variant="outline"
@@ -37,13 +37,7 @@ export function SchoolCookingGroupEditor({
         </Button>
       )}
       {(embedded || open) && (
-        <Box
-          id="school-cooking-group-editor"
-          mt="sm"
-          p="md"
-          bg="bg.toolbar"
-          borderRadius="workbench"
-        >
+        <Box id="school-cooking-group-editor" mt="sm" py="sm">
           <Heading as="h2" textStyle="section">
             Nơi nấu
           </Heading>
@@ -157,6 +151,10 @@ export function SchoolCookingGroupEditor({
             <Button
               variant="businessPrimary"
               size="sm"
+              minH={{
+                base: "var(--atlas-layout-mobile-target, 44px)",
+                lg: "compact",
+              }}
               disabled={
                 disabled ||
                 !c.groupDirty ||
@@ -173,6 +171,10 @@ export function SchoolCookingGroupEditor({
               <Button
                 size="sm"
                 variant="outline"
+                minH={{
+                  base: "var(--atlas-layout-mobile-target, 44px)",
+                  lg: "compact",
+                }}
                 disabled={disabled}
                 onClick={() => c.selectGroup(c.groupEditor.id)}
               >

@@ -9,7 +9,13 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useImperativeHandle, type Ref } from "react";
+import {
+  useEffect,
+  useRef,
+  useImperativeHandle,
+  useState,
+  type Ref,
+} from "react";
 import type { RecipeJobHandle } from "./useChangeOrderWorkbench";
 import {
   useAtlasWorkbenchStatus,
@@ -18,6 +24,12 @@ import {
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
+import { AtlasTaskContext } from "../AtlasTaskContext";
+import { useAtlasWorkbenchActive } from "../AtlasVNextProvider";
+import {
+  focusFirstCompactFilter,
+  preserveCompactFilterFocusOrder,
+} from "../compactFilterFocus";
 import type { DishRecipeApi } from "../bridges/dishRecipe";
 import { BaseRecipeEditor } from "./BaseRecipeEditor";
 import { DishCatalogue, dishStatusLabel } from "./DishCatalogue";
@@ -26,6 +38,22 @@ import { EffectiveRecipeView } from "./EffectiveRecipeView";
 import { RecipeDirtyExitDialog, RecipeUtilityDialog } from "./RecipeDialogs";
 import { RecipeReview } from "./RecipeReview";
 import { useDishRecipeWorkbench } from "./useDishRecipeWorkbench";
+
+function resetOwnerReadingPosition(node: HTMLElement | null) {
+  let owner = node?.parentElement ?? null;
+  while (owner) {
+    const overflow = window.getComputedStyle(owner).overflowY;
+    if (
+      /(auto|scroll)/.test(overflow) &&
+      owner.scrollHeight > owner.clientHeight
+    ) {
+      owner.scrollTop = 0;
+      owner.scrollLeft = 0;
+      return;
+    }
+    owner = owner.parentElement;
+  }
+}
 
 export function DishRecipeWorkbench(
   props: AtlasModuleExitProps & {
@@ -38,6 +66,7 @@ export function DishRecipeWorkbench(
   },
 ) {
   const c = useDishRecipeWorkbench(props);
+  const active = useAtlasWorkbenchActive();
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: c.dirty || c.utilityDirty,
     blocked: Boolean(
@@ -64,11 +93,26 @@ export function DishRecipeWorkbench(
     origin = useRef<HTMLButtonElement | null>(null);
   const catalogue = useRef<HTMLDivElement>(null);
   const originDishId = useRef<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const compactFilters = useRef<HTMLDivElement>(null);
+  const compactFilterTrigger = useRef<HTMLButtonElement>(null);
+  const compactFilterOnward = useRef<HTMLDivElement>(null);
   const open = Boolean(c.context || c.surface === "create");
+  const modal = ["copy", "import", "lifecycle"].includes(c.surface ?? "");
+  const selectionKey =
+    c.context?.dishId ?? (c.surface === "create" ? "create" : null);
   const wasOpen = useRef(false);
+  const activeSelection = useRef<string | null>(null);
+  const wasReview = useRef(false);
   useEffect(() => {
-    if (open) workspace.current?.focus();
-    else if (wasOpen.current) {
+    if (!active || modal) return;
+    if (open) {
+      if (selectionKey !== activeSelection.current) {
+        activeSelection.current = selectionKey;
+        workspace.current?.focus({ preventScroll: true });
+        resetOwnerReadingPosition(workspace.current);
+      }
+    } else if (wasOpen.current) {
       const trigger = origin.current?.isConnected
         ? origin.current
         : Array.from(
@@ -79,10 +123,21 @@ export function DishRecipeWorkbench(
             (button) => button.dataset.dishSelect === originDishId.current,
           );
       trigger?.focus();
+      activeSelection.current = null;
     }
     wasOpen.current = open;
-  }, [open, c.context?.dishId, c.surface]);
-  const modal = ["copy", "import", "lifecycle"].includes(c.surface ?? "");
+  }, [active, modal, open, selectionKey]);
+  useEffect(() => {
+    if (!active || modal) return;
+    if (c.review && !wasReview.current) {
+      workspace.current?.focus({ preventScroll: true });
+      resetOwnerReadingPosition(workspace.current);
+    }
+    wasReview.current = c.review;
+  }, [active, c.review, modal]);
+  useEffect(() => {
+    if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
+  }, [filtersOpen]);
   const operationallyLocked =
     c.effective?.is_operationally_locked ||
     c.effective?.editable_state === "LOCKED_CHANGE_ORDER";
@@ -92,62 +147,132 @@ export function DishRecipeWorkbench(
     props.onOpenChangeOrders,
   );
   const catalogueToolbar = (
-    <AtlasWorkbar px="md" py="sm" bg="bg.toolbar" aria-label="Bộ lọc công thức">
-      <Field.Root flex="var(--atlas-layout-search-grow, 1 1 200px)">
-        <Field.Label>Tìm món</Field.Label>
+    <AtlasWorkbar
+      display="grid"
+      px={{ base: "sm", md: "md" }}
+      py="sm"
+      gap="sm"
+      bg="bg.toolbar"
+      aria-label="Bộ lọc công thức"
+      alignItems="end"
+      templateColumns={
+        open
+          ? "minmax(0, 1fr)"
+          : {
+              base: "minmax(0, 1fr) auto",
+              md: "minmax(180px, 1fr) minmax(280px, 310px) auto",
+            }
+      }
+    >
+      <Field.Root
+        minW="var(--atlas-layout-zero, 0)"
+        gridRow={open ? "auto" : { base: "1", md: "auto" }}
+      >
+        <Field.Label display={{ base: "none", md: "block" }}>
+          Tìm món
+        </Field.Label>
         <Input
+          aria-label="Tìm món"
           value={c.query}
           placeholder="Tên món, loại món, nguyên liệu…"
           onChange={(e) => c.setQuery(e.target.value)}
         />
       </Field.Root>
-      <Field.Root
-        w={
-          open
-            ? "var(--atlas-layout-compact-filter, 119px)"
-            : "var(--atlas-layout-filter-width, 140px)"
-        }
+      <Grid
+        ref={compactFilters}
+        id="recipe-filters"
+        display={{ base: filtersOpen ? "grid" : "none", md: "grid" }}
+        gridColumn={open ? "1" : { base: "1 / -1", md: "auto" }}
+        gridRow={open ? "auto" : { base: "3", md: "auto" }}
+        templateColumns="repeat(2, minmax(0, 1fr))"
+        gap="sm"
+        minW="var(--atlas-layout-zero, 0)"
+        onKeyDown={(event) => {
+          if (filtersOpen)
+            preserveCompactFilterFocusOrder(
+              event,
+              compactFilters.current,
+              compactFilterTrigger.current,
+              compactFilterOnward.current,
+            );
+        }}
       >
-        <Field.Label>Trạng thái</Field.Label>
-        <NativeSelect.Root>
-          <NativeSelect.Field
-            value={c.statusFilter}
-            onChange={(e) => c.setStatusFilter(e.target.value)}
-          >
-            <option value="ALL">Tất cả</option>
-            {Object.entries(dishStatusLabel).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
-      </Field.Root>
-      <Field.Root
-        w={
-          open
-            ? "var(--atlas-layout-compact-filter, 119px)"
-            : "var(--atlas-layout-filter-width, 160px)"
-        }
+        <Field.Root minW="var(--atlas-layout-zero, 0)">
+          <Field.Label>Trạng thái</Field.Label>
+          <NativeSelect.Root minW="var(--atlas-layout-zero, 0)">
+            <NativeSelect.Field
+              value={c.statusFilter}
+              onChange={(e) => c.setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">Tất cả</option>
+              {Object.entries(dishStatusLabel).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </NativeSelect.Field>
+            <NativeSelect.Indicator />
+          </NativeSelect.Root>
+        </Field.Root>
+        <Field.Root minW="var(--atlas-layout-zero, 0)">
+          <Field.Label>Loại món</Field.Label>
+          <NativeSelect.Root minW="var(--atlas-layout-zero, 0)">
+            <NativeSelect.Field
+              value={c.typeFilter}
+              onChange={(e) => c.setTypeFilter(e.target.value)}
+            >
+              <option value="">Tất cả</option>
+              {c.catalog.dish_types.map((t) => (
+                <option key={t.dish_type_id} value={t.dish_type_id}>
+                  {t.dish_type_name}
+                </option>
+              ))}
+            </NativeSelect.Field>
+            <NativeSelect.Indicator />
+          </NativeSelect.Root>
+        </Field.Root>
+      </Grid>
+      <Button
+        ref={compactFilterTrigger}
+        display={{ base: "inline-flex", md: "none" }}
+        gridColumn="2"
+        gridRow="1"
+        variant="secondary"
+        minH="var(--atlas-layout-mobile-target, 44px)"
+        aria-expanded={filtersOpen}
+        aria-controls="recipe-filters"
+        onClick={() => setFiltersOpen((value) => !value)}
       >
-        <Field.Label>Loại món</Field.Label>
-        <NativeSelect.Root>
-          <NativeSelect.Field
-            value={c.typeFilter}
-            onChange={(e) => c.setTypeFilter(e.target.value)}
-          >
-            <option value="">Tất cả</option>
-            {c.catalog.dish_types.map((t) => (
-              <option key={t.dish_type_id} value={t.dish_type_id}>
-                {t.dish_type_name}
-              </option>
-            ))}
-          </NativeSelect.Field>
-          <NativeSelect.Indicator />
-        </NativeSelect.Root>
-      </Field.Root>
-      <AtlasWorkbarActions flexShrink="1" minW="var(--atlas-layout-zero, 0)">
+        Bộ lọc
+      </Button>
+      <Text
+        display={{ base: filtersOpen ? "none" : "block", md: "none" }}
+        gridColumn="1 / -1"
+        gridRow="2"
+        textStyle="helper"
+        color="fg.muted"
+      >
+        Trạng thái:{" "}
+        {c.statusFilter === "ALL"
+          ? "Tất cả"
+          : (Object.entries(dishStatusLabel).find(
+              ([value]) => value === c.statusFilter,
+            )?.[1] ?? "Không xác định")}{" "}
+        · Loại món:{" "}
+        {c.typeFilter
+          ? (c.catalog.dish_types.find(
+              (type) => type.dish_type_id === c.typeFilter,
+            )?.dish_type_name ?? "Không xác định")
+          : "Tất cả"}
+      </Text>
+      <AtlasWorkbarActions
+        ref={compactFilterOnward}
+        gridColumn={open ? "1" : { base: "1 / -1", md: "auto" }}
+        gridRow={open ? "auto" : { base: filtersOpen ? "4" : "3", md: "auto" }}
+        justifyContent={{ base: "flex-start", md: "flex-end" }}
+        flexWrap="wrap"
+        minW="var(--atlas-layout-zero, 0)"
+      >
         <AtlasRefreshButton
           loading={c.loading}
           disabled={c.refreshDisabled}
@@ -199,15 +324,26 @@ export function DishRecipeWorkbench(
       minW="var(--atlas-layout-zero, 0)"
     >
       {!props.embedded && (
-        <Box px="md" py="sm">
-          <Heading as="h1" textStyle="workbenchTitle">
-            Công thức
-          </Heading>
-        </Box>
+        <AtlasTaskContext
+          ariaLabel="Ngữ cảnh công thức"
+          moduleLabel="Công thức"
+          jobLabel="Công thức"
+          compactSummary={
+            open
+              ? (c.dish?.dish_name ?? "Tạo món mới")
+              : `${c.visibleDishes.length} món · ${c.date}`
+          }
+        />
       )}
       {!open && catalogueToolbar}
       {!open && <Box px="md">{feedback}</Box>}
-      <Flex px="md" py="xs" justify="space-between" align="center">
+      <Flex
+        display={open ? "none" : "flex"}
+        px="md"
+        py="xs"
+        justify="space-between"
+        align="center"
+      >
         {!c.loading && !c.error && (
           <Text textStyle="helper" color="fg.muted">
             {c.visibleDishes.length} món
@@ -223,7 +359,24 @@ export function DishRecipeWorkbench(
         p={open ? "sm" : "var(--atlas-layout-zero, 0)"}
         minW="var(--atlas-layout-zero, 0)"
       >
-        <Box ref={catalogue} minW="var(--atlas-layout-zero, 0)">
+        <Box
+          ref={catalogue}
+          display={{ base: open ? "none" : "block", xl: "block" }}
+          minW="var(--atlas-layout-zero, 0)"
+        >
+          {open && !c.loading && !c.error && (
+            <Flex
+              display={{ base: "none", xl: "flex" }}
+              px="sm"
+              py="xs"
+              justify="space-between"
+              align="center"
+            >
+              <Text textStyle="helper" color="fg.muted">
+                {c.visibleDishes.length} món
+              </Text>
+            </Flex>
+          )}
           <DishCatalogue
             c={c}
             compact={open}
@@ -269,16 +422,29 @@ export function DishRecipeWorkbench(
                   </Flex>
                 </Box>
               )}
-              <Button
-                variant="tertiary"
-                size="sm"
-                flexShrink="var(--atlas-layout-zero, 0)"
-                aria-label="Đóng công thức"
-                disabled={c.busy || Boolean(c.lock)}
-                onClick={() => c.transition({ kind: "close" })}
-              >
-                Đóng
-              </Button>
+              <Flex gap="xs" wrap="wrap" justify="flex-end">
+                {c.dishDraft && c.surface === "create" && (
+                  <Button
+                    display={{ base: "inline-flex", xl: "none" }}
+                    variant="secondary"
+                    size="sm"
+                    disabled={!c.canCommand}
+                    onClick={() => c.transition({ kind: "import" })}
+                  >
+                    Nhập từ Excel
+                  </Button>
+                )}
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  flexShrink="var(--atlas-layout-zero, 0)"
+                  aria-label="Đóng công thức"
+                  disabled={c.busy || Boolean(c.lock)}
+                  onClick={() => c.transition({ kind: "close" })}
+                >
+                  Đóng
+                </Button>
+              </Flex>
             </Flex>
             {!c.dishDraft && (
               <Flex gap="xs" wrap="wrap" mt="sm" justify="flex-end">

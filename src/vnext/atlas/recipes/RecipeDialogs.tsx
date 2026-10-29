@@ -106,12 +106,14 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
           mx="md"
           borderRadius="workbench"
           maxH="var(--atlas-layout-dialog-height, 90dvh)"
-          overflow="auto"
+          overflow="hidden"
+          display="flex"
+          flexDirection="column"
         >
-          <Dialog.Header>
+          <Dialog.Header flexShrink="0">
             <Dialog.Title>{title}</Dialog.Title>
           </Dialog.Header>
-          <Dialog.Body>
+          <Dialog.Body overflowY="auto" minH="var(--atlas-layout-zero, 0)">
             {kind === "lifecycle" && (
               <Text>
                 {c.dish?.dish_name}. Các tham chiếu vận hành và lịch sử công
@@ -238,7 +240,7 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
               </Box>
             )}
           </Dialog.Body>
-          <Dialog.Footer flexWrap="wrap">
+          <Dialog.Footer flexWrap="wrap" flexShrink="0">
             <Button
               ref={cancel}
               disabled={c.busy || Boolean(c.lock)}

@@ -84,7 +84,7 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
               <Text as="dt" textStyle="helper" color="fg.muted">
                 {label}
               </Text>
-              <Text as="dd" textStyle="helper">
+              <Text as="dd" textStyle="helper" overflowWrap="anywhere">
                 {value}
               </Text>
             </Box>

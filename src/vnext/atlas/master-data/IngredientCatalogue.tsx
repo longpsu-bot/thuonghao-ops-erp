@@ -1,6 +1,6 @@
 import {
   AtlasSortableColumnHeader,
-  atlasNarrowSortableHeader,
+  atlasRecordSortHeader,
 } from "../AtlasSortableColumnHeader";
 import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
 import { Fragment, useState } from "react";
@@ -60,13 +60,21 @@ export function IngredientCatalogue({
   const onSort = (key: SortKey) =>
     setSort((current) => nextAtlasSort(current, key));
   return (
-    <Box minW="var(--atlas-layout-zero, 0)">
+    <Box
+      data-testid="ingredient-catalogue"
+      data-selected-presentation={detailOpen ? "identity-rail" : undefined}
+      display="block"
+      css={
+        detailOpen
+          ? { "@media(max-width: 61.99rem)": { display: "none" } }
+          : undefined
+      }
+      minW="var(--atlas-layout-zero, 0)"
+    >
       <AtlasTableViewport
         label="Danh mục nguyên liệu"
         maxH={{
-          base: detailOpen
-            ? "var(--atlas-ingredient-list-selected-height, 35dvh)"
-            : "var(--atlas-ingredient-list-height, 60dvh)",
+          base: "var(--atlas-ingredient-list-height, 60dvh)",
           lg: "var(--atlas-layout-catalog-height, calc(100dvh - 340px))",
         }}
       >
@@ -77,7 +85,9 @@ export function IngredientCatalogue({
             aria-label="Danh mục nguyên liệu"
             minW={{
               base: "var(--atlas-layout-zero, 0)",
-              md: "var(--atlas-ingredient-table-width, 900px)",
+              md: detailOpen
+                ? "var(--atlas-layout-zero, 0)"
+                : "var(--atlas-ingredient-table-width, 900px)",
             }}
             w="full"
             tableLayout="fixed"
@@ -101,16 +111,60 @@ export function IngredientCatalogue({
               },
             }}
           >
+            <Table.Caption
+              hideFrom="md"
+              captionSide="top"
+              textAlign="start"
+              px="sm"
+              pt="sm"
+              pb="var(--atlas-layout-zero, 0)"
+              mt="var(--atlas-layout-zero, 0)"
+              fontWeight="semibold"
+              color="fg.default"
+              bg="bg.toolbar"
+            >
+              Sắp xếp
+            </Table.Caption>
             <Table.ColumnGroup>
-              <Table.Column w="var(--atlas-ingredient-name-width, 22%)" />
-              <Table.Column w="var(--atlas-ingredient-status-width, 13%)" />
-              <Table.Column w="var(--atlas-ingredient-unit-width, 10%)" />
-              <Table.Column w="var(--atlas-ingredient-type-width, 17%)" />
-              <Table.Column w="var(--atlas-ingredient-step-width, 10%)" />
-              <Table.Column w="var(--atlas-ingredient-supplier-width, 18%)" />
-              <Table.Column w="var(--atlas-ingredient-action-width, 10%)" />
+              <Table.Column
+                w={
+                  detailOpen
+                    ? "var(--atlas-master-rail-name-width, 48%)"
+                    : "var(--atlas-ingredient-name-width, 22%)"
+                }
+              />
+              <Table.Column
+                w={
+                  detailOpen
+                    ? "var(--atlas-master-rail-status-width, 26%)"
+                    : "var(--atlas-ingredient-status-width, 13%)"
+                }
+              />
+              <Table.Column
+                display={{ lg: detailOpen ? "none" : "table-column" }}
+                w="var(--atlas-ingredient-unit-width, 10%)"
+              />
+              <Table.Column
+                display={{ lg: detailOpen ? "none" : "table-column" }}
+                w="var(--atlas-ingredient-type-width, 17%)"
+              />
+              <Table.Column
+                display={{ lg: detailOpen ? "none" : "table-column" }}
+                w="var(--atlas-ingredient-step-width, 10%)"
+              />
+              <Table.Column
+                display={{ lg: detailOpen ? "none" : "table-column" }}
+                w="var(--atlas-ingredient-supplier-width, 18%)"
+              />
+              <Table.Column
+                w={
+                  detailOpen
+                    ? "var(--atlas-master-rail-action-width, 26%)"
+                    : "var(--atlas-ingredient-action-width, 10%)"
+                }
+              />
             </Table.ColumnGroup>
-            <Table.Header css={atlasNarrowSortableHeader}>
+            <Table.Header css={atlasRecordSortHeader}>
               <Table.Row>
                 {(
                   [
@@ -127,6 +181,12 @@ export function IngredientCatalogue({
                     <AtlasSortableColumnHeader
                       key={label}
                       label={label}
+                      display={{
+                        lg:
+                          detailOpen && key !== "ingredient" && key !== "status"
+                            ? "none"
+                            : "table-cell",
+                      }}
                       columnKey={key}
                       sort={sort}
                       onSort={onSort}
@@ -145,6 +205,12 @@ export function IngredientCatalogue({
                   ) : (
                     <Table.ColumnHeader
                       key={label}
+                      display={{
+                        lg:
+                          detailOpen && label !== "Thao tác"
+                            ? "none"
+                            : "table-cell",
+                      }}
                       position={
                         label === "Thao tác"
                           ? { base: "static", md: "sticky" }
@@ -200,7 +266,9 @@ export function IngredientCatalogue({
                         {status[item.ingredient_status].label}
                       </Text>
                     </Table.Cell>
-                    <Table.Cell>
+                    <Table.Cell
+                      display={{ lg: detailOpen ? "none" : "table-cell" }}
+                    >
                       <Text data-row-secondary="" color="fg.muted">
                         <Box as="span" hideFrom="md">
                           Đơn vị mua:{" "}
@@ -208,7 +276,9 @@ export function IngredientCatalogue({
                         {item.purchase_unit_name ?? "—"}
                       </Text>
                     </Table.Cell>
-                    <Table.Cell>
+                    <Table.Cell
+                      display={{ lg: detailOpen ? "none" : "table-cell" }}
+                    >
                       <Text>{item.ingredient_type_name ?? "—"}</Text>
                       <Text
                         data-row-secondary
@@ -218,7 +288,10 @@ export function IngredientCatalogue({
                         {item.ingredient_order_group_name ?? "—"}
                       </Text>
                     </Table.Cell>
-                    <Table.Cell textAlign={{ base: "left", md: "right" }}>
+                    <Table.Cell
+                      display={{ lg: detailOpen ? "none" : "table-cell" }}
+                      textAlign={{ base: "left", md: "right" }}
+                    >
                       <Text textStyle="quantityInline">
                         <Box as="span" hideFrom="md">
                           Mức làm tròn:{" "}
@@ -228,7 +301,9 @@ export function IngredientCatalogue({
                           : formatVietnameseDecimal(item.order_step)}
                       </Text>
                     </Table.Cell>
-                    <Table.Cell>
+                    <Table.Cell
+                      display={{ lg: detailOpen ? "none" : "table-cell" }}
+                    >
                       <Text data-row-secondary="" color="fg.muted">
                         <Box as="span" hideFrom="md">
                           Ưu tiên NCC:{" "}
@@ -269,7 +344,7 @@ export function IngredientCatalogue({
                           lg: "compact",
                         }}
                       >
-                        {item.ingredient_status === "ARCHIVED"
+                        {detailOpen || item.ingredient_status === "ARCHIVED"
                           ? "Xem"
                           : "Xem / sửa"}
                       </Button>

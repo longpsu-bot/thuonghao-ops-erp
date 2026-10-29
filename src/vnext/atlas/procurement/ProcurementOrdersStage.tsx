@@ -23,6 +23,7 @@ import {
   ProcurementPxkImpact,
   type ProcurementPxkImpactProps,
 } from "./ProcurementPxkImpact";
+import { focusFirstCompactFilter } from "../compactFilterFocus";
 
 export type ProcurementExportMode =
   "all" | "details_ing" | "details_school" | "sum";
@@ -99,11 +100,14 @@ export function ProcurementOrdersStage({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportMode, setExportMode] = useState<ProcurementExportMode>("all");
+  const [utilitiesOpen, setUtilitiesOpen] = useState(false);
+  const utilities = useRef<HTMLDivElement>(null);
   const exportOrders = (data?.purchase_orders ?? []).filter(canExport);
   const releaseOrders = (data?.purchase_orders ?? []).filter(
     canReleasePurchaseOrder,
   );
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const pendingFocusId = useRef<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const visible = (data?.purchase_orders ?? []).filter((order) =>
     [
@@ -133,8 +137,19 @@ export function ProcurementOrdersStage({
   }, [data, search, selectedId]);
   useEffect(() => {
     if (selectedId) heading.current?.focus();
+    if (selectedId === null && pendingFocusId.current) {
+      const id = pendingFocusId.current;
+      pendingFocusId.current = null;
+      const origin =
+        railButtons.current.get(id) ??
+        (trigger.current?.isConnected ? trigger.current : null);
+      origin?.focus();
+    }
     setExportError(null);
   }, [selectedId]);
+  useEffect(() => {
+    if (utilitiesOpen) focusFirstCompactFilter(utilities.current);
+  }, [utilitiesOpen]);
   const primary =
     selected?.status === "DRAFT"
       ? selected.commitment_state === "DRAFT_STALE"
@@ -212,23 +227,41 @@ export function ProcurementOrdersStage({
         >
           {visible.length} đơn mua đang hiển thị
         </Text>
-        {onReleaseAll && (
+        {(onReleaseAll || onExportZip) && (
           <Button
+            display={{ base: "inline-flex", lg: "none" }}
             variant="secondary"
-            disabled={disabled || exporting || releaseOrders.length === 0}
-            loading={Boolean(bulkProgress)}
-            onClick={onReleaseAll}
-            aria-describedby={`${detailId}-loaded-scope`}
+            aria-expanded={utilitiesOpen}
+            aria-controls={`${detailId}-loaded-utilities`}
+            onClick={() => setUtilitiesOpen((open) => !open)}
           >
-            Phát hành tất cả PO ({releaseOrders.length})
+            Tiện ích đơn mua
           </Button>
         )}
         <AtlasWorkbar
-          aria-label="Xuất đơn mua đã tải"
+          ref={utilities}
+          id={`${detailId}-loaded-utilities`}
+          aria-label="Tiện ích đơn mua đã tải"
           aria-describedby={`${detailId}-loaded-scope`}
+          display={{
+            base: utilitiesOpen ? "flex" : "none",
+            lg: "flex",
+          }}
           w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
-          alignItems="center"
+          alignItems={{ base: "stretch", lg: "center" }}
+          flexDirection={{ base: "column", lg: "row" }}
         >
+          {onReleaseAll && (
+            <Button
+              variant="secondary"
+              disabled={disabled || exporting || releaseOrders.length === 0}
+              loading={Boolean(bulkProgress)}
+              onClick={onReleaseAll}
+              aria-describedby={`${detailId}-loaded-scope`}
+            >
+              Phát hành tất cả PO ({releaseOrders.length})
+            </Button>
+          )}
           <Field.Root
             disabled={disabled || exporting}
             w={{ base: "full", sm: "var(--atlas-layout-auto, auto)" }}
@@ -280,7 +313,12 @@ export function ProcurementOrdersStage({
           )}
         </AtlasWorkbar>
       </AtlasWorkbar>
-      <Box px="md" pb="sm" bg="bg.toolbar">
+      <Box
+        px="md"
+        pb="sm"
+        bg="bg.toolbar"
+        display={{ base: utilitiesOpen ? "block" : "none", lg: "block" }}
+      >
         <Text
           id={`${detailId}-loaded-scope`}
           textStyle="helper"
@@ -326,6 +364,7 @@ export function ProcurementOrdersStage({
         <Flex
           as="nav"
           aria-label="Đơn mua theo nhà cung cấp"
+          data-narrow-selected={selected ? "true" : "false"}
           direction={{ base: "row", lg: "column" }}
           overflow="auto"
           maxH={{
@@ -335,6 +374,11 @@ export function ProcurementOrdersStage({
           gap="xs"
           minW="var(--atlas-layout-zero, 0)"
           alignSelf="start"
+          css={
+            selected
+              ? { "@media(max-width:63.99rem)": { display: "none" } }
+              : undefined
+          }
         >
           {visible.map((order) => (
             <Button
@@ -495,11 +539,8 @@ export function ProcurementOrdersStage({
                   variant="tertiary"
                   flexShrink="var(--atlas-layout-zero, 0)"
                   onClick={() => {
+                    pendingFocusId.current = selected.purchase_order_id;
                     setSelectedId(null);
-                    const origin = trigger.current?.isConnected
-                      ? trigger.current
-                      : railButtons.current.get(selected.purchase_order_id);
-                    origin?.focus();
                   }}
                 >
                   Đóng

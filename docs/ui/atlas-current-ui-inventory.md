@@ -14,6 +14,39 @@ the earlier UI-quality program; this amendment records the newly connected surfa
 
 ## Current workspace amendment — 8 October 2026
 
+**Hierarchy rollout outcome — 29 October 2026:** The Owner-approved
+[workbench hierarchy rollout](atlas-workbench-hierarchy-rollout.md) is delivered
+for review across all thirteen production owners and their reachable support
+surfaces. See the [phone gallery](../testing/artifacts/atlas-workbench-hierarchy/README.md)
+and [source-qualified coverage](../testing/artifacts/atlas-workbench-hierarchy/coverage.md).
+The seven-width matrix contains 175 PASS states, with additional family
+dialog/transition checks qualified separately. Accepted Allocation and
+satisfactory shell/sign-in composition remain review-only. Loading/expired/
+configuration-error session variants retain source/direct-test coverage.
+
+This dated amendment supersedes earlier narrow selected-editor widths and
+phone-stacked Review geometry, including earlier mobile-layout deferrals only
+for surfaces explicitly covered by this rollout. A selected/review workplane
+replaces its narrow chooser/directory where appropriate; desktop uses bounded
+identity rails beside broad working planes. Attendance, PXK and reconciliation
+use intentional labeled phone records; wide source/quantity evidence tables
+retain local scrolling. Owner horizontal drift is checked independently from
+document overflow. School defaults keep full-draft scope and separate cooking/
+dispatch configuration; PO/PXK utility disclosure retains complete loaded scope.
+
+Final source/test checkpoint `7de513d7` passes typecheck. The final correction
+keeps Reconciliation context visible on entry, fits selected PXK/Reconciliation
+navigation within their rails, removes record-only ghost dividers, and labels
+phone sort utilities. Focused regressions, including actual inactive Master
+first entry, and historical owner-test corrections are qualified in coverage.
+PR/latest-head CI and final Product/architecture review remain pending. Physical
+phones/virtual keyboards, AT speech, hosted writes, operational exports and live
+data are not certified. Existing palette, Inter roles, exact quantities/Units,
+guards, contracts and backend authority are unchanged. No migration; rollback is
+a frontend/test/docs revert. Warehouse Receiving remains paused; PXK and
+reconciliation are existing Dispatch owners. Older records below remain
+historical evidence and do not start another implementation or data task.
+
 **Optional additions — 23 October 2026:** The Owner approved removal of the
 recurring weekly no-additions checkbox and its bulk-clear transition. Untouched
 empty weeks need no action. Row removal still shows the saved quantity in review

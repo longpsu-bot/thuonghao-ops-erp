@@ -24,7 +24,7 @@ export function SchoolDispatchGroupEditor({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <Box px="md" pb="sm">
+    <Box px={{ base: "sm", md: "md" }} pb="sm">
       {!embedded && (
         <Button
           variant="outline"
@@ -37,13 +37,7 @@ export function SchoolDispatchGroupEditor({
         </Button>
       )}
       {(embedded || open) && (
-        <Box
-          id="school-dispatch-group-editor"
-          mt="sm"
-          p="md"
-          bg="bg.toolbar"
-          borderRadius="workbench"
-        >
+        <Box id="school-dispatch-group-editor" mt="sm" py="sm">
           <Heading as="h2" textStyle="section">
             Nhóm phiếu xuất kho
           </Heading>
@@ -119,6 +113,10 @@ export function SchoolDispatchGroupEditor({
             <Button
               variant="businessPrimary"
               size="sm"
+              minH={{
+                base: "var(--atlas-layout-mobile-target, 44px)",
+                lg: "compact",
+              }}
               disabled={
                 disabled ||
                 !c.dispatchGroupDirty ||
@@ -132,6 +130,10 @@ export function SchoolDispatchGroupEditor({
               <Button
                 size="sm"
                 variant="outline"
+                minH={{
+                  base: "var(--atlas-layout-mobile-target, 44px)",
+                  lg: "compact",
+                }}
                 disabled={disabled}
                 onClick={() => c.selectDispatchGroup(c.dispatchGroupEditor.id)}
               >

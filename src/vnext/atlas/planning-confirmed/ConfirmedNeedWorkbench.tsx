@@ -156,7 +156,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
           ariaLabel="Ngữ cảnh xác nhận nhu cầu"
           moduleLabel="Lập nhu cầu"
           jobLabel="Xác nhận nhu cầu"
-          compactSummary={scopeSummary}
+          compactSummary={`${dateSummary} · ${scopeSummary}`}
           details={[
             { label: "Ngày phục vụ", value: dateSummary },
             { label: "Trường / điểm giao", value: scopeSummary },
@@ -225,6 +225,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               <Field.Root
                 order={{ base: filtersOpen ? 6 : 0, lg: 3 }}
                 gridColumn={{ base: filtersOpen ? "1 / -1" : "1", lg: "auto" }}
+                minW="var(--atlas-layout-zero, 0)"
+                w="full"
               >
                 <Field.Label
                   display={{
@@ -238,6 +240,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 <Input
                   aria-label="Tìm kiếm"
                   placeholder="Nguyên liệu, nơi nhận…"
+                  minW="var(--atlas-layout-zero, 0)"
+                  w="full"
                   value={c.search}
                   onChange={(e) => c.setSearch(e.target.value)}
                 />
@@ -282,7 +286,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               textStyle="helper"
               color="fg.muted"
             >
-              Ngày {dateSummary} · {scopeSummary} · Tình trạng: {filterSummary}
+              Tình trạng: {filterSummary}
             </Text>
             <AtlasWorkbarActions
               ref={compactFilterOnward}
@@ -578,6 +582,17 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 }
                 onEdit={c.edit}
               />
+              {detailOpen && props.authSubject && (
+                <ConfirmedNeedSupportDetail
+                  key={contextKey}
+                  api={props.needGenerationApi}
+                  authSubject={props.authSubject}
+                  date={c.date}
+                  runId={c.workbench.need_generation_source.run_id}
+                  batchId={c.workbench.confirmed_need_batch_id}
+                  lines={c.workbench.lines}
+                />
+              )}
               <Flex
                 role="group"
                 aria-label="Thao tác xác nhận nhu cầu"
@@ -644,17 +659,6 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     {c.workbench.disabled_reasons.save_confirmed_needs}
                   </Text>
                 )}
-              {detailOpen && props.authSubject && (
-                <ConfirmedNeedSupportDetail
-                  key={contextKey}
-                  api={props.needGenerationApi}
-                  authSubject={props.authSubject}
-                  date={c.date}
-                  runId={c.workbench.need_generation_source.run_id}
-                  batchId={c.workbench.confirmed_need_batch_id}
-                  lines={c.workbench.lines}
-                />
-              )}
             </>
           )}
           <ConfirmedNeedDirtyExitDialog

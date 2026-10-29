@@ -107,6 +107,36 @@ const teacher = (name = "Trường Trung học Beta") =>
   screen.getByLabelText(`Giáo viên mặc định — ${name}`);
 
 describe("Chakra School default portions workbench", () => {
+  it("uses the shared task context for the active School job and authoritative counts", async () => {
+    await renderReady(apiWith().api);
+
+    const context = screen.getByRole("region", {
+      name: "Ngữ cảnh công việc trường học",
+    });
+    expect(
+      within(context).getByRole("heading", {
+        level: 1,
+        name: "Sĩ số mặc định",
+      }),
+    ).toHaveAccessibleDescription("Trường học");
+    expect(
+      within(context).getByLabelText(
+        "Tóm tắt công việc: 2 trường · 1 đang hoạt động · 0 thay đổi chưa lưu",
+      ),
+    ).toBeVisible();
+  });
+
+  it("keeps both labelled portion inputs at the narrow touch target", async () => {
+    await renderReady(apiWith().api);
+
+    expect(student()).toHaveStyle({
+      minHeight: "var(--atlas-layout-mobile-target, 44px)",
+    });
+    expect(teacher()).toHaveStyle({
+      minHeight: "var(--atlas-layout-mobile-target, 44px)",
+    });
+  });
+
   it("omits single-option navigation while retaining a named default workplane", async () => {
     await renderReady(apiWith().api);
     expect(
@@ -147,6 +177,9 @@ describe("Chakra School default portions workbench", () => {
 
   it("keeps all five sort actions and the School order visible in the narrow composition", async () => {
     await renderReady(apiWith().api);
+    expect(screen.getByText("Sắp xếp", { exact: true }).tagName).toBe(
+      "CAPTION",
+    );
     for (const label of [
       "#",
       "Trường",

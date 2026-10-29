@@ -497,6 +497,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 )}
               </Box>
               <Field.Root
+                minW="var(--atlas-layout-zero, 0)"
+                w="full"
                 order={{
                   base: 0,
                   md: controller.stage === "allocation" ? 3 : 2,
@@ -510,6 +512,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   Tìm kiếm
                 </Field.Label>
                 <Input
+                  minW="var(--atlas-layout-zero, 0)"
+                  w="full"
                   aria-label="Tìm kiếm"
                   placeholder={
                     controller.stage === "orders"

@@ -75,6 +75,7 @@ describe("Publish all loaded eligible POs", () => {
         />
       </AtlasVNextProvider>,
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiện ích đơn mua" }));
     fireEvent.click(
       screen.getByRole("button", { name: "Phát hành tất cả PO (2)" }),
     );

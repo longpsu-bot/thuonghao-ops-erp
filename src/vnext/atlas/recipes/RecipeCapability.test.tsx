@@ -112,6 +112,33 @@ async function retainedWorkspace(initialJob: "recipes" | "changes") {
 }
 
 describe("Unified Recipe capability and Change Order operator job", () => {
+  it("keeps Change Order search and creation immediate while status and scope use a focused disclosure", async () => {
+    await setup();
+
+    expect(screen.getByLabelText("Tìm lệnh")).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Tạo lệnh điều chỉnh" }),
+    ).toBeEnabled();
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveAttribute("aria-controls", "change-order-filters");
+    expect(
+      screen.getByText("Tình trạng: Cần chú ý / hiện hành · Phạm vi: Tất cả"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(disclosure);
+    await waitFor(() =>
+      expect(screen.getByLabelText("Tình trạng")).toHaveFocus(),
+    );
+    choose("Phạm vi", "SYSTEM_DISH");
+    fireEvent.click(disclosure);
+
+    expect(
+      screen.getByText(
+        "Tình trạng: Cần chú ý / hiện hành · Phạm vi: Một món · tất cả trường",
+      ),
+    ).toBeInTheDocument();
+  });
   it("translates a known inactive substitute blocker without exposing backend English", async () => {
     await setup("PREVIEW_BLOCKED", "changes", undefined, (fixture) => {
       const original = fixture.api.preview;
@@ -452,7 +479,7 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       expect(f.calls.filter((c) => c.name === "create")).toHaveLength(1);
     },
   );
-  it("keeps all ledger facts and opens the exact Adjustment in the narrow workplane, then restores its trigger", async () => {
+  it("keeps all ledger facts, opens without scrolling past context, then restores its trigger", async () => {
     const scroll = vi.fn();
     const previous = HTMLElement.prototype.scrollIntoView;
     HTMLElement.prototype.scrollIntoView = scroll;
@@ -485,7 +512,7 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       fireEvent.click(trigger);
       const panel = screen.getByLabelText("Chi tiết lệnh");
       expect(panel).toHaveFocus();
-      expect(scroll).toHaveBeenCalledWith({ block: "start" });
+      expect(scroll).not.toHaveBeenCalled();
       expect(
         within(panel).getAllByText("Thay bí đỏ bằng cà rốt theo thực đơn")[0],
       ).toBeVisible();
@@ -500,6 +527,46 @@ describe("Unified Recipe capability and Change Order operator job", () => {
       window.matchMedia = previousMedia;
       HTMLElement.prototype.scrollIntoView = previous;
     }
+  });
+  it("resets the detail reading position when another Change Order is selected", async () => {
+    await setup("ACTIVE", "changes", undefined, (fixture) => {
+      const first = fixture.data.operator_rows[0];
+      fixture.data.operator_rows.push({
+        ...first,
+        adjustment_id: "order-second",
+        current_revision_id: "revision-second",
+        display_revision: {
+          ...first.display_revision,
+          revision_id: "revision-second",
+          reason_note: "Điều chỉnh thứ hai",
+        },
+        content_revision: {
+          ...first.content_revision,
+          revision_id: "revision-second",
+          reason_note: "Điều chỉnh thứ hai",
+        },
+        command_revision: {
+          ...first.command_revision,
+          revision_id: "revision-second",
+          reason_note: "Điều chỉnh thứ hai",
+        },
+        history: first.history.map((entry) => ({
+          ...entry,
+          revision_id: "revision-second",
+          reason_note: "Điều chỉnh thứ hai",
+        })),
+      });
+    });
+
+    const viewButtons = screen.getAllByRole("button", { name: /^Xem lệnh/ });
+    fireEvent.click(viewButtons[0]);
+    const panel = screen.getByLabelText("Chi tiết lệnh");
+    panel.scrollTop = 240;
+    fireEvent.click(viewButtons[1]);
+
+    await waitFor(() => expect(panel.scrollTop).toBe(0));
+    expect(within(panel).getAllByText("Điều chỉnh thứ hai")[0]).toBeVisible();
+    expect(screen.getByRole("button", { name: "Đóng lệnh" })).toBeVisible();
   });
   it("has one capability heading and peer jobs above the full-width base catalogue", async () => {
     const f = await setup("ACTIVE", "recipes");
@@ -722,9 +789,11 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     await editor();
     fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
     const dialog = await screen.findByRole("dialog");
-    expect(
-      within(dialog).getByText("Nguyên liệu bị trùng trong công thức."),
-    ).toBeInTheDocument();
+    const blocker = within(dialog).getByRole("alert", {
+      name: "Điều kiện chặn lưu",
+    });
+    expect(blocker).toHaveTextContent("Nguyên liệu bị trùng trong công thức.");
+    expect(blocker.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(
       within(dialog).queryByRole("button", { name: "Lưu lệnh điều chỉnh" }),
     ).not.toBeInTheDocument();
@@ -740,6 +809,22 @@ describe("Unified Recipe capability and Change Order operator job", () => {
     expect(screen.getByLabelText("Lý do điều chỉnh")).toHaveValue(
       "Điều chỉnh theo thực đơn",
     );
+  });
+  it("warning Preview uses warning anatomy without changing Save eligibility", async () => {
+    await setup("PREVIEW_WARNING");
+    await editor();
+    fireEvent.click(screen.getByRole("button", { name: "Xem tác động" }));
+    const dialog = await screen.findByRole("dialog", { name: "Xem tác động" });
+    const warning = within(dialog).getByRole("status", {
+      name: "Cảnh báo tác động",
+    });
+    expect(warning).toHaveTextContent(
+      "Có lệnh khác áp dụng sau giai đoạn này.",
+    );
+    expect(warning.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(
+      within(dialog).getByRole("button", { name: "Lưu lệnh điều chỉnh" }),
+    ).toBeEnabled();
   });
   it("renders immutable legacy history without inventing attribution and cancel uses a focused dialog", async () => {
     await setup("LEGACY_UNATTRIBUTED_HISTORY");

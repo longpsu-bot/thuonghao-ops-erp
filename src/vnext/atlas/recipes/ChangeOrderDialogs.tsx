@@ -5,11 +5,14 @@ import {
   Button,
   Dialog,
   Field,
+  Flex,
   Grid,
+  Icon,
   Table,
   Text,
   Textarea,
 } from "@chakra-ui/react";
+import { Warning, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import type {
   EffectiveCompositionResult,
@@ -19,6 +22,40 @@ import type { ChangeOrderController } from "./useChangeOrderWorkbench";
 import { ChangeSelect } from "./ChangeOrderEditor";
 import { periodLabel, validDate, vietnamLocalDate } from "./changeOrderModel";
 import { recipeIssueCopy } from "./recipeIssueCopy";
+
+function RecipeIssueFeedback({
+  kind,
+  message,
+  mt = "xs",
+}: {
+  kind: "blocker" | "warning";
+  message: string;
+  mt?: "xs" | "sm";
+}) {
+  const blocked = kind === "blocker";
+  return (
+    <Box
+      role={blocked ? "alert" : "status"}
+      aria-label={blocked ? "Điều kiện chặn lưu" : "Cảnh báo tác động"}
+      layerStyle={blocked ? "feedbackDanger" : "feedbackWarning"}
+      borderRadius="control"
+      p="xs"
+      mt={mt}
+    >
+      <Flex align="flex-start" gap="xs">
+        <Icon asChild flexShrink="0" mt="var(--atlas-layout-icon-offset, 2px)">
+          {blocked ? (
+            <WarningCircle aria-hidden="true" />
+          ) : (
+            <Warning aria-hidden="true" />
+          )}
+        </Icon>
+        <Text textStyle="helper">{message}</Text>
+      </Flex>
+    </Box>
+  );
+}
+
 export function ChangeComposition({
   title,
   value,
@@ -76,9 +113,11 @@ export function ChangeComposition({
         </Table.Body>
       </Table.Root>
       {value.blockers.map((b, i) => (
-        <Text key={i} role="alert">
-          {recipeIssueCopy(b)}
-        </Text>
+        <RecipeIssueFeedback
+          key={i}
+          kind="blocker"
+          message={recipeIssueCopy(b)}
+        />
       ))}
     </Box>
   );
@@ -105,11 +144,14 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
           borderRadius="workbench"
           maxW="var(--atlas-layout-review-width, 920px)"
           maxH="var(--atlas-layout-review-height, 92dvh)"
+          overflow="hidden"
+          display="flex"
+          flexDirection="column"
         >
-          <Dialog.Header>
+          <Dialog.Header flexShrink="0">
             <Dialog.Title>Xem tác động</Dialog.Title>
           </Dialog.Header>
-          <Dialog.Body overflowY="auto">
+          <Dialog.Body overflowY="auto" minH="var(--atlas-layout-zero, 0)">
             {c.lock && c.message && (
               <Text role="alert" mb="sm">
                 {c.message}
@@ -143,14 +185,20 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
                   />
                 </Grid>
                 {p.warnings.map((w, i) => (
-                  <Text mt="sm" key={i} role="status" color="status.warning">
-                    {recipeIssueCopy(w)}
-                  </Text>
+                  <RecipeIssueFeedback
+                    key={i}
+                    kind="warning"
+                    message={recipeIssueCopy(w)}
+                    mt="sm"
+                  />
                 ))}
                 {p.blockers.map((b, i) => (
-                  <Text mt="sm" key={i} role="alert" color="status.danger">
-                    {recipeIssueCopy(b)}
-                  </Text>
+                  <RecipeIssueFeedback
+                    key={i}
+                    kind="blocker"
+                    message={recipeIssueCopy(b)}
+                    mt="sm"
+                  />
                 ))}
                 {p.school_id === null && (
                   <Box as="details" mt="md">
@@ -204,7 +252,7 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
               </>
             )}
           </Dialog.Body>
-          <Dialog.Footer flexWrap="wrap">
+          <Dialog.Footer flexWrap="wrap" flexShrink="0">
             <Button
               ref={back}
               onClick={c.backToEdit}
@@ -260,11 +308,15 @@ export function ChangeOrderCancel({ c }: { c: ChangeOrderController }) {
           color="fg.default"
           mx="md"
           borderRadius="workbench"
+          maxH="var(--atlas-layout-dialog-height, 90dvh)"
+          overflow="hidden"
+          display="flex"
+          flexDirection="column"
         >
-          <Dialog.Header>
+          <Dialog.Header flexShrink="0">
             <Dialog.Title>Hủy lệnh</Dialog.Title>
           </Dialog.Header>
-          <Dialog.Body>
+          <Dialog.Body overflowY="auto" minH="var(--atlas-layout-zero, 0)">
             {c.message && (
               <Text role="alert" color="status.danger" mb="sm">
                 {c.message}
@@ -288,7 +340,7 @@ export function ChangeOrderCancel({ c }: { c: ChangeOrderController }) {
               Lịch sử lệnh được giữ nguyên. Lệnh ngừng áp dụng từ ngày đã chọn.
             </Text>
           </Dialog.Body>
-          <Dialog.Footer flexWrap="wrap">
+          <Dialog.Footer flexWrap="wrap" flexShrink="0">
             <Button ref={back} disabled={c.busy} onClick={c.closeCancel}>
               Tiếp tục xem lệnh
             </Button>

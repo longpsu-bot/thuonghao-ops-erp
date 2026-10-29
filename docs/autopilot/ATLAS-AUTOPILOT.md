@@ -1,8 +1,37 @@
 # Atlas Autopilot Mandate
 
-**Current checkpoint:** 27 October 2026 (Asia/Bangkok).
+**Current checkpoint:** 29 October 2026 (Asia/Bangkok).
 
-**Status:** COMPLETE — Atlas Planning core data applied and replay-verified on Staging; Warehouse remains paused.
+**Status:** IN_REVIEW — Atlas hierarchy implementation/local evidence delivered; PR/latest-head CI and final Product/architecture review remain. Core-data work remains complete and Warehouse Receiving remains paused.
+
+## Current UI execution horizon
+
+The Owner approved “proceed for every workbench and page” after accepting and
+merging Allocation reference #446 (`777d3237`). Implementation of the
+[bounded UI specification](../ui/atlas-workbench-hierarchy-rollout.md) and its
+[sequential plan](../superpowers/plans/2026-10-29-atlas-workbench-hierarchy-rollout.md)
+across thirteen active owners and shared pages is delivered, with independent
+family PASS and scoped corrections. Work used the explicitly authorized canonical
+E-drive checkout on `codex/atlas-workbench-hierarchy-rollout`, with sequential
+writers and read-only review. See the [coverage record](../testing/artifacts/atlas-workbench-hierarchy/coverage.md)
+and [phone gallery](../testing/artifacts/atlas-workbench-hierarchy/README.md).
+
+The seven-width matrix records 175 PASS states; additional family support and
+dialog states are separately qualified. Final source/test checkpoint `5ab69bf3`
+passes typecheck. The focused owner run's initial 103 passes/one failure and
+test-only exact closure remain explicit in coverage. This does not claim one
+all-green combined run or full local routine certification.
+
+The remaining authorized horizon is branch/PR publication, public-gallery
+access verification, latest-head Frontend CI and final Product/architecture
+review. No further implementation starts automatically. Preserve
+business/backend authority and existing guards. No merge, manual
+deployment, hosted write, source-data correction, dependency or API change is
+implied. Warehouse Receiving remains paused; existing PXK/reconciliation view
+work does not reopen it. The completed data-task record below remains evidence,
+not executable authorization to repeat an import.
+
+## Previous completed core-data mandate — 27 October 2026
 
 **Owner instruction:** Complete the Atlas UI/data work as fully as practical, copy only core Planning master data from OPS v1 without changing v1, omit daily operational data, and **do not work on Warehouse yet**. The Owner subsequently authorized the guarded Atlas Staging core-data execution after review.
 

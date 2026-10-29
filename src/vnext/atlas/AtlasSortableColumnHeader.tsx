@@ -82,3 +82,40 @@ export const atlasNarrowSortableHeader = {
     },
   },
 } as const;
+
+// Opt-in for stacked School and master-data records; desktop comparisons stay unchanged.
+export const atlasRecordSortHeader = {
+  "@media(max-width:47.99rem)": {
+    display: "block",
+    position: "static",
+    width: "100%",
+    "& tr": {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "var(--atlas-spacing-xs)",
+      padding: "var(--atlas-spacing-xs) var(--atlas-spacing-sm)",
+    },
+    "& th:has(button)": {
+      display: "block",
+      position: "static",
+      flex: "1 1 calc(50% - var(--atlas-spacing-xs))",
+      minWidth: 0,
+      padding: 0,
+      whiteSpace: "normal",
+    },
+    "& th:not(:has(button))": {
+      position: "absolute",
+      width: "1px",
+      height: "1px",
+      overflow: "hidden",
+      clip: "rect(0, 0, 0, 0)",
+      whiteSpace: "nowrap",
+    },
+    "& button": {
+      minHeight: "var(--atlas-layout-mobile-target, 44px)",
+      minWidth: 0,
+      width: "100%",
+      whiteSpace: "normal",
+    },
+  },
+} as const;

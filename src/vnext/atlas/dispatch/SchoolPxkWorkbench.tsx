@@ -4,7 +4,6 @@ import {
   Flex,
   Field,
   Grid,
-  Heading,
   Input,
   NativeSelect,
   Text,
@@ -28,6 +27,7 @@ import {
   focusFirstCompactFilter,
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
+import { AtlasTaskContext } from "../AtlasTaskContext";
 export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const rangeErrorId = useId();
   const c = useSchoolPxkWorkbench(props);
@@ -57,12 +57,18 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const [exporting, setExporting] = useState(false);
   const [exportMode, setExportMode] = useState<"date" | "entity">("date");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [utilitiesOpen, setUtilitiesOpen] = useState(false);
+  const utilityId = useId();
+  const utilities = useRef<HTMLDivElement>(null);
   const compactFilters = useRef<HTMLDivElement>(null);
   const compactFilterTrigger = useRef<HTMLButtonElement>(null);
   const compactFilterOnward = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
   }, [filtersOpen]);
+  useEffect(() => {
+    if (utilitiesOpen) focusFirstCompactFilter(utilities.current);
+  }, [utilitiesOpen]);
   const releasedDocuments = Array.from(
     new Map(
       c.rows
@@ -137,15 +143,12 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
       display="flex"
       flexDirection="column"
     >
-      <Heading
-        as="h1"
-        textStyle="workbenchTitle"
-        px="md"
-        py="sm"
-        flexShrink="0"
-      >
-        Phiếu xuất kho
-      </Heading>
+      <AtlasTaskContext
+        ariaLabel="Ngữ cảnh Phiếu xuất kho"
+        moduleLabel="Phiếu xuất kho"
+        jobLabel="Phiếu xuất kho"
+        compactSummary={`${dateSummary} · ${scopeSummary}`}
+      />
       <AtlasWorkbar
         display="grid"
         bg="bg.toolbar"
@@ -208,6 +211,8 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
             />
           </Box>
           <Field.Root
+            minW="var(--atlas-layout-zero, 0)"
+            w="full"
             order={{ base: 0, md: 3 }}
             gridColumn={{ base: "1", md: "auto" }}
           >
@@ -215,6 +220,8 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
               Tìm kiếm
             </Field.Label>
             <Input
+              minW="var(--atlas-layout-zero, 0)"
+              w="full"
               aria-label="Tìm kiếm"
               placeholder="Trường, phiếu, nguyên liệu…"
               value={c.search}
@@ -271,7 +278,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
           textStyle="helper"
           color="fg.muted"
         >
-          Ngày {dateSummary} · {scopeSummary} · Tình trạng: {stateSummary}
+          Tình trạng: {stateSummary}
         </Text>
         <AtlasWorkbarActions
           ref={compactFilterOnward}
@@ -323,98 +330,109 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
           </Button>
         </Box>
       )}
-      <Flex
-        px="md"
-        py="sm"
-        gap="sm"
-        align="center"
-        justify="space-between"
-        wrap="wrap"
-        flexShrink="0"
-        bg="bg.toolbar"
-      >
-        <Text textStyle="helper" color="fg.muted">
-          {(["READY", "REPLACEMENT_REQUIRED", "BLOCKED", "CURRENT"] as const)
-            .map(
-              (s) =>
-                `${pxkLabels[s]} ${c.rows.filter((r) => r.state === s).length}`,
-            )
-            .join(" · ")}
-        </Text>
+      <Box flexShrink="0" bg="bg.toolbar" px="md" py="sm">
+        <Flex gap="sm" align="center" justify="space-between" wrap="wrap">
+          <Text textStyle="helper" color="fg.muted">
+            {(["READY", "REPLACEMENT_REQUIRED", "BLOCKED", "CURRENT"] as const)
+              .map(
+                (s) =>
+                  `${pxkLabels[s]} ${c.rows.filter((r) => r.state === s).length}`,
+              )
+              .join(" · ")}
+          </Text>
+          {(props.onExportGroupedXlsx || props.onExportZip) && (
+            <Button
+              display={{ base: "inline-flex", lg: "none" }}
+              variant="secondary"
+              aria-expanded={utilitiesOpen}
+              aria-controls={utilityId}
+              onClick={() => setUtilitiesOpen((open) => !open)}
+            >
+              Tiện ích phiếu xuất kho
+            </Button>
+          )}
+        </Flex>
         {(props.onExportGroupedXlsx || props.onExportZip) && (
-          <AtlasWorkbar
-            aria-label="Xuất phiếu đã tải"
-            w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
-            alignItems="center"
+          <Box
+            ref={utilities}
+            id={utilityId}
+            display={{ base: utilitiesOpen ? "block" : "none", lg: "block" }}
+            mt="sm"
           >
-            {props.onExportZip && (
-              <Field.Root
-                w={{
-                  base: "full",
-                  md: "var(--atlas-layout-auto, auto)",
-                }}
-                flexDirection={{ base: "column", md: "row" }}
-                alignItems={{ base: "stretch", md: "center" }}
-                gap="sm"
-              >
-                <Field.Label
-                  mb="var(--atlas-layout-zero, 0)"
-                  whiteSpace="nowrap"
-                >
-                  Nhóm file xuất kho
-                </Field.Label>
-                <NativeSelect.Root
-                  disabled={!c.canExportLoaded || exporting}
+            <AtlasWorkbar
+              aria-label="Xuất phiếu đã tải"
+              w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
+              alignItems="center"
+            >
+              {props.onExportZip && (
+                <Field.Root
                   w={{
                     base: "full",
-                    md: "var(--atlas-export-mode-width, 230px)",
+                    md: "var(--atlas-layout-auto, auto)",
                   }}
+                  flexDirection={{ base: "column", md: "row" }}
+                  alignItems={{ base: "stretch", md: "center" }}
+                  gap="sm"
                 >
-                  <NativeSelect.Field
-                    value={exportMode}
-                    onChange={(event) =>
-                      setExportMode(event.target.value as "date" | "entity")
-                    }
+                  <Field.Label
+                    mb="var(--atlas-layout-zero, 0)"
+                    whiteSpace="nowrap"
                   >
-                    <option value="date">Theo ngày</option>
-                    <option value="entity">Theo trường / điểm giao</option>
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
-              </Field.Root>
-            )}
-            <AtlasWorkbarActions flexShrink="1" flexWrap="nowrap">
-              {props.onExportGroupedXlsx && (
-                <Button
-                  variant="secondary"
-                  disabled={
-                    !c.canExportLoaded || exporting || !releasedDocuments.length
-                  }
-                  onClick={() => void exportLoaded(false)}
-                >
-                  Xuất XLSX
-                </Button>
+                    Nhóm file xuất kho
+                  </Field.Label>
+                  <NativeSelect.Root
+                    disabled={!c.canExportLoaded || exporting}
+                    w={{
+                      base: "full",
+                      md: "var(--atlas-export-mode-width, 230px)",
+                    }}
+                  >
+                    <NativeSelect.Field
+                      value={exportMode}
+                      onChange={(event) =>
+                        setExportMode(event.target.value as "date" | "entity")
+                      }
+                    >
+                      <option value="date">Theo ngày</option>
+                      <option value="entity">Theo trường / điểm giao</option>
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                  </NativeSelect.Root>
+                </Field.Root>
               )}
-              {props.onExportZip && (
-                <Button
-                  variant="secondary"
-                  loading={exporting}
-                  disabled={!c.canExportLoaded || !releasedDocuments.length}
-                  onClick={() => void exportLoaded(true)}
-                >
-                  Xuất ZIP
-                </Button>
-              )}
-            </AtlasWorkbarActions>
-          </AtlasWorkbar>
+              <AtlasWorkbarActions flexShrink="1" flexWrap="nowrap">
+                {props.onExportGroupedXlsx && (
+                  <Button
+                    variant="secondary"
+                    disabled={
+                      !c.canExportLoaded ||
+                      exporting ||
+                      !releasedDocuments.length
+                    }
+                    onClick={() => void exportLoaded(false)}
+                  >
+                    Xuất XLSX
+                  </Button>
+                )}
+                {props.onExportZip && (
+                  <Button
+                    variant="secondary"
+                    loading={exporting}
+                    disabled={!c.canExportLoaded || !releasedDocuments.length}
+                    onClick={() => void exportLoaded(true)}
+                  >
+                    Xuất ZIP
+                  </Button>
+                )}
+              </AtlasWorkbarActions>
+            </AtlasWorkbar>
+            <Text textStyle="helper" color="fg.muted" mt="xs">
+              Xuất các phiếu đủ điều kiện trong dữ liệu đã tải, không giới hạn
+              theo tìm kiếm.
+            </Text>
+          </Box>
         )}
-        {(props.onExportGroupedXlsx || props.onExportZip) && (
-          <Text textStyle="helper" color="fg.muted" w="full">
-            Xuất các phiếu đủ điều kiện trong dữ liệu đã tải, không giới hạn
-            theo tìm kiếm.
-          </Text>
-        )}
-      </Flex>
+      </Box>
       {exportError && (
         <Text px="md" pb="sm" role="alert" color="status.danger">
           {exportError}
@@ -431,22 +449,18 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
       <Grid
         flex="1"
         minH="var(--atlas-layout-zero, 0)"
-        templateRows={{
-          base: c.selected
-            ? "fit-content(35%) minmax(0, 1fr)"
-            : "minmax(0, 1fr)",
-          lg: "minmax(0, 1fr)",
-        }}
+        templateRows="minmax(0, 1fr)"
         templateColumns={{
           base: "minmax(0, 1fr)",
           lg: c.selected
-            ? "minmax(0, 62fr) minmax(320px, 38fr)"
+            ? "minmax(280px, 340px) minmax(0, 1fr)"
             : "minmax(0, 1fr)",
         }}
         minW="var(--atlas-layout-zero, 0)"
         data-pxk-master-detail
       >
         <Box
+          display={{ base: c.selected ? "none" : "block", lg: "block" }}
           minW="var(--atlas-layout-zero, 0)"
           minH="var(--atlas-layout-zero, 0)"
           h="full"

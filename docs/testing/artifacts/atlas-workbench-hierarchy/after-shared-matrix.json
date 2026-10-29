@@ -1,0 +1,170 @@
+[
+  {
+    "state": "signin",
+    "width": 1920,
+    "height": 1080,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "launcher",
+    "width": 1920,
+    "height": 1080,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "account",
+    "width": 1920,
+    "height": 1080,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "signin",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "launcher",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "account",
+    "width": 1440,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "signin",
+    "width": 1366,
+    "height": 768,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "launcher",
+    "width": 1366,
+    "height": 768,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "account",
+    "width": 1366,
+    "height": 768,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "signin",
+    "width": 1024,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "launcher",
+    "width": 1024,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "account",
+    "width": 1024,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "signin",
+    "width": 650,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "launcher",
+    "width": 650,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "account",
+    "width": 650,
+    "height": 900,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "signin",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "launcher",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "account",
+    "width": 390,
+    "height": 844,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "signin",
+    "width": 360,
+    "height": 800,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "launcher",
+    "width": 360,
+    "height": 800,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  },
+  {
+    "state": "account",
+    "width": 360,
+    "height": 800,
+    "errors": [],
+    "overflow": false,
+    "scrollX": 0
+  }
+]

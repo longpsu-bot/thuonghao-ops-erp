@@ -1,0 +1,4200 @@
+{
+  "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
+  "results": [
+    {
+      "id": "pxk",
+      "width": 1440,
+      "kind": "selected-directory",
+      "region": {
+        "x": 11,
+        "y": 371.59375,
+        "width": 340,
+        "height": 517.40625,
+        "right": 351,
+        "bottom": 889
+      },
+      "scrollWidth": 340,
+      "clientWidth": 340,
+      "table": {
+        "x": 11,
+        "y": 371.59375,
+        "width": 340,
+        "height": 251.1875,
+        "right": 351,
+        "bottom": 622.78125
+      },
+      "rows": [
+        {
+          "identity": {
+            "x": 21,
+            "y": 381.59375,
+            "width": 320,
+            "height": 68.59375,
+            "right": 341,
+            "bottom": 450.1875
+          },
+          "action": {
+            "x": 21,
+            "y": 575.78125,
+            "width": 320,
+            "height": 36,
+            "right": 341,
+            "bottom": 611.78125
+          }
+        }
+      ],
+      "sameOrigin": true,
+      "exactCloseOrigin": true
+    },
+    {
+      "id": "reconciliation",
+      "width": 1440,
+      "kind": "selected-directory",
+      "region": {
+        "x": 11,
+        "y": 325.59375,
+        "width": 340,
+        "height": 312.578125,
+        "right": 351,
+        "bottom": 638.171875
+      },
+      "scrollWidth": 340,
+      "clientWidth": 340,
+      "table": {
+        "x": 11,
+        "y": 325.59375,
+        "width": 340,
+        "height": 312.578125,
+        "right": 351,
+        "bottom": 638.171875
+      },
+      "rows": [
+        {
+          "identity": {
+            "x": 21,
+            "y": 335.59375,
+            "width": 320,
+            "height": 68.59375,
+            "right": 341,
+            "bottom": 404.1875
+          },
+          "action": {
+            "x": 21,
+            "y": 591.171875,
+            "width": 320,
+            "height": 36,
+            "right": 341,
+            "bottom": 627.171875
+          }
+        }
+      ],
+      "sameOrigin": true,
+      "exactCloseOrigin": true
+    },
+    {
+      "id": "pxk",
+      "width": 1024,
+      "kind": "selected-directory",
+      "region": {
+        "x": 11,
+        "y": 498.59375,
+        "width": 340,
+        "height": 390.40625,
+        "right": 351,
+        "bottom": 889
+      },
+      "scrollWidth": 340,
+      "clientWidth": 340,
+      "table": {
+        "x": 11,
+        "y": 498.59375,
+        "width": 340,
+        "height": 251.1875,
+        "right": 351,
+        "bottom": 749.78125
+      },
+      "rows": [
+        {
+          "identity": {
+            "x": 21,
+            "y": 508.59375,
+            "width": 320,
+            "height": 68.59375,
+            "right": 341,
+            "bottom": 577.1875
+          },
+          "action": {
+            "x": 21,
+            "y": 702.78125,
+            "width": 320,
+            "height": 36,
+            "right": 341,
+            "bottom": 738.78125
+          }
+        }
+      ],
+      "sameOrigin": true,
+      "exactCloseOrigin": true
+    },
+    {
+      "id": "reconciliation",
+      "width": 1024,
+      "kind": "selected-directory",
+      "region": {
+        "x": 11,
+        "y": 473.59375,
+        "width": 340,
+        "height": 312.578125,
+        "right": 351,
+        "bottom": 786.171875
+      },
+      "scrollWidth": 340,
+      "clientWidth": 340,
+      "table": {
+        "x": 11,
+        "y": 473.59375,
+        "width": 340,
+        "height": 312.578125,
+        "right": 351,
+        "bottom": 786.171875
+      },
+      "rows": [
+        {
+          "identity": {
+            "x": 21,
+            "y": 483.59375,
+            "width": 320,
+            "height": 68.59375,
+            "right": 341,
+            "bottom": 552.1875
+          },
+          "action": {
+            "x": 21,
+            "y": 739.171875,
+            "width": 320,
+            "height": 36,
+            "right": 341,
+            "bottom": 775.171875
+          }
+        }
+      ],
+      "sameOrigin": true,
+      "exactCloseOrigin": true
+    },
+    {
+      "id": "suppliers",
+      "width": 360,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "NCC Minh Tâm",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 1",
+          "after": "none"
+        },
+        {
+          "text": "0900000000",
+          "after": "none"
+        },
+        {
+          "text": "ncc1@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "NCC Hoàng Dung",
+          "after": "none"
+        },
+        {
+          "text": "Ngừng hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Thực phẩm An Phú",
+          "after": "none"
+        },
+        {
+          "text": "Tạm dừng",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nông sản Bình Minh",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000003",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Rau sạch Củ Chi",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 5",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Gia vị Phương Nam",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc6@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 7",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000006",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 8",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 9",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 9",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 10",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000009",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 11",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc11@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 12",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 13",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 13",
+          "after": "none"
+        },
+        {
+          "text": "0900000012",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 14",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 15",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 16",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000015",
+          "after": "none"
+        },
+        {
+          "text": "ncc16@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 17",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 17",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 18",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 19",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000018",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 20",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 21",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 21",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc21@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 22",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000021",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 23",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 24",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 25",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 25",
+          "after": "none"
+        },
+        {
+          "text": "0900000024",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 26",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc26@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 27",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 28",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000027",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 29",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 29",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 30",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 31",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000030",
+          "after": "none"
+        },
+        {
+          "text": "ncc31@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 32",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 33",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 33",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 34",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000033",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 35",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 36",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc36@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 37",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 37",
+          "after": "none"
+        },
+        {
+          "text": "0900000036",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "recipes",
+      "width": 360,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "Canh bí đỏ thịt bằm",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Thịt heo kho",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh rau củ",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Đậu sốt cà chua",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Ngừng dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Cá kho gừng",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Nháp",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh cải xanh",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Trứng hấp",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Gà xào nấm",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh khoai mỡ",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Thịt rim",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Rau củ luộc",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Cơm trắng",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "changes",
+      "width": 360,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "Thay nguyên liệu",
+          "after": "none"
+        },
+        {
+          "text": "Một món · tất cả trường",
+          "after": "none"
+        },
+        {
+          "text": "Canh bí đỏ thịt bằm · Khối nhỏ · Bí đỏ · Cà rốt",
+          "after": "none"
+        },
+        {
+          "text": "01/09/2026 · không thời hạn",
+          "after": "none"
+        },
+        {
+          "text": "Đang hiệu lực",
+          "after": "none"
+        },
+        {
+          "text": "Xem",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "suppliers",
+      "width": 390,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "NCC Minh Tâm",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 1",
+          "after": "none"
+        },
+        {
+          "text": "0900000000",
+          "after": "none"
+        },
+        {
+          "text": "ncc1@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "NCC Hoàng Dung",
+          "after": "none"
+        },
+        {
+          "text": "Ngừng hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Thực phẩm An Phú",
+          "after": "none"
+        },
+        {
+          "text": "Tạm dừng",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nông sản Bình Minh",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000003",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Rau sạch Củ Chi",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 5",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Gia vị Phương Nam",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc6@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 7",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000006",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 8",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 9",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 9",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 10",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000009",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 11",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc11@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 12",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 13",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 13",
+          "after": "none"
+        },
+        {
+          "text": "0900000012",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 14",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 15",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 16",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000015",
+          "after": "none"
+        },
+        {
+          "text": "ncc16@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 17",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 17",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 18",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 19",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000018",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 20",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 21",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 21",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc21@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 22",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000021",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 23",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 24",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 25",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 25",
+          "after": "none"
+        },
+        {
+          "text": "0900000024",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 26",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc26@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 27",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 28",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000027",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 29",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 29",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 30",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 31",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000030",
+          "after": "none"
+        },
+        {
+          "text": "ncc31@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 32",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 33",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 33",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 34",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "0900000033",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 35",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 36",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "none"
+        },
+        {
+          "text": "ncc36@example.test",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 37",
+          "after": "none"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "none"
+        },
+        {
+          "text": "Anh/Chị 37",
+          "after": "none"
+        },
+        {
+          "text": "0900000036",
+          "after": "none"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "none"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "recipes",
+      "width": 390,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "Canh bí đỏ thịt bằm",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Thịt heo kho",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh rau củ",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Đậu sốt cà chua",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Ngừng dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Cá kho gừng",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Nháp",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh cải xanh",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Trứng hấp",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Gà xào nấm",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh khoai mỡ",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Thịt rim",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Rau củ luộc",
+          "after": "none"
+        },
+        {
+          "text": "Món canh",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Cơm trắng",
+          "after": "none"
+        },
+        {
+          "text": "Món mặn",
+          "after": "none"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "none"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "none"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "changes",
+      "width": 390,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "Thay nguyên liệu",
+          "after": "none"
+        },
+        {
+          "text": "Một món · tất cả trường",
+          "after": "none"
+        },
+        {
+          "text": "Canh bí đỏ thịt bằm · Khối nhỏ · Bí đỏ · Cà rốt",
+          "after": "none"
+        },
+        {
+          "text": "01/09/2026 · không thời hạn",
+          "after": "none"
+        },
+        {
+          "text": "Đang hiệu lực",
+          "after": "none"
+        },
+        {
+          "text": "Xem",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "suppliers",
+      "width": 1440,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "NCC Minh Tâm",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 1",
+          "after": "block"
+        },
+        {
+          "text": "0900000000",
+          "after": "block"
+        },
+        {
+          "text": "ncc1@example.test",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "NCC Hoàng Dung",
+          "after": "block"
+        },
+        {
+          "text": "Ngừng hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Thực phẩm An Phú",
+          "after": "block"
+        },
+        {
+          "text": "Tạm dừng",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nông sản Bình Minh",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000003",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Rau sạch Củ Chi",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 5",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Gia vị Phương Nam",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "ncc6@example.test",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 7",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000006",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 8",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 9",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 9",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 10",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000009",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 11",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "ncc11@example.test",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 12",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 13",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 13",
+          "after": "block"
+        },
+        {
+          "text": "0900000012",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 14",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 15",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 16",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000015",
+          "after": "block"
+        },
+        {
+          "text": "ncc16@example.test",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 17",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 17",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 18",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 19",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000018",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 20",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 21",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 21",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "ncc21@example.test",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 22",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000021",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 23",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 24",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 25",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 25",
+          "after": "block"
+        },
+        {
+          "text": "0900000024",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 26",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "ncc26@example.test",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 27",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 28",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000027",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 29",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 29",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 30",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 31",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000030",
+          "after": "block"
+        },
+        {
+          "text": "ncc31@example.test",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 32",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 33",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 33",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 34",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "0900000033",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 35",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 36",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có người liên hệ",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có số điện thoại",
+          "after": "block"
+        },
+        {
+          "text": "ncc36@example.test",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        },
+        {
+          "text": "Nhà cung ứng khu vực 37",
+          "after": "block"
+        },
+        {
+          "text": "Đang hợp tác",
+          "after": "block"
+        },
+        {
+          "text": "Anh/Chị 37",
+          "after": "block"
+        },
+        {
+          "text": "0900000036",
+          "after": "block"
+        },
+        {
+          "text": "Chưa có email",
+          "after": "block"
+        },
+        {
+          "text": "Xem / sửa",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "recipes",
+      "width": 1440,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "Canh bí đỏ thịt bằm",
+          "after": "block"
+        },
+        {
+          "text": "Món canh",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Thịt heo kho",
+          "after": "block"
+        },
+        {
+          "text": "Món mặn",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh rau củ",
+          "after": "block"
+        },
+        {
+          "text": "Món canh",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Đậu sốt cà chua",
+          "after": "block"
+        },
+        {
+          "text": "Món mặn",
+          "after": "block"
+        },
+        {
+          "text": "Ngừng dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Cá kho gừng",
+          "after": "block"
+        },
+        {
+          "text": "Món canh",
+          "after": "block"
+        },
+        {
+          "text": "Nháp",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh cải xanh",
+          "after": "block"
+        },
+        {
+          "text": "Món mặn",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Trứng hấp",
+          "after": "block"
+        },
+        {
+          "text": "Món canh",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Gà xào nấm",
+          "after": "block"
+        },
+        {
+          "text": "Món mặn",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Canh khoai mỡ",
+          "after": "block"
+        },
+        {
+          "text": "Món canh",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Thịt rim",
+          "after": "block"
+        },
+        {
+          "text": "Món mặn",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Rau củ luộc",
+          "after": "block"
+        },
+        {
+          "text": "Món canh",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        },
+        {
+          "text": "Cơm trắng",
+          "after": "block"
+        },
+        {
+          "text": "Món mặn",
+          "after": "block"
+        },
+        {
+          "text": "Đang dùng",
+          "after": "block"
+        },
+        {
+          "text": "Khối nhỏ · Khối lớn",
+          "after": "block"
+        },
+        {
+          "text": "Sửa công thức",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "changes",
+      "width": 1440,
+      "kind": "record-separators",
+      "cells": [
+        {
+          "text": "Thay nguyên liệu",
+          "after": "block"
+        },
+        {
+          "text": "Một món · tất cả trường",
+          "after": "block"
+        },
+        {
+          "text": "Canh bí đỏ thịt bằm · Khối nhỏ · Bí đỏ · Cà rốt",
+          "after": "block"
+        },
+        {
+          "text": "01/09/2026 · không thời hạn",
+          "after": "block"
+        },
+        {
+          "text": "Đang hiệu lực",
+          "after": "block"
+        },
+        {
+          "text": "Xem",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "changes",
+      "width": 1440,
+      "kind": "compact-separators",
+      "cells": [
+        {
+          "text": "Thay nguyên liệu",
+          "after": "none"
+        },
+        {
+          "text": "Một món · tất cả trường",
+          "after": "none"
+        },
+        {
+          "text": "Canh bí đỏ thịt bằm · Khối nhỏ · Bí đỏ · Cà rốt",
+          "after": "none"
+        },
+        {
+          "text": "01/09/2026 · không thời hạn",
+          "after": "none"
+        },
+        {
+          "text": "Đang hiệu lực",
+          "after": "none"
+        },
+        {
+          "text": "Xem",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "id": "schools",
+      "width": 360,
+      "kind": "sort-utility",
+      "captionBounds": {
+        "x": 11,
+        "y": 463.1875,
+        "width": 338,
+        "height": 26
+      },
+      "controls": [
+        {
+          "label": "#",
+          "x": 21,
+          "y": 495.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Trường",
+          "x": 183,
+          "y": 495.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Loại trường",
+          "x": 21,
+          "y": 546.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Trạng thái",
+          "x": 183,
+          "y": 546.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Điểm giao",
+          "x": 21,
+          "y": 597.1875,
+          "width": 318,
+          "height": 44
+        }
+      ],
+      "interactive": [
+        {
+          "label": "Sắp xếp theo #",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Trường",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Loại trường",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Trạng thái",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Điểm giao",
+          "visible": true,
+          "width": 318,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "id": "ingredients",
+      "width": 360,
+      "kind": "sort-utility",
+      "captionBounds": {
+        "x": 11,
+        "y": 327.1875,
+        "width": 338,
+        "height": 26
+      },
+      "controls": [
+        {
+          "label": "Nguyên liệu",
+          "x": 21,
+          "y": 359.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Trạng thái",
+          "x": 183,
+          "y": 359.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Đơn vị mua",
+          "x": 21,
+          "y": 410.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Loại / nhóm đặt hàng",
+          "x": 183,
+          "y": 410.1875,
+          "width": 156,
+          "height": 54
+        },
+        {
+          "label": "Ưu tiên NCC",
+          "x": 21,
+          "y": 471.1875,
+          "width": 318,
+          "height": 44
+        }
+      ],
+      "interactive": [
+        {
+          "label": "Sắp xếp theo Nguyên liệu",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Trạng thái",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Đơn vị mua",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Loại / nhóm đặt hàng",
+          "visible": true,
+          "width": 156,
+          "height": 54
+        },
+        {
+          "label": "Sắp xếp theo Ưu tiên NCC",
+          "visible": true,
+          "width": 318,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "id": "suppliers",
+      "width": 360,
+      "kind": "sort-utility",
+      "captionBounds": {
+        "x": 11,
+        "y": 354.1875,
+        "width": 338,
+        "height": 26
+      },
+      "controls": [
+        {
+          "label": "Nhà cung ứng",
+          "x": 21,
+          "y": 386.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Trạng thái",
+          "x": 183,
+          "y": 386.1875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Người liên hệ",
+          "x": 21,
+          "y": 437.1875,
+          "width": 318,
+          "height": 44
+        }
+      ],
+      "interactive": [
+        {
+          "label": "Sắp xếp theo Nhà cung ứng",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Trạng thái",
+          "visible": true,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Người liên hệ",
+          "visible": true,
+          "width": 318,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "id": "schools",
+      "width": 390,
+      "kind": "sort-utility",
+      "captionBounds": {
+        "x": 11,
+        "y": 442.1875,
+        "width": 368,
+        "height": 26
+      },
+      "controls": [
+        {
+          "label": "#",
+          "x": 21,
+          "y": 474.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Trường",
+          "x": 198,
+          "y": 474.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Loại trường",
+          "x": 21,
+          "y": 525.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Trạng thái",
+          "x": 198,
+          "y": 525.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Điểm giao",
+          "x": 21,
+          "y": 576.1875,
+          "width": 348,
+          "height": 44
+        }
+      ],
+      "interactive": [
+        {
+          "label": "Sắp xếp theo #",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Trường",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Loại trường",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Trạng thái",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Điểm giao",
+          "visible": true,
+          "width": 348,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "id": "ingredients",
+      "width": 390,
+      "kind": "sort-utility",
+      "captionBounds": {
+        "x": 11,
+        "y": 327.1875,
+        "width": 368,
+        "height": 26
+      },
+      "controls": [
+        {
+          "label": "Nguyên liệu",
+          "x": 21,
+          "y": 359.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Trạng thái",
+          "x": 198,
+          "y": 359.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Đơn vị mua",
+          "x": 21,
+          "y": 410.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Loại / nhóm đặt hàng",
+          "x": 198,
+          "y": 410.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Ưu tiên NCC",
+          "x": 21,
+          "y": 461.1875,
+          "width": 348,
+          "height": 44
+        }
+      ],
+      "interactive": [
+        {
+          "label": "Sắp xếp theo Nguyên liệu",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Trạng thái",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Đơn vị mua",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Loại / nhóm đặt hàng",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Ưu tiên NCC",
+          "visible": true,
+          "width": 348,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "id": "suppliers",
+      "width": 390,
+      "kind": "sort-utility",
+      "captionBounds": {
+        "x": 11,
+        "y": 354.1875,
+        "width": 368,
+        "height": 26
+      },
+      "controls": [
+        {
+          "label": "Nhà cung ứng",
+          "x": 21,
+          "y": 386.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Trạng thái",
+          "x": 198,
+          "y": 386.1875,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Người liên hệ",
+          "x": 21,
+          "y": 437.1875,
+          "width": 348,
+          "height": 44
+        }
+      ],
+      "interactive": [
+        {
+          "label": "Sắp xếp theo Nhà cung ứng",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Trạng thái",
+          "visible": true,
+          "width": 171,
+          "height": 44
+        },
+        {
+          "label": "Sắp xếp theo Người liên hệ",
+          "visible": true,
+          "width": 348,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "id": "reconciliation",
+      "width": 360,
+      "kind": "scrolled-entry",
+      "initialScrollTop": 180,
+      "owner": {
+        "x": 10,
+        "y": 136,
+        "width": 340,
+        "height": 654,
+        "bottom": 790
+      },
+      "scrollTop": 0,
+      "h1": {
+        "x": 21,
+        "y": 147,
+        "width": 311.75,
+        "height": 31.1875,
+        "bottom": 178.1875
+      },
+      "detail": {
+        "x": 11,
+        "y": 690.578125,
+        "width": 338,
+        "height": 438.359375,
+        "bottom": 1128.9375
+      },
+      "close": {
+        "x": 274.625,
+        "y": 706.578125,
+        "width": 58.375,
+        "height": 44,
+        "bottom": 750.578125
+      },
+      "reactivationScrollTop": 80,
+      "exactCloseOrigin": true
+    }
+  ]
+}

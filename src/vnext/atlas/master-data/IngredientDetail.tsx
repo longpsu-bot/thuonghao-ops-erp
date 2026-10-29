@@ -26,7 +26,8 @@ export function IngredientDetail({
 }) {
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (c.activeSurface?.kind === "ingredient") panel.current?.focus();
+    if (c.activeSurface?.kind === "ingredient")
+      panel.current?.focus({ preventScroll: true });
   }, [c.activeSurface]);
   if (c.activeSurface?.kind !== "ingredient") return null;
   const disabled = c.saving || c.loading || Boolean(c.lock);
@@ -75,21 +76,26 @@ export function IngredientDetail({
       ref={panel}
       tabIndex={-1}
       aria-label="Chi tiết nguyên liệu"
-      bg="bg.subtle"
-      borderLeftWidth={{
-        base: "var(--atlas-layout-zero, 0)",
-        lg: "var(--atlas-layout-edge, 1px)",
-      }}
-      borderTopWidth={{
-        base: "var(--atlas-layout-edge, 1px)",
-        lg: "var(--atlas-layout-zero, 0)",
-      }}
-      borderColor="border.subtle"
+      bg="bg.workbench"
       minW="var(--atlas-layout-zero, 0)"
+      minH="var(--atlas-layout-zero, 0)"
+      maxH={{
+        lg: "var(--atlas-layout-master-workplane-height, calc(100dvh - 340px))",
+      }}
+      overflow={{ lg: "hidden" }}
       display="flex"
       flexDirection="column"
     >
-      <Flex p="md" justify="space-between" gap="sm" align="start">
+      <Flex
+        px="md"
+        py="sm"
+        justify="space-between"
+        gap="sm"
+        align="start"
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+        flexShrink="0"
+      >
         <Box>
           <Text textStyle="helper" color="fg.muted">
             Nguyên liệu
@@ -126,7 +132,7 @@ export function IngredientDetail({
         </Button>
       </Flex>
       {archived ? (
-        <Box p="md">
+        <Box p="md" overflowY="auto" minH="var(--atlas-layout-zero, 0)">
           <Text>Nguyên liệu đã lưu trữ chỉ có thể xem.</Text>
           <Fact
             label="Mã nội bộ (không bắt buộc)"
@@ -148,13 +154,16 @@ export function IngredientDetail({
       ) : (
         <>
           <Box
-            px="md"
-            pb="md"
+            p="md"
             display="grid"
             gap="sm"
+            overflowY="auto"
+            minH="var(--atlas-layout-zero, 0)"
+            flex="1"
+            alignItems="start"
             gridTemplateColumns={{
               base: "minmax(0, 1fr)",
-              xl: "repeat(2, minmax(0, 1fr))",
+              md: "repeat(2, minmax(0, 1fr))",
             }}
           >
             <Field.Root
@@ -236,7 +245,14 @@ export function IngredientDetail({
               </Field.HelperText>
             </Field.Root>
           </Box>
-          <Flex mt="var(--atlas-layout-auto, auto)" p="md" gap="sm" wrap="wrap">
+          <Flex
+            p="md"
+            gap="sm"
+            wrap="wrap"
+            borderTopWidth="var(--atlas-layout-edge, 1px)"
+            borderColor="border.subtle"
+            flexShrink="0"
+          >
             <Button
               variant="businessPrimary"
               disabled={disabled || !c.ingredientDirty || !c.ingredientValid}

@@ -13,7 +13,6 @@ import {
   Field,
   Flex,
   Grid,
-  Heading,
   Input,
   NativeSelect,
   Table,
@@ -26,9 +25,10 @@ import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import {
   AtlasSortableColumnHeader,
-  atlasNarrowSortableHeader,
+  atlasRecordSortHeader,
 } from "../AtlasSortableColumnHeader";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { AtlasTaskContext } from "../AtlasTaskContext";
 import {
   atlasDefaultSort,
   compareAtlasNumber,
@@ -74,6 +74,15 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   const activeCount = c.visibleSchools.filter(
     (school) => school.school_status === "ACTIVE",
   ).length;
+  const totalActiveCount = c.schools.filter(
+    (school) => school.school_status === "ACTIVE",
+  ).length;
+  const contextSummary =
+    c.schools.length === 0 && (c.loading || c.error)
+      ? c.loading
+        ? "Đang tải danh sách trường…"
+        : "Chưa xác định số trường"
+      : `${c.schools.length} trường · ${totalActiveCount} đang hoạt động · ${c.dirtyCount} thay đổi chưa lưu`;
 
   const tableTools = (
     <>
@@ -86,10 +95,9 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
           </Text>
         ) : (
           <Text textStyle="helper" color="fg.muted">
-            {filtered ? `${c.visibleSchools.length} / ` : ""}
-            {c.schools.length} trường · {activeCount} đang hoạt động
-            {filtered ? " trong kết quả" : ""} · {c.dirtyCount} thay đổi chưa
-            lưu
+            {filtered
+              ? `${c.visibleSchools.length} / ${c.schools.length} trường · ${activeCount} đang hoạt động trong kết quả · ${c.dirtyCount} thay đổi chưa lưu`
+              : `Hiển thị tất cả ${c.schools.length} trường`}
             {c.hiddenDirtyCount > 0
               ? ` · ${c.hiddenDirtyCount} thay đổi ngoài bộ lọc`
               : ""}
@@ -135,14 +143,12 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         onCancel={c.cancelExit}
         onDiscard={c.discardExit}
       />
-      <Box p="md">
-        <Text textStyle="helper" color="fg.muted">
-          Trường học
-        </Text>
-        <Heading as="h1" textStyle="workbenchTitle">
-          {viewTitle}
-        </Heading>
-      </Box>
+      <AtlasTaskContext
+        ariaLabel="Ngữ cảnh công việc trường học"
+        moduleLabel="Trường học"
+        jobLabel={viewTitle}
+        compactSummary={contextSummary}
+      />
       <Tabs.Root value={view} onValueChange={({ value }) => setView(value)}>
         <Tabs.List
           aria-label="Thiết lập trường học"
@@ -169,7 +175,8 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
               display="grid"
               aria-label="Bộ lọc trường học"
               bg="bg.toolbar"
-              p="md"
+              px={{ base: "sm", md: "md" }}
+              py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
               gap="sm"
               alignItems="end"
               templateColumns={{
@@ -382,6 +389,21 @@ function SchoolDefaultsTable({
           }}
           display={{ base: "block", md: "table" }}
         >
+          <Table.Caption
+            display={{ base: "block", md: "none" }}
+            w="full"
+            captionSide="top"
+            textAlign="start"
+            px="sm"
+            pt="sm"
+            pb="var(--atlas-layout-zero, 0)"
+            mt="var(--atlas-layout-zero, 0)"
+            fontWeight="semibold"
+            color="fg.default"
+            bg="bg.toolbar"
+          >
+            Sắp xếp
+          </Table.Caption>
           <Table.ColumnGroup
             display={{ base: "none", md: "table-column-group" }}
           >
@@ -392,7 +414,7 @@ function SchoolDefaultsTable({
             <Table.Column w="var(--atlas-school-defaults-width, 220px)" />
             <Table.Column />
           </Table.ColumnGroup>
-          <Table.Header css={atlasNarrowSortableHeader}>
+          <Table.Header css={atlasRecordSortHeader}>
             <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
               <AtlasSortableColumnHeader
                 label="#"
@@ -518,6 +540,10 @@ function SchoolDefaultsTable({
                           disabled={disabled}
                           size="sm"
                           h="compact"
+                          minH={{
+                            base: "var(--atlas-layout-mobile-target, 44px)",
+                            md: "compact",
+                          }}
                           minW="var(--atlas-layout-zero, 0)"
                           textAlign="right"
                           onChange={(event) =>
@@ -542,6 +568,10 @@ function SchoolDefaultsTable({
                           disabled={disabled}
                           size="sm"
                           h="compact"
+                          minH={{
+                            base: "var(--atlas-layout-mobile-target, 44px)",
+                            md: "compact",
+                          }}
                           minW="var(--atlas-layout-zero, 0)"
                           textAlign="right"
                           onChange={(event) =>

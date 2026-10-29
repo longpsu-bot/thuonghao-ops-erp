@@ -287,7 +287,13 @@ it("retains independent Recipe and Change Order editors, filters and guards with
   );
   retained(changeOwner, reason, "Điều chỉnh thử");
   await open("Lệnh điều chỉnh");
-  expect(screen.getByRole("textbox", { name: "Tìm lệnh" })).toBe(search);
+  expect(
+    within(changeOwner).getByRole("textbox", {
+      name: "Tìm lệnh",
+      hidden: true,
+    }),
+  ).toBe(search);
+  expect(search).not.toBeVisible();
   expect(search).toHaveValue("Thử");
   expect(screen.getByRole("textbox", { name: "Lý do điều chỉnh" })).toBe(
     reason,

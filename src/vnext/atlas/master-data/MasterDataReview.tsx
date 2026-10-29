@@ -13,7 +13,7 @@ export function MasterDataReview({
   c: IngredientSupplierWorkbenchController;
 }) {
   const panel = useRef<HTMLElement>(null);
-  useEffect(() => panel.current?.focus(), []);
+  useEffect(() => panel.current?.focus({ preventScroll: true }), []);
   if (!c.review) return null;
   const review = c.review;
   const name =
@@ -36,14 +36,26 @@ export function MasterDataReview({
       ref={panel}
       tabIndex={-1}
       aria-label={name}
-      bg="bg.subtle"
-      borderLeftWidth="var(--atlas-layout-edge, 1px)"
-      borderColor="border.subtle"
+      bg="bg.workbench"
       minW="var(--atlas-layout-zero, 0)"
+      minH="var(--atlas-layout-zero, 0)"
+      maxH={{
+        lg: "var(--atlas-layout-master-workplane-height, calc(100dvh - 340px))",
+      }}
+      overflow={{ lg: "hidden" }}
       display="flex"
       flexDirection="column"
     >
-      <Flex p="md" justify="space-between" align="start" gap="sm">
+      <Flex
+        px="md"
+        py="sm"
+        justify="space-between"
+        align="start"
+        gap="sm"
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+        flexShrink="0"
+      >
         <Box>
           <Text textStyle="helper" color="fg.muted">
             Xem thay đổi
@@ -52,15 +64,19 @@ export function MasterDataReview({
             {reviewedName}
           </Heading>
         </Box>
-        <Button size="sm" variant="tertiary" onClick={c.closeReview}>
+        <Button
+          size="sm"
+          variant="tertiary"
+          onClick={c.closeReview}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "compact",
+          }}
+        >
           Quay lại chỉnh sửa
         </Button>
       </Flex>
-      <Box
-        px="md"
-        overflow="auto"
-        maxH="var(--atlas-layout-review-height, calc(100dvh - 390px))"
-      >
+      <Box p="md" overflow="auto" minH="var(--atlas-layout-zero, 0)" flex="1">
         {review.kind === "ingredient" && (
           <IngredientReviewTable review={review} c={c} />
         )}
@@ -69,7 +85,13 @@ export function MasterDataReview({
           <PriorityReviewTable review={review} suppliers={c.suppliers} />
         )}
       </Box>
-      <Flex mt="var(--atlas-layout-auto, auto)" p="md" justify="end">
+      <Flex
+        p="md"
+        justify="end"
+        borderTopWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+        flexShrink="0"
+      >
         <Button
           variant="businessPrimary"
           loading={c.saving}

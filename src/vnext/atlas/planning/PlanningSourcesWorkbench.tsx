@@ -123,7 +123,10 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
       }}
       alignItems="stretch"
     >
-      <Box minW="var(--atlas-layout-zero, 0)">
+      <Box
+        minW="var(--atlas-layout-zero, 0)"
+        display={{ base: reviewOpen ? "none" : "block", lg: "block" }}
+      >
         {c.job === "menu" ? (
           <PlanningMenuStage c={c} visibleSchoolIds={visibleSchoolIds} />
         ) : c.job === "attendance" ? (
@@ -223,7 +226,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               templateColumns={{
                 base: "minmax(0, 1fr) auto auto",
                 md: "repeat(2, minmax(0, 1fr))",
-                xl: "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
+                lg: "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
               }}
             >
               <Box
@@ -310,6 +313,8 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               <Field.Root
                 order={{ base: 1, md: 4 }}
                 gridColumn={{ base: "1", md: "auto" }}
+                minW="var(--atlas-layout-zero, 0)"
+                w="full"
               >
                 <Field.Label
                   display={{ base: "none", md: "block" }}
@@ -320,6 +325,8 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 <Input
                   aria-label="Tìm trong công việc"
                   placeholder="Tên trường…"
+                  minW="var(--atlas-layout-zero, 0)"
+                  w="full"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -355,7 +362,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 textStyle="helper"
                 color="fg.muted"
               >
-                Tuần {viDate(c.week)} · Ngày {dateSummary} · {scopeSummary}
+                Tuần {weekSummary}
               </Text>
             </AtlasWorkbar>
             {c.outcome &&

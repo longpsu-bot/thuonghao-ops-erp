@@ -23,7 +23,8 @@ export function SupplierDetail({
 }) {
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (c.activeSurface?.kind === "supplier") panel.current?.focus();
+    if (c.activeSurface?.kind === "supplier")
+      panel.current?.focus({ preventScroll: true });
   }, [c.activeSurface]);
   if (c.activeSurface?.kind !== "supplier") return null;
   const disabled = c.saving || c.loading || Boolean(c.lock);
@@ -35,14 +36,26 @@ export function SupplierDetail({
       ref={panel}
       tabIndex={-1}
       aria-label="Chi tiết nhà cung ứng"
-      bg="bg.subtle"
-      borderLeftWidth="var(--atlas-layout-edge, 1px)"
-      borderColor="border.subtle"
+      bg="bg.workbench"
       minW="var(--atlas-layout-zero, 0)"
+      minH="var(--atlas-layout-zero, 0)"
+      maxH={{
+        lg: "var(--atlas-layout-master-workplane-height, calc(100dvh - 340px))",
+      }}
+      overflow={{ lg: "hidden" }}
       display="flex"
       flexDirection="column"
     >
-      <Flex p="md" justify="space-between" gap="sm" align="start">
+      <Flex
+        px="md"
+        py="sm"
+        justify="space-between"
+        gap="sm"
+        align="start"
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+        flexShrink="0"
+      >
         <Box>
           <Text textStyle="helper" color="fg.muted">
             Nhà cung ứng
@@ -61,18 +74,25 @@ export function SupplierDetail({
           variant="tertiary"
           aria-label="Đóng chi tiết"
           onClick={c.requestClose}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "compact",
+          }}
         >
           Đóng
         </Button>
       </Flex>
       <Box
-        px="md"
-        pb="md"
+        p="md"
         display="grid"
         gap="sm"
+        overflowY="auto"
+        minH="var(--atlas-layout-zero, 0)"
+        flex="1"
+        alignItems="start"
         gridTemplateColumns={{
           base: "minmax(0, 1fr)",
-          xl: "repeat(2, minmax(0, 1fr))",
+          md: "repeat(2, minmax(0, 1fr))",
         }}
       >
         <Field.Root required invalid={!c.supplierDraft.supplierName.trim()}>
@@ -112,7 +132,12 @@ export function SupplierDetail({
           onChange={(value) => c.setSupplierField("contactEmail", value)}
         />
       </Box>
-      <Flex mt="var(--atlas-layout-auto, auto)" p="md">
+      <Flex
+        p="md"
+        borderTopWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+        flexShrink="0"
+      >
         <Button
           variant="businessPrimary"
           disabled={disabled || !c.supplierDirty || !c.supplierValid}
