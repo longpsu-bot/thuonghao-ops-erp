@@ -401,7 +401,18 @@ describe("Confirmed Need Chakra operator surface", () => {
     show();
     await quantity();
 
-    expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBeEnabled();
+    const compactSearch = screen.getByRole("textbox", { name: "Tìm kiếm" });
+    expect(compactSearch).toBeEnabled();
+    expect(compactSearch).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
+    expect(
+      compactSearch.closest('[data-scope="field"][data-part="root"]'),
+    ).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
     expect(
       screen.getByRole("button", { name: "Làm mới dữ liệu" }),
     ).toBeEnabled();

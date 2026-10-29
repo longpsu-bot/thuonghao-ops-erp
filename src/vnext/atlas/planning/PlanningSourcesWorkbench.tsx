@@ -313,6 +313,8 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               <Field.Root
                 order={{ base: 1, md: 4 }}
                 gridColumn={{ base: "1", md: "auto" }}
+                minW="var(--atlas-layout-zero, 0)"
+                w="full"
               >
                 <Field.Label
                   display={{ base: "none", md: "block" }}
@@ -323,6 +325,8 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 <Input
                   aria-label="Tìm trong công việc"
                   placeholder="Tên trường…"
+                  minW="var(--atlas-layout-zero, 0)"
+                  w="full"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />

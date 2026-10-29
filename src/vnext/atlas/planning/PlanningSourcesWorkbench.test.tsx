@@ -565,9 +565,20 @@ describe("Planning sources Chakra workbench", () => {
   it("keeps search and refresh immediate while mobile filters expose a truthful summary", async () => {
     await show();
 
+    const compactSearch = screen.getByRole("textbox", {
+      name: "Tìm trong công việc",
+    });
+    expect(compactSearch).toBeEnabled();
+    expect(compactSearch).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
     expect(
-      screen.getByRole("textbox", { name: "Tìm trong công việc" }),
-    ).toBeEnabled();
+      compactSearch.closest('[data-scope="field"][data-part="root"]'),
+    ).toHaveStyle({
+      minWidth: "var(--atlas-layout-zero, 0)",
+      width: "var(--atlas-sizes-full)",
+    });
     expect(
       screen.getByRole("button", { name: "Làm mới dữ liệu" }),
     ).toBeEnabled();

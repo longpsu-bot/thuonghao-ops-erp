@@ -225,6 +225,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               <Field.Root
                 order={{ base: filtersOpen ? 6 : 0, lg: 3 }}
                 gridColumn={{ base: filtersOpen ? "1 / -1" : "1", lg: "auto" }}
+                minW="var(--atlas-layout-zero, 0)"
+                w="full"
               >
                 <Field.Label
                   display={{
@@ -238,6 +240,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 <Input
                   aria-label="Tìm kiếm"
                   placeholder="Nguyên liệu, nơi nhận…"
+                  minW="var(--atlas-layout-zero, 0)"
+                  w="full"
                   value={c.search}
                   onChange={(e) => c.setSearch(e.target.value)}
                 />
