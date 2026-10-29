@@ -8,7 +8,7 @@
 
 **IN_REVIEW:** implementation, independent family review and local evidence are
 delivered on `codex/atlas-workbench-hierarchy-rollout`; final source/test
-checkpoint `5ab69bf3`. See the [phone gallery](../testing/artifacts/atlas-workbench-hierarchy/README.md)
+checkpoint `7de513d7`. See the [phone gallery](../testing/artifacts/atlas-workbench-hierarchy/README.md)
 and [thirteen-owner coverage, provenance and limitations](../testing/artifacts/atlas-workbench-hierarchy/coverage.md).
 Public gallery access after push, PR publication, latest-head Frontend CI and
 final Product/architecture review remain integration gates. No merge or
@@ -27,6 +27,13 @@ its test-only correction passed the exact complete journey rerun (2 passed,
 guards or timeout. This is not one all-green combined run; GitHub Actions owns
 the full routine validation. No backend/API/model/controller/SQL, quantity,
 lifecycle, permission, dependency or export-format change is included.
+
+The final bounded correction retains the Reconciliation heading on detail entry,
+fits selected PXK/Reconciliation identity and navigation within desktop rails,
+removes inherited cell dividers only from record layouts, and labels phone sort
+utilities explicitly. The actual Master hidden/inert first-entry observer is now
+directly tested. See coverage for the focused red/green outcomes and refreshed
+49 normal / 42 selected captures at `7de513d7`; older evidence keeps its provenance.
 
 The latest Owner approval supersedes earlier presentation-only narrow selected
 editor geometry and phone-stacked Review composition. Narrow selected/review

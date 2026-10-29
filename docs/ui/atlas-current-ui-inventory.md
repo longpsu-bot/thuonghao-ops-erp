@@ -34,8 +34,11 @@ retain local scrolling. Owner horizontal drift is checked independently from
 document overflow. School defaults keep full-draft scope and separate cooking/
 dispatch configuration; PO/PXK utility disclosure retains complete loaded scope.
 
-Final source/test checkpoint `5ab69bf3` passes typecheck; focused regressions and
-the one stale owner-test assertion's exact rerun are recorded in coverage.
+Final source/test checkpoint `7de513d7` passes typecheck. The final correction
+keeps Reconciliation context visible on entry, fits selected PXK/Reconciliation
+navigation within their rails, removes record-only ghost dividers, and labels
+phone sort utilities. Focused regressions, including actual inactive Master
+first entry, and historical owner-test corrections are qualified in coverage.
 PR/latest-head CI and final Product/architecture review remain pending. Physical
 phones/virtual keyboards, AT speech, hosted writes, operational exports and live
 data are not certified. Existing palette, Inter roles, exact quantities/Units,

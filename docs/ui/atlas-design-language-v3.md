@@ -36,6 +36,12 @@ Phone Attendance/PXK/reconciliation records expose labeled facts; intentional
 wide comparisons remain locally scrollable. Check owner horizontal drift as
 well as document overflow. Do not force every owner into one template.
 
+Selected PXK/Reconciliation rails retain identity, state and navigation together
+without horizontal traversal. Reconciliation entry focus preserves the visible
+job heading. Record layouts suppress inherited cell separators while desktop
+comparisons retain them; School/Ingredient/Supplier phone sorting has an explicit
+utility label and keeps every existing sort cycle and keyboard target.
+
 Stable modal captures show opaque white content with reachable fixed headers
 and footers, including 360 × 500 stress cases. Change Order feedback uses the
 existing danger/warning foreground, icon, rail/border and subtle status surface;
@@ -45,7 +51,7 @@ runtime warning image claimed. Preserve exact copy, Units, dates, versions,
 precedence, loaded scope, permissions and dirty/UNKNOWN/exit contracts.
 
 Implementation/local evidence is **IN_REVIEW** at source/test checkpoint
-`5ab69bf3`, with typecheck passed and focused regression outcomes qualified in
+`7de513d7`, with typecheck passed and focused regression outcomes qualified in
 coverage. PR/latest-head CI and final Product/architecture review remain pending;
 there is no merge/deployment claim. Physical-device/virtual-keyboard and AT
 speech certification, hosted workflows and live-data density remain outside the

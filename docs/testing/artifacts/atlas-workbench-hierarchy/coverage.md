@@ -2,7 +2,7 @@
 
 **Status: IN_REVIEW.** Implementation, independent family review and local
 evidence are delivered on `codex/atlas-workbench-hierarchy-rollout`, with final
-source/test checkpoint `5ab69bf3`. PR publication, public gallery access,
+source/test checkpoint `7de513d7`. PR publication, public gallery access,
 latest-head `Frontend CI / Format, typecheck, test, build` and final Product /
 architecture review remain integration gates. No CI PASS, merge or deployment
 is claimed here.
@@ -79,6 +79,45 @@ button count 0; document width 360/360; owner horizontal offset 0. The
 [desktop blocker](change-blocked-review-desktop.png) corroborates the same final
 foreground. The successful Preview has a wrapped 124px footer at 360 × 500.
 
+## Final bounded correction — source `7de513d7`
+
+The final integrated review identified three presentation defects and two minor
+follow-ups. This source checkpoint corrects Reconciliation entry focus, selected
+PXK/Reconciliation directory containment, and orphan cell separators in Supplier,
+Recipe and Change Order record modes. School/Ingredient/Supplier phone headers
+are now explicitly labeled **Sắp xếp** utility bands, with all existing axes,
+ascending/descending/default cycles and keyboard controls retained. The real
+Master workbench hidden/inert first-entry observer also has a focused regression:
+no reset while either attribute remains, one reset on activation, and no reset
+on later draft edits or reactivation. No controller change was needed.
+
+[Focused geometry and computed-style evidence](final-fix-evidence.json) records
+selected directories at 1440/1024 with equal scroll/client widths and identity
+and action bounds inside each rail; Reconciliation scrolled entry at 360 with
+filters expanded (scrollTop 180 → 0), visible H1, detail and Close, exact Close origin and retained reading position
+on ordinary owner reactivation (scrollTop 80 retained); separators absent only in the actual record
+modes and still present in desktop comparisons; and all phone sort axes at
+360/390 with visible keyboard focus targets of at least 44px. The source-head
+confirmation contains 21 focused states, separate from the 175-state matrix.
+
+Only seven affected normal owners (PXK, Reconciliation, School, Ingredient,
+Supplier, Recipe and Change Order) and six affected selected owners (the same
+list without School) were refreshed across all seven widths: **49 normal and
+42 selected captures** at `7de513d7`. Other matrix entries and support images
+retain their earlier source qualifications. No old capture is relabeled.
+
+The initial focused red run recorded three expected failures for the old focus
+call and missing sort labels. The focused green run recorded **10 passed / two
+new navigation-test query failures**: jsdom applies the narrow hidden-directory
+fallback. The exact navigation rerun then passed **two tests / 109 skipped**,
+asserting retained row/button identity and latest Close origin; real desktop
+visibility is proved by Chromium. A separate initial targeted run passed the
+actual inactive observer case. These separate runs are not a combined all-green
+certification suite. Final source typecheck, changed-file formatting, UI boundary
+and whitespace checks passed; Impeccable's mechanical scan returned no findings.
+The scoped final Product/source/render confirmation and exact-head GitHub Actions
+remain integration gates.
+
 ## Review, regression and contract evidence
 
 All five families, counting the already accepted Allocation reference, reached
@@ -86,7 +125,7 @@ independent PASS. Earlier BLOCK/CONDITIONAL findings were retained in the local
 review record and closed by scoped corrections: 360px compact-control
 containment; complete narrow PXK/reconciliation records and PO replacement;
 Priority/Review entry position; settled opaque dialogs, selected Recipe count
-and exact warning/danger foreground. No new design system or shared abstraction
+and exact warning/danger foreground. No new design system or page framework
 was added.
 
 Focused family checks cover affected UI semantics, exact quantities/Units,

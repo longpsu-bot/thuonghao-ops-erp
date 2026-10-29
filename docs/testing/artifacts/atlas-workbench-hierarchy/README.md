@@ -40,6 +40,20 @@ packaging checkpoint.
 | Sign-in                       | [Phone](signin-phone.png)         | Existing session states retained                                    |
 | Chức năng                     | [Phone](launcher-phone.png)       | Existing shell retained                                             |
 
+## Final correction evidence
+
+Source `7de513d7`; actual Chromium captures and [focused geometry / computed-style
+checks](final-fix-evidence.json). These supplement the seven-width matrix.
+
+- [PXK directory at 1440](final-fix-pxk-directory-1440.png) and [1024](final-fix-pxk-directory-1024.png)
+- [Reconciliation directory at 1440](final-fix-reconciliation-directory-1440.png) and [1024](final-fix-reconciliation-directory-1024.png)
+- [Reconciliation scrolled entry at 360 × 800, 2×](final-fix-reconciliation-scrolled-entry-360.png)
+- [Change Order compact rail at 1440 × 900](final-fix-changes-compact-1440.png)
+
+Desktop images are 1×; the scrolled-entry image is 720 × 1600 pixels. The refreshed
+normal phone views also show labeled sort utilities and record-only divider
+suppression. Earlier support captures below retain their original provenance.
+
 ## Matched comparisons
 
 Before and after use the same fixture, viewport and image scale. No source facts

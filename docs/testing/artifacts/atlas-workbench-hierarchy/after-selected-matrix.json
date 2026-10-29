@@ -200,7 +200,7 @@
     "label": "Phiếu xuất kho",
     "width": 1920,
     "height": 1080,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -266,7 +266,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 1852.984375,
-        "y": 202.19969177246094,
+        "y": 202.19903564453125,
         "w": 40,
         "h": 40
       },
@@ -286,9 +286,9 @@
       },
       {
         "label": "Phát hành",
-        "x": 683,
-        "y": 422.484375,
-        "w": 90.09375,
+        "x": 21,
+        "y": 575.78125,
+        "w": 320,
         "h": 36
       },
       {
@@ -312,7 +312,7 @@
     "label": "Đối chiếu PO / Phiếu xuất kho",
     "width": 1920,
     "height": 1080,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -391,9 +391,9 @@
       },
       {
         "label": "Xem đối chiếu",
-        "x": 913,
-        "y": 386.78125,
-        "w": 106,
+        "x": 21,
+        "y": 591.171875,
+        "w": 320,
         "h": 36
       },
       {
@@ -606,7 +606,7 @@
     "label": "Phiếu xuất kho",
     "width": 1440,
     "height": 900,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -672,7 +672,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 1372.984375,
-        "y": 202.01918029785156,
+        "y": 202.01927185058594,
         "w": 40,
         "h": 40
       },
@@ -692,9 +692,9 @@
       },
       {
         "label": "Phát hành",
-        "x": 683,
-        "y": 422.484375,
-        "w": 90.09375,
+        "x": 21,
+        "y": 575.78125,
+        "w": 320,
         "h": 36
       },
       {
@@ -718,7 +718,7 @@
     "label": "Đối chiếu PO / Phiếu xuất kho",
     "width": 1440,
     "height": 900,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -797,9 +797,9 @@
       },
       {
         "label": "Xem đối chiếu",
-        "x": 913,
-        "y": 386.78125,
-        "w": 106,
+        "x": 21,
+        "y": 591.171875,
+        "w": 320,
         "h": 36
       },
       {
@@ -1012,7 +1012,7 @@
     "label": "Phiếu xuất kho",
     "width": 1366,
     "height": 768,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -1078,7 +1078,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 1298.984375,
-        "y": 202.01882934570312,
+        "y": 202.1993865966797,
         "w": 40,
         "h": 40
       },
@@ -1098,9 +1098,9 @@
       },
       {
         "label": "Phát hành",
-        "x": 683,
-        "y": 422.484375,
-        "w": 90.09375,
+        "x": 21,
+        "y": 575.78125,
+        "w": 320,
         "h": 36
       },
       {
@@ -1124,7 +1124,7 @@
     "label": "Đối chiếu PO / Phiếu xuất kho",
     "width": 1366,
     "height": 768,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -1203,9 +1203,9 @@
       },
       {
         "label": "Xem đối chiếu",
-        "x": 913,
-        "y": 386.78125,
-        "w": 106,
+        "x": 21,
+        "y": 591.171875,
+        "w": 320,
         "h": 36
       },
       {
@@ -1432,7 +1432,7 @@
     "label": "Phiếu xuất kho",
     "width": 1024,
     "height": 900,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -1498,7 +1498,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 27,
-        "y": 329.2001037597656,
+        "y": 329.2935791015625,
         "w": 40,
         "h": 40
       },
@@ -1518,9 +1518,9 @@
       },
       {
         "label": "Phát hành",
-        "x": 683,
-        "y": 549.484375,
-        "w": 90.09375,
+        "x": 21,
+        "y": 702.78125,
+        "w": 320,
         "h": 36
       },
       {
@@ -1544,7 +1544,7 @@
     "label": "Đối chiếu PO / Phiếu xuất kho",
     "width": 1024,
     "height": 900,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -1623,9 +1623,9 @@
       },
       {
         "label": "Xem đối chiếu",
-        "x": 907,
-        "y": 534.78125,
-        "w": 106,
+        "x": 21,
+        "y": 739.171875,
+        "w": 320,
         "h": 36
       },
       {
@@ -1782,7 +1782,7 @@
     "label": "Phiếu xuất kho",
     "width": 650,
     "height": 900,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -1820,7 +1820,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 585,
-        "y": 207.31353759765625,
+        "y": 206.70297241210938,
         "w": 44,
         "h": 44
       },
@@ -1852,7 +1852,7 @@
     "label": "Đối chiếu PO / Phiếu xuất kho",
     "width": 650,
     "height": 900,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -2048,7 +2048,7 @@
     "label": "Phiếu xuất kho",
     "width": 390,
     "height": 844,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -2086,7 +2086,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 325,
-        "y": 206.38784790039062,
+        "y": 206.3858184814453,
         "w": 44,
         "h": 44
       },
@@ -2118,7 +2118,7 @@
     "label": "Đối chiếu PO / Phiếu xuất kho",
     "width": 390,
     "height": 844,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -2314,7 +2314,7 @@
     "label": "Phiếu xuất kho",
     "width": 360,
     "height": 800,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -2352,7 +2352,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 295,
-        "y": 206.38638305664062,
+        "y": 206.38687133789062,
         "w": 44,
         "h": 44
       },
@@ -2384,7 +2384,7 @@
     "label": "Đối chiếu PO / Phiếu xuất kho",
     "width": 360,
     "height": 800,
-    "captureHead": "7002d0d502364c0415154a4a0e17c8412cd5a830",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -2415,21 +2415,21 @@
       {
         "label": "Bộ lọc",
         "x": 209.375,
-        "y": 174.1875,
+        "y": 226.1875,
         "w": 75.625,
         "h": 44
       },
       {
         "label": "Làm mới dữ liệu",
         "x": 295,
-        "y": 174.1875,
+        "y": 226.1875,
         "w": 44,
         "h": 44
       },
       {
         "label": "Đóng chi tiết",
         "x": 274.625,
-        "y": 367.375,
+        "y": 419.375,
         "w": 58.375,
         "h": 44
       }
@@ -2440,7 +2440,7 @@
     "label": "Nguyên liệu",
     "width": 1920,
     "height": 1080,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -5072,7 +5072,7 @@
     "label": "Nhà cung ứng",
     "width": 1920,
     "height": 1080,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -5429,7 +5429,7 @@
     "label": "Nguyên liệu",
     "width": 1440,
     "height": 900,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -8029,28 +8029,28 @@
       {
         "label": "Đóng chi tiết",
         "x": 1354.625,
-        "y": 283.9967956542969,
+        "y": 285,
         "w": 58.375,
         "h": 36
       },
       {
         "label": "Xem thay đổi",
         "x": 383,
-        "y": 711.371826171875,
+        "y": 712.375,
         "w": 122.140625,
         "h": 40
       },
       {
         "label": "Ưu tiên NCC",
         "x": 515.140625,
-        "y": 711.371826171875,
+        "y": 712.375,
         "w": 116.625,
         "h": 40
       },
       {
         "label": "Ngừng dùng",
         "x": 641.765625,
-        "y": 711.371826171875,
+        "y": 712.375,
         "w": 117.921875,
         "h": 40
       }
@@ -8061,7 +8061,7 @@
     "label": "Nhà cung ứng",
     "width": 1440,
     "height": 900,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -8113,7 +8113,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 1208.03125,
-        "y": 205.1271514892578,
+        "y": 206,
         "w": 40,
         "h": 40
       },
@@ -8400,14 +8400,14 @@
       {
         "label": "Đóng chi tiết",
         "x": 1354.625,
-        "y": 283.998046875,
+        "y": 283.994384765625,
         "w": 58.375,
         "h": 36
       },
       {
         "label": "Xem thay đổi",
         "x": 383,
-        "y": 684.576171875,
+        "y": 684.572509765625,
         "w": 122.140625,
         "h": 40
       }
@@ -8418,7 +8418,7 @@
     "label": "Nguyên liệu",
     "width": 1366,
     "height": 768,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -11018,28 +11018,28 @@
       {
         "label": "Đóng chi tiết",
         "x": 1280.625,
-        "y": 283.9967346191406,
+        "y": 285,
         "w": 58.375,
         "h": 36
       },
       {
         "label": "Xem thay đổi",
         "x": 383,
-        "y": 645.9967041015625,
+        "y": 647,
         "w": 122.140625,
         "h": 40
       },
       {
         "label": "Ưu tiên NCC",
         "x": 515.140625,
-        "y": 645.9967041015625,
+        "y": 647,
         "w": 116.625,
         "h": 40
       },
       {
         "label": "Ngừng dùng",
         "x": 641.765625,
-        "y": 645.9967041015625,
+        "y": 647,
         "w": 117.921875,
         "h": 40
       }
@@ -11050,7 +11050,7 @@
     "label": "Nhà cung ứng",
     "width": 1366,
     "height": 768,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -11389,14 +11389,14 @@
       {
         "label": "Đóng chi tiết",
         "x": 1280.625,
-        "y": 283.9975891113281,
+        "y": 285,
         "w": 58.375,
-        "h": 36.000030517578125
+        "h": 36
       },
       {
         "label": "Xem thay đổi",
         "x": 383,
-        "y": 645.99755859375,
+        "y": 647,
         "w": 122.140625,
         "h": 40
       }
@@ -11407,7 +11407,7 @@
     "label": "Nguyên liệu",
     "width": 1024,
     "height": 900,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14039,7 +14039,7 @@
     "label": "Nhà cung ứng",
     "width": 1024,
     "height": 900,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14091,7 +14091,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 792.03125,
-        "y": 204.73544311523438,
+        "y": 204.7358856201172,
         "w": 40,
         "h": 40
       },
@@ -14378,14 +14378,14 @@
       {
         "label": "Đóng chi tiết",
         "x": 938.625,
-        "y": 283.99810791015625,
+        "y": 285,
         "w": 58.375,
         "h": 36
       },
       {
         "label": "Xem thay đổi",
         "x": 383,
-        "y": 684.5762329101562,
+        "y": 685.578125,
         "w": 122.140625,
         "h": 40
       }
@@ -14396,7 +14396,7 @@
     "label": "Nguyên liệu",
     "width": 650,
     "height": 900,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14480,7 +14480,7 @@
     "label": "Nhà cung ứng",
     "width": 650,
     "height": 900,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14543,7 +14543,7 @@
     "label": "Nguyên liệu",
     "width": 390,
     "height": 844,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14627,7 +14627,7 @@
     "label": "Nhà cung ứng",
     "width": 390,
     "height": 844,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14658,7 +14658,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 21,
-        "y": 287.20654296875,
+        "y": 287.20623779296875,
         "w": 44,
         "h": 44
       },
@@ -14690,7 +14690,7 @@
     "label": "Nguyên liệu",
     "width": 360,
     "height": 800,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14774,7 +14774,7 @@
     "label": "Nhà cung ứng",
     "width": 360,
     "height": 800,
-    "captureHead": "a57d35a70e0cb3a638897c17e21a44460a26d0c9",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14805,7 +14805,7 @@
       {
         "label": "Làm mới dữ liệu",
         "x": 21,
-        "y": 287.206298828125,
+        "y": 287.2063293457031,
         "w": 44,
         "h": 44
       },
@@ -14837,7 +14837,7 @@
     "label": "Lệnh điều chỉnh",
     "width": 1920,
     "height": 1080,
-    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -14947,7 +14947,7 @@
     "label": "Lệnh điều chỉnh",
     "width": 1440,
     "height": 900,
-    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -15057,7 +15057,7 @@
     "label": "Lệnh điều chỉnh",
     "width": 1366,
     "height": 768,
-    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -15167,7 +15167,7 @@
     "label": "Lệnh điều chỉnh",
     "width": 1024,
     "height": 900,
-    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -15277,7 +15277,7 @@
     "label": "Lệnh điều chỉnh",
     "width": 650,
     "height": 900,
-    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -15345,7 +15345,7 @@
     "label": "Lệnh điều chỉnh",
     "width": 390,
     "height": 844,
-    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -15413,7 +15413,7 @@
     "label": "Lệnh điều chỉnh",
     "width": 360,
     "height": 800,
-    "captureHead": "2c439af07c9f725a09c7eabf88ce8455cfb3c4f6",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -15481,7 +15481,7 @@
     "label": "Công thức",
     "width": 1920,
     "height": 1080,
-    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -15689,7 +15689,7 @@
     "label": "Công thức",
     "width": 1440,
     "height": 900,
-    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -15897,7 +15897,7 @@
     "label": "Công thức",
     "width": 1366,
     "height": 768,
-    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -16105,7 +16105,7 @@
     "label": "Công thức",
     "width": 1024,
     "height": 900,
-    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -16208,7 +16208,7 @@
     "label": "Công thức",
     "width": 650,
     "height": 900,
-    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -16290,7 +16290,7 @@
     "label": "Công thức",
     "width": 390,
     "height": 844,
-    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
@@ -16372,7 +16372,7 @@
     "label": "Công thức",
     "width": 360,
     "height": 800,
-    "captureHead": "e151a305432d01ddc8df4e04617b4411ade9e621",
+    "captureHead": "7de513d7b2e73d879edefed48f29621691932344",
     "errors": [],
     "overflow": false,
     "windowScrollX": 0,
