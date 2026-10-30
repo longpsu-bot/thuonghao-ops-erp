@@ -1280,6 +1280,36 @@ select ok(
   'S. stable target identity round-trips through Preview and Create'
 );
 
+select is(
+  (select response_payload #>> '{preview,before,school_type_id}'
+   from recipe_effective_results
+   where result_name = 'adjustment-target-preview'),
+  'c1100000-0000-0000-0000-000000000010',
+  'S1. School Preview before carries the authoritative School Type'
+);
+
+select is(
+  (select response_payload #>> '{preview,after,school_type_id}'
+   from recipe_effective_results
+   where result_name = 'adjustment-target-preview'),
+  'c1100000-0000-0000-0000-000000000010',
+  'S2. School Preview after retains the same resolved School Type'
+);
+
+select is(
+  atlas_core.rmvp_02b_resolve_effective_composition(
+    '2026-09-05',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001'
+  ) - 'school_type_id',
+  atlas_core.rmvp_02b_resolve_selected_composition(
+    '2026-09-05',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001'
+  ),
+  'S3. added School context preserves all legacy selection and lineage evidence'
+);
+
 create function pg_temp.recipe_effective_rmvp_v2_read(payload jsonb)
 returns jsonb
 language sql
