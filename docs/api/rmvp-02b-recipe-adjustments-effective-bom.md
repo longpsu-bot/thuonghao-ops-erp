@@ -169,6 +169,13 @@ Responses never expose credentials, SQL, private relation dumps, or exception st
 
 **Approved current-date UX clarification (6 September 2026):** the normal Lệnh điều chỉnh ledger derives `as_of_date` from the current Vietnam-local business date and still sends that explicit ISO value in this envelope. It does not expose a routine `Ngày tham chiếu` input or require an operator to select a date to see current effectiveness. The Application refreshes the current ledger when the business date changes and renders returned `temporal_state`, `is_effective_now` and boundaries without reconstructing applicability.
 
+The normal owner does not pass the retained workspace date into this ledger.
+A clean, active owner checks for a Vietnam-local day change every 30 seconds;
+its refreshed backend row also replaces the selected detail, and the previous
+day's effective-composition inspection is cleared. Existing draft, review,
+cancellation and uncertain-command recovery guards still apply. Activating a
+hidden owner does not itself trigger a read.
+
 Explicit historical inspection belongs to the separate read-only effective-composition surface, labelled `Xem tại ngày`. Its selected date never controls the normal ledger or Create workflow. Business facts remain visible: `effective_from`, `effective_to`, original issuance where known, correction/cancellation dates and historical boundaries. Dish-copy `as_of_date` remains an explicit reviewed snapshot command date.
 
 The response retains the approved scope/action catalog, precedence and human-reference catalogs needed by the Application. In `RMVP-02B.v2` only, each Ingredient catalog entry also exposes its configured `purchase_unit_id` and `purchase_unit_name`; the v1 read shape is unchanged. Released Recipe lines are shaped with current Ingredient name, quantity and Unit so operators can select by business meaning rather than stable identity. The Application preserves a selected Recipe line's historical Unit, derives ADD and quantity-bearing REPLACE Units from the selected Ingredient purchase Unit, and blocks preview when that required master-data Unit is missing.

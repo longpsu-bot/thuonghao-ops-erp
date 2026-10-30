@@ -301,7 +301,6 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
       <ChangeOrderWorkbench
         {...owner(c)}
         standalone
-        initialDate={c.seed}
         api={c.app.apis.recipeAdjustment}
       />
     ),

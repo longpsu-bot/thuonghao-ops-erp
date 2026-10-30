@@ -40,6 +40,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 function show(
@@ -73,6 +74,22 @@ const owner = (name: string) =>
   document.querySelector<HTMLElement>(
     `[role="tabpanel"][aria-label="${name}"]`,
   )!;
+
+it("opens the Change Order ledger on the live Vietnam date instead of the retained workspace seed", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-09-12T17:05:00Z"));
+  const apis = createAtlasApplicationFixture();
+  const read = vi.spyOn(apis.recipeAdjustment, "getOperatorWorkbench");
+  show(apis, new Date("2026-09-12T05:00:00Z"));
+  await open("Lệnh điều chỉnh");
+  await waitFor(() =>
+    expect(read).toHaveBeenCalledWith(
+      "operator",
+      expect.any(String),
+      "2026-09-13",
+    ),
+  );
+});
 async function selectOrdersDay(date: string) {
   fireEvent.click(
     screen.getByRole("button", { name: "Mở lịch — Khoảng ngày dùng" }),

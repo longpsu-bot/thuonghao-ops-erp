@@ -184,6 +184,7 @@ export function useChangeOrderWorkbench({
     setCancelTarget(null);
     setCancelDirty(false);
     setEffective(null);
+    setEffectiveLoading(false);
     setEffectiveMessage("");
     invalidateReview();
   }
@@ -230,6 +231,14 @@ export function useChangeOrderWorkbench({
       resetEditor();
       setSelected(null);
       setMessage("");
+    } else {
+      resetEditor();
+      setSelected(
+        (selected) =>
+          next.operator_rows.find(
+            (row) => row.adjustment_id === selected?.adjustment_id,
+          ) ?? null,
+      );
     }
   }
   useEffect(() => {
