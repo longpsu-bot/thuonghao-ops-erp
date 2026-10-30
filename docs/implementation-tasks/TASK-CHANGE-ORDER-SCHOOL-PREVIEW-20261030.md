@@ -78,6 +78,19 @@ This is a test-driver adaptation to the merged hierarchy, not a product change
 or an increased timeout. The local model suite passed 33 tests; both local
 controller attempts hit worker-start timeouts and are not recorded as passes.
 
+Run `41004633165` on final-source candidate `f67eac7b` passed the repaired PO
+steps, release and PXK, then failed the exact visible reconciliation comparison.
+Its actual numeric totals remain 40.9 and 23.9 kg as expected. The old DOM reader
+instead includes the new responsive `aria-hidden` labels in date/status/quantity
+and treats the School label as the School name. Adapt only that reader to the
+existing `data-reconciliation-field` hooks and exclude decorative direct children.
+The complete date, School, location, status and every exact Unit total remain
+checked against frozen dispatch facts; no expectation is removed or relaxed.
+Independent reader/continuation review passes with no further same-root findings.
+The new reader was also executed read-only against the actual hosted Chrome
+reconciliation table: both School names/dates/statuses and all six Unit totals
+were extracted correctly, with every delta zero. No business command was invoked.
+
 ## Rollback and security
 
 No data migration, table or policy change. A reviewed forward migration can

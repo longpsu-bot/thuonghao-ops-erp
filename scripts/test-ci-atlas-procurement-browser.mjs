@@ -1483,7 +1483,16 @@ try {
   );
   assert(numbers.every((number) => comparisonText.includes(number)));
   const visibleComparison = await evaluate(
-    `(()=>{const table=document.querySelector('table[aria-label="Đối chiếu theo trường"]');return [...table.querySelectorAll('tbody tr')].map(row=>({date:row.cells[0].textContent.trim(),school:row.cells[1].children[0].textContent.trim(),location:row.cells[1].children[1].textContent.trim(),status:row.cells[2].textContent.trim(),totals:[...row.cells[4].children].map(total=>total.textContent.trim().replace(/\\s+/g,' ')).sort()}));})()`,
+    `(()=>{
+      const table=document.querySelector('table[aria-label="Đối chiếu theo trường"]');
+      return [...table.querySelectorAll('tbody tr')].map(row=>{
+        const values=field=>[...row.querySelector('[data-reconciliation-field="'+field+'"]').children]
+          .filter(child=>child.getAttribute('aria-hidden')!=='true')
+          .map(child=>child.textContent.trim().replace(/\\s+/g,' '));
+        const school=values('school');
+        return {date:values('date')[0],school:school[0],location:school[1],status:values('result')[0],totals:values('quantity').sort()};
+      });
+    })()`,
   );
   const displayedQuantity = (quantity) => {
     const fraction = String(quantity % 1_000_000n)
