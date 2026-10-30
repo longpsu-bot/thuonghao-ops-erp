@@ -56,6 +56,90 @@ async function prepare(c: Awaited<ReturnType<typeof setup>>) {
   expect(c.result.current.preview?.can_save).toBe(true);
 }
 describe("Change Order authoritative controller", () => {
+  it.each([false, true])(
+    "refreshes the selected rule after Vietnam midnight (pending inspection: %s)",
+    async (pendingInspection) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-09-12T16:59:40Z"));
+      const f = createChangeOrderFixture();
+      const rule = f.data.operator_rows[0];
+      for (const revision of [
+        rule.display_revision,
+        rule.content_revision,
+        rule.command_revision,
+        ...rule.history,
+      ])
+        revision.effective_to = "2026-09-13";
+      const originalRead = f.api.getOperatorWorkbench;
+      f.api.getOperatorWorkbench = async (...args) => {
+        const result = await originalRead(...args);
+        if (result.kind !== "success") return result;
+        const data = structuredClone(f.data);
+        data.reference_date = args[2];
+        if (args[2] === "2026-09-13") {
+          data.operator_rows[0] = {
+            ...data.operator_rows[0],
+            temporal_state: "EXPIRED",
+            is_effective_now: false,
+            can_cancel: false,
+          };
+        }
+        return fixtureSuccess({ workbench: data });
+      };
+      const c = renderHook(() =>
+        useChangeOrderWorkbench({ api: f.api, authSubject: "operator" }),
+      );
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      act(() =>
+        c.result.current.select(c.result.current.data.operator_rows[0]),
+      );
+      expect(c.result.current.selected?.temporal_state).toBe("ACTIVE");
+      const originalResolve = f.api.resolveSystem;
+      let finish!: () => void;
+      if (pendingInspection)
+        f.api.resolveSystem = async (...args) => {
+          const response = await originalResolve(...args);
+          return new Promise((resolve) => {
+            finish = () => resolve(response);
+          });
+        };
+      let inspection!: Promise<void>;
+      await act(async () => {
+        inspection = c.result.current.inspectEffective("dish-0", "", "scope-0");
+        if (!pendingInspection) await inspection;
+      });
+      if (pendingInspection)
+        expect(c.result.current.effectiveLoading).toBe(true);
+      else expect(c.result.current.effective?.as_of_date).toBe("2026-09-12");
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30000);
+      });
+      expect(c.result.current.data.reference_date).toBe("2026-09-13");
+      expect(c.result.current.data.operator_rows[0].temporal_state).toBe(
+        "EXPIRED",
+      );
+      expect(c.result.current.selected?.temporal_state).toBe("EXPIRED");
+      expect(c.result.current.selected?.is_effective_now).toBe(false);
+      expect(c.result.current.selected?.can_cancel).toBe(false);
+      expect(c.result.current.effectiveLoading).toBe(false);
+      expect(c.result.current.effective).toBeNull();
+      if (pendingInspection) {
+        await act(async () => {
+          finish();
+          await inspection;
+        });
+        expect(c.result.current.effective).toBeNull();
+      }
+      expect(f.calls.filter((call) => call.name === "read")).toHaveLength(2);
+      expect(
+        f.calls.some((call) =>
+          ["create", "supersede", "cancel"].includes(call.name),
+        ),
+      ).toBe(false);
+    },
+  );
   it.each(["draft", "review", "cancel", "hidden"] as const)(
     "Vietnam midnight preserves %s without refresh or activation read",
     async (state) => {
