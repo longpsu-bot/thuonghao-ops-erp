@@ -47,8 +47,10 @@ execution ACL; volatility, security-invoker posture and empty search path remain
 - Review and exact-head Frontend CI plus executed Supabase Full Integration pass
   before merge and guarded Staging migration deployment.
 - Chrome Preview and explicit issuance succeed for the bounded one-day change;
-  effective BOM shows 3.6 only for THUẬN GIAO on 20 October, with 3.5 before/after
-  and for TRỊNH HOÀI ĐỨC. Released PO/PXK contents remain frozen.
+  effective BOM shows 3.6 only for THUẬN GIAO on 20 October, with 3.5 before/after.
+  TRỊNH HOÀI ĐỨC retains its own pre-issue baseline of 9 kg per 100 portions
+  (TRUNG HỌC); its School Type differs from THUẬN GIAO (TIỂU HỌC).
+  Released PO/PXK contents remain frozen.
 
 The new two assertions failed as expected before the migration: 2 failures of
 61 assertions in `recipe_effective_contract_01.sql`. After the migration, all
