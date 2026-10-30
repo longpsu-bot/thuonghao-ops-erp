@@ -620,6 +620,7 @@ try {
     () => click("Tạo lại đơn cần cập nhật"),
     "REGENERATE_DRAFT_READY",
   );
+  await until(() => click("Tiện ích đơn mua"), "OPEN_ORDER_UTILITIES");
   await until(
     async () => (await text()).includes("Phát hành tất cả PO (2)"),
     "CURRENT_DRAFTS",

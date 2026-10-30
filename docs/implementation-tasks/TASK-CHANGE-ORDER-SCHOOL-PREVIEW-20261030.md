@@ -15,7 +15,9 @@ The workspace check's historical D-drive warning is superseded by the
 Owner-authorized E-drive checkout. Branch: `codex/change-order-school-preview`.
 
 Allowed files are one forward migration, the existing Recipe contract test,
-this record and the affected API documentation. No frontend guard relaxation,
+this record, the affected API documentation and the existing connected
+Procurement CI driver for the evidence-backed validation repair below.
+No frontend guard relaxation,
 new dependency, role/grant/RLS change, calculation change, source import or
 rewriting of released operational documents is permitted.
 
@@ -55,6 +57,17 @@ assertions respectively (174 total). Focused documentation formatting and
 `git diff --check` pass. Independent read-only product/architecture/security
 review reports PASS with no actionable findings. Exact-head CI, hosted migration
 and Chrome acceptance remain pending; this record does not claim completion.
+
+Frontend CI passed at `1834b05e` in run `41001682170`. Full Integration run
+`41001754657` passed Smoke and the database sequence, then failed at
+`CONNECTED_PROCUREMENT_CURRENT_DRAFTS`. Its retained `failure.png` shows the
+default narrow Chrome viewport with the existing `Tiện ích đơn mua` disclosure
+closed; the driver waits for text hidden inside that disclosure. Add the missing
+normal UI click before the existing current-Draft assertion. All exact quantity,
+School coverage, supplier-note, release and export assertions remain unchanged.
+This is a test-driver adaptation to the merged hierarchy, not a product change
+or an increased timeout. The local model suite passed 33 tests; both local
+controller attempts hit worker-start timeouts and are not recorded as passes.
 
 ## Rollback and security
 
