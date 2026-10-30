@@ -393,6 +393,13 @@ and l.ingredient_id='a7400000-0000-4000-8000-000000002002' and r.is_current and 
   await until(
     () =>
       evaluate(
+        `(()=>{if(performance.timeOrigin===${JSON.stringify(priorOrigin)}||document.readyState!=='complete')return false;const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Đóng');if(!b||b.disabled)return false;b.click();return true;})()`,
+      ),
+    "FRONTIER_OPEN_ORDER_DIRECTORY",
+  );
+  await until(
+    () =>
+      evaluate(
         `performance.timeOrigin!==${JSON.stringify(priorOrigin)}&&document.readyState==='complete'&&Boolean(document.querySelector('button[aria-label="Làm mới dữ liệu"]:not(:disabled)'))&&${JSON.stringify(releasedBeforeReload.map((o) => o.document_number))}.every(number=>document.body.innerText.includes(number))&&[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Phát hành tất cả PO (0)'&&b.disabled)`,
       ),
     "FRONTIER_RELEASE_REOPENED",

@@ -706,6 +706,11 @@ try {
   );
   assert.equal(receipts, "2", "One receipt per PO, with no duplicate command.");
   await reload();
+  await until(() => click("Đóng"), "PERSISTED_ORDER_DIRECTORY");
+  await until(
+    () => click("Tiện ích đơn mua"),
+    "OPEN_PERSISTED_ORDER_UTILITIES",
+  );
   await until(async () => {
     const body = await text();
     return (
