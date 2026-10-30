@@ -80,6 +80,14 @@ resolver and are never selected by `RECIPE-EFFECTIVE.v1`.
 - Preview proposal equality ignores JSON object member order, including PostgreSQL JSONB serialization order. The application must still verify exact field presence, values, types, nested source evidence and array order before freezing the review; omitted and explicit-null fields are distinct.
 - Effect: no write.
 
+**School-context response repair (30 October 2026):** both `before` and
+`after` include `school_type_id`, derived by PostgreSQL from the selected
+School. The outer preview still has `school_id` and a null `school_type_id`,
+retaining the exclusive request-context identity. The shared RMVP-02B resolver
+adds this context field without changing compatibility Recipe selection,
+quantities, precedence, lineage, warnings or blockers. The frontend continues
+to reject incomplete or mismatched context; it does not fill in missing fields.
+
 For `SYSTEM_DISH`, the proposal's `dish_id` and `school_type_id` must exactly match the outer reviewed context. Preview resolves the exact typed released Recipe followed by `SYSTEM_INGREDIENT` and `SYSTEM_DISH` only. It does not select or accept a representative School, apply a School layer, or fall back to a nullable GENERAL Recipe. Both before and hypothetical after use this same system-only authority.
 
 ## Proposal contract
