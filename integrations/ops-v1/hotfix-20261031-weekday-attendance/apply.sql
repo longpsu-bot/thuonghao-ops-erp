@@ -9,12 +9,12 @@ DECLARE r record;
 BEGIN
   FOR r IN SELECT * FROM (VALUES
     ('public.daily_orders_fill_default_portions()','4946897084088107af8715da766982a4',false,NULL::text[]),
-    ('public.fn_save_daily_menus(jsonb)','1cdd0a9516402d5f6337e00c5c079ee5',true,NULL::text[]),
-    ('public.fn_update_order_dishes(jsonb)','1279e9953a458f2a9dd8cab4b34e7424',true,ARRAY['search_path=public, pg_temp']::text[]),
+    ('public.fn_save_daily_menus(jsonb)','1708cf37373fd87938875656f95d110a',true,NULL::text[]),
+    ('public.fn_update_order_dishes(jsonb)','0ab7df7c51f5509591a7be1a4342fa7f',true,ARRAY['search_path=public, pg_temp']::text[]),
     ('public.fn_upsert_daily_orders(jsonb)','fc61219fcb3ab436078dd0ce27ad9f1b',true,ARRAY['search_path=public, pg_temp']::text[]),
-    ('public.fn_upsert_weekly_menu(date,text,text,jsonb)','c1370673f758348b5934c42ad5163425',true,ARRAY['search_path=public']::text[]),
+    ('public.fn_upsert_weekly_menu(date,text,text,jsonb)','46489de13bcfd416d10c68711fbaf051',true,ARRAY['search_path=public']::text[]),
     ('public.schools_sync_default_attendance_incoming()','3c86aaa69a8efcc8294488bed26dc09f',false,NULL::text[]),
-    ('public.sync_daily_order_dishes(bigint,jsonb,text)','4a0f52c5f651e8e7df6977b781a847cd',false,NULL::text[])
+    ('public.sync_daily_order_dishes(bigint,jsonb,text)','6317f48f3ef5ebdd6788fd09b410276e',false,NULL::text[])
   ) expected(signature,source_hash,security_definer,settings)
   LOOP
     IF (SELECT md5(replace(p.prosrc,chr(13),'')) = r.source_hash

@@ -156,4 +156,3 @@ if __name__ == '__main__':
         unittest.main(verbosity=2)
     finally:
         subprocess.run(['docker','exec',CONTAINER,'dropdb','-U','postgres',DATABASE],check=True)
-

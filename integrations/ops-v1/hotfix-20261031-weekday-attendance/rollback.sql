@@ -106,10 +106,21 @@ declare
   dish_cols text[] := array['mon_canh','mon_man','mon_xao','trang_mieng','buoi_xe'];
   v_col     text;
   v_dish_id bigint;
+  v_dishes jsonb;
 begin
   if p_rows is null or jsonb_typeof(p_rows) <> 'array' then
     return;
   end if;
+
+  perform 1
+  from public.daily_orders d
+  where exists (
+    select 1 from jsonb_array_elements(p_rows) x(rec)
+    where d.school_id = (x.rec->>'school_id')::bigint
+      and d.service_date = (x.rec->>'service_date')::date
+  )
+  order by d.id
+  for update of d;
 
   -- iterate each row from importer/editor
   for rec in
@@ -157,9 +168,7 @@ begin
       continue;
     end if;
 
-    -- reset dishes for this order
-    delete from public.daily_order_dishes
-    where order_id = v_order_id;
+    v_dishes := '[]'::jsonb;
 
     -- insert one row per non-null dish_id
     foreach v_col in array dish_cols loop
@@ -172,10 +181,11 @@ begin
       end;
 
       if v_dish_id is not null then
-        insert into public.daily_order_dishes(order_id, dish_id)
-        values (v_order_id, v_dish_id);
+        v_dishes := v_dishes || jsonb_build_array(v_dish_id);
       end if;
     end loop;
+
+    perform public.sync_daily_order_dishes(v_order_id, v_dishes, 'manual');
   end loop;
 end;
 $function$;
@@ -190,7 +200,6 @@ declare
   v_key      text;
   v_val      jsonb;
   v_order_id bigint;
-  v_dish_id  bigint;
 begin
   if p_body is null or jsonb_typeof(p_body) <> 'object' then
     raise exception 'p_body must be a JSON object of order_id -> dish_id[]';
@@ -198,32 +207,14 @@ begin
 
   -- Loop over each "order_id" key
   for v_key, v_val in
-    select key, value from jsonb_each(p_body)
+    select key, value from jsonb_each(p_body) order by key::bigint
   loop
     v_order_id := v_key::bigint;
     if v_order_id is null then
       continue;
     end if;
 
-    -- Clear existing dishes for that order
-    delete from daily_order_dishes
-    where order_id = v_order_id;
-
-    -- If value is not an array, nothing else to do (we just cleared)
-    if v_val is null or jsonb_typeof(v_val) <> 'array' then
-      continue;
-    end if;
-
-    -- Insert each dish_id in the array
-    for v_dish_id in
-      select (elem::text)::bigint
-      from jsonb_array_elements(v_val) as elem
-    loop
-      if v_dish_id is not null then
-        insert into daily_order_dishes(order_id, dish_id)
-        values (v_order_id, v_dish_id);
-      end if;
-    end loop;
+    perform public.sync_daily_order_dishes(v_order_id, v_val, 'manual');
   end loop;
 end;
 $function$;
@@ -373,6 +364,13 @@ BEGIN
   FROM tmp_payload_dishes pd
   ON CONFLICT (service_date, school_id) DO NOTHING;
 
+  PERFORM 1
+  FROM public.daily_orders o
+  JOIN tmp_payload_days p
+    ON p.school_id = o.school_id AND p.service_date = o.service_date
+  ORDER BY o.id
+  FOR UPDATE OF o;
+
   CREATE TEMP TABLE tmp_db_dishes ON COMMIT DROP AS
   SELECT DISTINCT
     o.school_id,
@@ -413,23 +411,21 @@ BEGIN
   IF NOT v_skipped THEN
     PERFORM set_config('ops.skip_rebalance', 'true', true);
 
-    DELETE FROM public.daily_order_dishes dod
-    USING public.daily_orders o
+    PERFORM public.sync_daily_order_dishes(
+      o.id,
+      COALESCE((
+        SELECT jsonb_agg(pd.dish_id ORDER BY pd.dish_id)
+        FROM tmp_payload_dishes pd
+        WHERE pd.school_id = c.school_id
+          AND pd.service_date = c.service_date
+      ), '[]'::jsonb),
+      'google_sheet'
+    )
+    FROM public.daily_orders o
     JOIN tmp_changed_days c
       ON c.school_id = o.school_id
      AND c.service_date = o.service_date
-    WHERE dod.order_id = o.id;
-
-    INSERT INTO public.daily_order_dishes (order_id, dish_id)
-    SELECT o.id, pd.dish_id
-    FROM tmp_payload_dishes pd
-    JOIN tmp_changed_days c
-      ON c.school_id = pd.school_id
-     AND c.service_date = pd.service_date
-    JOIN public.daily_orders o
-      ON o.school_id = pd.school_id
-     AND o.service_date = pd.service_date
-    ON CONFLICT DO NOTHING;
+    ORDER BY o.id;
 
     PERFORM set_config('ops.skip_rebalance', 'false', true);
 
@@ -559,46 +555,28 @@ CREATE OR REPLACE FUNCTION public.sync_daily_order_dishes(_order_id bigint, _dis
  LANGUAGE plpgsql
 AS $function$
 BEGIN
-  -- Treat NULL or non-array as empty set
   IF _dishes IS NULL OR jsonb_typeof(_dishes) <> 'array' THEN
     _dishes := '[]'::jsonb;
   END IF;
 
-  WITH desired AS (
-    SELECT DISTINCT (value)::bigint AS dish_id
-    FROM jsonb_array_elements(_dishes)
-    WHERE value IS NOT NULL
-  ),
-  existing AS (
-    SELECT id, dish_id
-    FROM daily_order_dishes
-    WHERE order_id = _order_id
-  ),
-  to_delete AS (
-    -- rows that exist in DB but *not* in desired set
-    SELECT e.id
-    FROM existing e
-    LEFT JOIN desired d ON d.dish_id = e.dish_id
-    WHERE d.dish_id IS NULL
-  ),
-  to_insert AS (
-    -- dish_ids that are in desired set but not yet in DB
-    SELECT d.dish_id
-    FROM desired d
-    LEFT JOIN existing e ON e.dish_id = d.dish_id
-    WHERE e.dish_id IS NULL
-  )
-  -- delete obsolete dishes
-  DELETE FROM daily_order_dishes dod
-  USING to_delete td
-  WHERE dod.id = td.id;
+  PERFORM 1 FROM public.daily_orders WHERE id = _order_id FOR UPDATE;
 
-  -- insert new dishes
-  INSERT INTO daily_order_dishes (order_id, dish_id)
-  SELECT _order_id, ti.dish_id
-  FROM to_insert ti;
+  -- Insert first so a replacement never looks like an explicit empty menu.
+  INSERT INTO public.daily_order_dishes (order_id, dish_id)
+  SELECT DISTINCT _order_id, d.value::text::bigint
+  FROM jsonb_array_elements(_dishes) d(value)
+  WHERE d.value IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM public.daily_order_dishes e
+      WHERE e.order_id = _order_id AND e.dish_id = d.value::text::bigint
+    );
 
-  -- (Optional) if you later want an audit table, you can extend this function.
+  DELETE FROM public.daily_order_dishes e
+  WHERE e.order_id = _order_id
+    AND NOT EXISTS (
+      SELECT 1 FROM jsonb_array_elements(_dishes) d(value)
+      WHERE d.value::text::bigint = e.dish_id
+    );
 END;
 $function$;
 ALTER TABLE public.schools DROP COLUMN default_students_weekday, DROP COLUMN default_teachers_weekday;

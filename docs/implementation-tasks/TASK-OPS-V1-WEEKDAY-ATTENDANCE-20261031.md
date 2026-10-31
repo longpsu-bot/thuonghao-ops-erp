@@ -66,6 +66,12 @@ runner. Auth/rebalance are fixture stubs. No hosted transaction journey is used 
 a test. GitHub Actions owns routine frontend validation; it is not duplicated locally.
 
 Restore Retool's original query before dropping the new columns. Guarded rollback
-restores all seven pre-hotfix functions and removes configuration only; it does not
-rewrite orders or recover deleted data. It restores the known pre-fix menu-reset
-behavior. Record exact deployment and CI evidence below after execution.
+restores all seven pre-weekday functions and removes configuration only; it does not
+rewrite orders or recover deleted data. It retains the already-deployed menu-reset
+repair. Record exact deployment and CI evidence below after execution.
+
+The baseline is OPS v1 after menu-reset migration `20261031065646`. An initial
+weekday migration attempt rejected that intervening source revision before any
+DDL/data write; a fresh comparison showed all 55 table fingerprints unchanged.
+The apply guards and rollback were rebased on the deployed source; the resulting
+seven target function bodies are unchanged from the independently reviewed patch.

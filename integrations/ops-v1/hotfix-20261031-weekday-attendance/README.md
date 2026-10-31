@@ -67,6 +67,11 @@ Commit and publish this exact SQL, pass independent review and required CI, then
 apply `apply.sql` through Supabase's migration tool against the approved project.
 Do not separately apply the overlapping menu-reset migration afterwards.
 
+The source baseline includes the already-deployed menu-reset migration
+`20261031065646`. The first weekday attempt rejected that intervening source
+change before any DDL/data write; all 55 business-table fingerprints remained
+identical. The guard and rollback were then rebased on that deployed source.
+
 After the DB migration, replace Retool's `get_school_attendance` query with the
 supplied same-name SQL to show weekday defaults before an order exists. Preserve
 the actual live query before editing. Backend autofill does not depend on this
@@ -74,8 +79,8 @@ display query. Local browser use must be enabled to perform the Retool UI edit.
 
 For rollback, restore Retool's original read query first (the retained reference is
 `get_school_attendance.rollback.sql`), then apply the guarded DB `rollback.sql`.
-Rollback removes the two configuration columns and restores the pre-hotfix seven
-functions, including the previous menu-reset defect. It never rewrites existing
+Rollback removes the two configuration columns and restores the pre-weekday seven
+functions, retaining the already-deployed menu-reset repair. It never rewrites existing
 orders or recovers previously deleted data. Defaults already stored on new orders
 remain stored. Any later function revision requires a separately reviewed rollback.
 
