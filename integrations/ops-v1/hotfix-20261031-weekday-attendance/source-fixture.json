@@ -1,0 +1,1192 @@
+[
+  {
+    "date": "2026-11-02",
+    "school_id": 7,
+    "school_name": "AN PHÚ (BD)",
+    "students": 2400,
+    "teachers": 100
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 8,
+    "school_name": "BÌNH MỸ - BÌNH DƯƠNG",
+    "students": 975,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 9,
+    "school_name": "BÌNH MỸ - CỦ CHI",
+    "students": 200,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 10,
+    "school_name": "BÌNH QUỚI - PHÂN HIỆU",
+    "students": 1590,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 12,
+    "school_name": "HỒ HẢO HỚN",
+    "students": 1190,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 14,
+    "school_name": "LÊ VĂN THẾ",
+    "students": 155,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 15,
+    "school_name": "LÝ THÁI TỔ",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 17,
+    "school_name": "PHẠM VĂN CỘI",
+    "students": 535,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 19,
+    "school_name": "PHÚ HOÀ ĐÔNG 1",
+    "students": 270,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 23,
+    "school_name": "NGUYỄN THỊ LẮNG",
+    "students": 670,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 24,
+    "school_name": "TÂN THÀNH",
+    "students": 675,
+    "teachers": 40
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 25,
+    "school_name": "TÂN AN HỘI",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 27,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+    "students": 190,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 28,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+    "students": 225,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 32,
+    "school_name": "THUẬN GIAO",
+    "students": 800,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 33,
+    "school_name": "THUẬN AN - PHÂN HIỆU",
+    "students": 700,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 34,
+    "school_name": "TRỊNH HOÀI ĐỨC",
+    "students": 1100,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 37,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 2",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 38,
+    "school_name": "VĨNH TÂN - PHÂN HIỆU",
+    "students": 280,
+    "teachers": 25
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 39,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 1",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 40,
+    "school_name": "VĨNH TÂN",
+    "students": 830,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 41,
+    "school_name": "PHÚ LỢI",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 42,
+    "school_name": "MN VĨNH TÂN - PHÂN HIỆU",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 43,
+    "school_name": "MN VĨNH TÂN",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 44,
+    "school_name": "MN HOA MAI VÀNG 2",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 45,
+    "school_name": "MN HOA QUỲNH",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 46,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+    "students": 105,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 47,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Sáng)",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 48,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 49,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 50,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 52,
+    "school_name": "BÌNH QUỚI",
+    "students": 1750,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 53,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-02",
+    "school_id": 54,
+    "school_name": "TÂN AN HỘI (Mặn 2)",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 7,
+    "school_name": "AN PHÚ (BD)",
+    "students": 2400,
+    "teachers": 100
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 8,
+    "school_name": "BÌNH MỸ - BÌNH DƯƠNG",
+    "students": 975,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 9,
+    "school_name": "BÌNH MỸ - CỦ CHI",
+    "students": 200,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 10,
+    "school_name": "BÌNH QUỚI - PHÂN HIỆU",
+    "students": 1590,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 12,
+    "school_name": "HỒ HẢO HỚN",
+    "students": 1190,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 14,
+    "school_name": "LÊ VĂN THẾ",
+    "students": 155,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 15,
+    "school_name": "LÝ THÁI TỔ",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 17,
+    "school_name": "PHẠM VĂN CỘI",
+    "students": 535,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 19,
+    "school_name": "PHÚ HOÀ ĐÔNG 1",
+    "students": 270,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 23,
+    "school_name": "NGUYỄN THỊ LẮNG",
+    "students": 670,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 24,
+    "school_name": "TÂN THÀNH",
+    "students": 675,
+    "teachers": 40
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 25,
+    "school_name": "TÂN AN HỘI",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 27,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+    "students": 190,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 28,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+    "students": 225,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 32,
+    "school_name": "THUẬN GIAO",
+    "students": 800,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 33,
+    "school_name": "THUẬN AN - PHÂN HIỆU",
+    "students": 700,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 34,
+    "school_name": "TRỊNH HOÀI ĐỨC",
+    "students": 1100,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 37,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 2",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 38,
+    "school_name": "VĨNH TÂN - PHÂN HIỆU",
+    "students": 280,
+    "teachers": 25
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 39,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 1",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 40,
+    "school_name": "VĨNH TÂN",
+    "students": 830,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 41,
+    "school_name": "PHÚ LỢI",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 42,
+    "school_name": "MN VĨNH TÂN - PHÂN HIỆU",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 43,
+    "school_name": "MN VĨNH TÂN",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 44,
+    "school_name": "MN HOA MAI VÀNG 2",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 45,
+    "school_name": "MN HOA QUỲNH",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 46,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+    "students": 105,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 47,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Sáng)",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 48,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 49,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 50,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 52,
+    "school_name": "BÌNH QUỚI",
+    "students": 1750,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 53,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-03",
+    "school_id": 54,
+    "school_name": "TÂN AN HỘI (Mặn 2)",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 7,
+    "school_name": "AN PHÚ (BD)",
+    "students": 2400,
+    "teachers": 100
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 8,
+    "school_name": "BÌNH MỸ - BÌNH DƯƠNG",
+    "students": 975,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 9,
+    "school_name": "BÌNH MỸ - CỦ CHI",
+    "students": 200,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 10,
+    "school_name": "BÌNH QUỚI - PHÂN HIỆU",
+    "students": 1590,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 12,
+    "school_name": "HỒ HẢO HỚN",
+    "students": 1190,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 14,
+    "school_name": "LÊ VĂN THẾ",
+    "students": 155,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 15,
+    "school_name": "LÝ THÁI TỔ",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 17,
+    "school_name": "PHẠM VĂN CỘI",
+    "students": 535,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 19,
+    "school_name": "PHÚ HOÀ ĐÔNG 1",
+    "students": 270,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 23,
+    "school_name": "NGUYỄN THỊ LẮNG",
+    "students": 670,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 24,
+    "school_name": "TÂN THÀNH",
+    "students": 675,
+    "teachers": 40
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 25,
+    "school_name": "TÂN AN HỘI",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 27,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+    "students": 190,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 28,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+    "students": 225,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 32,
+    "school_name": "THUẬN GIAO",
+    "students": 800,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 33,
+    "school_name": "THUẬN AN - PHÂN HIỆU",
+    "students": 700,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 34,
+    "school_name": "TRỊNH HOÀI ĐỨC",
+    "students": 1100,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 37,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 2",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 38,
+    "school_name": "VĨNH TÂN - PHÂN HIỆU",
+    "students": 280,
+    "teachers": 25
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 39,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 1",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 40,
+    "school_name": "VĨNH TÂN",
+    "students": 830,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 41,
+    "school_name": "PHÚ LỢI",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 42,
+    "school_name": "MN VĨNH TÂN - PHÂN HIỆU",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 43,
+    "school_name": "MN VĨNH TÂN",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 44,
+    "school_name": "MN HOA MAI VÀNG 2",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 45,
+    "school_name": "MN HOA QUỲNH",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 46,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+    "students": 105,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 47,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Sáng)",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 48,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 49,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 50,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 52,
+    "school_name": "BÌNH QUỚI",
+    "students": 1750,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 53,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-04",
+    "school_id": 54,
+    "school_name": "TÂN AN HỘI (Mặn 2)",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 7,
+    "school_name": "AN PHÚ (BD)",
+    "students": 2400,
+    "teachers": 100
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 8,
+    "school_name": "BÌNH MỸ - BÌNH DƯƠNG",
+    "students": 975,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 9,
+    "school_name": "BÌNH MỸ - CỦ CHI",
+    "students": 200,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 10,
+    "school_name": "BÌNH QUỚI - PHÂN HIỆU",
+    "students": 1590,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 12,
+    "school_name": "HỒ HẢO HỚN",
+    "students": 1190,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 14,
+    "school_name": "LÊ VĂN THẾ",
+    "students": 155,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 15,
+    "school_name": "LÝ THÁI TỔ",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 17,
+    "school_name": "PHẠM VĂN CỘI",
+    "students": 535,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 19,
+    "school_name": "PHÚ HOÀ ĐÔNG 1",
+    "students": 270,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 23,
+    "school_name": "NGUYỄN THỊ LẮNG",
+    "students": 670,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 24,
+    "school_name": "TÂN THÀNH",
+    "students": 675,
+    "teachers": 40
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 25,
+    "school_name": "TÂN AN HỘI",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 27,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+    "students": 190,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 28,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+    "students": 225,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 32,
+    "school_name": "THUẬN GIAO",
+    "students": 800,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 33,
+    "school_name": "THUẬN AN - PHÂN HIỆU",
+    "students": 700,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 34,
+    "school_name": "TRỊNH HOÀI ĐỨC",
+    "students": 1100,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 37,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 2",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 38,
+    "school_name": "VĨNH TÂN - PHÂN HIỆU",
+    "students": 280,
+    "teachers": 25
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 39,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 1",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 40,
+    "school_name": "VĨNH TÂN",
+    "students": 830,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 41,
+    "school_name": "PHÚ LỢI",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 42,
+    "school_name": "MN VĨNH TÂN - PHÂN HIỆU",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 43,
+    "school_name": "MN VĨNH TÂN",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 44,
+    "school_name": "MN HOA MAI VÀNG 2",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 45,
+    "school_name": "MN HOA QUỲNH",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 46,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+    "students": 105,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 47,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Sáng)",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 48,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 49,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 50,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 52,
+    "school_name": "BÌNH QUỚI",
+    "students": 1750,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 53,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-05",
+    "school_id": 54,
+    "school_name": "TÂN AN HỘI (Mặn 2)",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 7,
+    "school_name": "AN PHÚ (BD)",
+    "students": 2400,
+    "teachers": 100
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 8,
+    "school_name": "BÌNH MỸ - BÌNH DƯƠNG",
+    "students": 975,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 9,
+    "school_name": "BÌNH MỸ - CỦ CHI",
+    "students": 135,
+    "teachers": 15
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 10,
+    "school_name": "BÌNH QUỚI - PHÂN HIỆU",
+    "students": 1590,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 12,
+    "school_name": "HỒ HẢO HỚN",
+    "students": 1190,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 14,
+    "school_name": "LÊ VĂN THẾ",
+    "students": 155,
+    "teachers": 10
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 15,
+    "school_name": "LÝ THÁI TỔ",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 17,
+    "school_name": "PHẠM VĂN CỘI",
+    "students": 535,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 19,
+    "school_name": "PHÚ HOÀ ĐÔNG 1",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 23,
+    "school_name": "NGUYỄN THỊ LẮNG",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 24,
+    "school_name": "TÂN THÀNH",
+    "students": 675,
+    "teachers": 40
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 25,
+    "school_name": "TÂN AN HỘI",
+    "students": 370,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 27,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 28,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 32,
+    "school_name": "THUẬN GIAO",
+    "students": 800,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 33,
+    "school_name": "THUẬN AN - PHÂN HIỆU",
+    "students": 700,
+    "teachers": 20
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 34,
+    "school_name": "TRỊNH HOÀI ĐỨC",
+    "students": 1100,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 37,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 2",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 38,
+    "school_name": "VĨNH TÂN - PHÂN HIỆU",
+    "students": 280,
+    "teachers": 25
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 39,
+    "school_name": "TÂN THÀNH - PHÂN HIỆU 1",
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 40,
+    "school_name": "VĨNH TÂN",
+    "students": 830,
+    "teachers": 50
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 41,
+    "school_name": "PHÚ LỢI",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 42,
+    "school_name": "MN VĨNH TÂN - PHÂN HIỆU",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 43,
+    "school_name": "MN VĨNH TÂN",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 44,
+    "school_name": "MN HOA MAI VÀNG 2",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 45,
+    "school_name": "MN HOA QUỲNH",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 46,
+    "school_name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 47,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Sáng)",
+    "students": 0,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 48,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 49,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 50,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 52,
+    "school_name": "BÌNH QUỚI",
+    "students": 1750,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 53,
+    "school_name": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+    "students": 180,
+    "teachers": 0
+  },
+  {
+    "date": "2026-11-06",
+    "school_id": 54,
+    "school_name": "TÂN AN HỘI (Mặn 2)",
+    "students": 370,
+    "teachers": 20
+  }
+]

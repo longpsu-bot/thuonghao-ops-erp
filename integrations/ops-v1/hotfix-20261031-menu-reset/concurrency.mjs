@@ -68,12 +68,18 @@ try {
   const fixture = read("fixture.sql")
     .replaceAll("create temp ", "create ")
     .replaceAll("pg_temp.", "public.");
-  const functions = read("apply.sql")
+  const source = process.argv[2]
+    ? readFileSync(process.argv[2], "utf8")
+    : read("apply.sql");
+  const functions = source
     .match(/CREATE OR REPLACE FUNCTION[\s\S]*?\$function\$;/g)
     .join("\n")
     .replaceAll("auth.uid()", "public.uid()");
   sql(
     fixture +
+      (source.includes("default_students_weekday")
+        ? "\nalter table schools add column default_students_weekday smallint[], add column default_teachers_weekday smallint[];\n"
+        : "") +
       "\n" +
       functions +
       `

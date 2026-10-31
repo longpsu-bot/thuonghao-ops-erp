@@ -1,0 +1,240 @@
+[
+  {
+    "id": 7,
+    "name": "AN PHÚ (BD)",
+    "active": true,
+    "students": 2300,
+    "teachers": 100
+  },
+  {
+    "id": 8,
+    "name": "TIỂU HỌC BÌNH MỸ (P. BÌNH CƠ)",
+    "active": true,
+    "students": 1000,
+    "teachers": 50
+  },
+  {
+    "id": 9,
+    "name": "TIỂU HỌC BÌNH MỸ (X. BÌNH MỸ)",
+    "active": true,
+    "students": 260,
+    "teachers": 20
+  },
+  {
+    "id": 10,
+    "name": "BÌNH QUỚI - PHÂN HIỆU",
+    "active": true,
+    "students": 1680,
+    "teachers": 50
+  },
+  {
+    "id": 12,
+    "name": "HỒ HẢO HỚN",
+    "active": true,
+    "students": 1230,
+    "teachers": 50
+  },
+  {
+    "id": 14,
+    "name": "LÊ VĂN THẾ",
+    "active": true,
+    "students": 160,
+    "teachers": 10
+  },
+  {
+    "id": 15,
+    "name": "LÝ THÁI TỔ",
+    "active": true,
+    "students": 480,
+    "teachers": 15
+  },
+  {
+    "id": 17,
+    "name": "PHẠM VĂN CỘI",
+    "active": true,
+    "students": 530,
+    "teachers": 30
+  },
+  {
+    "id": 19,
+    "name": "PHÚ HOÀ ĐÔNG 1",
+    "active": true,
+    "students": 275,
+    "teachers": 20
+  },
+  {
+    "id": 23,
+    "name": "NGUYỄN THỊ LẮNG",
+    "active": true,
+    "students": 650,
+    "teachers": 30
+  },
+  {
+    "id": 24,
+    "name": "TÂN THÀNH",
+    "active": true,
+    "students": 675,
+    "teachers": 40
+  },
+  {
+    "id": 25,
+    "name": "TÂN AN HỘI",
+    "active": true,
+    "students": 360,
+    "teachers": 20
+  },
+  {
+    "id": 27,
+    "name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 2",
+    "active": true,
+    "students": 185,
+    "teachers": 20
+  },
+  {
+    "id": 28,
+    "name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 3",
+    "active": true,
+    "students": 225,
+    "teachers": 20
+  },
+  {
+    "id": 32,
+    "name": "THUẬN GIAO",
+    "active": true,
+    "students": 800,
+    "teachers": 50
+  },
+  {
+    "id": 33,
+    "name": "THUẬN AN - PHÂN HIỆU",
+    "active": true,
+    "students": 615,
+    "teachers": 25
+  },
+  {
+    "id": 34,
+    "name": "TRỊNH HOÀI ĐỨC",
+    "active": true,
+    "students": 1000,
+    "teachers": 30
+  },
+  {
+    "id": 37,
+    "name": "TÂN THÀNH - PHÂN HIỆU 2",
+    "active": true,
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "id": 38,
+    "name": "VĨNH TÂN - PHÂN HIỆU",
+    "active": true,
+    "students": 290,
+    "teachers": 25
+  },
+  {
+    "id": 39,
+    "name": "TÂN THÀNH - PHÂN HIỆU 1",
+    "active": true,
+    "students": 490,
+    "teachers": 30
+  },
+  {
+    "id": 40,
+    "name": "VĨNH TÂN",
+    "active": true,
+    "students": 850,
+    "teachers": 50
+  },
+  {
+    "id": 41,
+    "name": "PHÚ LỢI",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 42,
+    "name": "MN VĨNH TÂN - PHÂN HIỆU",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 43,
+    "name": "MN VĨNH TÂN",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 44,
+    "name": "MN HOA MAI VÀNG 2",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 45,
+    "name": "MN HOA QUỲNH",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 46,
+    "name": "PHÚ HOÀ ĐÔNG 1 - PHÂN HIỆU 1",
+    "active": true,
+    "students": 95,
+    "teachers": 10
+  },
+  {
+    "id": 47,
+    "name": "CHUYÊN HÙNG VƯƠNG (Sáng)",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 48,
+    "name": "CHUYÊN HÙNG VƯƠNG (Trưa)",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 49,
+    "name": "CHUYÊN HÙNG VƯƠNG (Trưa Mặn 2)",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 50,
+    "name": "CHUYÊN HÙNG VƯƠNG (Chiều)",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 52,
+    "name": "BÌNH QUỚI",
+    "active": true,
+    "students": 1750,
+    "teachers": null
+  },
+  {
+    "id": 53,
+    "name": "CHUYÊN HÙNG VƯƠNG (Chiều Mặn 2)",
+    "active": true,
+    "students": null,
+    "teachers": null
+  },
+  {
+    "id": 54,
+    "name": "TÂN AN HỘI (Mặn 2)",
+    "active": true,
+    "students": null,
+    "teachers": null
+  }
+]
