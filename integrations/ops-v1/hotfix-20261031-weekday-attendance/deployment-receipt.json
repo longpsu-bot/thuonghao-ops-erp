@@ -1,0 +1,299 @@
+{
+  "project": "qnthofvccilhnefdcxnz",
+  "source_commit": "8ce9dc02fea7a2cb0b8510f09b9308fd58c798db",
+  "ci_run": "https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/41179777095",
+  "migration": {
+    "name": "ops_v1_weekday_attendance_preserve_entered_data_20261031",
+    "version": "20261031072454"
+  },
+  "started_at": "2026-10-31 07:24:54 UTC",
+  "completed_at": "2026-10-31 07:25:15 UTC",
+  "configured_schools": 34,
+  "wrong_schools": 0,
+  "verified_functions": 7,
+  "wrong_functions": [],
+  "verified_tables": 55,
+  "preserved_rows": 236799,
+  "changed_existing_tables": [],
+  "local_tests": 13,
+  "composed_concurrency": "passed",
+  "independent_review": "no blockers",
+  "retool_ui": "not changed; Computer Use stopped because current Chrome URL could not be determined",
+  "tables": [
+    {
+      "rows": 2526,
+      "relation": "ops_v2.actual_need_overrides",
+      "fingerprint": "24773260915101f45fbe64b69d63f6f9"
+    },
+    {
+      "rows": 2168,
+      "relation": "ops_v2.actual_need_overrides_legacy",
+      "fingerprint": "b6c10bf1e9161107fa73dcdc229d7da0"
+    },
+    {
+      "rows": 3085,
+      "relation": "ops_v2.bill_of_materials",
+      "fingerprint": "4a978b0f756694aedee51b3c0ef08e35"
+    },
+    {
+      "rows": 2,
+      "relation": "ops_v2.dispatch_lines",
+      "fingerprint": "d69e95e7c3f7a2c0de48815b109b8a40"
+    },
+    {
+      "rows": 2,
+      "relation": "ops_v2.purchase_assignments",
+      "fingerprint": "11df32019f1ce0dfdf55505da6c34e1d"
+    },
+    {
+      "rows": 2,
+      "relation": "ops_v2.purchase_order_lines",
+      "fingerprint": "d78b8f4c7f8c6c206830e598d8843f6b"
+    },
+    {
+      "rows": 0,
+      "relation": "ops_v2.school_recipe_overrides",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 110,
+      "relation": "ops_v2.school_wide_overrides",
+      "fingerprint": "712cfacce6dc1170e6106795cb9683aa"
+    },
+    {
+      "rows": 307,
+      "relation": "ops_v2.system_bom_change_orders",
+      "fingerprint": "6e70f77366183f08f8cd185fe5de2899"
+    },
+    {
+      "rows": 34594,
+      "relation": "public._backup_v_effective_bom_dish",
+      "fingerprint": "3d395913eb5d24e9a0397ee28408987e"
+    },
+    {
+      "rows": 34594,
+      "relation": "public._backup_v_effective_bom_school",
+      "fingerprint": "20f7fd477ffaeb3fd42162422e335049"
+    },
+    {
+      "rows": 2087,
+      "relation": "public._backup_v_effective_bom_system",
+      "fingerprint": "4336470ec937ac1ea8c753842d17a2df"
+    },
+    {
+      "rows": 8170,
+      "relation": "public.actual_need_overrides",
+      "fingerprint": "a4d5629fbbc8019437f6b31c0450e9e1"
+    },
+    {
+      "rows": 9288,
+      "relation": "public.actual_need_overrides_log",
+      "fingerprint": "02d2fcf4a5e68046d72306fb7ed95c61"
+    },
+    {
+      "rows": 4536,
+      "relation": "public.bill_of_materials",
+      "fingerprint": "dd99dd0b3560dd0ab62f5cae83fb313f"
+    },
+    {
+      "rows": 1,
+      "relation": "public.config_ops_start",
+      "fingerprint": "85ff897e8223fba4830d1c23113fecca"
+    },
+    {
+      "rows": 152,
+      "relation": "public.correction_params",
+      "fingerprint": "80126f5e1609157c2047209d1e9bc3ab"
+    },
+    {
+      "rows": 13804,
+      "relation": "public.daily_order_dishes",
+      "fingerprint": "80ad434bf8cfae946e9302d92f1f8c26"
+    },
+    {
+      "rows": 4375,
+      "relation": "public.daily_orders",
+      "fingerprint": "55b349c6de8b4b8e6f5c434a8afa75c1"
+    },
+    {
+      "rows": 0,
+      "relation": "public.daily_orders_audit",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 6,
+      "relation": "public.dish_types",
+      "fingerprint": "0e5b4ba610dfc8b7c264d929a69e6671"
+    },
+    {
+      "rows": 753,
+      "relation": "public.dishes",
+      "fingerprint": "5d7a3918ff9c4c096b4479bb56e82bed"
+    },
+    {
+      "rows": 16,
+      "relation": "public.dispatch_export_group_members",
+      "fingerprint": "a9d225e62bb8726035405cfce8ade522"
+    },
+    {
+      "rows": 7,
+      "relation": "public.dispatch_export_groups",
+      "fingerprint": "4e04d333a42abafc28cff9eb85b16d42"
+    },
+    {
+      "rows": 2793,
+      "relation": "public.dispatch_headers",
+      "fingerprint": "36121a81a35396bbd0285499ec9f93c8"
+    },
+    {
+      "rows": 32958,
+      "relation": "public.dispatch_lines",
+      "fingerprint": "280eca314b46e97fc76c48fd72426be5"
+    },
+    {
+      "rows": 0,
+      "relation": "public.dispatch_name_map",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 5,
+      "relation": "public.ingredient_change_orders",
+      "fingerprint": "4840bbdc93ac27a2f8dc33241e7a8dd9"
+    },
+    {
+      "rows": 3,
+      "relation": "public.ingredient_shopping_type",
+      "fingerprint": "48a897e9264921425a6bd32fcd61fd65"
+    },
+    {
+      "rows": 978,
+      "relation": "public.ingredient_suppliers",
+      "fingerprint": "54f7e1538ad3d7a22bd766811423eefe"
+    },
+    {
+      "rows": 17,
+      "relation": "public.ingredient_type",
+      "fingerprint": "e1886f701f2bdf0dd9f14379bc5aef90"
+    },
+    {
+      "rows": 425,
+      "relation": "public.ingredients",
+      "fingerprint": "6e6658e2a6e19edd19bd4f65c6dfc641"
+    },
+    {
+      "rows": 0,
+      "relation": "public.invoices",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 30,
+      "relation": "public.menu_import_weeks",
+      "fingerprint": "45a05dc33ad8729cc349a8bf9162971c"
+    },
+    {
+      "rows": 928,
+      "relation": "public.needs_cache",
+      "fingerprint": "352ed4a2b6ff385e51cf96065581c22f"
+    },
+    {
+      "rows": 0,
+      "relation": "public.override_audit_log",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 1149,
+      "relation": "public.pantry_needs",
+      "fingerprint": "72091c7a9552b139a51e215175792e9c"
+    },
+    {
+      "rows": 0,
+      "relation": "public.pantry_schedule",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 0,
+      "relation": "public.pantry_schedule_run_log",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 0,
+      "relation": "public.payments",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 19,
+      "relation": "public.po_export_group_members",
+      "fingerprint": "1f5b02e8488f3c42f835cb01e02eba46"
+    },
+    {
+      "rows": 5,
+      "relation": "public.po_export_groups",
+      "fingerprint": "f8dce14d6419eee30c431e338d8c3b12"
+    },
+    {
+      "rows": 34590,
+      "relation": "public.purchase_assignments",
+      "fingerprint": "7e5125ebdd19ac678db74155de52bb42"
+    },
+    {
+      "rows": 35838,
+      "relation": "public.purchase_order_lines",
+      "fingerprint": "64b3f282d39f2277cd71bb951d260265"
+    },
+    {
+      "rows": 1911,
+      "relation": "public.purchase_orders",
+      "fingerprint": "010ff8f5ed6e364c2253242b80b66ff5"
+    },
+    {
+      "rows": 0,
+      "relation": "public.qa_ops_state",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 0,
+      "relation": "public.qa_po_dispatch_state",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 0,
+      "relation": "public.recipe_swap_orders",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 1506,
+      "relation": "public.recipes",
+      "fingerprint": "3d51e26df4c52fc96c12d6bc60eb89d3"
+    },
+    {
+      "rows": 2368,
+      "relation": "public.scaling_ratios_weekly",
+      "fingerprint": "2505794404fd4c72a4e7678edad53bff"
+    },
+    {
+      "rows": 0,
+      "relation": "public.school_recipe_overrides",
+      "fingerprint": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    {
+      "rows": 128,
+      "relation": "public.school_wide_overrides",
+      "fingerprint": "471edf47deb6c9c438e6b9104b653de7"
+    },
+    {
+      "rows": 50,
+      "relation": "public.schools",
+      "fingerprint": "6dc5d0cb09841d054f29cd3a3c7e32f5"
+    },
+    {
+      "rows": 43,
+      "relation": "public.suppliers",
+      "fingerprint": "50da01b68c51487141808112c59656c6"
+    },
+    {
+      "rows": 470,
+      "relation": "public.system_bom_change_orders",
+      "fingerprint": "8343ea96e220afd5edd435851992a50e"
+    }
+  ]
+}

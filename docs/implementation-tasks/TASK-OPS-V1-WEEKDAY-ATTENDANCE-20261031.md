@@ -1,7 +1,7 @@
 # OPS v1 — Weekday attendance defaults
 
-**Status:** Owner-approved deployment; implementation and local verification complete;
-independent review, exact-head CI and hosted execution/readback pending.
+**Status:** Backend deployed and verified; the Retool display-query edit remains
+blocked by Computer Use's browser-URL policy check.
 
 **Owner authorization:** On 31 October 2026, after reviewing the weekday hotfix and
 the standing OPS v1 NO-WRITE boundary, the Owner authorized deployment conditional
@@ -44,9 +44,9 @@ No signature, grant, role, RLS policy, module, calculation or dependency changes
 - [x] A deliberate existing-override corruption aborts and rolls back installation.
 - [x] Apply/rollback compare complete existing business-table rows and function security.
 - [x] Retool reference queries match source defaults; query rollback is exercised.
-- [ ] Independent composed-source review and exact-head Frontend CI pass.
-- [ ] Version-controlled migration is applied to the exact approved v1 project.
-- [ ] Hosted readback confirms defaults, deployed function revisions and preserved data.
+- [x] Independent composed-source review and deployed-source Frontend CI pass.
+- [x] Version-controlled migration is applied to the exact approved v1 project.
+- [x] Hosted readback confirms defaults, deployed function revisions and preserved data.
 - [ ] Live Retool display query is updated when browser access is available.
 
 Existing November 2–6 orders are not modified. Eleven retained differences from the
@@ -75,3 +75,19 @@ weekday migration attempt rejected that intervening source revision before any
 DDL/data write; a fresh comparison showed all 55 table fingerprints unchanged.
 The apply guards and rollback were rebased on the deployed source; the resulting
 seven target function bodies are unchanged from the independently reviewed patch.
+
+## Deployment evidence
+
+- Source: `8ce9dc02fea7a2cb0b8510f09b9308fd58c798db`, [PR #451](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/451).
+- Frontend CI: [41179777095](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/41179777095), success for that exact source revision.
+- Supabase migration: `20261031072454`, `ops_v1_weekday_attendance_preserve_entered_data_20261031`.
+- Applied at 07:24:54 UTC; readback completed at 07:25:15 UTC on 31 October 2026.
+- All 34 School configurations match the supplied source; all seven deployed function hashes match the reviewed target.
+- All 55 ordinary `public`/`ops_v2` table fingerprints match the immediate pre-apply read, covering 236,799 existing rows. Only the two authorized School configuration columns are excluded from comparison.
+- Thirteen local PostgreSQL tests and the composed two-session concurrency check passed. No hosted business command or test order was executed.
+- The eleven existing November 2–6 order/file differences remain unchanged.
+- Retool was not modified: Computer Use stopped because it could not determine the current Windows Chrome URL reliably enough to enforce policy. Backend autofill is deployed independently of that display-query edit.
+
+The machine-readable receipt is versioned beside the manual migration. This
+documentation closeout changes no deployed SQL. PR merge and the Retool UI edit
+remain separate from the completed backend deployment.

@@ -1,5 +1,12 @@
 # OPS v1 weekday attendance — 31 October 2026
 
+**Deployed and verified:** OPS v1 migration `20261031072454`, source
+`8ce9dc02fea7a2cb0b8510f09b9308fd58c798db`, applied at 07:24 UTC on 31 October 2026.
+Readback matched all 34 configurations and seven function revisions. All 55
+business-table fingerprints and 236,799 existing rows matched the pre-apply read.
+See `deployment-receipt.json`. Retool's display query is still unchanged: Computer
+Use stopped because it could not determine the current Chrome URL for policy checks.
+
 The Owner approved hosted deployment provided all previously entered data stays
 intact. Target only OPS v1 `qnthofvccilhnefdcxnz`. These manual migrations live
 outside Atlas's migration directory and are never deployed to Atlas.
