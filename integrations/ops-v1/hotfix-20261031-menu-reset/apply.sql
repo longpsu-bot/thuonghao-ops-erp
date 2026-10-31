@@ -44,19 +44,19 @@ BEGIN
 
   -- Insert first so a replacement never looks like an explicit empty menu.
   INSERT INTO public.daily_order_dishes (order_id, dish_id)
-  SELECT DISTINCT _order_id, d.value::bigint
+  SELECT DISTINCT _order_id, d.value::text::bigint
   FROM jsonb_array_elements(_dishes) d(value)
   WHERE d.value IS NOT NULL
     AND NOT EXISTS (
       SELECT 1 FROM public.daily_order_dishes e
-      WHERE e.order_id = _order_id AND e.dish_id = d.value::bigint
+      WHERE e.order_id = _order_id AND e.dish_id = d.value::text::bigint
     );
 
   DELETE FROM public.daily_order_dishes e
   WHERE e.order_id = _order_id
     AND NOT EXISTS (
       SELECT 1 FROM jsonb_array_elements(_dishes) d(value)
-      WHERE d.value::bigint = e.dish_id
+      WHERE d.value::text::bigint = e.dish_id
     );
 END;
 $function$;
@@ -86,6 +86,16 @@ begin
   if p_rows is null or jsonb_typeof(p_rows) <> 'array' then
     return;
   end if;
+
+  perform 1
+  from public.daily_orders d
+  where exists (
+    select 1 from jsonb_array_elements(p_rows) x(rec)
+    where d.school_id = (x.rec->>'school_id')::bigint
+      and d.service_date = (x.rec->>'service_date')::date
+  )
+  order by d.id
+  for update of d;
 
   -- iterate each row from importer/editor
   for rec in
@@ -172,7 +182,7 @@ begin
 
   -- Loop over each "order_id" key
   for v_key, v_val in
-    select key, value from jsonb_each(p_body)
+    select key, value from jsonb_each(p_body) order by key::bigint
   loop
     v_order_id := v_key::bigint;
     if v_order_id is null then

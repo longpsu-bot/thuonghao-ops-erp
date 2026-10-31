@@ -41,14 +41,18 @@ signature/drift reporting and rebalance flow intact.
       atomic failure on invalid Dish identity.
 - [x] Preserve unaffected Dish row identities and every field of unrelated
       saved override rows, including note and actor metadata.
-- [ ] Review the SQL migration/rollback guards and unchanged security attributes.
+- [x] Review the SQL migration/rollback guards and unchanged security attributes.
+- [x] Reproduce and fix fractional Dish-ID rounding and a mixed-writer parent-lock
+      deadlock; pass a real two-session local concurrency regression and focused
+      independent re-review.
 - [ ] Publish a Draft PR and observe its required Frontend CI. Keep production
       application separate from this source/test delivery.
 
 **Validation:** Run only the isolated PostgreSQL regression and scoped formatting
-and whitespace checks locally. The regression uses temporary objects in one
-rolled-back local connection; it does not reset a local Atlas database or call
-a hosted project.
+and whitespace checks locally. The first regression uses temporary objects in
+rolled-back local transactions. The concurrency runner uses two real sessions
+in a uniquely named disposable database and drops it in `finally`. Neither
+resets a local Atlas database or calls a hosted project.
 
 **Rollback:** Restore exact retained function definitions atomically, guarded
 against unknown deployed source. Function rollback does not recover previously

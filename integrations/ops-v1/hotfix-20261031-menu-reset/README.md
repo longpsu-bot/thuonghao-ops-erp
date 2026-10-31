@@ -30,18 +30,29 @@ changing menu Dishes, superseding the initial Recipe Change Order attribution.
 
 ```powershell
 node integrations/ops-v1/hotfix-20261031-menu-reset/regression.mjs
+node integrations/ops-v1/hotfix-20261031-menu-reset/concurrency.mjs
 ```
 
-The regression uses temporary objects in the existing local PostgreSQL container
+The first regression uses temporary objects in the existing local PostgreSQL container
 `supabase_db_thuonghao-ops-erp` and rolls back both test transactions. It does not
 reset Atlas, read a credential or access a hosted project.
 
 The retained baseline failed at “saved override changed: school 1, Ingredient
-102”; the patch passes eight behavioral scenarios and the source-guard probe.
+102”; the patch passes nine behavioral scenarios and the source-guard probe.
 It checks unrelated full override rows and stable Dish row IDs, unchanged
 replay, both manual writers, duplicate input, a single-Dish replacement,
-clear-day Pantry protection and atomic invalid-Dish failure. Apply/rollback
+clear-day Pantry protection and atomic invalid/fractional-Dish failure. Apply/rollback
 guards accept the expected source and reject unknown source.
+
+The second runner creates a uniquely named disposable database inside that same
+local container and drops it in `finally`. Two real sessions use advisory barriers
+to interleave a reversed-order manual save and a weekly import with an explicit
+clear-day marker. This reproduced a deadlock before the consistent-lock-order
+correction; both writes now finish successfully and retain the unrelated override.
+
+Independent review found the fractional-ID and mixed-writer deadlock cases;
+both were reproduced before correction and the focused re-review has no blocking
+findings. Required GitHub validation is recorded separately from these local tests.
 
 The existing production reset trigger is exercised against synthetic tables.
 Rebalance and Auth identity are test stubs: this does not certify allocation

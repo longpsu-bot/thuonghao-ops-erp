@@ -1,6 +1,8 @@
 savepoint scenario;
 
 -- The same source signature must still reconcile an actual Dish-set change.
+insert into menu_import_weeks values ('2026-11-02','google_sheet','fixture',
+  'retained-sig',2,now(),null);
 select pg_temp.fn_upsert_weekly_menu('2026-11-02','fixture','retained-sig',
   '[{"school_id":1,"service_date":"2026-11-02","dish_id":12},
     {"school_id":1,"service_date":"2026-11-02","dish_id":13}]');
@@ -90,4 +92,18 @@ do $$ begin
   perform pg_temp.assert_dish(1,12);
 end $$;
 \echo PASS invalid Dish fails atomically
+rollback to scenario;
+
+do $$ begin
+  begin
+    perform pg_temp.fn_update_order_dishes('{"1":[12,12.6]}');
+    raise exception 'fractional Dish identity accepted';
+  exception when invalid_text_representation then null;
+  end;
+  perform pg_temp.assert_override(1,101);
+  perform pg_temp.assert_override(1,102);
+  perform pg_temp.assert_dish(1,11);
+  perform pg_temp.assert_dish(1,12);
+end $$;
+\echo PASS fractional Dish identity rejected atomically
 rollback to scenario;

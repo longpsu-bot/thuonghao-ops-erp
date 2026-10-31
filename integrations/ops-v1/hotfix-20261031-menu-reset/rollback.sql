@@ -6,9 +6,9 @@ declare
   r record;
 begin
   for r in select * from (values
-    ('public.sync_daily_order_dishes(bigint,jsonb,text)', '05bbbeb74b7db835ae31eed8357f5695'),
-    ('public.fn_save_daily_menus(jsonb)', '01c1bcf351c6717f31687ed38139148e'),
-    ('public.fn_update_order_dishes(jsonb)', '06da33a5d9ea65e0ec6611703b5e4732'),
+    ('public.sync_daily_order_dishes(bigint,jsonb,text)', '6317f48f3ef5ebdd6788fd09b410276e'),
+    ('public.fn_save_daily_menus(jsonb)', '1708cf37373fd87938875656f95d110a'),
+    ('public.fn_update_order_dishes(jsonb)', '0ab7df7c51f5509591a7be1a4342fa7f'),
     ('public.fn_upsert_weekly_menu(date,text,text,jsonb)', '46489de13bcfd416d10c68711fbaf051')
   ) expected(signature, source_hash)
   loop
