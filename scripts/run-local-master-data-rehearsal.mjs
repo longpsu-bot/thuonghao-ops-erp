@@ -73,6 +73,8 @@ export function parseRehearsalQueryResult(output) {
   } catch {
     throw new Error("LOCAL_IMPORT_RESPONSE_INVALID");
   }
+  if (rows && !Array.isArray(rows) && typeof rows === "object")
+    rows = rows.rows;
   if (!Array.isArray(rows) || rows.length !== 1)
     throw new Error("LOCAL_IMPORT_RESPONSE_INVALID");
   const result = rows[0]?.result;

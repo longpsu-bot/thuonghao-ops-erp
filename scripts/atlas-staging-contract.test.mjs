@@ -1043,7 +1043,18 @@ describe("Atlas staging dry-run and workflow", () => {
       ),
     ).toHaveLength(2);
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(127);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(128);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "pnpm",
+      args: [
+        "exec",
+        "supabase",
+        "test",
+        "db",
+        "supabase/tests/recipe_change_order_history.sql",
+        "--local",
+      ],
+    });
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "pnpm",
       args: [
@@ -2387,8 +2398,8 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.authenticatedApiSignatures).not.toContain(
       dispatchSnapshotBase,
     );
-    expect(authority.policyCount).toBe(689);
-    expect(authority.policyDigest).toBe("d2a7ef8da79571431cbd60b93bd2acdf");
+    expect(authority.policyCount).toBe(690);
+    expect(authority.policyDigest).toBe("d89f0f1c192dffa36a806b13b221d61d");
   });
 
   it("compares authenticated EXECUTE against CAT-18 rather than physical CAT-15", () => {
@@ -2501,7 +2512,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 689");
+    expect(sql).toContain("normal_policy_count <> 690");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -2596,11 +2607,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [689, 1, true],
-    [689, 0, false],
-    [689, 2, false],
-    [688, 1, false],
-    [690, 1, false],
+    [690, 1, true],
+    [690, 0, false],
+    [690, 2, false],
+    [689, 1, false],
+    [691, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

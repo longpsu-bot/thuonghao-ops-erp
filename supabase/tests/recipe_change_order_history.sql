@@ -1,0 +1,70 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set search_path=public,extensions;
+select no_plan();
+grant atlas_read_runtime to postgres with set true;
+select has_function('atlas_legacy','import_recipe_change_order_history',array['jsonb','uuid','text'],'archive importer exists');
+select has_function('atlas_legacy','recipe_change_order_history',array[]::text[],'archive shaped read exists');
+insert into atlas_core.actors(actor_id,actor_type,display_name) values ('a9110000-0000-0000-0000-000000000001','HUMAN','Recipe history local operator');
+insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code,decimal_scale) values('a9110000-0000-0000-0000-000000000201','history-test-unit','History test kg','MASS',3);
+insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,ingredient_group,purchase_unit_id,ingredient_type,shopping_type,order_step) values
+('a9110000-0000-0000-0000-000000000202','history-test-old','History test old','Food','a9110000-0000-0000-0000-000000000201','Food','Planned',1),
+('a9110000-0000-0000-0000-000000000203','history-test-new','History test new','Food','a9110000-0000-0000-0000-000000000201','Food','Planned',1);
+insert into atlas_admin.recipe_composition_adjustments(recipe_composition_adjustment_id,scope_kind,action_kind,target_ingredient_id,created_by_actor_id,updated_by_actor_id) values('a9110000-0000-0000-0000-000000000204','SYSTEM_INGREDIENT','REPLACE','a9110000-0000-0000-0000-000000000202','a9110000-0000-0000-0000-000000000001','a9110000-0000-0000-0000-000000000001');
+insert into atlas_admin.recipe_composition_adjustment_revisions(recipe_composition_adjustment_revision_id,recipe_composition_adjustment_id,scope_kind,action_kind,revision_number,effective_from,substitute_ingredient_id,reason_code,reason_note,created_by_actor_id) values('a9110000-0000-0000-0000-000000000205','a9110000-0000-0000-0000-000000000204','SYSTEM_INGREDIENT','REPLACE',1,'2026-01-01','a9110000-0000-0000-0000-000000000203','RECIPE_ADJUSTMENT_CREATED','Native history must remain unchanged','a9110000-0000-0000-0000-000000000001');
+update atlas_admin.recipe_composition_adjustments set current_revision_id='a9110000-0000-0000-0000-000000000205',current_revision_number=1 where recipe_composition_adjustment_id='a9110000-0000-0000-0000-000000000204';
+create temp table evidence(snapshot jsonb, plan text);
+insert into evidence(snapshot) select jsonb_build_object('contract_version','OPS-V1-RECIPE-HISTORY.v1','source_system','OPS_V1_RECIPE_HISTORY','source_project_ref','qnthofvccilhnefdcxnz','snapshot_id','history-pgtap','exported_at','2026-11-05T00:00:00Z','extractor_version','test','source_access',jsonb_build_object('superuser',false,'bypassRls',true,'createRole',false,'createDb',false,'hasRequiredSelect',true,'hasNonSelectTablePrivilege',false),'source_counts',jsonb_build_object('ingredient_change_orders',0,'system_bom_change_orders',1,'school_wide_overrides',0,'school_recipe_overrides',0),'records',jsonb_build_array(jsonb_build_object('source_table','system_bom_change_orders','legacy_id','9007199254740993','scope_kind','SYSTEM_DISH','action','ADJUST_QUANTITY','source_active',false,'effective_from','2026-01-19','source_created_at','2026-01-19 09:00:00','source_school_type_id','1','dish_name','Source Dish','school_name',null,'ingredient_name','Salt','substitute_name',null,'quantity','1.000001','unit_name','kg','note','Original note','source_record',jsonb_build_object('id','9007199254740993'))));
+update evidence set snapshot=snapshot||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(snapshot));
+create temp table before_roots as select count(*) as n from atlas_admin.recipe_composition_adjustments;
+create temp table before_native as select to_jsonb(a) as root,to_jsonb(r) as revision from atlas_admin.recipe_composition_adjustments a join atlas_admin.recipe_composition_adjustment_revisions r using(recipe_composition_adjustment_id) where a.recipe_composition_adjustment_id='a9110000-0000-0000-0000-000000000204';
+update evidence set plan=atlas_legacy.import_recipe_change_order_history(snapshot,null,null)->>'plan_checksum';
+select matches((select plan from evidence),'^[a-f0-9]{64}$','Preview provides exact plan checksum');
+select is((select count(*) from atlas_legacy.import_batches where source_system='OPS_V1_RECIPE_HISTORY' and snapshot_id='history-pgtap'),0::bigint,'Preview makes no writes');
+select throws_ok($$select atlas_legacy.import_recipe_change_order_history(snapshot,null,plan) from evidence$$,'22023','ACTIVE_IMPORT_ACTOR_REQUIRED','Apply requires a real active Actor');
+select throws_ok($$select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',repeat('0',64)) from evidence$$,'22023','REVIEWED_PLAN_MISMATCH','Apply binds exact reviewed checksum');
+select is((select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',plan)->>'status' from evidence),'IMPORTED','Apply imports evidence');
+select is((select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',plan)->>'status' from evidence),'REPLAYED','Same snapshot replays');
+select is((select count(*) from atlas_legacy.import_batches where source_system='OPS_V1_RECIPE_HISTORY' and snapshot_id='history-pgtap'),1::bigint,'Replay does not duplicate evidence');
+select is((select count(*) from atlas_admin.recipe_composition_adjustments),(select n from before_roots),'Import does not change native adjustment roots');
+select is((select to_jsonb(a) from atlas_admin.recipe_composition_adjustments a where recipe_composition_adjustment_id='a9110000-0000-0000-0000-000000000204'),(select root from before_native),'Existing native root is byte-for-byte unchanged');
+select is((select to_jsonb(r) from atlas_admin.recipe_composition_adjustment_revisions r where recipe_composition_adjustment_revision_id='a9110000-0000-0000-0000-000000000205'),(select revision from before_native),'Existing native revision is unchanged');
+select throws_ok($$select atlas_legacy.import_recipe_change_order_history(snapshot||' {"snapshot_checksum":"bad"}'::jsonb,null,null) from evidence$$,'22023','SNAPSHOT_CHECKSUM_MISMATCH','Reject tampered snapshot');
+create temp table changed as select jsonb_set(snapshot-'snapshot_checksum','{records,0,note}','"Changed content"') as snapshot from evidence;
+update changed set snapshot=snapshot||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(snapshot));
+select throws_ok($$select atlas_legacy.import_recipe_change_order_history(snapshot,null,null) from changed$$,'22023','SNAPSHOT_IDENTITY_CONFLICT','Reject changed-content snapshot identity');
+select ok(not has_function_privilege('authenticated','atlas_legacy.import_recipe_change_order_history(jsonb,uuid,text)','execute'),'Browser cannot call importer');
+select ok(not has_function_privilege('anon','atlas_legacy.recipe_change_order_history()','execute'),'Anonymous cannot call private read');
+select ok(not has_function_privilege('service_role','atlas_legacy.import_recipe_change_order_history(jsonb,uuid,text)','execute'),'Service role cannot call importer');
+select ok(not has_table_privilege('authenticated','atlas_legacy.import_batches','select'),'Browser has no direct receipt-table access');
+select ok((select relforcerowsecurity from pg_class where oid='atlas_legacy.import_batches'::regclass),'Receipts retain forced RLS');
+set local role atlas_read_runtime;
+select is((select count(*)::integer from jsonb_array_elements(atlas_legacy.recipe_change_order_history()) r where r->>'legacy_id'='9007199254740993'),1,'Read runtime sees imported evidence');
+select is(jsonb_path_query_first(atlas_legacy.recipe_change_order_history(),'$[*] ? (@.legacy_id == "9007199254740993")')->>'quantity','1.000001','Read retains exact decimal text');
+select is(jsonb_path_query_first(atlas_legacy.recipe_change_order_history(),'$[*] ? (@.legacy_id == "9007199254740993")')->>'source_active','false','Inactive remains a source flag');
+select ok(not (jsonb_path_query_first(atlas_legacy.recipe_change_order_history(),'$[*] ? (@.legacy_id == "9007199254740993")') ? 'cancelled_at'),'No fabricated cancellation date');
+select ok(not (jsonb_path_query_first(atlas_legacy.recipe_change_order_history(),'$[*] ? (@.legacy_id == "9007199254740993")') ? 'issued_by_actor_name'),'No fabricated issuer');
+reset role;
+insert into atlas_core.actor_auth_subjects(actor_auth_subject_id,actor_id,auth_subject_id) values('a9110000-0000-0000-0000-000000000010','a9110000-0000-0000-0000-000000000001','a9110000-0000-0000-0000-000000000101');
+insert into atlas_core.roles(role_id,role_code,role_name) values('a9110000-0000-0000-0000-000000000002','recipe-history-test-reader','Recipe history test reader');
+insert into atlas_core.role_capabilities(role_id,capability_id) select 'a9110000-0000-0000-0000-000000000002',capability_id from atlas_core.capabilities where capability_code='master_data.recipe_adjustments.read';
+insert into atlas_core.actor_role_memberships(actor_id,role_id) values('a9110000-0000-0000-0000-000000000001','a9110000-0000-0000-0000-000000000002');
+insert into atlas_core.actor_scopes(actor_id,scope_kind) values('a9110000-0000-0000-0000-000000000001','GLOBAL');
+select set_config('request.jwt.claim.sub','a9110000-0000-0000-0000-000000000101',true);
+select is((select count(*)::integer from jsonb_array_elements(atlas_api.get_recipe_adjustment_operator_workbench(jsonb_build_object('contract_version','RMVP-02B.v2','requested_by_auth_subject','a9110000-0000-0000-0000-000000000101','correlation_id','a9110000-0000-0000-0000-000000000102','payload',jsonb_build_object('as_of_date','2026-11-05')))->'workbench'->'legacy_history') r where r->>'legacy_id'='9007199254740993'),1,'Existing authorized operator read includes source history');
+select set_config('request.jwt.claim.sub','a9110000-0000-0000-0000-000000000999',true);
+select ok(atlas_api.get_recipe_adjustment_operator_workbench(jsonb_build_object('contract_version','RMVP-02B.v2','requested_by_auth_subject','a9110000-0000-0000-0000-000000000999','correlation_id','a9110000-0000-0000-0000-000000000102','payload',jsonb_build_object('as_of_date','2026-11-05')))->'workbench' is null,'Unmapped identity receives no source history');
+-- A later empty snapshot must not erase an observed source identity.
+update evidence set snapshot=jsonb_set(jsonb_set(jsonb_set(snapshot-'snapshot_checksum','{snapshot_id}','"history-later"'),'{exported_at}','"2026-11-06T00:00:00Z"'),'{records}','[]');
+update evidence set snapshot=jsonb_set(snapshot,'{source_counts,system_bom_change_orders}','0');
+update evidence set snapshot=snapshot||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(snapshot));
+update evidence set plan=atlas_legacy.import_recipe_change_order_history(snapshot,null,null)->>'plan_checksum';
+select is((select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',plan)->>'status' from evidence),'IMPORTED','A later source observation imports');
+set local role atlas_read_runtime;
+select is((select count(*)::integer from jsonb_array_elements(atlas_legacy.recipe_change_order_history()) r where r->>'legacy_id'='9007199254740993'),1,'Disappeared source rows remain inspectable');
+reset role;
+select * from finish();
+rollback;
+
+
+
