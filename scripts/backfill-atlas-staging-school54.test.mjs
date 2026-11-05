@@ -25,10 +25,57 @@ function snapshot() {
     snapshot_id: "technical-1",
     exported_at: "2026-11-05T00:00:00Z",
     extractor_version: "a".repeat(40),
-    records: { schools: [] },
+    records: Object.fromEntries(
+      [
+        "customers",
+        "delivery_locations",
+        "dish_types",
+        "dishes",
+        "ingredient_order_groups",
+        "ingredient_types",
+        "ingredients",
+        "recipe_lines",
+        "recipes",
+        "school_types",
+        "schools",
+        "supplier_eligibilities",
+        "suppliers",
+        "units",
+      ].map((key) => [key, []]),
+    ),
+    source_access: {
+      role_name: "supabase_read_only_user",
+      bypass_rls: true,
+      superuser: false,
+      create_role: false,
+      create_db: false,
+      has_required_select: true,
+      has_non_select_privilege: false,
+    },
     source_counts: { schools: 1 },
     source_diagnostics: [],
   };
+  s.complete_entities = Object.keys(s.records).sort();
+  s.records.customers = [
+    { legacy_id: "school:54:customer", customer_name: "School54 full name" },
+  ];
+  s.records.delivery_locations = [
+    {
+      legacy_id: "school:54:delivery-location",
+      address_text: "Explicit source address",
+    },
+  ];
+  s.records.schools = [
+    {
+      legacy_id: "54",
+      school_type_legacy_id: "1",
+      school_name: "TÂN AN HỘI (Mặn 2)",
+    },
+  ];
+  s.records.school_types = [{ legacy_id: "1", school_type_name: "TIỂU HỌC" }];
+  s.records.suppliers = [
+    { legacy_id: "999", supplier_name: "Unselected supplier" },
+  ];
   return { ...s, snapshot_checksum: checksumOpsV1MasterSnapshot(s) };
 }
 const base = () => ({
@@ -66,10 +113,42 @@ describe("School54 bounded prerequisite", () => {
       };
     b.snapshot_checksum = checksumOpsV1MasterSnapshot(b);
     expect(school54ContentChecksum(a)).toBe(school54ContentChecksum(b));
-    b.records = { schools: [{ legacy_id: "54" }] };
+    b.records = structuredClone(b.records);
+    b.records.schools[0].school_name = "Changed selected name";
     b.snapshot_checksum = checksumOpsV1MasterSnapshot(b);
     expect(school54ContentChecksum(a)).not.toBe(school54ContentChecksum(b));
   });
+  it("unselected valid source changes retain the closed checksum", () => {
+    const a = snapshot(),
+      b = snapshot();
+    b.records.suppliers[0].supplier_name = "Changed unrelated supplier";
+    b.source_counts.suppliers = 10;
+    b.snapshot_checksum = checksumOpsV1MasterSnapshot(b);
+    expect(b.snapshot_checksum).not.toBe(a.snapshot_checksum);
+    expect(school54ContentChecksum(b)).toBe(school54ContentChecksum(a));
+  });
+  it.each(["customers", "delivery_locations", "schools", "school_types"])(
+    "selected %s facts change the closed checksum",
+    (entity) => {
+      const a = snapshot(),
+        b = snapshot();
+      b.records[entity][0].additional_normalized_fact = "Changed";
+      b.snapshot_checksum = checksumOpsV1MasterSnapshot(b);
+      expect(school54ContentChecksum(b)).not.toBe(school54ContentChecksum(a));
+    },
+  );
+  it.each(["proof", "envelope", "identity"])(
+    "still rejects invalid complete source %s before narrowing",
+    (failure) => {
+      const s = snapshot();
+      if (failure === "proof") s.source_access.has_non_select_privilege = true;
+      if (failure === "envelope") delete s.records.suppliers;
+      if (failure === "identity")
+        s.records.suppliers.push({ ...s.records.suppliers[0] });
+      s.snapshot_checksum = checksumOpsV1MasterSnapshot(s);
+      expect(() => school54ContentChecksum(s)).toThrow("SNAPSHOT");
+    },
+  );
   it("rejects invalid checksum before target", () => {
     expect(() =>
       school54ContentChecksum({ ...snapshot(), records: {} }),

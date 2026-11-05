@@ -37,6 +37,20 @@ begin
  return roots;
 end $$;
 
+-- Called only after school54_source validates the complete extraction.
+create or replace function pg_temp.school54_content(snapshot jsonb)
+returns text language sql immutable set search_path='' as $$
+select atlas_legacy.master_snapshot_hash(jsonb_build_object(
+ 'contract_version',snapshot->'contract_version','source_system',snapshot->'source_system',
+ 'source_project_ref',snapshot->'source_project_ref','source_access',snapshot->'source_access',
+ 'records',jsonb_build_object(
+  'customers',(select jsonb_agg(value) from jsonb_array_elements(snapshot#>'{records,customers}') where value->>'legacy_id'='school:54:customer'),
+  'delivery_locations',(select jsonb_agg(value) from jsonb_array_elements(snapshot#>'{records,delivery_locations}') where value->>'legacy_id'='school:54:delivery-location'),
+  'schools',(select jsonb_agg(value) from jsonb_array_elements(snapshot#>'{records,schools}') where value->>'legacy_id'='54'),
+  'school_types',(select jsonb_agg(value) from jsonb_array_elements(snapshot#>'{records,school_types}') where value->>'legacy_id'=(select value->>'school_type_legacy_id' from jsonb_array_elements(snapshot#>'{records,schools}') where value->>'legacy_id'='54'))
+ )))
+$$;
+
 create or replace function pg_temp.school54_protected(roots jsonb)
 returns jsonb language plpgsql stable set search_path='' as $$
 declare t record; value jsonb; result jsonb:='{}'; predicate text; k text;
@@ -70,7 +84,7 @@ begin
  if jsonb_array_length(expected_versions)<>138 or expected_versions->>-1 is distinct from '20261105090000' or (select jsonb_agg(version order by version) from supabase_migrations.schema_migrations) is distinct from expected_versions then raise exception 'EXACT_MIGRATION_HISTORY_REQUIRED'; end if;
  if not exists(select 1 from atlas_core.actors where actor_id=actor and actor_type='MIGRATION' and actor_status='ACTIVE' and display_name='Atlas Staging OPS v1 Master Import (GitHub Actions)') or exists(select 1 from atlas_core.actor_auth_subjects where actor_id=actor) then raise exception 'STAGING_IMPORT_ACTOR_REQUIRED'; end if;
  roots:=pg_temp.school54_source(snapshot);
- content_hash:=atlas_legacy.master_snapshot_hash(snapshot-array['snapshot_id','exported_at','extractor_version','snapshot_checksum']);
+ content_hash:=pg_temp.school54_content(snapshot);
  if content_hash is distinct from expected_content_checksum then raise exception 'SOURCE_CONTENT_CHECKSUM_MISMATCH'; end if;
  protected:=pg_temp.school54_protected(roots);
  select * into prior from atlas_legacy.import_batches where source_system='OPS_V1' and snapshot_id='atlas-staging-school54-prerequisite-v1';

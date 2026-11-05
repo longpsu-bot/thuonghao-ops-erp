@@ -2,7 +2,7 @@ begin;
 select no_plan();
 \ir ../packages/atlas-staging-school54.sql
 create function pg_temp.signed(v jsonb) returns jsonb language sql as $$ select (v-'snapshot_checksum')||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(v-'snapshot_checksum')) $$;
-create function pg_temp.content(v jsonb) returns text language sql as $$ select atlas_legacy.master_snapshot_hash(v-array['snapshot_id','exported_at','extractor_version','snapshot_checksum']) $$;
+create function pg_temp.content(v jsonb) returns text language sql as $$ select pg_temp.school54_content(v) $$;
 create function pg_temp.fixture() returns jsonb language plpgsql as $$
 declare records jsonb:='{}';entity text;v jsonb;
 begin
@@ -16,6 +16,7 @@ begin
  'source_counts','{"schools":1}'::jsonb,'source_diagnostics','[]'::jsonb,'source_access','{"role_name":"supabase_read_only_user","bypass_rls":true,"superuser":false,"create_role":false,"create_db":false,"has_required_select":true,"has_non_select_privilege":false}'::jsonb);
  return pg_temp.signed(v);
 end $$;
+create function pg_temp.unselected(v jsonb) returns jsonb language sql as $$ select pg_temp.signed(jsonb_set(v,'{records,suppliers}','[{"legacy_id":"999","supplier_code":"v1-supplier-999","supplier_name":"Changed unrelated supplier","supplier_status":"ACTIVE"}]')) $$;
 create function pg_temp.run(v jsonb, apply_requested boolean default false, checksum text default null) returns jsonb language sql as $$ select pg_temp.run_staging_school54(v,(select jsonb_agg(version order by version) from supabase_migrations.schema_migrations),apply_requested,checksum,pg_temp.content(v)) $$;
 insert into atlas_core.actors(actor_id,actor_type,display_name) values(extensions.uuid_generate_v5('6ab4d3f5-0b6c-5fcb-b589-10d9f3db63c7','atlas-staging-master-import-actor'),'MIGRATION','Atlas Staging OPS v1 Master Import (GitHub Actions)') on conflict do nothing;
 insert into atlas_legacy.import_batches(import_batch_id,source_system,snapshot_id,snapshot_checksum,exported_at,import_status,completed_at,operator_actor_id,execution_database_principal,plan_checksum,snapshot_contract_version,source_counts)
@@ -29,6 +30,14 @@ create temp table before_counts as select (select count(*) from atlas_admin.scho
 create temp table evidence(label text primary key,value jsonb);
 insert into evidence values('protected',pg_temp.school54_protected(pg_temp.school54_source(pg_temp.fixture()))),('preview',pg_temp.run(pg_temp.fixture()));
 select is((select value->>'status' from evidence where label='preview'),'PREVIEW','default preview succeeds');
+-- Independently computed by school54ContentChecksum from this exact normalized fixture.
+select is(pg_temp.content(pg_temp.fixture()),'0bfa922922e06ea09262b06f86f10196ea18128f4059f91b307903d56fefc781','closed content hash matches JavaScript canonicalization');
+select isnt(pg_temp.content(pg_temp.signed(jsonb_set(pg_temp.fixture(),'{records,school_types,0,additional_normalized_fact}','"Changed type fact"'))),pg_temp.content(pg_temp.fixture()),'complete selected SchoolType row participates in source checksum');
+select is(pg_temp.run(pg_temp.signed(jsonb_set(pg_temp.fixture(),'{records,schools,0,display_order}','35')),true,(select value->>'plan_checksum' from evidence where label='preview'))->>'error_code','REVIEWED_PLAN_CHANGED','changed selected School fact invalidates plan');
+select is(pg_temp.run(pg_temp.signed(jsonb_set(pg_temp.fixture(),'{records,delivery_locations,0,address_text}','"Different explicit address"')),true,(select value->>'plan_checksum' from evidence where label='preview'))->>'error_code','REVIEWED_PLAN_CHANGED','changed selected Location fact invalidates plan');
+select is(pg_temp.run(pg_temp.signed(jsonb_set(pg_temp.fixture(),'{records,suppliers}','[{"legacy_id":"999"},{"legacy_id":"999"}]')))->>'error_code','SOURCE_IDENTITIES_INVALID','duplicate unselected identities invalidate complete source before narrowing');
+select is(pg_temp.run(jsonb_set(pg_temp.fixture(),'{source_counts,schools}','2'))->>'error_code','SNAPSHOT_CHECKSUM_MISMATCH','outer full snapshot checksum still binds unselected metadata');
+
 savepoint readonly_preview;
 set local transaction_read_only=on;
 select pg_temp.run(pg_temp.fixture())->>'status' as readonly_status \gset
@@ -38,6 +47,7 @@ select is((select value->>'create_count' from evidence where label='preview'),'3
 select is((select count(*) from atlas_admin.schools),(select schools from before_counts),'preview has no School writes');
 select is((select count(*) from atlas_legacy.import_batches),(select receipts from before_counts),'preview has no receipt writes');
 select is(pg_temp.run(pg_temp.signed(pg_temp.fixture()||'{"snapshot_id":"fresh-extraction","exported_at":"2026-11-05T02:00:00Z","extractor_version":"fresh-sha"}')) ->>'plan_checksum',(select value->>'plan_checksum' from evidence where label='preview'),'technical extraction identity does not change reviewed plan');
+select is(pg_temp.run(pg_temp.unselected(pg_temp.fixture()))->>'plan_checksum',(select value->>'plan_checksum' from evidence where label='preview'),'valid unselected source record does not change closed plan');
 select is(pg_temp.run(pg_temp.signed(jsonb_set(pg_temp.fixture(),'{source_access,has_non_select_privilege}','true')))->>'error_code','SOURCE_NOT_PROVEN_READ_ONLY','source writable role is rejected');
 select is(pg_temp.run(pg_temp.signed(jsonb_set(pg_temp.fixture(),'{records,schools,0,school_name}','"Different"')))->>'error_code','SCHOOL54_SOURCE_IDENTITY_DRIFT','identity name drift rejected');
 select is(pg_temp.run(pg_temp.signed(jsonb_set(pg_temp.fixture(),'{records,delivery_locations}','[]')))->>'error_code','SCHOOL54_SOURCE_CLOSURE_REQUIRED','missing Location blocks closure');
@@ -67,8 +77,11 @@ select is((select count(*) from atlas_admin.delivery_locations),(select location
 select is((select count(*) from atlas_legacy.master_data_mappings),(select mappings from before_counts),'late failure rolls back typed mappings');
 select is((select count(*) from atlas_legacy.import_batches),(select receipts from before_counts),'late failure rolls back receipt');
 drop trigger school54_atomic_test on atlas_admin.schools;
-insert into evidence values('applied',pg_temp.run(pg_temp.fixture(),true,(select value->>'plan_checksum' from evidence where label='preview')));
+insert into evidence values('applied',pg_temp.run(pg_temp.unselected(pg_temp.fixture()),true,(select value->>'plan_checksum' from evidence where label='preview')));
 select is((select value->>'status' from evidence where label='applied'),'APPLIED','exact reviewed plan applies');
+select is((select reconciliation->>'source_snapshot_checksum' from atlas_legacy.import_batches where snapshot_id='atlas-staging-school54-prerequisite-v1'),pg_temp.unselected(pg_temp.fixture())->>'snapshot_checksum','receipt retains exact full applied extraction checksum');
+select is((select count(*) from atlas_admin.suppliers where supplier_code='v1-supplier-999'),0::bigint,'unselected source supplier is never materialized');
+
 select is((select count(*) from atlas_admin.schools),(select schools+1 from before_counts),'only one School added');
 select is((select count(*) from atlas_admin.customers),(select customers+1 from before_counts),'only one Customer added');
 select is((select count(*) from atlas_admin.delivery_locations),(select locations+1 from before_counts),'only one Location added');

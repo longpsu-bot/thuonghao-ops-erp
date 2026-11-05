@@ -12,11 +12,20 @@ Frontend41990276383 and executed Full41990276428 also passed. Staging deploy
 records including17 inactive, with exact readback/replay and117 protected tables
 unchanged; native adjustments/revisions remain3/3.
 
-Current branch `fix/atlas-school54-weekday-prerequisite` starts clean from that
-main. Weekday preview41993048837 stopped before any School command because
+School54 prerequisite #454 subsequently merged as `a57a892b`; exact-main
+Frontend41998777270 passed and Full41998777095 passed on attempt2 after an
+initial disposable PostgREST cache-startup503. No checks or limits changed.
+Current branch `fix/school54-closed-source-plan` starts clean from that main.
+Weekday preview41993048837 stopped before any School command because
 configured School54 has no Atlas mapping. The earlier unconfigured claim was
 an observation error. Execute only the [bounded three-root prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md),
 then rerun weekday preview/apply and finally the eight-name correction.
+School54 previews42003197238/42004344627 passed, but applies42003734495/42005054822
+were rejected before writes when complete source checksums differed. The exact
+School54 facts remained unchanged; all three roots and receipt remain absent.
+Correct only the reviewed source hash to its exact normalized dependency closure,
+keeping complete source validation and all target preservation guards. Do not
+loop Apply or refresh unrelated masters.
 The [spec](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md),
 [plan](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md),
 [comparison](../testing/atlas-v1-parity-2026-11-05.md) and

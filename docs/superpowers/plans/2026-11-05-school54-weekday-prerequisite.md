@@ -39,3 +39,22 @@ Supplier cancellation, Warehouse, or invented attribution/business facts.
    eight-name correction LAST. Retain history603/inactive17/native3+3 evidence.
 5. Publish actual execution evidence and the remaining scoped BOM/pilot gates.
    Recovery preserves roots/receipts and uses reviewed forward correction.
+
+## Closed source plan correction
+
+Two hosted Apply attempts were rejected before writes as complete master content
+checksums differed between runs. School54's materialized facts remained identical;
+the hash differences alone do not establish a specific source-row mutation.
+No prerequisite root or receipt was created.
+
+Keep complete immutable extraction/checksum/envelope/identity/read-only validation,
+but bind the reviewed source content identity to the exact normalized Customer,
+Delivery Location, School54 and required SchoolType records. Unselected masters
+cannot affect these three CREATE actions. Preserve the complete extraction
+checksum/identity in the receipt as technical evidence. Keep every target
+fingerprint, migration/Actor/certification/collision/freshness guard unchanged.
+
+Tests must show that an unrelated source record change retains the plan, while
+changes to any materialized fact/dependency, invalid complete source proof and
+any protected target drift still reject. Independently review this correction,
+then repeat normal exact-head and exact-main CI before a fresh hosted Preview.
