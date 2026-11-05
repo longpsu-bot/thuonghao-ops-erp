@@ -25,9 +25,12 @@ Only Schools with at least one non-null weekday value are configured. Exactly
 34 must be present, active and uniquely mapped to an existing active Atlas
 School by `school_code = v1-school-<source-id>`. Missing, ambiguous, inactive or
 duplicate identities block the run. This count is deliberately pinned to the
-reviewed date scope; changed source scope requires another review. Unconfigured
-School 54 is excluded and is not created. Other unconfigured Schools retain
-their current defaults and weekday facts.
+reviewed date scope; changed source scope requires another review. School 54 is
+configured in the original source evidence but was initially absent from Atlas.
+The first hosted preview stopped before any School command. The separately
+reviewed [School 54 prerequisite](staging-school54-prerequisite.md) creates only
+its required identities; this sync never creates a School or skips a missing
+mapping. Other unconfigured Schools retain their defaults and weekday facts.
 
 The source object replaces the configured School's complete weekday object;
 null source fields therefore use the target's existing general default rather

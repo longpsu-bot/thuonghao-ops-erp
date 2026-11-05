@@ -7,11 +7,18 @@ This section supersedes the dated queue/deferred status below only for the
 The Owner requested all listed parity work except Supplier cancellation;
 Warehouse remains paused. Source OPS v1 and Production remain NO-WRITE.
 
-- Recipe history #452 is merged as `5a0b8f77`; its exact-main Frontend and
-  executed Full Integration passed. Hosted archive application is a separate gate.
-- Weekday School defaults and Attendance XLSX are implemented on the bounded
-  parity branch and independently reviewed; source sync, exact-head release and
-  hosted readback remain separately tracked.
+- Recipe history #452 and parity #453 are merged. Exact main `539ae033` passed
+  Frontend41990276383 and executed Full41990276428; Staging deployment41992370968
+  installed138 migrations. Archive apply41992825322 retained603 records/17inactive,
+  matched all603 on readback and replayed the same receipt. All117 protected
+  tables and native adjustments/revisions3/3 stayed unchanged.
+- Weekday School defaults and Attendance XLSX are implemented and independently
+  reviewed. Weekday preview41993048837 stopped before any command because
+  configured source School54 lacks its Atlas mapping. The original evidence
+  already contained its weekday settings; the earlier unconfigured claim was
+  wrong. Complete only the [three-root prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md),
+  then rerun governed weekday sync and hosted readback. No full master refresh
+  or other School/Dish correction is included.
 - Existing multi-day Shopping List was already merged through #367; the old
   deferral below is stale. Ninety focused daily-range checks pass.
 - Reuse only the compatible eight-name correction package from Draft #445,

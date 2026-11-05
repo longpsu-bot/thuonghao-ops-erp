@@ -5,17 +5,26 @@
 **Task:** ATLAS-V1-PARITY-CLOSEOUT — Owner requests execution of the identified
 parity gaps except Supplier commitment/PO cancellation. Warehouse stays paused.
 
-Canonical checkout `E:/Project/OPS ERP/thuonghao-ops-erp`, branch
-`feat/atlas-v1-parity-closeout`, clean task start from `5a0b8f77` after reviewed
-Recipe history #452 merged and exact-main Frontend/executed Full passed.
+Canonical checkout `E:/Project/OPS ERP/thuonghao-ops-erp`. PR453 merged as
+`539ae033` after independent review and passing exact-head CI; exact merged-main
+Frontend41990276383 and executed Full41990276428 also passed. Staging deploy
+41992370968 installed all138 migrations. Archive apply41992825322 imported603
+records including17 inactive, with exact readback/replay and117 protected tables
+unchanged; native adjustments/revisions remain3/3.
+
+Current branch `fix/atlas-school54-weekday-prerequisite` starts clean from that
+main. Weekday preview41993048837 stopped before any School command because
+configured School54 has no Atlas mapping. The earlier unconfigured claim was
+an observation error. Execute only the [bounded three-root prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md),
+then rerun weekday preview/apply and finally the eight-name correction.
 The [spec](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md),
 [plan](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md),
 [comparison](../testing/atlas-v1-parity-2026-11-05.md) and
 [pilot packet](../runbooks/atlas-staff-pilot.md) govern this bounded horizon.
 
 Weekday defaults and Attendance XLSX implementation/focused checks/independent
-review are complete; guarded hosting/correction/source-sync and final release
-gates remain. Existing daily Shopping List range already works and is verified.
+review are complete; the School54 prerequisite, weekday sync and eight-name
+correction remain. Existing daily Shopping List range already works and is verified.
 No new lifecycle, dependency, public RPC, Warehouse, Supplier cancellation or
 Production write is allowed. Do not wholesale integrate unrelated Drafts.
 

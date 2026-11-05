@@ -60,9 +60,14 @@ This report contains no raw source rows.
   were freshly confirmed; all eight target versions are 2. The reused bounded
   correction pins complete 138-migration authority ending `20261105090000`;
   source confirmation is not an apply claim.
-- Source has 50 Schools, 34 active configured weekday Schools, all 34 mapped.
-  Atlas has 49 mapped Schools. New active source School54 is unconfigured and
-  is not created by weekday sync. Null remains missing; zero is explicit.
+- Source has 50 Schools and 34 active configured weekday Schools. Initial Atlas
+  has 49 mapped Schools plus one native fixture; 33 configured Schools are
+  mapped, and configured School54 is missing. The earlier claim that all 34
+  were mapped and School54 was unconfigured was an observation error: the
+  original private source already contains its 370/20 Monday-Friday overrides.
+  Hosted preview41993048837 correctly stopped before any School command. The
+  bounded prerequisite creates only School54 and its Customer/Delivery Location;
+  weekday sync retains its no-creation guard. Null remains missing; zero is explicit.
 - All 43 source Suppliers have empty `contact_details`. No address is
   recoverable from it. Cooking-group evidence and Recipe3529's kitchen answer
   remain unavailable; do not infer them from names or delivery addresses.
