@@ -1,17 +1,25 @@
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
-import type { SchoolMasterData } from "../bridges/schoolMasterData";
+import type {
+  SchoolMasterData,
+  WeekdayPortionDefaults,
+} from "../bridges/schoolMasterData";
 
 export const MAX_PORTION_COUNT = 2_147_483_647;
 
 export type SchoolDefaultsDraft = {
   student: string;
   teacher: string;
+  weekdays?: Partial<Record<Weekday, { student: string; teacher: string }>>;
 };
+
+export const SCHOOL_WEEKDAYS = ["1", "2", "3", "4", "5"] as const;
+export type Weekday = (typeof SCHOOL_WEEKDAYS)[number];
 
 export type SchoolDefaultsDrafts = Record<string, SchoolDefaultsDraft>;
 
 export type SchoolDefaultsReviewRow = {
+  new_weekday_portion_defaults?: WeekdayPortionDefaults;
   school_id: string;
   school_code: string;
   school_name: string;
@@ -37,8 +45,74 @@ function draftMatchesAuthority(
 ) {
   return (
     parsePortionDraft(draft.student) === school.default_student_portions &&
-    parsePortionDraft(draft.teacher) === school.default_teacher_portions
+    parsePortionDraft(draft.teacher) === school.default_teacher_portions &&
+    (!draft.weekdays ||
+      JSON.stringify(parseWeekdays(draft)) ===
+        JSON.stringify(
+          parseWeekdays({
+            student: "",
+            teacher: "",
+            weekdays: schoolWeekdayDrafts(school),
+          }),
+        ))
   );
+}
+
+export function schoolWeekdayDrafts(school: SchoolMasterData) {
+  return Object.fromEntries(
+    SCHOOL_WEEKDAYS.map((day) => [
+      day,
+      {
+        student: String(
+          school.weekday_portion_defaults?.[day]?.student_portions ?? "",
+        ),
+        teacher: String(
+          school.weekday_portion_defaults?.[day]?.teacher_portions ?? "",
+        ),
+      },
+    ]),
+  ) as Record<Weekday, { student: string; teacher: string }>;
+}
+
+function parseWeekdays(
+  draft: SchoolDefaultsDraft,
+): WeekdayPortionDefaults | null {
+  const result: WeekdayPortionDefaults = {};
+  for (const day of SCHOOL_WEEKDAYS) {
+    const values = draft.weekdays?.[day];
+    if (!values) continue;
+    const portions: { student_portions?: number; teacher_portions?: number } =
+      {};
+    for (const field of ["student", "teacher"] as const) {
+      if (!values[field].trim()) continue;
+      const count = parsePortionDraft(values[field]);
+      if (count === null) return null;
+      portions[`${field}_portions`] = count;
+    }
+    if (Object.keys(portions).length) result[day] = portions;
+  }
+  return result;
+}
+
+export function applySchoolWeekdayDraftEdit(
+  drafts: SchoolDefaultsDrafts,
+  school: SchoolMasterData,
+  day: Weekday,
+  field: "student" | "teacher",
+  value: string,
+): SchoolDefaultsDrafts {
+  const current = drafts[school.school_id] ?? {
+    student: String(school.default_student_portions),
+    teacher: String(school.default_teacher_portions),
+  };
+  const weekdays = current.weekdays ?? schoolWeekdayDrafts(school);
+  const draft = {
+    ...current,
+    weekdays: { ...weekdays, [day]: { ...weekdays[day], [field]: value } },
+  };
+  const next = { ...drafts, [school.school_id]: draft };
+  if (draftMatchesAuthority(draft, school)) delete next[school.school_id];
+  return next;
 }
 
 export function reconcileSchoolDrafts(
@@ -79,7 +153,8 @@ export function countInvalidDraftSchools(drafts: SchoolDefaultsDrafts) {
   return Object.values(drafts).filter(
     (draft) =>
       parsePortionDraft(draft.student) === null ||
-      parsePortionDraft(draft.teacher) === null,
+      parsePortionDraft(draft.teacher) === null ||
+      parseWeekdays(draft) === null,
   ).length;
 }
 
@@ -127,8 +202,10 @@ export function createSchoolDefaultsReview(
     if (!draft) continue;
     const student = parsePortionDraft(draft.student);
     const teacher = parsePortionDraft(draft.teacher);
-    if (student === null || teacher === null) return null;
+    const weekdays = parseWeekdays(draft);
+    if (student === null || teacher === null || weekdays === null) return null;
     rows.push({
+      ...(draft.weekdays ? { new_weekday_portion_defaults: weekdays } : {}),
       school_id: school.school_id,
       school_code: school.school_code,
       school_name: school.school_name,

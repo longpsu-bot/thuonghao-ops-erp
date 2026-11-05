@@ -135,65 +135,68 @@ describe("Planning input model", () => {
     ).toMatch(/Thời gian trên thiết bị/);
   });
 
-  it("uses persisted Attendance for matching pairs and defaults only for missing pairs", () => {
-    const defaults = [
-      {
-        school_id: "school-a",
-        service_date: "2026-08-03",
-        student_portions: 500,
-        teacher_portions: 20,
-        source_row_reference: null,
-      },
-      {
-        school_id: "school-b",
-        service_date: "2026-08-03",
-        student_portions: 400,
-        teacher_portions: 15,
-        source_row_reference: null,
-      },
-    ];
-    const working = attendanceWorkingRows(
-      {
-        attendance_batch_id: "attendance",
-        period_start: "2026-08-03",
-        period_end: "2026-08-09",
-        source_type: "MANUAL",
-        source_name: "Atlas",
-        source_signature: "signature",
-        attendance_status: "DRAFT",
-        row_count: 1,
-        version: 1,
-        latest_approved_at: null,
-        latest_approval_snapshot_id: null,
-        lines: [
-          {
-            school_id: "school-a",
-            service_date: "2026-08-03",
-            student_portions: 0,
-            teacher_portions: 18,
-            source_row_reference: null,
-          },
-        ],
-        issues: { blockers: [], warnings: [] },
-        change_history: [],
-        approval_history: [],
-      },
-      defaults,
-    );
+  it.each(["DRAFT", "APPROVED"] as const)(
+    "uses persisted %s Attendance zero over weekday-derived defaults",
+    (status) => {
+      const defaults = [
+        {
+          school_id: "school-a",
+          service_date: "2026-08-03",
+          student_portions: 500,
+          teacher_portions: 20,
+          source_row_reference: null,
+        },
+        {
+          school_id: "school-b",
+          service_date: "2026-08-03",
+          student_portions: 400,
+          teacher_portions: 15,
+          source_row_reference: null,
+        },
+      ];
+      const working = attendanceWorkingRows(
+        {
+          attendance_batch_id: "attendance",
+          period_start: "2026-08-03",
+          period_end: "2026-08-09",
+          source_type: "MANUAL",
+          source_name: "Atlas",
+          source_signature: "signature",
+          attendance_status: status,
+          row_count: 1,
+          version: 1,
+          latest_approved_at: null,
+          latest_approval_snapshot_id: null,
+          lines: [
+            {
+              school_id: "school-a",
+              service_date: "2026-08-03",
+              student_portions: 0,
+              teacher_portions: 18,
+              source_row_reference: null,
+            },
+          ],
+          issues: { blockers: [], warnings: [] },
+          change_history: [],
+          approval_history: [],
+        },
+        defaults,
+      );
 
-    expect(working).toEqual([
-      expect.objectContaining({
-        school_id: "school-a",
-        student_portions: 0,
-        teacher_portions: 18,
-      }),
-      expect.objectContaining({
-        school_id: "school-b",
-        student_portions: 400,
-        teacher_portions: 15,
-      }),
-    ]);
-  });
+      expect(working).toEqual([
+        expect.objectContaining({
+          school_id: "school-a",
+          student_portions: 0,
+          teacher_portions: 18,
+        }),
+        expect.objectContaining({
+          school_id: "school-b",
+          student_portions: 400,
+          teacher_portions: 15,
+        }),
+      ]);
+    },
+  );
 
   it("requires confirmation only when a displayed default pair is not persisted", () => {
     const defaults = [

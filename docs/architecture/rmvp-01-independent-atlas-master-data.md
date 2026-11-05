@@ -35,7 +35,50 @@ The retired `atlas_command_runtime` retains zero Atlas privilege. `anon` and `se
 
 UI-QUALITY-03C-A adds `atlas_api.update_school_portion_defaults_bulk(request jsonb)` as `RMVP-01.v2`. One request contains only changed Schools, with each row carrying its own `school_id`, `expected_version`, `default_student_portions`, and `default_teacher_portions`. PostgreSQL validates and authorizes the complete request, locks every School in stable identity order, checks every version, and then updates all rows or none. One operator Save creates one command receipt and one existing `SchoolPortionDefaultsUpdated` domain/audit record per changed School under the same command and correlation context.
 
-The original `atlas_api.update_school_portion_defaults(request jsonb)` remains unchanged and callable as `RMVP-01.v1`. The bulk command reuses `master_data.schools.write`, `atlas_master_data_command_runtime`, the existing School relations, receipt/idempotency infrastructure, and RMVP-01 change-recording machinery. It adds no table, private relation, capability, role, scope kind, policy family, trigger, batch aggregate, or read API.
+The original `atlas_api.update_school_portion_defaults(request jsonb)` remains callable as `RMVP-01.v1`. The bulk command reuses `master_data.schools.write`, `atlas_master_data_command_runtime`, the existing School relations, receipt/idempotency infrastructure, and RMVP-01 change-recording machinery. It adds no table, private relation, capability, role, scope kind, policy family, trigger, batch aggregate, or read API.
+
+### Weekday attendance defaults amendment — 5 November 2026
+
+The School aggregate additively owns `weekday_portion_defaults`, a JSON object
+keyed only by ISO weekdays `"1"` through `"5"` (Monday–Friday). Each day contains
+optional `student_portions` and `teacher_portions`. Present counts must be JSON
+numbers representing integers from 0 through 2147483647; strings, nulls,
+fractions, negative values, unsupported days and unknown portion keys are
+rejected. For example, `{"1":{"student_portions":0},"5":{"teacher_portions":12}}`
+sets Monday students to zero and Friday teachers to twelve. Missing days or
+portion fields use the corresponding existing School default. Weekends retain
+the existing fallback behavior.
+
+Both existing single and bulk default commands accept the optional object in
+the same payload as their existing counts. Omission preserves current weekday
+overrides; `{}` clears all overrides. A supplied object replaces the complete
+weekday object for that School. The bulk command still requires an actual
+change, and a weekday-only change qualifies. Commands retain School versions,
+capability/scope checks, receipts, exact replay, stable locking and existing
+`SchoolPortionDefaultsUpdated` events; before/after facts include the weekday
+object. A failure in any School rejects the whole bulk Save.
+
+The shaped School master read and Planning School read return the object.
+The vNext School editor reveals Monday–Friday fields per School, with blank
+meaning fallback and zero meaning an explicit count. Its existing Save,
+dirty-state, stale-version, UNKNOWN and authoritative readback guards also cover
+weekday edits. Existing callers that omit weekday data remain valid.
+
+Migration `20261105090000_atlas_weekday_attendance_defaults.sql` adds one
+non-null School column with an empty-object default and an immutable private
+constraint validator. It grants only the new column's UPDATE to the existing
+School command runtime; browser roles cannot execute the validator or access
+private tables. School importers that name existing columns preserve weekday
+overrides on update and default new Schools to `{}`. This amendment does not
+extract or seed OPS v1 weekday arrays. A separately reviewed source-backed load
+must map array positions Monday–Friday to keys 1–5, preserve null as missing and
+zero as explicit, and use governed School versions/commands.
+
+Rollback is forward-only: deploy a corrected migration if needed. Do not drop
+the column or erase explicit weekday facts to roll back UI code. Reverting the
+UI leaves existing optional command callers and persisted facts compatible;
+Attendance batches, approval snapshots and operational quantities are never
+recalculated by a School-default update.
 
 ### Authoritative Ingredient classification compatibility
 

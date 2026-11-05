@@ -14,6 +14,8 @@ import {
 } from "../bridges/schoolMasterData";
 import {
   applySchoolDraftEdit,
+  applySchoolWeekdayDraftEdit,
+  type Weekday,
   countInvalidDraftSchools,
   createSchoolDefaultsReview,
   filterAndOrderSchools,
@@ -351,6 +353,9 @@ export function useSchoolDefaultsWorkbench({
       expected_version: row.expected_version,
       default_student_portions: row.new_student_portions,
       default_teacher_portions: row.new_teacher_portions,
+      ...(row.new_weekday_portion_defaults
+        ? { weekday_portion_defaults: row.new_weekday_portion_defaults }
+        : {}),
     }));
     setSaving(true);
     setNotice(null);
@@ -799,6 +804,17 @@ export function useSchoolDefaultsWorkbench({
     lock,
     notice,
     edit,
+    editWeekday: (
+      school: SchoolMasterData,
+      day: Weekday,
+      field: "student" | "teacher",
+      value: string,
+    ) => {
+      setNotice(null);
+      setDrafts((current) =>
+        applySchoolWeekdayDraftEdit(current, school, day, field, value),
+      );
+    },
     refresh,
     save,
   };

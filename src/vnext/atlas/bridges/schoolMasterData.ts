@@ -30,5 +30,6 @@ export {
   resultMessage,
   schoolDefaultsBulkCommandRequest,
   type SchoolMasterData,
+  type WeekdayPortionDefaults,
 } from "../../../modules/atlas/master-data/masterDataModel";
 export type { AtlasRpcResult } from "../../../modules/atlas/connection/atlasRpc";

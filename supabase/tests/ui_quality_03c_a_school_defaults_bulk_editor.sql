@@ -487,12 +487,14 @@ select is(
     jsonb_build_object(
       'school_id', 'c3200000-0000-0000-0000-000000000011',
       'version', 2,
+      'weekday_portion_defaults', '{}'::jsonb,
       'default_student_portions', 120,
       'default_teacher_portions', 10
     ),
     jsonb_build_object(
       'school_id', 'c3200000-0000-0000-0000-000000000012',
       'version', 2,
+      'weekday_portion_defaults', '{}'::jsonb,
       'default_student_portions', 200,
       'default_teacher_portions', 25
     )

@@ -80,6 +80,14 @@ export const schoolDefaultsFixtureSchools: SchoolMasterData[] =
       display_order: number,
       default_student_portions: 280 + ((index * 37) % 520),
       default_teacher_portions: 18 + ((index * 5) % 42),
+      ...(index === 0
+        ? {
+            weekday_portion_defaults: {
+              "1": { student_portions: 0 },
+              "5": { teacher_portions: 12 },
+            },
+          }
+        : {}),
       school_type_id: `review-school-type-${type.toLowerCase().replaceAll(" ", "-")}`,
       school_type_name: type,
       customer_id: `review-customer-${Math.floor(index / 4) + 1}`,

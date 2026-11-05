@@ -107,6 +107,45 @@ const teacher = (name = "Trường Trung học Beta") =>
   screen.getByLabelText(`Giáo viên mặc định — ${name}`);
 
 describe("Chakra School default portions workbench", () => {
+  it("edits weekday zero, saves with the School version and reads it back", async () => {
+    const initial = schools.map((school) => ({
+      ...school,
+      weekday_portion_defaults: { "1": { student_portions: 90 } },
+    }));
+    const updated = initial.map((school) =>
+      school.school_id === "school-2"
+        ? {
+            ...school,
+            version: 8,
+            weekday_portion_defaults: { "1": { student_portions: 0 } },
+          }
+        : school,
+    );
+    const connected = apiWith({ reads: [success(initial), success(updated)] });
+    await renderReady(connected.api);
+    const input = screen.getByLabelText(
+      "Học sinh Thứ 2 — Trường Trung học Beta",
+    );
+    expect(input).toHaveValue("90");
+    fireEvent.change(input, { target: { value: "0" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
+    await waitFor(() =>
+      expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalled(),
+    );
+    expect(
+      connected.updateSchoolDefaultsBulk.mock.calls[0][0].payload.changes,
+    ).toEqual([
+      {
+        school_id: "school-2",
+        expected_version: 7,
+        default_student_portions: 840,
+        default_teacher_portions: 45,
+        weekday_portion_defaults: { "1": { student_portions: 0 } },
+      },
+    ]);
+    await waitFor(() => expect(input).toHaveValue("0"));
+    expect(screen.getByRole("button", { name: "Lưu sĩ số" })).toBeDisabled();
+  });
   it("uses the shared task context for the active School job and authoritative counts", async () => {
     await renderReady(apiWith().api);
 

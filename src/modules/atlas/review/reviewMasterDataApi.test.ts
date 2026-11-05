@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   commandRequest,
+  schoolDefaultsBulkCommandRequest,
   responseArray,
   type IngredientMasterData,
   type CookingGroupMasterData,
@@ -13,6 +14,38 @@ import {
 import { createReviewMasterDataApi } from "./reviewMasterDataApi";
 
 describe("review-only master-data adapter", () => {
+  it("reads back weekday zero and preserves overrides for an old default-only caller", async () => {
+    const api = createReviewMasterDataApi();
+    const school = responseArray<SchoolMasterData>(
+      await api.getSchools("reviewer", "review"),
+      "schools",
+    )![0];
+    await api.updateSchoolDefaultsBulk(
+      schoolDefaultsBulkCommandRequest("reviewer", "review", [
+        {
+          school_id: school.school_id,
+          expected_version: school.version,
+          default_student_portions: school.default_student_portions,
+          default_teacher_portions: school.default_teacher_portions,
+          weekday_portion_defaults: { "1": { student_portions: 0 } },
+        },
+      ]),
+    );
+    await api.updateSchoolDefaults(
+      commandRequest("reviewer", "review", school.version + 1, "UPDATE", {
+        school_id: school.school_id,
+        default_student_portions: 99,
+        default_teacher_portions: 10,
+      }),
+    );
+    const current = responseArray<SchoolMasterData>(
+      await api.getSchools("reviewer", "review"),
+      "schools",
+    )![0];
+    expect(current.weekday_portion_defaults).toEqual({
+      "1": { student_portions: 0 },
+    });
+  });
   it.each([
     "v1-ingredient-1082",
     "V1-SUPPLIER-53",

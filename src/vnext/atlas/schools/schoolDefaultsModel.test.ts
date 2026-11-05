@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SchoolMasterData } from "../bridges/schoolMasterData";
 import {
   applySchoolDraftEdit,
+  applySchoolWeekdayDraftEdit,
   countHiddenDraftSchools,
   countInvalidDraftSchools,
   createSchoolDefaultsReview,
@@ -55,6 +56,51 @@ const schools: SchoolMasterData[] = [
 ];
 
 describe("School default portion model", () => {
+  it("keeps weekday zero explicit, blank as fallback, and validates weekday drafts", () => {
+    const school = {
+      ...schools[0],
+      weekday_portion_defaults: { "1": { student_portions: 90 } },
+    };
+    const changed = applySchoolWeekdayDraftEdit(
+      {},
+      school,
+      "1",
+      "student",
+      "0",
+    );
+    expect(
+      createSchoolDefaultsReview([school], changed)?.[0]
+        .new_weekday_portion_defaults,
+    ).toEqual({ "1": { student_portions: 0 } });
+    const cleared = applySchoolWeekdayDraftEdit(
+      changed,
+      school,
+      "1",
+      "student",
+      "",
+    );
+    expect(
+      createSchoolDefaultsReview([school], cleared)?.[0]
+        .new_weekday_portion_defaults,
+    ).toEqual({});
+    const invalid = applySchoolWeekdayDraftEdit(
+      changed,
+      school,
+      "5",
+      "teacher",
+      "-1",
+    );
+    expect(countInvalidDraftSchools(invalid)).toBe(1);
+    expect(createSchoolDefaultsReview([school], invalid)).toBeNull();
+    expect(
+      reconcileSchoolDrafts(changed, [
+        {
+          ...school,
+          weekday_portion_defaults: { "1": { student_portions: 0 } },
+        },
+      ]),
+    ).toEqual({});
+  });
   it.each([
     ["0", 0],
     ["2147483647", 2_147_483_647],
