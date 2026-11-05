@@ -18,6 +18,16 @@ large BOM differences need separately bounded correction/adoption, not automatic
 activation of archived rules. Unrestricted staff pilot remains gated by actual
 scoped parity and named staff/School/week. No unrelated task follows this horizon.
 
+PR453 is merged and exact-main CI/Staging migration deployment passed. Recipe
+history603/17inactive was imported and replayed without native changes. The
+first weekday preview correctly stopped before writes: configured School54 is
+missing in Atlas. The prior unconfigured claim was an observation error, not
+source drift. The [bounded prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md)
+may create only School54 and its required Customer/Delivery Location through
+the controlled importer. Preserve all existing rows and mappings. Then resume
+weekday sync and run the eight-name correction last. No full master refresh,
+new Dish import or native BOM adoption is opened by this prerequisite.
+
 **Current checkpoint:** 29 October 2026 (Asia/Bangkok).
 
 **Status:** IN_REVIEW — Atlas hierarchy implementation/local evidence delivered; PR/latest-head CI and final Product/architecture review remain. Core-data work remains complete and Warehouse Receiving remains paused.
