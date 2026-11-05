@@ -87,3 +87,10 @@ exception while still rejecting importer execution, receipt writes, mapping
 access and all direct browser grants. Added a real RLS isolation check against
 an unrelated private receipt. Six focused master/Recipe/catalog pgTAP files now
 pass 247 checks; no runtime implementation changed for this correction.
+
+The next Integration run exposed one remaining cross-module total-policy pin in
+the Pantry suite. Exhaustive search of legacy totals/digests found only this
+remaining stale expectation: all policies are now 691 (690 normal plus the
+unchanged isolated Unit-lock policy). Updated that exact total, retaining every
+named-policy assertion. The 144 Pantry checks plus 33 history and 32 catalog
+checks pass; no Pantry behavior or runtime code changed.
