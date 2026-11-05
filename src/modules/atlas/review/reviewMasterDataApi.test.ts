@@ -14,6 +14,59 @@ import {
 import { createReviewMasterDataApi } from "./reviewMasterDataApi";
 
 describe("review-only master-data adapter", () => {
+  it("single default commands set, preserve omitted, and clear weekday overrides", async () => {
+    const api = createReviewMasterDataApi();
+    let school = responseArray<SchoolMasterData>(
+      await api.getSchools("reviewer", "review"),
+      "schools",
+    )![0];
+    for (const weekdayDefaults of [
+      { "1": { student_portions: 0 } },
+      undefined,
+      {},
+    ]) {
+      const result = await api.updateSchoolDefaults(
+        commandRequest("reviewer", "review", school.version, "UPDATE", {
+          school_id: school.school_id,
+          default_student_portions: 99,
+          default_teacher_portions: 10,
+          ...(weekdayDefaults
+            ? { weekday_portion_defaults: weekdayDefaults }
+            : {}),
+        }),
+      );
+      expect(result.kind).toBe("success");
+      school = responseArray<SchoolMasterData>(
+        await api.getSchools("reviewer", "review"),
+        "schools",
+      )![0];
+      expect(school.weekday_portion_defaults).toEqual(
+        weekdayDefaults ?? { "1": { student_portions: 0 } },
+      );
+    }
+  });
+  it("Cooking Group commands never write unrelated weekday defaults", async () => {
+    const api = createReviewMasterDataApi();
+    const school = responseArray<SchoolMasterData>(
+      await api.getSchools("reviewer", "review"),
+      "schools",
+    )![0];
+    const result = await api.setSchoolCookingGroup(
+      commandRequest("reviewer", "review", school.version, "COOKING", {
+        school_id: school.school_id,
+        cooking_group_id: null,
+        weekday_portion_defaults: { "1": { student_portions: 0 } },
+      }),
+    );
+    expect(result.kind).toBe("success");
+    const current = responseArray<SchoolMasterData>(
+      await api.getSchools("reviewer", "review"),
+      "schools",
+    )![0];
+    expect(current.weekday_portion_defaults).toEqual(
+      school.weekday_portion_defaults,
+    );
+  });
   it("reads back weekday zero and preserves overrides for an old default-only caller", async () => {
     const api = createReviewMasterDataApi();
     const school = responseArray<SchoolMasterData>(

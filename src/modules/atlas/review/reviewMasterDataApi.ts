@@ -567,13 +567,6 @@ export function createReviewMasterDataApi(
         return Promise.resolve(backendError("STALE_VERSION"));
       schools[index] = {
         ...schools[index],
-        ...(request.payload.weekday_portion_defaults
-          ? {
-              weekday_portion_defaults: clone(
-                request.payload.weekday_portion_defaults,
-              ) as WeekdayPortionDefaults,
-            }
-          : {}),
         cooking_location_id: group?.cooking_group_id ?? null,
         cooking_location_name: group?.cooking_group_name ?? null,
         cooking_location_kind: group?.location_kind ?? null,
@@ -698,6 +691,13 @@ export function createReviewMasterDataApi(
         return Promise.resolve(backendError("STALE_VERSION"));
       schools[index] = {
         ...schools[index],
+        ...(request.payload.weekday_portion_defaults
+          ? {
+              weekday_portion_defaults: clone(
+                request.payload.weekday_portion_defaults,
+              ) as WeekdayPortionDefaults,
+            }
+          : {}),
         default_student_portions: payloadNumber(
           request,
           "default_student_portions",
