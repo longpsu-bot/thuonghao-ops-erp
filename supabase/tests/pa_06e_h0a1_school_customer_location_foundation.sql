@@ -60,7 +60,8 @@ select is(
     'default_student_portions',
     'default_teacher_portions',
     'dispatch_document_issuer_name',
-    'dispatch_document_issuer_address'
+    'dispatch_document_issuer_address',
+    'weekday_portion_defaults'
   ]::text[],
   'schools has only the approved reference fields'
 );
