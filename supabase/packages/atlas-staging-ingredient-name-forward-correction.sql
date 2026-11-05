@@ -12,11 +12,11 @@ begin
  loop
   expression:='to_jsonb(t)'; predicate:='';
   if t.nspname='atlas_admin' and t.relname='ingredients' then
-   expression:=$e$case when t.ingredient_code=any(array['v1-ingredient-931','v1-ingredient-962','v1-ingredient-1040','v1-ingredient-1041','v1-ingredient-1047','v1-ingredient-1053','v1-ingredient-1067','v1-ingredient-1154']) then to_jsonb(t)-'ingredient_name'-'version'-'updated_at' else to_jsonb(t) end$e$;
+   expression:=$e$case when t.ingredient_code='v1-ingredient-1047' then to_jsonb(t)-'ingredient_name'-'version'-'updated_at'-'ingredient_type_id' when t.ingredient_code=any(array['v1-ingredient-931','v1-ingredient-962','v1-ingredient-1040','v1-ingredient-1041','v1-ingredient-1047','v1-ingredient-1053','v1-ingredient-1067','v1-ingredient-1154']) then to_jsonb(t)-'ingredient_name'-'version'-'updated_at' else to_jsonb(t) end$e$;
   elsif t.nspname='atlas_legacy' and t.relname='master_data_mappings' then
    expression:=$e$case when t.source_system='OPS_V1' and t.object_type='INGREDIENT' and t.legacy_id=any(array['931','962','1040','1041','1047','1053','1067','1154']) then to_jsonb(t)-'last_seen_import_batch_id'-'last_source_fingerprint'-'last_target_version'-'updated_at' else to_jsonb(t) end$e$;
   elsif t.nspname='atlas_legacy' and t.relname='import_batches' then
-   predicate:=$p$ where t.snapshot_id<>'ops-v1-ingredient-name-forward-correction-20261027-v1'$p$;
+   predicate:=$p$ where t.snapshot_id<>'ops-v1-ingredient-factual-correction-20261105-v1'$p$;
   end if;
   execute format(
    'select jsonb_build_object(''rows'',count(*),''sha256'',atlas_legacy.master_snapshot_hash(coalesce(jsonb_agg(%s order by (%s)::text),''[]''::jsonb))) from %I.%I t%s',
@@ -49,15 +49,15 @@ create or replace function pg_temp.run_ingredient_name_forward_correction(
 ) returns jsonb language plpgsql volatile set search_path='' as $$
 declare
  actor uuid:=extensions.uuid_generate_v5('6ab4d3f5-0b6c-5fcb-b589-10d9f3db63c7','atlas-staging-master-import-actor');
- correction text:='ops-v1-ingredient-name-forward-correction-20261027-v1';
+ correction text:='ops-v1-ingredient-factual-correction-20261105-v1';
  receipt atlas_legacy.import_batches%rowtype; item jsonb; plan jsonb; report jsonb:='[]'; protected jsonb;
  target uuid; current_row atlas_admin.ingredients%rowtype; mapping atlas_legacy.master_data_mappings%rowtype;
  ids text[]; batch uuid:=gen_random_uuid(); changed integer:=0; mapped integer:=0; result jsonb; target_fingerprints jsonb;
- phase text:='INPUT'; installed_migrations jsonb;
+ phase text:='INPUT'; installed_migrations jsonb; before_type uuid; after_type uuid;
 begin
  begin
   if current_user<>'postgres' or session_user<>'postgres' or requested_correction_id is distinct from correction
-   or payload->>'contract_version' is distinct from 'OPS-V1-INGREDIENT-NAME-FORWARD-CORRECTION.v1'
+   or payload->>'contract_version' is distinct from 'OPS-V1-INGREDIENT-FACTUAL-CORRECTION.v1'
    or payload->>'source_project_ref' is distinct from 'qnthofvccilhnefdcxnz'
    or payload->>'correction_id' is distinct from correction
    or payload->>'source_snapshot_checksum' !~ '^[0-9a-f]{64}$'
@@ -93,8 +93,19 @@ begin
   select coalesce(jsonb_agg(version order by version),'[]'::jsonb) into installed_migrations
   from supabase_migrations.schema_migrations;
   if installed_migrations is distinct from payload->'expected_migration_versions'
-   or not exists(select 1 from atlas_core.actors where actor_id=actor and actor_type='MIGRATION' and actor_status='ACTIVE')
+   or not exists(select 1 from atlas_core.actors where actor_id=actor and actor_type='MIGRATION' and actor_status='ACTIVE' and display_name='Atlas Staging OPS v1 Master Import (GitHub Actions)')
+   or exists(select 1 from atlas_core.actor_auth_subjects where actor_id=actor)
   then raise exception 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW'; end if;
+  if exists(select 1 from atlas_legacy.import_batches where source_system='OPS_V1' and snapshot_id='ops-v1-ingredient-name-forward-correction-20261027-v1') then raise exception 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW'; end if;
+  if payload#>>'{type_correction,legacy_id}' is distinct from '1047' or payload#>>'{type_correction,expected_before_type_legacy_id}' is distinct from '36' or payload#>>'{type_correction,expected_after_type_legacy_id}' is distinct from '43'
+   or payload#>'{type_correction,source_catalog_access,has_select}' is distinct from 'true'::jsonb or payload#>'{type_correction,source_catalog_access,has_non_select}' is distinct from 'false'::jsonb
+   or jsonb_typeof(payload#>'{type_correction,source_types}') is distinct from 'array' or jsonb_array_length(payload#>'{type_correction,source_types}')<>2
+   or exists(select 1 from jsonb_array_elements(payload#>'{type_correction,source_types}') r group by r.value->>'legacy_id' having count(*)<>1)
+   or (select count(*) from jsonb_array_elements(payload#>'{type_correction,source_types}') r where (r.value->>'legacy_id'='36' and r.value->>'ingredient_type_name'='Heo') or (r.value->>'legacy_id'='43' and r.value->>'ingredient_type_name'='Thuỷ hải sản'))<>2
+   or (select r.value#>>'{source_record,ingredient_type_legacy_id}' from jsonb_array_elements(payload->'records') r where r.value->>'legacy_id'='1047') is distinct from '43' then raise exception 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW'; end if;
+  select t.ingredient_type_id into before_type from atlas_legacy.master_data_mappings m join atlas_admin.ingredient_types t on t.ingredient_type_id=m.ingredient_type_id where m.source_system='OPS_V1' and m.object_type='INGREDIENT_TYPE' and m.legacy_id='36' and t.ingredient_type_code='heo' and t.ingredient_type_name='Heo' and t.ingredient_type_status='ACTIVE';
+  select t.ingredient_type_id into after_type from atlas_legacy.master_data_mappings m join atlas_admin.ingredient_types t on t.ingredient_type_id=m.ingredient_type_id where m.source_system='OPS_V1' and m.object_type='INGREDIENT_TYPE' and m.legacy_id='43' and t.ingredient_type_code='thuy_hai_san' and t.ingredient_type_name='Thuỷ hải sản' and t.ingredient_type_status='ACTIVE';
+  if before_type is null or after_type is null or before_type=after_type then raise exception 'INGREDIENT_NAME_FORWARD_CORRECTION_REQUIRED_REVIEW'; end if;
   phase:='RECEIPT';
   protected:=pg_temp.ingredient_name_correction_protected_fingerprints();
   select * into receipt from atlas_legacy.import_batches
@@ -125,14 +136,16 @@ begin
    select * into current_row from atlas_admin.ingredients i where i.ingredient_id=target;
    if not found or current_row.ingredient_code is distinct from 'v1-ingredient-'||(item->>'legacy_id')
     or current_row.ingredient_name is distinct from item->>'expected_before_name'
+    or current_row.version<>2
     or mapping.last_target_version is distinct from current_row.version
     or current_row.order_step is distinct from (item#>>'{source_record,order_step}')::numeric
     or current_row.ingredient_status is distinct from item#>>'{source_record,ingredient_status}'
-    or ((item#>>'{source_record,ingredient_type_legacy_id}') is null and current_row.ingredient_type_id is not null)
+    or (item->>'legacy_id'='1047' and current_row.ingredient_type_id is distinct from before_type)
+    or (item->>'legacy_id'<>'1047' and (((item#>>'{source_record,ingredient_type_legacy_id}') is null and current_row.ingredient_type_id is not null)
     or ((item#>>'{source_record,ingredient_type_legacy_id}') is not null and not exists(
      select 1 from atlas_legacy.master_data_mappings x where x.source_system='OPS_V1'
       and x.object_type='INGREDIENT_TYPE' and x.legacy_id=item#>>'{source_record,ingredient_type_legacy_id}'
-      and x.ingredient_type_id=current_row.ingredient_type_id))
+      and x.ingredient_type_id=current_row.ingredient_type_id))))
     or ((item#>>'{source_record,ingredient_order_group_legacy_id}') is null and current_row.ingredient_order_group_id is not null)
     or ((item#>>'{source_record,ingredient_order_group_legacy_id}') is not null and not exists(
      select 1 from atlas_legacy.master_data_mappings x where x.source_system='OPS_V1'
@@ -145,6 +158,11 @@ begin
    report:=report||jsonb_build_array(jsonb_build_object(
     'legacy_id',item->>'legacy_id','ingredient_id',target,
     'current_name',current_row.ingredient_name,'proposed_name',item->>'expected_after_name',
+    'current_type_legacy_id',case when item->>'legacy_id'='1047' then '36' else item#>>'{source_record,ingredient_type_legacy_id}' end,
+    'proposed_type_legacy_id',item#>>'{source_record,ingredient_type_legacy_id}',
+    'current_type_id',current_row.ingredient_type_id,'proposed_type_id',case when item->>'legacy_id'='1047' then after_type else current_row.ingredient_type_id end,
+    'current_type_name',(select ingredient_type_name from atlas_admin.ingredient_types where ingredient_type_id=current_row.ingredient_type_id),
+    'proposed_type_name',(select ingredient_type_name from atlas_admin.ingredient_types where ingredient_type_id=case when item->>'legacy_id'='1047' then after_type else current_row.ingredient_type_id end),
     'current_version',current_row.version,'source_fingerprint',item->>'source_fingerprint',
     'current_last_seen_import_batch_id',mapping.last_seen_import_batch_id,
     'current_last_source_fingerprint',mapping.last_source_fingerprint,
@@ -156,8 +174,8 @@ begin
    'success',true,'status','PREVIEW','correction_id',correction,
    'source_snapshot_checksum',payload->>'source_snapshot_checksum',
    'migration_versions_checksum',payload->>'migration_versions_checksum',
-   'update_count',8,'no_change_count',0,'report',report,
-   'protected_fingerprints',protected
+   'update_count',8,'type_update_count',1,'no_change_count',0,'report',report,
+   'protected_fingerprints',protected,'type_correction',payload->'type_correction'
   );
   plan:=plan||jsonb_build_object('plan_checksum',atlas_legacy.master_snapshot_hash(plan));
   if not apply_requested then return plan||jsonb_build_object('correction_already_applied',false); end if;
@@ -168,11 +186,11 @@ begin
   ) values(
    batch,'OPS_V1',correction,payload->>'source_snapshot_checksum',transaction_timestamp(),'COMPLETED',clock_timestamp(),
    actor,session_user,expected_plan_checksum,payload->>'contract_version','{"ingredients":8}',
-   '{"INGREDIENT_NAME_UPDATE":8,"MAPPING_REFRESH":8}',plan
+   '{"INGREDIENT_NAME_UPDATE":8,"INGREDIENT_TYPE_UPDATE":1,"MAPPING_REFRESH":8}',plan
   );
   for item in select value from jsonb_array_elements(payload->'records') loop
    update atlas_admin.ingredients i
-    set ingredient_name=item->>'expected_after_name',version=i.version+1,updated_at=clock_timestamp()
+    set ingredient_name=item->>'expected_after_name',ingredient_type_id=case when item->>'legacy_id'='1047' then after_type else i.ingredient_type_id end,version=i.version+1,updated_at=clock_timestamp()
     from atlas_legacy.master_data_mappings m
     where m.source_system='OPS_V1' and m.object_type='INGREDIENT' and m.legacy_id=item->>'legacy_id'
      and i.ingredient_id=m.ingredient_id and i.ingredient_name=item->>'expected_before_name';
@@ -192,6 +210,8 @@ begin
    left join atlas_legacy.master_data_mappings m on m.source_system='OPS_V1' and m.object_type='INGREDIENT' and m.legacy_id=r.value->>'legacy_id'
    left join atlas_admin.ingredients i on i.ingredient_id=m.ingredient_id
    where i.ingredient_name is distinct from r.value->>'expected_after_name'
+    or i.version is distinct from 3::bigint
+    or (r.value->>'legacy_id'='1047' and i.ingredient_type_id is distinct from after_type)
     or m.last_seen_import_batch_id is distinct from batch
     or m.last_source_fingerprint is distinct from r.value->>'source_fingerprint'
     or m.last_target_version is distinct from i.version

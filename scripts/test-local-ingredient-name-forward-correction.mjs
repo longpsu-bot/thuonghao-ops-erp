@@ -14,7 +14,7 @@ const records = INGREDIENT_NAME_CORRECTIONS.map(
     legacy_id,
     ingredient_code: `v1-ingredient-${legacy_id}`,
     ingredient_name,
-    ingredient_type_legacy_id: "1",
+    ingredient_type_legacy_id: legacy_id === "1047" ? "43" : "1",
     ingredient_order_group_legacy_id: "1",
     purchase_unit_legacy_id: "kg",
     order_step: "1",
@@ -26,7 +26,14 @@ const snapshot = {
   snapshot_checksum: createHash("sha256")
     .update(JSON.stringify(records), "utf8")
     .digest("hex"),
-  records: { ingredients: records },
+  records: {
+    ingredients: records,
+    ingredient_types: [
+      { legacy_id: "36", ingredient_type_name: "Heo" },
+      { legacy_id: "43", ingredient_type_name: "Thuỷ hải sản" },
+    ],
+  },
+  source_catalog_access: { has_select: true, has_non_select: false },
 };
 const payload = buildIngredientNameCorrectionPayload(snapshot);
 const work = mkdtempSync(

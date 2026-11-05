@@ -26,6 +26,14 @@ Warehouse remains paused. Source OPS v1 and Production remain NO-WRITE.
   facts stayed identical. The bounded correction scopes source plan identity to
   the exact four normalized dependencies, retaining full source validation and
   all target fingerprints. No School54 root or receipt has been created yet.
+- Checkpoint update: #455 merged as `d80a1361` and exact-main Frontend/Full
+  passed. School54 Apply42012115437 and weekday Apply42012951054 succeeded,
+  including replay/authenticated readback and all34 weekday configurations.
+  The preceding absent-root statement describes the rejected earlier attempts.
+  Eight-name Preview42013307974 stopped before writes because1047's canonical
+  type is36/Heo in Atlas versus explicit source43/Thuỷ hải sản. The existing
+  active catalogue mappings permit the [bounded factual correction](../superpowers/plans/2026-11-05-ingredient-factual-correction.md):
+  eight names plus only1047's type reference, all other facts preserved.
 - Existing multi-day Shopping List was already merged through #367; the old
   deferral below is stale. Ninety focused daily-range checks pass.
 - Reuse only the compatible eight-name correction package from Draft #445,

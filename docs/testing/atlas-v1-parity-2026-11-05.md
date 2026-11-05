@@ -108,3 +108,26 @@ This report contains no raw source rows.
   local bottleneck, not that it was the sole global CI bottleneck or a hosted
   speed improvement. No timeouts, tests or business rules were weakened.
   The script subtree independently passes825 checks/45files at two workers.
+
+## Hosted delivery checkpoint
+
+Exact source `d80a1361` passed Frontend42009379045 and executed
+Full42009379140. Staging retains138 migrations ending20261105090000.
+Archive apply41992825322 retained603 records/17inactive with exact readback and
+receipt replay; read-only verification42008038118 matched the same source
+business checksum. These imports do not certify native effective-BOM parity.
+
+School54's bounded prerequisite Apply42012115437 created exactly three roots,
+three mappings and receipt `ec55d20a-631f-47aa-85a4-d7496ca9b4aa`, with all117
+protected tables preserved, replay and actual authenticated readback. Weekday
+Apply42012951054 updated34 Schools with normal authenticated bulk-command replay
+and complete School readback. School54's general defaults remain0/0; its five
+weekday overrides are370 students/20 teachers. Archive603 and native3/3 remain.
+
+Name-only Preview42013307974 stopped before writes. Fresh source/target reads
+showed all eight old target names/version2 and matching Unit/group/order-step/
+status facts, but Ingredient1047 had type36/Heo in Atlas and explicit source
+type43/Thuỷ hải sản. Both existing typed catalogue mappings are ACTIVE. The
+separate factual correction must state this one additional type change, preserve
+all other facts, refresh truthful mappings and undergo review/CI before Apply.
+No name correction or classification update is claimed at this checkpoint.

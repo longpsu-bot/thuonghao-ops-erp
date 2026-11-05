@@ -16,6 +16,14 @@ import {
 } from "./ops-v1-master-snapshot-contract.mjs";
 
 const target = "rnzxmxiiqgtdevzregff";
+const typeReport = {
+  current_type_legacy_id: "36",
+  proposed_type_legacy_id: "43",
+  current_type_name: "Heo",
+  proposed_type_name: "Thuỷ hải sản",
+  current_type_id: "c3100000-0000-4000-8000-000000000009",
+  proposed_type_id: "c3100000-0000-4000-8000-000000000016",
+};
 const expected = [
   ["931", "Chả giò", "Chả giò xốp Cholimex 2kg"],
   ["962", "Hẹ tươi", "Hẹ lá"],
@@ -36,17 +44,22 @@ function snapshot() {
     extractor_version: "a".repeat(40),
     source_counts: { ingredients: 8 },
     records: {
+      ingredient_types: [
+        { legacy_id: "36", ingredient_type_name: "Heo" },
+        { legacy_id: "43", ingredient_type_name: "Thuỷ hải sản" },
+      ],
       ingredients: expected.map(([legacy_id, , ingredient_name]) => ({
         legacy_id,
         ingredient_code: `v1-ingredient-${legacy_id}`,
         ingredient_name,
-        ingredient_type_legacy_id: "1",
+        ingredient_type_legacy_id: legacy_id === "1047" ? "43" : "1",
         ingredient_order_group_legacy_id: "1",
         purchase_unit_legacy_id: legacy_id === "1154" ? "Miếng" : "kg",
         order_step: legacy_id === "1154" ? "1" : "0.1",
         ingredient_status: "ACTIVE",
       })),
     },
+    source_catalog_access: { has_select: true, has_non_select: false },
     source_diagnostics: [],
   };
   return { ...value, snapshot_checksum: checksumOpsV1MasterSnapshot(value) };
@@ -62,6 +75,37 @@ const env = {
 };
 
 describe("bounded OPS v1 Ingredient-name correction", () => {
+  it("makes the source-backed 1047 classification explicit without forging the source", () => {
+    const payload = buildIngredientNameCorrectionPayload(snapshot());
+    expect(payload.contract_version).toBe(
+      "OPS-V1-INGREDIENT-FACTUAL-CORRECTION.v1",
+    );
+    expect(payload.type_correction).toMatchObject({
+      legacy_id: "1047",
+      expected_before_type_legacy_id: "36",
+      expected_after_type_legacy_id: "43",
+    });
+    expect(
+      payload.records.find((r) => r.legacy_id === "1047").source_record
+        .ingredient_type_legacy_id,
+    ).toBe("43");
+  });
+  it.each(["source", "catalog", "proof"])(
+    "rejects factual %s drift",
+    (failure) => {
+      const s = snapshot();
+      if (failure === "source")
+        s.records.ingredients.find(
+          (r) => r.legacy_id === "1047",
+        ).ingredient_type_legacy_id = "36";
+      if (failure === "catalog")
+        s.records.ingredient_types[1].ingredient_type_name = "Heo";
+      if (failure === "proof") s.source_catalog_access.has_select = false;
+      expect(() => buildIngredientNameCorrectionPayload(s)).toThrow(
+        /TYPE|CATALOG/,
+      );
+    },
+  );
   it("requires certification before any source or target call", async () => {
     const executeTarget = vi.fn(),
       extractSnapshot = vi.fn();
@@ -164,7 +208,7 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
     },
   );
 
-  it.each(["success", "apply", "readback", "cleanup", "stale"])(
+  it.each(["success", "apply", "readback", "type", "cleanup", "stale"])(
     "keeps preflight/apply/readback order and cleans up on %s",
     async (failure) => {
       const payload = buildIngredientNameCorrectionPayload(snapshot());
@@ -176,10 +220,12 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
         source_snapshot_checksum: payload.source_snapshot_checksum,
         migration_versions_checksum: payload.migration_versions_checksum,
         update_count: 8,
+        type_update_count: 1,
         no_change_count: 0,
         report: expected.map(([legacy_id, before, after]) => ({
           legacy_id,
           current_name: before,
+          ...(legacy_id === "1047" ? typeReport : {}),
           proposed_name: after,
           action: "UPDATE",
         })),
@@ -208,8 +254,20 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
           ok: true,
           json: async () => ({
             success: true,
+            source_catalog_access: { has_select: true, has_non_select: false },
+            ingredient_types: [
+              { legacy_id: "36", ingredient_type_name: "Heo" },
+              { legacy_id: "43", ingredient_type_name: "Thuỷ hải sản" },
+            ],
             ingredients: expected.map(([id, before, after]) => ({
               ingredient_code: `v1-ingredient-${id}`,
+              ingredient_type_id:
+                id === "1047"
+                  ? failure === "type"
+                    ? typeReport.current_type_id
+                    : typeReport.proposed_type_id
+                  : null,
+              ingredient_type_name: id === "1047" ? "Thuỷ hải sản" : null,
               ingredient_name:
                 reads === 1 || failure === "readback" ? before : after,
             })),
@@ -257,6 +315,7 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
           {
             apply: "PRIMARY_APPLY_FAILURE",
             readback: "AUTHENTICATED_NAME_READBACK_DRIFT",
+            type: "AUTHENTICATED_TYPE_READBACK_DRIFT",
             cleanup: "AUTHENTICATED_SIGNOUT_FAILED",
             stale: "STALE_MAIN",
           }[failure],
@@ -367,11 +426,16 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
               has_select: true,
               has_non_select: false,
             },
+            source_catalog_access: { has_select: true, has_non_select: false },
+            ingredient_types: [
+              { legacy_id: "36", ingredient_type_name: "Heo" },
+              { legacy_id: "43", ingredient_type_name: "Thuỷ hải sản" },
+            ],
             ingredients: expected.map(([id, , name]) => ({
               id,
               name,
               purchase_unit: "kg",
-              ingredient_type_id: "1",
+              ingredient_type_id: id === "1047" ? "43" : "1",
               shopping_type_id: "1",
               order_step: "1.000000",
               is_active: true,
@@ -455,10 +519,12 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
       source_snapshot_checksum: snapshot().snapshot_checksum,
       migration_versions_checksum: payload.migration_versions_checksum,
       update_count: 8,
+      type_update_count: 1,
       no_change_count: 0,
       report: expected.map(([legacy_id, before, after]) => ({
         legacy_id,
         current_name: before,
+        ...(legacy_id === "1047" ? typeReport : {}),
         proposed_name: after,
         action: "UPDATE",
       })),
@@ -494,6 +560,9 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
         read: async () =>
           expected.map(([id, , name]) => ({
             ingredient_code: `v1-ingredient-${id}`,
+            ingredient_type_id:
+              id === "1047" ? typeReport.proposed_type_id : null,
+            ingredient_type_name: id === "1047" ? "Thuỷ hải sản" : null,
             ingredient_name: name,
           })),
         signOut: vi.fn(),
@@ -517,6 +586,9 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
           read: async () =>
             expected.map(([id, , name]) => ({
               ingredient_code: `v1-ingredient-${id}`,
+              ingredient_type_id:
+                id === "1047" ? typeReport.proposed_type_id : null,
+              ingredient_type_name: id === "1047" ? "Thuỷ hải sản" : null,
               ingredient_name: name,
             })),
           signOut: vi.fn(),
@@ -540,6 +612,9 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
           read: async () =>
             expected.map(([id, , name]) => ({
               ingredient_code: `v1-ingredient-${id}`,
+              ingredient_type_id:
+                id === "1047" ? typeReport.proposed_type_id : null,
+              ingredient_type_name: id === "1047" ? "Thuỷ hải sản" : null,
               ingredient_name: name,
             })),
           signOut: vi.fn(),
@@ -563,6 +638,9 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
         read: async () =>
           expected.map(([id, , name]) => ({
             ingredient_code: `v1-ingredient-${id}`,
+            ingredient_type_id:
+              id === "1047" ? typeReport.proposed_type_id : null,
+            ingredient_type_name: id === "1047" ? "Thuỷ hải sản" : null,
             ingredient_name: name,
           })),
         signOut: vi.fn(),
