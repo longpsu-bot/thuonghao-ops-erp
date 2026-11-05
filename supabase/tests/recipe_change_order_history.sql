@@ -43,7 +43,9 @@ select ok(not has_function_privilege('anon','atlas_legacy.recipe_change_order_hi
 select ok(not has_function_privilege('service_role','atlas_legacy.import_recipe_change_order_history(jsonb,uuid,text)','execute'),'Service role cannot call importer');
 select ok(not has_table_privilege('authenticated','atlas_legacy.import_batches','select'),'Browser has no direct receipt-table access');
 select ok((select relforcerowsecurity from pg_class where oid='atlas_legacy.import_batches'::regclass),'Receipts retain forced RLS');
+insert into atlas_legacy.import_batches(source_system,snapshot_id,snapshot_checksum,exported_at,import_status,source_counts,completed_at,result_payload) values('OTHER_PRIVATE_MASTER','history-isolation-test',repeat('a',64),'2026-11-01T00:00:00Z','COMPLETED','{}',transaction_timestamp(),'{"private":"must not leak"}');
 set local role atlas_read_runtime;
+select is((select count(*) from atlas_legacy.import_batches where source_system='OTHER_PRIVATE_MASTER'),0::bigint,'Archive read privileges cannot see other legacy evidence');
 select is((select count(*)::integer from jsonb_array_elements(atlas_legacy.recipe_change_order_history()) r where r->>'legacy_id'='9007199254740993'),1,'Read runtime sees imported evidence');
 select is(jsonb_path_query_first(atlas_legacy.recipe_change_order_history(),'$[*] ? (@.legacy_id == "9007199254740993")')->>'quantity','1.000001','Read retains exact decimal text');
 select is(jsonb_path_query_first(atlas_legacy.recipe_change_order_history(),'$[*] ? (@.legacy_id == "9007199254740993")')->>'source_active','false','Inactive remains a source flag');

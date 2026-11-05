@@ -59,7 +59,7 @@ does not yet activate missing legacy business rules; doing so requires an exact
 context reconciliation task with its own operative mapping.
 
 Evidence checkpoint: 603 real source rows, 17 inactive, exact same-receipt replay,
-zero native writes. Recipe history pgTAP: 32 checks, including preservation of a
+zero native writes. Recipe history pgTAP: 33 checks, including preservation of a
 nonempty native root and revision. Platform security catalog: 32 checks. Focused
 frontend/script tests: 185 passing; TypeScript passes. Component rendering passes
 at 1440px and 390px. Raw evidence remains private outside Git.
@@ -80,3 +80,10 @@ Independent read-only review found no functional/security defect. Its whitespace
 finding on two SQL file endings is corrected. Additional pgTAP cases cover
 same-time observation conflict, a changed importer on replay, and latest source
 observation selection. Latest-head CI remains pending at this checkpoint.
+
+CI found two retained RMVP-01 privilege assertions that assumed the read runtime
+had no legacy access at all. Updated them to the approved archive-only SELECT
+exception while still rejecting importer execution, receipt writes, mapping
+access and all direct browser grants. Added a real RLS isolation check against
+an unrelated private receipt. Six focused master/Recipe/catalog pgTAP files now
+pass 247 checks; no runtime implementation changed for this correction.
