@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Field,
   Flex,
   Input,
   Table,
@@ -64,6 +65,42 @@ export function PlanningAttendanceStage({
               : "Cần sửa số suất trước khi tính tổng."}
         </Text>
         <Flex gap="sm" wrap="wrap">
+          <Field.Root
+            maxW="full"
+            w={{
+              base: "full",
+              md: "var(--atlas-attendance-import-width, 360px)",
+            }}
+          >
+            <Field.Label htmlFor="atlas-attendance-xlsx" textStyle="label">
+              Nhập sĩ số XLSX
+            </Field.Label>
+            <Input
+              id="atlas-attendance-xlsx"
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              size="sm"
+              h={atlasWorkbarControlHeight}
+              disabled={!c.canEdit || c.dirty || c.attendanceImporting}
+              aria-describedby="atlas-attendance-xlsx-help"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                if (file) void c.importAttendanceWorkbook(file);
+              }}
+            />
+            <Field.HelperText
+              id="atlas-attendance-xlsx-help"
+              textStyle="helper"
+              color="fg.muted"
+            >
+              {c.attendanceImporting
+                ? "Đang đọc tệp…"
+                : c.dirty
+                  ? "Lưu hoặc bỏ thay đổi trước khi nhập tệp khác."
+                  : "Thay thế sĩ số cả tuần trong bản nháp; rà soát trước khi Lưu."}
+            </Field.HelperText>
+          </Field.Root>
           <Button
             size="sm"
             h={atlasWorkbarControlHeight}

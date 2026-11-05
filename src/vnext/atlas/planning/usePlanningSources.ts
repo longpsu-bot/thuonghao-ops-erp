@@ -23,6 +23,7 @@ import {
   planningIssueMessage,
   parseMenuMatrix,
   parseAttendancePaste,
+  parseAttendanceWorkbook,
   pantryRowsFromBatch,
   pantryRowsForWrite,
   pantryModesForRows,
@@ -236,6 +237,8 @@ export function usePlanningSources({
     }));
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [attendanceImporting, setAttendanceImporting] = useState(false);
+  const attendanceImportGeneration = useRef(0);
   const generation = useRef(0),
     googleGeneration = useRef(0),
     readGeneration = useRef({ planning: 0, pantry: 0 });
@@ -444,6 +447,8 @@ export function usePlanningSources({
     !loading &&
     !readError &&
     !!authority;
+  const attendanceImportAllowed = useRef(false);
+  attendanceImportAllowed.current = canEdit && !dirty && job === "attendance";
   useAtlasAuthorityRefresh(
     freshness,
     dirty ||
@@ -541,6 +546,55 @@ export function usePlanningSources({
     setAttendanceRows(
       attendanceDraft(parseAttendancePaste(value, data.schools)),
     );
+  };
+  const importAttendanceWorkbook = async (file: File) => {
+    if (!attendanceImportAllowed.current || !data) return;
+    if (!/\.xlsx$/i.test(file.name) || file.size === 0) {
+      setOutcome("Không thể nhập: chọn tệp XLSX có dữ liệu.");
+      return;
+    }
+    const token = ++attendanceImportGeneration.current;
+    const epoch = generation.current;
+    const current = () =>
+      token === attendanceImportGeneration.current &&
+      epoch === generation.current &&
+      attendanceImportAllowed.current;
+    setAttendanceImporting(true);
+    setOutcome("");
+    try {
+      const parsed = await parseAttendanceWorkbook(file, data.schools);
+      if (!current()) return;
+      const invalid = parsed.rows.some(
+        (row) =>
+          !data.schools.some((school) => school.school_id === row.school_id) ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(row.service_date) ||
+          !Number.isFinite(Date.parse(row.service_date)) ||
+          new Date(row.service_date).toISOString().slice(0, 10) !==
+            row.service_date ||
+          row.service_date < week ||
+          row.service_date > data.week_end ||
+          !validCount(String(row.student_portions)) ||
+          !validCount(String(row.teacher_portions)),
+      );
+      if (parsed.errors.length || !parsed.rows.length || invalid) {
+        setOutcome(
+          `Không thể nhập: ${parsed.errors.join(" ") || "kiểm tra trường, ngày thuộc tuần đang chọn và số suất nguyên không âm; tệp phải có ít nhất một dòng dữ liệu."}`,
+        );
+        return;
+      }
+      markEdit();
+      setAttendanceSource({ type: "XLSX", name: parsed.fileName });
+      setAttendanceRows(attendanceDraft(parsed.rows));
+      setOutcome(
+        "Đã nhập dữ liệu XLSX cho cả tuần vào bản nháp. Chọn Xem thay đổi để rà soát trước khi Lưu.",
+      );
+    } catch {
+      if (current())
+        setOutcome("Không thể nhập tệp sĩ số XLSX. Kiểm tra tệp rồi thử lại.");
+    } finally {
+      if (token === attendanceImportGeneration.current)
+        setAttendanceImporting(false);
+    }
   };
   const addPantryRow = (schoolId: string, purposeId?: string) => {
     const purpose = pantryData?.purposes.find(
@@ -1121,6 +1175,7 @@ export function usePlanningSources({
     loading,
     busy,
     syncing,
+    attendanceImporting,
     canEdit,
     requestExit: (exit: () => void) => {
       if (exitBlocked || writeBusy.current) return;
@@ -1134,6 +1189,7 @@ export function usePlanningSources({
     },
     editAttendance,
     pasteAttendance,
+    importAttendanceWorkbook,
     addPantryRow,
     editPantryRow,
     removePantryRow,
