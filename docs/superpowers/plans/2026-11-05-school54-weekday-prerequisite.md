@@ -42,9 +42,10 @@ Supplier cancellation, Warehouse, or invented attribution/business facts.
 
 ## Closed source plan correction
 
-Two hosted Apply attempts were rejected before writes as the complete v1 master
-content changed between separate previews and apply. School54's materialized
-facts remained identical. No prerequisite root or receipt was created.
+Two hosted Apply attempts were rejected before writes as complete master content
+checksums differed between runs. School54's materialized facts remained identical;
+the hash differences alone do not establish a specific source-row mutation.
+No prerequisite root or receipt was created.
 
 Keep complete immutable extraction/checksum/envelope/identity/read-only validation,
 but bind the reviewed source content identity to the exact normalized Customer,

@@ -54,13 +54,19 @@ identities and School facts. Raw extraction remains in memory and is not uploade
 Apply requires `apply=true`, exact Staging project confirmation and that separately
 reviewed plan checksum; there is no skip-certification/authentication CLI flag.
 
-The stable plan binds all normalized source business facts, the exact three
-CREATE actions, full expected migration history, Actor and fingerprints of all
+The stable plan binds the exact normalized Customer, Delivery Location and
+School54 rows plus the required SchoolType source row, fixed source contract,
+project and read-only proof. It also binds the three CREATE actions, complete
+expected migration history, Actor and fingerprints of all
 preexisting Atlas table rows, typed mappings and receipts. Technical extraction
 snapshot ID, export time, extractor version and enclosing snapshot checksum are
 excluded from the content identity, allowing separately dispatched Preview and
-Apply to agree when actual facts have not changed. Source or protected target
-drift requires a fresh reviewed preview.
+Apply to agree when these selected facts have not changed. Unselected source rows,
+counts and diagnostics do not enter this closed checksum; complete snapshot
+checksum/envelope/identities/read-only proof remain validated before narrowing.
+The receipt retains the full extraction checksum and identity as technical
+evidence. Selected source or any protected target drift requires a fresh reviewed
+preview.
 
 Apply runs atomically through the existing private master import identity,
 validation, collision, materialization and mapping helpers. Its complete allowed

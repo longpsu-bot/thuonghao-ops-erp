@@ -31,14 +31,79 @@ export function school54ContentChecksum(snapshot) {
     snapshot.snapshot_checksum !== checksumOpsV1MasterSnapshot(snapshot)
   )
     fail("SNAPSHOT_INVALID");
-  const {
-    snapshot_id,
-    exported_at,
-    extractor_version,
-    snapshot_checksum,
-    ...facts
-  } = snapshot;
-  return checksumOpsV1MasterSnapshot(facts);
+  const entities = [
+    "customers",
+    "delivery_locations",
+    "dish_types",
+    "dishes",
+    "ingredient_order_groups",
+    "ingredient_types",
+    "ingredients",
+    "recipe_lines",
+    "recipes",
+    "school_types",
+    "schools",
+    "supplier_eligibilities",
+    "suppliers",
+    "units",
+  ];
+  if (
+    !snapshot.snapshot_id ||
+    !snapshot.extractor_version ||
+    !Number.isFinite(Date.parse(snapshot.exported_at)) ||
+    !snapshot.records ||
+    !Array.isArray(snapshot.complete_entities) ||
+    canonicalMasterJson(Object.keys(snapshot.records).sort()) !==
+      canonicalMasterJson(entities) ||
+    canonicalMasterJson(snapshot.complete_entities) !==
+      canonicalMasterJson(entities) ||
+    !Array.isArray(snapshot.source_diagnostics)
+  )
+    fail("SNAPSHOT_ENVELOPE_INVALID");
+  const proof = snapshot.source_access;
+  if (
+    proof?.role_name !== "supabase_read_only_user" ||
+    proof.has_required_select !== true ||
+    proof.has_non_select_privilege !== false ||
+    proof.bypass_rls !== true ||
+    proof.superuser !== false ||
+    proof.create_role !== false ||
+    proof.create_db !== false
+  )
+    fail("SNAPSHOT_READ_ONLY_PROOF_INVALID");
+  for (const entity of entities) {
+    const rows = snapshot.records[entity];
+    if (
+      !Array.isArray(rows) ||
+      rows.some(
+        (row) =>
+          !row || typeof row.legacy_id !== "string" || !row.legacy_id.trim(),
+      ) ||
+      new Set(rows.map((row) => row.legacy_id)).size !== rows.length
+    )
+      fail("SNAPSHOT_IDENTITIES_INVALID");
+  }
+  const selected = (entity, id) => {
+    const rows = snapshot.records[entity].filter((row) => row.legacy_id === id);
+    if (rows.length !== 1) fail("SNAPSHOT_CLOSURE_REQUIRED");
+    return rows;
+  };
+  const schools = selected("schools", "54");
+  return checksumOpsV1MasterSnapshot({
+    contract_version: snapshot.contract_version,
+    source_system: snapshot.source_system,
+    source_project_ref: snapshot.source_project_ref,
+    source_access: proof,
+    records: {
+      customers: selected("customers", "school:54:customer"),
+      delivery_locations: selected(
+        "delivery_locations",
+        "school:54:delivery-location",
+      ),
+      schools,
+      school_types: selected("school_types", schools[0].school_type_legacy_id),
+    },
+  });
 }
 export function buildSchool54Sql(
   snapshot,

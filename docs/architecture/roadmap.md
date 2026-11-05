@@ -19,6 +19,13 @@ Warehouse remains paused. Source OPS v1 and Production remain NO-WRITE.
   wrong. Complete only the [three-root prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md),
   then rerun governed weekday sync and hosted readback. No full master refresh
   or other School/Dish correction is included.
+- School54 prerequisite #454 merged as `a57a892b` with passing exact-main
+  Frontend/Full certification (the Full rerun retained the initial disposable
+  cache-startup503 failure). Two source-backed previews passed; two Applies
+  stopped before writes as the complete master hash changed while School54's
+  facts stayed identical. The bounded correction scopes source plan identity to
+  the exact four normalized dependencies, retaining full source validation and
+  all target fingerprints. No School54 root or receipt has been created yet.
 - Existing multi-day Shopping List was already merged through #367; the old
   deferral below is stale. Ninety focused daily-range checks pass.
 - Reuse only the compatible eight-name correction package from Draft #445,
