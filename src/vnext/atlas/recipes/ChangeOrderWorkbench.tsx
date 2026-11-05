@@ -35,6 +35,7 @@ import { RecipeDirtyExitDialog } from "./RecipeDialogs";
 import { ChangeOrderEditor, ChangeSelect } from "./ChangeOrderEditor";
 import { ChangeOrderReview, ChangeOrderCancel } from "./ChangeOrderDialogs";
 import { ChangeOrderDetail } from "./ChangeOrderDetail";
+import { LegacyChangeOrderHistory } from "./LegacyChangeOrderHistory";
 import {
   actionLabels,
   ledgerRows,
@@ -540,6 +541,13 @@ export function ChangeOrderWorkbench(
           </Box>
         )}
       </Grid>
+      {c.ready && !open && (
+        <LegacyChangeOrderHistory
+          rows={c.data.legacy_history ?? []}
+          query={query}
+          scope={scope}
+        />
+      )}
       <RecipeDirtyExitDialog c={c} />
       <ChangeOrderReview c={c} />
       {c.cancelTarget && (

@@ -54,7 +54,11 @@ select is(
 );
 
 select ok(
-  not has_schema_privilege('atlas_read_runtime', 'atlas_legacy', 'USAGE')
+  not has_function_privilege(
+    'atlas_read_runtime',
+    'atlas_legacy.import_master_data_snapshot(jsonb)',
+    'EXECUTE'
+  )
   and not has_function_privilege(
     'atlas_master_data_command_runtime',
     'atlas_legacy.import_master_data_snapshot(jsonb)',
@@ -75,8 +79,7 @@ select ok(
       array[
         'anon',
         'authenticated',
-        'service_role',
-        'atlas_read_runtime'
+        'service_role'
       ]
     ) role_name
     where has_table_privilege(
@@ -90,6 +93,10 @@ select ok(
         'SELECT,INSERT,UPDATE,DELETE'
       )
   )
+  -- Recipe history permits only source-filtered receipt SELECT, not import or mapping access.
+  and has_table_privilege('atlas_read_runtime','atlas_legacy.import_batches','SELECT')
+  and not has_table_privilege('atlas_read_runtime','atlas_legacy.import_batches','INSERT,UPDATE,DELETE')
+  and not has_table_privilege('atlas_read_runtime','atlas_legacy.master_data_mappings','SELECT,INSERT,UPDATE,DELETE')
   and has_table_privilege(
     'atlas_master_data_command_runtime',
     'atlas_legacy.import_batches',

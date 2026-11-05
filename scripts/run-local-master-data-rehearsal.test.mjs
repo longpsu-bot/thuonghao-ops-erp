@@ -235,6 +235,26 @@ describe("local-only rehearsal runner", () => {
 });
 
 describe("pinned Supabase CLI result decoding", () => {
+  it("decodes the CLI boundary envelope without accepting malformed rows", async () => {
+    const { parseRehearsalQueryResult } =
+      await import("./run-local-master-data-rehearsal.mjs");
+    expect(
+      parseRehearsalQueryResult(
+        JSON.stringify({
+          boundary: "untrusted",
+          rows: [{ result: { status: "PREVIEW" } }],
+        }),
+      ),
+    ).toEqual({ status: "PREVIEW" });
+    for (const value of [
+      { rows: [] },
+      { rows: [{}] },
+      { rows: [{ result: [] }] },
+    ])
+      expect(() => parseRehearsalQueryResult(JSON.stringify(value))).toThrow(
+        "LOCAL_IMPORT_RESPONSE_INVALID",
+      );
+  });
   it("accepts the actual JSON-array result returned by the pinned local CLI", async () => {
     const { parseRehearsalQueryResult } =
       await import("./run-local-master-data-rehearsal.mjs");

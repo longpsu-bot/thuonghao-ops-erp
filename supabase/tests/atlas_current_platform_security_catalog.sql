@@ -463,9 +463,9 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    -- K1 adds exactly six private source SELECT/lock policies.
-    'count', 689,
-    'md5', 'd2a7ef8da79571431cbd60b93bd2acdf'
+    -- Recipe history adds one completed-source receipt SELECT policy.
+    'count', 690,
+    'md5', 'd89f0f1c192dffa36a806b13b221d61d'
   ),
   'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
@@ -1813,18 +1813,18 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 689,
-    'policy_catalog_md5', 'd2a7ef8da79571431cbd60b93bd2acdf',
+    'policy_count', 690,
+    'policy_catalog_md5', 'd89f0f1c192dffa36a806b13b221d61d',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 373,
-    -- One private stable invoker predicate for optional daily Pantry absence.
+    'private_function_count', 375,
+    -- Recipe history adds two private fixed-path invokers.
     -- Existing owners, browser grants, RLS and policies remain pinned.
-    'private_function_catalog_md5', '599c58cc86a668bb419ad9b3f14ffcd2',
+    'private_function_catalog_md5', '1a297d848dcdfd930842a71bb5e80877',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
-    -- Three additional private runtime EXECUTE grants; no browser grant.
-    'positive_target_grant_count', 1915,
-    'positive_target_grant_md5', '8f99817c55925fdb414dd36d877eb93c',
+    -- Recipe history adds three read-runtime privileges; no browser grant.
+    'positive_target_grant_count', 1918,
+    'positive_target_grant_md5', '59248de9f55c08c4ba67c4cc84119f84',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

@@ -90,6 +90,14 @@ pnpm local:recipe-adjustments:import -- --file supabase/local/rmvp_02b_adjustmen
 
 The local-only importer accepts exactly four explicit OPS v1 arrays, calculates the canonical checksum, rejects missing/ambiguous/cyclic references before writes, records reconciliation, and never connects to live OPS v1. The example contains no production data. See [RMVP-02B Recipe adjustments and effective BOM](docs/architecture/rmvp-02b-recipe-adjustments-effective-bom.md) and the [RMVP-02B API contract](docs/api/rmvp-02b-recipe-adjustments-effective-bom.md).
 
+### Recipe Change Order source history
+
+Recipe history can be previewed and imported into an explicit disposable local
+database with `pnpm local:recipe-history`. The Change Order workbench displays
+imported OPS v1 evidence separately from native operative rules. Source
+active/inactive flags do not establish Atlas applicability or a historical
+cancellation date. See the [history import contract and commands](docs/api/recipe-change-order-history.md).
+
 ### RMVP-03A connected Weekly Menu and Attendance
 
 RMVP-03A activates the Vietnamese `Nguồn kế hoạch` workbench for one explicit Monday-start week. It connects the existing Weekly Menu and Attendance aggregates, stable rows, exact approval snapshots, and inherited lifecycles without adding a table, trigger, role, module, or downstream write.

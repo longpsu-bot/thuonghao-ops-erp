@@ -165,6 +165,24 @@ export type EffectiveTargetContext = {
   blockers: { code: string; message: string; [key: string]: JsonValue }[];
 };
 
+export type LegacyRecipeChangeOrder = {
+  source_table: string;
+  legacy_id: string;
+  scope_kind: RecipeAdjustmentScope;
+  action: RecipeAdjustmentAction;
+  source_active: boolean;
+  effective_from: string | null;
+  source_created_at: string | null;
+  source_school_type_id: string | null;
+  quantity: string | null;
+  unit_name: string | null;
+  dish_name: string | null;
+  school_name: string | null;
+  ingredient_name: string | null;
+  substitute_name: string | null;
+  note: string | null;
+};
+
 export type RecipeAdjustmentWorkbenchData = {
   reference_date: string;
   scope_catalog: {
@@ -180,6 +198,7 @@ export type RecipeAdjustmentWorkbenchData = {
   recipe_lines: AdjustmentReference[];
   operator_rows: RecipeAdjustmentOperatorRecord[];
   adjustments?: RecipeAdjustmentRecord[];
+  legacy_history?: LegacyRecipeChangeOrder[];
 };
 
 export type EffectiveCompositionLine = {
@@ -647,10 +666,44 @@ export function adjustmentWorkbenchFromResult(
     !Array.isArray(source.recipe_lines) ||
     !source.recipe_lines.every(isRecipeLineReference) ||
     !Array.isArray(source.operator_rows) ||
-    !source.operator_rows.every(isOperatorRecord)
+    !source.operator_rows.every(isOperatorRecord) ||
+    (source.legacy_history !== undefined &&
+      (!Array.isArray(source.legacy_history) ||
+        !source.legacy_history.every(isLegacyRecipeChangeOrder)))
   )
     return null;
   return source as unknown as RecipeAdjustmentWorkbenchData;
+}
+
+function isLegacyRecipeChangeOrder(value: JsonValue): boolean {
+  return (
+    isRecord(value) &&
+    [
+      "ingredient_change_orders",
+      "system_bom_change_orders",
+      "school_wide_overrides",
+      "school_recipe_overrides",
+    ].includes(String(value.source_table)) &&
+    typeof value.legacy_id === "string" &&
+    /^[1-9]\d*$/.test(value.legacy_id) &&
+    isAdjustmentScope(value.scope_kind) &&
+    isAdjustmentAction(value.action) &&
+    typeof value.source_active === "boolean" &&
+    [
+      value.effective_from,
+      value.source_created_at,
+      value.source_school_type_id,
+      value.quantity,
+      value.unit_name,
+      value.dish_name,
+      value.school_name,
+      value.ingredient_name,
+      value.substitute_name,
+      value.note,
+    ].every(isNullableString) &&
+    (value.quantity === null ||
+      /^-?\d+(\.\d+)?$/.test(value.quantity as string))
+  );
 }
 
 export function effectiveCompositionFromResult(
