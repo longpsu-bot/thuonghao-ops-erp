@@ -69,15 +69,20 @@ This report contains no raw source rows.
 - Multi-day Shopping List already merged through #367. Existing daily-range
   hook/date checks pass 90 tests; the old roadmap deferral is superseded. No
   duplicate feature or ranged Need root is added.
-- Weekday checks: 41 new pgTAP, 27 bulk and 77 Attendance; 138 focused frontend
-  checks. Independent review's adapter finding is fixed, with 21 focused
-  checks, typecheck and independent re-review passing.
+- Weekday checks: 41 new pgTAP, 27 bulk and 77 Attendance. Independent review's
+  adapter finding is fixed, with typecheck and independent re-review passing.
+  Initial local counts138/10files and21/2files also included ignored historical
+  test copies; they are not unique current-code coverage totals.
 - Exact catalog delta: one private validator and two runtime privileges
   (validator EXECUTE and new-column UPDATE). Excluding exactly those additions
   reproduces previous 375-function/1,918-grant digests. New totals376/1920;
   RLS and other catalogs unchanged. Catalog plus weekday73 checks pass.
-- Attendance XLSX regression241 checks; final real-XLSX/installed-reader
-  rendered suite20 checks and independent review pass. Chromium1440/390px
+- Attendance's initial regression command passed four current files plus three
+  ignored historical copies (241 total; a current-only total is unavailable
+  from that retained output). The final real-XLSX/installed-reader suite has
+  one unique current file,20 passing checks and independent review approval.
+  Subsequent diagnostic commands explicitly exclude `**/.superpowers/**`;
+  this changes no repository/CI test configuration. Chromium1440/390px
   inspection covers weekday disclosure/editing, actual file import/zero,
   invalid file and dirty blocking, with no horizontal overflow/page errors.
   The School Storybook write callback is intentionally a no-op; browser
@@ -85,3 +90,16 @@ This report contains no raw source rows.
 - Archive hosting package10 and reused name package22 rolled-back pgTAP checks
   pass. Full routine CI, hosted release/apply and staff acceptance are separate
   gates and must be recorded only after execution succeeds.
+- Full CI exposed a stale exact School write-column expectation; its one-line
+  update retains exact equality and every other privilege. RMVP01, catalog and
+  weekday focused checks pass116; independent scoped review approves.
+- Frontend CI at `0ea57fbb` hit its15-minute job cap in `pnpm test`; this is
+  not a passing certificate. A controlled current-only School probe found340
+  weekday inputs mounted in closed disclosure. Lazy disclosure now mounts none
+  until opened and retains drafts through close/reopen. A controlled existing
+  App case failed its60-second timeout at100.102seconds before and passes
+  at7.847seconds after; the complete related App24/School28 suite passes52/52
+  with one worker and ignored copies excluded. This proves the reproduced
+  local bottleneck, not that it was the sole global CI bottleneck or a hosted
+  speed improvement. No timeouts, tests or business rules were weakened.
+  The script subtree independently passes825 checks/45files at two workers.
