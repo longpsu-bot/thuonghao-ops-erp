@@ -97,6 +97,12 @@ complete migration history and the existing active, unlinked technical migration
 Actor. Preview uses a database READ ONLY transaction and creates no receipt.
 Only counts/hashes/status are uploaded; raw extraction stays in runner memory.
 
+Before setup, installation or repository-controlled execution, a native-shell
+workflow gate requires a full lowercase SHA, main dispatch ref, clean checkout,
+and equality with HEAD and freshly fetched origin/main. Protected credentials
+are scoped only to the verified transport and import steps. After extraction,
+the runner rechecks current main immediately before target access.
+
 First run `apply=false` and inspect the safe summary's `content_checksum`.
 Apply additionally requires `apply=true`, exact Staging project confirmation
 and that reviewed checksum. This hash binds source project/contract, archive

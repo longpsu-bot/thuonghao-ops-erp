@@ -62,6 +62,231 @@ const env = {
 };
 
 describe("bounded OPS v1 Ingredient-name correction", () => {
+  it("requires certification before any source or target call", async () => {
+    const executeTarget = vi.fn(),
+      extractSnapshot = vi.fn();
+    await expect(
+      runIngredientNameCorrection({
+        commitSha: "a".repeat(40),
+        environment: env,
+        verifyCheckout: vi.fn(),
+        verifyCertification: async () => {
+          throw Error("NO_CERTIFICATION");
+        },
+        extractSnapshot,
+        executeTarget,
+      }),
+    ).rejects.toThrow("NO_CERTIFICATION");
+    expect(extractSnapshot).not.toHaveBeenCalled();
+    expect(executeTarget).not.toHaveBeenCalled();
+  });
+
+  it.each(["bad login", "denied read", "disabled actor"])(
+    "blocks %s before privileged calls",
+    async (failure) => {
+      const executeTarget = vi.fn();
+      const logout = vi.fn();
+      const createReadSession =
+        failure === "bad login"
+          ? async () => {
+              throw Error("BAD_LOGIN");
+            }
+          : async () => ({
+              read: async () => {
+                throw Error("DENIED_ACTOR");
+              },
+              signOut: logout,
+            });
+      await expect(
+        runIngredientNameCorrection({
+          commitSha: "a".repeat(40),
+          apply: true,
+          planChecksum: "b".repeat(64),
+          targetConfirmation: target,
+          environment: env,
+          verifyCheckout: vi.fn(),
+          verifyCertification: vi.fn(),
+          extractSnapshot: async () => snapshot(),
+          executeTarget,
+          createReadSession,
+        }),
+      ).rejects.toThrow(failure === "bad login" ? "BAD_LOGIN" : "DENIED_ACTOR");
+      expect(executeTarget).not.toHaveBeenCalled();
+      if (failure !== "bad login") expect(logout).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(["login", "capability", "disabled", "network"])(
+    "real auth transport refuses %s before target access",
+    async (failure) => {
+      const executeTarget = vi.fn();
+      const fetchImpl = vi.fn(async (url) => {
+        if (url.includes("/token"))
+          return {
+            ok: failure !== "login",
+            json: async () => ({
+              access_token: failure === "login" ? null : "session-token",
+              user: { id: "actor" },
+            }),
+          };
+        if (url.includes("/logout")) return { ok: true };
+        if (failure === "network") throw Error("private-transport-detail");
+        return {
+          ok: failure !== "capability",
+          json: async () => ({ success: false, error: failure }),
+        };
+      });
+      await expect(
+        runIngredientNameCorrection({
+          commitSha: "a".repeat(40),
+          apply: true,
+          planChecksum: "b".repeat(64),
+          targetConfirmation: target,
+          environment: env,
+          verifyCheckout: vi.fn(),
+          verifyCertification: vi.fn(),
+          extractSnapshot: async () => snapshot(),
+          executeTarget,
+          fetchImpl,
+        }),
+      ).rejects.toThrow(
+        failure === "login"
+          ? "AUTHENTICATED_SIGNIN_FAILED"
+          : failure === "network"
+            ? "AUTHENTICATED_READ_FAILED"
+            : "AUTHENTICATED_READBACK_FAILED",
+      );
+      expect(executeTarget).not.toHaveBeenCalled();
+      const urls = fetchImpl.mock.calls.map(([url]) => url);
+      expect(
+        urls.filter((url) => url.includes("/logout?scope=local")),
+      ).toHaveLength(failure === "login" ? 0 : 1);
+    },
+  );
+
+  it.each(["success", "apply", "readback", "cleanup", "stale"])(
+    "keeps preflight/apply/readback order and cleans up on %s",
+    async (failure) => {
+      const payload = buildIngredientNameCorrectionPayload(snapshot());
+      const plan = {
+        success: true,
+        status: "PREVIEW",
+        plan_checksum: "b".repeat(64),
+        correction_id: payload.correction_id,
+        source_snapshot_checksum: payload.source_snapshot_checksum,
+        migration_versions_checksum: payload.migration_versions_checksum,
+        update_count: 8,
+        no_change_count: 0,
+        report: expected.map(([legacy_id, before, after]) => ({
+          legacy_id,
+          current_name: before,
+          proposed_name: after,
+          action: "UPDATE",
+        })),
+      };
+      const order = [];
+      let reads = 0,
+        calls = 0;
+      const fetchImpl = vi.fn(async (url, options) => {
+        if (url.includes("/token")) {
+          order.push("login");
+          return {
+            ok: true,
+            json: async () => ({
+              access_token: "session-token",
+              user: { id: "actor" },
+            }),
+          };
+        }
+        expect(options.headers.Authorization).toBe("Bearer session-token");
+        if (url.includes("/logout")) {
+          order.push("logout");
+          return { ok: failure !== "cleanup" && failure !== "apply" };
+        }
+        order.push(++reads === 1 ? "preflight" : "readback");
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            ingredients: expected.map(([id, before, after]) => ({
+              ingredient_code: `v1-ingredient-${id}`,
+              ingredient_name:
+                reads === 1 || failure === "readback" ? before : after,
+            })),
+          }),
+        };
+      });
+      const executeTarget = vi.fn(async () => {
+        order.push(["preview", "apply", "replay"][calls++]);
+        if (calls === 2 && failure === "apply")
+          throw Error("PRIMARY_APPLY_FAILURE");
+        return JSON.stringify([
+          {
+            result: {
+              ...plan,
+              status: ["PREVIEW", "APPLIED", "REPLAYED"][calls - 1],
+              reconciled: true,
+              operational_data_unchanged: true,
+              unrelated_master_facts_unchanged: true,
+              updated_count: 8,
+            },
+          },
+        ]);
+      });
+      const verifyCheckout = vi.fn(async () => {
+        if (failure === "stale" && order.includes("preview"))
+          throw Error("STALE_MAIN");
+      });
+      const verifyCertification = vi.fn();
+      const result = runIngredientNameCorrection({
+        commitSha: "a".repeat(40),
+        apply: true,
+        planChecksum: plan.plan_checksum,
+        targetConfirmation: target,
+        environment: env,
+        verifyCheckout,
+        verifyCertification,
+        extractSnapshot: async () => snapshot(),
+        executeTarget,
+        fetchImpl,
+      });
+      if (failure === "success")
+        expect((await result).authenticated_readback.count).toBe(8);
+      else
+        await expect(result).rejects.toThrow(
+          {
+            apply: "PRIMARY_APPLY_FAILURE",
+            readback: "AUTHENTICATED_NAME_READBACK_DRIFT",
+            cleanup: "AUTHENTICATED_SIGNOUT_FAILED",
+            stale: "STALE_MAIN",
+          }[failure],
+        );
+      expect(order.slice(0, 3)).toEqual(["login", "preflight", "preview"]);
+      expect(order.at(-1)).toBe("logout");
+      if (
+        failure === "success" ||
+        failure === "cleanup" ||
+        failure === "readback"
+      )
+        expect(order).toEqual([
+          "login",
+          "preflight",
+          "preview",
+          "apply",
+          "replay",
+          "readback",
+          "logout",
+        ]);
+      if (failure === "stale") expect(executeTarget).toHaveBeenCalledOnce();
+      expect(verifyCertification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          commitSha: "a".repeat(40),
+          certificationMode: "github",
+        }),
+      );
+    },
+  );
+
   it("rejects missing readback credentials before source or target access", async () => {
     const extractSnapshot = vi.fn(),
       executeTarget = vi.fn();
@@ -97,6 +322,12 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
       /plan_checksum:\s*\n\s+description:[^\n]+\n\s+required: false/,
     );
     expect(workflow).toContain("environment: atlas-staging");
+    const runnerStep = workflow.slice(
+      workflow.indexOf("- name: Read exact v1 scope"),
+      workflow.indexOf("- name: Save bounded"),
+    );
+    expect(runnerStep).toContain("GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}");
+    expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/main"');
     expect(workflow).toContain("contents: read");
     expect(workflow).toContain("ref: ${{ inputs.commit_sha }}");
     expect(workflow).toContain(
@@ -258,6 +489,15 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
       commitSha: "a".repeat(40),
       environment: env,
       verifyCheckout,
+      verifyCertification: vi.fn(),
+      createReadSession: async () => ({
+        read: async () =>
+          expected.map(([id, , name]) => ({
+            ingredient_code: `v1-ingredient-${id}`,
+            ingredient_name: name,
+          })),
+        signOut: vi.fn(),
+      }),
       extractSnapshot,
       executeTarget,
     });
@@ -272,6 +512,15 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
         targetConfirmation: target,
         environment: env,
         verifyCheckout,
+        verifyCertification: vi.fn(),
+        createReadSession: async () => ({
+          read: async () =>
+            expected.map(([id, , name]) => ({
+              ingredient_code: `v1-ingredient-${id}`,
+              ingredient_name: name,
+            })),
+          signOut: vi.fn(),
+        }),
         extractSnapshot,
         executeTarget,
       }),
@@ -286,6 +535,15 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
         targetConfirmation: target,
         environment: env,
         verifyCheckout,
+        verifyCertification: vi.fn(),
+        createReadSession: async () => ({
+          read: async () =>
+            expected.map(([id, , name]) => ({
+              ingredient_code: `v1-ingredient-${id}`,
+              ingredient_name: name,
+            })),
+          signOut: vi.fn(),
+        }),
         extractSnapshot,
         executeTarget,
       }),
@@ -300,6 +558,15 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
       targetConfirmation: target,
       environment: env,
       verifyCheckout,
+      verifyCertification: vi.fn(),
+      createReadSession: async () => ({
+        read: async () =>
+          expected.map(([id, , name]) => ({
+            ingredient_code: `v1-ingredient-${id}`,
+            ingredient_name: name,
+          })),
+        signOut: vi.fn(),
+      }),
       extractSnapshot,
       executeTarget,
     });

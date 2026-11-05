@@ -10,7 +10,10 @@ import {
   canonicalMasterJson,
   canonicalizeUnitSourceLabel,
 } from "./ops-v1-master-snapshot-contract.mjs";
-import { redactAtlasStagingDiagnostic } from "./atlas-staging-contract.mjs";
+import {
+  redactAtlasStagingDiagnostic,
+  verifyExactHeadCertification,
+} from "./atlas-staging-contract.mjs";
 import { migrationVersionsFromFilenames } from "./verify-atlas-staging.mjs";
 
 const STAGING = "rnzxmxiiqgtdevzregff";
@@ -285,8 +288,7 @@ function validatePlan(result, payload, statuses) {
   return result;
 }
 
-async function authenticatedIngredientReadback(
-  payload,
+async function authenticatedIngredientReadSession(
   authority,
   environment,
   fetchImpl,
@@ -304,7 +306,10 @@ async function authenticatedIngredientReadback(
         redirect: "error",
         signal: AbortSignal.timeout(45_000),
       });
-      return { ok: response.ok, body: await response.json() };
+      return {
+        ok: response.ok,
+        body: url.includes("/auth/v1/logout") ? null : await response.json(),
+      };
     } catch {
       fail("AUTHENTICATED_READ_FAILED");
     }
@@ -319,34 +324,55 @@ async function authenticatedIngredientReadback(
   );
   if (!login.ok || !login.body?.access_token || !login.body?.user?.id)
     fail("AUTHENTICATED_SIGNIN_FAILED");
-  const read = await request(
-    `${authority.targetSupabaseUrl}/rest/v1/rpc/get_ingredient_supplier_master_data`,
-    {
-      method: "POST",
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${login.body.access_token}`,
-        "Content-Type": "application/json",
-        "Content-Profile": "atlas_api",
-      },
-      body: JSON.stringify({
-        request: {
-          contract_version: "RMVP-01.v1",
-          requested_by_auth_subject: login.body.user.id,
-          correlation_id: randomUUID(),
-          payload: {},
+  return {
+    async read() {
+      const read = await request(
+        `${authority.targetSupabaseUrl}/rest/v1/rpc/get_ingredient_supplier_master_data`,
+        {
+          method: "POST",
+          headers: {
+            apikey: key,
+            Authorization: `Bearer ${login.body.access_token}`,
+            "Content-Type": "application/json",
+            "Content-Profile": "atlas_api",
+          },
+          body: JSON.stringify({
+            request: {
+              contract_version: "RMVP-01.v1",
+              requested_by_auth_subject: login.body.user.id,
+              correlation_id: randomUUID(),
+              payload: {},
+            },
+          }),
         },
-      }),
+      );
+      if (
+        !read.ok ||
+        read.body?.success !== true ||
+        !Array.isArray(read.body.ingredients)
+      )
+        fail("AUTHENTICATED_READBACK_FAILED");
+      return read.body.ingredients;
     },
-  );
-  if (
-    !read.ok ||
-    read.body?.success !== true ||
-    !Array.isArray(read.body.ingredients)
-  )
-    fail("AUTHENTICATED_READBACK_FAILED");
+    async signOut() {
+      const result = await request(
+        `${authority.targetSupabaseUrl}/auth/v1/logout?scope=local`,
+        {
+          method: "POST",
+          headers: {
+            apikey: key,
+            Authorization: `Bearer ${login.body.access_token}`,
+          },
+        },
+      );
+      if (!result.ok) fail("AUTHENTICATED_SIGNOUT_FAILED");
+    },
+  };
+}
+
+function validateIngredientReadback(payload, ingredients) {
   for (const expected of payload.records) {
-    const row = read.body.ingredients.find(
+    const row = ingredients.find(
       (item) => item.ingredient_code === `v1-ingredient-${expected.legacy_id}`,
     );
     if (row?.ingredient_name !== expected.expected_after_name)
@@ -363,9 +389,10 @@ export async function runIngredientNameCorrection({
   environment = process.env,
   cwd = process.cwd(),
   verifyCheckout = verifyExactMainCheckout,
+  verifyCertification = verifyExactHeadCertification,
   extractSnapshot = extractReviewedIngredientSnapshot,
   executeTarget,
-  verifyReadback,
+  createReadSession = authenticatedIngredientReadSession,
   fetchImpl = fetch,
 } = {}) {
   if (apply && !SHA256.test(String(planChecksum ?? "")))
@@ -387,6 +414,12 @@ export async function runIngredientNameCorrection({
   )
     fail("AUTHENTICATED_READBACK_CREDENTIALS_REQUIRED");
   await verifyCheckout({ commitSha, cwd });
+  await verifyCertification({
+    commitSha,
+    certificationMode: "github",
+    environment,
+    cwd,
+  });
   const snapshot = await extractSnapshot({
     projectRef: SOURCE,
     accessToken: authority.targetAccessToken,
@@ -418,37 +451,51 @@ export async function runIngredientNameCorrection({
         }),
       ),
     );
-  const preview = validatePlan(await call(false), payload, ["PREVIEW"]);
-  if (!apply) return preview;
-  if (preview.plan_checksum !== planChecksum)
-    fail("REVIEWED_PLAN_CHECKSUM_DRIFT");
-  await verifyCheckout({ commitSha, cwd });
-  const applied = validatePlan(await call(true, planChecksum), payload, [
-    "APPLIED",
-    "REPLAYED",
-  ]);
-  if (
-    applied.reconciled !== true ||
-    applied.operational_data_unchanged !== true ||
-    applied.unrelated_master_facts_unchanged !== true ||
-    applied.updated_count !== 8
-  )
-    fail("APPLY_READBACK_DRIFT");
-  const replay = validatePlan(await call(true, planChecksum), payload, [
-    "REPLAYED",
-  ]);
-  if (replay.reconciled !== true) fail("REPLAY_DRIFT");
-  const readback = await (
-    verifyReadback ??
-    (executeTarget
-      ? async () => ({ status: "INJECTED_TARGET_READBACK" })
-      : authenticatedIngredientReadback)
-  )(payload, authority, environment, fetchImpl);
-  return {
-    ...applied,
-    replay_status: replay.status,
-    authenticated_readback: readback,
-  };
+  let session;
+  let primaryError;
+  try {
+    if (apply) {
+      session = await createReadSession(authority, environment, fetchImpl);
+      await session.read();
+    }
+    const preview = validatePlan(await call(false), payload, ["PREVIEW"]);
+    if (!apply) return preview;
+    if (preview.plan_checksum !== planChecksum)
+      fail("REVIEWED_PLAN_CHECKSUM_DRIFT");
+    await verifyCheckout({ commitSha, cwd });
+    const applied = validatePlan(await call(true, planChecksum), payload, [
+      "APPLIED",
+      "REPLAYED",
+    ]);
+    if (
+      applied.reconciled !== true ||
+      applied.operational_data_unchanged !== true ||
+      applied.unrelated_master_facts_unchanged !== true ||
+      applied.updated_count !== 8
+    )
+      fail("APPLY_READBACK_DRIFT");
+    const replay = validatePlan(await call(true, planChecksum), payload, [
+      "REPLAYED",
+    ]);
+    if (replay.reconciled !== true) fail("REPLAY_DRIFT");
+    const readback = validateIngredientReadback(payload, await session.read());
+    return {
+      ...applied,
+      replay_status: replay.status,
+      authenticated_readback: readback,
+    };
+  } catch (error) {
+    primaryError = error;
+    throw error;
+  } finally {
+    if (session) {
+      try {
+        await session.signOut();
+      } catch (error) {
+        if (!primaryError) throw error;
+      }
+    }
+  }
 }
 
 async function main() {

@@ -112,6 +112,7 @@ export async function runStagingRecipeHistory({
   const execute =
     executeTarget ??
     ((t, sql) => executeAtlasStagingPostgres(t, sql, { environment, cwd }));
+  await verifyCheckout({ commitSha, cwd });
   const result = parseStagingMasterResult(
     await execute(
       target,

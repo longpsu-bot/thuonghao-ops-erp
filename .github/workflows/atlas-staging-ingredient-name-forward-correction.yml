@@ -48,6 +48,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
           [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
           git fetch --no-tags origin main:refs/remotes/origin/main
           test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
@@ -88,6 +89,7 @@ jobs:
           pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
       - name: Read exact v1 scope, preview, and optionally apply
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REQUESTED_SHA: ${{ inputs.commit_sha }}
           APPLY_REQUESTED: ${{ inputs.apply }}
           REVIEWED_PLAN_CHECKSUM: ${{ inputs.plan_checksum }}

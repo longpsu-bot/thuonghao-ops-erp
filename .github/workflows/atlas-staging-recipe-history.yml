@@ -36,22 +36,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: atlas-staging
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
-      VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
-      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
-      ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
-      ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
-      ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
-      ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
-      SUPABASE_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commit_sha }}
           fetch-depth: 0
+      - name: Verify exact current main
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
+          test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"
+          test -z "$(git status --porcelain)"
       - uses: pnpm/action-setup@v4
         with:
           version: 11.7.0
@@ -63,6 +64,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Prepare verified exact Staging transport
         env:
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          SUPABASE_TELEMETRY_DISABLED: "1"
           SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
         run: |
@@ -79,6 +82,15 @@ jobs:
           pnpm exec supabase link --project-ref "$ATLAS_STAGING_PROJECT_REF" >/dev/null
       - name: Extract once, preview and optionally import the reviewed content
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
           REQUESTED_SHA: ${{ inputs.commit_sha }}
           APPLY_REQUESTED: ${{ inputs.apply }}
           CONFIRMED_TARGET: ${{ inputs.target_project_ref }}

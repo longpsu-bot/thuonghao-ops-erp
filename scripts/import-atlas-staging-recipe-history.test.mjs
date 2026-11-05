@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { checksumOpsV1MasterSnapshot } from "./ops-v1-master-snapshot-contract.mjs";
 import {
@@ -36,6 +37,49 @@ const environment = {
 };
 
 describe("guarded Staging recipe source history", () => {
+  it("gates checkout before setup or secrets and rechecks after extraction", async () => {
+    const workflow = readFileSync(
+      ".github/workflows/atlas-staging-recipe-history.yml",
+      "utf8",
+    );
+    const gate = workflow.indexOf("- name: Verify exact current main");
+    expect(gate).toBeGreaterThan(workflow.indexOf("actions/checkout@v4"));
+    expect(gate).toBeLessThan(workflow.indexOf("pnpm/action-setup"));
+    expect(workflow.slice(0, gate)).not.toContain("secrets.");
+    for (const step of workflow.split(/(?=      - (?:name:|uses:|run:))/)) {
+      if (step.includes("secrets."))
+        expect(step).toMatch(
+          /- name: (Prepare verified exact Staging transport|Extract once, preview and optionally import the reviewed content)/,
+        );
+    }
+
+    expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/main"');
+    expect(workflow).toContain('[[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]');
+    expect(workflow).toContain(
+      'test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"',
+    );
+    expect(workflow).toContain(
+      'test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"',
+    );
+    expect(workflow).toContain('test -z "$(git status --porcelain)"');
+    const executeTarget = vi.fn();
+    const verifyCheckout = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(Error("STALE_AFTER_EXTRACT"));
+    await expect(
+      runStagingRecipeHistory({
+        commitSha: sha,
+        environment,
+        verifyCheckout,
+        verifyCertification: vi.fn(),
+        extractSnapshot: async () => snapshot(),
+        executeTarget,
+      }),
+    ).rejects.toThrow("STALE_AFTER_EXTRACT");
+    expect(executeTarget).not.toHaveBeenCalled();
+  });
+
   it("binds source content while allowing a fresh technical extraction", () => {
     const a = snapshot();
     const b = {
