@@ -1,32 +1,37 @@
 # Atlas Autopilot Mandate
 
-## Current parity mandate — 5 November 2026
+## Closed parity horizon — 5 November 2026
 
-**Status: ACTIVE within the bounded parity campaign.** The Owner requested all
-identified parity work except Supplier commitment cancellation. Execute the
-[specification](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md) and
-[plan](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md), with exact-head
-review/CI and guarded Staging release/import/readback. The older UI-only
-sequencing below is historical. Preserve all approved business/security
-contracts and historical receipts. OPS v1 and Production stay NO-WRITE;
-Warehouse stays PAUSED; Supplier cancellation stays excluded.
+**Status: DELIVERED for the bounded Staging horizon.** The Owner-authorized
+feature/data work is verified through the factual correction. There is no next
+automatic data or operational action under this mandate. The older UI-only
+sequencing below is historical and must not reopen this closed horizon.
 
-Complete independent tasks without repeated permission requests. Do not guess
-the kitchen answer, addresses/group membership or staff pilot acceptance.
-The [current comparison](../testing/atlas-v1-parity-2026-11-05.md) is diagnostic:
-large BOM differences need separately bounded correction/adoption, not automatic
-activation of archived rules. Unrestricted staff pilot remains gated by actual
-scoped parity and named staff/School/week. No unrelated task follows this horizon.
+The [delivery record](ACTIVE_TASK.md) identifies exact code/CI,138 migrations,
+603 archived source records/17 inactive, School54's three-root prerequisite,
+34 governed weekday configurations and eight corrected names plus only1047's
+source-backed seafood classification. All apply paths passed readback/replay;
+protected operational facts and native adjustments/revisions3/3 remain intact.
+The final data mutation was factual Apply42020808586. Do not rerun earlier
+one-time packages after subsequent authorized changes.
 
-PR453 is merged and exact-main CI/Staging migration deployment passed. Recipe
-history603/17inactive was imported and replayed without native changes. The
-first weekday preview correctly stopped before writes: configured School54 is
-missing in Atlas. The prior unconfigured claim was an observation error, not
-source drift. The [bounded prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md)
-may create only School54 and its required Customer/Delivery Location through
-the controlled importer. Preserve all existing rows and mappings. Then resume
-weekday sync and run the eight-name correction last. No full master refresh,
-new Dish import or native BOM adoption is opened by this prerequisite.
+Keep the [specification](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md),
+[plans](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md), source evidence,
+receipts and [qualified validation record](../testing/atlas-v1-parity-2026-11-05.md).
+No failed, skipped or cancelled CI attempt is recast as a passing certificate.
+Recovery preserves facts and uses reviewed forward correction.
+
+**Full v1 parity and staff acceptance are not delivered.** The pre-backfill
+BOM comparison remains diagnostic. Missing Dish mappings/native rule adoption
+need a separately bounded School/Dish/date reconciliation. Do not automatically
+activate archived rules or rewrite released documents. Staff lead, School/week,
+kitchen and required address/group facts remain actual pilot prerequisites;
+never invent them or interpret silence as acceptance.
+
+OPS v1 and Production remain NO-WRITE; Warehouse stays PAUSED; Supplier
+commitment cancellation remains excluded. No unrelated Draft merge, staff or
+Supplier communication, Production cutover, schedule or new execution horizon
+is opened by this closeout.
 
 **Current checkpoint:** 29 October 2026 (Asia/Bangkok).
 

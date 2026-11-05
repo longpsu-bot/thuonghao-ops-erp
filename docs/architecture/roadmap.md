@@ -1,54 +1,50 @@
 # Atlas Roadmap
 
-## Owner-authorized parity campaign — 5 November 2026
+## Verified bounded Staging delivery — 5 November 2026
 
-This section supersedes the dated queue/deferred status below only for the
-[bounded parity specification](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md).
-The Owner requested all listed parity work except Supplier cancellation;
-Warehouse remains paused. Source OPS v1 and Production remain NO-WRITE.
+The Owner-authorized parity horizon is delivered within the
+[approved scope](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md), except
+Supplier cancellation as requested. This status does not establish full BOM
+parity or actual staff acceptance. Warehouse remains paused; no Production
+cutover or OPS v1 write occurred.
 
-- Recipe history #452 and parity #453 are merged. Exact main `539ae033` passed
-  Frontend41990276383 and executed Full41990276428; Staging deployment41992370968
-  installed138 migrations. Archive apply41992825322 retained603 records/17inactive,
-  matched all603 on readback and replayed the same receipt. All117 protected
-  tables and native adjustments/revisions3/3 stayed unchanged.
-- Weekday School defaults and Attendance XLSX are implemented and independently
-  reviewed. Weekday preview41993048837 stopped before any command because
-  configured source School54 lacks its Atlas mapping. The original evidence
-  already contained its weekday settings; the earlier unconfigured claim was
-  wrong. Complete only the [three-root prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md),
-  then rerun governed weekday sync and hosted readback. No full master refresh
-  or other School/Dish correction is included.
-- School54 prerequisite #454 merged as `a57a892b` with passing exact-main
-  Frontend/Full certification (the Full rerun retained the initial disposable
-  cache-startup503 failure). Two source-backed previews passed; two Applies
-  stopped before writes as the complete master hash changed while School54's
-  facts stayed identical. The bounded correction scopes source plan identity to
-  the exact four normalized dependencies, retaining full source validation and
-  all target fingerprints. No School54 root or receipt has been created yet.
-- Checkpoint update: #455 merged as `d80a1361` and exact-main Frontend/Full
-  passed. School54 Apply42012115437 and weekday Apply42012951054 succeeded,
-  including replay/authenticated readback and all34 weekday configurations.
-  The preceding absent-root statement describes the rejected earlier attempts.
-  Eight-name Preview42013307974 stopped before writes because1047's canonical
-  type is36/Heo in Atlas versus explicit source43/Thuỷ hải sản. The existing
-  active catalogue mappings permit the [bounded factual correction](../superpowers/plans/2026-11-05-ingredient-factual-correction.md):
-  eight names plus only1047's type reference, all other facts preserved.
-- Existing multi-day Shopping List was already merged through #367; the old
-  deferral below is stale. Ninety focused daily-range checks pass.
-- Reuse only the compatible eight-name correction package from Draft #445,
-  repinned to complete current migration authority; do not wholesale merge its
-  older UI/Autopilot. Fresh source/target names are confirmed, not yet applied.
-- [Current BOM comparison](../testing/atlas-v1-parity-2026-11-05.md) records
-  562 SYSTEM differences and 1,835 School override affected differences.
-  These block unrestricted pilot and do not authorize automatic archive activation.
-- [Staff pilot packet](../runbooks/atlas-staff-pilot.md) is prepared. Staff lead,
-  School/week scope, kitchen fact and required address/group evidence remain
-  external prerequisites, not completed acceptance.
+- PRs453/454/455/456 are merged. Exact final-factual main `6ab5063b` passed
+  Frontend42018205721 and executed Full42018205722. Guarded deploy41992370968
+  installed138 migrations ending20261105090000.
+- Archive Apply41992825322 at `539ae033` retained603 surviving v1 records,17 inactive, with
+  exact readback and receipt replay. Read-only verification42008038118 matched
+  the same source content. No legacy rule was activated.
+- School54 Apply42012115437 at `d80a1361` created its three missing identities/mappings.
+  Weekday Apply42012951054 at `d80a1361` updated34 Schools through the governed authenticated
+  command, with replay/all-School readback. Independent source/target normalized
+  content matched all34. General defaults and saved Attendance were preserved.
+- Attendance XLSX imports into a clean draft through canonical Preview/Save.
+  Multi-day Shopping List already existed through #367; its90 focused checks
+  remain valid, and the older deferral below is stale.
+- Factual Apply42020808586 at `6ab5063b` corrected the eight reviewed names plus ONLY1047's
+  canonical type36/Heo to43/Thuỷ hải sản. All eight versions/mappings advanced
+  once to3. Authenticated name/type readback and replay passed; facts outside
+  this exact delta were protected across117 tables. Native adjustments and
+  revisions remain3/3; archive603/17 and weekday configurations34 remain.
 
-Merged, schema-deployed, data-applied and staff-accepted states remain distinct.
-Preserve dated failures and the prior completed core-data receipt. No unrelated
-Draft, cancellation workflow, Warehouse or Production cutover is activated.
+Earlier rejected attempts and the School54 source-observation error are retained
+in the [qualified evidence](../testing/atlas-v1-parity-2026-11-05.md), alongside the
+reviewed source-plan correction and explicit classification amendment. No check
+or guard was weakened. Only compatible bounded code was reused from Draft #445;
+its unrelated UI/Autopilot was not merged.
+
+The data-mutation horizon is CLOSED after factual Apply42020808586. Do not
+replay one-time packages after later changes or refresh unrelated masters.
+Preserve roots/receipts and recover through reviewed forward correction.
+
+The [BOM comparison](../testing/atlas-v1-parity-2026-11-05.md) contains pre-backfill
+observations:562 SYSTEM differences and1,835 School-override affected differences,
+with missing mappings and blockers. It was not rerun as a full post-import parity
+certification. The data imports do not close those issues. Unrestricted pilot
+remains gated by a separately bounded School/Dish/date reconciliation.
+The [pilot packet](../runbooks/atlas-staff-pilot.md) is ready, while staff lead,
+School/week, kitchen and required address/group evidence remain unconfirmed.
+No new execution horizon follows automatically.
 
 **Reviewed:** 27 October 2026 (Asia/Bangkok). Repository baseline: `9a0148480ad8250faef249f606382fe10a00a32e`, latest verified `origin/main`.
 

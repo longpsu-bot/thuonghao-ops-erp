@@ -1,9 +1,10 @@
 # Atlas / OPS v1 parity observations — 5 November 2026
 
 Owner authorized parity work except Supplier commitment cancellation; Warehouse
-remains paused. Source OPS `qnthofvccilhnefdcxnz` and target Atlas Staging
-`rnzxmxiiqgtdevzregff` were read-only for these observations. This is migration
-evidence, not Production or staff acceptance.
+remains paused. Comparisons used read-only observations of source OPS
+`qnthofvccilhnefdcxnz` and target Atlas Staging `rnzxmxiiqgtdevzregff`.
+Subsequent authorized Staging writes are recorded separately below. Source OPS
+and Production were never written. This is migration evidence, not staff acceptance.
 
 ## Effective composition
 
@@ -109,7 +110,7 @@ This report contains no raw source rows.
   speed improvement. No timeouts, tests or business rules were weakened.
   The script subtree independently passes825 checks/45files at two workers.
 
-## Hosted delivery checkpoint
+## Hosted checkpoint before the final factual correction
 
 Exact source `d80a1361` passed Frontend42009379045 and executed
 Full42009379140. Staging retains138 migrations ending20261105090000.
@@ -131,3 +132,77 @@ type43/Thuỷ hải sản. Both existing typed catalogue mappings are ACTIVE. Th
 separate factual correction must state this one additional type change, preserve
 all other facts, refresh truthful mappings and undergo review/CI before Apply.
 No name correction or classification update is claimed at this checkpoint.
+
+## Verified final bounded delivery
+
+All four data deliveries below succeeded. Implementation PRs453,454,455,456
+were independently reviewed and merged. The final factual operation used exact source
+`6ab5063b3d5c652f96d9aa96819bf61573ccd1bd` passed
+[Frontend42018205721](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42018205721)
+and executed
+[Full42018205722](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42018205722).
+Cloudflare published that main. Guarded Staging deploy41992370968 established
+all138 migrations; final independent readback retains tip20261105090000.
+The subsequent closeout change affects documentation only.
+
+| Delivery                      | Successful Apply                                                                         | Exact source SHA                           | Verified outcome                                                                                                        |
+| ----------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Recipe source archive         | [41992825322](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/41992825322) | `539ae033d745d6fc01d8c1332579e7980e597f26` | 603 exact source rows,17 inactive, same-receipt replay, no native activation                                            |
+| School54 prerequisite         | [42012115437](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42012115437) | `d80a1361a87b528ce66c8051758d06c8d96a3383` | 3 roots/3 mappings/1 receipt,117-table protection, replay and authenticated readback                                    |
+| School weekday defaults       | [42012951054](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42012951054) | `d80a1361a87b528ce66c8051758d06c8d96a3383` | 34 updates through one real authenticated command, replay and all-School readback                                       |
+| Ingredient factual correction | [42020808586](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42020808586) | `6ab5063b3d5c652f96d9aa96819bf61573ccd1bd` | 8 names plus only1047's canonical type36→43, all versions/mappings2→3 once, replay and authenticated type/name readback |
+
+Archive receipt: `ac65b864-e842-4d15-8495-ae1ad5d3c861`.
+School54 receipt: `ec55d20a-631f-47aa-85a4-d7496ca9b4aa`.
+Final factual receipt: `dbf45a1a-a5dc-4aa5-a99b-7b91ad1bea4d`.
+All are retained; no import or replay follows the final factual correction.
+
+The factual preview42020490122 explicitly reported all eight old/new names,
+versions2, and1047's existing mapped transition Heo36→Thuỷ hải sản43. Both
+catalogues were already ACTIVE; no catalogue entry was created. Reviewed plan:
+`8ac75d106a6129f767a16cfcdcbd27188c222aef0f260f61cbf8f14561b88816`.
+Apply used the same plan/source snapshot, preserved operational and unrelated
+master facts across117 protected tables, and refreshed truthful source43 mapping
+fingerprints. Independent readback confirms all eight names and mapping versions3,
+1047's seafood classification,51 Schools,34 weekday configurations, archive603/17,
+and native adjustments/revisions3/3. Quantity, Unit, group, step, status, Recipe
+and released rows were not changed by this correction.
+
+At18:07 local time, independent source and target read-only snapshots normalized
+all configured School codes and Monday-Friday objects with null omission and
+explicit zero. Both had34 configurations, zero inactive configured Schools and
+identical content MD5 `f15aab46ef6f552f8c8f06dd8e784979`; the source had no invalid
+array shapes. This is an independent equality check at that observation, not a
+cross-project transaction or continuous synchronization.
+Read-only archive verification42008038118 also retained603/17 and matched the
+original source business checksum:
+`e045a04fc3dd6590b53a1a68f513a1d28c92db557688a579e6b19b501691e5b7`.
+
+The failed pre-write guards remain part of the record. Weekday mapping guard
+caught missing School54; the original unconfigured claim was an observation
+error. Two School54 Applies rejected differing full-source plan hashes before
+any root/receipt creation; narrowing only source content identity to the exact
+normalized dependency closure retained complete-source validation and every
+target guard. Full-hash differences did not establish a specific source-row
+mutation. Name-only preview then caught1047's actual classification mismatch;
+the explicit factual amendment corrected it instead of forging source data or
+removing non-name guards. One earlier exact-main Full attempt failed on disposable
+PostgREST startup503; the same-commit fresh attempt passed. No failure, skip or
+cancellation is counted as success and no assertion, timeout or security check
+was weakened.
+
+Final scoped correction evidence includes25 runner/39 pgTAP checks and116
+related PostgreSQL checks; source-plan correction includes25 runner/46 pgTAP
+checks. GitHub owns the full routine suites. The browser evidence above remains
+component-level; real persistence evidence comes from SQL and authenticated
+hosted readback, not the Storybook no-op callback.
+
+**Delivery horizon closed; full parity remains unclaimed.** The SYSTEM/School
+BOM tables above describe pre-School54-backfill observations. No full post-import
+BOM certification or actual staff pilot was performed. Large composition/Unit
+differences, missing Dish mappings and factual kitchen/School/week/address/group
+prerequisites remain. Reconcile a separately bounded School/Dish/date scope before
+unrestricted staff use. Never automatically replay archive rules or recalculate
+released documents. Supplier cancellation, Warehouse, external communication and
+Production cutover remain excluded. Recovery preserves roots/receipts and uses a
+reviewed forward correction.
