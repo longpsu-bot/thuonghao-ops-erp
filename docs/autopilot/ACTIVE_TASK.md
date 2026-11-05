@@ -5,35 +5,44 @@
 **Task:** ATLAS-V1-PARITY-CLOSEOUT — Owner requests execution of the identified
 parity gaps except Supplier commitment/PO cancellation. Warehouse stays paused.
 
-Canonical checkout `E:/Project/OPS ERP/thuonghao-ops-erp`. PR453 merged as
-`539ae033` after independent review and passing exact-head CI; exact merged-main
-Frontend41990276383 and executed Full41990276428 also passed. Staging deploy
-41992370968 installed all138 migrations. Archive apply41992825322 imported603
-records including17 inactive, with exact readback/replay and117 protected tables
-unchanged; native adjustments/revisions remain3/3.
+Canonical checkout `E:/Project/OPS ERP/thuonghao-ops-erp`. Current certified
+implementation main is `d80a1361`, with passing Frontend42009379045 and executed
+Full42009379140. PRs453/454/455 deliver the features and reviewed prerequisites.
+Current branch `fix/ingredient-shrimp-type-fidelity` starts clean from that main.
 
-School54 prerequisite #454 subsequently merged as `a57a892b`; exact-main
-Frontend41998777270 passed and Full41998777095 passed on attempt2 after an
-initial disposable PostgREST cache-startup503. No checks or limits changed.
-Current branch `fix/school54-closed-source-plan` starts clean from that main.
-Weekday preview41993048837 stopped before any School command because
-configured School54 has no Atlas mapping. The earlier unconfigured claim was
-an observation error. Execute only the [bounded three-root prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md),
-then rerun weekday preview/apply and finally the eight-name correction.
-School54 previews42003197238/42004344627 passed, but applies42003734495/42005054822
-were rejected before writes when complete source checksums differed. The exact
-School54 facts remained unchanged; all three roots and receipt remain absent.
-Correct only the reviewed source hash to its exact normalized dependency closure,
-keeping complete source validation and all target preservation guards. Do not
-loop Apply or refresh unrelated masters.
+Verified Staging delivery:
+
+- Deploy41992370968 installed138 migrations, ending20261105090000.
+- Archive Apply41992825322 retained603 records,17 inactive, with exact readback
+  and receipt replay. Read-only verification42008038118 matched the same source
+  content. No native Recipe rule was activated.
+- School54 Apply42012115437 created exactly three roots/three mappings, with
+  replay, authenticated readback and117 protected tables preserved. Receipt:
+  `ec55d20a-631f-47aa-85a4-d7496ca9b4aa`.
+- Weekday Apply42012951054 updated34 Schools through one authenticated command,
+  with replay and complete School readback. School54 is version2, general0/0
+  and Monday-Friday370/20. Archive603 and native adjustments/revisions3/3 remain.
+- Attendance XLSX and the existing daily Shopping List range are implemented
+  and verified. Actual staff-pilot participation has not occurred.
+
+Do not rerun the one-time School54 path after weekday changes. Earlier rejected
+previews/applies and the source-observation correction remain in the
+[evidence report](../testing/atlas-v1-parity-2026-11-05.md) and prerequisite plan.
+One exact-main Full run required a fresh disposable rerun after startup503;
+no check, assertion or timeout was weakened.
+
+Remaining bounded action: Ingredient-name Preview42013307974 rejected before
+writes because1047 is type36/Heo in Atlas versus explicit source43/Thuỷ hải sản.
+Both mapped catalogue entries already exist and are ACTIVE. Execute only the
+[eight-name plus one classification plan](../superpowers/plans/2026-11-05-ingredient-factual-correction.md)
+after independent review and exact-head/exact-main CI. Run a fresh reviewed
+preview/apply as the LAST data mutation, then readback/replay and closeout.
+Do not fake source36, remove non-name fidelity guards or refresh other masters.
 The [spec](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md),
 [plan](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md),
 [comparison](../testing/atlas-v1-parity-2026-11-05.md) and
 [pilot packet](../runbooks/atlas-staff-pilot.md) govern this bounded horizon.
 
-Weekday defaults and Attendance XLSX implementation/focused checks/independent
-review are complete; the School54 prerequisite, weekday sync and eight-name
-correction remain. Existing daily Shopping List range already works and is verified.
 No new lifecycle, dependency, public RPC, Warehouse, Supplier cancellation or
 Production write is allowed. Do not wholesale integrate unrelated Drafts.
 

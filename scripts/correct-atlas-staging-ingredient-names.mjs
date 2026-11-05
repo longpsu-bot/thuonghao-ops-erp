@@ -18,8 +18,8 @@ import { migrationVersionsFromFilenames } from "./verify-atlas-staging.mjs";
 
 const STAGING = "rnzxmxiiqgtdevzregff";
 const SOURCE = "qnthofvccilhnefdcxnz";
-const CONTRACT = "OPS-V1-INGREDIENT-NAME-FORWARD-CORRECTION.v1";
-const CORRECTION_ID = "ops-v1-ingredient-name-forward-correction-20261027-v1";
+const CONTRACT = "OPS-V1-INGREDIENT-FACTUAL-CORRECTION.v1";
+const CORRECTION_ID = "ops-v1-ingredient-factual-correction-20261105-v1";
 const SHA256 = /^[0-9a-f]{64}$/;
 export const INGREDIENT_NAME_CORRECTIONS = Object.freeze([
   ["931", "Chả giò", "Chả giò xốp Cholimex 2kg"],
@@ -86,6 +86,23 @@ export function ingredientNameCorrectionMigrationVersions(cwd = process.cwd()) {
   );
 }
 
+function sourceTypeCatalog(types, access) {
+  if (
+    access?.has_select !== true ||
+    access?.has_non_select !== false ||
+    !Array.isArray(types) ||
+    types.length !== 2 ||
+    types.filter(
+      (r) => r.legacy_id === "36" && r.ingredient_type_name === "Heo",
+    ).length !== 1 ||
+    types.filter(
+      (r) => r.legacy_id === "43" && r.ingredient_type_name === "Thuỷ hải sản",
+    ).length !== 1
+  )
+    fail("SOURCE_TYPE_CATALOG_DRIFT");
+  return types;
+}
+
 export function buildIngredientNameCorrectionPayload(
   snapshot,
   { migrationVersions = ingredientNameCorrectionMigrationVersions() } = {},
@@ -117,6 +134,16 @@ export function buildIngredientNameCorrectionPayload(
     },
   );
   if (rows.length !== records.length) fail("SOURCE_SCOPE_DRIFT");
+  const types = sourceTypeCatalog(
+    snapshot.records.ingredient_types,
+    snapshot.source_catalog_access,
+  );
+  if (
+    records.find((r) => r.legacy_id === "1047").source_record
+      .ingredient_type_legacy_id !== "43"
+  )
+    fail("SOURCE_TYPE_DRIFT");
+
   if (
     migrationVersions.length !== 138 ||
     migrationVersions.at(-1) !== "20261105090000"
@@ -130,6 +157,13 @@ export function buildIngredientNameCorrectionPayload(
     expected_migration_versions: migrationVersions,
     migration_versions_checksum: hash(canonicalMasterJson(migrationVersions)),
     records,
+    type_correction: {
+      legacy_id: "1047",
+      expected_before_type_legacy_id: "36",
+      expected_after_type_legacy_id: "43",
+      source_types: types,
+      source_catalog_access: snapshot.source_catalog_access,
+    },
   };
 }
 
@@ -189,8 +223,11 @@ export function buildIngredientNameSourceSql() {
     'has_non_select',pg_catalog.has_table_privilege(r.oid,'public.ingredients','INSERT')
       or pg_catalog.has_table_privilege(r.oid,'public.ingredients','UPDATE')
       or pg_catalog.has_table_privilege(r.oid,'public.ingredients','DELETE')
-      or pg_catalog.has_table_privilege(r.oid,'public.ingredients','TRUNCATE'))
+      or pg_catalog.has_table_privilege(r.oid,'public.ingredients','TRUNCATE,REFERENCES,TRIGGER')
+      or pg_catalog.has_any_column_privilege(r.oid,'public.ingredients','INSERT,UPDATE,REFERENCES'))
     from pg_catalog.pg_roles r where r.rolname=current_user),
+  'source_catalog_access',(select jsonb_build_object('has_select',pg_catalog.has_table_privilege(r.oid,'public.ingredient_type','SELECT'),'has_non_select',pg_catalog.has_table_privilege(r.oid,'public.ingredient_type','INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or pg_catalog.has_any_column_privilege(r.oid,'public.ingredient_type','INSERT,UPDATE,REFERENCES')) from pg_catalog.pg_roles r where r.rolname=current_user),
+  'ingredient_types',(select jsonb_agg(jsonb_build_object('legacy_id',id::text,'ingredient_type_name',name) order by id) from public.ingredient_type where id in (36,43)),
   'ingredients',(select coalesce(jsonb_agg(to_jsonb(i) order by i.id),'[]') from (
     select id::text,name,purchase_unit,ingredient_type_id::text,shopping_type_id::text,
       order_step::text,is_active,archived_at
@@ -246,12 +283,23 @@ export async function extractReviewedIngredientSnapshot({
   )
     fail("SOURCE_READ_ONLY_PROOF_INVALID");
   const ingredients = raw.ingredients.map(sourceRecord);
-  const checksum = hash(canonicalMasterJson(ingredients));
+  const ingredientTypes = sourceTypeCatalog(
+    raw.ingredient_types,
+    raw.source_catalog_access,
+  );
+  const checksum = hash(
+    canonicalMasterJson({
+      ingredients,
+      ingredient_types: ingredientTypes,
+      source_catalog_access: raw.source_catalog_access,
+    }),
+  );
   return {
     contract_version: CONTRACT,
     source_project_ref: SOURCE,
     snapshot_id: `${CORRECTION_ID}-${checksum.slice(0, 12)}`,
-    records: { ingredients },
+    records: { ingredients, ingredient_types: ingredientTypes },
+    source_catalog_access: raw.source_catalog_access,
     source_counts: { ingredients: ingredients.length },
     source_diagnostics: [],
     snapshot_checksum: checksum,
@@ -268,6 +316,7 @@ function validatePlan(result, payload, statuses) {
       payload.migration_versions_checksum ||
     !SHA256.test(String(result.plan_checksum ?? "")) ||
     result.update_count !== 8 ||
+    result.type_update_count !== 1 ||
     result.no_change_count !== 0 ||
     !Array.isArray(result.report) ||
     result.report.length !== 8
@@ -285,6 +334,17 @@ function validatePlan(result, payload, statuses) {
     )
       fail("TARGET_REPORT_DRIFT");
   }
+  const typeRow = result.report.find((r) => r.legacy_id === "1047");
+  if (
+    typeRow.current_type_legacy_id !== "36" ||
+    typeRow.proposed_type_legacy_id !== "43" ||
+    typeRow.current_type_name !== "Heo" ||
+    typeRow.proposed_type_name !== "Thuỷ hải sản" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+      typeRow.proposed_type_id ?? "",
+    )
+  )
+    fail("TARGET_TYPE_REPORT_DRIFT");
   return result;
 }
 
@@ -370,7 +430,7 @@ async function authenticatedIngredientReadSession(
   };
 }
 
-function validateIngredientReadback(payload, ingredients) {
+function validateIngredientReadback(payload, ingredients, report) {
   for (const expected of payload.records) {
     const row = ingredients.find(
       (item) => item.ingredient_code === `v1-ingredient-${expected.legacy_id}`,
@@ -378,6 +438,15 @@ function validateIngredientReadback(payload, ingredients) {
     if (row?.ingredient_name !== expected.expected_after_name)
       fail("AUTHENTICATED_NAME_READBACK_DRIFT");
   }
+  const shrimp = ingredients.find(
+      (r) => r.ingredient_code === "v1-ingredient-1047",
+    ),
+    expectedType = report.find((r) => r.legacy_id === "1047");
+  if (
+    shrimp?.ingredient_type_id !== expectedType.proposed_type_id ||
+    shrimp?.ingredient_type_name !== "Thuỷ hải sản"
+  )
+    fail("AUTHENTICATED_TYPE_READBACK_DRIFT");
   return { status: "AUTHENTICATED_INGREDIENT_NAME_READBACK_PASS", count: 8 };
 }
 
@@ -478,7 +547,11 @@ export async function runIngredientNameCorrection({
       "REPLAYED",
     ]);
     if (replay.reconciled !== true) fail("REPLAY_DRIFT");
-    const readback = validateIngredientReadback(payload, await session.read());
+    const readback = validateIngredientReadback(
+      payload,
+      await session.read(),
+      applied.report,
+    );
     return {
       ...applied,
       replay_status: replay.status,

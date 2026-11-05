@@ -1,4 +1,4 @@
-name: Atlas Staging Ingredient Name Forward Correction
+name: Atlas Staging Ingredient Factual Correction
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       apply:
-        description: Apply the reviewed eight-name correction
+        description: Apply eight reviewed names and Ingredient1047 type36 to43
         required: true
         type: boolean
         default: false
@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   correct:
-    name: Preview or apply bounded Ingredient-name correction
+    name: Preview or apply eight names and one source-backed type correction
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: atlas-staging
