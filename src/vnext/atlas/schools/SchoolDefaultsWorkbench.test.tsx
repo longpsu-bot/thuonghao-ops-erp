@@ -17,6 +17,7 @@ import type {
   SchoolMasterDataApi,
 } from "../bridges/schoolMasterData";
 import { SchoolDefaultsWorkbench } from "./SchoolDefaultsWorkbench";
+import { schoolDefaultsFixtureSchools } from "./schoolDefaultsReviewFixtures";
 
 afterEach(cleanup);
 
@@ -107,6 +108,42 @@ const teacher = (name = "Trường Trung học Beta") =>
   screen.getByLabelText(`Giáo viên mặc định — ${name}`);
 
 describe("Chakra School default portions workbench", () => {
+  it("does not mount closed weekday controls for the complete School fixture", async () => {
+    const { container } = render(
+      <AtlasVNextProvider>
+        <SchoolDefaultsWorkbench
+          authSubject="operator"
+          api={apiWith({ reads: [success(schoolDefaultsFixtureSchools)] }).api}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByText(schoolDefaultsFixtureSchools[0].school_name);
+    expect(
+      container.querySelectorAll("details:not([open]) input"),
+    ).toHaveLength(0);
+  });
+  it("mounts only the requested weekday disclosure and retains zero drafts across close and reopen", async () => {
+    await renderReady(apiWith().api);
+    const summary = within(
+      screen.getByText("Trường Trung học Beta").closest("tr")!,
+    ).getByText("Theo ngày (Thứ 2–Thứ 6)");
+    expect(summary.tagName).toBe("SUMMARY");
+    const label = "Học sinh Thứ 2 — Trường Trung học Beta";
+    expect(screen.queryByLabelText(label)).not.toBeInTheDocument();
+    fireEvent.click(summary);
+    const input = await screen.findByLabelText(label);
+    expect(summary.closest("details")).toHaveAttribute("open");
+    expect(document.querySelectorAll("details input")).toHaveLength(10);
+    fireEvent.change(input, { target: { value: "0" } });
+    fireEvent.click(summary);
+    await waitFor(() =>
+      expect(screen.queryByLabelText(label)).not.toBeInTheDocument(),
+    );
+    expect(summary.closest("details")).not.toHaveAttribute("open");
+    fireEvent.click(summary);
+    expect(await screen.findByLabelText(label)).toHaveValue("0");
+    expect(document.querySelectorAll("details input")).toHaveLength(10);
+  });
   it("edits weekday zero, saves with the School version and reads it back", async () => {
     const initial = schools.map((school) => ({
       ...school,
@@ -123,7 +160,12 @@ describe("Chakra School default portions workbench", () => {
     );
     const connected = apiWith({ reads: [success(initial), success(updated)] });
     await renderReady(connected.api);
-    const input = screen.getByLabelText(
+    fireEvent.click(
+      within(
+        screen.getByText("Trường Trung học Beta").closest("tr")!,
+      ).getByText("Theo ngày (Thứ 2–Thứ 6)"),
+    );
+    const input = await screen.findByLabelText(
       "Học sinh Thứ 2 — Trường Trung học Beta",
     );
     expect(input).toHaveValue("90");

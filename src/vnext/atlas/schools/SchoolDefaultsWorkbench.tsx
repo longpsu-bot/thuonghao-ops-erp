@@ -589,78 +589,12 @@ function SchoolDefaultsTable({
                       </Field.Root>
                     </Grid>
                     {onEditWeekday && (
-                      <Box as="details" mt="sm">
-                        <Box
-                          as="summary"
-                          cursor="var(--atlas-disclosure-cursor, pointer)"
-                          minH={{
-                            base: "var(--atlas-layout-mobile-target, 44px)",
-                            md: "compact",
-                          }}
-                          textStyle="helper"
-                          color="fg.primary"
-                        >
-                          Theo ngày (Thứ 2–Thứ 6)
-                        </Box>
-                        <Text textStyle="helper" color="fg.muted" my="xs">
-                          Để trống để dùng sĩ số mặc định. Nhập 0 nếu không có
-                          suất.
-                        </Text>
-                        {SCHOOL_WEEKDAYS.map((day) => {
-                          const values =
-                            drafts[school.school_id]?.weekdays?.[day] ??
-                            schoolWeekdayDrafts(school)[day];
-                          return (
-                            <Grid
-                              key={day}
-                              templateColumns="repeat(2, minmax(0, 1fr))"
-                              gap="sm"
-                              mb="xs"
-                            >
-                              {(["student", "teacher"] as const).map(
-                                (field) => (
-                                  <Field.Root key={field}>
-                                    <Field.Label textStyle="helper">
-                                      Thứ {Number(day) + 1} ·{" "}
-                                      {field === "student" ? "HS" : "GV"}
-                                    </Field.Label>
-                                    <Input
-                                      size="sm"
-                                      minH={{
-                                        base: "var(--atlas-layout-mobile-target, 44px)",
-                                        md: "compact",
-                                      }}
-                                      inputMode="numeric"
-                                      minW="var(--atlas-layout-zero, 0)"
-                                      disabled={disabled}
-                                      aria-label={`${field === "student" ? "Học sinh" : "Giáo viên"} Thứ ${Number(day) + 1} — ${school.school_name}`}
-                                      aria-invalid={
-                                        Boolean(values[field].trim()) &&
-                                        parsePortionDraft(values[field]) ===
-                                          null
-                                      }
-                                      placeholder={String(
-                                        field === "student"
-                                          ? school.default_student_portions
-                                          : school.default_teacher_portions,
-                                      )}
-                                      value={values[field]}
-                                      onChange={(event) =>
-                                        onEditWeekday(
-                                          school,
-                                          day,
-                                          field,
-                                          event.target.value,
-                                        )
-                                      }
-                                    />
-                                  </Field.Root>
-                                ),
-                              )}
-                            </Grid>
-                          );
-                        })}
-                      </Box>
+                      <SchoolWeekdayDefaults
+                        school={school}
+                        draft={drafts[school.school_id]}
+                        disabled={disabled}
+                        onEdit={onEditWeekday}
+                      />
                     )}
                   </Table.Cell>
                   <Table.Cell
@@ -850,6 +784,94 @@ function SchoolDefaultsTable({
         </Table.Root>
       </AtlasTableViewport>
       {!schools.length && <Text p="md">Không có trường phù hợp bộ lọc.</Text>}
+    </Box>
+  );
+}
+
+function SchoolWeekdayDefaults({
+  school,
+  draft,
+  disabled,
+  onEdit,
+}: {
+  school: SchoolMasterData;
+  draft: SchoolDefaultsDrafts[string] | undefined;
+  disabled: boolean;
+  onEdit: SchoolDefaultsController["editWeekday"];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Box
+      as="details"
+      mt="sm"
+      onToggle={(event) =>
+        setExpanded(event.currentTarget.hasAttribute("open"))
+      }
+    >
+      <Box
+        as="summary"
+        cursor="var(--atlas-disclosure-cursor, pointer)"
+        minH={{
+          base: "var(--atlas-layout-mobile-target, 44px)",
+          md: "compact",
+        }}
+        textStyle="helper"
+        color="fg.primary"
+      >
+        Theo ngày (Thứ 2–Thứ 6)
+      </Box>
+      {expanded && (
+        <>
+          <Text textStyle="helper" color="fg.muted" my="xs">
+            Để trống để dùng sĩ số mặc định. Nhập 0 nếu không có suất.
+          </Text>
+          {SCHOOL_WEEKDAYS.map((day) => {
+            const values =
+              draft?.weekdays?.[day] ?? schoolWeekdayDrafts(school)[day];
+            return (
+              <Grid
+                key={day}
+                templateColumns="repeat(2, minmax(0, 1fr))"
+                gap="sm"
+                mb="xs"
+              >
+                {(["student", "teacher"] as const).map((field) => (
+                  <Field.Root key={field}>
+                    <Field.Label textStyle="helper">
+                      Thứ {Number(day) + 1} ·{" "}
+                      {field === "student" ? "HS" : "GV"}
+                    </Field.Label>
+                    <Input
+                      size="sm"
+                      minH={{
+                        base: "var(--atlas-layout-mobile-target, 44px)",
+                        md: "compact",
+                      }}
+                      inputMode="numeric"
+                      minW="var(--atlas-layout-zero, 0)"
+                      disabled={disabled}
+                      aria-label={`${field === "student" ? "Học sinh" : "Giáo viên"} Thứ ${Number(day) + 1} — ${school.school_name}`}
+                      aria-invalid={
+                        Boolean(values[field].trim()) &&
+                        parsePortionDraft(values[field]) === null
+                      }
+                      placeholder={String(
+                        field === "student"
+                          ? school.default_student_portions
+                          : school.default_teacher_portions,
+                      )}
+                      value={values[field]}
+                      onChange={(event) =>
+                        onEdit(school, day, field, event.target.value)
+                      }
+                    />
+                  </Field.Root>
+                ))}
+              </Grid>
+            );
+          })}
+        </>
+      )}
     </Box>
   );
 }
