@@ -302,7 +302,7 @@ select is(
   ),
   E'ingredients|INSERT|document_code,ingredient_code,ingredient_group,ingredient_name,ingredient_order_group_id,ingredient_type,ingredient_type_id,order_step,purchase_unit_id,shopping_type\n'
     || E'ingredients|UPDATE|document_code,ingredient_group,ingredient_name,ingredient_order_group_id,ingredient_status,ingredient_type,ingredient_type_id,order_step,purchase_unit_id,shopping_type,updated_at,version\n'
-    || E'schools|UPDATE|default_student_portions,default_teacher_portions,updated_at,version\n'
+    || E'schools|UPDATE|default_student_portions,default_teacher_portions,updated_at,version,weekday_portion_defaults\n'
     || E'supplier_eligibilities|INSERT|effective_from,eligibility_status,ingredient_id,priority,reason_note,supplier_id\n'
     || E'supplier_eligibilities|UPDATE|effective_to,eligibility_status,priority,reason_note,updated_at,version\n'
     || E'suppliers|INSERT|contact_email,contact_name,contact_phone,document_code,supplier_code,supplier_name\n'

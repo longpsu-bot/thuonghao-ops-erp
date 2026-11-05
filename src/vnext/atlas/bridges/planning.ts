@@ -8,6 +8,7 @@ export * from "../../../modules/atlas/planning-inputs/planningInputsModel";
 export {
   parseMenuMatrix,
   parseAttendancePaste,
+  parseAttendanceWorkbook,
 } from "../../../modules/atlas/planning-inputs/planningInputsWorkbook";
 export type {
   SourceMatrix,

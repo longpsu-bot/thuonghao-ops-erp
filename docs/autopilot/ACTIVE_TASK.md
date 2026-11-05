@@ -1,6 +1,36 @@
 # Atlas Autopilot — Active Task
 
-## Current task — 29 October 2026
+## Current task — 5 November 2026
+
+**Task:** ATLAS-V1-PARITY-CLOSEOUT — Owner requests execution of the identified
+parity gaps except Supplier commitment/PO cancellation. Warehouse stays paused.
+
+Canonical checkout `E:/Project/OPS ERP/thuonghao-ops-erp`, branch
+`feat/atlas-v1-parity-closeout`, clean task start from `5a0b8f77` after reviewed
+Recipe history #452 merged and exact-main Frontend/executed Full passed.
+The [spec](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md),
+[plan](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md),
+[comparison](../testing/atlas-v1-parity-2026-11-05.md) and
+[pilot packet](../runbooks/atlas-staff-pilot.md) govern this bounded horizon.
+
+Weekday defaults and Attendance XLSX implementation/focused checks/independent
+review are complete; guarded hosting/correction/source-sync and final release
+gates remain. Existing daily Shopping List range already works and is verified.
+No new lifecycle, dependency, public RPC, Warehouse, Supplier cancellation or
+Production write is allowed. Do not wholesale integrate unrelated Drafts.
+
+Execute successful exact-head review/CI, guarded exact-main Staging deployment,
+preview/reviewed data apply, authoritative readback and replay. Keep all raw
+evidence private. Retain native adjustments, released snapshots and source facts.
+Report each actual merged/deployed/applied/accepted boundary separately.
+
+Endpoint: verified bounded feature/data delivery plus pilot readiness with
+explicit remaining factual/data gates. Current extensive BOM differences,
+Recipe3529, absent address/group evidence and unconfirmed staff/School/week
+must not be turned into fabricated parity or staff acceptance. No automatic
+new bulk Recipe rewrite or operational pilot after this closeout.
+
+## Historical task — 29 October 2026
 
 **Task:** ATLAS-WORKBENCH-HIERARCHY-20261029 — apply the approved Allocation hierarchy across every active Atlas workbench and shared page.
 

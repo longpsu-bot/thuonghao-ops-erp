@@ -1,5 +1,26 @@
 # RMVP-03A Planning Inputs API Contract
 
+## School weekday defaults amendment — 5 November 2026
+
+Planning Schools additively expose `weekday_portion_defaults` from the governed
+School aggregate. See the [School contract](../architecture/rmvp-01-independent-atlas-master-data.md#weekday-attendance-defaults-amendment--5-november-2026)
+for the closed Monday–Friday object, integer validation, command compatibility
+and rollback. PostgreSQL resolves each proposed Attendance field from its
+service date's weekday override, then its existing School default. Explicit
+zero is retained. Missing overrides and weekends use the existing defaults.
+
+Menu-aware School/date population and canonical ordering are unchanged. The
+Attendance difference warning compares with the same effective weekday counts.
+The normal working-row flow continues to overlay persisted active Attendance,
+including explicit zero, over proposed defaults and fills only missing covered
+pairs. Defaults remain proposals until existing Preview/Save succeeds. A School
+update changes no saved Attendance line, batch version, approval snapshot or
+released operational document; no new lifecycle or approval bypass is added.
+The explicitly invoked lower-level `create_attendance_draft_from_defaults`
+support API keeps its existing proposal/checksum and DRAFT replacement semantics.
+The normal operator UI uses persisted-row overlay instead of that retired setup
+action; this amendment does not change support API reset behavior.
+
 ## Menu-sync recovery amendment — 26 October 2026
 
 Owner-authorized implementation scope:

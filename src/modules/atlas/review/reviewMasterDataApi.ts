@@ -17,6 +17,7 @@ import type {
   SchoolMasterData,
   SupplierMasterData,
   UnitMasterData,
+  WeekdayPortionDefaults,
 } from "../master-data/masterDataModel";
 import type { AtlasReviewScenario } from "./reviewMode";
 
@@ -690,6 +691,13 @@ export function createReviewMasterDataApi(
         return Promise.resolve(backendError("STALE_VERSION"));
       schools[index] = {
         ...schools[index],
+        ...(request.payload.weekday_portion_defaults
+          ? {
+              weekday_portion_defaults: clone(
+                request.payload.weekday_portion_defaults,
+              ) as WeekdayPortionDefaults,
+            }
+          : {}),
         default_student_portions: payloadNumber(
           request,
           "default_student_portions",
@@ -727,7 +735,9 @@ export function createReviewMasterDataApi(
         const index = schools.findIndex(
           (school) => school.school_id === schoolId,
         );
-        return [{ index, expectedVersion, student, teacher }];
+        const weekdayDefaults = value.weekday_portion_defaults as
+          WeekdayPortionDefaults | undefined;
+        return [{ index, expectedVersion, student, teacher, weekdayDefaults }];
       });
       if (
         prepared.length !== changes.length ||
@@ -744,16 +754,24 @@ export function createReviewMasterDataApi(
       )
         return Promise.resolve(backendError("VALIDATION_FAILED"));
 
-      const updatedSchools = prepared.map(({ index, student, teacher }) => ({
-        school_id: schools[index]!.school_id,
-        version: schools[index]!.version + 1,
-        default_student_portions: student,
-        default_teacher_portions: teacher,
-      }));
+      const updatedSchools = prepared.map(
+        ({ index, student, teacher, weekdayDefaults }) => ({
+          ...(weekdayDefaults
+            ? { weekday_portion_defaults: clone(weekdayDefaults) }
+            : {}),
+          school_id: schools[index]!.school_id,
+          version: schools[index]!.version + 1,
+          default_student_portions: student,
+          default_teacher_portions: teacher,
+        }),
+      );
       const nextSchools = [...schools];
-      prepared.forEach(({ index, student, teacher }) => {
+      prepared.forEach(({ index, student, teacher, weekdayDefaults }) => {
         nextSchools[index] = {
           ...nextSchools[index]!,
+          ...(weekdayDefaults
+            ? { weekday_portion_defaults: clone(weekdayDefaults) }
+            : {}),
           default_student_portions: student,
           default_teacher_portions: teacher,
           version: nextSchools[index]!.version + 1,

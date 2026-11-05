@@ -44,7 +44,7 @@ credential. Raw source snapshots must remain outside Git.
 `SUPABASE_WORKDIR`. Apply additionally requires `--apply --actor-id UUID
 --plan-checksum SHA256`. The private postgres-only importer writes only a
 completed `atlas_legacy.import_batches` receipt containing the snapshot. There
-is no hosted runner. Same identity/content replays; changed content under the
+was no hosted runner in the initial delivery. Same identity/content replays; changed content under the
 same identity rejects. Preserve prior snapshots and rows absent from later
 snapshots. No source write, native adjustment write or master-data creation is
 allowed.
@@ -84,7 +84,41 @@ import, preserve receipts: rollback is a reviewed forward correction disabling
 archive display/access, not deletion of historical evidence. No Staging apply,
 Production write, deployment, merge or Warehouse work is part of this task.
 
-## Local evidence — 5 November 2026
+## Owner-authorized Staging extension — 5 November 2026
+
+The subsequent instruction to execute all identified parity work except Supplier
+cancellation authorizes this separate Staging path. Earlier no-hosting/merge
+limits describe the initial local delivery, not this later instruction. OPS v1
+remains read-only; Production and Warehouse remain excluded.
+
+`Atlas Staging Recipe History` is a manual protected workflow. Require exact
+current main, successful exact-head Frontend and executed Full Integration,
+complete migration history and the existing active, unlinked technical migration
+Actor. Preview uses a database READ ONLY transaction and creates no receipt.
+Only counts/hashes/status are uploaded; raw extraction stays in runner memory.
+
+Before setup, installation or repository-controlled execution, a native-shell
+workflow gate requires a full lowercase SHA, main dispatch ref, clean checkout,
+and equality with HEAD and freshly fetched origin/main. Protected credentials
+are scoped only to the verified transport and import steps. After extraction,
+the runner rechecks current main immediately before target access.
+
+First run `apply=false` and inspect the safe summary's `content_checksum`.
+Apply additionally requires `apply=true`, exact Staging project confirmation
+and that reviewed checksum. This hash binds source project/contract, archive
+mode, every original record and counts. It intentionally excludes fresh
+technical snapshot identity/export time/extractor version. Any source-content
+change fails closed; no timestamp is fabricated to match an old plan. Each run
+extracts exactly once, and the database Preview/Apply/replay use that same
+immutable snapshot and native plan checksum.
+
+The private session-local package checks all other Atlas tables and unrelated
+receipts before/after, verifies exact source-row readback and identical receipt
+replay. It writes only the archive receipt, never native adjustment authority.
+Local-only command guards are unchanged. Rollback preserves receipts and uses
+a reviewed forward change; no historical deletion or automatic rule activation.
+
+## Initial local evidence — 5 November 2026
 
 The independent `atlas-master-rehearsal-01` stack uses ports 553xx. Full migration
 reset succeeded. A real snapshot taken through the connected Supabase tool in an

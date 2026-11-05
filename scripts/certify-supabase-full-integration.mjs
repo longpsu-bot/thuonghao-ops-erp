@@ -60,6 +60,9 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "master_data_rehearsal_recipe_import.sql",
   "rmvp_02b_recipe_adjustments_effective_bom.sql",
   "recipe_change_order_history.sql",
+  "atlas_weekday_attendance_defaults.sql",
+  "atlas_staging_recipe_history.sql",
+  "atlas_staging_ingredient_name_forward_correction.sql",
   "ui_quality_03a_recipe_workflow.sql",
   "ui_quality_03b_recipe_adjustment_operator_workbench.sql",
   "recipe_effective_contract_01.sql",
@@ -134,45 +137,57 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
             command: "node",
             args: Object.freeze(["scripts/test-local-count-unit-policies.mjs"]),
           })
-        : file === "atlas_staging_school_reconciliation.sql"
+        : file === "atlas_staging_recipe_history.sql"
           ? Object.freeze({
               command: "node",
-              args: Object.freeze([
-                "scripts/test-local-school-reconciliation.mjs",
-              ]),
+              args: Object.freeze(["scripts/test-local-recipe-history.mjs"]),
             })
-          : file === "atlas_staging_master_load.sql"
+          : file === "atlas_staging_ingredient_name_forward_correction.sql"
             ? Object.freeze({
                 command: "node",
                 args: Object.freeze([
-                  "scripts/test-local-staging-master-load.mjs",
+                  "scripts/test-local-ingredient-name-forward-correction.mjs",
                 ]),
               })
-            : [
-                  "purchase_review_confirm_release.sql",
-                  "atlas_c_need_correction_authority.sql",
-                  "atlas_k2_receipt_integrity.sql",
-                  "atlas_k2_corrected_need_purchase_orders.sql",
-                  "purchase_preparation_release_projection.sql",
-                  "purchase_preparation_source_ambiguity.sql",
-                  "supplier_allocation_released_read.sql",
-                  "atlas_backend_convergence_02b_allocation.sql",
-                ].includes(file)
+            : file === "atlas_staging_school_reconciliation.sql"
               ? Object.freeze({
                   command: "node",
                   args: Object.freeze([
-                    "scripts/test-local-purchase-review.mjs",
-                    file,
+                    "scripts/test-local-school-reconciliation.mjs",
                   ]),
                 })
-              : pnpm(
-                  "exec",
-                  "supabase",
-                  "test",
-                  "db",
-                  `supabase/tests/${file}`,
-                  "--local",
-                ),
+              : file === "atlas_staging_master_load.sql"
+                ? Object.freeze({
+                    command: "node",
+                    args: Object.freeze([
+                      "scripts/test-local-staging-master-load.mjs",
+                    ]),
+                  })
+                : [
+                      "purchase_review_confirm_release.sql",
+                      "atlas_c_need_correction_authority.sql",
+                      "atlas_k2_receipt_integrity.sql",
+                      "atlas_k2_corrected_need_purchase_orders.sql",
+                      "purchase_preparation_release_projection.sql",
+                      "purchase_preparation_source_ambiguity.sql",
+                      "supplier_allocation_released_read.sql",
+                      "atlas_backend_convergence_02b_allocation.sql",
+                    ].includes(file)
+                  ? Object.freeze({
+                      command: "node",
+                      args: Object.freeze([
+                        "scripts/test-local-purchase-review.mjs",
+                        file,
+                      ]),
+                    })
+                  : pnpm(
+                      "exec",
+                      "supabase",
+                      "test",
+                      "db",
+                      `supabase/tests/${file}`,
+                      "--local",
+                    ),
 );
 
 export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([

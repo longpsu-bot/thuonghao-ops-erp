@@ -17,6 +17,7 @@ import type {
   SchoolMasterDataApi,
 } from "../bridges/schoolMasterData";
 import { SchoolDefaultsWorkbench } from "./SchoolDefaultsWorkbench";
+import { schoolDefaultsFixtureSchools } from "./schoolDefaultsReviewFixtures";
 
 afterEach(cleanup);
 
@@ -107,6 +108,86 @@ const teacher = (name = "Trường Trung học Beta") =>
   screen.getByLabelText(`Giáo viên mặc định — ${name}`);
 
 describe("Chakra School default portions workbench", () => {
+  it("does not mount closed weekday controls for the complete School fixture", async () => {
+    const { container } = render(
+      <AtlasVNextProvider>
+        <SchoolDefaultsWorkbench
+          authSubject="operator"
+          api={apiWith({ reads: [success(schoolDefaultsFixtureSchools)] }).api}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByText(schoolDefaultsFixtureSchools[0].school_name);
+    expect(
+      container.querySelectorAll("details:not([open]) input"),
+    ).toHaveLength(0);
+  });
+  it("mounts only the requested weekday disclosure and retains zero drafts across close and reopen", async () => {
+    await renderReady(apiWith().api);
+    const summary = within(
+      screen.getByText("Trường Trung học Beta").closest("tr")!,
+    ).getByText("Theo ngày (Thứ 2–Thứ 6)");
+    expect(summary.tagName).toBe("SUMMARY");
+    const label = "Học sinh Thứ 2 — Trường Trung học Beta";
+    expect(screen.queryByLabelText(label)).not.toBeInTheDocument();
+    fireEvent.click(summary);
+    const input = await screen.findByLabelText(label);
+    expect(summary.closest("details")).toHaveAttribute("open");
+    expect(document.querySelectorAll("details input")).toHaveLength(10);
+    fireEvent.change(input, { target: { value: "0" } });
+    fireEvent.click(summary);
+    await waitFor(() =>
+      expect(screen.queryByLabelText(label)).not.toBeInTheDocument(),
+    );
+    expect(summary.closest("details")).not.toHaveAttribute("open");
+    fireEvent.click(summary);
+    expect(await screen.findByLabelText(label)).toHaveValue("0");
+    expect(document.querySelectorAll("details input")).toHaveLength(10);
+  });
+  it("edits weekday zero, saves with the School version and reads it back", async () => {
+    const initial = schools.map((school) => ({
+      ...school,
+      weekday_portion_defaults: { "1": { student_portions: 90 } },
+    }));
+    const updated = initial.map((school) =>
+      school.school_id === "school-2"
+        ? {
+            ...school,
+            version: 8,
+            weekday_portion_defaults: { "1": { student_portions: 0 } },
+          }
+        : school,
+    );
+    const connected = apiWith({ reads: [success(initial), success(updated)] });
+    await renderReady(connected.api);
+    fireEvent.click(
+      within(
+        screen.getByText("Trường Trung học Beta").closest("tr")!,
+      ).getByText("Theo ngày (Thứ 2–Thứ 6)"),
+    );
+    const input = await screen.findByLabelText(
+      "Học sinh Thứ 2 — Trường Trung học Beta",
+    );
+    expect(input).toHaveValue("90");
+    fireEvent.change(input, { target: { value: "0" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu sĩ số" }));
+    await waitFor(() =>
+      expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalled(),
+    );
+    expect(
+      connected.updateSchoolDefaultsBulk.mock.calls[0][0].payload.changes,
+    ).toEqual([
+      {
+        school_id: "school-2",
+        expected_version: 7,
+        default_student_portions: 840,
+        default_teacher_portions: 45,
+        weekday_portion_defaults: { "1": { student_portions: 0 } },
+      },
+    ]);
+    await waitFor(() => expect(input).toHaveValue("0"));
+    expect(screen.getByRole("button", { name: "Lưu sĩ số" })).toBeDisabled();
+  });
   it("uses the shared task context for the active School job and authoritative counts", async () => {
     await renderReady(apiWith().api);
 

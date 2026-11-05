@@ -1,5 +1,33 @@
 # Atlas Roadmap
 
+## Owner-authorized parity campaign — 5 November 2026
+
+This section supersedes the dated queue/deferred status below only for the
+[bounded parity specification](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md).
+The Owner requested all listed parity work except Supplier cancellation;
+Warehouse remains paused. Source OPS v1 and Production remain NO-WRITE.
+
+- Recipe history #452 is merged as `5a0b8f77`; its exact-main Frontend and
+  executed Full Integration passed. Hosted archive application is a separate gate.
+- Weekday School defaults and Attendance XLSX are implemented on the bounded
+  parity branch and independently reviewed; source sync, exact-head release and
+  hosted readback remain separately tracked.
+- Existing multi-day Shopping List was already merged through #367; the old
+  deferral below is stale. Ninety focused daily-range checks pass.
+- Reuse only the compatible eight-name correction package from Draft #445,
+  repinned to complete current migration authority; do not wholesale merge its
+  older UI/Autopilot. Fresh source/target names are confirmed, not yet applied.
+- [Current BOM comparison](../testing/atlas-v1-parity-2026-11-05.md) records
+  562 SYSTEM differences and 1,835 School override affected differences.
+  These block unrestricted pilot and do not authorize automatic archive activation.
+- [Staff pilot packet](../runbooks/atlas-staff-pilot.md) is prepared. Staff lead,
+  School/week scope, kitchen fact and required address/group evidence remain
+  external prerequisites, not completed acceptance.
+
+Merged, schema-deployed, data-applied and staff-accepted states remain distinct.
+Preserve dated failures and the prior completed core-data receipt. No unrelated
+Draft, cancellation workflow, Warehouse or Production cutover is activated.
+
 **Reviewed:** 27 October 2026 (Asia/Bangkok). Repository baseline: `9a0148480ad8250faef249f606382fe10a00a32e`, latest verified `origin/main`.
 
 **Purpose:** Current delivery order and evidence boundaries. Approved contracts and explicit Owner instructions govern scope. Bounded Planning core-data convergence on Atlas Staging is complete; Warehouse remains paused.

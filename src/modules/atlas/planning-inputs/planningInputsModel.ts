@@ -12,6 +12,7 @@ export type PlanningIssues = {
 };
 
 export type PlanningSchool = {
+  weekday_portion_defaults?: import("../master-data/masterDataModel").WeekdayPortionDefaults;
   school_id: string;
   school_code: string;
   school_name: string;

@@ -4,6 +4,7 @@ import type {
   AtlasRpcResult,
   JsonValue,
 } from "../connection/atlasRpc";
+import type { WeekdayPortionDefaults } from "./masterDataModel";
 
 export const MASTER_DATA_RPC_FUNCTIONS = {
   getSchools: "atlas_api.get_school_master_data",
@@ -38,6 +39,7 @@ export type MasterDataCommandRequest = AtlasRpcRequest & {
 };
 
 export type SchoolDefaultsBulkChange = {
+  weekday_portion_defaults?: WeekdayPortionDefaults;
   school_id: string;
   expected_version: number;
   default_student_portions: number;

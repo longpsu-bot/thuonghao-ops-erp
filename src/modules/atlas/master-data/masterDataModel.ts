@@ -6,6 +6,7 @@ import type {
 } from "./masterDataApi";
 
 export type SchoolMasterData = {
+  weekday_portion_defaults?: WeekdayPortionDefaults;
   cooking_location_id?: string | null;
   cooking_location_name?: string | null;
   cooking_location_kind?: "SCHOOL" | "COMPANY" | null;
@@ -33,6 +34,16 @@ export type SchoolMasterData = {
   delivery_instructions: string | null;
   contract_context: string | null;
 };
+
+export type WeekdayPortionDefaults = Partial<
+  Record<
+    "1" | "2" | "3" | "4" | "5",
+    {
+      student_portions?: number;
+      teacher_portions?: number;
+    }
+  >
+>;
 
 export type DispatchGroupMasterData = {
   dispatch_group_id: string;

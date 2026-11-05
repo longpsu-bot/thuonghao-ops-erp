@@ -1043,7 +1043,26 @@ describe("Atlas staging dry-run and workflow", () => {
       ),
     ).toHaveLength(2);
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(128);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(131);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "node",
+      args: ["scripts/test-local-recipe-history.mjs"],
+    });
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "node",
+      args: ["scripts/test-local-ingredient-name-forward-correction.mjs"],
+    });
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "pnpm",
+      args: [
+        "exec",
+        "supabase",
+        "test",
+        "db",
+        "supabase/tests/atlas_weekday_attendance_defaults.sql",
+        "--local",
+      ],
+    });
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "pnpm",
       args: [
