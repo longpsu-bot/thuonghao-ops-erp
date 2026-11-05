@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { JsonValue } from "../connection/atlasRpc";
 import {
   commandRequest,
   schoolDefaultsBulkCommandRequest,
@@ -20,11 +21,12 @@ describe("review-only master-data adapter", () => {
       await api.getSchools("reviewer", "review"),
       "schools",
     )![0];
-    for (const weekdayDefaults of [
+    const weekdayCases: (JsonValue | undefined)[] = [
       { "1": { student_portions: 0 } },
       undefined,
       {},
-    ]) {
+    ];
+    for (const weekdayDefaults of weekdayCases) {
       const result = await api.updateSchoolDefaults(
         commandRequest("reviewer", "review", school.version, "UPDATE", {
           school_id: school.school_id,
