@@ -1,61 +1,68 @@
 # Atlas Autopilot — Active Task
 
-## Current task — 5 November 2026
+## Verified delivery — 5 November 2026
 
-**Task:** ATLAS-V1-PARITY-CLOSEOUT — Owner requests execution of the identified
-parity gaps except Supplier commitment/PO cancellation. Warehouse stays paused.
+**Status: DELIVERED for the bounded Staging capability/data horizon.** No
+further automatic data mutation or operational pilot is authorized by this task.
+This does not claim complete v1 BOM parity or actual staff acceptance.
 
-Canonical checkout `E:/Project/OPS ERP/thuonghao-ops-erp`. Current certified
-implementation main is `d80a1361`, with passing Frontend42009379045 and executed
-Full42009379140. PRs453/454/455 deliver the features and reviewed prerequisites.
-Current branch `fix/ingredient-shrimp-type-fidelity` starts clean from that main.
+Canonical checkout: `E:/Project/OPS ERP/thuonghao-ops-erp`. Reviewed implementation
+PRs453/454/455/456 are merged. The final factual operation used exact main
+`6ab5063b`, certified by Frontend42018205721 and executed Full42018205722.
+Earlier delivery SHAs are recorded beside their runs below. Staging has138 migrations
+ending20261105090000, deployed through41992370968. The closeout change is docs only.
 
-Verified Staging delivery:
+Verified delivery:
 
-- Deploy41992370968 installed138 migrations, ending20261105090000.
-- Archive Apply41992825322 retained603 records,17 inactive, with exact readback
-  and receipt replay. Read-only verification42008038118 matched the same source
-  content. No native Recipe rule was activated.
-- School54 Apply42012115437 created exactly three roots/three mappings, with
-  replay, authenticated readback and117 protected tables preserved. Receipt:
-  `ec55d20a-631f-47aa-85a4-d7496ca9b4aa`.
-- Weekday Apply42012951054 updated34 Schools through one authenticated command,
-  with replay and complete School readback. School54 is version2, general0/0
-  and Monday-Friday370/20. Archive603 and native adjustments/revisions3/3 remain.
-- Attendance XLSX and the existing daily Shopping List range are implemented
-  and verified. Actual staff-pilot participation has not occurred.
+- Recipe history Apply41992825322 at `539ae033` retained603 surviving source records,17 inactive,
+  with exact readback/replay. Receipt `ac65b864-e842-4d15-8495-ae1ad5d3c861`.
+  Read-only verification42008038118 matched the same source business checksum.
+  Source activity does not establish current Recipe effectiveness or unknown
+  original issuers/cancellation dates. No archived rule was activated.
+- School54 Apply42012115437 at `d80a1361` created exactly three roots/three mappings, with
+  authenticated readback/replay and all preexisting protected facts preserved.
+  Receipt `ec55d20a-631f-47aa-85a4-d7496ca9b4aa`; there are51 Schools including
+  the existing native fixture. Do not rerun this prerequisite after later changes.
+- Weekday Apply42012951054 at `d80a1361` updated34 Schools through one actual authenticated
+  bulk command, with replay and all-School readback. Independent read-only source
+  and target normalization also matched all34. School54 is version2, general0/0
+  and Monday-Friday370 students/20 teachers. Saved Attendance remains unchanged.
+- Factual Apply42020808586 at `6ab5063b` changed the eight reviewed names and ONLY1047's type
+  from36/Heo to43/Thuỷ hải sản. All eight Ingredients/mappings are version3.
+  Receipt `dbf45a1a-a5dc-4aa5-a99b-7b91ad1bea4d`; replay and authenticated
+  name/type readback passed. All facts outside the exact allowed delta remained
+  protected across117 tables, including operational/released facts.
+- Attendance XLSX uses clean-draft import, canonical Preview and explicit Save.
+  Existing multi-day Shopping List access remains verified. These are supporting
+  features within the approved operating baseline, not new daily workflow stages.
 
-Do not rerun the one-time School54 path after weekday changes. Earlier rejected
-previews/applies and the source-observation correction remain in the
-[evidence report](../testing/atlas-v1-parity-2026-11-05.md) and prerequisite plan.
-One exact-main Full run required a fresh disposable rerun after startup503;
-no check, assertion or timeout was weakened.
+The factual correction was the LAST Atlas data mutation. Native adjustments and
+revisions remain3/3; history remains603/17 and weekday configurations34. Preserve
+all roots and receipts. Recovery is reviewed forward correction, not deletion,
+reset, blind replay or a new full master refresh. Raw evidence stays outside Git.
 
-Remaining bounded action: Ingredient-name Preview42013307974 rejected before
-writes because1047 is type36/Heo in Atlas versus explicit source43/Thuỷ hải sản.
-Both mapped catalogue entries already exist and are ACTIVE. Execute only the
-[eight-name plus one classification plan](../superpowers/plans/2026-11-05-ingredient-factual-correction.md)
-after independent review and exact-head/exact-main CI. Run a fresh reviewed
-preview/apply as the LAST data mutation, then readback/replay and closeout.
-Do not fake source36, remove non-name fidelity guards or refresh other masters.
-The [spec](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md),
-[plan](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md),
-[comparison](../testing/atlas-v1-parity-2026-11-05.md) and
-[pilot packet](../runbooks/atlas-staff-pilot.md) govern this bounded horizon.
+Rejected pre-write attempts, the School54 observation correction, source-plan
+scope correction, exact School-column test pins and disposable cache-startup503
+remain recorded in the [evidence report](../testing/atlas-v1-parity-2026-11-05.md).
+No assertion, timeout, CI check, business guard or security rule was weakened.
 
-No new lifecycle, dependency, public RPC, Warehouse, Supplier cancellation or
-Production write is allowed. Do not wholesale integrate unrelated Drafts.
+The approved [spec](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md),
+[original plan](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md),
+[School54 prerequisite](../superpowers/plans/2026-11-05-school54-weekday-prerequisite.md)
+and [factual correction](../superpowers/plans/2026-11-05-ingredient-factual-correction.md)
+retain their bounded historical scope.
 
-Execute successful exact-head review/CI, guarded exact-main Staging deployment,
-preview/reviewed data apply, authoritative readback and replay. Keep all raw
-evidence private. Retain native adjustments, released snapshots and source facts.
-Report each actual merged/deployed/applied/accepted boundary separately.
+**Remaining gates:** the BOM comparison describes pre-backfill observations,
+not newly certified full parity. Broad native Recipe adoption, missing Dish
+backfill and unrestricted pilot require a separately bounded School/Dish/date
+scope and reconciliation. Recipe3529's kitchen decision, staff lead/School/week,
+and required address/cooking-group facts remain unconfirmed. The
+[pilot packet](../runbooks/atlas-staff-pilot.md) is prepared, not staff acceptance.
 
-Endpoint: verified bounded feature/data delivery plus pilot readiness with
-explicit remaining factual/data gates. Current extensive BOM differences,
-Recipe3529, absent address/group evidence and unconfirmed staff/School/week
-must not be turned into fabricated parity or staff acceptance. No automatic
-new bulk Recipe rewrite or operational pilot after this closeout.
+OPS v1 and Production remain NO-WRITE for this campaign; Warehouse stays PAUSED;
+Supplier commitment/PO cancellation stays excluded. Do not automatically open
+another task, activate archived rules, merge unrelated Drafts or contact staff
+or Suppliers after this verified delivery.
 
 ## Historical task — 29 October 2026
 
