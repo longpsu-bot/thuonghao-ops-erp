@@ -111,6 +111,6 @@ Security catalog reconciliation pins 690 normal policies, 375 private functions,
 and 1,918 positive runtime grants. The delta is one source-restricted read policy,
 two private fixed-path invokers, and three read-runtime privileges. Public RPC,
 browser grants, schema/table/role/capability counts and forced RLS are unchanged.
-Focused local results: 28 Recipe history pgTAP checks, 32 platform catalog checks,
+Focused local results: 32 Recipe history pgTAP checks, 32 platform catalog checks,
 185 frontend/script checks, and TypeScript pass. GitHub Actions remains the owner
 of full routine validation.

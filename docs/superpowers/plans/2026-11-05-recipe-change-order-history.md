@@ -59,7 +59,7 @@ does not yet activate missing legacy business rules; doing so requires an exact
 context reconciliation task with its own operative mapping.
 
 Evidence checkpoint: 603 real source rows, 17 inactive, exact same-receipt replay,
-zero native writes. Recipe history pgTAP: 28 checks, including preservation of a
+zero native writes. Recipe history pgTAP: 32 checks, including preservation of a
 nonempty native root and revision. Platform security catalog: 32 checks. Focused
 frontend/script tests: 185 passing; TypeScript passes. Component rendering passes
 at 1440px and 390px. Raw evidence remains private outside Git.
@@ -75,3 +75,8 @@ was removed or weakened. The new pgTAP file is registered in full Integration CI
 Local test discovery also matched stale ignored baseline copies under
 `.superpowers/sdd`. Focused runs exclude that local temporary directory only;
 repository tests and CI configuration are not excluded or disabled.
+
+Independent read-only review found no functional/security defect. Its whitespace
+finding on two SQL file endings is corrected. Additional pgTAP cases cover
+same-time observation conflict, a changed importer on replay, and latest source
+observation selection. Latest-head CI remains pending at this checkpoint.

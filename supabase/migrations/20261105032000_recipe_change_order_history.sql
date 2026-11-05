@@ -257,5 +257,3 @@ exception when others then
   );
 end;
 $$;
-
-

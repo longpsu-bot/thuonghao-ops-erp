@@ -25,6 +25,11 @@ select throws_ok($$select atlas_legacy.import_recipe_change_order_history(snapsh
 select throws_ok($$select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',repeat('0',64)) from evidence$$,'22023','REVIEWED_PLAN_MISMATCH','Apply binds exact reviewed checksum');
 select is((select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',plan)->>'status' from evidence),'IMPORTED','Apply imports evidence');
 select is((select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',plan)->>'status' from evidence),'REPLAYED','Same snapshot replays');
+insert into atlas_core.actors(actor_id,actor_type,display_name) values('a9110000-0000-0000-0000-000000000003','HUMAN','Another history test operator');
+select throws_ok($$select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000003',plan) from evidence$$,'22023','REPLAY_ACTOR_MISMATCH','Replay cannot change the technical importer');
+create temp table equal_time as select jsonb_set(snapshot-'snapshot_checksum','{snapshot_id}','"history-same-time"') as snapshot from evidence;
+update equal_time set snapshot=snapshot||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(snapshot));
+select throws_ok($$select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',atlas_legacy.import_recipe_change_order_history(snapshot,null,null)->>'plan_checksum') from equal_time$$,'22023','AMBIGUOUS_SOURCE_OBSERVATION','Different snapshot identities cannot claim conflicting observations at the same export time');
 select is((select count(*) from atlas_legacy.import_batches where source_system='OPS_V1_RECIPE_HISTORY' and snapshot_id='history-pgtap'),1::bigint,'Replay does not duplicate evidence');
 select is((select count(*) from atlas_admin.recipe_composition_adjustments),(select n from before_roots),'Import does not change native adjustment roots');
 select is((select to_jsonb(a) from atlas_admin.recipe_composition_adjustments a where recipe_composition_adjustment_id='a9110000-0000-0000-0000-000000000204'),(select root from before_native),'Existing native root is byte-for-byte unchanged');
@@ -55,7 +60,13 @@ select is((select count(*)::integer from jsonb_array_elements(atlas_api.get_reci
 select set_config('request.jwt.claim.sub','a9110000-0000-0000-0000-000000000999',true);
 select ok(atlas_api.get_recipe_adjustment_operator_workbench(jsonb_build_object('contract_version','RMVP-02B.v2','requested_by_auth_subject','a9110000-0000-0000-0000-000000000999','correlation_id','a9110000-0000-0000-0000-000000000102','payload',jsonb_build_object('as_of_date','2026-11-05')))->'workbench' is null,'Unmapped identity receives no source history');
 -- A later empty snapshot must not erase an observed source identity.
-update evidence set snapshot=jsonb_set(jsonb_set(jsonb_set(snapshot-'snapshot_checksum','{snapshot_id}','"history-later"'),'{exported_at}','"2026-11-06T00:00:00Z"'),'{records}','[]');
+create temp table later_observation as select jsonb_set(jsonb_set(jsonb_set(snapshot-'snapshot_checksum','{snapshot_id}','"history-updated"'),'{exported_at}','"2026-11-06T00:00:00Z"'),'{records,0,note}','"Later source note"') as snapshot from evidence;
+update later_observation set snapshot=snapshot||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(snapshot));
+select is((select atlas_legacy.import_recipe_change_order_history(snapshot,'a9110000-0000-0000-0000-000000000001',atlas_legacy.import_recipe_change_order_history(snapshot,null,null)->>'plan_checksum')->>'status' from later_observation),'IMPORTED','A later observation of the same source row imports separately');
+set local role atlas_read_runtime;
+select is(jsonb_path_query_first(atlas_legacy.recipe_change_order_history(),'$[*] ? (@.legacy_id == "9007199254740993")')->>'note','Later source note','The latest observation wins without overwriting prior snapshots');
+reset role;
+update evidence set snapshot=jsonb_set(jsonb_set(jsonb_set(snapshot-'snapshot_checksum','{snapshot_id}','"history-later"'),'{exported_at}','"2026-11-07T00:00:00Z"'),'{records}','[]');
 update evidence set snapshot=jsonb_set(snapshot,'{source_counts,system_bom_change_orders}','0');
 update evidence set snapshot=snapshot||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(snapshot));
 update evidence set plan=atlas_legacy.import_recipe_change_order_history(snapshot,null,null)->>'plan_checksum';
@@ -65,6 +76,3 @@ select is((select count(*)::integer from jsonb_array_elements(atlas_legacy.recip
 reset role;
 select * from finish();
 rollback;
-
-
-
