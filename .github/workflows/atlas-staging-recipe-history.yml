@@ -1,0 +1,105 @@
+name: Atlas Staging Recipe History
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full certified current-main SHA
+        required: true
+        type: string
+      apply:
+        description: Import archive evidence only; never activate Recipe rules
+        required: true
+        default: false
+        type: boolean
+      reviewed_content_checksum:
+        description: Source-content checksum from a separately reviewed preview; required for apply
+        required: false
+        type: string
+      target_project_ref:
+        description: Exact Atlas Staging project confirmation for apply
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: atlas-staging-recipe-history
+  cancel-in-progress: false
+
+jobs:
+  history:
+    name: Guarded recipe archive preview or import
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: atlas-staging
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+      VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+      ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+      ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+      ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+      SUPABASE_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prepare verified exact Staging transport
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test "$ATLAS_STAGING_PROJECT_REF" = "rnzxmxiiqgtdevzregff"
+          command -v psql >/dev/null
+          ca="$RUNNER_TEMP/supabase-root-ca.crt"
+          curl --fail --silent --show-error --proto '=https' \
+            'https://supabase-downloads.s3.ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt' --output "$ca"
+          echo "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  $ca" | sha256sum --check --status
+          bundle="$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
+          cat /etc/ssl/certs/ca-certificates.crt "$ca" > "$bundle"
+          echo "ATLAS_STAGING_CA_BUNDLE=$bundle" >> "$GITHUB_ENV"
+          pnpm exec supabase link --project-ref "$ATLAS_STAGING_PROJECT_REF" >/dev/null
+      - name: Extract once, preview and optionally import the reviewed content
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          REVIEWED_CONTENT_CHECKSUM: ${{ inputs.reviewed_content_checksum }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          args=(--commit-sha "$REQUESTED_SHA")
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            test "$CONFIRMED_TARGET" = "$ATLAS_STAGING_PROJECT_REF"
+            [[ "$REVIEWED_CONTENT_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
+            args+=(--apply --target-project-ref "$CONFIRMED_TARGET" --reviewed-content-checksum "$REVIEWED_CONTENT_CHECKSUM")
+          fi
+          node scripts/import-atlas-staging-recipe-history.mjs "${args[@]}" > "$RUNNER_TEMP/recipe-history-summary.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recipe-history-${{ github.run_id }}
+          path: ${{ runner.temp }}/recipe-history-summary.json
+          retention-days: 7
+      - name: Remove transient transport metadata
+        if: always()
+        run: |
+          rm -f supabase/.temp/pooler-url supabase/.temp/project-ref
+          rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"

@@ -1,5 +1,23 @@
 # Atlas Autopilot Mandate
 
+## Current parity mandate — 5 November 2026
+
+**Status: ACTIVE within the bounded parity campaign.** The Owner requested all
+identified parity work except Supplier commitment cancellation. Execute the
+[specification](../superpowers/specs/2026-11-05-atlas-v1-parity-closeout.md) and
+[plan](../superpowers/plans/2026-11-05-atlas-v1-parity-closeout.md), with exact-head
+review/CI and guarded Staging release/import/readback. The older UI-only
+sequencing below is historical. Preserve all approved business/security
+contracts and historical receipts. OPS v1 and Production stay NO-WRITE;
+Warehouse stays PAUSED; Supplier cancellation stays excluded.
+
+Complete independent tasks without repeated permission requests. Do not guess
+the kitchen answer, addresses/group membership or staff pilot acceptance.
+The [current comparison](../testing/atlas-v1-parity-2026-11-05.md) is diagnostic:
+large BOM differences need separately bounded correction/adoption, not automatic
+activation of archived rules. Unrestricted staff pilot remains gated by actual
+scoped parity and named staff/School/week. No unrelated task follows this horizon.
+
 **Current checkpoint:** 29 October 2026 (Asia/Bangkok).
 
 **Status:** IN_REVIEW — Atlas hierarchy implementation/local evidence delivered; PR/latest-head CI and final Product/architecture review remain. Core-data work remains complete and Warehouse Receiving remains paused.

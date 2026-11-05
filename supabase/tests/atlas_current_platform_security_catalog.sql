@@ -1816,15 +1816,16 @@ select is(
     'policy_count', 690,
     'policy_catalog_md5', 'd89f0f1c192dffa36a806b13b221d61d',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 375,
+    'private_function_count', 376,
     -- Recipe history adds two private fixed-path invokers.
     -- Existing owners, browser grants, RLS and policies remain pinned.
-    'private_function_catalog_md5', '1a297d848dcdfd930842a71bb5e80877',
+    'private_function_catalog_md5', '042e3b9664b042f66ff733be726ac02c',
     'trigger_count', 127,
     'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
     -- Recipe history adds three read-runtime privileges; no browser grant.
-    'positive_target_grant_count', 1918,
-    'positive_target_grant_md5', '59248de9f55c08c4ba67c4cc84119f84',
+    -- Weekday defaults add one private validator EXECUTE and one column UPDATE.
+    'positive_target_grant_count', 1920,
+    'positive_target_grant_md5', '61da70477c89769f7e65669667fdcb94',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 121,
     'pa_06a_write_count', 15,

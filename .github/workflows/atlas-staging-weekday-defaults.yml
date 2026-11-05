@@ -1,0 +1,98 @@
+name: Atlas Staging Weekday Defaults
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full SHA at current origin/main
+        required: true
+        type: string
+      apply:
+        description: Apply the separately reviewed weekday-default plan
+        required: true
+        type: boolean
+        default: false
+      plan_checksum:
+        description: Exact checksum from the reviewed preview; required for apply
+        required: false
+        type: string
+      target_project_ref:
+        description: Exact Staging project confirmation; required for apply
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: atlas-staging-weekday-defaults
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Preview or apply governed School weekday defaults
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: atlas-staging
+    steps:
+      - name: Check out requested exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Verify exact current main
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
+          test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"
+          test -z "$(git status --porcelain)"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Read source, authenticate, preview and optionally apply
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          REVIEWED_PLAN_CHECKSUM: ${{ inputs.plan_checksum }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--commit-sha "$REQUESTED_SHA")
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            test "$CONFIRMED_TARGET" = "rnzxmxiiqgtdevzregff"
+            [[ "$REVIEWED_PLAN_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
+            args+=(--apply --target-project-ref "$CONFIRMED_TARGET" --plan-checksum "$REVIEWED_PLAN_CHECKSUM")
+          elif [ -n "$REVIEWED_PLAN_CHECKSUM" ] || [ -n "$CONFIRMED_TARGET" ]; then
+            echo 'Apply-only inputs are not accepted for preview.' >&2
+            exit 1
+          fi
+          node scripts/sync-atlas-staging-weekday-defaults.mjs "${args[@]}" \
+            > "$RUNNER_TEMP/weekday-default-sync.json"
+      - name: Save counts and checksums only
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekday-default-sync-${{ inputs.commit_sha }}
+          path: ${{ runner.temp }}/weekday-default-sync.json
+          retention-days: 7

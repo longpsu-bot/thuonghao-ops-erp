@@ -100,6 +100,16 @@ cancellation date. See the [history import contract and commands](docs/api/recip
 
 ### RMVP-03A connected Weekly Menu and Attendance
 
+The 5 November parity amendment adds optional Monday-Friday School defaults
+through the existing governed School commands and a guarded manual Staging
+[source sync](docs/api/staging-weekday-default-sync.md). Saved Attendance,
+including zero, remains authoritative. [Attendance XLSX](docs/api/attendance-xlsx-operator.md)
+now stages a clean whole-week draft through the existing parser and canonical
+Preview/explicit Save. Multi-day Shopping List access already exists as a
+projection of independent daily contexts; it does not create ranged Need roots.
+See the [current comparison and limits](docs/testing/atlas-v1-parity-2026-11-05.md)
+and [staff pilot gate](docs/runbooks/atlas-staff-pilot.md).
+
 RMVP-03A activates the Vietnamese `Nguồn kế hoạch` workbench for one explicit Monday-start week. It connects the existing Weekly Menu and Attendance aggregates, stable rows, exact approval snapshots, and inherited lifecycles without adding a table, trigger, role, module, or downstream write.
 
 ```bash
