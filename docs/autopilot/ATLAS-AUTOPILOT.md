@@ -1,5 +1,17 @@
 # Atlas Autopilot Mandate
 
+## Current bounded continuation — 9 November
+
+**Status: ACTIVE.** The Owner reopened reconciliation for confirmed Recipe
+corrections, testing-data cleanup and a complete staff review workbook. Follow
+the [active task](ACTIVE_TASK.md) and its continuation plan. Use existing governed
+commands; keep unconfirmed Recipe differences for staff review. Exact synthetic
+provenance/references control cleanup, never names alone. Owner explicitly allows
+the complete disclosed synthetic document chain to be deleted after exact closure,
+recovery export, Preview and review. All real/imported history, access identity,
+v1 evidence and Owner corrections remain protected. No source/Production writes,
+Warehouse reactivation, Supplier cancellation or generic bulk rule activation.
+
 ## Bounded reconciliation horizon — 9 November 2026
 
 **Status: bounded data delivery complete; UI integration remains ACTIVE.** Follow
