@@ -43,6 +43,37 @@ update global_fixture set history=jsonb_set(history,'{records,0,source_record,ne
 update global_fixture set history=history||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(history-'snapshot_checksum'));
 select throws_ok($$select pg_temp.run_global_replacements(history,migrations,source_checksum,false) from global_fixture$$,'P0001','GLOBAL_SOURCE_DRIFT','SQL independently pins the exact source edges');
 rollback to source_drift;
+savepoint other_source_target;
+update atlas_legacy.master_data_mappings set source_system='OTHER_SOURCE' where source_system='OPS_V1' and object_type='INGREDIENT' and legacy_id='1043';
+update global_fixture set baseline=pg_temp.global_adoption_fingerprints();
+select throws_ok($$select pg_temp.run_global_replacements(history,migrations,source_checksum,false) from global_fixture$$,'P0001','INGREDIENT_MAPPING_REQUIRED','Other-source target Ingredient mapping cannot substitute for missing OPS mapping');
+select is(pg_temp.global_adoption_fingerprints(),(select baseline from global_fixture),'Missing OPS target mapping leaves all facts and receipts unchanged');
+rollback to other_source_target;
+savepoint other_source_substitute;
+update atlas_legacy.master_data_mappings set source_system='OTHER_SOURCE' where source_system='OPS_V1' and object_type='INGREDIENT' and legacy_id='1039';
+select throws_ok($$select pg_temp.run_global_replacements(history,migrations,source_checksum,false) from global_fixture$$,'P0001','INGREDIENT_MAPPING_REQUIRED','Other-source substitute mapping cannot substitute for missing OPS mapping');
+rollback to other_source_substitute;
+savepoint other_source_typed;
+update atlas_legacy.master_data_mappings set source_system='OTHER_SOURCE' where source_system='OPS_V1' and object_type='SCHOOL_TYPE' and legacy_id='1';
+select throws_ok($$select pg_temp.run_global_replacements(history,migrations,source_checksum,false) from global_fixture$$,'P0001','MAPPED_TYPED_CONTEXTS_REQUIRED','Both canonical contexts require OPS mappings');
+rollback to other_source_typed;
+savepoint other_source_dish;
+update atlas_legacy.master_data_mappings set source_system='OTHER_SOURCE' where source_system='OPS_V1' and object_type='DISH';
+select throws_ok($$select pg_temp.run_global_replacements(history,migrations,source_checksum,false) from global_fixture$$,'P0001','MAPPED_TYPED_CONTEXTS_REQUIRED','Other-source Dishes cannot create OPS proof coverage');
+rollback to other_source_dish;
+savepoint incorrect_canonical_mapping;
+update atlas_legacy.master_data_mappings set school_type_id=md5('global-test:type:'||case legacy_id when '1' then '2' else '1' end)::uuid where source_system='OPS_V1' and object_type='SCHOOL_TYPE';
+select throws_ok($$select pg_temp.run_global_replacements(history,migrations,source_checksum,false) from global_fixture$$,'P0001','MAPPED_TYPED_CONTEXTS_REQUIRED','Legacy School Types must map to their exact active canonical identities');
+rollback to incorrect_canonical_mapping;
+savepoint inactive_canonical_type;
+update atlas_admin.school_types set school_type_status='INACTIVE' where school_type_id=md5('global-test:type:1')::uuid;
+select throws_ok($$select pg_temp.run_global_replacements(history,migrations,source_checksum,false) from global_fixture$$,'P0001','MAPPED_TYPED_CONTEXTS_REQUIRED','Inactive canonical School Type blocks the whole adoption');
+rollback to inactive_canonical_type;
+savepoint other_source_duplicates;
+insert into atlas_legacy.master_data_mappings(import_batch_id,source_system,object_type,legacy_id,ingredient_id,school_type_id,dish_id)
+select import_batch_id,'OTHER_SOURCE',object_type,legacy_id,ingredient_id,school_type_id,dish_id from atlas_legacy.master_data_mappings where source_system='OPS_V1';
+select is((select pg_temp.run_global_replacements(history,migrations,source_checksum,false)->>'contexts' from global_fixture),'2','Unrelated same-key mappings neither create ambiguity nor expand OPS typed proof');
+rollback to other_source_duplicates;
 update global_fixture set preview=pg_temp.run_global_replacements(history,migrations,source_checksum,false);
 select is((select preview->>'status' from global_fixture),'PREVIEW','Actual four-row import and canonical proof succeeds in preview');
 select is((select preview->>'changed_lines' from global_fixture),'8','Both typed contexts retain all four stable lines');
@@ -85,8 +116,9 @@ select is((select pg_temp.run_global_replacements(history,migrations,source_chec
 rollback to expired_native;
 savepoint unrelated_native;
 insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_status) values(md5('global-test:unmapped-dish')::uuid,'global-test-unmapped','Unmapped native fixture','ACTIVE');
+insert into atlas_legacy.master_data_mappings(import_batch_id,source_system,object_type,legacy_id,dish_id) values(md5('global-test:batch')::uuid,'OTHER_SOURCE','DISH','2095',md5('global-test:unmapped-dish')::uuid);
 select pg_temp.global_test_native(md5('global-test:unmapped-dish')::uuid,'2026-10-20');
-select is((select pg_temp.run_global_replacements(history,migrations,source_checksum,false)->>'preserved' from global_fixture),'true','Unrelated unmapped native fixture is allowed and preserved exactly');
+select is((select pg_temp.run_global_replacements(history,migrations,source_checksum,false)->>'preserved' from global_fixture),'true','Unrelated native fixture mapped only by another source stays outside OPS interaction scope');
 rollback to unrelated_native;
 
 savepoint school_interaction;

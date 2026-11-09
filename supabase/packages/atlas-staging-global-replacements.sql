@@ -59,20 +59,22 @@ begin
   if actual_source_checksum is distinct from source_checksum then raise exception 'SOURCE_CONTENT_CHECKSUM_INVALID'; end if;
   if exists(select 1 from atlas_admin.recipe_composition_adjustments where recipe_composition_adjustment_id in(select md5('OPS_V1_INGREDIENT_CHANGE_ORDER:'||id)::uuid from unnest(array['7','11','12','14']) id))
     or exists(select 1 from atlas_legacy.import_batches where source_system='OPS_V1_RECIPE_ADJUSTMENTS' and snapshot_id='atlas-global-adoption-20261109') then raise exception 'ADOPTION_ALREADY_PRESENT'; end if;
-  if (select count(*) from atlas_legacy.master_data_mappings where object_type='SCHOOL_TYPE' and legacy_id in('1','2'))<>2
-    or not exists(select 1 from atlas_legacy.master_data_mappings where object_type='DISH') then raise exception 'MAPPED_TYPED_CONTEXTS_REQUIRED'; end if;
+  if (select count(*) from atlas_legacy.master_data_mappings m join atlas_admin.school_types t on t.school_type_id=m.school_type_id
+      and t.school_type_code='v1-school-type-'||m.legacy_id and t.school_type_status='ACTIVE'
+      where m.source_system='OPS_V1' and m.object_type='SCHOOL_TYPE' and m.legacy_id in('1','2'))<>2
+    or not exists(select 1 from atlas_legacy.master_data_mappings where source_system='OPS_V1' and object_type='DISH') then raise exception 'MAPPED_TYPED_CONTEXTS_REQUIRED'; end if;
   -- Later layers run after global replacement. A final-line substitution oracle is valid only without relevant later-layer rules.
   if exists(select 1 from atlas_admin.recipe_composition_adjustments a join atlas_admin.recipe_composition_adjustment_revisions r using(recipe_composition_adjustment_id)
     where r.revision_status='ACTIVE' and coalesce(r.effective_to,'infinity'::date)>'2026-11-09'::date
-      and (a.scope_kind in('SYSTEM_INGREDIENT','SCHOOL') or (a.scope_kind in('SYSTEM_DISH','SCHOOL_DISH') and exists(select 1 from atlas_legacy.master_data_mappings m where m.object_type='DISH' and m.dish_id=a.dish_id)
-        and (a.school_type_id is null or exists(select 1 from atlas_legacy.master_data_mappings m where m.object_type='SCHOOL_TYPE' and m.legacy_id in('1','2') and m.school_type_id=a.school_type_id))))) then raise exception 'NATIVE_INTERACTION_BLOCKED'; end if;
+      and (a.scope_kind in('SYSTEM_INGREDIENT','SCHOOL') or (a.scope_kind in('SYSTEM_DISH','SCHOOL_DISH') and exists(select 1 from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1' and m.object_type='DISH' and m.dish_id=a.dish_id)
+        and (a.school_type_id is null or exists(select 1 from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1' and m.object_type='SCHOOL_TYPE' and m.legacy_id in('1','2') and m.school_type_id=a.school_type_id))))) then raise exception 'NATIVE_INTERACTION_BLOCKED'; end if;
   before_facts:=pg_temp.global_adoption_fingerprints(); protected_facts:=pg_temp.global_adoption_fingerprints(true);
   plan_checksum:=atlas_legacy.master_snapshot_hash(jsonb_build_object('source_content_checksum',source_checksum,'target_state',before_facts,'migrations',versions,'actor',v_actor_id,'adoption_date','2026-11-09','orders',jsonb_build_array('7','11','12','14'),'excluded','13'));
   if apply_requested and (reviewed_checksum#>>'{}') is distinct from plan_checksum then raise exception 'TARGET_OR_SOURCE_DRIFT'; end if;
   for source_row in select r from jsonb_array_elements(source_rows) r where r->>'legacy_id'<>'13' order by (r->>'legacy_id')::bigint loop
-    select count(*),min(m.ingredient_id::text)::uuid into mapped,from_id from atlas_legacy.master_data_mappings m where m.object_type='INGREDIENT' and m.legacy_id=source_row->'source_record'->>'old_ingredient_id';
+    select count(*),min(m.ingredient_id::text)::uuid into mapped,from_id from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1' and m.object_type='INGREDIENT' and m.legacy_id=source_row->'source_record'->>'old_ingredient_id';
     if mapped<>1 or from_id is null then raise exception 'INGREDIENT_MAPPING_REQUIRED'; end if;
-    select count(*),min(m.ingredient_id::text)::uuid into mapped,to_id from atlas_legacy.master_data_mappings m where m.object_type='INGREDIENT' and m.legacy_id=source_row->'source_record'->>'new_ingredient_id';
+    select count(*),min(m.ingredient_id::text)::uuid into mapped,to_id from atlas_legacy.master_data_mappings m where m.source_system='OPS_V1' and m.object_type='INGREDIENT' and m.legacy_id=source_row->'source_record'->>'new_ingredient_id';
     if mapped<>1 or to_id is null then raise exception 'INGREDIENT_MAPPING_REQUIRED'; end if;
     records:=records||jsonb_build_array(jsonb_build_object('legacy_id',source_row->>'legacy_id','action','REPLACE','target_ingredient_id',from_id,'substitute_ingredient_id',to_id,'effective_from','2026-11-09','is_active',true,
       'reason_note',jsonb_build_object('adoption','Atlas adoption effective 2026-11-09; original OPS issuance unattributed','source_project_ref','qnthofvccilhnefdcxnz','source_content_checksum',source_checksum,'original_source',source_row)::text));
@@ -80,7 +82,7 @@ begin
   payload:=jsonb_build_object('source_system','OPS_V1_RECIPE_ADJUSTMENTS','snapshot_id','atlas-global-adoption-20261109','exported_at',history->>'exported_at','imported_by_actor_id',v_actor_id,'records',jsonb_build_object('ingredient_change_orders',records,'system_bom_change_orders','[]'::jsonb,'school_overrides','[]'::jsonb,'school_dish_overrides','[]'::jsonb));
   payload:=payload||jsonb_build_object('snapshot_checksum',encode(extensions.digest(convert_to(payload::text,'UTF8'),'sha256'),'hex'));
   for item in select d.dish_id,t.school_type_id,day.as_of_date from atlas_legacy.master_data_mappings d cross join atlas_legacy.master_data_mappings t cross join (values('2026-11-08'::date),('2026-11-09'::date)) day(as_of_date)
-    where d.object_type='DISH' and t.object_type='SCHOOL_TYPE' and t.legacy_id in('1','2') order by d.dish_id,t.school_type_id,day.as_of_date loop
+    where d.source_system='OPS_V1' and t.source_system='OPS_V1' and d.object_type='DISH' and t.object_type='SCHOOL_TYPE' and t.legacy_id in('1','2') order by d.dish_id,t.school_type_id,day.as_of_date loop
     resolution:=atlas_core.recipe_effective_resolve_composition(item.as_of_date,null,item.dish_id,item.school_type_id);
     before_composition:=before_composition||jsonb_build_array(jsonb_build_object('dish_id',item.dish_id,'school_type_id',item.school_type_id,'date',item.as_of_date,'resolution',resolution));
   end loop;
