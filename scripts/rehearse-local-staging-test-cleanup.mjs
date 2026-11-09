@@ -242,7 +242,7 @@ END $check$;
   let restore =
     packageSql +
     "\nBEGIN; SET LOCAL lock_timeout='15s'; SET LOCAL statement_timeout='15min'; SET LOCAL timezone='UTC';\n";
-  restore += `DO $lock$ DECLARE r record; BEGIN FOR r IN SELECT n.nspname,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname LIKE 'atlas\\_%' ESCAPE '\\' AND c.relkind IN('r','p') ORDER BY n.nspname,c.relname LOOP EXECUTE format('LOCK TABLE %I.%I IN ACCESS EXCLUSIVE MODE',r.nspname,r.relname); END LOOP; END $lock$;\n`;
+  restore += `DO $lock$ DECLARE r record; BEGIN FOR r IN SELECT n.nspname,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE (n.nspname LIKE 'atlas\\_%' ESCAPE '\\' OR n.nspname IN('auth','public','supabase_migrations')) AND c.relkind IN('r','p') ORDER BY n.nspname,c.relname LOOP IF r.nspname='auth' AND r.relname='schema_migrations' THEN EXECUTE 'LOCK TABLE auth.schema_migrations IN ACCESS SHARE MODE'; ELSE EXECUTE format('LOCK TABLE %I.%I IN ACCESS EXCLUSIVE MODE',r.nspname,r.relname); END IF; END LOOP; END $lock$;\n`;
   for (const g of guards) {
     restore += `DO $guard$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_trigger t WHERE t.tgrelid=${q(g.table)}::regclass AND t.tgname=${q(g.trigger)} AND NOT t.tgisinternal AND t.tgenabled='O' AND t.tgtype=${g.type} AND pg_get_triggerdef(t.oid,true)=${q(g.definition)} AND encode(extensions.digest(pg_get_functiondef(t.tgfoid),'sha256'),'hex')=${q(g.function_sha256)}) THEN RAISE EXCEPTION 'LOCAL_RESTORE_GUARD_DRIFT'; END IF; END $guard$; ALTER TABLE ${g.table} DISABLE TRIGGER "${g.trigger}";\n`;
   }
@@ -283,6 +283,8 @@ END $check$;
   proof.canonical_context_count = preview.canonical_context_count;
   proof.full_staging_resolver_restore_proven = false;
   proof.source_schema_overlay_sha256 = sha256(overlay);
+  proof.platform_auth_migration_ledger =
+    "OBSERVED_UNCHANGED_ACCESS_SHARE_NOT_SERIALIZED";
   if (
     git(["rev-parse", "HEAD"]) !== commitSha ||
     git(["status", "--porcelain", "--", ...sourcePaths]) ||

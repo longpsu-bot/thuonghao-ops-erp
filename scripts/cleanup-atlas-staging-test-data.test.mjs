@@ -140,6 +140,12 @@ describe("one-off Staging test cleanup", () => {
     );
     expect(sql).toContain("SET CONSTRAINTS ALL IMMEDIATE");
     expect(sql).toContain("ACCESS EXCLUSIVE");
+    expect(sql).toContain(
+      "IF item.nspname='auth' AND item.relname='schema_migrations' THEN",
+    );
+    expect(sql).toContain(
+      "LOCK TABLE auth.schema_migrations IN ACCESS SHARE MODE",
+    );
     expect(sql).toContain("DELETE_RETURNING_MEMBERSHIP_MISMATCH");
     expect(sql).toContain("OUTSIDE_MANIFEST_FACTS_CHANGED");
     expect(sql).toContain("MAPPED_CANONICAL_COMPOSITION_CHANGED");

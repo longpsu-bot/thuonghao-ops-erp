@@ -90,7 +90,12 @@ BEGIN
   CREATE TEMP TABLE cleanup_rows(table_name text NOT NULL,identity jsonb NOT NULL,row_data jsonb NOT NULL,ordinal bigint NOT NULL,PRIMARY KEY(table_name,identity)) ON COMMIT DROP;
   -- Deterministic locks also protect the exact-state capture used by GitHub.
   FOR item IN SELECT n.nspname,c.relname FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE (n.nspname LIKE 'atlas\_%' ESCAPE '\' OR n.nspname IN('auth','public','supabase_migrations')) AND c.relkind IN('r','p') ORDER BY n.nspname,c.relname LOOP
-    EXECUTE format('LOCK TABLE %I.%I IN ACCESS EXCLUSIVE MODE',item.nspname,item.relname);
+    -- Platform-owned ledger is SELECT-only. Its before/after hash must still match.
+    IF item.nspname='auth' AND item.relname='schema_migrations' THEN
+      EXECUTE 'LOCK TABLE auth.schema_migrations IN ACCESS SHARE MODE';
+    ELSE
+      EXECUTE format('LOCK TABLE %I.%I IN ACCESS EXCLUSIVE MODE',item.nspname,item.relname);
+    END IF;
   END LOOP;
   IF coalesce(recovery,'null'::jsonb)='null'::jsonb THEN
     FOR entry IN SELECT value FROM jsonb_array_elements(pg_temp.cleanup_fixed_manifest()) LOOP
