@@ -198,6 +198,12 @@ the existing5s limit. No timeout/assertion/configuration was weakened. Prettier
 and diff whitespace checks pass. Latest-head Frontend CI remains the integration
 gate; local checks do not substitute for it.
 
+PR462's initial Frontend42558695635 failed at strict Chakra typecheck because
+literal border widths are not admitted by Atlas typegen. The correction reuses
+the existing `--atlas-layout-edge` / `--atlas-layout-zero` variables with the
+same1px/0 values; no token system or check is weakened. Its replacement exact-head
+Frontend result must pass before merge. The initial failure remains evidence.
+
 ## Remaining reconciliation
 
 Existing mapped-context differences require source-rule and stable-line

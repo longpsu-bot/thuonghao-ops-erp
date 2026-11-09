@@ -180,8 +180,14 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
                   />
                   <Box
                     aria-hidden="true"
-                    borderStartWidth={{ base: "0", md: "1px" }}
-                    borderTopWidth={{ base: "1px", md: "0" }}
+                    borderStartWidth={{
+                      base: "var(--atlas-layout-zero, 0)",
+                      md: "var(--atlas-layout-edge, 1px)",
+                    }}
+                    borderTopWidth={{
+                      base: "var(--atlas-layout-edge, 1px)",
+                      md: "var(--atlas-layout-zero, 0)",
+                    }}
                     borderColor="border.default"
                   />
                   <ChangeComposition
