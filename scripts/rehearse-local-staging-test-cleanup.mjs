@@ -81,7 +81,7 @@ export async function rehearseLocalCleanup({
   const overlay = readFileSync(schemaOverlay, "utf8");
   if (
     sha256(overlay) !==
-    "b0d0950664905879f20b58b6c0b8f15dd618f54926bf1c1cdcef05925b08fe3f"
+    "ba88c2894c2338be854ae95a7d29ffab75ced226307837f35d21795ec229b810"
   )
     throw Error("REVIEWED_LOCAL_SCHEMA_OVERLAY_REQUIRED");
   const recovery = readCleanupRecovery(recoveryDirectory);
