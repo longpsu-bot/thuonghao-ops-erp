@@ -102,8 +102,13 @@ source dates in evidence, uses a rollback-only importer/canonical Preview and
 binds reviewed source plus full target fingerprints before exactly4 roots,
 4 revisions and1 receipt. Order13 and view-derived adjustments remain excluded.
 The new pgTAP wrapper is registered as command133 in the shared full certification;
-the existing132 commands remain. Current contract117 tests pass. Hosted adoption
-and final comparisons remain pending.
+the existing132 commands remain. Integrated local validation passes131 Vitest
+checks and31 pgTAP assertions. Review corrected the workflow entrypoint, moved
+executed-CI verification before installation/privileged transport, and required
+exact OPS-v1 mappings plus active canonical School-Type identities. All findings
+are closed in independent whole-branch rereview; other-source-only and mixed-key
+regressions preserve the authority boundary. Hosted adoption and final comparisons
+remain pending.
 
 ## Remaining reconciliation
 
