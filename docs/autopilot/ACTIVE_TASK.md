@@ -1,5 +1,24 @@
 # Atlas Autopilot — Active Task
 
+## Bounded reconciliation — 9 November 2026
+
+**Status: IN_PROGRESS.** Owner instruction: reconcile v1 and update Atlas DB.
+This new task supersedes the no-next-action instruction only for the bounded
+Staging corrections in the [implementation plan](../superpowers/plans/2026-11-09-atlas-bom-reconciliation.md).
+The 5 November delivery and its receipts remain historical and must not be replayed.
+
+Allowed: missing29-Dish dependency closure with every School preserved; refresh
+the source history archive; transactionally preview and, only if fully proven,
+adopt actual global Ingredient orders7/11/12/14 from9 November. Order13 remains
+excluded because of duplicate-final Ingredient conflicts. No view-derived
+composition adjustments, released Recipe rewrites, daily-operation copy or
+historic Atlas issuance is authorized. Exact source/target checksums, canonical
+readback, native/operational preservation, review, CI and replay are required.
+
+The [fresh comparison](../testing/atlas-bom-reconciliation-2026-11-09.md) records
+baseline and actual execution evidence separately. OPS v1 and Production remain
+NO-WRITE; Warehouse remains PAUSED; Supplier commitment cancellation is excluded.
+
 ## Verified delivery — 5 November 2026
 
 **Status: DELIVERED for the bounded Staging capability/data horizon.** No

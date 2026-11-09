@@ -29,6 +29,16 @@ are retained outside Git at
 Source and target reads are separate read-only transactions, not one atomic
 cross-project snapshot and not historical equivalence certification.
 
+Affected School scope is1,962 contexts across17 Schools:3 MATCH,1,862 DIFFERENCE,
+40 missing mappings and57 BLOCKED. Those57 are `SCHOOL_INACTIVE` for Schools
+11/20/21, confirmed inactive in the source too; they must not be reactivated.
+This uses the original `v_effective_bom_dish_v2` definition narrowed only at its
+School-preserving join and exact affected contexts. Original ranking and recursion
+are retained. The two additional source history rows are actual quantity orders
+568/569 for Dish2095/Ingredient1231, effective6 November:7.5kg/10kg per100
+portions for types1/2; Atlas currently retains5kg. Archive refresh alone does not
+activate these orders.
+
 ## First bounded correction: missing Dish closure
 
 Reuse the existing Planning catch-up, SQL package and protected manual workflow.
@@ -70,9 +80,43 @@ expected new regression failures. The clean-fixture rerun removed that single
 local receipt only inside the test transaction and rolled back; it did not reset
 the stack or change hosted data. The existing receipt remains after the test.
 
+Corrected Preview42548374987 at3b0454b5 succeeded with no School action and no
+UPDATE. It proposes29 Dishes,58 typed roots,55 Recipe Versions,93 stable lines
+and revisions,17 Ingredients,3 Suppliers and21 eligibility rows. Existing
+dependencies remain NO_CHANGE. Plan checksum
+`2d64811efb56842d41bf10318173ecc5a2ba5d8ed5d2f038b727bb322cb816a9`;
+snapshot checksum
+`55fb11afc3ba5b73b45657f25b29de450638e680b2dd027831f087ffb1541d77`.
+The separately mistyped-SHA Preview42548362954 failed checkout validation before
+business/transport execution; it is not a passing preview or a data operation.
+
+PR460 merged as `f4672f98265548a83a7e69732c94c693f374d3c6` after independent
+review and exact-head Frontend42548344035 / Full42548344143 PASS. Main
+Frontend42549607837 / Full42549607836 must pass before the guarded Apply.
+
+## Four faithful global replacements
+
+The [bounded adoption contract](../api/atlas-staging-global-replacements.md)
+admits only actual source orders7/11/12/14 from9 November. It preserves original
+source dates in evidence, uses a rollback-only importer/canonical Preview and
+binds reviewed source plus full target fingerprints before exactly4 roots,
+4 revisions and1 receipt. Order13 and view-derived adjustments remain excluded.
+The new pgTAP wrapper is registered as command133 in the shared full certification;
+the existing132 commands remain. Current contract117 tests pass. Hosted adoption
+and final comparisons remain pending.
+
 ## Remaining reconciliation
 
 Existing mapped-context differences require source-rule and stable-line
 reconciliation through the canonical resolver before append-only adoption.
 Unknown Recipe3529 kitchen facts, source addresses and cooking groups must not
 be guessed. Actual staff acceptance and Production cutover are outside this task.
+
+A fresh single-source transaction also compared the system view against the
+system-only `sys_out` CTE extracted unchanged from the School view (before any
+School layer, with identical active-Ingredient eligibility). Of1,526 contexts,
+two differ: Dish1802/types1 and2. The system view recursively applies system
+non-ADD chains, while the School view's system stage is a single pass. These
+source outputs are not one consistent rule authority. Preserve the original
+definitions and resolve intended business semantics before any affected adoption;
+do not change Atlas precedence or manufacture School exceptions to force parity.

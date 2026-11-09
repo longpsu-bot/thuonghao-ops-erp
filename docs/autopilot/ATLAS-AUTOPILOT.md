@@ -1,5 +1,17 @@
 # Atlas Autopilot Mandate
 
+## Bounded reconciliation horizon — 9 November 2026
+
+**Status: ACTIVE for the new Owner-requested Staging reconciliation.** Follow
+the [active task](ACTIVE_TASK.md) and
+[bounded plan](../superpowers/plans/2026-11-09-atlas-bom-reconciliation.md).
+Reuse the guarded missing29-Dish closure, refresh archive evidence, and allow
+only the four proven actual source global replacements7/11/12/14 after complete
+transactional canonical Preview. Do not import effective-view outputs as authored
+rules, force order13 through duplicate blockers, rewrite released history or
+rerun prior one-off packages. Source/Production NO-WRITE, Warehouse PAUSED and
+Supplier commitment cancellation exclusions persist. No other horizon opens.
+
 ## Closed parity horizon — 5 November 2026
 
 **Status: DELIVERED for the bounded Staging horizon.** The Owner-authorized
