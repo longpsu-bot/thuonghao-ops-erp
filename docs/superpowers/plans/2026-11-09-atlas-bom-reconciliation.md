@@ -36,7 +36,7 @@ retain the concrete blocker. No missing policy is inferred from parity totals.
 - [x] Fresh read-only system and affected-School captures, exact rational comparison.
 - [x] Pin29 active source Dishes, excluding source test1983.
 - [x] Explicit Dish scopes exclude historical School reconciliation; add regression
-  coverage for Preview/Apply/replay/full School preservation.
+      coverage for Preview/Apply/replay/full School preservation.
 - [x] Focused50 Vitest and151 local pgTAP checks; initial failures retained in report.
 - [ ] Latest-head review/CI, corrected no-write Preview, merge and exact-main CI.
 - [ ] Guarded Apply/replay/readback; fresh canonical completeness and preservation.
@@ -49,32 +49,32 @@ pgTAP test/wrapper, and `.github/workflows/atlas-staging-global-replacements.yml
 Any existing certification registration change is explicitly coordinated by parent.
 
 - [ ] Reuse history read-only extractor, protected-value/current-main/full-CI checks,
-  verified PostgreSQL transport, technical MIGRATION Actor and private importer.
+      verified PostgreSQL transport, technical MIGRATION Actor and private importer.
 - [ ] Pin exact four source identities/edges and active payloads; fail on changed,
-  missing, duplicate or extra global source order. Known excluded13 stays evidence.
-  Bind preview plan to source content, target state, mappings, Actor and fixed date.
+      missing, duplicate or extra global source order. Known excluded13 stays evidence.
+      Bind preview plan to source content, target state, mappings, Actor and fixed date.
 - [ ] Preview actually runs importer plus canonical assertions inside a rollback
-  boundary; leaves no receipt/root/revision. Do not weaken local importer guards.
+      boundary; leaves no receipt/root/revision. Do not weaken local importer guards.
 - [ ] Apply rechecks under locks, adds exactly4 roots/4 revisions/1 receipt and proves
-  identical replay. No unknown-outcome automatic retry or generic import option.
+      identical replay. No unknown-outcome automatic retry or generic import option.
 - [ ] Fresh post-catch-up before/after canonical resolution covers all mapped typed
-  contexts and preserves readiness, quantities, Units and stable identities; only
-  the four ingredient substitutions and their new lineage steps are permitted.
-  Preserve existing lineage exactly. Prove native/system/School/future interaction
-  absence for this scope or block; do not use a naïve final-line oracle across
-  interacting native rules. Protect all other Atlas tables/old rows and receipts.
+      contexts and preserves readiness, quantities, Units and stable identities; only
+      the four ingredient substitutions and their new lineage steps are permitted.
+      Preserve existing lineage exactly. Prove native/system/School/future interaction
+      absence for this scope or block; do not use a naïve final-line oracle across
+      interacting native rules. Protect all other Atlas tables/old rows and receipts.
 - [ ] Test source/target drift, duplicate destination rollback, native interaction
-  blockers, dates, preserved history, exact delta and replay. Use focused local tests
-  and GitHub full certification. No hosted mutation by the worker.
+      blockers, dates, preserved history, exact delta and replay. Use focused local tests
+      and GitHub full certification. No hosted mutation by the worker.
 - [ ] Independent spec/security/code review before main/Apply. Document partial
-  faithful adoption and remaining order13/system/School blockers accurately.
+      faithful adoption and remaining order13/system/School blockers accurately.
 
 ## Task 3 — archive, final readback and evidence (parent)
 
 - [ ] Refresh archive from603 to the fresh605 surviving records through existing
-  separate Preview/reviewed-content/Apply workflow; never activate archived rows.
+      separate Preview/reviewed-content/Apply workflow; never activate archived rows.
 - [ ] Capture final independent system/School comparisons, actual receipts, run
-  IDs, checksum/replay/preservation results and unresolved semantic blockers.
+      IDs, checksum/replay/preservation results and unresolved semantic blockers.
 - [ ] Update active task/Autopilot/affected API/testing docs in same reviewed change.
-  Recovery is forward correction, not deletion/reset/backdating. No Production or
-  staff-pilot claim. Stop at actual unresolved business decisions with named evidence.
+      Recovery is forward correction, not deletion/reset/backdating. No Production or
+      staff-pilot claim. Stop at actual unresolved business decisions with named evidence.
