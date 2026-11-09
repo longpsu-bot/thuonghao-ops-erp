@@ -2,23 +2,30 @@
 
 ## Current continuation — confirmed facts and staff review
 
-**Status: IN_PROGRESS.** Owner requests continued reconciliation, testing-data
-cleanup and one complete Recipe difference list for staff review. Follow the
-[bounded continuation plan](../superpowers/plans/2026-11-09-atlas-reconciliation-staff-review.md).
-Owner confirmed Dish1735 total pork3.5kg/type1 and5kg/type2 (not doubled), and
-Dish1802 Nấm bào ngư0.15kg/100 portions for both types. Other unresolved facts
-wait for staff review. The Owner subsequently explicitly selected deletion of the
-complete test-document chain in Staging, including the disclosed seven test POs
-and four test School dispatch releases. Exact provenance/dependency closure,
-private recovery snapshot, rollback Preview and review are required; block mixed
-business/test aggregates. Preserve access identities, v1 data/evidence/import
-receipts, Owner corrections and all unrelated facts.
-Staging only; source/Production NO-WRITE, Warehouse PAUSED, Supplier cancellation
-excluded. The previous delivery below is historical, not a new mutation mandate.
+**Status: DELIVERED for the bounded Staging continuation.** The confirmed1735
+pork totals and1802 Nấm bào ngư0.15kg/100 portions are saved for both types.
+The verified staff workbook contains5,740 changed-Ingredient rows across2,236
+difference contexts, plus65 exceptions and five confirmed Owner decisions.
+Unconfirmed differences remain unchanged pending staff review.
+
+The Owner explicitly classified all current Staging operational documents as
+test. Reviewed Apply42594135361 on certified main `1f83f6f8` deleted exactly27,431
+rows, including54 POs/22 School dispatch releases and29 fixture rows. Independent
+readback confirms all76 operational tables empty, nine business adjustment
+roots/revisions byte-identical,605 v1 history records and14,558 mappings intact.
+All ten checked Owner current/historical contexts retain their exact hashes.
+The [delivery record](../testing/atlas-reconciliation-staff-review-2026-11-09.md)
+records the actual Preview, external recovery proof, certification and readback.
+
+This horizon is closed. Do not replay cleanup/imports, start a pilot, adopt more
+legacy rules or infer staff acceptance. Recovery uses the reviewed private
+backup and demonstrated restore, never automatic reseeding. Source/Production
+remain NO-WRITE, Warehouse PAUSED and Supplier cancellation excluded. Prior
+deliveries below are historical, not new mutation mandates.
 
 ## Bounded reconciliation — 9 November 2026
 
-**Status: DATA DELIVERED; bounded UI integration in progress.** Owner instruction:
+**Status: DELIVERED (historical).** Owner instruction:
 reconcile v1/update Atlas DB, then use pork mince for Recipe3529 and add a
 separator between the impact comparison tables.
 This new task supersedes the no-next-action instruction only for the bounded
@@ -41,7 +48,8 @@ Core Apply42551175136, archive Apply42552673234 (605/17), and global
 Apply42555155022 passed readback/replay. Recipe3529 was corrected through the
 existing authenticated UI command, adjustment
 `389b8d1c-1465-421f-934b-3784e107fcd6`, retaining5.5kg/100 portions. Native
-roots/revisions are8/8, prior7/7 unchanged. Released operations remain intact.
+roots/revisions at that delivery were8/8, prior7/7 unchanged. Its operational
+preservation proof predates the separately authorized test disposal above.
 The redundant CLI prototype stays preserved unmerged/unexecuted.
 
 Final system comparison:1,195 MATCH/331 DIFFERENCE/0 missing/8 source absent;
@@ -50,9 +58,9 @@ one difference is the Owner pork fact. Affected Schools:0 MATCH/1,905 DIFFERENCE
 conflicts/source-layer semantics remain business gates. No next data mutation,
 staff pilot, unrelated task or Production cutover starts automatically.
 
-Only the decorative responsive separator in `ChangeOrderDialogs.tsx` and evidence
-closeout remain for latest-head Frontend CI/review/integration. Focused tests and
-independent rendered review pass; no new backend or migration is involved.
+The responsive separator in `ChangeOrderDialogs.tsx` was delivered by PR462,
+main `2fd32d76`, with passing Frontend CI42559646873 and rendered review. No UI
+integration remains under that earlier instruction.
 
 ## Verified delivery — 5 November 2026
 

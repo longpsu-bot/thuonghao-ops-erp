@@ -2,35 +2,38 @@
 
 ## Current bounded continuation — 9 November
 
-**Status: ACTIVE.** The Owner reopened reconciliation for confirmed Recipe
-corrections, testing-data cleanup and a complete staff review workbook. Follow
-the [active task](ACTIVE_TASK.md) and its continuation plan. Use existing governed
-commands; keep unconfirmed Recipe differences for staff review. Exact synthetic
-provenance/references control cleanup, never names alone. Owner explicitly allows
-the complete disclosed synthetic document chain to be deleted after exact closure,
-recovery export, Preview and review. All real/imported history, access identity,
-v1 evidence and Owner corrections remain protected. No source/Production writes,
-Warehouse reactivation, Supplier cancellation or generic bulk rule activation.
+**Status: DELIVERED for this bounded Staging continuation.** Confirmed Recipe
+corrections are saved, the complete5,740-row staff workbook is verified, and
+reviewed Apply42594135361 removed27,431 Owner-classified test rows. Independent
+readback confirms all76 operational tables empty; nine business adjustments,
+605 v1 history records,14,558 mappings, access/audit and the checked canonical
+compositions remain intact. See the [active delivery record](ACTIVE_TASK.md) and
+[verification report](../testing/atlas-reconciliation-staff-review-2026-11-09.md).
+
+No next automatic mutation, import replay, pilot or bulk rule activation is
+authorized. Unconfirmed Recipe differences await staff review. Preserve the
+private recovery files; recovery follows the demonstrated restore, not reseeding.
+Source/Production remain NO-WRITE, Warehouse PAUSED and Supplier cancellation
+excluded. The mandates below are historical and must not reopen this horizon.
 
 ## Bounded reconciliation horizon — 9 November 2026
 
-**Status: bounded data delivery complete; UI integration remains ACTIVE.** Follow
-the [active task](ACTIVE_TASK.md) and
+**Status: DELIVERED (historical).** See the [active task](ACTIVE_TASK.md) and
 [bounded plan](../superpowers/plans/2026-11-09-atlas-bom-reconciliation.md).
-Reuse the guarded missing29-Dish closure, refresh archive evidence, and allow
-only the four proven actual source global replacements7/11/12/14 after complete
+That bounded delivery used the guarded missing29-Dish closure, refreshed archive
+evidence and adopted only actual source global replacements7/11/12/14 after
 transactional canonical Preview. Do not import effective-view outputs as authored
 rules, force order13 through duplicate blockers, rewrite released history or
 rerun prior one-off packages. Source/Production NO-WRITE, Warehouse PAUSED and
 Supplier commitment cancellation exclusions persist. No other horizon opens.
 
 The three approved imports passed readback/replay. Recipe3529's Owner pork fact
-was saved through the existing authenticated product UI. Current evidence:
+was saved through the existing authenticated product UI. Historical evidence:
 605 archive records/17 inactive, native roots/revisions8/8, system comparison
 1,195 MATCH/331 DIFFERENCE/0 missing/8 source absent. Full School/v1 parity and
-staff acceptance are not delivered. Only the requested before/after separator
-and evidence closeout remain for Frontend CI/review/integration; this remaining
-UI work authorizes no further data operation.
+staff acceptance are not delivered. The requested separator and evidence closeout
+were subsequently delivered by PR462 on main `2fd32d76`; no UI or data operation
+remains authorized under that earlier horizon.
 
 ## Closed parity horizon — 5 November 2026
 
