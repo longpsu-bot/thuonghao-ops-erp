@@ -159,7 +159,7 @@ BEGIN
     EXECUTE 'WITH '||ctes||' INSERT INTO pg_temp.cleanup_deleted '||unions;
     SET CONSTRAINTS ALL IMMEDIATE;
     SELECT count(*) INTO deleted_count FROM pg_temp.cleanup_deleted;
-    IF deleted_count<>27431 OR EXISTS((SELECT table_name,identity FROM pg_temp.cleanup_rows EXCEPT SELECT table_name,identity FROM pg_temp.cleanup_deleted) UNION ALL (SELECT table_name,identity FROM pg_temp.cleanup_deleted EXCEPT SELECT table_name,identity FROM pg_temp.cleanup_rows)) THEN RAISE EXCEPTION 'DELETE_RETURNING_MEMBERSHIP_MISMATCH'; END IF;
+    IF deleted_count<>27431 OR EXISTS((SELECT r.table_name,r.identity FROM pg_temp.cleanup_rows r EXCEPT SELECT d.table_name,d.identity FROM pg_temp.cleanup_deleted d) UNION ALL (SELECT d.table_name,d.identity FROM pg_temp.cleanup_deleted d EXCEPT SELECT r.table_name,r.identity FROM pg_temp.cleanup_rows r)) THEN RAISE EXCEPTION 'DELETE_RETURNING_MEMBERSHIP_MISMATCH'; END IF;
     FOR guard IN SELECT value FROM jsonb_array_elements(trigger_modes) LOOP
       EXECUTE format('ALTER TABLE %s ENABLE TRIGGER %I',(guard->>'table')::regclass,guard->>'trigger');
     END LOOP;
