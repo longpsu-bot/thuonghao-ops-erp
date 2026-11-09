@@ -64,49 +64,83 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
     CANCELLED: "Hủy lệnh",
   };
   return (
-    <>
-      <Text textStyle="helper" color="fg.muted" mt="sm">
+    <Box maxW="4xl">
+      <Flex align="baseline" justify="space-between" gap="sm" wrap="wrap">
+        <Heading as="h3" textStyle="section">
+          {actionLabels[row.action_kind]}
+        </Heading>
+        <Text textStyle="label" color="fg.secondary">
+          {temporalLabels[row.temporal_state]}
+        </Text>
+      </Flex>
+      <Text textStyle="body" color="fg.muted" mt="xs">
         {scopeLabels[row.scope_kind]}
       </Text>
-      <Heading as="h3" textStyle="section" mt="sm">
-        {actionLabels[row.action_kind]}
-      </Heading>
       <Grid
         as="dl"
-        templateColumns="minmax(0, 1fr) minmax(0, 1.4fr)"
-        gap="xs"
-        mt="sm"
+        templateColumns={{
+          base: "minmax(0, 8rem) minmax(0, 1fr)",
+          md: "minmax(0, 10rem) minmax(0, 1fr)",
+        }}
+        columnGap="md"
+        rowGap="sm"
+        mt="md"
+        alignItems="baseline"
       >
         {facts
           .filter(([, value]) => value)
           .map(([label, value]) => (
             <Box key={label} display="contents">
-              <Text as="dt" textStyle="helper" color="fg.muted">
+              <Text as="dt" textStyle="label" color="fg.muted">
                 {label}
               </Text>
-              <Text as="dd" textStyle="helper" overflowWrap="anywhere">
+              <Text
+                as="dd"
+                textStyle="body"
+                fontWeight="medium"
+                overflowWrap="anywhere"
+              >
                 {value}
               </Text>
             </Box>
           ))}
+        {r.quantity_per_basis !== null && (
+          <>
+            <Text as="dt" textStyle="label" color="fg.muted">
+              Định lượng
+            </Text>
+            <Text as="dd" textStyle="quantityInline">
+              {r.quantity_per_basis.toLocaleString("vi-VN", {
+                maximumFractionDigits: 6,
+              })}{" "}
+              {unit ?? ""}
+            </Text>
+          </>
+        )}
       </Grid>
-      {r.quantity_per_basis !== null && (
-        <Text mt="xs">
-          Định lượng:{" "}
-          {r.quantity_per_basis.toLocaleString("vi-VN", {
-            maximumFractionDigits: 6,
-          })}{" "}
-          {unit ?? ""}
+      <Box mt="md">
+        <Text textStyle="label" color="fg.muted">
+          Hiệu lực
         </Text>
-      )}
-      <Text mt="sm" textStyle="helper">
-        {periodLabel(r.effective_from, r.effective_to)}
-      </Text>
-      <Text mt="xs" textStyle="helper">
-        {temporalLabels[row.temporal_state]}
-      </Text>
-      <Text mt="sm">{r.reason_note}</Text>
-      <Flex mt="md" gap="sm" wrap="wrap">
+        <Text textStyle="body" mt="xs">
+          {periodLabel(r.effective_from, r.effective_to)}
+        </Text>
+      </Box>
+      <Box mt="md">
+        <Text textStyle="label" color="fg.muted">
+          Lý do điều chỉnh
+        </Text>
+        <Text
+          textStyle="body"
+          mt="xs"
+          maxW="prose"
+          whiteSpace="pre-wrap"
+          overflowWrap="anywhere"
+        >
+          {r.reason_note}
+        </Text>
+      </Box>
+      <Flex mt="md" gap="md" wrap="wrap">
         {row.can_correct && (
           <Button
             variant="businessPrimary"
@@ -119,7 +153,6 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
         {row.can_cancel && (
           <Button
             variant="tertiary"
-            ms="var(--atlas-layout-auto, auto)"
             color="status.danger"
             _hover={{
               bg: "bg.danger",
@@ -144,7 +177,14 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
             <Text textStyle="helper" color="fg.muted">
               {periodLabel(h.effective_from, h.effective_to)}
             </Text>
-            <Text textStyle="helper">{h.reason_note}</Text>
+            <Text
+              textStyle="body"
+              maxW="prose"
+              whiteSpace="pre-wrap"
+              overflowWrap="anywhere"
+            >
+              {h.reason_note}
+            </Text>
             <Text textStyle="helper" color="fg.muted">
               {h.issuance_kind === "LEGACY_UNATTRIBUTED"
                 ? "Dữ liệu cũ · không lưu người phát hành"
@@ -215,6 +255,6 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
           )}
         </Box>
       </Box>
-    </>
+    </Box>
   );
 }

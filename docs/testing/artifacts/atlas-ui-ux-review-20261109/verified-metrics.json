@@ -1,0 +1,311 @@
+{
+  "sourceHead": "e5f5db79a70aee68c15f838959aab8411439e15a",
+  "sourceDelta": "final ChangeOrderDetail.tsx presentation diff",
+  "browser": "151.0.7922.34",
+  "captureCount": 30,
+  "normalOwnerCount": 13,
+  "pageErrors": [],
+  "blockedExternalRequests": [],
+  "records": [
+    {
+      "owner": "planning",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:38.995Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [34],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "attendance",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:39.491Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [53],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "pantry",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:39.870Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "confirmed-need",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:40.233Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [79.796875],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "procurement",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:40.586Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [54.796875],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "purchase-orders",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:40.906Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [],
+      "firstRowHeights": [],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "pxk",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:41.204Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [54.796875],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "reconciliation",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:41.539Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [75.390625],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "schools",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:42.100Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [95],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "ingredients",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:43.260Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [55],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "suppliers",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:43.870Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1344],
+      "firstRowHeights": [49],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "recipes",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:44.426Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1346],
+      "firstRowHeights": [49],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "recipe-detail",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:44.887Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [958, 938],
+      "firstRowHeights": [100.59375, 34],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "change-orders",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:45.631Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [1346],
+      "firstRowHeights": [55],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "change-detail",
+      "device": "desktop",
+      "capturedAt": "2026-11-09T07:57:45.944Z",
+      "viewport": [1366, 768],
+      "documentSize": [1366, 768],
+      "tableWidths": [320],
+      "firstRowHeights": [48],
+      "titleFontSize": "26px"
+    },
+    {
+      "owner": "planning",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:48.691Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [1120],
+      "firstRowHeights": [35.5],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "attendance",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:49.332Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [368],
+      "firstRowHeights": [28.5],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "pantry",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:49.736Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [368],
+      "firstRowHeights": [],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "confirmed-need",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:50.072Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [1292],
+      "firstRowHeights": [153.890625],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "procurement",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:50.358Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [368],
+      "firstRowHeights": [76.09375],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "purchase-orders",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:50.672Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [],
+      "firstRowHeights": [],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "pxk",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:50.921Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [368],
+      "firstRowHeights": [70.09375],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "reconciliation",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:51.237Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [368],
+      "firstRowHeights": [20.796875],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "schools",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:51.775Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [368],
+      "firstRowHeights": [0],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "ingredients",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:52.975Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [368],
+      "firstRowHeights": [34.5],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "suppliers",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:53.557Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [368],
+      "firstRowHeights": [34.5],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "recipes",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:53.936Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [370],
+      "firstRowHeights": [34.5],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "recipe-detail",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:54.294Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [318, 298],
+      "firstRowHeights": [34.5, 35.5],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "change-orders",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:54.853Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [370],
+      "firstRowHeights": [56],
+      "titleFontSize": "24px"
+    },
+    {
+      "owner": "change-detail",
+      "device": "mobile",
+      "capturedAt": "2026-11-09T07:57:55.073Z",
+      "viewport": [390, 844],
+      "documentSize": [390, 844],
+      "tableWidths": [],
+      "firstRowHeights": [],
+      "titleFontSize": "24px"
+    }
+  ]
+}
