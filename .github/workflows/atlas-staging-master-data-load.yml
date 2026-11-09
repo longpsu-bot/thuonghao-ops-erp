@@ -189,7 +189,7 @@ jobs:
           APPLY_REQUESTED: ${{ inputs.apply }}
           CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
           DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary }}
-          REVIEWED_DISH_LEGACY_IDS: "2065,2077,2078,2079,2080,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2093,2094,2095,2097"
+          REVIEWED_DISH_LEGACY_IDS: "2098,2099,2101,2102,2103,2104,2105,2106,2107,2108,2109,2110,2111,2113,2114,2115,2116,2117,2119,2120,2122,2123,2124,2125,2126,2129,2130,2133,2134"
           ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
@@ -208,6 +208,7 @@ jobs:
           fi
           node scripts/run-planning-master-catchup.mjs "${args[@]}"
           if [ "$APPLY_REQUESTED" = "true" ]; then
+            node --input-type=module -e 'import { readFileSync } from "node:fs"; const plan=JSON.parse(readFileSync(process.argv[1], "utf8")); if (!Array.isArray(plan.actions) || plan.actions.some(a => a.action === "UPDATE")) throw new Error("EXISTING_MASTER_UPDATE_FORBIDDEN")' "$RUNNER_TEMP/planning-preview/planning-master-plan.json"
             plan_checksum="$(node --input-type=module -e 'import { readFileSync } from "node:fs"; const value=JSON.parse(readFileSync(process.argv[1], "utf8")).plan_checksum; if (!/^[a-f0-9]{64}$/.test(value ?? "")) process.exit(1); process.stdout.write(value)' "$RUNNER_TEMP/planning-preview/planning-master-plan.json")"
             actor_id="$(node --input-type=module -e "import { deterministicV1Uuid } from './scripts/atlas-staging-v1-reference-transform.mjs'; process.stdout.write(deterministicV1Uuid('atlas-staging-master-import-actor'))")"
             node scripts/run-planning-master-catchup.mjs \
