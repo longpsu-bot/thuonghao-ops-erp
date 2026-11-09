@@ -127,9 +127,64 @@ contexts; it proves exact recovery of the disposal set, not a complete Staging
 database or resolver restoration. Hosted execution separately requires all1,534
 mapped system contexts and exact before/after canonical compositions. A fresh
 receipt must execute from eventual certified main; the earlier commit identity
-must never be relabeled. Hosted Preview/Apply remain pending.
+must never be relabeled. The fresh main proof and hosted execution are recorded below.
 
 The bootstrap overlay only restores eight formatting-only function definitions
 and one explicit owner ACL in newly created disposable databases. Direct source
 category checks confirmed the original Unicode CHECK definitions already match
 Staging; no CHECK or hosted schema changes are needed.
+
+## Verified hosted disposal
+
+PR464 was merged as main `1f83f6f878b761c1736e34414d6d0bda9d67d458` after
+exact-head Frontend42588674411 and executed Full Integration42588674402 passed,
+with independent architecture/security/recovery review. Main itself was then
+certified by [Frontend42590891782](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42590891782)
+and [Full Integration42590892103](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42590892103).
+The actual Full Integration job and certification step passed; skipped Smoke is
+not counted as an executed certificate.
+
+A fresh external recovery rehearsal executed from that exact clean main and
+returned `RESTORED_EXACTLY`. Its canonical JSON proof checksum is
+`ba611d69c55d7e4effc466dc31a636db3c1b08b7d5bb63475bdea4f9916f90b5`.
+All three executing source hashes match the reviewed implementation; the prior
+receipt was preserved and never relabeled. No raw backup files were uploaded.
+
+[Hosted Preview42593389650](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42593389650)
+executed the real27,431-row disposal and rolled back. It verified1,534 mapped
+system contexts and1,538 canonical contexts at9 November. Independent read-only
+counts, identities, history, mappings and ten Owner context hashes matched the
+pre-Preview baseline exactly. Independent review approved its actual content
+checksum `23ebf70dd07cb3f95b83b18e71bdda0a07f44c545c1b8c197dd60271c9306449`.
+
+[Apply42594135361](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42594135361)
+was dispatched once and succeeded with `APPLIED`, no rollback and that exact
+reviewed checksum. It deleted27,402 operational rows plus29 fixture rows:
+27,431 total, including54 POs and22 School dispatch releases. All immediate FK
+checks, exact DELETE RETURNING membership, protected row hashes and canonical
+comparisons passed. Original trigger modes and raw catalog were restored before
+commit; the catalog checksum remains
+`bdba1effd71a641aadcf5b235a41f193ad468452602ff738d2137af237f6581b`.
+
+Independent post-Apply READ ONLY verification confirms:
+
+- All76 allowlisted operational tables contain zero rows.
+- The exact nine business adjustment roots and nine revisions retain their full
+  PostgreSQL row texts; only the three proven old test adjustments were removed.
+- All ten Owner current/historical context hashes remain identical.
+- All605 v1 history records,767 mapped Dishes and14,558 mappings remain.
+- Zero unvalidated Atlas FKs and zero abnormal Atlas trigger states.
+- The delivered XLSX retains its verified SHA256 above.
+
+All v1 masters, Recipes, import receipts, shared Units, six configuration
+families, access/audit and unrelated facts were preserved by exact outside-set
+hash checks. The platform-owned auth migration ledger was observed unchanged
+under its documented ACCESS SHARE exception. No persistent schema, API, role,
+grant, RLS or security-guard change was made. Source OPS v1 and Production were
+not written. Warehouse and real Supplier cancellation remain excluded.
+
+The disposal horizon is closed. Do not replay this one-off command or earlier
+imports, reseed the deleted tests, infer staff acceptance or start a pilot.
+Recovery uses the retained private67-file backup and reviewed demonstrated
+restore. The complete workbook remains the staff decision queue; unconfirmed
+Recipe differences are unchanged until reviewed through governed commands.
