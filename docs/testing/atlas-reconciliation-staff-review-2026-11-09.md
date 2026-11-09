@@ -112,3 +112,24 @@ its explicit ACCESS SHARE lock respects existing privileges. All other selected
 tables use ACCESS EXCLUSIVE. Exact before/after ledger and catalog comparisons
 must pass; the platform ledger is observed unchanged, not serialized against
 concurrent platform writers. No grants, roles or security guards are changed.
+
+The completed disposable recovery rehearsal at source commit `da37a0c9` returned
+`RESTORED_EXACTLY`: same-path Preview deleted27,431 rows and rolled back; actual
+purge deleted27,402 operational rows and29 fixture rows; all FK checks passed
+before restoration. All67 external backup files then restored27,431 rows in place.
+The75 reviewed business restore guards were restored exactly. Full row/catalog
+equality and validated FKs passed before commit and again after commit. A second
+independent external reconstruction matched. Actual Staging semantic schema hash
+is `08fc31ff1cd527b348767e61ab2fcde2783d1e6b8a419ddd166a23d407100708`.
+
+This local data set is a partial protected FK closure, with zero mapped resolver
+contexts; it proves exact recovery of the disposal set, not a complete Staging
+database or resolver restoration. Hosted execution separately requires all1,534
+mapped system contexts and exact before/after canonical compositions. A fresh
+receipt must execute from eventual certified main; the earlier commit identity
+must never be relabeled. Hosted Preview/Apply remain pending.
+
+The bootstrap overlay only restores eight formatting-only function definitions
+and one explicit owner ACL in newly created disposable databases. Direct source
+category checks confirmed the original Unicode CHECK definitions already match
+Staging; no CHECK or hosted schema changes are needed.
