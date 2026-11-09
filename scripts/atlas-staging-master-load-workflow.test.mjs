@@ -49,8 +49,10 @@ describe("protected hosted master load workflow", () => {
       "${{ inputs.diagnostic_boundary && 'planning-master-diagnostic-report.tsv' || 'planning-master-report.tsv' }}",
     );
     expect(planningPreview).toContain(
-      'REVIEWED_DISH_LEGACY_IDS: "2065,2077,2078,2079,2080,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2093,2094,2095,2097"',
+      'REVIEWED_DISH_LEGACY_IDS: "2098,2099,2101,2102,2103,2104,2105,2106,2107,2108,2109,2110,2111,2113,2114,2115,2116,2117,2119,2120,2122,2123,2124,2125,2126,2129,2130,2133,2134"',
     );
+    expect(planningPreview).toContain("EXISTING_MASTER_UPDATE_FORBIDDEN");
+    expect(planningPreview).toContain('a.action === "UPDATE"');
     expect(planningPreview).toContain('--snapshot-output "$snapshot"');
     expect(planningPreview).toContain("trap 'rm -f \"$snapshot\"' EXIT");
     expect(planningPreview).toContain(
