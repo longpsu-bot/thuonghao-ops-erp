@@ -37,6 +37,12 @@ for one staff review. This supersedes the prior no-next-task limit for this scop
    demonstrated recovery in a disposable exact-schema database. No blanket trigger
    disabling, replication-role change, TRUNCATE/rebuild or persistent bypass.
 
+   The sole lock exception is platform-owned, SELECT-only
+   `auth.schema_migrations`: use explicit ACCESS SHARE for this unchanged ledger,
+   never a permission-error fallback or privilege escalation. All other selected
+   tables retain ACCESS EXCLUSIVE. Abort on observed ledger row/catalog drift;
+   its unchanged observation does not serialize concurrent platform writers.
+
 4. Deliver one Vietnamese XLSX review packet outside Git, with all differences,
    ingredient/quantity/Unit details, source orders, explicit review input columns,
    confirmed decisions and source-empty/inactive cases. Use an artifact worker

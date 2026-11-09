@@ -106,3 +106,9 @@ cleanup complete. Preserve v1 masters/Recipes/mappings,605 source history record
 all import receipts, nine business adjustment roots/revisions, access/audit,
 shared Units and configuration. The three separately proven old fixture
 adjustments and unmapped synthetic masters belong to the authorized test purge.
+
+The only lock exception is platform-owned, SELECT-only `auth.schema_migrations`:
+its explicit ACCESS SHARE lock respects existing privileges. All other selected
+tables use ACCESS EXCLUSIVE. Exact before/after ledger and catalog comparisons
+must pass; the platform ledger is observed unchanged, not serialized against
+concurrent platform writers. No grants, roles or security guards are changed.
