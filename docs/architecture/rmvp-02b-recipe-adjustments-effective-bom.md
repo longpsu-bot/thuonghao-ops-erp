@@ -154,6 +154,18 @@ Validation is all-or-nothing and reports source/target/mapping counts, inserted/
 
 The retained task workspace did not contain the referenced OPS v1 adjustment export or live legacy schema. Implementation therefore uses the approved four-array behavior in the bounded task, the merged RMVP-02A legacy evidence, and an explicit-export-only contract; no dataset-specific assumption or live access was introduced. Legacy hard-deleted history cannot be reconstructed and is always reported.
 
+### Bounded Staging adoption amendment — 9 November 2026
+
+The Owner-requested DB reconciliation permits the unchanged private importer only
+inside the separately guarded [four-global Staging adoption](../api/atlas-staging-global-replacements.md).
+Only actual source orders7/11/12/14 are admitted, with Atlas authority starting
+9 November and original source rows/dates retained as evidence. Preview performs
+the importer and full canonical proof inside rollback; Apply binds source plus
+target state and preserves all prior history. Exact OPS-v1 typed mappings are
+required; another source's matching legacy key is never a fallback. The generic
+local command, security boundary, resolver and all other migration restrictions
+remain unchanged. Order13 and effective-view-derived adjustments are excluded.
+
 ## Reconciliation matrix
 
 The focused pgTAP suite, authenticated browser-key script, and deterministic review fixtures cover the intended v1 cases:
