@@ -1,0 +1,105 @@
+name: Atlas Staging Recipe3529 Owner Correction
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full certified current-main SHA
+        required: true
+        type: string
+      apply:
+        description: Apply Owner-confirmed pork correction effective 2026-11-09
+        required: true
+        type: boolean
+        default: false
+      plan_checksum:
+        description: Exact combined plan checksum from separately reviewed Preview
+        required: false
+        type: string
+      target_project_ref:
+        description: Exact Atlas Staging project confirmation for apply
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: atlas-staging-recipe3529
+  cancel-in-progress: false
+
+jobs:
+  correction:
+    name: Preview or apply one owner-confirmed Recipe correction
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: atlas-staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Verify exact current main
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
+          test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"
+          test -z "$(git status --porcelain)"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Verify certified exact head
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { verifyExactHeadCertification } from "./scripts/atlas-staging-contract.mjs";
+          await verifyExactHeadCertification({ commitSha: process.env.REQUESTED_SHA, certificationMode: "github", environment: process.env });
+          NODE
+      - run: pnpm install --frozen-lockfile
+      - name: Authenticate actual operator, preview and optionally apply
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          REVIEWED_PLAN_CHECKSUM: ${{ inputs.plan_checksum }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--commit-sha "$REQUESTED_SHA")
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            test "$CONFIRMED_TARGET" = "rnzxmxiiqgtdevzregff"
+            [[ "$REVIEWED_PLAN_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
+            args+=(--apply --target-project-ref "$CONFIRMED_TARGET" --plan-checksum "$REVIEWED_PLAN_CHECKSUM")
+          elif [ -n "$REVIEWED_PLAN_CHECKSUM" ] || [ -n "$CONFIRMED_TARGET" ]; then
+            echo 'Apply-only inputs are not accepted for preview.' >&2
+            exit 1
+          fi
+          node scripts/correct-atlas-staging-recipe3529.mjs "${args[@]}" > "$RUNNER_TEMP/recipe3529-correction.json"
+      - name: Retain reviewed checksum and correction receipt identifiers
+        uses: actions/upload-artifact@v4
+        with:
+          name: recipe3529-correction-${{ inputs.commit_sha }}
+          path: ${{ runner.temp }}/recipe3529-correction.json
+          retention-days: 7
