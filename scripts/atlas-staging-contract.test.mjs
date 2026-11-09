@@ -1043,7 +1043,11 @@ describe("Atlas staging dry-run and workflow", () => {
       ),
     ).toHaveLength(2);
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(133);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(134);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "node",
+      args: ["scripts/test-local-staging-test-cleanup.mjs"],
+    });
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: ["scripts/test-local-staging-global-replacements.mjs"],
