@@ -176,9 +176,11 @@ begin
  end loop;
  -- Dish actions precede root actions for the existing FK-preserving writer.
  actions:=actions||(empty_roots->'actions');
+ orders:='[]';
+ -- Explicit Dish closure must preserve Schools; the historical unscoped reconciliation remains separate.
+ if requested_scope is null then
  select coalesce(max((s.value->>'display_order')::integer),0) into next_tail from jsonb_array_elements(snapshot#>'{records,schools}') s where not exists
  (select 1 from jsonb_array_elements(snapshot->'source_diagnostics') d where d.value->>'code'='INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED' and d.value->>'legacy_id'=s.value->>'legacy_id');
- orders:='[]';
  for r in select s.value from jsonb_array_elements(snapshot#>'{records,schools}') s order by
  case when exists(select 1 from jsonb_array_elements(snapshot->'source_diagnostics') d where d.value->>'code'='INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED' and d.value->>'legacy_id'=s.value->>'legacy_id') then 1 else 0 end,
  (s.value->>'display_order')::integer,s.value->>'school_name',s.value->>'legacy_id' loop
@@ -200,6 +202,7 @@ begin
  if exists(select 1 from (values (array['40','38']), (array['52','10']), (array['47','48','49','50','53'])) b(ids)
  where (select array_agg(value->>'legacy_id' order by ordinality) from jsonb_array_elements(orders) with ordinality where value->>'legacy_id'=any(b.ids)) is distinct from b.ids
  or b.ids<>array['40','38'] and (select max(ordinality)-min(ordinality)+1 from jsonb_array_elements(orders) with ordinality where value->>'legacy_id'=any(b.ids))<>cardinality(b.ids)) then raise exception 'OWNER_SCHOOL_SEQUENCE_DRIFT'; end if;
+ end if;
  if prior.import_batch_id is not null and (prior.reconciliation->'target_fingerprints' is distinct from pg_temp.planning_catchup_fingerprints(prior.reconciliation->'actions')) then raise exception 'TARGET_DRIFT'; end if;
  select coalesce(jsonb_agg(jsonb_build_object('SOURCE_SYSTEM','OPS_V1','OBJECT_TYPE',a.value->>'object_type','LEGACY_ID',a.value->>'legacy_id',
  'SOURCE_NAME',coalesce(a.value#>>'{values,school_name}',a.value#>>'{values,dish_name}',a.value#>>'{values,ingredient_name}',a.value#>>'{values,supplier_name}',a.value->>'legacy_id'),

@@ -185,6 +185,16 @@ update atlas_legacy.master_data_mappings set source_system='OTHER_SOURCE' where 
 select ok(pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),false,null,null)->>'success'='false','same legacy key from another source does not stand in for an OPS_V1 mapping');
 rollback to savepoint wrong_type;
 
+savepoint dish_only_scope;
+create temp table dish_only_schools_before as select school_id,to_jsonb(s) value from atlas_admin.schools s;
+create temp table dish_only_plan as select pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),false,null,null,'["100"]') value;
+select is((select value->>'success' from dish_only_plan),'true','explicit Dish-only scope previews with existing School drift');
+select is((select count(*) from dish_only_plan p cross join lateral jsonb_array_elements(p.value->'actions') a where a.value->>'object_type'='SCHOOL'),0::bigint,'explicit Dish-only scope excludes School reconciliation actions');
+select is((select pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,value->>'plan_checksum','ee120000-0000-4000-8000-000000000001','["100"]')->>'status' from dish_only_plan),'APPLIED','explicit Dish-only scope applies without School updates');
+select ok(not exists(select 1 from dish_only_schools_before b full join atlas_admin.schools s using(school_id) where b.value is distinct from to_jsonb(s)),'all School rows remain byte-identical after Dish-only apply');
+select is((select pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,value->>'plan_checksum','ee120000-0000-4000-8000-000000000001','["100"]')->>'status' from dish_only_plan),'REPLAYED','Dish-only apply retains exact replay');
+rollback to savepoint dish_only_scope;
+
 insert into evidence values ('apply',pg_temp.run_planning_master_catchup(pg_temp.catchup_fixture(),true,(select value->>'plan_checksum' from evidence where label='preview'),'ee120000-0000-4000-8000-000000000001'));
 select diag(value::text) from evidence where label='apply' and value->>'success' is distinct from 'true';
 select is((select value->>'status' from evidence where label='apply'),'APPLIED','the reviewed bounded plan applies atomically');

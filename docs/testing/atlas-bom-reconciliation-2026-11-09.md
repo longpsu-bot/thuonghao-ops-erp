@@ -38,9 +38,12 @@ The source test Dish1983 is excluded. Dish2111 has no current effective output;
 empty composition receives the established roots-only policy, never a fabricated
 released Recipe. The exact preview decides actual dependency eligibility.
 
-Expected code files: the existing hosted workflow and its focused contract test.
+Expected code files: the existing hosted workflow, its focused contract test,
+the session-local catch-up package and its pgTAP suite.
 Only missing Dish/typed Recipe/BOM roots and required unmapped master dependencies
-may be created. Existing dependencies remain references. Before Apply the workflow
+may be created. Existing dependencies remain references. Explicit Dish scope now
+excludes the historical School name/order reconciliation; the unscoped historical
+path retains its existing behavior. Before Apply the workflow
 rejects any plan containing UPDATE, including unrelated School-order drift. It
 retains exact-main, migration parity, immutable snapshot/plan/Actor, same-snapshot
 replay, transactional readback and protected operational/unrelated fingerprints.
@@ -53,6 +56,19 @@ rules, weekday defaults and prior receipts remain intact. No schema migration or
 grant change. Recovery is reviewed forward correction, never deleting imported
 history. Targeted workflow checks run locally; GitHub Actions owns routine full
 validation before merge/Apply. Actual hosted results will be recorded here.
+
+Initial Preview42547849758 at86e91263 succeeded without business writes but
+proposed11 School-order UPDATEs, so its plan was not accepted for Apply. The
+new no-UPDATE guard would reject it. The correction excludes School actions for
+explicit Dish scopes and protects all School rows instead. Regression checks
+cover preview, apply, exact replay and byte-identical School preservation.
+
+Focused runner/planner/workflow checks:50 passed. Local pgTAP:151 passed after
+the scoped correction. The disposable stack retained one prior history receipt;
+the initial run also showed three preexisting fixture-count failures plus the two
+expected new regression failures. The clean-fixture rerun removed that single
+local receipt only inside the test transaction and rolled back; it did not reset
+the stack or change hosted data. The existing receipt remains after the test.
 
 ## Remaining reconciliation
 
