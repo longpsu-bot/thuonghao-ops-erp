@@ -15,6 +15,12 @@ composition adjustments, released Recipe rewrites, daily-operation copy or
 historic Atlas issuance is authorized. Exact source/target checksums, canonical
 readback, native/operational preservation, review, CI and replay are required.
 
+The Owner subsequently confirmed Recipe3529 uses pork. Add exactly one normal
+authenticated Type2 SYSTEM_DISH replacement from beef1037 to current pork1208,
+preserving5.5kg/100 portions, other lines, Type1 and pre-adoption history. Use
+the [bounded native command](../api/staging-recipe3529-owner-correction.md) after
+the four-global operation; never fabricate an OPS-v1 order for the new Owner fact.
+
 The [fresh comparison](../testing/atlas-bom-reconciliation-2026-11-09.md) records
 baseline and actual execution evidence separately. OPS v1 and Production remain
 NO-WRITE; Warehouse remains PAUSED; Supplier commitment cancellation is excluded.

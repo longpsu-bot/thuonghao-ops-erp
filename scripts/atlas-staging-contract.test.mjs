@@ -1043,6 +1043,11 @@ describe("Atlas staging dry-run and workflow", () => {
       ),
     ).toHaveLength(2);
     expect(fullIntegration).not.toContain("supabase test db");
+    expect(
+      supabaseWorkflow.match(
+        /- "\.github\/workflows\/atlas-staging-recipe3529\.yml"/g,
+      ),
+    ).toHaveLength(2);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(133);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",

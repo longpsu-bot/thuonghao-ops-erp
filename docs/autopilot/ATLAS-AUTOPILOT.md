@@ -10,7 +10,10 @@ only the four proven actual source global replacements7/11/12/14 after complete
 transactional canonical Preview. Do not import effective-view outputs as authored
 rules, force order13 through duplicate blockers, rewrite released history or
 rerun prior one-off packages. Source/Production NO-WRITE, Warehouse PAUSED and
-Supplier commitment cancellation exclusions persist. No other horizon opens.
+Supplier commitment cancellation exclusions persist. The Owner's later explicit
+Recipe3529 pork confirmation adds one separately reviewed normal-auth Type2
+replacement after the four globals, preserving quantity, Type1 and history.
+No other horizon opens.
 
 ## Closed parity horizon — 5 November 2026
 

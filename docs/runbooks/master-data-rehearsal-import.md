@@ -138,6 +138,17 @@ Inspect the artifact and logs before claiming data applied. Require `success=tru
 
 The 27 October execution completed through [run 40470127924](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40470127924): `APPLIED`, reconciled readback, `REPLAYED`, matching plan/snapshot checksums, protected facts unchanged and Weekly Menu PASS with zero unresolved references and zero Save/Approve calls. The later read-only check [40470447170](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/40470447170) confirmed the expected `CATCHUP_DISH_SCOPE_UNAVAILABLE` guard and independently passed Weekly Menu. Preserve both runs as closeout evidence; do not rerun the importer without a newly approved factual correction task.
 
+### Bounded follow-up — 9 November 2026
+
+The27 October19-Dish operation above is closed historical evidence. The current
+workflow now pins the separately reviewed29-Dish scope in the
+[9 November reconciliation](../testing/atlas-bom-reconciliation-2026-11-09.md).
+An explicit Dish scope excludes historical School name/order reconciliation and
+protects all School rows; any remaining UPDATE in the reviewed plan blocks Apply.
+Apply42551175136 completed that new closure with replay and protected readback.
+Do not rerun either completed scope or earlier one-off packages from a new snapshot.
+Further factual changes require their own reviewed forward correction.
+
 ## OPS-v1 Recipe Unit adoption evidence
 
 The normalized snapshot must continue to preserve each raw BoM
