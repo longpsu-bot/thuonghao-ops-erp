@@ -165,3 +165,16 @@ excluded native `UIQ03A_SAVE` mismatch. After deployment, run the post-deploy
 manifest and require the identical authority represented by immutable
 successors and evidence. Drift blocks the sequence. Neither manifest authorizes
 or performs import, migration, correction, or other hosted mutation.
+
+## Bounded 9 November closure (completed)
+
+The historical October manifest is not the current missing-Dish scope. Reviewed
+Preview42548374987 and Apply42551175136 at `f4672f98` created29 missing Dishes,
+58 typed roots,55 versions and93 stable lines/revisions, with required unmapped
+dependencies only. Explicit Dish scopes exclude historical School reconciliation;
+all existing Schools were preserved and any UPDATE plan is rejected. Receipt
+`806b7702-718e-4e48-8e57-a909274db084` passed readback/replay. Current mapped
+Dish count is767, excluding source test1983. Do not rerun completed imports after
+later authorized changes. See the [dated evidence](../testing/atlas-bom-reconciliation-2026-11-09.md)
+for archive/global adoption, Owner Recipe3529 correction and unresolved parity;
+no source/Production write, released-history rewrite or staff acceptance is claimed.

@@ -2,7 +2,9 @@
 
 ## Bounded reconciliation — 9 November 2026
 
-**Status: IN_PROGRESS.** Owner instruction: reconcile v1 and update Atlas DB.
+**Status: DATA DELIVERED; bounded UI integration in progress.** Owner instruction:
+reconcile v1/update Atlas DB, then use pork mince for Recipe3529 and add a
+separator between the impact comparison tables.
 This new task supersedes the no-next-action instruction only for the bounded
 Staging corrections in the [implementation plan](../superpowers/plans/2026-11-09-atlas-bom-reconciliation.md).
 The 5 November delivery and its receipts remain historical and must not be replayed.
@@ -18,6 +20,23 @@ readback, native/operational preservation, review, CI and replay are required.
 The [fresh comparison](../testing/atlas-bom-reconciliation-2026-11-09.md) records
 baseline and actual execution evidence separately. OPS v1 and Production remain
 NO-WRITE; Warehouse remains PAUSED; Supplier commitment cancellation is excluded.
+
+Core Apply42551175136, archive Apply42552673234 (605/17), and global
+Apply42555155022 passed readback/replay. Recipe3529 was corrected through the
+existing authenticated UI command, adjustment
+`389b8d1c-1465-421f-934b-3784e107fcd6`, retaining5.5kg/100 portions. Native
+roots/revisions are8/8, prior7/7 unchanged. Released operations remain intact.
+The redundant CLI prototype stays preserved unmerged/unexecuted.
+
+Final system comparison:1,195 MATCH/331 DIFFERENCE/0 missing/8 source absent;
+one difference is the Owner pork fact. Affected Schools:0 MATCH/1,905 DIFFERENCE/
+0 missing/57 inactive-School BLOCKED. This is not full v1 parity. Order13 duplicate
+conflicts/source-layer semantics remain business gates. No next data mutation,
+staff pilot, unrelated task or Production cutover starts automatically.
+
+Only the decorative responsive separator in `ChangeOrderDialogs.tsx` and evidence
+closeout remain for latest-head Frontend CI/review/integration. Focused tests and
+independent rendered review pass; no new backend or migration is involved.
 
 ## Verified delivery — 5 November 2026
 
