@@ -215,6 +215,10 @@ export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
   ...databaseTests,
   Object.freeze({
     command: "node",
+    args: Object.freeze(["scripts/test-local-staging-test-cleanup.mjs"]),
+  }),
+  Object.freeze({
+    command: "node",
     args: Object.freeze(["scripts/test-local-staging-global-replacements.mjs"]),
   }),
   Object.freeze({

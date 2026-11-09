@@ -1,5 +1,21 @@
 # Atlas Autopilot — Active Task
 
+## Current continuation — confirmed facts and staff review
+
+**Status: IN_PROGRESS.** Owner requests continued reconciliation, testing-data
+cleanup and one complete Recipe difference list for staff review. Follow the
+[bounded continuation plan](../superpowers/plans/2026-11-09-atlas-reconciliation-staff-review.md).
+Owner confirmed Dish1735 total pork3.5kg/type1 and5kg/type2 (not doubled), and
+Dish1802 Nấm bào ngư0.15kg/100 portions for both types. Other unresolved facts
+wait for staff review. The Owner subsequently explicitly selected deletion of the
+complete test-document chain in Staging, including the disclosed seven test POs
+and four test School dispatch releases. Exact provenance/dependency closure,
+private recovery snapshot, rollback Preview and review are required; block mixed
+business/test aggregates. Preserve access identities, v1 data/evidence/import
+receipts, Owner corrections and all unrelated facts.
+Staging only; source/Production NO-WRITE, Warehouse PAUSED, Supplier cancellation
+excluded. The previous delivery below is historical, not a new mutation mandate.
+
 ## Bounded reconciliation — 9 November 2026
 
 **Status: DATA DELIVERED; bounded UI integration in progress.** Owner instruction:
