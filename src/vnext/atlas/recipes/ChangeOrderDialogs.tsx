@@ -169,14 +169,26 @@ export function ChangeOrderReview({ c }: { c: ChangeOrderController }) {
                 <Grid
                   templateColumns={{
                     base: "minmax(0, 1fr)",
-                    md: "repeat(2, minmax(0, 1fr))",
+                    md: "minmax(0, 1fr) auto minmax(0, 1fr)",
                   }}
-                  gap="md"
+                  gap="sm"
                 >
                   <ChangeComposition
                     title="Trước điều chỉnh"
                     value={p.before}
                     data={c.data}
+                  />
+                  <Box
+                    aria-hidden="true"
+                    borderStartWidth={{
+                      base: "var(--atlas-layout-zero, 0)",
+                      md: "var(--atlas-layout-edge, 1px)",
+                    }}
+                    borderTopWidth={{
+                      base: "var(--atlas-layout-edge, 1px)",
+                      md: "var(--atlas-layout-zero, 0)",
+                    }}
+                    borderColor="border.default"
                   />
                   <ChangeComposition
                     title="Sau điều chỉnh"

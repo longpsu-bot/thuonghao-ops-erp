@@ -2,7 +2,7 @@
 
 ## Bounded reconciliation horizon — 9 November 2026
 
-**Status: ACTIVE for the new Owner-requested Staging reconciliation.** Follow
+**Status: bounded data delivery complete; UI integration remains ACTIVE.** Follow
 the [active task](ACTIVE_TASK.md) and
 [bounded plan](../superpowers/plans/2026-11-09-atlas-bom-reconciliation.md).
 Reuse the guarded missing29-Dish closure, refresh archive evidence, and allow
@@ -11,6 +11,14 @@ transactional canonical Preview. Do not import effective-view outputs as authore
 rules, force order13 through duplicate blockers, rewrite released history or
 rerun prior one-off packages. Source/Production NO-WRITE, Warehouse PAUSED and
 Supplier commitment cancellation exclusions persist. No other horizon opens.
+
+The three approved imports passed readback/replay. Recipe3529's Owner pork fact
+was saved through the existing authenticated product UI. Current evidence:
+605 archive records/17 inactive, native roots/revisions8/8, system comparison
+1,195 MATCH/331 DIFFERENCE/0 missing/8 source absent. Full School/v1 parity and
+staff acceptance are not delivered. Only the requested before/after separator
+and evidence closeout remain for Frontend CI/review/integration; this remaining
+UI work authorizes no further data operation.
 
 ## Closed parity horizon — 5 November 2026
 

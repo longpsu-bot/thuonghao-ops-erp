@@ -38,8 +38,8 @@ retain the concrete blocker. No missing policy is inferred from parity totals.
 - [x] Explicit Dish scopes exclude historical School reconciliation; add regression
       coverage for Preview/Apply/replay/full School preservation.
 - [x] Focused50 Vitest and151 local pgTAP checks; initial failures retained in report.
-- [ ] Latest-head review/CI, corrected no-write Preview, merge and exact-main CI.
-- [ ] Guarded Apply/replay/readback; fresh canonical completeness and preservation.
+- [x] Latest-head review/CI, corrected no-write Preview, merge and exact-main CI.
+- [x] Guarded Apply/replay/readback; fresh canonical completeness and preservation.
 
 ## Task 2 — four faithful global replacements (bounded implementer)
 
@@ -48,33 +48,51 @@ Vitest test, `supabase/packages/atlas-staging-global-replacements.sql`, focused
 pgTAP test/wrapper, and `.github/workflows/atlas-staging-global-replacements.yml`.
 Any existing certification registration change is explicitly coordinated by parent.
 
-- [ ] Reuse history read-only extractor, protected-value/current-main/full-CI checks,
+- [x] Reuse history read-only extractor, protected-value/current-main/full-CI checks,
       verified PostgreSQL transport, technical MIGRATION Actor and private importer.
-- [ ] Pin exact four source identities/edges and active payloads; fail on changed,
+- [x] Pin exact four source identities/edges and active payloads; fail on changed,
       missing, duplicate or extra global source order. Known excluded13 stays evidence.
       Bind preview plan to source content, target state, mappings, Actor and fixed date.
-- [ ] Preview actually runs importer plus canonical assertions inside a rollback
+- [x] Preview actually runs importer plus canonical assertions inside a rollback
       boundary; leaves no receipt/root/revision. Do not weaken local importer guards.
-- [ ] Apply rechecks under locks, adds exactly4 roots/4 revisions/1 receipt and proves
+- [x] Apply rechecks under locks, adds exactly4 roots/4 revisions/1 receipt and proves
       identical replay. No unknown-outcome automatic retry or generic import option.
-- [ ] Fresh post-catch-up before/after canonical resolution covers all mapped typed
+- [x] Fresh post-catch-up before/after canonical resolution covers all mapped typed
       contexts and preserves readiness, quantities, Units and stable identities; only
       the four ingredient substitutions and their new lineage steps are permitted.
       Preserve existing lineage exactly. Prove native/system/School/future interaction
       absence for this scope or block; do not use a naïve final-line oracle across
       interacting native rules. Protect all other Atlas tables/old rows and receipts.
-- [ ] Test source/target drift, duplicate destination rollback, native interaction
+- [x] Test source/target drift, duplicate destination rollback, native interaction
       blockers, dates, preserved history, exact delta and replay. Use focused local tests
       and GitHub full certification. No hosted mutation by the worker.
-- [ ] Independent spec/security/code review before main/Apply. Document partial
+- [x] Independent spec/security/code review before main/Apply. Document partial
       faithful adoption and remaining order13/system/School blockers accurately.
 
 ## Task 3 — archive, final readback and evidence (parent)
 
-- [ ] Refresh archive from603 to the fresh605 surviving records through existing
+- [x] Refresh archive from603 to the fresh605 surviving records through existing
       separate Preview/reviewed-content/Apply workflow; never activate archived rows.
-- [ ] Capture final independent system/School comparisons, actual receipts, run
+- [x] Capture final independent system/School comparisons, actual receipts, run
       IDs, checksum/replay/preservation results and unresolved semantic blockers.
-- [ ] Update active task/Autopilot/affected API/testing docs in same reviewed change.
+- [x] Update active task/Autopilot/affected API/testing docs in same reviewed change.
       Recovery is forward correction, not deletion/reset/backdating. No Production or
       staff-pilot claim. Stop at actual unresolved business decisions with named evidence.
+
+## Task 4 — Owner pork fact and comparison separator
+
+- [x] Existing authenticated SYSTEM_DISH REPLACE UI saved Recipe3529/type2 from
+      9 November: beef1037→current pork1208; retain5.5kg/100 portions, stable
+      identity, other ingredients, historical day8, type1 and released operations.
+- [x] Independent readback: exact new root/revision in evidence; prior7/7 native
+      rows,16 mapped-master fingerprint groups and82 operational tables unchanged.
+- [x] Keep CLI prototype preserved unmerged/unexecuted; ship no redundant backend
+      path, grant, dependency or command for an existing product action.
+- [x] One decorative neutral responsive comparison divider, four existing action
+      Review tests and independent rendered review; no new business behavior.
+- [ ] Latest-head Frontend CI, final review and integration of UI/evidence closeout.
+
+Final system totals1,195/331/0/8 (match/difference/missing/source absent) include
+one intentional Owner difference. Affected Schools remain1,905 differences and
+57 inactive blockers. Proven bounded corrections are delivered, not full v1
+parity. No next mutation starts automatically; recovery remains forward correction.

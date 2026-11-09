@@ -67,3 +67,15 @@ Focused checks: `pnpm exec vitest run
 scripts/adopt-atlas-staging-global-replacements.test.mjs` and
 `node scripts/test-local-staging-global-replacements.mjs`. The latter is a
 rollback-only pgTAP fixture through the existing local Supabase transport.
+
+## Completed bounded execution — 9 November
+
+At certified main `0cff3f32`, Preview42554715147 rolled back and
+Apply42555155022 committed exactly the reviewed four orders, then REPLAYED.
+Actual receipt `6a81d3f7-1650-4547-a52d-ea168f17866a`; reviewed combined checksum
+`16c893655c6e5be0b252c4688d6fc054a157face186b0b3b88a109531c511095`.
+All1,534 canonical contexts and117 protected tables passed the bounded proof;
+305 effective lines changed. Do not replay this one-off with a fresh snapshot.
+The later Recipe3529 Owner correction used the existing authenticated product
+command, not this import exception. See [actual receipts and qualified final
+comparisons](../testing/atlas-bom-reconciliation-2026-11-09.md).
