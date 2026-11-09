@@ -78,3 +78,39 @@ Any existing certification registration change is explicitly coordinated by pare
 - [ ] Update active task/Autopilot/affected API/testing docs in same reviewed change.
       Recovery is forward correction, not deletion/reset/backdating. No Production or
       staff-pilot claim. Stop at actual unresolved business decisions with named evidence.
+
+## Task 4 — Owner-confirmed Recipe3529 correction
+
+The Owner first requested keeping the ambiguous Recipe unchanged, then explicitly
+clarified **“thịt heo xay nha”**. The later factual confirmation governs. Source
+Recipe3529 is Dish2071 / School Type2; its name says pork, while its base line14590
+uses Ingredient1037 (beef) at5.5kg/100 portions. Atlas's corresponding stable line
+is `b72261a4-a7b1-5a0d-14ae-0b692dc52a13`. The same Dish's Type1 already uses
+Ingredient1208 (Nạc vai heo xay), the current pork mince selected by actual source
+global order14. Use that exact Ingredient, not the retired1040 target.
+
+- [ ] New bounded normal-auth runner, focused Vitest, protected manual workflow and
+      API note: `correct-atlas-staging-recipe3529.mjs`, its test,
+      `atlas-staging-recipe3529.yml`, and `staging-recipe3529-owner-correction.md`.
+      Parent owns shared CI path registration and broad task/evidence documents.
+- [ ] Use actual authenticated browser-key RPCs only: canonical typed reads,
+      `preview_recipe_composition_adjustment`, `create_recipe_composition_adjustment`,
+      exact replay and canonical readback. No SQL, Management API write, service-role
+      key, Actor impersonation, source-v1 write or released-base edit.
+- [ ] Exactly one SYSTEM_DISH / REPLACE at Type2, effective9 November, stable line
+      above, substitute1208. Preserve5.5kg/100, all other lines, current Type1, pre-date
+      resolution and released operations. Source evidence is the Owner's new decision,
+      never a fabricated OPS-v1 order or old source issuer. Write a clear Vietnamese
+      reason and explicit confirmation evidence. Use stable command/rule/revision IDs.
+- [ ] Preview is read-only and hashes the exact proposed command plus canonical
+      selected contexts/Actor. Apply requires reviewed checksum and fixed Staging,
+      real-user auth/subject matching, canonical prerequisites, exact-main/Full CI.
+      Recheck immediately before the one transactional native command; no blind retry
+      after unknown outcome. Always close the local auth session.
+- [ ] Focused tests prove wrong target/type/line/substitute/quantity/readiness,
+      missing permission, stale preview, no-write Preview, exact Create/replay/readback,
+      and logout on success/failure. Existing backend REPLACE/RLS tests remain.
+- [ ] Independent review, actual CI, separately reviewed hosted Preview then Apply.
+      Sequence after the four-global operation so its conservative native-interaction
+      gate remains valid. Record the intentional source/Atlas difference separately
+      from unresolved reconciliation gaps. Do not change the shared Dish name or Type1.
