@@ -1,7 +1,11 @@
 import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { useId, useState } from "react";
 import type { CSSProperties } from "react";
-import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
+import {
+  AtlasSortableColumnHeader,
+  atlasRecordSortHeader,
+} from "../AtlasSortableColumnHeader";
+import { atlasVisuallyHidden } from "../AtlasTaskTabs";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
@@ -138,10 +142,61 @@ export function ConfirmedNeedTable({
         tableLayout="fixed"
         css={{
           "@media(max-width:47.99rem)": {
-            "& col:nth-of-type(4)": { width: "calc(100vw - 48px)" },
-            "& td[data-field=identity], & th:first-of-type": {
-              position: "static",
+            minWidth: 0,
+            "& colgroup": { display: "none" },
+            "& thead th:has(button)": {
+              flex: "1 1 calc(33.333% - var(--atlas-spacing-xs))",
+              height: "auto",
             },
+            "& tbody": { display: "block" },
+            "& tbody tr": {
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gridTemplateAreas:
+                '"identity identity" "ingredient ingredient" "proposal confirmation" "delta delta" "reason reason"',
+              columnGap: "var(--atlas-spacing-md)",
+              rowGap: "var(--atlas-spacing-xs)",
+              padding: "var(--atlas-spacing-sm)",
+              borderBottom: "1px solid var(--atlas-colors-border-strong)",
+            },
+            "& td": {
+              display: "block",
+              minWidth: 0,
+              padding: 0,
+              border: 0,
+              textAlign: "start",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
+            },
+            "& td::after": { display: "none" },
+            "& td[data-field=identity]": {
+              gridArea: "identity",
+              position: "static",
+              display: "flex",
+              flexWrap: "wrap",
+              columnGap: "var(--atlas-spacing-sm)",
+            },
+            "& [data-role=recipient]": { width: "100%" },
+            "& td[data-field=ingredient]": {
+              gridArea: "ingredient",
+              paddingBottom: "var(--atlas-spacing-xs)",
+              borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+            },
+            "& td[data-field=operational-proposal]": { gridArea: "proposal" },
+            "& td[data-field=confirmation]": { gridArea: "confirmation" },
+            "& td[data-field=delta]": {
+              gridArea: "delta",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+            },
+            "& td[data-field=reason]": {
+              gridArea: "reason",
+              paddingTop: "var(--atlas-spacing-sm)",
+              borderTop: "1px solid var(--atlas-colors-border-subtle)",
+            },
+            // Row facts are visible; retain the input's existing accessible description.
+            "& [data-quantity-context]": atlasVisuallyHidden,
           },
         }}
       >
@@ -153,7 +208,7 @@ export function ConfirmedNeedTable({
           <Table.Column w="var(--atlas-confirmed-delta-width, 110px)" />
           <Table.Column w="var(--atlas-confirmed-reason-width, 300px)" />
         </Table.ColumnGroup>
-        <Table.Header>
+        <Table.Header css={atlasRecordSortHeader}>
           <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
             <AtlasSortableColumnHeader
               label="Trường / nơi nhận"
@@ -293,6 +348,14 @@ export function ConfirmedNeedTable({
                   textAlign="end"
                   whiteSpace="nowrap"
                 >
+                  <Text
+                    hideFrom="md"
+                    aria-hidden="true"
+                    textStyle="label"
+                    color="fg.muted"
+                  >
+                    Đề xuất vận hành
+                  </Text>
                   <Text textStyle="quantityInline">
                     {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
                     <Box
@@ -319,6 +382,14 @@ export function ConfirmedNeedTable({
                         : undefined,
                   }}
                 >
+                  <Text
+                    hideFrom="md"
+                    aria-hidden="true"
+                    textStyle="label"
+                    color="fg.muted"
+                  >
+                    Số lượng xác nhận
+                  </Text>
                   <AtlasQuantityContext
                     id={`${id}-quantity-${line.confirmed_need_line_id}`}
                     recipient={line.school.name}
@@ -332,11 +403,6 @@ export function ConfirmedNeedTable({
                     date={line.service_date}
                     source="Xác nhận nhu cầu"
                   />
-                  <Text hideFrom="md" textStyle="helper" color="fg.muted">
-                    Đề xuất:{" "}
-                    {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
-                    {confirmedNeedUnitLabel(line.controlled_unit)}
-                  </Text>
                   <Text textStyle="helper" color="fg.muted" mb="xs">
                     {line.confirmed_quantity_after === null
                       ? "Chưa lưu"
@@ -391,6 +457,14 @@ export function ConfirmedNeedTable({
                   textAlign="end"
                   whiteSpace="nowrap"
                 >
+                  <Text
+                    hideFrom="md"
+                    aria-hidden="true"
+                    textStyle="label"
+                    color="fg.muted"
+                  >
+                    Thay đổi
+                  </Text>
                   {delta ? (
                     <Text textStyle="quantityInline" color="fg.primary">
                       {exactQuantityDisplay(delta)}{" "}
@@ -412,6 +486,14 @@ export function ConfirmedNeedTable({
                   minW="var(--atlas-layout-reason-width, 255px)"
                 >
                   <Box display="grid" gap="xs">
+                    <Text
+                      hideFrom="md"
+                      aria-hidden="true"
+                      textStyle="label"
+                      color="fg.muted"
+                    >
+                      Lý do / ghi chú
+                    </Text>
                     {correctionReason !== undefined ? (
                       <Text textStyle="helper">
                         {changed

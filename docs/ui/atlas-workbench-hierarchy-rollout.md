@@ -44,6 +44,8 @@ authority remain controlling. Historical screenshots retain their dated meaning.
 
 ## Scope
 
+**Owner follow-up — 10 November 2026:** The approved [four P2 hierarchy corrections](atlas-p2-workbench-hierarchy-2026-11-10.md) refine phone Confirmed Need into one-DOM records with visible quantities, align Attendance imports, label the Pantry add group and align Recipe utilities. Semantic 1px separators distinguish real groups; desktop tables, exact values, guards and backend authority remain. This supersedes only the earlier phone Confirmed Need wide-table presentation in the dated evidence below.
+
 Apply the accepted Allocation hierarchy to the thirteen production owners in
 `AtlasWorkbenchRegistry.tsx`, their reachable detail/review/dialog surfaces, the
 shared shell and sign-in/session states. These are different operator jobs, not

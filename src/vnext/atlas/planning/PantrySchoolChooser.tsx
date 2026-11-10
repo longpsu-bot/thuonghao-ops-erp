@@ -1,4 +1,12 @@
-import { Box, Input, Popover, Portal, Stack, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Field,
+  Input,
+  Popover,
+  Portal,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
 import {
   useEffect,
   useId,
@@ -107,14 +115,19 @@ export function PantrySchoolChooser({
       unmountOnExit
     >
       <Popover.Anchor asChild>
-        <Box
+        <Field.Root
           w={{
             base: "full",
             md: "var(--atlas-layout-add-school-width, 220px)",
           }}
           minW="var(--atlas-layout-zero, 0)"
+          gap="xs"
         >
+          <Field.Label htmlFor={`${id}-input`}>
+            Trường cần thêm hàng
+          </Field.Label>
           <Input
+            id={`${id}-input`}
             ref={inputRef}
             role="combobox"
             aria-label="Trường cần thêm hàng"
@@ -165,7 +178,7 @@ export function PantrySchoolChooser({
               } else if (event.key === "Tab") close();
             }}
           />
-        </Box>
+        </Field.Root>
       </Popover.Anchor>
       <Portal container={portal}>
         <Popover.Positioner>

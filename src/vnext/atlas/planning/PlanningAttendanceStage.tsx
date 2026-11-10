@@ -56,118 +56,150 @@ export function PlanningAttendanceStage({
     );
   return (
     <>
-      <Flex p="sm" gap="sm" align="center" justify="space-between" wrap="wrap">
-        <Text textStyle="helper" color="fg.muted">
+      <Box
+        px="md"
+        py="sm"
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+      >
+        <Text textStyle="label" color="fg.default">
           {!visible.length
             ? "Không có sĩ số phù hợp bộ lọc trong ngày."
             : valid
               ? `Học sinh ${students} · Giáo viên ${teachers} · Tổng ${students + teachers}`
               : "Cần sửa số suất trước khi tính tổng."}
         </Text>
-        <Flex gap="sm" wrap="wrap">
-          <Field.Root
-            maxW="full"
-            w={{
-              base: "full",
-              md: "var(--atlas-attendance-import-width, 360px)",
-            }}
+      </Box>
+      <Box
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+      >
+        <Field.Root
+          p="md"
+          display="grid"
+          gridTemplateColumns={{
+            base: "minmax(0, 1fr)",
+            lg: "minmax(0, var(--atlas-attendance-import-width, 360px)) minmax(0, 1fr)",
+          }}
+          columnGap="md"
+          rowGap="xs"
+          maxW="full"
+        >
+          <Field.Label
+            htmlFor="atlas-attendance-xlsx"
+            textStyle="label"
+            gridColumn="1"
+            gridRow="1"
           >
-            <Field.Label htmlFor="atlas-attendance-xlsx" textStyle="label">
-              Nhập sĩ số XLSX
-            </Field.Label>
-            <Input
-              id="atlas-attendance-xlsx"
-              type="file"
-              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            Nhập sĩ số XLSX
+          </Field.Label>
+          <Input
+            id="atlas-attendance-xlsx"
+            type="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            size="sm"
+            h={atlasWorkbarControlHeight}
+            gridColumn="1"
+            gridRow="2"
+            minW="var(--atlas-layout-zero, 0)"
+            disabled={!c.canEdit || c.dirty || c.attendanceImporting}
+            aria-describedby="atlas-attendance-xlsx-help"
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              if (file) void c.importAttendanceWorkbook(file);
+            }}
+          />
+          <Field.HelperText
+            id="atlas-attendance-xlsx-help"
+            textStyle="helper"
+            color="fg.muted"
+            gridColumn="1"
+            gridRow="3"
+          >
+            {c.attendanceImporting
+              ? "Đang đọc tệp…"
+              : c.dirty
+                ? "Lưu hoặc bỏ thay đổi trước khi nhập tệp khác."
+                : "Thay thế sĩ số cả tuần trong bản nháp; rà soát trước khi Lưu."}
+          </Field.HelperText>
+          <Flex
+            gap="sm"
+            wrap="wrap"
+            align="center"
+            gridColumn={{ base: "1", lg: "2" }}
+            gridRow={{ base: "4", lg: "2" }}
+          >
+            <Button
               size="sm"
               h={atlasWorkbarControlHeight}
-              disabled={!c.canEdit || c.dirty || c.attendanceImporting}
-              aria-describedby="atlas-attendance-xlsx-help"
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0];
-                event.currentTarget.value = "";
-                if (file) void c.importAttendanceWorkbook(file);
+              disabled={!c.data || !onExportTemplate || templatePending}
+              onClick={async () => {
+                setTemplatePending(true);
+                setTemplateNotice("");
+                try {
+                  await onExportTemplate!(c.week, c.data!.schools);
+                  setTemplateNotice(
+                    "Đã tải mẫu nhập. Sĩ số chỉ được ghi nhận sau khi rà soát và Lưu.",
+                  );
+                } catch {
+                  setTemplateNotice(
+                    "Không thể tải mẫu nhập sĩ số. Hãy thử lại.",
+                  );
+                } finally {
+                  setTemplatePending(false);
+                }
               }}
-            />
-            <Field.HelperText
-              id="atlas-attendance-xlsx-help"
-              textStyle="helper"
-              color="fg.muted"
             >
-              {c.attendanceImporting
-                ? "Đang đọc tệp…"
-                : c.dirty
-                  ? "Lưu hoặc bỏ thay đổi trước khi nhập tệp khác."
-                  : "Thay thế sĩ số cả tuần trong bản nháp; rà soát trước khi Lưu."}
-            </Field.HelperText>
-          </Field.Root>
-          <Button
-            size="sm"
-            h={atlasWorkbarControlHeight}
-            disabled={!c.data || !onExportTemplate || templatePending}
-            onClick={async () => {
-              setTemplatePending(true);
-              setTemplateNotice("");
-              try {
-                await onExportTemplate!(c.week, c.data!.schools);
-                setTemplateNotice(
-                  "Đã tải mẫu nhập. Sĩ số chỉ được ghi nhận sau khi rà soát và Lưu.",
-                );
-              } catch {
-                setTemplateNotice("Không thể tải mẫu nhập sĩ số. Hãy thử lại.");
-              } finally {
-                setTemplatePending(false);
-              }
-            }}
-          >
-            Tải mẫu sĩ số XLSX
-          </Button>
-          <Button
-            size="sm"
-            h={atlasWorkbarControlHeight}
-            disabled={!c.canEdit}
-            onClick={() => setPasteOpen(!pasteOpen)}
-          >
-            Dán hàng loạt
-          </Button>
-        </Flex>
-      </Flex>
-      {templateNotice && (
-        <Text role="status" px="sm" textStyle="helper">
-          {templateNotice}
-        </Text>
-      )}
-      {pasteOpen && (
-        <Box p="sm" bg="bg.subtle">
-          <Text textStyle="helper">
-            Mỗi dòng: Trường · Ngày · Học sinh · Giáo viên (cách bằng Tab).{" "}
-            <Text
-              as="span"
-              display={{ base: "inline", lg: "block" }}
-              textStyle={{ base: "helper", lg: "label" }}
+              Tải mẫu sĩ số XLSX
+            </Button>
+            <Button
+              size="sm"
+              h={atlasWorkbarControlHeight}
+              disabled={!c.canEdit}
+              onClick={() => setPasteOpen(!pasteOpen)}
             >
-              Thay thế dữ liệu cả tuần.
-            </Text>
+              Dán hàng loạt
+            </Button>
+          </Flex>
+        </Field.Root>
+        {templateNotice && (
+          <Text role="status" px="md" pb="sm" textStyle="helper">
+            {templateNotice}
           </Text>
-          <Textarea
-            aria-label="Dữ liệu dán"
-            value={paste}
-            onChange={(e) => setPaste(e.target.value)}
-            rows={3}
-          />
-          <Button
-            size="sm"
-            h={atlasWorkbarControlHeight}
-            disabled={!paste.trim() || !c.canEdit}
-            onClick={() => {
-              c.pasteAttendance(paste);
-              setPasteOpen(false);
-            }}
-          >
-            Dùng dữ liệu dán
-          </Button>
-        </Box>
-      )}
+        )}
+        {pasteOpen && (
+          <Box p="md" bg="bg.subtle">
+            <Text textStyle="helper">
+              Mỗi dòng: Trường · Ngày · Học sinh · Giáo viên (cách bằng Tab).{" "}
+              <Text
+                as="span"
+                display={{ base: "inline", lg: "block" }}
+                textStyle={{ base: "helper", lg: "label" }}
+              >
+                Thay thế dữ liệu cả tuần.
+              </Text>
+            </Text>
+            <Textarea
+              aria-label="Dữ liệu dán"
+              value={paste}
+              onChange={(e) => setPaste(e.target.value)}
+              rows={3}
+            />
+            <Button
+              size="sm"
+              h={atlasWorkbarControlHeight}
+              disabled={!paste.trim() || !c.canEdit}
+              onClick={() => {
+                c.pasteAttendance(paste);
+                setPasteOpen(false);
+              }}
+            >
+              Dùng dữ liệu dán
+            </Button>
+          </Box>
+        )}
+      </Box>
       <AtlasTableViewport
         label="Bảng sĩ số theo trường"
         maxH={

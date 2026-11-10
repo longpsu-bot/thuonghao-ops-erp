@@ -1177,6 +1177,15 @@ describe("Planning sources Chakra workbench", () => {
     const school = await screen.findByRole("combobox", {
       name: "Trường cần thêm hàng",
     });
+    expect(
+      screen.getByRole("heading", { name: "Thêm hàng đặt riêng" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Trường cần thêm hàng", { selector: "label" }),
+    ).toHaveAttribute("for", school.id);
+    expect(
+      screen.getByRole("table", { name: "Hàng đặt riêng" }),
+    ).toBeInTheDocument();
     const category = screen.getByRole("combobox", {
       name: "Nguồn của dòng mới",
     });

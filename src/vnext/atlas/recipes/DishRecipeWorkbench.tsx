@@ -447,10 +447,21 @@ export function DishRecipeWorkbench(
               </Flex>
             </Flex>
             {!c.dishDraft && (
-              <Flex gap="xs" wrap="wrap" mt="sm" justify="flex-end">
+              <Flex
+                gap="xs"
+                wrap="wrap"
+                mt="sm"
+                pb="sm"
+                borderBottomWidth="var(--atlas-layout-edge, 1px)"
+                borderColor="border.subtle"
+              >
                 <Button
                   size="sm"
                   variant="tertiary"
+                  flex={{ base: "1 1 0", md: "0 1 auto" }}
+                  minW="var(--atlas-layout-zero, 0)"
+                  h={{ base: "var(--atlas-layout-auto, auto)", md: "compact" }}
+                  whiteSpace={{ base: "normal", md: "nowrap" }}
                   disabled={!c.canCommand}
                   onClick={() => c.transition({ kind: "edit" })}
                 >
@@ -460,6 +471,13 @@ export function DishRecipeWorkbench(
                   <Button
                     size="sm"
                     variant="secondary"
+                    flex={{ base: "1 1 0", md: "0 1 auto" }}
+                    minW="var(--atlas-layout-zero, 0)"
+                    h={{
+                      base: "var(--atlas-layout-auto, auto)",
+                      md: "compact",
+                    }}
+                    whiteSpace={{ base: "normal", md: "nowrap" }}
                     onClick={() => c.transition({ kind: "copy" })}
                   >
                     Sao chép công thức

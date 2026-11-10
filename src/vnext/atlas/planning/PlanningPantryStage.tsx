@@ -124,66 +124,79 @@ export function PlanningPantryStage({
   };
   return (
     <>
-      <Flex p="sm" gap="sm" wrap="wrap" align="end">
-        {automaticSchool ? (
-          <Box>
-            <Text fontWeight="semibold">
-              Thêm cho {automaticSchool.school_name}
-            </Text>
-            <Text textStyle="helper" color="fg.muted">
-              {automaticSchool.default_delivery_location.location_name}
-            </Text>
-          </Box>
-        ) : (
-          <PantrySchoolChooser
-            inputRef={addSchoolInput}
-            schools={schools}
-            value={targetSchoolId}
-            onChange={setAddSchool}
-            disabled={!c.canEdit}
-          />
-        )}
-        <Field.Root
-          disabled={!c.canEdit || !targetSchoolId}
-          w={{ base: "full", md: "var(--atlas-layout-source-width, 270px)" }}
-          gap="xs"
-        >
-          <Field.Label>Nguồn của dòng mới</Field.Label>
-          <NativeSelect.Root>
-            <NativeSelect.Field
-              value={addCategory}
-              onChange={(event) => setAddCategory(event.target.value)}
-            >
-              {Object.entries(categoryLabels).map(([code, label]) => (
-                <option
-                  key={code}
-                  value={code}
-                  disabled={
-                    !creationPurposes.some((p) => p.purpose_code === code)
-                  }
-                >
-                  {label}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
-        <Button
-          ref={addButton}
-          size="sm"
-          h={atlasWorkbarControlHeight}
-          disabled={!c.canEdit || !targetSchoolId || !targetPurpose}
-          onClick={() =>
-            c.addPantryRow(
-              targetSchoolId,
-              targetPurpose?.pantry_need_purpose_id,
-            )
-          }
-        >
-          + Thêm dòng
-        </Button>
-      </Flex>
+      <Box
+        p="md"
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+      >
+        <Text as="h2" textStyle="section" mb="sm">
+          Thêm hàng đặt riêng
+        </Text>
+        <Flex gap="md" wrap="wrap" align="end">
+          {automaticSchool ? (
+            <Box>
+              <Text textStyle="label" mb="xs">
+                Trường cần thêm hàng
+              </Text>
+              <Text fontWeight="semibold">
+                Thêm cho {automaticSchool.school_name}
+              </Text>
+              <Text textStyle="helper" color="fg.muted">
+                {automaticSchool.default_delivery_location.location_name}
+              </Text>
+            </Box>
+          ) : (
+            <PantrySchoolChooser
+              inputRef={addSchoolInput}
+              schools={schools}
+              value={targetSchoolId}
+              onChange={setAddSchool}
+              disabled={!c.canEdit}
+            />
+          )}
+          <Field.Root
+            disabled={!c.canEdit || !targetSchoolId}
+            w={{ base: "full", md: "var(--atlas-layout-source-width, 270px)" }}
+            gap="xs"
+          >
+            <Field.Label>Nguồn của dòng mới</Field.Label>
+            <NativeSelect.Root>
+              <NativeSelect.Field
+                value={addCategory}
+                onChange={(event) => setAddCategory(event.target.value)}
+              >
+                {Object.entries(categoryLabels).map(([code, label]) => (
+                  <option
+                    key={code}
+                    value={code}
+                    disabled={
+                      !creationPurposes.some((p) => p.purpose_code === code)
+                    }
+                  >
+                    {label}
+                  </option>
+                ))}
+              </NativeSelect.Field>
+              <NativeSelect.Indicator />
+            </NativeSelect.Root>
+          </Field.Root>
+          <Button
+            ref={addButton}
+            variant="businessPrimary"
+            size="sm"
+            h={atlasWorkbarControlHeight}
+            disabled={!c.canEdit || !targetSchoolId || !targetPurpose}
+            onClick={() =>
+              c.addPantryRow(
+                targetSchoolId,
+                targetPurpose?.pantry_need_purpose_id,
+              )
+            }
+          >
+            + Thêm dòng
+          </Button>
+        </Flex>
+      </Box>
       {!targetPurpose && (
         <Text px="sm" role="status" textStyle="helper" color="status.warning">
           Nguồn đã chọn chưa có trong danh mục đang hoạt động. Hãy tải lại danh
@@ -207,7 +220,7 @@ export function PlanningPantryStage({
         </Text>
       ))}
       {!rows.length && (
-        <Text p="md" color="fg.muted">
+        <Text px="md" py="sm" textStyle="helper" color="fg.muted">
           {!visibleSchoolIds.length
             ? "Không có trường phù hợp bộ lọc."
             : c.pantryRows.some((row) => row.service_date === c.date)
