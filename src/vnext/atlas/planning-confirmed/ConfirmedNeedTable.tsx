@@ -466,7 +466,11 @@ export function ConfirmedNeedTable({
                     Thay đổi
                   </Text>
                   {delta ? (
-                    <Text textStyle="quantityInline" color="fg.primary">
+                    <Text
+                      data-role="quantity-delta"
+                      textStyle="quantityInline"
+                      color="fg.primary"
+                    >
                       {exactQuantityDisplay(delta)}{" "}
                       <Box
                         as="span"
@@ -478,7 +482,9 @@ export function ConfirmedNeedTable({
                       </Box>
                     </Text>
                   ) : (
-                    "—"
+                    <Box as="span" data-role="quantity-delta">
+                      —
+                    </Box>
                   )}
                 </Table.Cell>
                 <Table.Cell

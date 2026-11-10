@@ -10,6 +10,8 @@ const PHASE_TABLIST = '[role="tablist"][aria-label="Giai đoạn lập nhu cầu
 const CONFIRMED_WORKBENCH = 'section[aria-label="Xác nhận nhu cầu"]';
 const SOURCES_WORKBENCH = 'section[aria-label="Nguồn lập nhu cầu"]';
 const CONFIRMED_TABLE = 'table[aria-label="Nhu cầu xác nhận"]';
+// Older deployed rows expose only the cell; new rows separate labels from values.
+const ROW_DELTA_TEXT = `(r?.querySelector('[data-role="quantity-delta"]')?.textContent??r?.querySelector('[data-field="delta"]')?.textContent??'').trim()`;
 const REHEARSAL_WEEK = "14/09/2026 – 20/09/2026";
 const REHEARSAL_SERVICE_DATE = "2026-09-17";
 const REHEARSAL_WEEK_DATES = [
@@ -705,7 +707,7 @@ export function assertPostSaveResumeReview(review, expectedFingerprint = null) {
 }
 
 export function preSaveGateStateExpression() {
-  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const save=root?[...root.querySelectorAll('button')].find(e=>e.textContent.trim()==='Lưu'):null;const deltaText=r=>(r.querySelector('[data-field="delta"]')?.textContent??'').trim();return {rendered_rows:rows.length,quantity_delta_rows:rows.filter(r=>{const text=deltaText(r);return Boolean(text&&text!=='—');}).length,quantity_adjustment_rows:rows.filter(r=>r.querySelector('[data-field="confirmation"][data-adjustment-state="valid"]')).length,adjustment_reason_rows:rows.filter(r=>r.querySelector('select[aria-label^="Lý do"]')?.value==='OPERATIONAL_QUANTITY_ADJUSTMENT').length,nonblank_note_rows:rows.filter(r=>(r.querySelector('input[aria-label^="Ghi chú"]')?.value??'').trim()!=='').length,invalid_controls:root?.querySelectorAll('[aria-invalid="true"]').length??0,save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true')};})()`;
+  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const save=root?[...root.querySelectorAll('button')].find(e=>e.textContent.trim()==='Lưu'):null;const deltaText=r=>${ROW_DELTA_TEXT};return {rendered_rows:rows.length,quantity_delta_rows:rows.filter(r=>{const text=deltaText(r);return Boolean(text&&text!=='—');}).length,quantity_adjustment_rows:rows.filter(r=>r.querySelector('[data-field="confirmation"][data-adjustment-state="valid"]')).length,adjustment_reason_rows:rows.filter(r=>r.querySelector('select[aria-label^="Lý do"]')?.value==='OPERATIONAL_QUANTITY_ADJUSTMENT').length,nonblank_note_rows:rows.filter(r=>(r.querySelector('input[aria-label^="Ghi chú"]')?.value??'').trim()!=='').length,invalid_controls:root?.querySelectorAll('[aria-invalid="true"]').length??0,save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true')};})()`;
 }
 
 export function editableConfirmedNeedCandidateExpression() {
@@ -803,11 +805,11 @@ export async function prepareConfirmedNeedEdit({
 }
 
 function quantityEditReadyForReasonExpression(row, proposed) {
-  return `(()=>{const r=document.querySelector(${JSON.stringify(row)});const confirmation=r?.querySelector('[data-field="confirmation"]');const state=confirmation?.getAttribute('data-adjustment-state');const input=confirmation?.querySelector('input[aria-label^="Số lượng xác nhận"]');const delta=(r?.querySelector('[data-field="delta"]')?.textContent??'').trim();const reason=r?.querySelector('select[aria-label^="Lý do"]');return Boolean(input?.value===${JSON.stringify(proposed)}&&(state==='valid'||state==='invalid')&&delta&&delta!=='—'&&reason);})()`;
+  return `(()=>{const r=document.querySelector(${JSON.stringify(row)});const confirmation=r?.querySelector('[data-field="confirmation"]');const state=confirmation?.getAttribute('data-adjustment-state');const input=confirmation?.querySelector('input[aria-label^="Số lượng xác nhận"]');const delta=${ROW_DELTA_TEXT};const reason=r?.querySelector('select[aria-label^="Lý do"]');return Boolean(input?.value===${JSON.stringify(proposed)}&&(state==='valid'||state==='invalid')&&delta&&delta!=='—'&&reason);})()`;
 }
 
 export function quantityEditSettledExpression(row, proposed) {
-  return `(()=>{const r=document.querySelector(${JSON.stringify(row)});const input=r?.querySelector('[data-field="confirmation"][data-adjustment-state="valid"] input[aria-label^="Số lượng xác nhận"]');const delta=(r?.querySelector('[data-field="delta"]')?.textContent??'').trim();return Boolean(input?.value===${JSON.stringify(proposed)}&&delta&&delta!=='—');})()`;
+  return `(()=>{const r=document.querySelector(${JSON.stringify(row)});const input=r?.querySelector('[data-field="confirmation"][data-adjustment-state="valid"] input[aria-label^="Số lượng xác nhận"]');const delta=${ROW_DELTA_TEXT};return Boolean(input?.value===${JSON.stringify(proposed)}&&delta&&delta!=='—');})()`;
 }
 export async function verifyPlanningBrowser({
   target,

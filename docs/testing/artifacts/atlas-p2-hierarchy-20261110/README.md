@@ -28,6 +28,8 @@ Thêm hai trạng thái tại 390px: [lượng không hợp lệ](need-invalid-3
 - Recipe: hai tiện ích cùng chiều rộng, target ít nhất 44px, không clipping hoặc document overflow; divider với context rõ; Close trả focus về dòng mở.
 - Mỗi capture kiểm tra document đúng viewport. Network route chỉ cho localhost/data/blob; không ghi nhận request ngoài localhost.
 
+Bản sửa CI tiếp theo thêm marker DOM vào giá trị delta và cập nhật bộ đọc read-only, không đổi hình ảnh. Regression Closeout + Confirmed Need đạt 137/137; fallback cho DOM cũ và các guard một dòng thay đổi được giữ nguyên. Chi tiết lượt CI đầu thất bại nằm trong delivery record.
+
 ## Chạy lại
 
 Script cần Python có Playwright/Chromium sẵn và Vite của repository chạy trên `127.0.0.1:5175`. Chạy từ root repository, truyền `--output` là thư mục mới; script từ chối ghi đè ảnh có sẵn. Script chỉ dùng fixture entry `atlas-vnext-review.html` và chặn external requests. Không cần tài khoản hosted hoặc thay đổi dependency của ứng dụng.

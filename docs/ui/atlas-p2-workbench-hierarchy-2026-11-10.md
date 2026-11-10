@@ -37,7 +37,7 @@
 
 ## Phạm vi file và tiêu chí hoàn tất
 
-Năm component trình bày: `ConfirmedNeedTable.tsx`, `PlanningAttendanceStage.tsx`, `PlanningPantryStage.tsx`, `PantrySchoolChooser.tsx`, `DishRecipeWorkbench.tsx`; bổ sung các kiểm tra label/heading vào luồng Pantry hiện có. Không sửa controller, bridge, model, API, system/provider, dependency hoặc database.
+Năm component trình bày: `ConfirmedNeedTable.tsx`, `PlanningAttendanceStage.tsx`, `PlanningPantryStage.tsx`, `PantrySchoolChooser.tsx`, `DishRecipeWorkbench.tsx`; bổ sung các kiểm tra label/heading vào luồng Pantry hiện có. Bộ đọc DOM read-only trong `staging-planning-browser.mjs` và regression dùng dòng thực được cập nhật để đọc riêng giá trị delta. Không sửa controller, bridge, model, API, system/provider, dependency hoặc database.
 
 Tiêu chí kiểm tra:
 
@@ -58,6 +58,7 @@ Xem [ảnh và browser checks](../testing/artifacts/atlas-p2-hierarchy-20261110/
 - Ảnh ban đầu cho thấy phần dưới input lượng bị cắt bởi mép vùng cuộn. Đã chỉnh nhịp nhóm và bỏ caption sort dư; kiểm tra cuối yêu cầu toàn bộ input nằm trong vùng nhìn và hit-test được ở tâm bốn cạnh. Probe ở góc bo tròn cho false positive nên đã sửa oracle, không sửa UI để vượt probe đó.
 - Một lượt kiểm tra ghi nhận Công thức ở 360px bị tràn dọc 50px khi hai tiện ích thành hai hàng. Giữ một hàng nút co giãn với text wrap giải quyết lỗi mà không giảm cỡ chữ, ẩn nội dung hoặc giảm target.
 - Bộ browser cuối **PASS 59/59 checks, 14 captures** ở 1366 × 768, 390 × 844 và 360 × 800; không document overflow, page error hoặc external request. Sort/draft/reason, invalid Save/Continue, Add eligibility và Close focus đều được kiểm tra. Read-only UI reviewer xác nhận PASS ở các ảnh điện thoại cuối.
+- [CI đầu ở `e6ffe3e6`](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/42742161410) qua format/typecheck nhưng thất bại một test DOM-reader (244 files/3.427 tests PASS): nhãn “Thay đổi” mới bị tính là giá trị delta, làm số dòng khác 0 thành 3 thay vì 1. Thêm marker chỉ vào giá trị và dùng cùng một expression đọc marker ở ba helper read-only, giữ fallback cho UI cũ chưa có marker. Giữ nguyên mọi guard và assertion một dòng thay đổi; thêm kiểm tra ba giá trị marker `+0,01 kg`, `—`, `—`. Closeout + Confirmed Need rerun **137/137 PASS**. Thay đổi marker không làm đổi layout/ảnh đã chụp; không thực thi lại Staging closeout.
 - CI `Frontend CI / Format, typecheck, test, build` của PR là gate full routine, không bị thay thế bởi số đo hình học hoặc các lần chạy cục bộ.
 
 ## Tác động và giới hạn
