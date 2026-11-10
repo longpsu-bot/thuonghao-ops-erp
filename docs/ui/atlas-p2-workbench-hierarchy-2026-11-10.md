@@ -4,6 +4,20 @@
 
 **Baseline:** `origin/main` tại `c10e4c43950b18170efd54275444cfaec1c9b76e`. Owner cho phép tạo worktree sạch; nhánh `codex/atlas-p2-workbench-hierarchy` nằm trong managed worktree `C:/Users/HOME/.codex/worktrees/atlas-p2-ui-hierarchy/thuonghao-ops-erp`. Checkout E-drive và các công việc reconciliation được giữ nguyên.
 
+## Ưu tiên desktop — làm rõ trong cùng ngày
+
+Owner xác nhận desktop là bề mặt sử dụng chính. Bản chỉnh tiếp theo trong cùng PR lấy **1920 × 1080, 1440 × 900 và 1366 × 768** làm tiêu chí chính; điện thoại là kiểm tra hồi quy bổ sung. Phần bên dưới ghi nhận checkpoint trước đó, không có nghĩa desktop chỉ được kiểm tra để giữ nguyên.
+
+- **Xác nhận nhu cầu:** ngày và điểm giao cùng một dòng metadata; giá trị đã lưu nằm cạnh ô xác nhận trên desktop. Điều chỉnh tỷ lệ cột cho nhóm lượng, giữ đủ sáu cột và không pan ngang ở ba kích thước chính. Dòng bình thường đo được khoảng 56px; ở 1366 × 768 có năm dòng đầy đủ trong vùng nhìn, so với ba dòng đầy đủ trong ảnh checkpoint trước. Ô lượng vẫn cao 40px, không giảm cỡ chữ.
+- **Sĩ số:** label, file và tiện ích cùng một hàng trên workplane rộng; helper có đủ chiều ngang. Bảng bắt đầu ở khoảng y=400 thay vì y=449 trong ảnh trước. Ô số được giới hạn 140px, số tổng dùng vai trò `quantityInline`. Khi mở Review làm hẹp cột soạn thảo, container query cho nhóm nhập xuống hàng theo chính vùng chứa, tránh lấn sang cột Review.
+- **Hàng đặt riêng:** tiêu đề và nhóm thêm cùng hàng khi đủ chỗ, tự wrap trong cột Review. Ô chọn trường rộng 320px trên desktop; nhãn cố định, điều kiện Add và dòng phân cách được giữ.
+- **Công thức:** tiện ích và loại/ngày công thức cùng hàng desktop, có đường phân cách giữa hai nhóm; các control căn cùng trục và cao 40px. Số suất, input và giá trị đã lưu cùng hàng; cột lượng đủ cho thông tin đã lưu. Bảng nguyên liệu bắt đầu ở y=454 thay vì khoảng y=564 trong ảnh trước.
+- **Focus Review:** dùng `preventScroll` khi chuyển focus đến Review hoặc trở lại trigger; tiêu đề và ngữ cảnh không bị tự cuộn khỏi đầu workplane. Giữ nguyên thứ tự và đích focus.
+
+Giữ Inter, các text style, palette và separator 1px hiện có. Không đổi command, quyền, dữ liệu, công thức tính, API hoặc controller. Phạm vi trình bày bổ sung gồm `BaseRecipeEditor.tsx` và chuyển focus của `PlanningSourcesWorkbench.tsx`.
+
+**Bằng chứng hiện tại:** [gallery desktop và giới hạn](../testing/artifacts/atlas-p2-desktop-20261110/README.md). Bộ cuối đạt **21 captures / 98 checks PASS**, gồm sáu trạng thái Review. Review độc lập xác nhận PASS. Typecheck, UI boundary, formatting và whitespace được kiểm tra; bốn file focused đạt **119/119**, sau thay đổi focus chạy lại toàn bộ Planning Sources đạt **44/44**. Đây là hai checkpoint, không cộng thành một suite mới. Bộ hồi quy 1366/390/360 đạt **14 captures / 70 checks PASS**; lượt trước đó phát hiện thêm 1px border thừa ở Recipe360, đã bỏ đường lặp và giữ separator thực giữa tiện ích/ngữ cảnh. CI của commit mới vẫn là gate tích hợp.
+
 ## Thay đổi
 
 ### 1. Xác nhận nhu cầu trên điện thoại
@@ -25,7 +39,7 @@
 
 - Nhóm thêm có heading “Thêm hàng đặt riêng”, nhãn trường cố định có liên kết `for`/`id`, nhãn nguồn hiện có và hành động thêm primary khi hợp lệ.
 - Trường tự chọn theo phạm vi một trường vẫn thể hiện đúng trường/điểm giao. Nguồn mặc định, danh mục active, purpose identity và điều kiện thêm không đổi.
-- Border 1px phân biệt nhóm thêm với vùng dữ liệu/trạng thái trống; hướng dẫn trống gọn hơn.
+- Border 1px phân biệt nhóm thêm với vùng bảng và hướng dẫn khi chưa có dòng; hướng dẫn gọn hơn.
 - Bảng trống giữ trong DOM; header bảng vốn được ẩn trực quan trên điện thoại. Không dùng yêu cầu “table visible” để thay đổi hành vi rỗng hiện có.
 - Giữ chooser keyboard/focus, local draft, danh tính dòng, Unit, mode lịch sử và tất cả backend commands.
 

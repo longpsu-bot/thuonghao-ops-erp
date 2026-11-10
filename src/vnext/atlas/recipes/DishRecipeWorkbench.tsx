@@ -446,45 +446,6 @@ export function DishRecipeWorkbench(
                 </Button>
               </Flex>
             </Flex>
-            {!c.dishDraft && (
-              <Flex
-                gap="xs"
-                wrap="wrap"
-                mt="sm"
-                pb="sm"
-                borderBottomWidth="var(--atlas-layout-edge, 1px)"
-                borderColor="border.subtle"
-              >
-                <Button
-                  size="sm"
-                  variant="tertiary"
-                  flex={{ base: "1 1 0", md: "0 1 auto" }}
-                  minW="var(--atlas-layout-zero, 0)"
-                  h={{ base: "var(--atlas-layout-auto, auto)", md: "compact" }}
-                  whiteSpace={{ base: "normal", md: "nowrap" }}
-                  disabled={!c.canCommand}
-                  onClick={() => c.transition({ kind: "edit" })}
-                >
-                  Sửa thông tin món
-                </Button>
-                {c.canCopy && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    flex={{ base: "1 1 0", md: "0 1 auto" }}
-                    minW="var(--atlas-layout-zero, 0)"
-                    h={{
-                      base: "var(--atlas-layout-auto, auto)",
-                      md: "compact",
-                    }}
-                    whiteSpace={{ base: "normal", md: "nowrap" }}
-                    onClick={() => c.transition({ kind: "copy" })}
-                  >
-                    Sao chép công thức
-                  </Button>
-                )}
-              </Flex>
-            )}
             {c.dishDraft ? (
               <>
                 {feedback}
@@ -492,49 +453,111 @@ export function DishRecipeWorkbench(
               </>
             ) : (
               <>
-                <Flex
+                <Grid
+                  data-role="recipe-controls"
                   mt="sm"
-                  p="sm"
-                  bg="bg.toolbar"
+                  templateColumns={{
+                    base: "minmax(0, 1fr)",
+                    xl: "auto minmax(0, 1fr)",
+                  }}
                   gap="sm"
-                  wrap="wrap"
-                  align="flex-end"
+                  borderBottomWidth={{
+                    base: "var(--atlas-layout-zero, 0)",
+                    xl: "var(--atlas-layout-edge, 1px)",
+                  }}
+                  borderColor="border.subtle"
                 >
-                  <Field.Root w="var(--atlas-layout-context-width, 160px)">
-                    <Field.Label>Loại công thức</Field.Label>
-                    <NativeSelect.Root disabled={c.busy || Boolean(c.lock)}>
-                      <NativeSelect.Field
-                        value={c.context?.schoolTypeId ?? ""}
-                        onChange={(e) =>
-                          c.transition({
-                            kind: "scope",
-                            schoolTypeId: e.target.value,
-                          })
-                        }
+                  <Flex
+                    gap="xs"
+                    wrap="wrap"
+                    align="flex-end"
+                    pb="sm"
+                    pr={{ base: "var(--atlas-layout-zero, 0)", xl: "sm" }}
+                    borderBottomWidth={{
+                      base: "var(--atlas-layout-edge, 1px)",
+                      xl: "var(--atlas-layout-zero, 0)",
+                    }}
+                    borderRightWidth={{
+                      base: "var(--atlas-layout-zero, 0)",
+                      xl: "var(--atlas-layout-edge, 1px)",
+                    }}
+                    borderColor="border.subtle"
+                  >
+                    <Button
+                      size="sm"
+                      variant="tertiary"
+                      flex={{ base: "1 1 0", md: "0 1 auto" }}
+                      minW="var(--atlas-layout-zero, 0)"
+                      h={{
+                        base: "var(--atlas-layout-auto, auto)",
+                        md: "control",
+                      }}
+                      whiteSpace={{ base: "normal", md: "nowrap" }}
+                      disabled={!c.canCommand}
+                      onClick={() => c.transition({ kind: "edit" })}
+                    >
+                      Sửa thông tin món
+                    </Button>
+                    {c.canCopy && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        flex={{ base: "1 1 0", md: "0 1 auto" }}
+                        minW="var(--atlas-layout-zero, 0)"
+                        h={{
+                          base: "var(--atlas-layout-auto, auto)",
+                          md: "control",
+                        }}
+                        whiteSpace={{ base: "normal", md: "nowrap" }}
+                        onClick={() => c.transition({ kind: "copy" })}
                       >
-                        {c.scopes.map((s) => (
-                          <option
-                            key={s.school_type_id}
-                            value={s.school_type_id}
-                          >
-                            {s.school_type_name}
-                          </option>
-                        ))}
-                      </NativeSelect.Field>
-                      <NativeSelect.Indicator />
-                    </NativeSelect.Root>
-                  </Field.Root>
-                  <Box w="var(--atlas-layout-context-width, 180px)">
-                    <AtlasDateInput
-                      label="Ngày áp dụng"
-                      value={c.date}
-                      disabled={c.busy || Boolean(c.lock)}
-                      onValueChange={(date) =>
-                        c.transition({ kind: "date", date })
-                      }
-                    />
-                  </Box>
-                </Flex>
+                        Sao chép công thức
+                      </Button>
+                    )}
+                  </Flex>
+                  <Flex
+                    p="sm"
+                    bg="bg.toolbar"
+                    gap="sm"
+                    wrap="wrap"
+                    align="flex-end"
+                  >
+                    <Field.Root w="var(--atlas-layout-context-width, 160px)">
+                      <Field.Label>Loại công thức</Field.Label>
+                      <NativeSelect.Root disabled={c.busy || Boolean(c.lock)}>
+                        <NativeSelect.Field
+                          value={c.context?.schoolTypeId ?? ""}
+                          onChange={(e) =>
+                            c.transition({
+                              kind: "scope",
+                              schoolTypeId: e.target.value,
+                            })
+                          }
+                        >
+                          {c.scopes.map((s) => (
+                            <option
+                              key={s.school_type_id}
+                              value={s.school_type_id}
+                            >
+                              {s.school_type_name}
+                            </option>
+                          ))}
+                        </NativeSelect.Field>
+                        <NativeSelect.Indicator />
+                      </NativeSelect.Root>
+                    </Field.Root>
+                    <Box w="var(--atlas-layout-context-width, 180px)">
+                      <AtlasDateInput
+                        label="Ngày áp dụng"
+                        value={c.date}
+                        disabled={c.busy || Boolean(c.lock)}
+                        onValueChange={(date) =>
+                          c.transition({ kind: "date", date })
+                        }
+                      />
+                    </Box>
+                  </Flex>
+                </Grid>
                 {feedback}
                 {operationallyLocked && (
                   <Box mt="sm">

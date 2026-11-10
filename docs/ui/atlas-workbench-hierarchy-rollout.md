@@ -46,6 +46,8 @@ authority remain controlling. Historical screenshots retain their dated meaning.
 
 **Owner follow-up — 10 November 2026:** The approved [four P2 hierarchy corrections](atlas-p2-workbench-hierarchy-2026-11-10.md) refine phone Confirmed Need into one-DOM records with visible quantities, align Attendance imports, label the Pantry add group and align Recipe utilities. Semantic 1px separators distinguish real groups; desktop tables, exact values, guards and backend authority remain. This supersedes only the earlier phone Confirmed Need wide-table presentation in the dated evidence below.
 
+**Owner priority clarification — same day:** Desktop is the primary work surface. The same bounded P2 change now compacts desktop Need records, aligns Attendance tools with container-aware Review reflow, groups Pantry creation horizontally when space permits, and brings Recipe ingredients higher through aligned context and basis controls. [Desktop evidence](../testing/artifacts/atlas-p2-desktop-20261110/README.md) covers 1920/1440/1366 and selected Review states; phone coverage is a supplementary regression check. Existing contracts, text roles and 1px group separators remain controlling.
+
 Apply the accepted Allocation hierarchy to the thirteen production owners in
 `AtlasWorkbenchRegistry.tsx`, their reachable detail/review/dialog surfaces, the
 shared shell and sign-in/session states. These are different operator jobs, not

@@ -141,6 +141,12 @@ export function ConfirmedNeedTable({
         w="full"
         tableLayout="fixed"
         css={{
+          "@media(min-width:48rem)": {
+            "& [data-role=service-date], & [data-row-secondary]": {
+              display: "inline",
+            },
+            "& [data-row-secondary]::before": { content: '" · "' },
+          },
           "@media(max-width:47.99rem)": {
             minWidth: 0,
             "& colgroup": { display: "none" },
@@ -204,9 +210,9 @@ export function ConfirmedNeedTable({
           <Table.Column w="var(--atlas-confirmed-school-width, 220px)" />
           <Table.Column w="var(--atlas-confirmed-ingredient-width, 180px)" />
           <Table.Column w="var(--atlas-confirmed-proposal-width, 140px)" />
-          <Table.Column w="var(--atlas-confirmed-quantity-width, 170px)" />
+          <Table.Column w="var(--atlas-confirmed-quantity-width, 260px)" />
           <Table.Column w="var(--atlas-confirmed-delta-width, 110px)" />
-          <Table.Column w="var(--atlas-confirmed-reason-width, 300px)" />
+          <Table.Column w="var(--atlas-confirmed-reason-width, 210px)" />
         </Table.ColumnGroup>
         <Table.Header css={atlasRecordSortHeader}>
           <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
@@ -317,7 +323,11 @@ export function ConfirmedNeedTable({
                   <Text data-role="recipient" fontWeight="semibold">
                     {line.school.name}
                   </Text>
-                  <Text textStyle="helper" color="fg.muted">
+                  <Text
+                    data-role="service-date"
+                    textStyle="helper"
+                    color="fg.muted"
+                  >
                     {line.service_date.split("-").reverse().join("/")}
                   </Text>
                   {!duplicateRecipient && (
@@ -403,48 +413,59 @@ export function ConfirmedNeedTable({
                     date={line.service_date}
                     source="Xác nhận nhu cầu"
                   />
-                  <Text textStyle="helper" color="fg.muted" mb="xs">
-                    {line.confirmed_quantity_after === null
-                      ? "Chưa lưu"
-                      : `Đã lưu: ${exactQuantityDisplay(line.confirmed_quantity_after)} ${confirmedNeedUnitLabel(line.controlled_unit)}`}
-                  </Text>
                   <Box
-                    display="grid"
-                    gridTemplateColumns="minmax(0, 1fr) auto"
-                    gap="xs"
+                    display={{ base: "block", md: "grid" }}
+                    gridTemplateColumns="minmax(0, 1fr) minmax(0, var(--atlas-layout-confirmed-input-width, 160px))"
+                    gap="sm"
                     alignItems="center"
                   >
-                    <Input
-                      aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
-                      inputMode="decimal"
-                      textAlign="end"
-                      value={
-                        draft.quantity_entered
-                          ? draft.exact_quantity
-                          : confirmedNeedInputDisplay(draft.exact_quantity)
-                      }
-                      readOnly={historical}
-                      disabled={!editable}
-                      aria-invalid={Boolean(error)}
-                      borderColor={
-                        error
-                          ? "status.danger"
-                          : adjusted
-                            ? "border.interactive"
-                            : undefined
-                      }
-                      fontWeight={adjusted ? "semibold" : "medium"}
-                      aria-describedby={`${id}-quantity-${line.confirmed_need_line_id}${error || historical ? ` ${description}` : ""}`}
-                      onChange={(e) =>
-                        onEdit(line.confirmed_need_line_id, {
-                          exact_quantity: e.target.value,
-                          quantity_entered: true,
-                        })
-                      }
-                    />
-                    <Text textStyle="unitInline" color="fg.muted">
-                      {confirmedNeedUnitLabel(line.controlled_unit)}
+                    <Text
+                      textStyle="helper"
+                      color="fg.muted"
+                      mb={{ base: "xs", md: "var(--atlas-layout-zero, 0)" }}
+                    >
+                      {line.confirmed_quantity_after === null
+                        ? "Chưa lưu"
+                        : `Đã lưu: ${exactQuantityDisplay(line.confirmed_quantity_after)} ${confirmedNeedUnitLabel(line.controlled_unit)}`}
                     </Text>
+                    <Box
+                      display="grid"
+                      gridTemplateColumns="minmax(0, 1fr) auto"
+                      gap="xs"
+                      alignItems="center"
+                    >
+                      <Input
+                        aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
+                        inputMode="decimal"
+                        textAlign="end"
+                        value={
+                          draft.quantity_entered
+                            ? draft.exact_quantity
+                            : confirmedNeedInputDisplay(draft.exact_quantity)
+                        }
+                        readOnly={historical}
+                        disabled={!editable}
+                        aria-invalid={Boolean(error)}
+                        borderColor={
+                          error
+                            ? "status.danger"
+                            : adjusted
+                              ? "border.interactive"
+                              : undefined
+                        }
+                        fontWeight={adjusted ? "semibold" : "medium"}
+                        aria-describedby={`${id}-quantity-${line.confirmed_need_line_id}${error || historical ? ` ${description}` : ""}`}
+                        onChange={(e) =>
+                          onEdit(line.confirmed_need_line_id, {
+                            exact_quantity: e.target.value,
+                            quantity_entered: true,
+                          })
+                        }
+                      />
+                      <Text textStyle="unitInline" color="fg.muted">
+                        {confirmedNeedUnitLabel(line.controlled_unit)}
+                      </Text>
+                    </Box>
                   </Box>
                   {historical && (
                     <Text id={description} textStyle="helper" color="fg.muted">

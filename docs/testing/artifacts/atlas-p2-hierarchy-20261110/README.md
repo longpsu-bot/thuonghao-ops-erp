@@ -2,6 +2,8 @@
 
 [Thay đổi, contracts và giới hạn](../../../ui/atlas-p2-workbench-hierarchy-2026-11-10.md).
 
+**Checkpoint kế tiếp:** Owner làm rõ desktop là ưu tiên chính. Xem [bản chỉnh và gallery desktop mới](../atlas-p2-desktop-20261110/README.md). Các ảnh và số đo bên dưới giữ nguyên ý nghĩa của checkpoint đầu; script đã được mở rộng với `--desktop` để tái lập bộ mới.
+
 Baseline `c10e4c43950b18170efd54275444cfaec1c9b76e` cộng diff trình bày của task này; Chromium `151.0.7922.34`, device scale 1. Fixture local, không phải dữ liệu hosted hoặc bằng chứng lưu dữ liệu nghiệp vụ.
 
 ## Kết quả

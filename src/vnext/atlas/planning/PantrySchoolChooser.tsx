@@ -118,7 +118,7 @@ export function PantrySchoolChooser({
         <Field.Root
           w={{
             base: "full",
-            md: "var(--atlas-layout-add-school-width, 220px)",
+            md: "var(--atlas-layout-add-school-width, 320px)",
           }}
           minW="var(--atlas-layout-zero, 0)"
           gap="xs"

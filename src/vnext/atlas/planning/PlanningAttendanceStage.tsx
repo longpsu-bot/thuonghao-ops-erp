@@ -63,27 +63,53 @@ export function PlanningAttendanceStage({
         borderColor="border.subtle"
       >
         <Text textStyle="label" color="fg.default">
-          {!visible.length
-            ? "Không có sĩ số phù hợp bộ lọc trong ngày."
-            : valid
-              ? `Học sinh ${students} · Giáo viên ${teachers} · Tổng ${students + teachers}`
-              : "Cần sửa số suất trước khi tính tổng."}
+          {!visible.length ? (
+            "Không có sĩ số phù hợp bộ lọc trong ngày."
+          ) : valid ? (
+            <>
+              Học sinh{" "}
+              <Text as="span" textStyle="quantityInline">
+                {students}
+              </Text>
+              {" · "}Giáo viên{" "}
+              <Text as="span" textStyle="quantityInline">
+                {teachers}
+              </Text>
+              {" · "}Tổng{" "}
+              <Text as="span" textStyle="quantityInline">
+                {students + teachers}
+              </Text>
+            </>
+          ) : (
+            "Cần sửa số suất trước khi tính tổng."
+          )}
         </Text>
       </Box>
       <Box
         borderBottomWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
+        css={{ containerType: "inline-size" }}
       >
         <Field.Root
           p="md"
           display="grid"
           gridTemplateColumns={{
             base: "minmax(0, 1fr)",
-            lg: "minmax(0, var(--atlas-attendance-import-width, 360px)) minmax(0, 1fr)",
+            lg: "auto minmax(0, var(--atlas-attendance-import-width, 360px)) minmax(0, 1fr)",
           }}
           columnGap="md"
           rowGap="xs"
+          alignItems="center"
           maxW="full"
+          css={{
+            "@container (max-width: 880px)": {
+              gridTemplateColumns: "minmax(0, 1fr)",
+              "& label": { gridColumn: "1", gridRow: "1" },
+              "& input": { gridColumn: "1", gridRow: "2" },
+              "& [data-part=helper-text]": { gridColumn: "1", gridRow: "3" },
+              "& [data-role=import-actions]": { gridColumn: "1", gridRow: "4" },
+            },
+          }}
         >
           <Field.Label
             htmlFor="atlas-attendance-xlsx"
@@ -99,8 +125,8 @@ export function PlanningAttendanceStage({
             accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             size="sm"
             h={atlasWorkbarControlHeight}
-            gridColumn="1"
-            gridRow="2"
+            gridColumn={{ base: "1", lg: "2" }}
+            gridRow={{ base: "2", lg: "1" }}
             minW="var(--atlas-layout-zero, 0)"
             disabled={!c.canEdit || c.dirty || c.attendanceImporting}
             aria-describedby="atlas-attendance-xlsx-help"
@@ -114,8 +140,8 @@ export function PlanningAttendanceStage({
             id="atlas-attendance-xlsx-help"
             textStyle="helper"
             color="fg.muted"
-            gridColumn="1"
-            gridRow="3"
+            gridColumn={{ base: "1", lg: "2 / -1" }}
+            gridRow={{ base: "3", lg: "2" }}
           >
             {c.attendanceImporting
               ? "Đang đọc tệp…"
@@ -124,11 +150,12 @@ export function PlanningAttendanceStage({
                 : "Thay thế sĩ số cả tuần trong bản nháp; rà soát trước khi Lưu."}
           </Field.HelperText>
           <Flex
+            data-role="import-actions"
             gap="sm"
             wrap="wrap"
             align="center"
-            gridColumn={{ base: "1", lg: "2" }}
-            gridRow={{ base: "4", lg: "2" }}
+            gridColumn={{ base: "1", lg: "3" }}
+            gridRow={{ base: "4", lg: "1" }}
           >
             <Button
               size="sm"
@@ -326,6 +353,12 @@ export function PlanningAttendanceStage({
                           }
                           textAlign="right"
                           minW="var(--atlas-layout-count-width, 76px)"
+                          maxW={{
+                            base: "full",
+                            md: "var(--atlas-layout-count-max-width, 140px)",
+                          }}
+                          display="block"
+                          ml="var(--atlas-layout-auto, auto)"
                         />
                       </Table.Cell>
                     ),

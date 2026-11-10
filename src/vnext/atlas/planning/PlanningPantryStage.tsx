@@ -128,11 +128,31 @@ export function PlanningPantryStage({
         p="md"
         borderBottomWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
+        display="flex"
+        flexWrap="wrap"
+        columnGap="md"
       >
-        <Text as="h2" textStyle="section" mb="sm">
+        <Text
+          as="h2"
+          textStyle="section"
+          flex={{ base: "1 1 100%", lg: "0 0 200px" }}
+          mb={{ base: "sm", lg: "var(--atlas-layout-zero, 0)" }}
+          pr={{ base: "var(--atlas-layout-zero, 0)", lg: "md" }}
+          borderRightWidth={{
+            base: "var(--atlas-layout-zero, 0)",
+            lg: "var(--atlas-layout-edge, 1px)",
+          }}
+          borderColor="border.subtle"
+        >
           Thêm hàng đặt riêng
         </Text>
-        <Flex gap="md" wrap="wrap" align="end">
+        <Flex
+          gap="md"
+          wrap="wrap"
+          align="end"
+          flex="1 1 650px"
+          minW="var(--atlas-layout-zero, 0)"
+        >
           {automaticSchool ? (
             <Box>
               <Text textStyle="label" mb="xs">
