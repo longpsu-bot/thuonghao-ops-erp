@@ -19,6 +19,7 @@ import {
   Text,
   Tabs,
 } from "@chakra-ui/react";
+import { FloppyDisk } from "@phosphor-icons/react";
 import { useImperativeHandle, useState, type ReactNode } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
@@ -126,6 +127,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         }
         onClick={() => void c.save()}
       >
+        <FloppyDisk aria-hidden="true" />
         Lưu sĩ số
       </Button>
     </>
@@ -415,9 +417,9 @@ function SchoolDefaultsTable({
           <Table.ColumnGroup
             display={{ base: "none", md: "table-column-group" }}
           >
-            <Table.Column w="var(--atlas-school-order-width, 44px)" />
+            <Table.Column w="var(--atlas-school-order-width, 56px)" />
             <Table.Column w="var(--atlas-school-identity-width, 25%)" />
-            <Table.Column w="var(--atlas-school-type-width, 100px)" />
+            <Table.Column w="var(--atlas-school-type-width, 132px)" />
             <Table.Column w="var(--atlas-school-status-width, 130px)" />
             <Table.Column w="var(--atlas-school-defaults-width, 220px)" />
             <Table.Column />

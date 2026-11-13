@@ -1,0 +1,292 @@
+{
+  "sourceBaseline": "c10e4c43950b18170efd54275444cfaec1c9b76e",
+  "sourceDelta": "four approved P2 presentation changes",
+  "browser": "151.0.7922.34",
+  "captureCount": 14,
+  "passedCheckCount": 59,
+  "pageErrors": [],
+  "blockedExternalRequests": [],
+  "records": [
+    {
+      "surface": "need",
+      "owner": "Xác nhận nhu cầu",
+      "viewport": [1366, 768],
+      "screenshot": "need-1366.png",
+      "documentSize": [1366, 768],
+      "documentY": 0,
+      "quantity": {
+        "x": 671,
+        "y": 382.296875,
+        "width": 159.171875,
+        "height": 40
+      },
+      "tableViewport": {
+        "client": 1344,
+        "scroll": 1344,
+        "left": 0
+      },
+      "separators": {
+        "record": "1px",
+        "identity": "1px",
+        "reason": "0px"
+      }
+    },
+    {
+      "surface": "attendance",
+      "owner": "Sĩ số",
+      "viewport": [1366, 768],
+      "screenshot": "attendance-1366.png",
+      "documentSize": [1366, 768],
+      "documentY": 0,
+      "separators": {
+        "import": "1px",
+        "totals": "1px"
+      }
+    },
+    {
+      "surface": "pantry",
+      "owner": "Hàng đặt riêng",
+      "viewport": [1366, 768],
+      "screenshot": "pantry-1366.png",
+      "documentSize": [1366, 768],
+      "documentY": 0,
+      "separator": "1px"
+    },
+    {
+      "surface": "recipe",
+      "owner": "Công thức",
+      "viewport": [1366, 768],
+      "screenshot": "recipe-1366.png",
+      "documentSize": [1366, 768],
+      "documentY": 0,
+      "utilities": [
+        {
+          "x": 372,
+          "y": 264.984375,
+          "width": 145.03125,
+          "height": 36
+        },
+        {
+          "x": 523.03125,
+          "y": 264.984375,
+          "width": 156.734375,
+          "height": 36
+        }
+      ],
+      "separator": "1px"
+    },
+    {
+      "surface": "need",
+      "owner": "Xác nhận nhu cầu",
+      "viewport": [390, 844],
+      "screenshot": "need-390.png",
+      "documentSize": [390, 844],
+      "documentY": 0,
+      "quantity": {
+        "x": 203,
+        "y": 666.171875,
+        "width": 145.171875,
+        "height": 44
+      },
+      "tableViewport": {
+        "client": 368,
+        "scroll": 368,
+        "left": 0
+      },
+      "separators": {
+        "record": "1px",
+        "identity": "1px",
+        "reason": "1px"
+      }
+    },
+    {
+      "surface": "need-invalid",
+      "owner": "Xác nhận nhu cầu",
+      "viewport": [390, 844],
+      "screenshot": "need-invalid-390.png",
+      "documentSize": [390, 844],
+      "documentY": 0
+    },
+    {
+      "surface": "attendance",
+      "owner": "Sĩ số",
+      "viewport": [390, 844],
+      "screenshot": "attendance-390.png",
+      "documentSize": [390, 844],
+      "documentY": 0,
+      "separators": {
+        "import": "1px",
+        "totals": "1px"
+      }
+    },
+    {
+      "surface": "pantry",
+      "owner": "Hàng đặt riêng",
+      "viewport": [390, 844],
+      "screenshot": "pantry-390.png",
+      "documentSize": [390, 844],
+      "documentY": 0,
+      "separator": "1px"
+    },
+    {
+      "surface": "pantry-added",
+      "owner": "Hàng đặt riêng",
+      "viewport": [390, 844],
+      "screenshot": "pantry-added-390.png",
+      "documentSize": [390, 844],
+      "documentY": 0
+    },
+    {
+      "surface": "recipe",
+      "owner": "Công thức",
+      "viewport": [390, 844],
+      "screenshot": "recipe-390.png",
+      "documentSize": [390, 844],
+      "documentY": 0,
+      "utilities": [
+        {
+          "x": 36,
+          "y": 296.171875,
+          "width": 156,
+          "height": 44
+        },
+        {
+          "x": 198,
+          "y": 296.171875,
+          "width": 156,
+          "height": 44
+        }
+      ],
+      "separator": "1px"
+    },
+    {
+      "surface": "need",
+      "owner": "Xác nhận nhu cầu",
+      "viewport": [360, 800],
+      "screenshot": "need-360.png",
+      "documentSize": [360, 800],
+      "documentY": 0,
+      "quantity": {
+        "x": 188,
+        "y": 666.171875,
+        "width": 130.171875,
+        "height": 44
+      },
+      "tableViewport": {
+        "client": 338,
+        "scroll": 338,
+        "left": 0
+      },
+      "separators": {
+        "record": "1px",
+        "identity": "1px",
+        "reason": "1px"
+      }
+    },
+    {
+      "surface": "attendance",
+      "owner": "Sĩ số",
+      "viewport": [360, 800],
+      "screenshot": "attendance-360.png",
+      "documentSize": [360, 800],
+      "documentY": 0,
+      "separators": {
+        "import": "1px",
+        "totals": "1px"
+      }
+    },
+    {
+      "surface": "pantry",
+      "owner": "Hàng đặt riêng",
+      "viewport": [360, 800],
+      "screenshot": "pantry-360.png",
+      "documentSize": [360, 800],
+      "documentY": 0,
+      "separator": "1px"
+    },
+    {
+      "surface": "recipe",
+      "owner": "Công thức",
+      "viewport": [360, 800],
+      "screenshot": "recipe-360.png",
+      "documentSize": [360, 800],
+      "documentY": 0,
+      "utilities": [
+        {
+          "x": 36,
+          "y": 296.171875,
+          "width": 141,
+          "height": 44
+        },
+        {
+          "x": 183,
+          "y": 296.171875,
+          "width": 141,
+          "height": 44
+        }
+      ],
+      "separator": "1px"
+    }
+  ],
+  "passedChecks": [
+    "need-1366: document fits",
+    "need-1366: sort preserves one exact draft input",
+    "need-1366: invalid quantity keeps Save/Continue locked",
+    "attendance-1366: aligned import tools",
+    "attendance-1366: import/data separators",
+    "attendance-1366: document fits",
+    "attendance-1366: paste remains reachable",
+    "pantry-1366: persistent School label",
+    "pantry-1366: add/data separator",
+    "pantry-1366: document fits",
+    "pantry-1366: explicit eligible Add works",
+    "recipe-1366: utility/context separator",
+    "recipe-1366: document fits",
+    "recipe-1366: Close returns focus",
+    "need-390: quantity in first view",
+    "need-390: no quantity panning",
+    "need-390: record/group separator lines",
+    "need-390: input unoccluded at all edges",
+    "need-390: document fits",
+    "need-390: sort preserves one exact draft input",
+    "need-390: invalid quantity keeps Save/Continue locked",
+    "need-invalid-390: document fits",
+    "attendance-390: aligned import tools",
+    "attendance-390: import/data separators",
+    "attendance-390: document fits",
+    "attendance-390: paste remains reachable",
+    "pantry-390: persistent School label",
+    "pantry-390: add/data separator",
+    "pantry-390: document fits",
+    "pantry-390: explicit eligible Add works",
+    "pantry-added-390: document fits",
+    "recipe-390: utility/context separator",
+    "recipe-390: utility targets fit",
+    "recipe-390: utilities aligned",
+    "recipe-390: peers share row",
+    "recipe-390: document fits",
+    "recipe-390: Close returns focus",
+    "need-360: quantity in first view",
+    "need-360: no quantity panning",
+    "need-360: record/group separator lines",
+    "need-360: input unoccluded at all edges",
+    "need-360: document fits",
+    "need-360: sort preserves one exact draft input",
+    "need-360: invalid quantity keeps Save/Continue locked",
+    "attendance-360: aligned import tools",
+    "attendance-360: import/data separators",
+    "attendance-360: document fits",
+    "attendance-360: paste remains reachable",
+    "pantry-360: persistent School label",
+    "pantry-360: add/data separator",
+    "pantry-360: document fits",
+    "pantry-360: explicit eligible Add works",
+    "recipe-360: utility/context separator",
+    "recipe-360: utility targets fit",
+    "recipe-360: utilities aligned",
+    "recipe-360: document fits",
+    "recipe-360: Close returns focus",
+    "no page errors",
+    "no external requests"
+  ]
+}

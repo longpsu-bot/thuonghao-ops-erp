@@ -140,6 +140,15 @@ distribution finding is fixed and its follow-up review has no remaining findings
 Physical iOS/Android text rendering and focus zoom, hosted workflows and exports
 were not re-certified. Full routine validation remains owned by GitHub Actions.
 
+### Desktop reading follow-up — 13 November 2026
+
+Keep the bundled Inter v4.1 face. Table text, sortable headers and inline
+quantities use 15px at every width. Desktop inputs use 15px and narrow inputs
+use 16px. Numeric inputs use tabular figures, so digits occupy equal widths as
+values change. The School index and type columns reserve room for the larger
+header text and sort icons. The 14px desktop body style still serves ordinary
+labels and actions, and the 13px helper style serves secondary details.
+
 ### Allocation composition follow-up — 28 October 2026
 
 The Owner rejected cosmetic type/layout changes as too generic and requested a

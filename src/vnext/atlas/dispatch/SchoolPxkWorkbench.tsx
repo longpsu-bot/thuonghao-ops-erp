@@ -8,6 +8,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
+import { FileArrowDown } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
@@ -330,7 +331,14 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
           </Button>
         </Box>
       )}
-      <Box flexShrink="0" bg="bg.toolbar" px="md" py="sm">
+      <Box
+        flexShrink="0"
+        bg="bg.toolbar"
+        px="md"
+        py="sm"
+        borderTopWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+      >
         <Flex gap="sm" align="center" justify="space-between" wrap="wrap">
           <Text textStyle="helper" color="fg.muted">
             {(["READY", "REPLACEMENT_REQUIRED", "BLOCKED", "CURRENT"] as const)
@@ -411,6 +419,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
                     }
                     onClick={() => void exportLoaded(false)}
                   >
+                    <FileArrowDown aria-hidden="true" />
                     Xuất XLSX
                   </Button>
                 )}
@@ -421,6 +430,7 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
                     disabled={!c.canExportLoaded || !releasedDocuments.length}
                     onClick={() => void exportLoaded(true)}
                   >
+                    <FileArrowDown aria-hidden="true" />
                     Xuất ZIP
                   </Button>
                 )}

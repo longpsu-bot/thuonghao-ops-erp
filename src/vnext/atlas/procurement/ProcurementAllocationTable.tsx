@@ -2,7 +2,8 @@ import {
   AtlasSortableColumnHeader,
   atlasNarrowSortableHeader,
 } from "../AtlasSortableColumnHeader";
-import { Box, Button, Flex, Table, Text } from "@chakra-ui/react";
+import { Icon, Box, Button, Flex, Table, Text } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import {
   allocationFamilyUnitLabel,
   type AllocationFamilyRow,
@@ -529,7 +530,9 @@ export function ProcurementAllocationTable({
                     >
                       {attention && (
                         <Box as="span" aria-hidden="true">
-                          ⚠{" "}
+                          <Icon asChild aria-hidden="true" mr="xs">
+                            <WarningCircle />
+                          </Icon>
                         </Box>
                       )}
                       {issue}

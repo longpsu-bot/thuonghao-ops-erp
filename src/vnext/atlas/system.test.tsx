@@ -108,9 +108,13 @@ describe("Atlas v3 color and typography floors", () => {
   });
   it("keeps operational typography large enough for repeated scanning", () => {
     const styles = atlasSystem._config.theme?.textStyles;
-    for (const name of ["body", "table", "quantityInline"])
+    expect(styles?.body?.value).toMatchObject({
+      fontSize: { base: "15px", lg: "14px" },
+      lineHeight: "1.5",
+    });
+    for (const name of ["table", "quantityInline"])
       expect(styles?.[name]?.value).toMatchObject({
-        fontSize: { base: "15px", lg: "14px" },
+        fontSize: "15px",
         lineHeight: "1.5",
       });
     for (const name of ["helper", "unitInline"])
@@ -128,7 +132,8 @@ describe("Atlas v3 color and typography floors", () => {
   });
   it("keeps editable text at 16px on phones without inflating desktop controls", () => {
     expect(atlasSystem._config.theme?.textStyles?.input?.value).toMatchObject({
-      fontSize: { base: "16px", lg: "14px" },
+      fontSize: { base: "16px", lg: "15px" },
+      fontVariantNumeric: "tabular-nums",
     });
     expect(atlasSystem.getRecipe("input").variants?.size?.md).toMatchObject({
       textStyle: "input",

@@ -10,7 +10,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Fragment, useId, useRef, useState } from "react";
-import { Trash } from "@phosphor-icons/react";
+import { Trash, Plus } from "@phosphor-icons/react";
 import { PantryIngredientChooser } from "./PantryIngredientChooser";
 import { PantrySchoolChooser } from "./PantrySchoolChooser";
 import { AtlasQuantityContext } from "../AtlasQuantityContext";
@@ -124,66 +124,100 @@ export function PlanningPantryStage({
   };
   return (
     <>
-      <Flex p="sm" gap="sm" wrap="wrap" align="end">
-        {automaticSchool ? (
-          <Box>
-            <Text fontWeight="semibold">
-              Thêm cho {automaticSchool.school_name}
-            </Text>
-            <Text textStyle="helper" color="fg.muted">
-              {automaticSchool.default_delivery_location.location_name}
-            </Text>
-          </Box>
-        ) : (
-          <PantrySchoolChooser
-            inputRef={addSchoolInput}
-            schools={schools}
-            value={targetSchoolId}
-            onChange={setAddSchool}
-            disabled={!c.canEdit}
-          />
-        )}
-        <Field.Root
-          disabled={!c.canEdit || !targetSchoolId}
-          w={{ base: "full", md: "var(--atlas-layout-source-width, 270px)" }}
-          gap="xs"
+      <Box
+        p="md"
+        borderBottomWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
+        display="flex"
+        flexWrap="wrap"
+        columnGap="md"
+      >
+        <Text
+          as="h2"
+          textStyle="section"
+          flex={{ base: "1 1 100%", lg: "0 0 200px" }}
+          mb={{ base: "sm", lg: "var(--atlas-layout-zero, 0)" }}
+          pr={{ base: "var(--atlas-layout-zero, 0)", lg: "md" }}
+          borderRightWidth={{
+            base: "var(--atlas-layout-zero, 0)",
+            lg: "var(--atlas-layout-edge, 1px)",
+          }}
+          borderColor="border.subtle"
         >
-          <Field.Label>Nguồn của dòng mới</Field.Label>
-          <NativeSelect.Root>
-            <NativeSelect.Field
-              value={addCategory}
-              onChange={(event) => setAddCategory(event.target.value)}
-            >
-              {Object.entries(categoryLabels).map(([code, label]) => (
-                <option
-                  key={code}
-                  value={code}
-                  disabled={
-                    !creationPurposes.some((p) => p.purpose_code === code)
-                  }
-                >
-                  {label}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
-        <Button
-          ref={addButton}
-          size="sm"
-          h={atlasWorkbarControlHeight}
-          disabled={!c.canEdit || !targetSchoolId || !targetPurpose}
-          onClick={() =>
-            c.addPantryRow(
-              targetSchoolId,
-              targetPurpose?.pantry_need_purpose_id,
-            )
-          }
+          Thêm hàng đặt riêng
+        </Text>
+        <Flex
+          gap="md"
+          wrap="wrap"
+          align="end"
+          flex="1 1 650px"
+          minW="var(--atlas-layout-zero, 0)"
         >
-          + Thêm dòng
-        </Button>
-      </Flex>
+          {automaticSchool ? (
+            <Box>
+              <Text textStyle="label" mb="xs">
+                Trường cần thêm hàng
+              </Text>
+              <Text fontWeight="semibold">
+                Thêm cho {automaticSchool.school_name}
+              </Text>
+              <Text textStyle="helper" color="fg.muted">
+                {automaticSchool.default_delivery_location.location_name}
+              </Text>
+            </Box>
+          ) : (
+            <PantrySchoolChooser
+              inputRef={addSchoolInput}
+              schools={schools}
+              value={targetSchoolId}
+              onChange={setAddSchool}
+              disabled={!c.canEdit}
+            />
+          )}
+          <Field.Root
+            disabled={!c.canEdit || !targetSchoolId}
+            w={{ base: "full", md: "var(--atlas-layout-source-width, 270px)" }}
+            gap="xs"
+          >
+            <Field.Label>Nguồn của dòng mới</Field.Label>
+            <NativeSelect.Root>
+              <NativeSelect.Field
+                value={addCategory}
+                onChange={(event) => setAddCategory(event.target.value)}
+              >
+                {Object.entries(categoryLabels).map(([code, label]) => (
+                  <option
+                    key={code}
+                    value={code}
+                    disabled={
+                      !creationPurposes.some((p) => p.purpose_code === code)
+                    }
+                  >
+                    {label}
+                  </option>
+                ))}
+              </NativeSelect.Field>
+              <NativeSelect.Indicator />
+            </NativeSelect.Root>
+          </Field.Root>
+          <Button
+            ref={addButton}
+            variant="businessPrimary"
+            size="sm"
+            h={atlasWorkbarControlHeight}
+            disabled={!c.canEdit || !targetSchoolId || !targetPurpose}
+            onClick={() =>
+              c.addPantryRow(
+                targetSchoolId,
+                targetPurpose?.pantry_need_purpose_id,
+              )
+            }
+          >
+            <Plus aria-hidden="true" />
+            Thêm dòng
+          </Button>
+        </Flex>
+      </Box>
       {!targetPurpose && (
         <Text px="sm" role="status" textStyle="helper" color="status.warning">
           Nguồn đã chọn chưa có trong danh mục đang hoạt động. Hãy tải lại danh
@@ -207,7 +241,7 @@ export function PlanningPantryStage({
         </Text>
       ))}
       {!rows.length && (
-        <Text p="md" color="fg.muted">
+        <Text px="md" py="sm" textStyle="helper" color="fg.muted">
           {!visibleSchoolIds.length
             ? "Không có trường phù hợp bộ lọc."
             : c.pantryRows.some((row) => row.service_date === c.date)
@@ -225,7 +259,7 @@ export function PlanningPantryStage({
           w="full"
           minW={{
             base: "var(--atlas-layout-zero, 0)",
-            md: "var(--atlas-pantry-table-width, 1156px)",
+            md: "var(--atlas-pantry-table-width, 960px)",
           }}
           size="sm"
           stickyHeader
@@ -258,7 +292,6 @@ export function PlanningPantryStage({
             <Table.Column w="var(--atlas-pantry-ingredient-column, 210px)" />
             <Table.Column w="var(--atlas-pantry-quantity-column, 130px)" />
             <Table.Column w="var(--atlas-pantry-note-column, 190px)" />
-            <Table.Column w="var(--atlas-pantry-reference-column, 130px)" />
             <Table.Column w="var(--atlas-pantry-action-column, 96px)" />
           </Table.ColumnGroup>
           <Table.Header>
@@ -267,8 +300,7 @@ export function PlanningPantryStage({
                 "Trường / điểm giao",
                 "Nguyên liệu / Đơn vị",
                 "Số lượng",
-                "Ghi chú / Lý do",
-                "Tham chiếu",
+                "Ghi chú",
                 "",
               ].map((name, i) => (
                 <Table.ColumnHeader key={i}>{name}</Table.ColumnHeader>
@@ -281,7 +313,7 @@ export function PlanningPantryStage({
               .map((s) => (
                 <Fragment key={s.school_id}>
                   <Table.Row bg="bg.subtle">
-                    <Table.Cell colSpan={6}>
+                    <Table.Cell colSpan={5}>
                       <Flex align="center" gap="sm" wrap="wrap">
                         <Box>
                           <Text fontWeight="semibold">{s.school_name}</Text>
@@ -320,7 +352,7 @@ export function PlanningPantryStage({
                             <Table.Row
                               data-pantry-source={r.pantry_need_purpose_id}
                             >
-                              <Table.Cell colSpan={6} py="xs" bg="bg.subtle">
+                              <Table.Cell colSpan={5} py="xs" bg="bg.subtle">
                                 <Text fontWeight="semibold">
                                   {sourceLabel(r.pantry_need_purpose_id)}
                                 </Text>
@@ -411,9 +443,7 @@ export function PlanningPantryStage({
                             </Table.Cell>
                             <Table.Cell>
                               <Field.Root>
-                                <Field.Label hideFrom="md">
-                                  Ghi chú / Lý do
-                                </Field.Label>
+                                <Field.Label hideFrom="md">Ghi chú</Field.Label>
                                 <Input
                                   aria-label={`Ghi chú dòng ${index + 1}`}
                                   value={r.note}
@@ -433,28 +463,9 @@ export function PlanningPantryStage({
                                       : rowPurpose(r.pantry_need_purpose_id)
                                             ?.note_rule === "PROHIBITED"
                                         ? "Phân loại này không nhận ghi chú."
-                                        : "Không bắt buộc."
+                                        : undefined
                                   }
                                 />
-                              </Field.Root>
-                            </Table.Cell>
-                            <Table.Cell>
-                              <Field.Root>
-                                <Field.Label hideFrom="md">
-                                  Tham chiếu
-                                </Field.Label>
-                                <Input
-                                  aria-label={`Tham chiếu dòng ${index + 1}`}
-                                  value={r.source_request_reference}
-                                  disabled={!c.canEdit}
-                                  minW="var(--atlas-layout-reference-width, 110px)"
-                                  onChange={(e) =>
-                                    c.editPantryRow(index, {
-                                      source_request_reference: e.target.value,
-                                    })
-                                  }
-                                />
-                                <PantryFeedback />
                               </Field.Root>
                             </Table.Cell>
                             <Table.Cell>
