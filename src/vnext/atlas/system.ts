@@ -378,10 +378,14 @@ export const atlasSystem = createSystem(
           value: { fontSize: { base: "15px", lg: "14px" }, lineHeight: "1.5" },
         },
         table: {
-          value: { fontSize: { base: "15px", lg: "14px" }, lineHeight: "1.5" },
+          value: { fontSize: "15px", lineHeight: "1.5" },
         },
         input: {
-          value: { fontSize: { base: "16px", lg: "14px" }, lineHeight: "1.5" },
+          value: {
+            fontSize: { base: "16px", lg: "15px" },
+            lineHeight: "1.5",
+            fontVariantNumeric: "tabular-nums",
+          },
         },
         label: {
           value: {
@@ -393,7 +397,7 @@ export const atlasSystem = createSystem(
         helper: { value: { fontSize: "13px", lineHeight: "1.6" } },
         quantityInline: {
           value: {
-            fontSize: { base: "15px", lg: "14px" },
+            fontSize: "15px",
             fontWeight: "semibold",
             lineHeight: "1.5",
             fontVariantNumeric: "tabular-nums",
