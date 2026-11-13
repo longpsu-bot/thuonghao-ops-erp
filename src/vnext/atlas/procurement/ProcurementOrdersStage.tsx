@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Icon,
   Flex,
   Grid,
   Heading,
@@ -9,6 +10,7 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
+import { FileArrowDown, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   canReleasePurchaseOrder,
@@ -306,6 +308,7 @@ export function ProcurementOrdersStage({
                   disabled={disabled || exporting || !exportOrders.length}
                   onClick={() => void exportZip(format)}
                 >
+                  <FileArrowDown aria-hidden="true" />
                   Xuất {format.toUpperCase()}
                 </Button>
               ))}
@@ -349,7 +352,10 @@ export function ProcurementOrdersStage({
         "Có điều kiện cần kiểm tra trước khi tiếp tục.",
       ).map((message) => (
         <Text key={message} px="md" pb="sm" color="status.warning">
-          ⚠ {message}
+          <Icon asChild aria-hidden="true" mr="xs">
+            <WarningCircle />
+          </Icon>
+          {message}
         </Text>
       ))}
       <Grid
@@ -475,7 +481,10 @@ export function ProcurementOrdersStage({
                 "Có cảnh báo cần kiểm tra.",
               ).map((message) => (
                 <Text key={message} textStyle="helper" color="status.warning">
-                  ⚠ {message}
+                  <Icon asChild aria-hidden="true" mr="xs">
+                    <WarningCircle />
+                  </Icon>
+                  {message}
                 </Text>
               ))}
             </Button>
@@ -518,9 +527,6 @@ export function ProcurementOrdersStage({
             >
               <Flex justify="space-between" gap="md" align="start">
                 <Box minW="var(--atlas-layout-zero, 0)">
-                  <Text color="fg.muted" textStyle="helper" mb="xs">
-                    {selected.document_number ?? "Bản nháp · Chưa cấp số đơn"}
-                  </Text>
                   <Heading
                     as="h2"
                     ref={heading}
@@ -531,7 +537,8 @@ export function ProcurementOrdersStage({
                     {selected.supplier.supplier_name}
                   </Heading>
                   <Text color="fg.muted" textStyle="helper" mt="xs">
-                    Ngày dùng {dateLabel(selected.service_date)} ·{" "}
+                    {selected.document_number ?? "Chưa cấp số đơn"} · Ngày dùng{" "}
+                    {dateLabel(selected.service_date)} ·{" "}
                     {stateLabel[selected.commitment_state]}
                   </Text>
                 </Box>
@@ -600,6 +607,7 @@ export function ProcurementOrdersStage({
                         disabled={disabled || exporting}
                         onClick={() => void exportOrder(onExportXlsx)}
                       >
+                        <FileArrowDown aria-hidden="true" />
                         Xuất XLSX
                       </Button>
                     )}
@@ -609,6 +617,7 @@ export function ProcurementOrdersStage({
                         disabled={disabled || exporting}
                         onClick={() => void exportOrder(onExportPdf)}
                       >
+                        <FileArrowDown aria-hidden="true" />
                         Xuất PDF
                       </Button>
                     )}
@@ -626,24 +635,36 @@ export function ProcurementOrdersStage({
             >
               {selected.commitment_state === "DRAFT_STALE" && (
                 <Text color="status.warning">
-                  ⚠ Bản nháp cần tạo lại theo phân bổ hiện tại trước khi phát
+                  <Icon asChild aria-hidden="true" mr="xs">
+                    <WarningCircle />
+                  </Icon>
+                  Bản nháp cần tạo lại theo phân bổ hiện tại trước khi phát
                   hành.
                 </Text>
               )}
               {selected.commitment_state === "REPLACEMENT_REQUIRED" && (
                 <Text color="status.warning">
-                  ⚠ Đơn đã phát hành được giữ nguyên. Tạo và kiểm tra đơn thay
-                  thế đầy đủ.
+                  <Icon asChild aria-hidden="true" mr="xs">
+                    <WarningCircle />
+                  </Icon>
+                  Đơn đã phát hành được giữ nguyên. Tạo và kiểm tra đơn thay thế
+                  đầy đủ.
                 </Text>
               )}
               {selected.commitment_state === "CANCELLATION_REQUIRED" && (
                 <Text color="status.warning">
-                  ⚠ Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.
+                  <Icon asChild aria-hidden="true" mr="xs">
+                    <WarningCircle />
+                  </Icon>
+                  Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.
                 </Text>
               )}
               {messages.map((message) => (
                 <Text key={message} color="status.warning">
-                  ⚠ {message}
+                  <Icon asChild aria-hidden="true" mr="xs">
+                    <WarningCircle />
+                  </Icon>
+                  {message}
                 </Text>
               ))}
               {schoolDispatchApi && (

@@ -10,6 +10,12 @@ import {
   Text,
 } from "@chakra-ui/react";
 import {
+  FileArrowUp,
+  Plus,
+  PencilSimple,
+  CopySimple,
+} from "@phosphor-icons/react";
+import {
   useEffect,
   useRef,
   useImperativeHandle,
@@ -283,6 +289,7 @@ export function DishRecipeWorkbench(
           disabled={!c.canCommand}
           onClick={() => c.transition({ kind: "import" })}
         >
+          <FileArrowUp aria-hidden="true" />
           Nhập từ Excel
         </Button>
         <Button
@@ -290,6 +297,7 @@ export function DishRecipeWorkbench(
           disabled={!c.canCommand}
           onClick={() => c.transition({ kind: "create" })}
         >
+          <Plus aria-hidden="true" />
           Tạo món mới
         </Button>
       </AtlasWorkbarActions>
@@ -431,6 +439,7 @@ export function DishRecipeWorkbench(
                     disabled={!c.canCommand}
                     onClick={() => c.transition({ kind: "import" })}
                   >
+                    <FileArrowUp aria-hidden="true" />
                     Nhập từ Excel
                   </Button>
                 )}
@@ -496,6 +505,7 @@ export function DishRecipeWorkbench(
                       disabled={!c.canCommand}
                       onClick={() => c.transition({ kind: "edit" })}
                     >
+                      <PencilSimple aria-hidden="true" />
                       Sửa thông tin món
                     </Button>
                     {c.canCopy && (
@@ -511,6 +521,7 @@ export function DishRecipeWorkbench(
                         whiteSpace={{ base: "normal", md: "nowrap" }}
                         onClick={() => c.transition({ kind: "copy" })}
                       >
+                        <CopySimple aria-hidden="true" />
                         Sao chép công thức
                       </Button>
                     )}
@@ -572,6 +583,7 @@ export function DishRecipeWorkbench(
                         variant="secondary"
                         onClick={() => props.onOpenChangeOrders?.()}
                       >
+                        <Plus aria-hidden="true" />
                         Tạo lệnh điều chỉnh
                       </Button>
                     )}

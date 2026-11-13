@@ -1,5 +1,7 @@
 # Atlas P2 — review desktop ngày 10/11/2026
 
+**Cập nhật ngày 13/11/2026.** Nút chọn tệp XLSX dùng icon Phosphor và nhãn tiếng Việt. Xem [Sĩ số](attendance-xlsx-icons-20261113.png) và [hộp nhập Công thức](recipe-xlsx-icons-20261113.png) ở 1366 px. Đã mở cả 13 workbench bằng fixture ở 1366 và 1920 px, kiểm tra cuộn ngang toàn trang và kích hoạt ba nút chọn XLSX bằng phím Enter.
+
 Desktop là ưu tiên Owner vừa xác nhận. Đây là bản chỉnh tiếp theo của [bốn P2](../../../ui/atlas-p2-workbench-hierarchy-2026-11-10.md), cùng nhánh/PR, không thay thế bằng chứng Chi tiết lệnh trong PR #463.
 
 **21 captures · 98/98 checks PASS · không page error, external request hoặc document overflow.** Chromium 151.0.7922.34, scale 1, fixture local. Không dùng dữ liệu hosted hoặc thực hiện hosted Save. Root và reviewer độc lập đã kiểm tra ảnh; Review mở bằng Preview fixture hiện có, không diễn giải các số tổng hợp trong fixture thành dữ liệu vận hành thật.

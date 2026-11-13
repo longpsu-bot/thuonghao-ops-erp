@@ -10,6 +10,7 @@ import { foldVietnameseSearch as fold } from "../foldVietnameseSearch";
 import {
   Box,
   Button,
+  Icon,
   Field,
   Flex,
   Grid,
@@ -18,6 +19,7 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import type { CSSProperties } from "react";
 import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
@@ -598,7 +600,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             {controller.readError && (
               <Box role="alert" p="md">
                 <Text color="status.warning">
-                  ⚠ Không tải được dữ liệu hiện tại: {controller.readError}
+                  <Icon asChild aria-hidden="true" mr="xs">
+                    <WarningCircle />
+                  </Icon>
+                  Không tải được dữ liệu hiện tại: {controller.readError}
                 </Text>
                 {controller.feedback?.kind !== "unknown" && (
                   <Button
@@ -634,7 +639,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                         key={message}
                         color="status.warning"
                       >
-                        ⚠ {message}
+                        <Icon asChild aria-hidden="true" mr="xs">
+                          <WarningCircle />
+                        </Icon>
+                        {message}
                       </Text>
                     ))}
                     <Grid

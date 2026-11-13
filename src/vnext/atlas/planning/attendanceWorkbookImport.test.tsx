@@ -97,7 +97,12 @@ describe("Attendance XLSX operator import", () => {
       </AtlasVNextProvider>,
     );
     const input = await screen.findByLabelText("Nhập sĩ số XLSX");
+    const picker = screen.getByRole("button", { name: "Nhập sĩ số XLSX" });
     await waitFor(() => expect(input).toBeEnabled());
+    expect(input).not.toBeVisible();
+    const openPicker = vi.spyOn(input, "click");
+    fireEvent.click(picker);
+    expect(openPicker).toHaveBeenCalledOnce();
     fireEvent.change(input, { target: { files: [uploaded] } });
     await waitFor(() =>
       expect(
@@ -107,6 +112,7 @@ describe("Attendance XLSX operator import", () => {
     expect(preview).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
     expect(input).toBeDisabled();
+    expect(picker).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await waitFor(() => expect(preview).toHaveBeenCalledOnce());
     expect(preview.mock.calls[0][3]).toEqual([

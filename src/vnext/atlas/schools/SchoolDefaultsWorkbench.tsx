@@ -19,6 +19,7 @@ import {
   Text,
   Tabs,
 } from "@chakra-ui/react";
+import { FloppyDisk } from "@phosphor-icons/react";
 import { useImperativeHandle, useState, type ReactNode } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
@@ -126,6 +127,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         }
         onClick={() => void c.save()}
       >
+        <FloppyDisk aria-hidden="true" />
         Lưu sĩ số
       </Button>
     </>

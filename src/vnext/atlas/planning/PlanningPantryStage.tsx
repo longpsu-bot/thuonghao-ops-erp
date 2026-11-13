@@ -10,7 +10,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Fragment, useId, useRef, useState } from "react";
-import { Trash } from "@phosphor-icons/react";
+import { Trash, Plus } from "@phosphor-icons/react";
 import { PantryIngredientChooser } from "./PantryIngredientChooser";
 import { PantrySchoolChooser } from "./PantrySchoolChooser";
 import { AtlasQuantityContext } from "../AtlasQuantityContext";
@@ -213,7 +213,8 @@ export function PlanningPantryStage({
               )
             }
           >
-            + Thêm dòng
+            <Plus aria-hidden="true" />
+            Thêm dòng
           </Button>
         </Flex>
       </Box>

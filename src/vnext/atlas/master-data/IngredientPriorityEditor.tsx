@@ -8,6 +8,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
+import { Plus } from "@phosphor-icons/react";
 import { useEffect, useRef } from "react";
 import type { IngredientSupplierWorkbenchController } from "./useIngredientSupplierWorkbench";
 
@@ -234,7 +235,8 @@ export function IngredientPriorityEditor({
           }
           onClick={add}
         >
-          + Thêm nhà cung ứng
+          <Plus aria-hidden="true" />
+          Thêm nhà cung ứng
         </Button>
         <Button
           variant="businessPrimary"

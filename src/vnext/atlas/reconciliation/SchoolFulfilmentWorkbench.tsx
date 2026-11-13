@@ -283,6 +283,8 @@ export function SchoolFulfilmentWorkbench(
           </Text>
           <Grid
             data-reconciliation-master-detail=""
+            borderTopWidth="var(--atlas-layout-edge, 1px)"
+            borderColor="border.subtle"
             templateColumns={{
               base: "minmax(0, 1fr)",
               lg: c.selected

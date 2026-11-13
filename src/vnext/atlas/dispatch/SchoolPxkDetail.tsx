@@ -9,6 +9,7 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
+import { FileArrowDown } from "@phosphor-icons/react";
 import { useState, type RefObject } from "react";
 import {
   schoolDispatchBlockerLabel,
@@ -105,6 +106,7 @@ function OfficialDocument({
                 disabled={exporting}
                 onClick={() => void run(exports.onExportXlsx!)}
               >
+                <FileArrowDown aria-hidden="true" />
                 Xuất XLSX
               </Button>
             )}
@@ -115,6 +117,7 @@ function OfficialDocument({
                 disabled={exporting}
                 onClick={() => void run(exports.onExportPdf!)}
               >
+                <FileArrowDown aria-hidden="true" />
                 Xuất PDF
               </Button>
             )}

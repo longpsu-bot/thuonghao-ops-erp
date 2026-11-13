@@ -446,12 +446,15 @@ export async function certifyMasterSourceAuthoring({
     `document.querySelector(${JSON.stringify(schoolOption)}).click()`,
   );
   const pantryScope = 'section[aria-label="Hàng đặt riêng"]';
+  const addRowLabel = await evaluate(
+    `[...document.querySelectorAll(${JSON.stringify(`${pantryScope} button`)})].some(b=>b.textContent.trim()==='Thêm dòng') ? 'Thêm dòng' : '+ Thêm dòng'`,
+  );
   for (const [index, purpose, quantity] of [
     [1, "planning_identified_supplement", "2"],
     [2, "school_requested_supplement", "3"],
   ]) {
     await field(pantryScope, "Nguồn của dòng mới", purpose);
-    await action("+ Thêm dòng");
+    await action(addRowLabel, pantryScope);
     const chooser = `input[aria-label="Nguyên liệu dòng ${index}"]`;
     await input(chooser, ingredientName, "combobox");
     const ingredientOption = `[role=listbox][aria-label="Nguyên liệu dòng ${index}"] [role=option][id$="-option-${ingredient.ingredient_id}"]:not([aria-disabled=true])`;

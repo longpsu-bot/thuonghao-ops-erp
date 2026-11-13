@@ -64,7 +64,7 @@ describe("Supplier decisions", () => {
     row.splits = [];
     row.recommendation = null;
     show(row);
-    click("+ Thêm nhà cung ứng");
+    click("Thêm nhà cung ứng");
     fireEvent.change(
       screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
       { target: { value: "supplier-c" } },
@@ -74,7 +74,7 @@ describe("Supplier decisions", () => {
     remove.focus();
     fireEvent.click(remove);
     expect(
-      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+      screen.getByRole("button", { name: "Thêm nhà cung ứng" }),
     ).toHaveFocus();
   });
   it("requires explicit acceptance of a stale source even when the saved split is unchanged", () => {
@@ -203,7 +203,7 @@ describe("Supplier decisions", () => {
         "var(--atlas-procurement-editor-max-height, max(360px, calc(100dvh - 320px)))",
     });
 
-    for (const name of ["Đóng", "Lưu phân bổ", "+ Thêm nhà cung ứng"]) {
+    for (const name of ["Đóng", "Lưu phân bổ", "Thêm nhà cung ứng"]) {
       expect(screen.getByRole("button", { name })).toHaveStyle({
         minHeight: "var(--atlas-layout-mobile-target, 44px)",
       });
@@ -305,7 +305,7 @@ describe("Supplier decisions", () => {
   });
   it("changes Supplier, adds a split, and removes it back to the exact derived baseline", () => {
     show();
-    click("+ Thêm nhà cung ứng");
+    click("Thêm nhà cung ứng");
     fireEvent.change(
       screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
       {
@@ -349,7 +349,7 @@ describe("Supplier decisions", () => {
   });
   it("does not create manual authority for an added zero split omitted by Save", () => {
     const { onSave } = show();
-    click("+ Thêm nhà cung ứng");
+    click("Thêm nhà cung ứng");
     fireEvent.change(
       screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
       {
@@ -367,7 +367,7 @@ describe("Supplier decisions", () => {
     const note = openSupplierNote("NCC An Phú");
     fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
     quantity("NCC An Phú", "40");
-    click("+ Thêm nhà cung ứng");
+    click("Thêm nhà cung ứng");
     fireEvent.change(
       screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
       { target: { value: "supplier-b" } },
@@ -418,7 +418,7 @@ describe("Supplier decisions", () => {
     expect(
       screen.queryByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
     ).not.toBeInTheDocument();
-    click("+ Thêm nhà cung ứng");
+    click("Thêm nhà cung ứng");
     expect(
       screen.queryByRole("option", { name: "NCC Bình Minh" }),
     ).not.toBeInTheDocument();
@@ -431,7 +431,7 @@ describe("Supplier decisions", () => {
   });
   it("adds and removes only eligible unselected participants", () => {
     show(reviewFamily("manual_split"));
-    click("+ Thêm nhà cung ứng");
+    click("Thêm nhà cung ứng");
     expect(
       screen.queryByRole("option", { name: "NCC An Phú" }),
     ).not.toBeInTheDocument();

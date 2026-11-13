@@ -10,6 +10,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
+import { FileArrowDown } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState, useImperativeHandle } from "react";
 import { useAtlasWorkbenchStatus } from "../AtlasModuleExit";
 import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
@@ -21,6 +22,7 @@ import {
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { AtlasTaskContext } from "../AtlasTaskContext";
+import { AtlasXlsxPicker } from "../AtlasXlsxPicker";
 import {
   useConfirmedNeedWorkbench,
   type ConfirmedNeedWorkbenchProps,
@@ -80,7 +82,6 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
         ? "Đang xử lý"
         : undefined,
   });
-  const workbookInput = useRef<HTMLInputElement>(null);
   const compactFilters = useRef<HTMLDivElement>(null);
   const compactFilterTrigger = useRef<HTMLButtonElement>(null);
   const compactFilterOnward = useRef<HTMLDivElement>(null);
@@ -461,9 +462,11 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                             .finally(() => setWorkbookBusy(false));
                         }}
                       >
+                        <FileArrowDown aria-hidden="true" />
                         Xuất Phiếu đi chợ
                       </Button>
-                      <Button
+                      <AtlasXlsxPicker
+                        inputLabel="Nhập Phiếu đi chợ .xlsx"
                         variant="tertiary"
                         data-atlas-action-priority="tertiary"
                         disabled={
@@ -475,40 +478,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                           Boolean(c.lock) ||
                           !c.editable
                         }
-                        onClick={() => workbookInput.current?.click()}
-                      >
-                        Nhập Phiếu đi chợ
-                      </Button>
-                      <input
-                        ref={workbookInput}
-                        type="file"
-                        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        aria-label="Nhập Phiếu đi chợ .xlsx"
-                        style={{
-                          position: "absolute",
-                          width: 1,
-                          height: 1,
-                          padding: 0,
-                          margin: -1,
-                          overflow: "hidden",
-                          clip: "rect(0, 0, 0, 0)",
-                          whiteSpace: "nowrap",
-                          border: 0,
-                        }}
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          event.target.value = "";
-                          if (
-                            !file ||
-                            c.allDirty ||
-                            c.rangeBusy ||
-                            c.released ||
-                            c.busy ||
-                            c.lock ||
-                            !c.editable ||
-                            workbookBusy
-                          )
-                            return;
+                        onFile={(file) => {
                           const apply = c.captureShoppingListImport();
                           setWorkbookError(null);
                           setWorkbookBusy(true);
@@ -528,7 +498,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                             )
                             .finally(() => setWorkbookBusy(false));
                         }}
-                      />
+                      >
+                        Nhập Phiếu đi chợ
+                      </AtlasXlsxPicker>
                     </Flex>
                   )}
                   {c.allDirty && props.onExportShoppingList && (

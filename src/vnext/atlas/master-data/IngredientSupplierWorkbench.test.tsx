@@ -717,9 +717,7 @@ describe("IngredientSupplierWorkbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
     fireEvent.click(screen.getByRole("button", { name: "Ưu tiên NCC" }));
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Thêm nhà cung ứng" }));
 
     await waitFor(() =>
       expect(screen.getByLabelText("Nhà cung ứng ưu tiên 2")).toHaveFocus(),
@@ -773,9 +771,7 @@ describe("IngredientSupplierWorkbench", () => {
     expect(owner.scrollTop).toBe(0);
     expect(inactiveOwner.scrollTop).toBe(190);
     owner.scrollTop = 170;
-    fireEvent.click(
-      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Thêm nhà cung ứng" }));
     expect(owner.scrollTop).toBe(170);
     fireEvent.click(screen.getByRole("button", { name: "Gỡ NCC Minh Tâm" }));
     expect(owner.scrollTop).toBe(170);
@@ -831,9 +827,7 @@ describe("IngredientSupplierWorkbench", () => {
     owner.removeAttribute("inert");
     await waitFor(() => expect(owner.scrollTop).toBe(0));
     owner.scrollTop = 170;
-    fireEvent.click(
-      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Thêm nhà cung ứng" }));
     expect(owner.scrollTop).toBe(170);
     owner.hidden = true;
     owner.setAttribute("inert", "");
@@ -1255,10 +1249,10 @@ describe("IngredientSupplierWorkbench", () => {
       name: "Ưu tiên nhà cung ứng",
     });
     fireEvent.click(
-      within(editor).getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+      within(editor).getByRole("button", { name: "Thêm nhà cung ứng" }),
     );
     fireEvent.click(
-      within(editor).getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+      within(editor).getByRole("button", { name: "Thêm nhà cung ứng" }),
     );
     const supplierSelects =
       within(editor).getAllByLabelText(/Nhà cung ứng ưu tiên/);

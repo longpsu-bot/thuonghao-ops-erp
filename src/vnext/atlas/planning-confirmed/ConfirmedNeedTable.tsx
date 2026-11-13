@@ -1,4 +1,5 @@
-import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
+import { Icon, Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import type { CSSProperties } from "react";
 import {
@@ -341,7 +342,9 @@ export function ConfirmedNeedTable({
                   )}
                   {attention && (
                     <Text textStyle="helper" color="status.warning">
-                      ⚠{" "}
+                      <Icon asChild aria-hidden="true" mr="xs">
+                        <WarningCircle />
+                      </Icon>
                       {confirmedNeedConfirmationStateLabel(
                         line.confirmation_state,
                       )}

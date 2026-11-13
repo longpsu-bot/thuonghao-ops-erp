@@ -97,7 +97,7 @@ def main():
                 capture("need-invalid", "Xác nhận nhu cầu")
 
             open_owner("Sĩ số")
-            file = page.get_by_label("Nhập sĩ số XLSX", exact=True)
+            file = page.get_by_role("button", name="Nhập sĩ số XLSX", exact=True)
             template = page.get_by_role("button", name="Tải mẫu sĩ số XLSX", exact=True)
             helper = page.locator("#atlas-attendance-xlsx-help")
             paste = page.get_by_role("button", name="Dán hàng loạt", exact=True)
@@ -137,7 +137,7 @@ def main():
             associated = school.evaluate("e => !!document.querySelector('label[for=\"' + CSS.escape(e.id) + '\"]')")
             check(f"pantry-{width}: persistent School label", associated)
             expect(page.get_by_role("table", name="Hàng đặt riêng", exact=True)).to_be_attached()
-            add = page.get_by_role("button", name="+ Thêm dòng", exact=True)
+            add = page.get_by_role("button", name="Thêm dòng", exact=True)
             expect(add).to_be_disabled()
             pantry_border = page.get_by_role("heading", name="Thêm hàng đặt riêng", exact=True).evaluate("e => getComputedStyle(e.parentElement).borderBottomWidth")
             check(f"pantry-{width}: add/data separator", pantry_border == "1px", pantry_border)

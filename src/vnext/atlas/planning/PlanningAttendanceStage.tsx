@@ -1,13 +1,13 @@
 import {
   Box,
   Button,
-  Field,
   Flex,
   Input,
   Table,
   Text,
   Textarea,
 } from "@chakra-ui/react";
+import { ClipboardText, FileArrowDown } from "@phosphor-icons/react";
 import { useState } from "react";
 import {
   validCount,
@@ -16,6 +16,7 @@ import {
 } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
+import { AtlasXlsxPicker } from "../AtlasXlsxPicker";
 export function PlanningAttendanceStage({
   c,
   visibleSchoolIds,
@@ -90,73 +91,48 @@ export function PlanningAttendanceStage({
         borderColor="border.subtle"
         css={{ containerType: "inline-size" }}
       >
-        <Field.Root
+        <Box
           p="md"
           display="grid"
-          gridTemplateColumns={{
-            base: "minmax(0, 1fr)",
-            lg: "auto minmax(0, var(--atlas-attendance-import-width, 360px)) minmax(0, 1fr)",
-          }}
+          gridTemplateColumns="minmax(0, 1fr)"
+          gridTemplateAreas={'"upload" "help" "actions"'}
           columnGap="md"
           rowGap="xs"
           alignItems="center"
           maxW="full"
           css={{
-            "@container (max-width: 880px)": {
-              gridTemplateColumns: "minmax(0, 1fr)",
-              "& label": { gridColumn: "1", gridRow: "1" },
-              "& input": { gridColumn: "1", gridRow: "2" },
-              "& [data-part=helper-text]": { gridColumn: "1", gridRow: "3" },
-              "& [data-role=import-actions]": { gridColumn: "1", gridRow: "4" },
+            "@container (min-width: 881px)": {
+              gridTemplateColumns: "auto minmax(0, 1fr)",
+              gridTemplateAreas: '"upload actions" "help help"',
             },
           }}
         >
-          <Field.Label
-            htmlFor="atlas-attendance-xlsx"
-            textStyle="label"
-            gridColumn="1"
-            gridRow="1"
-          >
-            Nhập sĩ số XLSX
-          </Field.Label>
-          <Input
-            id="atlas-attendance-xlsx"
-            type="file"
-            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          <AtlasXlsxPicker
+            inputLabel="Nhập sĩ số XLSX"
+            variant="secondary"
             size="sm"
             h={atlasWorkbarControlHeight}
-            gridColumn={{ base: "1", lg: "2" }}
-            gridRow={{ base: "2", lg: "1" }}
-            minW="var(--atlas-layout-zero, 0)"
+            gridArea="upload"
+            justifySelf="start"
             disabled={!c.canEdit || c.dirty || c.attendanceImporting}
             aria-describedby="atlas-attendance-xlsx-help"
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              event.currentTarget.value = "";
-              if (file) void c.importAttendanceWorkbook(file);
-            }}
-          />
-          <Field.HelperText
+            onFile={(file) => void c.importAttendanceWorkbook(file)}
+          >
+            Nhập sĩ số XLSX
+          </AtlasXlsxPicker>
+          <Text
             id="atlas-attendance-xlsx-help"
             textStyle="helper"
             color="fg.muted"
-            gridColumn={{ base: "1", lg: "2 / -1" }}
-            gridRow={{ base: "3", lg: "2" }}
+            gridArea="help"
           >
             {c.attendanceImporting
               ? "Đang đọc tệp…"
               : c.dirty
                 ? "Lưu hoặc bỏ thay đổi trước khi nhập tệp khác."
                 : "Thay thế sĩ số cả tuần trong bản nháp; rà soát trước khi Lưu."}
-          </Field.HelperText>
-          <Flex
-            data-role="import-actions"
-            gap="sm"
-            wrap="wrap"
-            align="center"
-            gridColumn={{ base: "1", lg: "3" }}
-            gridRow={{ base: "4", lg: "1" }}
-          >
+          </Text>
+          <Flex gap="sm" wrap="wrap" align="center" gridArea="actions">
             <Button
               size="sm"
               h={atlasWorkbarControlHeight}
@@ -178,6 +154,7 @@ export function PlanningAttendanceStage({
                 }
               }}
             >
+              <FileArrowDown aria-hidden="true" />
               Tải mẫu sĩ số XLSX
             </Button>
             <Button
@@ -186,10 +163,11 @@ export function PlanningAttendanceStage({
               disabled={!c.canEdit}
               onClick={() => setPasteOpen(!pasteOpen)}
             >
+              <ClipboardText aria-hidden="true" />
               Dán hàng loạt
             </Button>
           </Flex>
-        </Field.Root>
+        </Box>
         {templateNotice && (
           <Text role="status" px="md" pb="sm" textStyle="helper">
             {templateNotice}
