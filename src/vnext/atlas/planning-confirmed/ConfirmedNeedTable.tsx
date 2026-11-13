@@ -263,7 +263,7 @@ export function ConfirmedNeedTable({
               h="var(--atlas-confirmed-need-header-height)"
               py="var(--atlas-layout-zero, 0)"
             >
-              Lý do / ghi chú
+              Lý do điều chỉnh
             </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
@@ -516,14 +516,17 @@ export function ConfirmedNeedTable({
                   minW="var(--atlas-layout-reason-width, 255px)"
                 >
                   <Box display="grid" gap="xs">
-                    <Text
-                      hideFrom="md"
-                      aria-hidden="true"
-                      textStyle="label"
-                      color="fg.muted"
-                    >
-                      Lý do / ghi chú
-                    </Text>
+                    {(showReasonChrome ||
+                      (correctionReason !== undefined && changed)) && (
+                      <Text
+                        hideFrom="md"
+                        aria-hidden="true"
+                        textStyle="label"
+                        color="fg.muted"
+                      >
+                        Lý do điều chỉnh
+                      </Text>
+                    )}
                     {correctionReason !== undefined ? (
                       <Text textStyle="helper">
                         {changed

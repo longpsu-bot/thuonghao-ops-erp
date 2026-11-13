@@ -1327,6 +1327,9 @@ describe("Planning sources Chakra workbench", () => {
       screen.queryByRole("combobox", { name: "Trường dòng 1" }),
     ).not.toBeInTheDocument();
     expect(quantity.closest("tr")).toHaveTextContent("Bếp Trường Nguyễn Du");
+    expect(
+      screen.queryByRole("textbox", { name: "Tham chiếu dòng 1" }),
+    ).not.toBeInTheDocument();
 
     const readsBefore = read.mock.calls.length;
     fireEvent.change(quantity, { target: { value: "26.000001" } });
@@ -1364,6 +1367,7 @@ describe("Planning sources Chakra workbench", () => {
       expect.arrayContaining([
         expect.objectContaining({
           source_row_reference: "fixture:1",
+          source_request_reference: "Yêu cầu bếp ngày 07/09",
           school_id: "school-0",
           requested_quantity: "26.000001",
         }),
