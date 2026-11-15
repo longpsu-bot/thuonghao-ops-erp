@@ -16,6 +16,23 @@ The owner's atmosphere correction supersedes the first v3 pass's charcoal shell 
 
 ## Color architecture
 
+### Staff palette follow-up — 15 November 2026
+
+Staff asked for a deeper, livelier green and supplied a sage-green workspace
+reference. Navigation uses deep green `#052F25` and primary actions use
+`#075C46`. The tab strip and table headings use pale sage `#E7F1EB`,
+toolbars use `#F3F8F4`, and selected rows use `#D9EDE1` with the existing
+green edge. White work surfaces and visible separators keep dense tables easy
+to scan. The palette supersedes the ivory and eucalyptus values in the dated
+trial below. Existing status colors retain their roles.
+
+The [desktop Menu capture](../testing/artifacts/atlas-p2-desktop-20261110/menu-sage-20261115.png)
+shows the palette in the local review fixture. The theme suite passed 51 tests.
+Chromium opened all 13 workbenches at 1366 × 768. The four-workbench desktop
+checks passed 98 assertions across 1366, 1440 and 1920px. Supplier Allocation
+retained its selected-row edge in three color-vision simulations.
+Rollback is a revert of the theme and its accompanying tests and documentation.
+
 ### Workbench hierarchy amendment — 29 October 2026
 
 The approved [hierarchy rollout](atlas-workbench-hierarchy-rollout.md) applies

@@ -57,7 +57,7 @@ describe("Atlas v3 color and typography floors", () => {
         .slice(1)
         .match(/../g)!
         .map((v) => parseInt(v, 16));
-      expect(r, name).toBeGreaterThan(g);
+      expect(g, name).toBeGreaterThan(r);
       expect(g, name).toBeGreaterThan(b);
     }
     expect(color("fg.primary")).toBe(color("neutral.900"));
@@ -71,6 +71,7 @@ describe("Atlas v3 color and typography floors", () => {
     ["fg.muted", "bg.workbench", 4.5],
     ["fg.placeholder", "bg.workbench", 4.5],
     ["fg.primary", "bg.workspace", 7],
+    ["fg.primary", "bg.tableHeader", 7],
     ["fg.secondary", "bg.toolbar", 7],
     ["fg.muted", "bg.workspace", 4.5],
     ["fg.placeholder", "bg.toolbar", 4.5],
@@ -78,6 +79,7 @@ describe("Atlas v3 color and typography floors", () => {
     ["fg.inverse", "bg.navigation", 7],
     ["fg.navBrand", "bg.navigation", 4.5],
     ["fg.navMuted", "bg.navigation", 4.5],
+    ["fg.navMuted", "bg.navigationHover", 4.5],
     ["border.default", "bg.workbench", 3],
     ["border.strong", "bg.toolbar", 3],
     ["border.strong", "bg.workbench", 3],
@@ -90,6 +92,7 @@ describe("Atlas v3 color and typography floors", () => {
     ["focus.ring", "bg.toolbar", 3],
     ["focus.ring", "bg.selected", 3],
     ["focus.inverse", "bg.navigation", 3],
+    ["focus.inverse", "bg.navigationHover", 3],
     ["fg.disabled", "bg.disabled", 4.5],
     ["status.danger", "bg.danger", 4.5],
     ["status.warning", "bg.warning", 4.5],
