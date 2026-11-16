@@ -410,7 +410,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
             >
               {definition.label}
             </Box>
-            <AtlasWorkbenchScope active={active}>
+            <AtlasWorkbenchScope active={active} icon={definition.icon}>
               <WorkbenchContent
                 definition={definition}
                 app={props}

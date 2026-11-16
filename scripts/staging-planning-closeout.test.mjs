@@ -845,6 +845,12 @@ test("real Confirmed Need rows distinguish one nonzero edit from pending zero de
   assert.equal(state.rendered_rows, 3);
   assert.equal(state.quantity_delta_rows, 1);
   assert.equal(state.quantity_adjustment_rows, 1);
+  assert.deepEqual(
+    [...document.querySelectorAll('[data-role="quantity-delta"]')].map(
+      (value) => value.textContent.trim(),
+    ),
+    ["+0,01 kg", "—", "—"],
+  );
   const candidate = await browserEvaluate(
     planningBrowser.editableConfirmedNeedCandidateExpression(),
   );

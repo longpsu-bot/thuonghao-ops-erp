@@ -75,8 +75,10 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
     if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
   }, [filtersOpen]);
   useEffect(() => {
-    if (active && reviewOpen) reviewPanel.current?.focus();
-    else if (active && wasReviewOpen.current) reviewTrigger.current?.focus();
+    if (active && reviewOpen)
+      reviewPanel.current?.focus({ preventScroll: true });
+    else if (active && wasReviewOpen.current)
+      reviewTrigger.current?.focus({ preventScroll: true });
     wasReviewOpen.current = reviewOpen;
   }, [reviewOpen, active]);
   useEffect(() => {

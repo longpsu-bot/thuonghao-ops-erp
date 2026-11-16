@@ -1177,10 +1177,19 @@ describe("Planning sources Chakra workbench", () => {
     const school = await screen.findByRole("combobox", {
       name: "Trường cần thêm hàng",
     });
+    expect(
+      screen.getByRole("heading", { name: "Thêm hàng đặt riêng" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Trường cần thêm hàng", { selector: "label" }),
+    ).toHaveAttribute("for", school.id);
+    expect(
+      screen.getByRole("table", { name: "Hàng đặt riêng" }),
+    ).toBeInTheDocument();
     const category = screen.getByRole("combobox", {
       name: "Nguồn của dòng mới",
     });
-    const add = screen.getByRole("button", { name: "+ Thêm dòng" });
+    const add = screen.getByRole("button", { name: "Thêm dòng" });
     expect(
       screen.queryByRole("combobox", { name: "Cách tính nhu cầu" }),
     ).not.toBeInTheDocument();
@@ -1267,8 +1276,8 @@ describe("Planning sources Chakra workbench", () => {
     fireEvent.click(
       await screen.findByRole("option", { name: /Trường Nguyễn Du/ }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
-    fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
+    fireEvent.click(screen.getByRole("button", { name: "Thêm dòng" }));
+    fireEvent.click(screen.getByRole("button", { name: "Thêm dòng" }));
     expect(
       screen.queryByRole("combobox", {
         name: "Cách tính nhu cầu",
@@ -1318,6 +1327,9 @@ describe("Planning sources Chakra workbench", () => {
       screen.queryByRole("combobox", { name: "Trường dòng 1" }),
     ).not.toBeInTheDocument();
     expect(quantity.closest("tr")).toHaveTextContent("Bếp Trường Nguyễn Du");
+    expect(
+      screen.queryByRole("textbox", { name: "Tham chiếu dòng 1" }),
+    ).not.toBeInTheDocument();
 
     const readsBefore = read.mock.calls.length;
     fireEvent.change(quantity, { target: { value: "26.000001" } });
@@ -1355,6 +1367,7 @@ describe("Planning sources Chakra workbench", () => {
       expect.arrayContaining([
         expect.objectContaining({
           source_row_reference: "fixture:1",
+          source_request_reference: "Yêu cầu bếp ngày 07/09",
           school_id: "school-0",
           requested_quantity: "26.000001",
         }),
@@ -1412,7 +1425,7 @@ describe("Planning sources Chakra workbench", () => {
     expect(
       screen.queryByRole("combobox", { name: "Trường cần thêm hàng" }),
     ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
+    fireEvent.click(screen.getByRole("button", { name: "Thêm dòng" }));
     expect(
       screen.getByRole("textbox", { name: "Số lượng dòng 3" }).closest("tr"),
     ).toHaveTextContent("Bếp Trường Lê Lợi");

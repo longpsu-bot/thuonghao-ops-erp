@@ -1,7 +1,12 @@
-import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
+import { Icon, Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import type { CSSProperties } from "react";
-import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
+import {
+  AtlasSortableColumnHeader,
+  atlasRecordSortHeader,
+} from "../AtlasSortableColumnHeader";
+import { atlasVisuallyHidden } from "../AtlasTaskTabs";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { AtlasQuantityContext } from "../AtlasQuantityContext";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
@@ -137,11 +142,68 @@ export function ConfirmedNeedTable({
         w="full"
         tableLayout="fixed"
         css={{
-          "@media(max-width:47.99rem)": {
-            "& col:nth-of-type(4)": { width: "calc(100vw - 48px)" },
-            "& td[data-field=identity], & th:first-of-type": {
-              position: "static",
+          "@media(min-width:48rem)": {
+            "& [data-role=service-date], & [data-row-secondary]": {
+              display: "inline",
             },
+            "& [data-row-secondary]::before": { content: '" · "' },
+          },
+          "@media(max-width:47.99rem)": {
+            minWidth: 0,
+            "& colgroup": { display: "none" },
+            "& thead th:has(button)": {
+              flex: "1 1 calc(33.333% - var(--atlas-spacing-xs))",
+              height: "auto",
+            },
+            "& tbody": { display: "block" },
+            "& tbody tr": {
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gridTemplateAreas:
+                '"identity identity" "ingredient ingredient" "proposal confirmation" "delta delta" "reason reason"',
+              columnGap: "var(--atlas-spacing-md)",
+              rowGap: "var(--atlas-spacing-xs)",
+              padding: "var(--atlas-spacing-sm)",
+              borderBottom: "1px solid var(--atlas-colors-border-strong)",
+            },
+            "& td": {
+              display: "block",
+              minWidth: 0,
+              padding: 0,
+              border: 0,
+              textAlign: "start",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
+            },
+            "& td::after": { display: "none" },
+            "& td[data-field=identity]": {
+              gridArea: "identity",
+              position: "static",
+              display: "flex",
+              flexWrap: "wrap",
+              columnGap: "var(--atlas-spacing-sm)",
+            },
+            "& [data-role=recipient]": { width: "100%" },
+            "& td[data-field=ingredient]": {
+              gridArea: "ingredient",
+              paddingBottom: "var(--atlas-spacing-xs)",
+              borderBottom: "1px solid var(--atlas-colors-border-subtle)",
+            },
+            "& td[data-field=operational-proposal]": { gridArea: "proposal" },
+            "& td[data-field=confirmation]": { gridArea: "confirmation" },
+            "& td[data-field=delta]": {
+              gridArea: "delta",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+            },
+            "& td[data-field=reason]": {
+              gridArea: "reason",
+              paddingTop: "var(--atlas-spacing-sm)",
+              borderTop: "1px solid var(--atlas-colors-border-subtle)",
+            },
+            // Row facts are visible; retain the input's existing accessible description.
+            "& [data-quantity-context]": atlasVisuallyHidden,
           },
         }}
       >
@@ -149,11 +211,11 @@ export function ConfirmedNeedTable({
           <Table.Column w="var(--atlas-confirmed-school-width, 220px)" />
           <Table.Column w="var(--atlas-confirmed-ingredient-width, 180px)" />
           <Table.Column w="var(--atlas-confirmed-proposal-width, 140px)" />
-          <Table.Column w="var(--atlas-confirmed-quantity-width, 170px)" />
+          <Table.Column w="var(--atlas-confirmed-quantity-width, 260px)" />
           <Table.Column w="var(--atlas-confirmed-delta-width, 110px)" />
-          <Table.Column w="var(--atlas-confirmed-reason-width, 300px)" />
+          <Table.Column w="var(--atlas-confirmed-reason-width, 210px)" />
         </Table.ColumnGroup>
-        <Table.Header>
+        <Table.Header css={atlasRecordSortHeader}>
           <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
             <AtlasSortableColumnHeader
               label="Trường / nơi nhận"
@@ -201,7 +263,7 @@ export function ConfirmedNeedTable({
               h="var(--atlas-confirmed-need-header-height)"
               py="var(--atlas-layout-zero, 0)"
             >
-              Lý do / ghi chú
+              Lý do điều chỉnh
             </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
@@ -262,7 +324,11 @@ export function ConfirmedNeedTable({
                   <Text data-role="recipient" fontWeight="semibold">
                     {line.school.name}
                   </Text>
-                  <Text textStyle="helper" color="fg.muted">
+                  <Text
+                    data-role="service-date"
+                    textStyle="helper"
+                    color="fg.muted"
+                  >
                     {line.service_date.split("-").reverse().join("/")}
                   </Text>
                   {!duplicateRecipient && (
@@ -276,7 +342,9 @@ export function ConfirmedNeedTable({
                   )}
                   {attention && (
                     <Text textStyle="helper" color="status.warning">
-                      ⚠{" "}
+                      <Icon asChild aria-hidden="true" mr="xs">
+                        <WarningCircle />
+                      </Icon>
                       {confirmedNeedConfirmationStateLabel(
                         line.confirmation_state,
                       )}
@@ -293,6 +361,14 @@ export function ConfirmedNeedTable({
                   textAlign="end"
                   whiteSpace="nowrap"
                 >
+                  <Text
+                    hideFrom="md"
+                    aria-hidden="true"
+                    textStyle="label"
+                    color="fg.muted"
+                  >
+                    Đề xuất vận hành
+                  </Text>
                   <Text textStyle="quantityInline">
                     {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
                     <Box
@@ -319,6 +395,14 @@ export function ConfirmedNeedTable({
                         : undefined,
                   }}
                 >
+                  <Text
+                    hideFrom="md"
+                    aria-hidden="true"
+                    textStyle="label"
+                    color="fg.muted"
+                  >
+                    Số lượng xác nhận
+                  </Text>
                   <AtlasQuantityContext
                     id={`${id}-quantity-${line.confirmed_need_line_id}`}
                     recipient={line.school.name}
@@ -332,53 +416,59 @@ export function ConfirmedNeedTable({
                     date={line.service_date}
                     source="Xác nhận nhu cầu"
                   />
-                  <Text hideFrom="md" textStyle="helper" color="fg.muted">
-                    Đề xuất:{" "}
-                    {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
-                    {confirmedNeedUnitLabel(line.controlled_unit)}
-                  </Text>
-                  <Text textStyle="helper" color="fg.muted" mb="xs">
-                    {line.confirmed_quantity_after === null
-                      ? "Chưa lưu"
-                      : `Đã lưu: ${exactQuantityDisplay(line.confirmed_quantity_after)} ${confirmedNeedUnitLabel(line.controlled_unit)}`}
-                  </Text>
                   <Box
-                    display="grid"
-                    gridTemplateColumns="minmax(0, 1fr) auto"
-                    gap="xs"
+                    display={{ base: "block", md: "grid" }}
+                    gridTemplateColumns="minmax(0, 1fr) minmax(0, var(--atlas-layout-confirmed-input-width, 160px))"
+                    gap="sm"
                     alignItems="center"
                   >
-                    <Input
-                      aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
-                      inputMode="decimal"
-                      textAlign="end"
-                      value={
-                        draft.quantity_entered
-                          ? draft.exact_quantity
-                          : confirmedNeedInputDisplay(draft.exact_quantity)
-                      }
-                      readOnly={historical}
-                      disabled={!editable}
-                      aria-invalid={Boolean(error)}
-                      borderColor={
-                        error
-                          ? "status.danger"
-                          : adjusted
-                            ? "border.interactive"
-                            : undefined
-                      }
-                      fontWeight={adjusted ? "semibold" : "medium"}
-                      aria-describedby={`${id}-quantity-${line.confirmed_need_line_id}${error || historical ? ` ${description}` : ""}`}
-                      onChange={(e) =>
-                        onEdit(line.confirmed_need_line_id, {
-                          exact_quantity: e.target.value,
-                          quantity_entered: true,
-                        })
-                      }
-                    />
-                    <Text textStyle="unitInline" color="fg.muted">
-                      {confirmedNeedUnitLabel(line.controlled_unit)}
+                    <Text
+                      textStyle="helper"
+                      color="fg.muted"
+                      mb={{ base: "xs", md: "var(--atlas-layout-zero, 0)" }}
+                    >
+                      {line.confirmed_quantity_after === null
+                        ? "Chưa lưu"
+                        : `Đã lưu: ${exactQuantityDisplay(line.confirmed_quantity_after)} ${confirmedNeedUnitLabel(line.controlled_unit)}`}
                     </Text>
+                    <Box
+                      display="grid"
+                      gridTemplateColumns="minmax(0, 1fr) auto"
+                      gap="xs"
+                      alignItems="center"
+                    >
+                      <Input
+                        aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
+                        inputMode="decimal"
+                        textAlign="end"
+                        value={
+                          draft.quantity_entered
+                            ? draft.exact_quantity
+                            : confirmedNeedInputDisplay(draft.exact_quantity)
+                        }
+                        readOnly={historical}
+                        disabled={!editable}
+                        aria-invalid={Boolean(error)}
+                        borderColor={
+                          error
+                            ? "status.danger"
+                            : adjusted
+                              ? "border.interactive"
+                              : undefined
+                        }
+                        fontWeight={adjusted ? "semibold" : "medium"}
+                        aria-describedby={`${id}-quantity-${line.confirmed_need_line_id}${error || historical ? ` ${description}` : ""}`}
+                        onChange={(e) =>
+                          onEdit(line.confirmed_need_line_id, {
+                            exact_quantity: e.target.value,
+                            quantity_entered: true,
+                          })
+                        }
+                      />
+                      <Text textStyle="unitInline" color="fg.muted">
+                        {confirmedNeedUnitLabel(line.controlled_unit)}
+                      </Text>
+                    </Box>
                   </Box>
                   {historical && (
                     <Text id={description} textStyle="helper" color="fg.muted">
@@ -391,8 +481,20 @@ export function ConfirmedNeedTable({
                   textAlign="end"
                   whiteSpace="nowrap"
                 >
+                  <Text
+                    hideFrom="md"
+                    aria-hidden="true"
+                    textStyle="label"
+                    color="fg.muted"
+                  >
+                    Thay đổi
+                  </Text>
                   {delta ? (
-                    <Text textStyle="quantityInline" color="fg.primary">
+                    <Text
+                      data-role="quantity-delta"
+                      textStyle="quantityInline"
+                      color="fg.primary"
+                    >
                       {exactQuantityDisplay(delta)}{" "}
                       <Box
                         as="span"
@@ -404,7 +506,9 @@ export function ConfirmedNeedTable({
                       </Box>
                     </Text>
                   ) : (
-                    "—"
+                    <Box as="span" data-role="quantity-delta">
+                      —
+                    </Box>
                   )}
                 </Table.Cell>
                 <Table.Cell
@@ -412,6 +516,17 @@ export function ConfirmedNeedTable({
                   minW="var(--atlas-layout-reason-width, 255px)"
                 >
                   <Box display="grid" gap="xs">
+                    {(showReasonChrome ||
+                      (correctionReason !== undefined && changed)) && (
+                      <Text
+                        hideFrom="md"
+                        aria-hidden="true"
+                        textStyle="label"
+                        color="fg.muted"
+                      >
+                        Lý do điều chỉnh
+                      </Text>
+                    )}
                     {correctionReason !== undefined ? (
                       <Text textStyle="helper">
                         {changed

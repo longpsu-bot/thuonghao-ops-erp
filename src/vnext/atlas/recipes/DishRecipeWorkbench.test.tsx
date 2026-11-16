@@ -218,7 +218,7 @@ describe("Công thức operator workbench", () => {
     const row = screen
       .getByText("Canh bí đỏ thịt bằm", { exact: true })
       .closest("tr")!;
-    expect(within(row).getByText("🔒 Công thức gốc đã khóa")).toBeVisible();
+    expect(within(row).getByText("Công thức gốc đã khóa")).toBeVisible();
     expect(within(row).getByText("Chỉnh qua Lệnh điều chỉnh")).toBeVisible();
     expect(
       within(row).getByRole("button", { name: /Xem công thức/ }),
@@ -240,7 +240,7 @@ describe("Công thức operator workbench", () => {
       .getByText("Canh bí đỏ thịt bằm", { exact: true })
       .closest("tr")!;
     expect(
-      within(row).queryByText("🔒 Công thức gốc đã khóa"),
+      within(row).queryByText("Công thức gốc đã khóa"),
     ).not.toBeInTheDocument();
     expect(
       within(row).getByRole("button", { name: /Sửa công thức/ }),

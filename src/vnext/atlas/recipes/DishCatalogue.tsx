@@ -1,5 +1,6 @@
 import { atlasVisuallyHidden } from "../AtlasTaskTabs";
-import { Box, Button, Table, Text } from "@chakra-ui/react";
+import { Icon, Box, Button, Table, Text } from "@chakra-ui/react";
+import { LockSimple } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
 export const dishStatusLabel = {
@@ -300,7 +301,10 @@ export function DishCatalogue({
                         {baseRecipeState === "LOCKED" ? (
                           <>
                             <Text fontWeight="semibold">
-                              🔒 Công thức gốc đã khóa
+                              <Icon asChild aria-hidden="true" mr="xs">
+                                <LockSimple />
+                              </Icon>
+                              Công thức gốc đã khóa
                             </Text>
                             <Text textStyle="helper" color="fg.muted">
                               Chỉnh qua Lệnh điều chỉnh

@@ -198,7 +198,7 @@ it("retains separate Menu, Attendance, direct-order and Need owners without navi
   });
   expect(schoolOption.id).toMatch(/school-school-1$/);
   fireEvent.click(schoolOption);
-  fireEvent.click(screen.getByRole("button", { name: "+ Thêm dòng" }));
+  fireEvent.click(screen.getByRole("button", { name: "Thêm dòng" }));
   const pantryQuantity = await screen.findByRole("textbox", {
     name: "Số lượng dòng 1",
   });

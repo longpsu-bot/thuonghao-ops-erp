@@ -1,4 +1,5 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
+import { Eye } from "@phosphor-icons/react";
 import {
   SCHOOL_FULFILMENT_STATUS_LABELS,
   type SchoolFulfilmentComparisonStatus,
@@ -300,6 +301,7 @@ export function SchoolFulfilmentTable({
                   w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
                   onClick={(event) => onSelect(row, event.currentTarget)}
                 >
+                  <Eye aria-hidden="true" />
                   Xem đối chiếu
                 </Button>
               </Table.Cell>

@@ -1,4 +1,5 @@
 import { Box, ChakraProvider } from "@chakra-ui/react";
+import type { Icon } from "@phosphor-icons/react";
 import {
   createContext,
   useContext,
@@ -12,24 +13,33 @@ import "./typography.css";
 const AtlasPortalContainerContext =
   createContext<RefObject<HTMLDivElement | null> | null>(null);
 const AtlasWorkbenchActiveContext = createContext(true);
+const AtlasWorkbenchIconContext = createContext<Icon | undefined>(undefined);
 
 export function useAtlasWorkbenchActive() {
   return useContext(AtlasWorkbenchActiveContext);
 }
 
+export function useAtlasWorkbenchIcon() {
+  return useContext(AtlasWorkbenchIconContext);
+}
+
 /** One shared Chakra system; each retained owner contains its own portals. */
 export function AtlasWorkbenchScope({
   active,
+  icon,
   children,
 }: {
   active: boolean;
+  icon?: Icon;
   children: ReactNode;
 }) {
   const portalRef = useRef<HTMLDivElement>(null);
   return (
     <AtlasWorkbenchActiveContext.Provider value={active}>
       <AtlasPortalContainerContext.Provider value={portalRef}>
-        {children}
+        <AtlasWorkbenchIconContext.Provider value={icon}>
+          {children}
+        </AtlasWorkbenchIconContext.Provider>
         <Box ref={portalRef} data-atlas-portal-root="" />
       </AtlasPortalContainerContext.Provider>
     </AtlasWorkbenchActiveContext.Provider>

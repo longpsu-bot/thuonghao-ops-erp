@@ -16,6 +16,37 @@ The owner's atmosphere correction supersedes the first v3 pass's charcoal shell 
 
 ## Color architecture
 
+### Staff palette follow-up — 15 November 2026
+
+Staff asked for a deeper, livelier green and supplied a sage-green workspace
+reference. Navigation uses deep green `#052F25` and primary actions use
+`#075C46`. The tab strip and table headings use pale sage `#E7F1EB`,
+toolbars use `#F3F8F4`, and selected rows use `#D9EDE1` with the existing
+green edge. White work surfaces and visible separators keep dense tables easy
+to scan. The palette supersedes the ivory and eucalyptus values in the dated
+trial below. Existing status colors retain their roles.
+
+The [desktop Menu capture](../testing/artifacts/atlas-p2-desktop-20261110/menu-sage-20261115.png)
+shows the palette in the local review fixture. The theme suite passed 51 tests.
+Chromium opened all 13 workbenches at 1366 × 768. The four-workbench desktop
+checks passed 98 assertions across 1366, 1440 and 1920px. Supplier Allocation
+retained its selected-row edge in three color-vision simulations.
+Rollback is a revert of the theme and its accompanying tests and documentation.
+
+### Desktop workspace refinement — 16 November 2026
+
+The desktop workbench title pairs the existing module icon with a pale sage tile
+on the white work surface. A bottom rule separates the title from the controls,
+and a vertical rule sets off the current date and scope. The active tab uses
+green text and icon with a stronger top edge. A calendar icon and a divider
+group the business date separately from the account menu.
+
+The [updated desktop Menu capture](../testing/artifacts/atlas-p2-desktop-20261110/menu-polish-20261116.png)
+shows the shared treatment in the local review fixture. The heading icon tile
+is shown only on desktop to preserve space for controls at narrow widths.
+Confirmed Need uses a compact action strip on narrow screens so the first
+quantity input clears the sticky footer.
+
 ### Workbench hierarchy amendment — 29 October 2026
 
 The approved [hierarchy rollout](atlas-workbench-hierarchy-rollout.md) applies
@@ -139,6 +170,15 @@ distribution finding is fixed and its follow-up review has no remaining findings
 [before/after comparison](../testing/artifacts/atlas-sanzo-wada/typography-comparison.png).
 Physical iOS/Android text rendering and focus zoom, hosted workflows and exports
 were not re-certified. Full routine validation remains owned by GitHub Actions.
+
+### Desktop reading follow-up — 13 November 2026
+
+Keep the bundled Inter v4.1 face. Table text, sortable headers and inline
+quantities use 15px at every width. Desktop inputs use 15px and narrow inputs
+use 16px. Numeric inputs use tabular figures, so digits occupy equal widths as
+values change. The School index and type columns reserve room for the larger
+header text and sort icons. The 14px desktop body style still serves ordinary
+labels and actions, and the 13px helper style serves secondary details.
 
 ### Allocation composition follow-up — 28 October 2026
 

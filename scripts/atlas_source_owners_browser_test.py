@@ -44,7 +44,7 @@ with sync_playwright() as p:
         attendance.fill('123')
         launch(page,'Hàng đặt riêng')
         page.get_by_role('combobox',name='Trường thêm dòng',exact=True).select_option('school-1')
-        page.get_by_role('button',name='+ Thêm dòng',exact=True).click()
+        page.get_by_role('button',name='Thêm dòng',exact=True).click()
         pantry=page.get_by_role('textbox',name='Số lượng dòng 1',exact=True,include_hidden=True)
         pantry.fill('3,5')
         launch(page,'Thực đơn')

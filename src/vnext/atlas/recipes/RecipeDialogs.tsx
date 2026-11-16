@@ -9,6 +9,8 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
+import { AtlasXlsxPicker } from "../AtlasXlsxPicker";
+import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
 import { useAtlasWorkbenchActive } from "../AtlasVNextProvider";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
 
@@ -65,6 +67,7 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
   const [source, setSource] = useState("");
   const [date, setDate] = useState(c.date);
   const [reason, setReason] = useState("");
+  const [fileName, setFileName] = useState("");
   const initialDate = useRef(date);
   useEffect(() => {
     c.setUtilityDirty(
@@ -161,18 +164,24 @@ export function RecipeUtilityDialog({ c }: { c: DishRecipeController }) {
             )}
             {kind === "import" && (
               <>
-                <Field.Root>
-                  <Field.Label>Chọn file Excel .xlsx</Field.Label>
-                  <Input
-                    type="file"
-                    accept=".xlsx"
-                    disabled={!c.canCommand}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) void c.parseWorkbook(file);
-                    }}
-                  />
-                </Field.Root>
+                <AtlasXlsxPicker
+                  inputLabel="Chọn file Excel .xlsx"
+                  variant="secondary"
+                  size="sm"
+                  h={atlasWorkbarControlHeight}
+                  disabled={!c.canCommand}
+                  onFile={(file) => {
+                    setFileName(file.name);
+                    void c.parseWorkbook(file);
+                  }}
+                >
+                  Chọn tệp XLSX
+                </AtlasXlsxPicker>
+                {fileName && (
+                  <Text mt="xs" textStyle="helper" overflowWrap="anywhere">
+                    {fileName}
+                  </Text>
+                )}
                 {c.workbook && (
                   <Box mt="sm">
                     <Text>

@@ -49,6 +49,7 @@ export function AtlasSortableColumnHeader<Key extends string>({
         py="xs"
         justifyContent={textAlign === "end" ? "flex-end" : "flex-start"}
         gap="xs"
+        textStyle="table"
         color="fg.default"
         aria-label={`Sắp xếp theo ${label}`}
         onClick={() => onSort(columnKey)}

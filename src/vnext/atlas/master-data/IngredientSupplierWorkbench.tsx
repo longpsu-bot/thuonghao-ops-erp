@@ -20,6 +20,7 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
+import { Plus } from "@phosphor-icons/react";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasWorkbar, AtlasWorkbarActions } from "../AtlasWorkbar";
 import type { IngredientSupplierMasterDataApi } from "../bridges/ingredientSupplierMasterData";
@@ -465,6 +466,7 @@ function IngredientToolbar({
           disabled={Boolean(c.lock)}
           onClick={(event) => onCreate(event.currentTarget)}
         >
+          <Plus aria-hidden="true" />
           Tạo nguyên liệu
         </Button>
       </AtlasWorkbarActions>
@@ -516,6 +518,7 @@ function SupplierToolbar({
           disabled={Boolean(c.lock)}
           onClick={(event) => onCreate(event.currentTarget)}
         >
+          <Plus aria-hidden="true" />
           Tạo nhà cung ứng
         </Button>
       </AtlasWorkbarActions>

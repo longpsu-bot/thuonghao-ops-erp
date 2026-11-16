@@ -69,15 +69,25 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
         </Text>
       </Flex>
       {editable ? (
-        <Field.Root mt="sm" invalid={!basisValid}>
-          <Field.Label>Số suất áp dụng cho định lượng</Field.Label>
+        <Field.Root
+          mt="sm"
+          invalid={!basisValid}
+          display={{ base: "flex", md: "grid" }}
+          gridTemplateColumns="auto var(--atlas-layout-basis-width, 120px) minmax(0, 1fr)"
+          alignItems={{ base: "stretch", md: "center" }}
+          columnGap="md"
+          rowGap="xs"
+        >
+          <Field.Label gridColumn="1" gridRow="1">
+            Số suất áp dụng cho định lượng
+          </Field.Label>
           <AtlasQuantityContext
             recipient={c.dish?.dish_name}
             date={c.date}
             source="Công thức gốc · Số suất áp dụng"
             unit="suất"
           />
-          <Text textStyle="helper" color="fg.muted">
+          <Text textStyle="helper" color="fg.muted" gridColumn="3" gridRow="1">
             {c.effective
               ? `Đã lưu: ${c.effective.base_authoring.basis_portions} suất`
               : "Chưa lưu"}
@@ -86,11 +96,15 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
             value={draft.basis}
             inputMode="numeric"
             maxW="var(--atlas-layout-basis-width, 160px)"
+            gridColumn="2"
+            gridRow="1"
             onChange={(e) =>
               c.setRecipeDraft({ ...draft, basis: e.target.value })
             }
           />
-          <Field.ErrorText>Nhập số suất nguyên dương.</Field.ErrorText>
+          <Field.ErrorText gridColumn="2 / -1" gridRow="2">
+            Nhập số suất nguyên dương.
+          </Field.ErrorText>
         </Field.Root>
       ) : (
         <Text mt="sm">Số suất áp dụng cho định lượng: {draft.basis}</Text>
@@ -135,12 +149,12 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
           tableLayout="fixed"
         >
           <Table.ColumnGroup>
-            <Table.Column w="var(--atlas-recipe-ingredient-width, 160px)" />
-            <Table.Column w="var(--atlas-recipe-quantity-width, 110px)" />
-            <Table.Column w="var(--atlas-recipe-unit-width, 140px)" />
+            <Table.Column w="var(--atlas-recipe-ingredient-width, 200px)" />
+            <Table.Column w="var(--atlas-recipe-quantity-width, 160px)" />
+            <Table.Column w="var(--atlas-recipe-unit-width, 120px)" />
             <Table.Column />
             {editable && (
-              <Table.Column w="var(--atlas-recipe-action-width, 80px)" />
+              <Table.Column w="var(--atlas-recipe-action-width, 96px)" />
             )}
           </Table.ColumnGroup>
           <Table.Header

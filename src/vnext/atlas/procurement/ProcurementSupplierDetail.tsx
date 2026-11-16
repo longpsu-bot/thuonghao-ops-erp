@@ -17,7 +17,7 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import { Info, Trash } from "@phosphor-icons/react";
+import { Info, Plus, Trash, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import type { CSSProperties } from "react";
 import {
@@ -382,7 +382,10 @@ export function ProcurementSupplierDetail({
               p="sm"
               borderRadius="control"
             >
-              ⚠ {split.supplier_name} không còn phù hợp (
+              <Icon asChild aria-hidden="true" mr="xs">
+                <WarningCircle />
+              </Icon>
+              {split.supplier_name} không còn phù hợp (
               {quantity(split.allocated_quantity)}{" "}
               {allocationFamilyUnitLabel(row)}). Cần chọn nhà cung ứng thay thế;
               phần đã lưu không tự chuyển.
@@ -624,7 +627,8 @@ export function ProcurementSupplierDetail({
               lg: "compact",
             }}
           >
-            + Thêm nhà cung ứng
+            <Plus aria-hidden="true" />
+            Thêm nhà cung ứng
           </Button>
           {adding && (
             <Stack mt="sm" gap="sm">
@@ -692,7 +696,10 @@ export function ProcurementSupplierDetail({
           "Máy chủ chưa cho phép tiếp tục phân bổ này.",
         ).map((message) => (
           <Text key={message} role="alert" color="status.warning">
-            ⚠ {message}
+            <Icon asChild aria-hidden="true" mr="xs">
+              <WarningCircle />
+            </Icon>
+            {message}
           </Text>
         ))}
       </Stack>

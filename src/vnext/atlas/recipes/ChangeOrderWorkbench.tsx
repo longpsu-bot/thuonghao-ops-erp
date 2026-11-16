@@ -10,6 +10,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
+import { Plus } from "@phosphor-icons/react";
 import {
   useEffect,
   useImperativeHandle,
@@ -263,6 +264,7 @@ export function ChangeOrderWorkbench(
               c.openCreate();
             }}
           >
+            <Plus aria-hidden="true" />
             Tạo lệnh điều chỉnh
           </Button>
         </AtlasWorkbarActions>

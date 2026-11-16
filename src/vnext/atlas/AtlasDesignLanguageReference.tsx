@@ -14,7 +14,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { Info, Warning } from "@phosphor-icons/react";
+import { Info, Warning, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { AtlasRefreshButton } from "./AtlasRefreshButton";
 import { AtlasDateInput } from "./AtlasDateInput";
@@ -365,7 +365,10 @@ export function AtlasDesignLanguageReference({
                       <Table.Cell minW="var(--atlas-layout-status-min-width, 110px)">
                         {row.attention ? (
                           <Text color="status.warning" fontWeight="semibold">
-                            ⚠ {row.status}
+                            <Icon asChild aria-hidden="true" mr="xs">
+                              <WarningCircle />
+                            </Icon>
+                            {row.status}
                           </Text>
                         ) : (
                           <Text data-row-secondary="" color="fg.muted">
