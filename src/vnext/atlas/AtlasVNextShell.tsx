@@ -9,6 +9,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import {
+  CalendarBlank,
   CaretDown,
   Circle,
   List,
@@ -96,13 +97,14 @@ export function AtlasVNextShell({
       ? "Chưa lưu"
       : (statuses[id]?.attention ??
         (statuses[id]?.blocked ? "Cần giải quyết" : ""));
-  const workbenchIcon = (id: AtlasWorkbenchId) => {
+  const workbenchIcon = (id: AtlasWorkbenchId, selected = false) => {
     const WorkbenchIcon = destinations.find((item) => item.id === id)?.icon;
     return WorkbenchIcon ? (
       <Icon
         asChild
         flexShrink="0"
         boxSize="var(--atlas-workspace-icon-size, 18px)"
+        color={selected ? "fg.brand" : undefined}
       >
         <WorkbenchIcon aria-hidden="true" />
       </Icon>
@@ -284,7 +286,7 @@ export function AtlasVNextShell({
         >
           <List size={22} aria-hidden="true" />
         </Button>
-        <Text textStyle="brandCompact" flexShrink="0" color="fg.navBrand">
+        <Text textStyle="brandCompact" flexShrink="0" color="fg.inverse">
           ATLAS
         </Text>
         <Flex
@@ -295,10 +297,19 @@ export function AtlasVNextShell({
           minW="var(--atlas-layout-zero, 0)"
         >
           {desktop && (
-            <Text textStyle="helper" color="fg.navMuted">
-              Hôm nay:{" "}
-              {formatVietnamBusinessDate(now).replace(/^Hôm nay: /, "")}
-            </Text>
+            <Flex
+              align="center"
+              gap="xs"
+              pe="sm"
+              borderInlineEndWidth="var(--atlas-layout-edge, 1px)"
+              borderColor="bg.navigationHover"
+              color="fg.navMuted"
+            >
+              <CalendarBlank size={16} aria-hidden="true" />
+              <Text textStyle="helper" fontVariantNumeric="tabular-nums">
+                {formatVietnamBusinessDate(now)}
+              </Text>
+            </Flex>
           )}
           <Button
             variant="utility"
@@ -501,6 +512,10 @@ export function AtlasVNextShell({
                       : "var(--atlas-layout-edge, 1px)",
                   borderColor:
                     id === activeModule ? "border.strong" : "border.default",
+                  borderTopWidth:
+                    id === activeModule
+                      ? "var(--atlas-workspace-tab-active-edge, 2px)"
+                      : undefined,
                   bg: id === activeModule ? "bg.workbench" : "bg.toolbar",
                 }}
                 pr="xs"
@@ -521,7 +536,7 @@ export function AtlasVNextShell({
                   aria-keyshortcuts="Delete"
                   tabIndex={id === activeModule ? 0 : -1}
                   variant="utility"
-                  color={id === activeModule ? "fg.default" : "fg.secondary"}
+                  color={id === activeModule ? "fg.brand" : "fg.secondary"}
                   fontWeight={id === activeModule ? "semibold" : "normal"}
                   h="compact"
                   px="sm"
@@ -531,7 +546,7 @@ export function AtlasVNextShell({
                   onClick={() => select(id)}
                   onKeyDown={(event) => tabKeys(event, id)}
                 >
-                  {workbenchIcon(id)}
+                  {workbenchIcon(id, id === activeModule)}
                   {label(id)}
                   {marker(id) && (
                     <Box

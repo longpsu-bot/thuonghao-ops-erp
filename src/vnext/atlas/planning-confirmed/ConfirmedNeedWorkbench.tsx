@@ -569,7 +569,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 role="group"
                 aria-label="Thao tác xác nhận nhu cầu"
                 data-atlas-persistent-actions="true"
-                p="md"
+                px="md"
+                py={{ base: "sm", lg: "md" }}
                 gap="sm"
                 justify="flex-end"
                 align="center"

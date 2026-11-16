@@ -33,6 +33,20 @@ checks passed 98 assertions across 1366, 1440 and 1920px. Supplier Allocation
 retained its selected-row edge in three color-vision simulations.
 Rollback is a revert of the theme and its accompanying tests and documentation.
 
+### Desktop workspace refinement — 16 November 2026
+
+The desktop workbench title pairs the existing module icon with a pale sage tile
+on the white work surface. A bottom rule separates the title from the controls,
+and a vertical rule sets off the current date and scope. The active tab uses
+green text and icon with a stronger top edge. A calendar icon and a divider
+group the business date separately from the account menu.
+
+The [updated desktop Menu capture](../testing/artifacts/atlas-p2-desktop-20261110/menu-polish-20261116.png)
+shows the shared treatment in the local review fixture. The heading icon tile
+is shown only on desktop to preserve space for controls at narrow widths.
+Confirmed Need uses a compact action strip on narrow screens so the first
+quantity input clears the sticky footer.
+
 ### Workbench hierarchy amendment — 29 October 2026
 
 The approved [hierarchy rollout](atlas-workbench-hierarchy-rollout.md) applies
