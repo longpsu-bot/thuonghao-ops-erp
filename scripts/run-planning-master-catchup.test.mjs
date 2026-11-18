@@ -46,6 +46,119 @@ afterEach(() => {
   for (const root of roots.splice(0))
     rmSync(root, { recursive: true, force: true });
 });
+describe("repeatable reviewed missing-Dish sync", () => {
+  it("selects missing active Dishes and refuses unreviewed target plan changes", async () => {
+    const { options, snapshot } = fixture();
+    snapshot.records.dishes = [
+      { legacy_id: "9", dish_status: "ACTIVE" },
+      { legacy_id: "10", dish_status: "ACTIVE" },
+      { legacy_id: "11", dish_status: "INACTIVE" },
+    ];
+    snapshot.snapshot_checksum = checksumOpsV1MasterSnapshot(snapshot);
+    const actions = (source) => {
+      const evidence = {
+        snapshot_id: source.snapshot_id,
+        snapshot_checksum: source.snapshot_checksum,
+        source_record_id: "23",
+      };
+      return [
+        { object_type: "RECIPE", action: "CREATE", source_evidence: evidence },
+        {
+          object_type: "RECIPE_VERSION",
+          action: "CREATE",
+          values: { source_evidence: evidence },
+          source_fingerprint: checksumOpsV1MasterSnapshot({
+            source_evidence: evidence,
+          }),
+        },
+      ];
+    };
+    const targetPlan = {
+      success: true,
+      status: "PREVIEW",
+      snapshot_checksum: snapshot.snapshot_checksum,
+      plan_checksum: planChecksum,
+      actions: actions(snapshot),
+      catchup_dish_ids: ["10"],
+    };
+    const setup = (plan = targetPlan) =>
+      vi
+        .fn()
+        .mockResolvedValueOnce([
+          { result: { migrations: ["20260101000000", "20260102000000"] } },
+        ])
+        .mockResolvedValueOnce([{ result: { dish_legacy_ids: ["9"] } }])
+        .mockResolvedValueOnce([{ result: plan }]);
+    const run = {
+      ...options,
+      snapshotFile: undefined,
+      reviewedSync: true,
+      extractSnapshot: async () => snapshot,
+      verifyCertification: async () => {},
+    };
+    const executePreview = setup();
+    const preview = await runPlanningMasterCatchup({
+      ...run,
+      executeTarget: executePreview,
+    });
+    expect(preview.reviewed_plan_checksum).toMatch(/^[a-f0-9]{64}$/);
+    expect(executePreview.mock.calls[2][1]).toContain("'[\"10\"]'::jsonb");
+    const executeChangedPlan = setup({
+      ...targetPlan,
+      mapping_fingerprint: "changed",
+    });
+    await expect(
+      runPlanningMasterCatchup({
+        ...run,
+        apply: true,
+        targetConfirmation: staging,
+        reviewedPlanChecksum: preview.reviewed_plan_checksum,
+        executeTarget: executeChangedPlan,
+      }),
+    ).rejects.toThrow("REVIEWED_PLANNING_PLAN_MISMATCH");
+    expect(executeChangedPlan).toHaveBeenCalledTimes(3);
+
+    const fresh = {
+      ...snapshot,
+      snapshot_id: "fresh-run",
+      exported_at: "2026-11-18T07:00:00.000Z",
+    };
+    fresh.snapshot_checksum = checksumOpsV1MasterSnapshot(fresh);
+    const freshPlan = {
+      ...targetPlan,
+      snapshot_checksum: fresh.snapshot_checksum,
+      plan_checksum: "d".repeat(64),
+      actions: actions(fresh),
+    };
+    const executeApply = setup(freshPlan)
+      .mockResolvedValueOnce([
+        {
+          result: {
+            ...freshPlan,
+            status: "APPLIED",
+            operational_data_unchanged: true,
+            unrelated_master_facts_unchanged: true,
+          },
+        },
+      ])
+      .mockResolvedValueOnce([
+        { result: { ...freshPlan, status: "REPLAYED" } },
+      ]);
+    const applied = await runPlanningMasterCatchup({
+      ...run,
+      apply: true,
+      extractSnapshot: async () => fresh,
+      targetConfirmation: staging,
+      reviewedPlanChecksum: preview.reviewed_plan_checksum,
+      executeTarget: executeApply,
+    });
+    expect(applied.replay_status).toBe("REPLAYED");
+    expect(executeApply.mock.calls[3][1]).toContain(
+      `,true,'${freshPlan.plan_checksum}'`,
+    );
+  });
+});
+
 function fixture() {
   const cwd = mkdtempSync(join(tmpdir(), "atlas-planning-catchup-test-"));
   roots.push(cwd);

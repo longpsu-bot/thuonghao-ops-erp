@@ -16,6 +16,13 @@ on:
         description: Exact Atlas Staging project confirmation for apply
         required: false
         type: string
+      reviewed_plan_checksum:
+        description: Reviewed checksum for missing-Dish catch-up apply
+        type: string
+      reviewed_sync:
+        description: Discover missing active Dishes and their dependencies for review
+        type: boolean
+        default: false
       planning_preview:
         description: Run the bounded Planning master catch-up instead of the full master load; apply=false is preview-only
         required: true
@@ -26,9 +33,24 @@ on:
         required: false
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      commit_sha:
+        required: true
+        type: string
+      apply:
+        required: true
+        type: boolean
+      target_project_ref:
+        type: string
+      reviewed_plan_checksum:
+        type: string
 
 permissions:
   contents: read
+
+env:
+  REVIEWED_SYNC: ${{ inputs.reviewed_sync || startsWith(github.workflow_ref, format('{0}/.github/workflows/atlas-staging-v1-sync.yml@', github.repository)) }}
 
 concurrency:
   group: atlas-staging-master-data-load
@@ -36,7 +58,7 @@ concurrency:
 
 jobs:
   load:
-    if: ${{ !inputs.planning_preview }}
+    if: ${{ startsWith(github.workflow_ref, format('{0}/.github/workflows/atlas-staging-master-data-load.yml@', github.repository)) && !inputs.planning_preview && !inputs.reviewed_sync }}
     name: Guarded master snapshot load and authenticated readback
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -50,7 +72,7 @@ jobs:
       - name: Verify exact current main before repository execution
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
-          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary }}
+          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary && 'true' || 'false' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -120,11 +142,14 @@ jobs:
           rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
 
   planning-preview:
-    if: ${{ inputs.planning_preview }}
+    if: ${{ inputs.planning_preview || startsWith(github.workflow_ref, format('{0}/.github/workflows/atlas-staging-v1-sync.yml@', github.repository)) }}
     name: Guarded bounded Planning catch-up preview or apply
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: atlas-staging
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -136,7 +161,7 @@ jobs:
           APPLY_REQUESTED: ${{ inputs.apply }}
           CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
           EXPECTED_PROJECT: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
-          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary }}
+          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary && 'true' || 'false' }}
         run: |
           set -euo pipefail
           [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
@@ -184,6 +209,7 @@ jobs:
           echo "ATLAS_STAGING_CA_BUNDLE=$bundle" >> "$GITHUB_ENV"
           pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
       - name: Fresh read-only V1 snapshot and deterministic dependency-closed plan
+        if: ${{ env.REVIEWED_SYNC != 'true' }}
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
           APPLY_REQUESTED: ${{ inputs.apply }}
@@ -221,7 +247,7 @@ jobs:
               > "$RUNNER_TEMP/planning-preview/planning-master-apply.json"
           fi
       - name: Read-only real Google fetch, strict parse and Preview
-        if: always()
+        if: ${{ always() && env.REVIEWED_SYNC != 'true' }}
         env:
           ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
@@ -236,7 +262,7 @@ jobs:
           export PLANNING_PREVIEW_REPORT_DIR="$RUNNER_TEMP/planning-preview"
           node scripts/verify-planning-weekly-menu.mjs
       - name: Save review report without raw source snapshot
-        if: always()
+        if: ${{ always() && env.REVIEWED_SYNC != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.apply && 'planning-master-apply' || inputs.diagnostic_boundary && 'planning-master-diagnostic-preview' || 'planning-master-preview' }}-${{ inputs.commit_sha }}
@@ -247,6 +273,28 @@ jobs:
             ${{ runner.temp }}/planning-preview/weekly-menu-read-only.json
           if-no-files-found: ignore
           retention-days: 7
+      - name: Preview or apply missing Dishes and dependencies
+        if: ${{ env.REVIEWED_SYNC == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          REVIEWED_PLAN_CHECKSUM: ${{ inputs.reviewed_plan_checksum }}
+          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary && 'true' || 'false' }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test "$DIAGNOSTIC_BOUNDARY" = "false"
+          args=(--commit-sha "$REQUESTED_SHA" --reviewed-sync)
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            [[ "$REVIEWED_PLAN_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
+            args+=(--apply --target-project-ref "$CONFIRMED_TARGET" --reviewed-plan-checksum "$REVIEWED_PLAN_CHECKSUM")
+          fi
+          node scripts/run-planning-master-catchup.mjs "${args[@]}"
       - name: Remove transient linked transport metadata
         if: always()
         run: |

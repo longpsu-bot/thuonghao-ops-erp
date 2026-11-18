@@ -1,0 +1,72 @@
+name: Atlas Staging V1 Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview master data and Change Order history, or apply one reviewed import
+        type: choice
+        options:
+          - preview
+          - apply-history
+          - apply-master
+        default: preview
+        required: true
+      reviewed_checksum:
+        description: Reviewed checksum from the corresponding preview; required for apply
+        type: string
+      target_project_ref:
+        description: Exact Atlas Staging project confirmation for apply
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: atlas-staging-v1-sync
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify main dispatch and apply confirmation
+        env:
+          MODE: ${{ inputs.mode }}
+          REVIEWED_CHECKSUM: ${{ inputs.reviewed_checksum }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          case "$MODE" in
+            preview) ;;
+            apply-history|apply-master)
+              test "$CONFIRMED_TARGET" = "rnzxmxiiqgtdevzregff"
+              [[ "$REVIEWED_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
+              ;;
+            *) exit 1 ;;
+          esac
+
+  master:
+    needs: validate
+    if: ${{ inputs.mode == 'preview' || inputs.mode == 'apply-master' }}
+    uses: ./.github/workflows/atlas-staging-master-data-load.yml
+    secrets: inherit
+    with:
+      commit_sha: ${{ github.sha }}
+      apply: ${{ inputs.mode == 'apply-master' }}
+      target_project_ref: ${{ inputs.target_project_ref }}
+      reviewed_plan_checksum: ${{ inputs.reviewed_checksum }}
+
+  history:
+    needs: validate
+    if: ${{ inputs.mode == 'preview' || inputs.mode == 'apply-history' }}
+    uses: ./.github/workflows/atlas-staging-recipe-history.yml
+    secrets: inherit
+    with:
+      commit_sha: ${{ github.sha }}
+      apply: ${{ inputs.mode == 'apply-history' }}
+      target_project_ref: ${{ inputs.target_project_ref }}
+      reviewed_content_checksum: ${{ inputs.reviewed_checksum }}

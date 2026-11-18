@@ -20,6 +20,18 @@ on:
         description: Exact Atlas Staging project confirmation for apply
         required: false
         type: string
+  workflow_call:
+    inputs:
+      commit_sha:
+        required: true
+        type: string
+      apply:
+        required: true
+        type: boolean
+      reviewed_content_checksum:
+        type: string
+      target_project_ref:
+        type: string
 
 permissions:
   contents: read
