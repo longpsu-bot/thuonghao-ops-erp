@@ -138,9 +138,13 @@ describe("Atlas v3 color and typography floors", () => {
       fontSize: { base: "16px", lg: "15px" },
       fontVariantNumeric: "tabular-nums",
     });
-    expect(atlasSystem.getRecipe("input").variants?.size?.md).toMatchObject({
-      textStyle: "input",
-    });
+    for (const size of ["sm", "md"] as const) {
+      expect(
+        atlasSystem.getRecipe("input").variants?.size?.[size],
+      ).toMatchObject({
+        textStyle: "input",
+      });
+    }
     expect(atlasSystem.getRecipe("textarea").variants?.size?.md).toMatchObject({
       textStyle: "input",
     });

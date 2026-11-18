@@ -28,6 +28,8 @@ Use Impeccable in **Operate** mode. Start each bounded change with a staff task,
 
 The shared **Chức năng** launcher applies these principles to the eight daily jobs and five configuration jobs. The two groups sit side by side when space permits. On phones the results scroll below the search field. Enter opens the sole matching destination after text composition finishes. Arrow keys still traverse results and Escape returns to the launcher trigger. Navigation follows [D-048](../decisions/decision-atlas-persistent-workspace.md).
 
+During **Hàng đặt riêng** review, **Lưu** is the primary action and the visible desktop **Thêm dòng** uses the secondary style. The **Thực đơn** table uses the remaining height of the active workbench after its context, filters, notices and visible footer. Compact and standard text inputs share the input type role (15px on desktop and 16px on narrow screens). Section headings, including **Cách hình thành nhu cầu**, use the section type role. See the [laptop and phone comparisons](../testing/artifacts/atlas-workbench-refinements-20261118/README.md).
+
 ## Color architecture
 
 ### Staff palette follow-up — 15 November 2026

@@ -202,7 +202,7 @@ export function PlanningPantryStage({
           </Field.Root>
           <Button
             ref={addButton}
-            variant="businessPrimary"
+            variant={c.preview ? "secondary" : "businessPrimary"}
             size="sm"
             h={atlasWorkbarControlHeight}
             disabled={!c.canEdit || !targetSchoolId || !targetPurpose}
