@@ -127,7 +127,7 @@ def main():
                 title_box = page.get_by_role("heading", name="Sĩ số", exact=True).bounding_box()
                 check(f"attendance-review-{width}: context stays visible", title_box["y"] >= 100, title_box)
                 capture("attendance-review", "Sĩ số")
-                review.get_by_role("button", name="Đóng", exact=True).click()
+                review.get_by_role("button", name="Quay lại chỉnh sửa", exact=True).first.click()
                 expect(page.get_by_role("button", name="Xem thay đổi", exact=True)).to_be_focused()
                 check(f"attendance-review-{width}: Close returns focus", True)
 

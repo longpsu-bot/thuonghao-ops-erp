@@ -30,6 +30,8 @@ The shared **Chức năng** launcher applies these principles to the eight daily
 
 During **Hàng đặt riêng** review, **Lưu** is the primary action and the visible desktop **Thêm dòng** uses the secondary style. The **Thực đơn** table uses the remaining height of the active workbench after its context, filters, notices and visible footer. Compact and standard text inputs share the input type role (15px on desktop and 16px on narrow screens). Section headings, including **Cách hình thành nhu cầu**, use the section type role. See the [laptop and phone comparisons](../testing/artifacts/atlas-workbench-refinements-20261118/README.md).
 
+In **Hàng đặt riêng**, use **Thêm dòng** as the primary action while entering an incomplete draft. As soon as review is available, **Xem thay đổi** becomes primary and adding another line remains available. Both exits from the Planning source review read **Quay lại chỉnh sửa** and return staff to their draft. In **Xác nhận nhu cầu**, the shopping-list notice explains saving changes and discarding them by reloading in separate sentences. See the [before/after comparisons](../testing/artifacts/atlas-edit-review-20261118/README.md).
+
 ## Color architecture
 
 ### Staff palette follow-up — 15 November 2026

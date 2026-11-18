@@ -60,6 +60,8 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const reviewTrigger = useRef<HTMLButtonElement>(null);
   const wasReviewOpen = useRef(false);
   const reviewOpen = c.job !== "menu" && Boolean(c.preview);
+  const reviewReady =
+    c.candidate && c.canEdit && !c.syncing && c.errors.length === 0;
   const fitMenu = props.ownerJob === "menu";
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: c.dirty,
@@ -151,7 +153,11 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
             onExportTemplate={props.onExportAttendanceTemplate}
           />
         ) : (
-          <PlanningPantryStage c={c} visibleSchoolIds={visibleSchoolIds} />
+          <PlanningPantryStage
+            c={c}
+            visibleSchoolIds={visibleSchoolIds}
+            primaryAdd={!reviewReady && !reviewOpen}
+          />
         )}
         {(!fitMenu || c.dirty) && (
           <Flex
@@ -169,7 +175,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 ref={reviewTrigger}
                 display={c.preview ? "none" : "inline-flex"}
                 variant="businessPrimary"
-                disabled={!c.canEdit || c.syncing || c.errors.length > 0}
+                disabled={!reviewReady}
                 onClick={() => void c.previewChanges()}
               >
                 Xem thay đổi

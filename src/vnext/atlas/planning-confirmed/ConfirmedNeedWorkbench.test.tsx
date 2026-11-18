@@ -783,6 +783,11 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(
       screen.getByRole("button", { name: "Nhập Phiếu đi chợ" }),
     ).toBeDisabled();
+    expect(
+      screen.getByText(
+        "Hãy lưu thay đổi trước khi xuất hoặc nhập Phiếu đi chợ. Nếu muốn bỏ thay đổi, hãy tải lại dữ liệu.",
+      ),
+    ).toBeVisible();
     await editValid();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
     expect(h.save).not.toHaveBeenCalled();

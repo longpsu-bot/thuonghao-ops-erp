@@ -46,9 +46,11 @@ function PantryFeedback({
 export function PlanningPantryStage({
   c,
   visibleSchoolIds,
+  primaryAdd,
 }: {
   c: PlanningSourcesController;
   visibleSchoolIds: string[];
+  primaryAdd: boolean;
 }) {
   const [addSchool, setAddSchool] = useState("");
   const [addCategory, setAddCategory] = useState(
@@ -202,7 +204,7 @@ export function PlanningPantryStage({
           </Field.Root>
           <Button
             ref={addButton}
-            variant={c.preview ? "secondary" : "businessPrimary"}
+            variant={primaryAdd ? "businessPrimary" : "secondary"}
             size="sm"
             h={atlasWorkbarControlHeight}
             disabled={!c.canEdit || !targetSchoolId || !targetPurpose}

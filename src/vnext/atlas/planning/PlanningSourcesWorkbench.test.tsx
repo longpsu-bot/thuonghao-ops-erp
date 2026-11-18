@@ -1219,6 +1219,8 @@ describe("Planning sources Chakra workbench", () => {
       await screen.findByRole("textbox", { name: "Số lượng dòng 1" }),
     ).toBeVisible();
     expect(category).toHaveValue("school_requested_supplement");
+    const addWhileIncomplete = add.className;
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
     const table = screen.getByRole("table", { name: "Hàng đặt riêng" });
     expect(
       within(table).queryByRole("combobox", { name: /Cách/ }),
@@ -1235,7 +1237,11 @@ describe("Planning sources Chakra workbench", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Số lượng dòng 1" }), {
       target: { value: "5" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    const reviewTrigger = screen.getByRole("button", { name: "Xem thay đổi" });
+    expect(reviewTrigger).toBeEnabled();
+    expect(add).toBeEnabled();
+    expect(add.className).not.toBe(addWhileIncomplete);
+    fireEvent.click(reviewTrigger);
     await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
     expect(preview.mock.calls[0]?.[4]).toEqual([
       expect.objectContaining({
@@ -1250,6 +1256,19 @@ describe("Planning sources Chakra workbench", () => {
         direct_need_mode: "ADDITIVE",
       },
     ]);
+    const review = await screen.findByRole("complementary", {
+      name: "Xem thay đổi",
+    });
+    const returnButtons = within(review).getAllByRole("button", {
+      name: "Quay lại chỉnh sửa",
+    });
+    expect(returnButtons).toHaveLength(2);
+    fireEvent.click(returnButtons[1]!);
+    expect(reviewTrigger).toHaveFocus();
+    expect(
+      screen.getByRole("textbox", { name: "Số lượng dòng 1" }),
+    ).toHaveValue("5");
+    expect(save).not.toHaveBeenCalled();
   });
   it("groups pantry mode by School/date and derives unit and delivery location", async () => {
     await show(2);
