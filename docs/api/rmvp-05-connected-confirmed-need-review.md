@@ -17,8 +17,8 @@ After workbook identity/version validation, the importer compares the visible
 and exported quantities as exact up-to-six-decimal representations. Unchanged
 source quantities preserve the current local draft and its `quantity_entered`
 flag; a note-only change is not a quantity entry. A real quantity edit must be
-an exact whole number of the line's effective Planning step and still requires
-the applicable reason note. Invalid quantity metadata is rejected. The workbook
+an exact whole number of the line's effective Planning step and carries the
+governed adjustment reason. Its row note is optional. Invalid quantity metadata is rejected. The workbook
 baseline is change-detection evidence, never authority to replace a draft with
 a value supplied by the file.
 
@@ -168,10 +168,10 @@ When it differs:
 
 - `decision_kind = ADJUSTED_QUANTITY_CONFIRMED`;
 - allowed reasons are `PLANNING_STEP_ADJUSTMENT`, `OPERATIONAL_QUANTITY_ADJUSTMENT`, and `OTHER`;
-- the latter two require a nonblank note;
+- the row note is optional for all three reasons;
 - exactly one direct successor quantity revision is required.
 
-Every replacement decision requires a nonblank correction note and binds the exact current decision as predecessor. Decision-only replacement may keep the current quantity revision.
+Every replacement binds the exact current decision as predecessor. Its row note is optional. Decision-only replacement may keep the current quantity revision. Released correction uses a separate v3 command and requires its correction explanation.
 
 ### 4.3 Response and hash
 
@@ -228,7 +228,6 @@ Common Atlas validation, authentication, capability, scope, stale-version, idemp
 - `AMBIGUOUS_PLANNING_QUANTITY_POLICY`
 - `QUANTITY_NOT_REPRESENTABLE`
 - `INVALID_DECISION_REASON`
-- `REASON_NOTE_REQUIRED`
 - `PREVIEW_MISMATCH`
 
 Safe failures report write certainty, whether the local Draft may be preserved, whether exact retry is safe, and `get_confirmed_need_review` as the authorized refresh. Raw SQL, private payloads, policy internals, credentials, and role internals are not returned.

@@ -624,7 +624,7 @@ select throws_ok(
   $$,
   '23514',
   null,
-  'H1B1-CHN-22 operational adjustment without a note is rejected'
+  'H1B1-CHN-22 operational adjustment still requires its quantity successor'
 );
 select throws_ok(
   $$
@@ -641,7 +641,7 @@ select throws_ok(
   $$,
   '23514',
   null,
-  'H1B1-CHN-23 OTHER without a note is rejected'
+  'H1B1-CHN-23 OTHER adjustment still requires its quantity successor'
 );
 
 set local session_replication_role = replica;
@@ -729,19 +729,7 @@ select throws_ok(
   null,
   'H1B1-CHN-27 a reason note above 500 Unicode characters is rejected'
 );
-select throws_ok(
-  $$
-    select pg_temp.h1b1_chain_decide(
-      p_decision => 'c7100000-0000-0000-0000-000000000828',
-      p_number => 3,
-      p_predecessor => 'c7100000-0000-0000-0000-000000000802',
-      p_command_ordinal => 3
-    )
-  $$,
-  '23514',
-  null,
-  'H1B1-CHN-28 a replacement without a correction note is rejected'
-);
+
 select ok(
   (
     select
@@ -1057,6 +1045,18 @@ select ok(
       ) = 0
   ),
   'H1B1-CHN-48 private persistence emits zero domain or audit events directly'
+);
+
+select lives_ok(
+  $$
+    select pg_temp.h1b1_chain_decide(
+      p_decision => 'c7100000-0000-0000-0000-000000000828',
+      p_number => 3,
+      p_predecessor => 'c7100000-0000-0000-0000-000000000802',
+      p_command_ordinal => 3
+    )
+  $$,
+  'H1B1-CHN-28 a replacement permits an omitted row note'
 );
 
 set constraints all immediate;

@@ -5,6 +5,7 @@ import {
   normalizeConfirmedNeedEntry,
   normalizeConfirmedNeedQuantity,
   confirmedNeedDraftMatchesSaved,
+  defaultConfirmedNeedReason,
   type ConfirmedNeedDraftLine,
   type ConfirmedNeedWorkbenchData,
 } from "./confirmedNeedModel";
@@ -697,6 +698,7 @@ export function validateShoppingListEnvelope(
       next[id] = {
         ...existing,
         exact_quantity: confirmedNeedInputDisplay(quantity),
+        reason_code: defaultConfirmedNeedReason(line, existing, quantity),
         quantity_entered: true,
       };
       changedLineIds.push(id);

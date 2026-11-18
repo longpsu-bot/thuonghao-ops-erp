@@ -24,7 +24,7 @@ describe("Confirmed Need exact Planning-step drafts", () => {
         ...initialConfirmedNeedDraft(line),
         exact_quantity: "4.5",
         quantity_entered: true,
-      }),
+      })?.message,
     ).toBe("Số lượng xác nhận phải theo bước 1 Trái.");
   });
   it("keeps a fresh high-precision proposal editable", () => {
@@ -64,7 +64,7 @@ describe("Confirmed Need exact Planning-step drafts", () => {
         quantity_entered: true,
         reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
         reason_note: "Bếp yêu cầu",
-      }),
+      })?.message,
     ).toBe("Số lượng xác nhận phải theo bước 0,01 kg.");
   });
 
@@ -90,7 +90,7 @@ describe("Confirmed Need exact Planning-step drafts", () => {
       reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT" as const,
       reason_note: "Bếp yêu cầu",
     };
-    expect(draftError(line, draft)).toBe(
+    expect(draftError(line, draft)?.message).toBe(
       "Số lượng xác nhận phải theo bước 1 Quả.",
     );
     expect(draft.exact_quantity).toBe("4.5");

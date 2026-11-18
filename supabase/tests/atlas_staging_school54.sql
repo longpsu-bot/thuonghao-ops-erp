@@ -1,5 +1,7 @@
 begin;
 select no_plan();
+-- Model the package's approved migration history inside this rollback-only fixture.
+delete from supabase_migrations.schema_migrations where version > '20261105090000';
 \ir ../packages/atlas-staging-school54.sql
 create function pg_temp.signed(v jsonb) returns jsonb language sql as $$ select (v-'snapshot_checksum')||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(v-'snapshot_checksum')) $$;
 create function pg_temp.content(v jsonb) returns text language sql as $$ select pg_temp.school54_content(v) $$;

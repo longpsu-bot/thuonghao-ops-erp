@@ -64,6 +64,10 @@ shows the shared treatment in the local review fixture. The heading icon tile
 is shown only on desktop to preserve space for controls at narrow widths.
 Confirmed Need uses a compact action strip on narrow screens so the first
 quantity input clears the sticky footer.
+For quantity confirmation, present the proposal, last saved value and editable
+quantity as separate fields. On phones, pair proposal with entry and saved
+quantity with the difference. Associate validation with the field requiring
+attention. Show the editable reason default and mark the row note as optional.
 
 ### Workbench hierarchy amendment — 29 October 2026
 

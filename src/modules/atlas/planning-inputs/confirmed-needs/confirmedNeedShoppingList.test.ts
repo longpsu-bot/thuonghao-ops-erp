@@ -377,7 +377,7 @@ describe("Shopping List V2", () => {
     expect(a.drafts[a.changedLineIds[0]!]).toMatchObject({
       exact_quantity: "12,5",
       quantity_entered: true,
-      reason_code: "PROPOSAL_ACCEPTED",
+      reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
       reason_note: "",
     });
   });

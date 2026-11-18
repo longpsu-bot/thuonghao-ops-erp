@@ -328,7 +328,7 @@ describe("06B frozen Review safety and focus", () => {
   it.each(["attendance", "pantry"] as const)(
     "blocks routine refresh during %s Preview and restores it on back",
     async (job) => {
-      const { read, pantryRead } = await planning(job);
+      const { read, pantryRead, review } = await planning(job);
       const reads = read.mock.calls.length,
         pantryReads = pantryRead.mock.calls.length;
       expect(button("Làm mới dữ liệu")).toBeDisabled();
@@ -336,7 +336,11 @@ describe("06B frozen Review safety and focus", () => {
       expect(read).toHaveBeenCalledTimes(reads);
       expect(pantryRead).toHaveBeenCalledTimes(pantryReads);
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      fireEvent.click(button("Quay lại"));
+      fireEvent.click(
+        within(review).getAllByRole("button", {
+          name: "Quay lại chỉnh sửa",
+        })[1]!,
+      );
       expect(button("Làm mới dữ liệu")).toBeEnabled();
       expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
     },
@@ -344,7 +348,9 @@ describe("06B frozen Review safety and focus", () => {
   it("moves focus into Planning Review and returns it on back", async () => {
     const { review } = await planning("attendance");
     await waitFor(() => expect(review).toHaveFocus());
-    fireEvent.click(button("Quay lại"));
+    fireEvent.click(
+      within(review).getAllByRole("button", { name: "Quay lại chỉnh sửa" })[0]!,
+    );
     await waitFor(() => expect(button("Xem thay đổi")).toHaveFocus());
   });
 });

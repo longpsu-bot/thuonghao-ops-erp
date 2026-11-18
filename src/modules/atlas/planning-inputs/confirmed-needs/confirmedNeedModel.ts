@@ -227,6 +227,22 @@ export function initialConfirmedNeedDraft(
   };
 }
 
+export function defaultConfirmedNeedReason(
+  line: ConfirmedNeedLine,
+  draft: ConfirmedNeedDraftLine,
+  entered: string,
+): ConfirmedNeedReasonCode {
+  const quantity = normalizeConfirmedNeedQuantity(entered);
+  if (!quantity) return draft.reason_code;
+  const saved = initialConfirmedNeedDraft(line);
+  if (exactDecimalEqual(quantity, saved.exact_quantity))
+    return saved.reason_code;
+  if (draft.reason_code !== "PROPOSAL_ACCEPTED") return draft.reason_code;
+  return saved.reason_code === "PROPOSAL_ACCEPTED"
+    ? "OPERATIONAL_QUANTITY_ADJUSTMENT"
+    : saved.reason_code;
+}
+
 export function confirmedNeedDraftMatchesSaved(
   line: ConfirmedNeedLine,
   draft: ConfirmedNeedDraftLine,

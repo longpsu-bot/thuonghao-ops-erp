@@ -76,7 +76,7 @@ def main():
             desktop_need = table.evaluate("""e => {const r=e.getBoundingClientRect();const rows=[...e.querySelectorAll('tbody tr')];const bottom=e.parentElement.getBoundingClientRect().bottom;return {firstRowHeight:rows[0].getBoundingClientRect().height,fullyVisibleRows:rows.filter(row=>row.getBoundingClientRect().bottom<=bottom+1).length,columnWidths:[...e.querySelectorAll('thead th')].map(c=>c.getBoundingClientRect().width)};}""") if width >= 1366 else None
             if width >= 1366:
                 check(f"need-{width}: five comparable rows visible", desktop_need["fullyVisibleRows"] >= 5, desktop_need)
-                check(f"need-{width}: six columns without panning", len(desktop_need["columnWidths"]) == 6 and geometry["scroll"] <= geometry["client"] + 1, geometry)
+                check(f"need-{width}: seven columns without panning", len(desktop_need["columnWidths"]) == 7 and geometry["scroll"] <= geometry["client"] + 1, geometry)
                 check(f"need-{width}: compact rows and readable input", desktop_need["firstRowHeight"] <= 64 and box["height"] >= 40, {"row": desktop_need["firstRowHeight"], "input": box})
             capture("need", "Xác nhận nhu cầu", {"quantity": box, "tableViewport": geometry, "separators": borders, "desktop": desktop_need})
             line_id = row.get_attribute("data-confirmed-need-line-id")

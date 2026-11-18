@@ -499,7 +499,9 @@ describe("Confirmed Need local draft and safety", () => {
           quantity_entered: true,
         }),
       );
-      expect(h.result.current.errors["line-0"]).toContain("bước 0,25 kg");
+      expect(h.result.current.errors["line-0"].message).toContain(
+        "bước 0,25 kg",
+      );
       expect(h.result.current.canSave).toBe(false);
     },
   );
@@ -527,7 +529,7 @@ describe("Confirmed Need local draft and safety", () => {
         quantity_entered: true,
       }),
     );
-    expect(h.result.current.errors["line-0"]).toContain("bước 0,01 kg");
+    expect(h.result.current.errors["line-0"].message).toContain("bước 0,01 kg");
     expect(h.result.current.canSave).toBe(false);
   });
   it("keeps COUNT human confirmation on H1A rather than the proposal step", async () => {
@@ -554,7 +556,7 @@ describe("Confirmed Need local draft and safety", () => {
         quantity_entered: true,
       }),
     );
-    expect(h.result.current.errors["line-0"]).toContain("bước 1 Chai");
+    expect(h.result.current.errors["line-0"].message).toContain("bước 1 Chai");
     expect(h.result.current.canSave).toBe(false);
   });
   it("accepts proposed quantities for new lines using Save", async () => {
@@ -566,7 +568,7 @@ describe("Confirmed Need local draft and safety", () => {
       reason_code: "PROPOSAL_ACCEPTED",
     });
   });
-  it("requires adjustment reason and explanatory saved-decision note", async () => {
+  it("defaults the reason on quantity entry, restores acceptance on undo and preserves a staff override", async () => {
     const h = await ready();
     act(() =>
       h.result.current.edit("line-0", {
@@ -574,16 +576,52 @@ describe("Confirmed Need local draft and safety", () => {
         quantity_entered: true,
       }),
     );
-    expect(h.result.current.errors["line-0"]).toContain("chọn lý do");
+    expect(h.result.current.drafts["line-0"].reason_code).toBe(
+      "OPERATIONAL_QUANTITY_ADJUSTMENT",
+    );
+    expect(h.result.current.canSave).toBe(true);
+    act(() => h.result.current.edit("line-0", { exact_quantity: "10,25" }));
+    expect(h.result.current.dirty).toBe(false);
+    act(() => h.result.current.edit("line-0", { exact_quantity: "12" }));
     act(() =>
       h.result.current.edit("line-0", {
         reason_code: "PLANNING_STEP_ADJUSTMENT",
       }),
     );
-    expect(h.result.current.errors["line-0"]).toContain("đã lưu cần ghi chú");
+    act(() => h.result.current.edit("line-0", { exact_quantity: "13" }));
+    expect(h.result.current.drafts["line-0"].reason_code).toBe(
+      "PLANNING_STEP_ADJUSTMENT",
+    );
+    expect(h.result.current.canSave).toBe(true);
   });
+  it.each(["", "Bếp yêu cầu tăng lượng."])(
+    "saves a default adjustment with optional note %j",
+    async (note) => {
+      const h = await ready();
+      act(() =>
+        h.result.current.edit("line-0", {
+          exact_quantity: "12",
+          quantity_entered: true,
+        }),
+      );
+      act(() =>
+        h.result.current.edit("line-0", {
+          reason_note: note,
+        }),
+      );
+      await act(() => h.result.current.save());
+      expect(h.save.mock.calls[0]![0].payload.lines).toEqual([
+        expect.objectContaining({
+          confirmed_need_line_id: "line-0",
+          proposed_confirmed_quantity: "12",
+          reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+          reason_note: note || null,
+        }),
+      ]);
+    },
+  );
   it.each(["OTHER", "OPERATIONAL_QUANTITY_ADJUSTMENT"] as const)(
-    "requires note for %s",
+    "allows a first adjustment without a note for %s",
     async (reason_code) => {
       const h = await ready("needs_review");
       act(() =>
@@ -593,7 +631,7 @@ describe("Confirmed Need local draft and safety", () => {
           reason_code,
         }),
       );
-      expect(h.result.current.errors["line-0"]).toContain("cần ghi chú");
+      expect(h.result.current.canSave).toBe(true);
     },
   );
   it.each([

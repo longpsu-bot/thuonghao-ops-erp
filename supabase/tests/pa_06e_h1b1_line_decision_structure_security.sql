@@ -328,15 +328,14 @@ select ok(
 );
 select ok(
   (
-    select pg_get_constraintdef(oid)
-      like '%predecessor_decision_id IS NULL%reason_note IS NOT NULL%'
+    select count(*) = 0
     from pg_constraint
     where conrelid
         = 'atlas_planning.confirmed_need_line_decisions'::regclass
       and conname
         = 'confirmed_need_line_decisions_correction_note_check'
   ),
-  'H1B1-STR-21 every non-first decision requires a correction note'
+  'H1B1-STR-21 predecessor links do not impose a free-text note'
 );
 select ok(
   (

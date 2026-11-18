@@ -525,7 +525,7 @@ select
 
 insert into rmvp05_requests values (
   'mixed-lines',
-  pg_temp.rmvp05_lines(null, 'PROPOSAL_ACCEPTED', null, '1.37', 'PLANNING_STEP_ADJUSTMENT', null)
+  pg_temp.rmvp05_lines(null, 'PROPOSAL_ACCEPTED', null, '1.37', 'OTHER', null)
 );
 set local role authenticated;
 insert into rmvp05_responses select 'preview-mixed', atlas_api.preview_confirmed_need_confirmation(pg_temp.rmvp05_preview(1, request)) from rmvp05_requests where request_name = 'mixed-lines';
@@ -836,7 +836,7 @@ select set_config('request.jwt.claim.sub', 'f5000000-0000-0000-0000-000000000101
 insert into rmvp05_responses select 'replacement-note-missing', atlas_api.preview_confirmed_need_confirmation(pg_temp.rmvp05_preview(2, pg_temp.rmvp05_single_line(1)));
 insert into rmvp05_responses select 'replacement-preview', atlas_api.preview_confirmed_need_confirmation(pg_temp.rmvp05_preview(2, pg_temp.rmvp05_single_line(1, null, 'PROPOSAL_ACCEPTED', 'Confirmed against corrected evidence')));
 reset role;
-select is((select response->'preview'->>'error_code' from rmvp05_responses where response_name = 'replacement-note-missing'), 'REASON_NOTE_REQUIRED', 'RMVP05-35 replacement decision requires a nonblank correction note');
+select is((select response->'preview'->>'success' from rmvp05_responses where response_name = 'replacement-note-missing'), 'true', 'RMVP05-35 replacement decision permits an omitted row note');
 select ok(
   (select response->'preview'->>'success' = 'true'
     and response->'preview'->'warnings' @> '[{"code":"DECISION_REPLACEMENT"}]'::jsonb

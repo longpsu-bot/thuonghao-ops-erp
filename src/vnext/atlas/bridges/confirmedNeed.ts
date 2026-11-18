@@ -40,6 +40,7 @@ export type {
 } from "../../../modules/atlas/planning-inputs/need-generation/needGenerationModel";
 export {
   initialConfirmedNeedDraft,
+  defaultConfirmedNeedReason,
   exactDecimalEqual,
   normalizeConfirmedNeedQuantity,
   normalizeConfirmedNeedEntry,
