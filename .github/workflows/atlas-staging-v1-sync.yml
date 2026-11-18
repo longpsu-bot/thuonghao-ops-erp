@@ -57,8 +57,6 @@ jobs:
     with:
       commit_sha: ${{ github.sha }}
       apply: ${{ inputs.mode == 'apply-master' }}
-      planning_preview: true
-      reviewed_sync: true
       target_project_ref: ${{ inputs.target_project_ref }}
       reviewed_plan_checksum: ${{ inputs.reviewed_checksum }}
 

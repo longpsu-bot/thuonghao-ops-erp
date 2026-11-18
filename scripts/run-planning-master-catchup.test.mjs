@@ -55,12 +55,30 @@ describe("repeatable reviewed missing-Dish sync", () => {
       { legacy_id: "11", dish_status: "INACTIVE" },
     ];
     snapshot.snapshot_checksum = checksumOpsV1MasterSnapshot(snapshot);
+    const actions = (source) => {
+      const evidence = {
+        snapshot_id: source.snapshot_id,
+        snapshot_checksum: source.snapshot_checksum,
+        source_record_id: "23",
+      };
+      return [
+        { object_type: "RECIPE", action: "CREATE", source_evidence: evidence },
+        {
+          object_type: "RECIPE_VERSION",
+          action: "CREATE",
+          values: { source_evidence: evidence },
+          source_fingerprint: checksumOpsV1MasterSnapshot({
+            source_evidence: evidence,
+          }),
+        },
+      ];
+    };
     const targetPlan = {
       success: true,
       status: "PREVIEW",
       snapshot_checksum: snapshot.snapshot_checksum,
       plan_checksum: planChecksum,
-      actions: [],
+      actions: actions(snapshot),
       catchup_dish_ids: ["10"],
     };
     const setup = (plan = targetPlan) =>
@@ -110,6 +128,7 @@ describe("repeatable reviewed missing-Dish sync", () => {
       ...targetPlan,
       snapshot_checksum: fresh.snapshot_checksum,
       plan_checksum: "d".repeat(64),
+      actions: actions(fresh),
     };
     const executeApply = setup(freshPlan)
       .mockResolvedValueOnce([

@@ -45,13 +45,12 @@ on:
         type: string
       reviewed_plan_checksum:
         type: string
-      planning_preview:
-        type: boolean
-      reviewed_sync:
-        type: boolean
 
 permissions:
   contents: read
+
+env:
+  REVIEWED_SYNC: ${{ inputs.reviewed_sync || startsWith(github.workflow_ref, format('{0}/.github/workflows/atlas-staging-v1-sync.yml@', github.repository)) }}
 
 concurrency:
   group: atlas-staging-master-data-load
@@ -59,7 +58,7 @@ concurrency:
 
 jobs:
   load:
-    if: ${{ !inputs.planning_preview }}
+    if: ${{ startsWith(github.workflow_ref, format('{0}/.github/workflows/atlas-staging-master-data-load.yml@', github.repository)) && !inputs.planning_preview && !inputs.reviewed_sync }}
     name: Guarded master snapshot load and authenticated readback
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -143,7 +142,7 @@ jobs:
           rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
 
   planning-preview:
-    if: ${{ inputs.planning_preview }}
+    if: ${{ inputs.planning_preview || startsWith(github.workflow_ref, format('{0}/.github/workflows/atlas-staging-v1-sync.yml@', github.repository)) }}
     name: Guarded bounded Planning catch-up preview or apply
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -210,7 +209,7 @@ jobs:
           echo "ATLAS_STAGING_CA_BUNDLE=$bundle" >> "$GITHUB_ENV"
           pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
       - name: Fresh read-only V1 snapshot and deterministic dependency-closed plan
-        if: ${{ !inputs.reviewed_sync }}
+        if: ${{ env.REVIEWED_SYNC != 'true' }}
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
           APPLY_REQUESTED: ${{ inputs.apply }}
@@ -248,7 +247,7 @@ jobs:
               > "$RUNNER_TEMP/planning-preview/planning-master-apply.json"
           fi
       - name: Read-only real Google fetch, strict parse and Preview
-        if: ${{ always() && !inputs.reviewed_sync }}
+        if: ${{ always() && env.REVIEWED_SYNC != 'true' }}
         env:
           ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
@@ -263,7 +262,7 @@ jobs:
           export PLANNING_PREVIEW_REPORT_DIR="$RUNNER_TEMP/planning-preview"
           node scripts/verify-planning-weekly-menu.mjs
       - name: Save review report without raw source snapshot
-        if: ${{ always() && !inputs.reviewed_sync }}
+        if: ${{ always() && env.REVIEWED_SYNC != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.apply && 'planning-master-apply' || inputs.diagnostic_boundary && 'planning-master-diagnostic-preview' || 'planning-master-preview' }}-${{ inputs.commit_sha }}
@@ -275,7 +274,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: Preview or apply missing Dishes and dependencies
-        if: ${{ inputs.reviewed_sync }}
+        if: ${{ env.REVIEWED_SYNC == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REQUESTED_SHA: ${{ inputs.commit_sha }}

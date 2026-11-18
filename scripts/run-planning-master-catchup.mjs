@@ -50,17 +50,30 @@ function catchupReviewChecksum(commitSha, snapshot, preview) {
     plan_checksum,
     ...plan
   } = preview;
+  // Keep the actual extraction ID in the native write plan. Ignore it for review.
+  const stableEvidence = ({ snapshot_id, snapshot_checksum, ...business }) =>
+    business;
   const actions = plan.actions.map((action) => {
-    const evidence = action.values?.source_evidence;
-    if (action.object_type !== "RECIPE_VERSION" || !evidence) return action;
-    // Keep live provenance in the native write plan. Ignore extraction IDs for review.
-    const { snapshot_id, snapshot_checksum, ...source_evidence } = evidence;
-    const values = { ...action.values, source_evidence };
-    return {
-      ...action,
-      values,
-      source_fingerprint: checksumOpsV1MasterSnapshot(values),
-    };
+    if (action.object_type === "RECIPE" && action.source_evidence)
+      return {
+        ...action,
+        source_evidence: stableEvidence(action.source_evidence),
+      };
+    if (
+      action.object_type === "RECIPE_VERSION" &&
+      action.values?.source_evidence
+    ) {
+      const values = {
+        ...action.values,
+        source_evidence: stableEvidence(action.values.source_evidence),
+      };
+      return {
+        ...action,
+        values,
+        source_fingerprint: checksumOpsV1MasterSnapshot(values),
+      };
+    }
+    return action;
   });
   return checksumOpsV1MasterSnapshot({
     commitSha,
