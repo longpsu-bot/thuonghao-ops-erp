@@ -50,6 +50,9 @@ No Supabase credential or production-data access is required. The PA-04 through 
 
 Before changing code, read `AGENTS.md` and the relevant domain contract.
 
+To refresh OPS v1 master data and archive Change Order history in Atlas
+Staging, use the [Atlas Staging V1 Sync runbook](docs/runbooks/atlas-staging-v1-sync.md).
+
 ### RMVP-01 local master data
 
 RMVP-01 uses an independent local Atlas database and an explicit one-way JSON snapshot. It does not connect to or mutate OPS v1/v2, Retool, or a hosted Supabase project.

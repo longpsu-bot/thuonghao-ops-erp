@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { checksumOpsV1MasterSnapshot } from "./ops-v1-master-snapshot-contract.mjs";
 import {
   buildStagingMasterLoadSql,
+  masterDataContentChecksum,
   parseStagingMasterResult,
   runAtlasStagingMasterLoad,
   verifyStagingMasterVisibility,
@@ -36,6 +37,40 @@ const preview = {
 };
 
 describe("guarded hosted master-data load", () => {
+  it("binds review to master data content across fresh extractions", () => {
+    const original = fixture();
+    const fresh = fixture();
+    fresh.snapshot_id = "new-extraction";
+    fresh.exported_at = "2026-11-18T00:00:00.000Z";
+    fresh.extractor_version = "new-extractor";
+    fresh.snapshot_checksum = checksumOpsV1MasterSnapshot(fresh);
+    expect(masterDataContentChecksum(fresh)).toBe(
+      masterDataContentChecksum(original),
+    );
+    fresh.records.schools[0].school_name = "Changed since review";
+    fresh.snapshot_checksum = checksumOpsV1MasterSnapshot(fresh);
+    expect(masterDataContentChecksum(fresh)).not.toBe(
+      masterDataContentChecksum(original),
+    );
+  });
+
+  it("blocks a new master snapshot before target access when its content differs from the review", async () => {
+    const statements = [];
+    await expect(
+      runAtlasStagingMasterLoad({
+        commitSha: "a".repeat(40),
+        apply: true,
+        targetConfirmation: target,
+        reviewedContentChecksum: "f".repeat(64),
+        environment: env,
+        verifyCheckout: () => "a".repeat(40),
+        extractSnapshot: async () => fixture(),
+        executeTarget: async (_target, sql) => statements.push(sql),
+      }),
+    ).rejects.toThrow("REVIEWED_MASTER_CONTENT_MISMATCH");
+    expect(statements).toHaveLength(0);
+  });
+
   it("requires a checksum-valid source snapshot and exact target before constructing SQL", () => {
     expect(() =>
       buildStagingMasterLoadSql(fixture(), {
@@ -127,20 +162,30 @@ describe("guarded hosted master-data load", () => {
       },
     });
     expect(result.status).toBe("REJECTED");
+    expect(result.source.content_checksum).toBe(
+      masterDataContentChecksum(fixture()),
+    );
     expect(extracted).toBe(1);
     expect(statements).toHaveLength(1);
     expect(statements[0]).toContain(", false, null)");
   });
   it("applies only the validated snapshot/plan and requires a reconciled replay", async () => {
     const statements = [];
+    let certified = false;
     const result = await runAtlasStagingMasterLoad({
       commitSha: "a".repeat(40),
       apply: true,
       targetConfirmation: target,
+      reviewedContentChecksum: masterDataContentChecksum(fixture()),
       environment: env,
       verifyCheckout: () => "a".repeat(40),
+      verifyCertification: async ({ certificationMode }) => {
+        expect(certificationMode).toBe("github");
+        certified = true;
+      },
       extractSnapshot: async () => fixture(),
       executeTarget: async (_target, sql) => {
+        expect(certified).toBe(true);
         statements.push(sql);
         return JSON.stringify([
           {

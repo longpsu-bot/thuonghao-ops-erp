@@ -26,6 +26,18 @@ on:
         required: false
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      commit_sha:
+        required: true
+        type: string
+      apply:
+        required: true
+        type: boolean
+      target_project_ref:
+        type: string
+      reviewed_content_checksum:
+        type: string
 
 permissions:
   contents: read
@@ -41,6 +53,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: atlas-staging
+    permissions:
+      contents: read
+      actions: read
     steps:
       - name: Check out requested exact commit
         uses: actions/checkout@v4
@@ -50,7 +65,7 @@ jobs:
       - name: Verify exact current main before repository execution
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
-          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary }}
+          DIAGNOSTIC_BOUNDARY: ${{ inputs.diagnostic_boundary && 'true' || 'false' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -94,9 +109,11 @@ jobs:
           pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
       - name: Snapshot, adopt existing IDs, preview, apply and verify
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REQUESTED_SHA: ${{ inputs.commit_sha }}
           APPLY_REQUESTED: ${{ inputs.apply }}
           CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          REVIEWED_CONTENT_CHECKSUM: ${{ inputs.reviewed_content_checksum }}
           ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -110,6 +127,9 @@ jobs:
           args=(--commit-sha "$REQUESTED_SHA")
           if [ "$APPLY_REQUESTED" = "true" ]; then
             args+=(--apply --target-project-ref "$CONFIRMED_TARGET")
+            if [ -n "$REVIEWED_CONTENT_CHECKSUM" ]; then
+              args+=(--reviewed-content-checksum "$REVIEWED_CONTENT_CHECKSUM")
+            fi
           fi
           pnpm atlas:staging:master:load -- "${args[@]}"
       - name: Remove transient linked metadata and public CA bundle

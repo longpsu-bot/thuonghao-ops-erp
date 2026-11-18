@@ -2,7 +2,10 @@ import { executeAtlasStagingPostgres } from "./atlas-staging-postgres-transport.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { redactAtlasStagingDiagnostic } from "./atlas-staging-contract.mjs";
+import {
+  redactAtlasStagingDiagnostic,
+  verifyExactHeadCertification,
+} from "./atlas-staging-contract.mjs";
 import { validateV1ReferenceImportRequest } from "./atlas-staging-v1-reference-target.mjs";
 import { verifyExactMainCheckout } from "./import-atlas-staging-v1-reference-snapshot.mjs";
 import {
@@ -12,6 +15,18 @@ import {
 
 const STAGING = "rnzxmxiiqgtdevzregff";
 const SHA256 = /^[0-9a-f]{64}$/;
+
+export function masterDataContentChecksum(snapshot) {
+  const {
+    snapshot_id,
+    snapshot_checksum,
+    exported_at,
+    extractor_version,
+    ...content
+  } = snapshot;
+  return checksumOpsV1MasterSnapshot(content);
+}
+
 export function buildStagingMasterLoadSql(
   snapshot,
   { targetProjectRef, apply = false, planChecksum } = {},
@@ -74,9 +89,11 @@ export async function runAtlasStagingMasterLoad({
   commitSha,
   apply = false,
   targetConfirmation,
+  reviewedContentChecksum,
   environment = process.env,
   cwd = process.cwd(),
   verifyCheckout = verifyExactMainCheckout,
+  verifyCertification = verifyExactHeadCertification,
   extractSnapshot = extractOpsV1MasterSnapshot,
   executeTarget,
   fetchImpl = fetch,
@@ -94,6 +111,21 @@ export async function runAtlasStagingMasterLoad({
     extractorVersion: commitSha,
     fetchImpl,
   });
+  const contentChecksum = masterDataContentChecksum(snapshot);
+  if (apply && reviewedContentChecksum !== undefined) {
+    if (
+      !SHA256.test(reviewedContentChecksum) ||
+      reviewedContentChecksum !== contentChecksum
+    )
+      throw new Error("REVIEWED_MASTER_CONTENT_MISMATCH");
+    await verifyCertification({
+      commitSha,
+      certificationMode: "github",
+      environment,
+      cwd,
+    });
+  }
+  await verifyCheckout({ commitSha, cwd });
   const target = {
     projectRef: authority.targetProjectRef,
     supabaseUrl: authority.targetSupabaseUrl,
@@ -118,6 +150,7 @@ export async function runAtlasStagingMasterLoad({
   const source = {
     snapshot_id: snapshot.snapshot_id,
     snapshot_checksum: snapshot.snapshot_checksum,
+    content_checksum: contentChecksum,
     exported_at: snapshot.exported_at,
     source_counts: snapshot.source_counts,
     canonical_counts: Object.fromEntries(
@@ -134,6 +167,7 @@ export async function runAtlasStagingMasterLoad({
     preview.snapshot_checksum !== snapshot.snapshot_checksum
   )
     throw new Error("STAGING_PREVIEW_CONTRACT_MISMATCH");
+  await verifyCheckout({ commitSha, cwd });
   const applied = await execute(true, preview.plan_checksum);
   if (
     applied.success !== true ||
@@ -282,7 +316,12 @@ async function main() {
     const flag = args[i];
     if (
       flags.has(flag) ||
-      !["--commit-sha", "--target-project-ref", "--apply"].includes(flag)
+      ![
+        "--commit-sha",
+        "--target-project-ref",
+        "--reviewed-content-checksum",
+        "--apply",
+      ].includes(flag)
     )
       throw new Error("INVALID_ARGUMENT");
     if (flag === "--apply") flags.set(flag, true);
@@ -296,6 +335,7 @@ async function main() {
     commitSha: flags.get("--commit-sha"),
     apply: flags.has("--apply"),
     targetConfirmation: flags.get("--target-project-ref"),
+    reviewedContentChecksum: flags.get("--reviewed-content-checksum"),
   });
   console.log(JSON.stringify(result, null, 2));
   if (result.status === "STAGING_MASTER_DATA_LOADED")
