@@ -12,8 +12,8 @@ on:
           - apply-master
         default: preview
         required: true
-      reviewed_content_checksum:
-        description: Content checksum from the corresponding preview; required for apply
+      reviewed_checksum:
+        description: Reviewed checksum from the corresponding preview; required for apply
         type: string
       target_project_ref:
         description: Exact Atlas Staging project confirmation for apply
@@ -35,7 +35,7 @@ jobs:
       - name: Verify main dispatch and apply confirmation
         env:
           MODE: ${{ inputs.mode }}
-          REVIEWED_CONTENT_CHECKSUM: ${{ inputs.reviewed_content_checksum }}
+          REVIEWED_CHECKSUM: ${{ inputs.reviewed_checksum }}
           CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
         run: |
           set -euo pipefail
@@ -44,7 +44,7 @@ jobs:
             preview) ;;
             apply-history|apply-master)
               test "$CONFIRMED_TARGET" = "rnzxmxiiqgtdevzregff"
-              [[ "$REVIEWED_CONTENT_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
+              [[ "$REVIEWED_CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
               ;;
             *) exit 1 ;;
           esac
@@ -53,18 +53,22 @@ jobs:
     needs: validate
     if: ${{ inputs.mode == 'preview' || inputs.mode == 'apply-master' }}
     uses: ./.github/workflows/atlas-staging-master-data-load.yml
+    secrets: inherit
     with:
       commit_sha: ${{ github.sha }}
       apply: ${{ inputs.mode == 'apply-master' }}
+      planning_preview: true
+      reviewed_sync: true
       target_project_ref: ${{ inputs.target_project_ref }}
-      reviewed_content_checksum: ${{ inputs.reviewed_content_checksum }}
+      reviewed_plan_checksum: ${{ inputs.reviewed_checksum }}
 
   history:
     needs: validate
     if: ${{ inputs.mode == 'preview' || inputs.mode == 'apply-history' }}
     uses: ./.github/workflows/atlas-staging-recipe-history.yml
+    secrets: inherit
     with:
       commit_sha: ${{ github.sha }}
       apply: ${{ inputs.mode == 'apply-history' }}
       target_project_ref: ${{ inputs.target_project_ref }}
-      reviewed_content_checksum: ${{ inputs.reviewed_content_checksum }}
+      reviewed_content_checksum: ${{ inputs.reviewed_checksum }}

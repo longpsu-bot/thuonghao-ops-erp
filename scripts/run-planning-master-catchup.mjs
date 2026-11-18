@@ -4,8 +4,13 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateV1ReferenceImportRequest } from "./atlas-staging-v1-reference-target.mjs";
 import { verifyExactMainCheckout } from "./import-atlas-staging-v1-reference-snapshot.mjs";
-import { extractOpsV1MasterSnapshot } from "./ops-v1-master-snapshot-contract.mjs";
+import {
+  checksumOpsV1MasterSnapshot,
+  extractOpsV1MasterSnapshot,
+} from "./ops-v1-master-snapshot-contract.mjs";
 import { executeAtlasStagingPostgres } from "./atlas-staging-postgres-transport.mjs";
+import { verifyExactHeadCertification } from "./atlas-staging-contract.mjs";
+import { deterministicV1Uuid } from "./atlas-staging-v1-reference-transform.mjs";
 import { parseStagingMasterResult } from "./import-atlas-staging-master-data.mjs";
 import {
   assertPlanningSource,
@@ -37,6 +42,33 @@ export function verifyPlanningPreviewCheckout(commitSha, cwd = process.cwd()) {
   git("merge-base", "--is-ancestor", "origin/main", commitSha);
 }
 
+function catchupReviewChecksum(commitSha, snapshot, preview) {
+  const { snapshot_id, exported_at, extractor_version, ...source } = snapshot;
+  const {
+    snapshot_id: id,
+    snapshot_checksum,
+    plan_checksum,
+    ...plan
+  } = preview;
+  const actions = plan.actions.map((action) => {
+    const evidence = action.values?.source_evidence;
+    if (action.object_type !== "RECIPE_VERSION" || !evidence) return action;
+    // Keep live provenance in the native write plan. Ignore extraction IDs for review.
+    const { snapshot_id, snapshot_checksum, ...source_evidence } = evidence;
+    const values = { ...action.values, source_evidence };
+    return {
+      ...action,
+      values,
+      source_fingerprint: checksumOpsV1MasterSnapshot(values),
+    };
+  });
+  return checksumOpsV1MasterSnapshot({
+    commitSha,
+    source: checksumOpsV1MasterSnapshot(source),
+    plan: { ...plan, actions },
+  });
+}
+
 export async function runPlanningMasterCatchup({
   commitSha,
   apply = false,
@@ -47,14 +79,27 @@ export async function runPlanningMasterCatchup({
   planChecksum,
   actorId,
   dishLegacyIds,
+  reviewedSync = false,
+  reviewedPlanChecksum,
   environment = process.env,
   cwd = process.cwd(),
   verifyPreview = verifyPlanningPreviewCheckout,
   verifyApply = verifyExactMainCheckout,
+  verifyCertification = verifyExactHeadCertification,
   extractSnapshot = extractOpsV1MasterSnapshot,
   executeTarget = executeAtlasStagingPostgres,
   onPhase = () => {},
 } = {}) {
+  if (
+    reviewedSync &&
+    (snapshotFile ||
+      snapshotOutput ||
+      planChecksum ||
+      actorId ||
+      dishLegacyIds ||
+      diagnosticBoundary)
+  )
+    throw new Error("REVIEWED_SYNC_REQUIRES_FRESH_MISSING_DISH_SCOPE");
   if (diagnosticBoundary && apply)
     throw new Error("DIAGNOSTIC_BOUNDARY_PREVIEW_ONLY");
   if (diagnosticBoundary) onPhase("PLANNING_CATCHUP_DIAGNOSTIC_BOUNDARY_MODE");
@@ -71,14 +116,26 @@ export async function runPlanningMasterCatchup({
     targetConfirmation,
   });
   if (apply) {
-    if (!snapshotFile || !planChecksum || !actorId)
+    if (reviewedSync) {
+      if (!/^[a-f0-9]{64}$/.test(reviewedPlanChecksum ?? ""))
+        throw new Error("REVIEWED_PLANNING_PLAN_REQUIRED");
+    } else if (!snapshotFile || !planChecksum || !actorId)
       throw new Error("REVIEWED_IMMUTABLE_SNAPSHOT_PLAN_AND_ACTOR_REQUIRED");
     if (
-      !/^[a-f0-9]{64}$/.test(planChecksum) ||
-      !/^[a-f0-9-]{36}$/.test(actorId)
+      !reviewedSync &&
+      (!/^[a-f0-9]{64}$/.test(planChecksum) || !/^[a-f0-9-]{36}$/.test(actorId))
     )
       throw new Error("REVIEWED_PLAN_AND_ACTOR_REQUIRED");
     await phase("CHECKOUT", () => verifyApply({ commitSha, cwd }));
+    if (reviewedSync) {
+      await verifyCertification({
+        commitSha,
+        certificationMode: "github",
+        environment,
+        cwd,
+      });
+      actorId = deterministicV1Uuid("atlas-staging-master-import-actor");
+    }
   } else await phase("CHECKOUT", () => verifyPreview(commitSha, cwd));
   const snapshot = await phase("SOURCE_SNAPSHOT", () =>
     snapshotFile
@@ -130,21 +187,83 @@ export async function runPlanningMasterCatchup({
     installed.some((v, i) => v !== expected[i])
   )
     throw new Error("STAGING_MIGRATION_PREFIX_MISMATCH");
-  if (apply && installed.length !== expected.length)
+  if ((apply || reviewedSync) && installed.length !== expected.length)
     throw new Error("STAGING_FULL_MIGRATION_PARITY_REQUIRED");
-  const planSql = await phase("PLAN_BUILD", () =>
-    buildPlanningCatchupSql(snapshot, {
-      targetProjectRef: target.projectRef,
-      apply,
-      diagnosticBoundary,
-      planChecksum,
-      actorId,
-      dishLegacyIds,
-    }),
-  );
-  const result = await phase("PLAN_EXECUTION", () =>
-    execute(planSql, diagnosticBoundary ? { timeoutMs: 60000 } : {}),
-  );
+  const executePlan = async (applyRequested) => {
+    const planSql = await phase("PLAN_BUILD", () =>
+      buildPlanningCatchupSql(snapshot, {
+        targetProjectRef: target.projectRef,
+        apply: applyRequested,
+        diagnosticBoundary,
+        planChecksum,
+        actorId,
+        dishLegacyIds,
+      }),
+    );
+    return phase("PLAN_EXECUTION", () =>
+      execute(planSql, diagnosticBoundary ? { timeoutMs: 60000 } : {}),
+    );
+  };
+  let reviewChecksum;
+  let result;
+  if (reviewedSync) {
+    const { dish_legacy_ids: mappedIds } = await phase("MAPPED_DISHES", () =>
+      execute(
+        "select jsonb_build_object('dish_legacy_ids',coalesce(jsonb_agg(legacy_id),'[]'::jsonb)) as result from atlas_legacy.master_data_mappings where source_system='OPS_V1' and object_type='DISH';",
+        { timeoutMs: 45000 },
+      ),
+    );
+    if (
+      !Array.isArray(mappedIds) ||
+      mappedIds.some((id) => typeof id !== "string")
+    )
+      throw new Error("STAGING_MAPPED_DISHES_INVALID");
+    const mapped = new Set(mappedIds);
+    dishLegacyIds = snapshot.records.dishes
+      .filter(
+        (dish) => dish.dish_status === "ACTIVE" && !mapped.has(dish.legacy_id),
+      )
+      .map((dish) => dish.legacy_id);
+    if (!dishLegacyIds.length) {
+      if (apply) throw new Error("REVIEWED_PLANNING_PLAN_MISMATCH");
+      return {
+        success: true,
+        status: "NO_CHANGES",
+        business_writes: 0,
+        catchup_dish_ids: [],
+      };
+    }
+    result = await executePlan(false);
+    if (result.success === true) {
+      if (
+        result.status !== "PREVIEW" ||
+        result.snapshot_checksum !== snapshot.snapshot_checksum ||
+        !/^[a-f0-9]{64}$/.test(result.plan_checksum ?? "") ||
+        !Array.isArray(result.actions) ||
+        result.actions.some(
+          (action) =>
+            action.object_type === "SCHOOL" ||
+            !["CREATE", "NO_CHANGE"].includes(action.action),
+        )
+      )
+        throw new Error("REVIEWED_PLANNING_SCOPE_INVALID");
+      reviewChecksum = catchupReviewChecksum(commitSha, snapshot, result);
+      if (apply) {
+        if (reviewChecksum !== reviewedPlanChecksum)
+          throw new Error("REVIEWED_PLANNING_PLAN_MISMATCH");
+        planChecksum = result.plan_checksum;
+        await phase("CHECKOUT", () => verifyApply({ commitSha, cwd }));
+        result = await executePlan(true);
+        if (
+          result.success === true &&
+          (result.status !== "APPLIED" ||
+            result.operational_data_unchanged !== true ||
+            result.unrelated_master_facts_unchanged !== true)
+        )
+          throw new Error("REVIEWED_PLANNING_READBACK_FAILED");
+      }
+    }
+  } else result = await executePlan(apply);
   if (
     result.snapshot_checksum &&
     result.snapshot_checksum !== snapshot.snapshot_checksum
@@ -209,6 +328,7 @@ export async function runPlanningMasterCatchup({
   }
   return {
     ...result,
+    ...(reviewChecksum ? { reviewed_plan_checksum: reviewChecksum } : {}),
     ...(diagnosticBoundary
       ? {
           diagnostic_boundary: true,
@@ -288,10 +408,13 @@ async function main() {
         "--actor-id",
         "--dish-legacy-ids",
         "--report-dir",
+        "--reviewed-sync",
+        "--reviewed-plan-checksum",
       ].includes(k)
     )
       throw new Error("INVALID_ARGUMENT");
-    if (k === "--apply" || k === "--diagnostic-boundary") flags.set(k, true);
+    if (["--apply", "--diagnostic-boundary", "--reviewed-sync"].includes(k))
+      flags.set(k, true);
     else {
       const v = args[++i];
       if (!v || v.startsWith("--")) throw new Error("MISSING_ARGUMENT");
@@ -307,6 +430,8 @@ async function main() {
     snapshotOutput: flags.get("--snapshot-output"),
     planChecksum: flags.get("--plan-checksum"),
     actorId: flags.get("--actor-id"),
+    reviewedSync: flags.has("--reviewed-sync"),
+    reviewedPlanChecksum: flags.get("--reviewed-plan-checksum"),
     dishLegacyIds: flags.has("--dish-legacy-ids")
       ? flags.get("--dish-legacy-ids").split(",")
       : undefined,
@@ -317,6 +442,27 @@ async function main() {
     writePlanningCatchupReports(result, flags.get("--report-dir"));
   }
   const { actions, report, protected: fingerprints, ...summary } = result;
+  if (flags.has("--reviewed-sync")) {
+    if (report)
+      summary.planned_changes = report
+        .filter(({ ACTION }) => ACTION !== "DEPENDENCY_ONLY")
+        .map(({ OBJECT_TYPE, LEGACY_ID, ACTION }) => ({
+          object_type: OBJECT_TYPE,
+          legacy_id: LEGACY_ID,
+          action: ACTION,
+        }));
+    if (summary.issues)
+      summary.issues = summary.issues.map(
+        ({ severity, code, entity, legacy_id, object_type, field }) => ({
+          severity,
+          code,
+          entity,
+          legacy_id,
+          object_type,
+          field,
+        }),
+      );
+  }
   console.log(JSON.stringify(summary, null, 2));
   if (result.success !== true) process.exitCode = 2;
 }
