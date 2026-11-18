@@ -55,7 +55,7 @@ export function historicalQuantity(line: ConfirmedNeedLine) {
 // Local feedback uses the exact effective Planning step; the backend remains
 // authoritative for policy resolution, source membership and final eligibility.
 export type ConfirmedNeedDraftError = {
-  field: "quantity" | "reason";
+  field: "quantity" | "reason" | "note";
   message: string;
 };
 export function draftError(
@@ -102,6 +102,11 @@ export function draftError(
     return {
       field: "reason",
       message: "Hãy chọn lý do khi thay đổi số lượng.",
+    };
+  if (equalsBaseline && !line.current_decision_id && draft.reason_note.trim())
+    return {
+      field: "note",
+      message: "Xóa ghi chú điều chỉnh để xác nhận theo đề xuất ban đầu.",
     };
   return null;
 }

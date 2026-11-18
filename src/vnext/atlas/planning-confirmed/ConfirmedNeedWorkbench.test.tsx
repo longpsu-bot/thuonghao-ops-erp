@@ -65,6 +65,23 @@ function show(
 async function quantity() {
   return screen.findByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" });
 }
+it("lets staff clear their adjustment note before a first unchanged acceptance", async () => {
+  show("needs_review");
+  const input = await quantity();
+  const proposed = (input as HTMLInputElement).value;
+  fireEvent.change(input, { target: { value: "12" } });
+  const note = screen.getByRole("textbox", { name: "Ghi chú Gạo thơm" });
+  fireEvent.change(note, { target: { value: "Bếp đề nghị tăng" } });
+  fireEvent.change(input, { target: { value: proposed } });
+  expect(note).toHaveValue("Bếp đề nghị tăng");
+  expect(note).toHaveAccessibleDescription(
+    "Xóa ghi chú điều chỉnh để xác nhận theo đề xuất ban đầu.",
+  );
+  const save = screen.getByRole("button", { name: "Lưu" });
+  expect(save).toBeDisabled();
+  fireEvent.change(note, { target: { value: "" } });
+  expect(save).toBeEnabled();
+});
 function openUtilities() {
   const button = screen.getByRole("button", { name: "Tiện ích" });
   if (button.getAttribute("aria-expanded") === "false") fireEvent.click(button);

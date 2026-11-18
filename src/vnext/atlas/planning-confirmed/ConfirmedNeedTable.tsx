@@ -597,6 +597,10 @@ export function ConfirmedNeedTable({
                       <Input
                         aria-label={`Ghi chú ${line.ingredient.name}`}
                         placeholder="Ghi chú (tùy chọn)"
+                        aria-invalid={error?.field === "note"}
+                        aria-describedby={
+                          error?.field === "note" ? description : undefined
+                        }
                         value={draft.reason_note}
                         disabled={!editable || historical}
                         onChange={(e) =>

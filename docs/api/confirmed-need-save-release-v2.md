@@ -81,7 +81,12 @@ acceptance to `Điều chỉnh vận hành`. Staff can override the reason and m
 leave the row note blank on first and replacement decisions. Save normalizes
 an empty note to null. The separate v3 released-correction explanation is required.
 
-Deploy migration `20261118074850_optional_confirmed_need_adjustment_note.sql`
+Editing or clearing the note on a saved adjustment appends a decision on the
+same quantity revision and preserves its original before/after evidence. For
+a first acceptance at the proposal quantity, clear any draft adjustment note.
+
+Deploy migrations `20261118074850_optional_confirmed_need_adjustment_note.sql`
+and `20261118085415_confirmed_need_note_only_replacement.sql` in order
 before the updated client. It changes validation and decision constraints
 without rewriting history. Rolling back the UI alone preserves saved decisions.
 Reinstating the older database rules requires grandfathering decisions with
