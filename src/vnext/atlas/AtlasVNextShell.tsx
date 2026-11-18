@@ -3,8 +3,10 @@ import {
   Button,
   Field,
   Flex,
+  Grid,
   Icon,
   Input,
+  InputGroup,
   Stack,
   Text,
 } from "@chakra-ui/react";
@@ -13,6 +15,7 @@ import {
   CaretDown,
   Circle,
   List,
+  MagnifyingGlass,
   Prohibit,
   UserCircle,
   Warning,
@@ -162,6 +165,18 @@ export function AtlasVNextShell({
       event.preventDefault();
       closeMenu();
       return;
+    }
+    if (event.target === searchInput.current) {
+      if (["Home", "End"].includes(event.key)) return;
+      if (
+        event.key === "Enter" &&
+        !event.nativeEvent.isComposing &&
+        matches.length === 1
+      ) {
+        event.preventDefault();
+        select(matches[0]!.id);
+        return;
+      }
     }
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
     const buttons = Array.from(
@@ -336,94 +351,145 @@ export function AtlasVNextShell({
             left="sm"
             id={`${prefix}-launcher-menu`}
             role="dialog"
-            aria-label="Chức năng"
+            aria-labelledby={`${prefix}-launcher-heading`}
             onKeyDown={menuKeys}
+            display="flex"
+            flexDirection="column"
+            w={{ base: popup.w, md: "var(--atlas-launcher-wide, 44rem)" }}
+            maxW="calc(100vw - var(--atlas-launcher-gutter, 20px))"
+            p="0"
+            overflow="hidden"
           >
-            <Text fontWeight="semibold" px="sm" pb="sm">
-              Chức năng
-            </Text>
-            <Field.Root mb="sm">
-              <Field.Label>Tìm chức năng</Field.Label>
-              <Input
-                ref={searchInput}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Tên công việc…"
-              />
-            </Field.Root>
-            {(["CÔNG VIỆC HẰNG NGÀY", "DỮ LIỆU & CẤU HÌNH"] as const).map(
-              (group) => {
-                const items = matches.filter((w) => w.group === group);
-                return (
-                  items.length > 0 && (
-                    <Box key={group} mb="sm">
-                      <Text textStyle="helper" color="fg.muted" px="sm" py="xs">
-                        {group}
-                      </Text>
-                      <Stack gap="xs">
-                        {items.map(({ id, label: name }) => (
-                          <Button
-                            key={id}
-                            data-destination=""
-                            variant="utility"
-                            justifyContent="flex-start"
-                            textAlign="left"
-                            h="var(--atlas-layout-auto, auto)"
-                            minH="var(--atlas-layout-mobile-target, 44px)"
-                            whiteSpace="normal"
-                            bg={
-                              id === activeModule
-                                ? "bg.selected"
-                                : "transparent"
-                            }
-                            borderLeftWidth="var(--atlas-workspace-selected-edge, 3px)"
-                            borderLeftColor={
-                              id === activeModule
-                                ? "border.accent"
-                                : "transparent"
-                            }
-                            color={
-                              id === activeModule
-                                ? "fg.primary"
-                                : "fg.secondary"
-                            }
-                            _hover={{
-                              bg:
+            <Flex
+              align={{ base: "stretch", md: "center" }}
+              direction={{ base: "column", md: "row" }}
+              justify="space-between"
+              gap="sm"
+              px="md"
+              py="sm"
+              bg="bg.toolbar"
+              borderBottomWidth="var(--atlas-layout-edge, 1px)"
+              borderColor="border.default"
+            >
+              <Text
+                as="h2"
+                id={`${prefix}-launcher-heading`}
+                textStyle="section"
+                flexShrink="0"
+              >
+                Chức năng
+              </Text>
+              <Field.Root maxW={{ md: "var(--atlas-launcher-search, 20rem)" }}>
+                <Field.Label srOnly>Tìm chức năng</Field.Label>
+                <InputGroup
+                  startElement={<MagnifyingGlass aria-hidden="true" />}
+                >
+                  <Input
+                    ref={searchInput}
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Tìm chức năng"
+                  />
+                </InputGroup>
+              </Field.Root>
+            </Flex>
+            <Grid
+              overflowY="auto"
+              minH="0"
+              alignItems="start"
+              gridAutoFlow={{ base: "row", md: "column" }}
+              gridAutoColumns="minmax(0, 1fr)"
+              gap="md"
+              p="md"
+            >
+              {(["CÔNG VIỆC HẰNG NGÀY", "DỮ LIỆU & CẤU HÌNH"] as const).map(
+                (group) => {
+                  const items = matches.filter((w) => w.group === group);
+                  return (
+                    items.length > 0 && (
+                      <Box as="section" key={group} aria-label={group} minW="0">
+                        <Text
+                          as="h3"
+                          textStyle="helper"
+                          fontWeight="semibold"
+                          color="fg.brand"
+                          px="sm"
+                          pb="xs"
+                          mb="xs"
+                          borderBottomWidth="var(--atlas-layout-edge, 1px)"
+                          borderColor="border.default"
+                        >
+                          {group}
+                        </Text>
+                        <Stack gap="0">
+                          {items.map(({ id, label: name }) => (
+                            <Button
+                              key={id}
+                              data-destination=""
+                              variant="utility"
+                              justifyContent="flex-start"
+                              textAlign="left"
+                              h="var(--atlas-layout-auto, auto)"
+                              py="sm"
+                              minH="var(--atlas-layout-mobile-target, 44px)"
+                              whiteSpace="normal"
+                              bg={
                                 id === activeModule
                                   ? "bg.selected"
-                                  : "bg.context",
-                            }}
-                            aria-label={name}
-                            aria-current={
-                              id === activeModule ? "page" : undefined
-                            }
-                            onClick={() => select(id)}
-                          >
-                            {workbenchIcon(id)}
-                            <Text flex="1">{name}</Text>
-                            {ids.includes(id) && (
-                              <Text
-                                textStyle="helper"
-                                color="fg.muted"
-                                fontWeight="normal"
-                                flexShrink="0"
-                              >
-                                Đang mở
-                              </Text>
-                            )}
-                          </Button>
-                        ))}
-                      </Stack>
-                    </Box>
-                  )
-                );
-              },
-            )}
-            {!matches.length && (
-              <Text role="status" p="sm">
-                Không tìm thấy chức năng phù hợp. Thử tìm bằng tên khác.
-              </Text>
-            )}
+                                  : "transparent"
+                              }
+                              borderLeftWidth="var(--atlas-workspace-selected-edge, 3px)"
+                              borderLeftColor={
+                                id === activeModule
+                                  ? "border.accent"
+                                  : "transparent"
+                              }
+                              color={
+                                id === activeModule
+                                  ? "fg.primary"
+                                  : "fg.secondary"
+                              }
+                              _hover={{
+                                bg:
+                                  id === activeModule
+                                    ? "bg.selected"
+                                    : "bg.context",
+                              }}
+                              aria-label={name}
+                              aria-description={
+                                ids.includes(id) ? "Đang mở" : undefined
+                              }
+                              aria-current={
+                                id === activeModule ? "page" : undefined
+                              }
+                              onClick={() => select(id)}
+                            >
+                              {workbenchIcon(id, id === activeModule)}
+                              <Text flex="1">{name}</Text>
+                              {ids.includes(id) && (
+                                <Text
+                                  textStyle="helper"
+                                  color="fg.muted"
+                                  fontWeight="normal"
+                                  flexShrink="0"
+                                >
+                                  Đang mở
+                                </Text>
+                              )}
+                            </Button>
+                          ))}
+                        </Stack>
+                      </Box>
+                    )
+                  );
+                },
+              )}
+              {!matches.length && (
+                <Text role="status" p="sm">
+                  Không tìm thấy chức năng phù hợp. Thử tìm bằng tên khác.
+                </Text>
+              )}
+            </Grid>
           </Box>
         )}
         {menu === "account" && (
