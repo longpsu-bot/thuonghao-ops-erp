@@ -356,8 +356,7 @@ export function AtlasVNextShell({
             display="flex"
             flexDirection="column"
             w={{ base: popup.w, md: "var(--atlas-launcher-wide, 44rem)" }}
-            maxW="calc(100vw - var(--atlas-launcher-gutter, 20px))"
-            p="0"
+            p="var(--atlas-layout-zero, 0)"
             overflow="hidden"
           >
             <Flex
@@ -395,7 +394,7 @@ export function AtlasVNextShell({
             </Flex>
             <Grid
               overflowY="auto"
-              minH="0"
+              minH="var(--atlas-layout-zero, 0)"
               alignItems="start"
               gridAutoFlow={{ base: "row", md: "column" }}
               gridAutoColumns="minmax(0, 1fr)"
@@ -407,7 +406,12 @@ export function AtlasVNextShell({
                   const items = matches.filter((w) => w.group === group);
                   return (
                     items.length > 0 && (
-                      <Box as="section" key={group} aria-label={group} minW="0">
+                      <Box
+                        as="section"
+                        key={group}
+                        aria-label={group}
+                        minW="var(--atlas-layout-zero, 0)"
+                      >
                         <Text
                           as="h3"
                           textStyle="helper"
@@ -421,7 +425,7 @@ export function AtlasVNextShell({
                         >
                           {group}
                         </Text>
-                        <Stack gap="0">
+                        <Stack gap="var(--atlas-layout-zero, 0)">
                           {items.map(({ id, label: name }) => (
                             <Button
                               key={id}
