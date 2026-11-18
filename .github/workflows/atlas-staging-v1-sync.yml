@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Preview master data and Change Order history, or apply one reviewed import
+        description: Reconcile master data and preview Change Order history, or apply one reviewed import
         type: choice
         options:
           - preview
