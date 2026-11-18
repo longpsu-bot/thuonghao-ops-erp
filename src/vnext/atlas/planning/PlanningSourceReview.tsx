@@ -112,7 +112,7 @@ export function PlanningSourceReview({
             lg: "compact",
           }}
         >
-          Đóng
+          Quay lại chỉnh sửa
         </Button>
       </Flex>
       <Box
@@ -213,7 +213,7 @@ export function PlanningSourceReview({
             lg: "control",
           }}
         >
-          Quay lại
+          Quay lại chỉnh sửa
         </Button>
         {nextChain && !c.impact?.save_allowed ? (
           <Button

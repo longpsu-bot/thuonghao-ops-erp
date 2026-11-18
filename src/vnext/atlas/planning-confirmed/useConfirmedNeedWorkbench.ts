@@ -25,6 +25,7 @@ import {
   loadCompleteConfirmedNeedReview,
   shoppingListRangeDates,
   initialConfirmedNeedDraft,
+  defaultConfirmedNeedReason,
   type ShoppingListRangeContext,
   needGenerationContinuitySummaryFromResult,
   needGenerationExecutionRequest,
@@ -545,7 +546,20 @@ export function useConfirmedNeedWorkbench({
             : {}),
         }
       : change;
-    setDrafts((d) => ({ ...d, [id]: { ...d[id]!, ...accepted } }));
+    setDrafts((d) => {
+      const draft = { ...d[id]!, ...accepted };
+      if (
+        !correctionMode &&
+        change.exact_quantity !== undefined &&
+        change.reason_code === undefined
+      )
+        draft.reason_code = defaultConfirmedNeedReason(
+          line,
+          draft,
+          change.exact_quantity,
+        );
+      return { ...d, [id]: draft };
+    });
   };
   const classifyFailure = (r: AtlasRpcResult, generation = false) => {
     recoveryInvalidation.current = confirmedNeedResultHasUnknownWriteOutcome(r);

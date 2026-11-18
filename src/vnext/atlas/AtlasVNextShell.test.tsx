@@ -84,6 +84,9 @@ describe("Atlas v2 workspace shell", () => {
     fireEvent.change(input, { target: { value: "cong thuc" } });
     const dialog = screen.getByRole("dialog", { name: "Chức năng" });
     expect(within(dialog).getAllByRole("button")).toHaveLength(1);
+    fireEvent.keyDown(input, { key: "Home" });
+    fireEvent.keyDown(input, { key: "End" });
+    expect(input).toHaveFocus();
     fireEvent.keyDown(input, { key: "ArrowDown" });
     expect(
       within(dialog).getByRole("button", { name: "Công thức" }),
@@ -92,6 +95,25 @@ describe("Atlas v2 workspace shell", () => {
     expect(trigger).toHaveFocus();
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("opens a unique search result with Enter after Vietnamese text composition ends", () => {
+    const navigate = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell onNavigate={navigate}>Atlas</AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    const trigger = screen.getByRole("button", { name: "Chức năng" });
+    fireEvent.click(trigger);
+    const input = screen.getByRole("textbox", { name: "Tìm chức năng" });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.change(input, { target: { value: "cong thuc" } });
+    fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+    expect(navigate).not.toHaveBeenCalled();
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("recipes");
+    expect(trigger).toHaveFocus();
   });
 
   it("separates available-workbench launcher from narrow open-workbench selection and guarded close", () => {

@@ -65,6 +65,23 @@ function show(
 async function quantity() {
   return screen.findByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" });
 }
+it("lets staff clear their adjustment note before a first unchanged acceptance", async () => {
+  show("needs_review");
+  const input = await quantity();
+  const proposed = (input as HTMLInputElement).value;
+  fireEvent.change(input, { target: { value: "12" } });
+  const note = screen.getByRole("textbox", { name: "Ghi chú Gạo thơm" });
+  fireEvent.change(note, { target: { value: "Bếp đề nghị tăng" } });
+  fireEvent.change(input, { target: { value: proposed } });
+  expect(note).toHaveValue("Bếp đề nghị tăng");
+  expect(note).toHaveAccessibleDescription(
+    "Xóa ghi chú điều chỉnh để xác nhận theo đề xuất ban đầu.",
+  );
+  const save = screen.getByRole("button", { name: "Lưu" });
+  expect(save).toBeDisabled();
+  fireEvent.change(note, { target: { value: "" } });
+  expect(save).toBeEnabled();
+});
 function openUtilities() {
   const button = screen.getByRole("button", { name: "Tiện ích" });
   if (button.getAttribute("aria-expanded") === "false") fireEvent.click(button);
@@ -208,7 +225,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(row).toHaveTextContent("07/09/2026");
     expect(row).toHaveTextContent("Trường Nguyễn Du");
     expect(row).toHaveTextContent("Gạo thơm");
-    expect(row).toHaveTextContent("Đã lưu: 10,25 kg");
+    expect(row.querySelector('[data-field="saved"]')).toHaveTextContent(
+      "10,25 kg",
+    );
     expect(input).toHaveValue("12.500001");
     expect(input).toHaveAccessibleDescription(/Trường Nguyễn Du.*Gạo thơm/);
     expect(input).toHaveAccessibleDescription(/07\/09\/2026/);
@@ -313,7 +332,10 @@ describe("Confirmed Need Chakra operator surface", () => {
       width: "100%",
       tableLayout: "fixed",
     });
-    expect(within(viewport).getAllByRole("columnheader")).toHaveLength(6);
+    expect(within(viewport).getAllByRole("columnheader")).toHaveLength(7);
+    expect(within(viewport).getAllByRole("columnheader")[3]).toHaveTextContent(
+      "Đã lưu",
+    );
     expect(
       within(viewport)
         .getAllByRole("columnheader")
@@ -744,6 +766,7 @@ describe("Confirmed Need Chakra operator surface", () => {
               ...drafts["line-0"]!,
               exact_quantity: "12,5",
               quantity_entered: true,
+              reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
             },
           },
           changedLineIds: ["line-0"],
@@ -773,16 +796,21 @@ describe("Confirmed Need Chakra operator surface", () => {
     ).toBeVisible();
     expect(await quantity()).toHaveValue("12,5");
     expect(h.save).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
     expect(
       screen.getByRole("combobox", { name: "Lý do Gạo thơm" }),
-    ).toHaveValue("PROPOSAL_ACCEPTED");
+    ).toHaveValue("OPERATIONAL_QUANTITY_ADJUSTMENT");
     expect(
       screen.getByRole("button", { name: "Xuất Phiếu đi chợ" }),
     ).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Nhập Phiếu đi chợ" }),
     ).toBeDisabled();
+    expect(
+      screen.getByText(
+        "Hãy lưu thay đổi trước khi xuất hoặc nhập Phiếu đi chợ. Nếu muốn bỏ thay đổi, hãy tải lại dữ liệu.",
+      ),
+    ).toBeVisible();
     await editValid();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
     expect(h.save).not.toHaveBeenCalled();
@@ -868,7 +896,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Xác nhận nhu cầu",
     );
-    expect(screen.getAllByRole("columnheader")).toHaveLength(6);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(7);
     expect(document.body.textContent).not.toMatch(
       /batch-current|line-0|revision-0|decision-0|DRAFT_REVIEW/,
     );
@@ -898,6 +926,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     });
     const input = await quantity();
     const row = input.closest("tr")!;
+    expect(row.querySelector('[data-field="saved"]')).toHaveTextContent(
+      "Chưa lưu",
+    );
     expect(
       screen.queryByRole("columnheader", { name: "Nhu cầu tính" }),
     ).not.toBeInTheDocument();

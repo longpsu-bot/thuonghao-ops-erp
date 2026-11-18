@@ -73,8 +73,24 @@ The normal operator path invokes one backend `prepare_school_catering_purchase_o
 ## School-first identity presentation — 2026-10-12
 
 The vNext Confirmed Need table separates sticky sortable `Trường / nơi nhận`
-from `Nguyên liệu`, followed by `Đề xuất vận hành`, `Số lượng xác nhận`,
-`Thay đổi`, and `Lý do / ghi chú`. Default order is School → Ingredient.
+from `Nguyên liệu`, followed by `Đề xuất vận hành`, `Đã lưu`, `Số lượng xác nhận`,
+`Thay đổi`, and `Lý do điều chỉnh`. Default order is School → Ingredient.
+The saved column shows the exact last confirmed quantity, or `Chưa lưu` before
+the first decision. Typing or importing a different quantity defaults an
+acceptance to `Điều chỉnh vận hành`. Staff can override the reason and may
+leave the row note blank on first and replacement decisions. Save normalizes
+an empty note to null. The separate v3 released-correction explanation is required.
+
+Editing or clearing the note on a saved adjustment appends a decision on the
+same quantity revision and preserves its original before/after evidence. For
+a first acceptance at the proposal quantity, clear any draft adjustment note.
+
+Deploy migrations `20261118074850_optional_confirmed_need_adjustment_note.sql`
+and `20261118085415_confirmed_need_note_only_replacement.sql` in order
+before the updated client. It changes validation and decision constraints
+without rewriting history. Rolling back the UI alone preserves saved decisions.
+Reinstating the older database rules requires grandfathering decisions with
+omitted notes so that history remains immutable and validates downstream.
 Identical School/delivery-location names appear once; distinct destinations use
 secondary typography. This is presentation-only: exact quantities, rounding,
 line decisions, Save/reload, reason requirements, Shopping List, currentness,

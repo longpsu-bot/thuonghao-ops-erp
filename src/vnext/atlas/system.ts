@@ -448,7 +448,10 @@ export const atlasSystem = createSystem(
           base: control,
           variants: {
             variant: { outline: control },
-            size: { md: { h: "control", px: "sm", textStyle: "input" } },
+            size: {
+              sm: { textStyle: "input" },
+              md: { h: "control", px: "sm", textStyle: "input" },
+            },
           },
           defaultVariants: { size: "md" },
         },

@@ -558,8 +558,7 @@ describe("Confirmed Need two-action workbench", () => {
     );
     expect(screen.getByText("Gạo thơm")).toBeVisible();
     expect(screen.queryByText("Cà rốt")).not.toBeInTheDocument();
-    expect(screen.getByText("Lý do này cần ghi chú.")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
 
     fireEvent.change(screen.getByLabelText("Ghi chú Gạo thơm"), {
       target: { value: "Cập nhật ghi chú vận hành" },

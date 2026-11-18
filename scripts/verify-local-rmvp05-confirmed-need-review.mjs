@@ -363,9 +363,8 @@ async function main() {
       previewRequest(subject, batchId, 2, [missingNoteLine]),
     );
     assert(
-      missingNote.preview.success === false &&
-        missingNote.preview.error_code === "REASON_NOTE_REQUIRED",
-      "RMVP-05 replacement preview did not require correction evidence.",
+      missingNote.preview.success === true,
+      "RMVP-05 ordinary replacement preview rejected an omitted row note.",
     );
 
     const replacementLine = {

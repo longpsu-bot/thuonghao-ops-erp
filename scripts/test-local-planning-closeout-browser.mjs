@@ -26,7 +26,6 @@ import {
   assertFirstSaveTransition,
   assertReopenedReview,
   preSaveGateStateExpression,
-  controlledInputExpression,
   minimalPlanningAdjustment,
 } from "./staging-planning-browser.mjs";
 
@@ -522,40 +521,26 @@ export async function certifyLocalCloseoutBrowser() {
     );
     assert.equal(
       proposedState.save_enabled,
-      false,
-      "A file quantity change still needs an explicit operator reason.",
+      true,
+      "An imported quantity adjustment is ready to save with its default reason and an optional note.",
     );
     assert.deepEqual(
       receiptState(),
       originalFacts,
       "Modified import remains a local proposal.",
     );
-    console.log("Local browser: explicit adjustment reason/note");
     const importedRow = `section[aria-label="Xác nhận nhu cầu"] tr[data-confirmed-need-line-id="${candidate.lineId}"]`;
-    await evaluate(
-      controlledInputExpression(
-        `${importedRow} select[aria-label^="Lý do"]`,
-        "OPERATIONAL_QUANTITY_ADJUSTMENT",
-        "select",
+    assert.equal(
+      await evaluate(
+        `document.querySelector(${JSON.stringify(`${importedRow} select[aria-label^="Lý do"]:not(:disabled)`)})?.value`,
       ),
+      "OPERATIONAL_QUANTITY_ADJUSTMENT",
     );
-    await until(
-      () =>
-        evaluate(
-          `Boolean(document.querySelector(${JSON.stringify(`${importedRow} input[aria-label^="Ghi chú"]:not(:disabled)`)}))`,
-        ),
-      "imported_note_ready",
-    );
-    const importedNote = "Disposable connected worksheet adjustment";
-    await evaluate(
-      controlledInputExpression(
-        `${importedRow} input[aria-label^="Ghi chú"]`,
-        importedNote,
+    assert.equal(
+      await evaluate(
+        `document.querySelector(${JSON.stringify(`${importedRow} input[aria-label^="Ghi chú"]:not(:disabled)`)})?.value`,
       ),
-    );
-    await until(
-      async () => (await evaluate(preSaveGateStateExpression())).save_enabled,
-      "imported_adjustment_ready",
+      "",
     );
     console.log("Local browser: save");
     await clickBusinessActionOnce({
@@ -627,7 +612,7 @@ export async function certifyLocalCloseoutBrowser() {
         );
         assert.equal(decision.decision_kind, "ADJUSTED_QUANTITY_CONFIRMED");
         assert.equal(decision.reason_code, "OPERATIONAL_QUANTITY_ADJUSTMENT");
-        assert.equal(decision.reason_note, importedNote);
+        assert.equal(decision.reason_note ?? null, null);
         assert.equal(
           decision.policy_revision_id,
           prior.effective_policy.revision_id,
@@ -750,7 +735,7 @@ export async function certifyLocalCloseoutBrowser() {
         encoding: "utf8",
       }).trim(),
       journey:
-        "Public Auth → initial248-line Save/reopen → fresh XLSX download → unchanged import → one file quantity proposal → explicit reason/note → one successor Save → public readback → reopen → stale-file rejection → native fresh-day first generation →248 rows/304 memberships → explicit unconfirmed Discard → new-document reselect/reopen",
+        "Public Auth → initial248-line Save/reopen → fresh XLSX download → unchanged import → one file quantity proposal with default reason and empty note → one successor Save → public readback → reopen → stale-file rejection → native fresh-day first generation →248 rows/304 memberships → explicit unconfirmed Discard → new-document reselect/reopen",
       transport:
         "actual public Auth/PostgREST; real connected React/Chakra workbench and shopping service; disposable runner only",
     };

@@ -26,9 +26,11 @@ import { viDate, planningIssueMessage } from "../bridges/planning";
 export function PlanningMenuStage({
   c,
   visibleSchoolIds,
+  fitWorkspace,
 }: {
   c: PlanningSourcesController;
   visibleSchoolIds: string[];
+  fitWorkspace: boolean;
 }) {
   const [choose, setChoose] = useState(false);
   const active = useAtlasWorkbenchActive();
@@ -333,6 +335,7 @@ export function PlanningMenuStage({
         label="Bảng thực đơn theo trường"
         data-testid="weekly-menu-scroll"
         data-horizontal-scroll="local"
+        fillAvailableHeight={fitWorkspace}
         maxH={
           c.locked
             ? "var(--atlas-layout-planning-recovery-table-height, max(160px, calc(100dvh - 570px)))"

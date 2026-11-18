@@ -60,6 +60,9 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const reviewTrigger = useRef<HTMLButtonElement>(null);
   const wasReviewOpen = useRef(false);
   const reviewOpen = c.job !== "menu" && Boolean(c.preview);
+  const reviewReady =
+    c.candidate && c.canEdit && !c.syncing && c.errors.length === 0;
+  const fitMenu = props.ownerJob === "menu";
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: c.dirty,
     blocked: c.exitBlocked || c.syncing || reviewOpen,
@@ -124,13 +127,25 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
           : "minmax(0, 1fr)",
       }}
       alignItems="stretch"
+      flex={fitMenu ? "1" : undefined}
+      minH="var(--atlas-layout-zero, 0)"
+      templateRows={fitMenu ? "minmax(0, 1fr)" : undefined}
     >
       <Box
         minW="var(--atlas-layout-zero, 0)"
-        display={{ base: reviewOpen ? "none" : "block", lg: "block" }}
+        display={
+          fitMenu
+            ? "flex"
+            : { base: reviewOpen ? "none" : "block", lg: "block" }
+        }
+        flexDirection="column"
       >
         {c.job === "menu" ? (
-          <PlanningMenuStage c={c} visibleSchoolIds={visibleSchoolIds} />
+          <PlanningMenuStage
+            c={c}
+            visibleSchoolIds={visibleSchoolIds}
+            fitWorkspace={fitMenu}
+          />
         ) : c.job === "attendance" ? (
           <PlanningAttendanceStage
             c={c}
@@ -138,30 +153,36 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
             onExportTemplate={props.onExportAttendanceTemplate}
           />
         ) : (
-          <PlanningPantryStage c={c} visibleSchoolIds={visibleSchoolIds} />
+          <PlanningPantryStage
+            c={c}
+            visibleSchoolIds={visibleSchoolIds}
+            primaryAdd={!reviewReady && !reviewOpen}
+          />
         )}
-        <Flex
-          p="md"
-          justify="space-between"
-          align="center"
-          gap="sm"
-          wrap="wrap"
-        >
-          <Text textStyle="helper" color="fg.muted">
-            {c.dirty ? "Đang chỉnh sửa · chưa lưu" : ""}
-          </Text>
-          {c.job !== "menu" && c.candidate && (
-            <Button
-              ref={reviewTrigger}
-              display={c.preview ? "none" : "inline-flex"}
-              variant="businessPrimary"
-              disabled={!c.canEdit || c.syncing || c.errors.length > 0}
-              onClick={() => void c.previewChanges()}
-            >
-              Xem thay đổi
-            </Button>
-          )}
-        </Flex>
+        {(!fitMenu || c.dirty) && (
+          <Flex
+            p="md"
+            justify="space-between"
+            align="center"
+            gap="sm"
+            wrap="wrap"
+          >
+            <Text textStyle="helper" color="fg.muted">
+              {c.dirty ? "Đang chỉnh sửa · chưa lưu" : ""}
+            </Text>
+            {c.job !== "menu" && c.candidate && (
+              <Button
+                ref={reviewTrigger}
+                display={c.preview ? "none" : "inline-flex"}
+                variant="businessPrimary"
+                disabled={!reviewReady}
+                onClick={() => void c.previewChanges()}
+              >
+                Xem thay đổi
+              </Button>
+            )}
+          </Flex>
+        )}
       </Box>
       {reviewOpen && <PlanningSourceReview c={c} reviewRef={reviewPanel} />}
     </Grid>
@@ -171,6 +192,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   return (
     <Box
       as="section"
+      h={fitMenu ? "full" : undefined}
       aria-label={label}
       bg="bg.workbench"
       borderRadius="workbench"
@@ -178,7 +200,11 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
+      <Grid
+        h={fitMenu ? "full" : undefined}
+        templateColumns="minmax(0, 1fr)"
+        templateRows="auto minmax(0, 1fr)"
+      >
         <AtlasTaskContext
           ariaLabel={`Ngữ cảnh ${label.toLocaleLowerCase("vi")}`}
           moduleLabel={label}
@@ -193,6 +219,10 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
         />
         <Box minW="var(--atlas-layout-zero, 0)" bg="bg.workbench">
           <Tabs.Root
+            h={fitMenu ? "full" : undefined}
+            _horizontal={
+              fitMenu ? { display: "flex", flexDirection: "column" } : undefined
+            }
             value={c.job}
             onValueChange={(d) => c.transition({ job: d.value })}
             variant="line"
@@ -407,7 +437,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               </Text>
             ))}
             {props.ownerJob ? (
-              <Box>{sourceContent}</Box>
+              sourceContent
             ) : (
               <Tabs.Content value={c.job} p="var(--atlas-layout-zero, 0)">
                 {sourceContent}

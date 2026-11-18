@@ -15,6 +15,17 @@ import {
   checksumOpsV1MasterSnapshot,
 } from "./ops-v1-master-snapshot-contract.mjs";
 
+// Exercise this one-off package against its approved November 5 checkout.
+vi.mock("./verify-atlas-staging.mjs", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    migrationVersionsFromFilenames: (names) =>
+      actual
+        .migrationVersionsFromFilenames(names)
+        .filter((v) => v <= "20261105090000"),
+  };
+});
 const target = "rnzxmxiiqgtdevzregff";
 const typeReport = {
   current_type_legacy_id: "36",
@@ -462,6 +473,14 @@ describe("bounded OPS v1 Ingredient-name correction", () => {
       ingredientNameCorrectionMigrationVersions(),
     );
     expect(payload.expected_migration_versions).toHaveLength(138);
+    expect(() =>
+      buildIngredientNameCorrectionPayload(snapshot(), {
+        migrationVersions: [
+          ...payload.expected_migration_versions,
+          "20261118074850",
+        ],
+      }),
+    ).toThrow("REPOSITORY_MIGRATION_SCOPE_DRIFT");
     expect(
       payload.records.map((row) => [
         row.legacy_id,

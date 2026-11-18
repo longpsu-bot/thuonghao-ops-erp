@@ -1,5 +1,7 @@
 begin;
 select no_plan();
+-- Model the package's approved migration history inside this rollback-only fixture.
+delete from supabase_migrations.schema_migrations where version > '20261105090000';
 -- FIXTURE
 \ir ../packages/atlas-staging-ingredient-name-forward-correction.sql
 

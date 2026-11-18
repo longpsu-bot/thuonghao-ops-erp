@@ -11,12 +11,14 @@ import {
 export interface AtlasTableViewportProps extends Omit<BoxProps, "children"> {
   label: string;
   children: ReactNode;
+  fillAvailableHeight?: boolean;
 }
 
 export function AtlasTableViewport({
   label,
   children,
   onScroll,
+  fillAvailableHeight,
   ...props
 }: AtlasTableViewportProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -70,10 +72,20 @@ export function AtlasTableViewport({
   };
 
   return (
-    <Box position="relative" minW="var(--atlas-layout-zero, 0)">
+    <Box
+      position="relative"
+      minW="var(--atlas-layout-zero, 0)"
+      flex={fillAvailableHeight ? "1" : undefined}
+      minH={
+        fillAvailableHeight
+          ? "var(--atlas-menu-min-table-height, 160px)"
+          : undefined
+      }
+    >
       <Box
         ref={viewportRef}
         {...props}
+        maxH={fillAvailableHeight ? "full" : props.maxH}
         css={{ "& > table": { width: "100%" } }}
         role="region"
         aria-label={label}

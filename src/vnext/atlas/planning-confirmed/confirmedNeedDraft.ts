@@ -54,13 +54,20 @@ export function historicalQuantity(line: ConfirmedNeedLine) {
 }
 // Local feedback uses the exact effective Planning step; the backend remains
 // authoritative for policy resolution, source membership and final eligibility.
+export type ConfirmedNeedDraftError = {
+  field: "quantity" | "reason" | "note";
+  message: string;
+};
 export function draftError(
   line: ConfirmedNeedLine,
   draft: ConfirmedNeedDraftLine,
-) {
+): ConfirmedNeedDraftError | null {
   const initial = initialConfirmedNeedDraft(line);
   if (!line.effective_policy)
-    return "Không có bước lượng hiệu lực cho dòng nhu cầu này.";
+    return {
+      field: "quantity",
+      message: "Không có bước lượng hiệu lực cho dòng nhu cầu này.",
+    };
   const entry = draft.quantity_entered
     ? draft.exact_quantity
     : confirmedNeedInputDisplay(initial.exact_quantity);
@@ -71,33 +78,36 @@ export function draftError(
       line.effective_policy.planning_step,
     )
   )
-    return `Số lượng xác nhận phải theo bước ${exactQuantityDisplay(
-      line.effective_policy.planning_step,
-    )} ${confirmedNeedUnitLabel(line.controlled_unit)}.`;
-  const equalsProposal = exactDecimalEqual(
+    return {
+      field: "quantity",
+      message: `Số lượng xác nhận phải theo bước ${exactQuantityDisplay(
+        line.effective_policy.planning_step,
+      )} ${confirmedNeedUnitLabel(line.controlled_unit)}.`,
+    };
+  const equalsBaseline = exactDecimalEqual(
     normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
       draft.exact_quantity,
-    line.proposed_confirmed_quantity,
+    initial.exact_quantity,
   );
   if (
-    equalsProposal &&
+    equalsBaseline &&
     draft.reason_code !== "PROPOSAL_ACCEPTED" &&
     !(line.current_decision_id && initial.reason_code !== "PROPOSAL_ACCEPTED")
   )
-    return "Số lượng không đổi nên không cần lý do điều chỉnh.";
-  if (!equalsProposal && draft.reason_code === "PROPOSAL_ACCEPTED")
-    return "Hãy chọn lý do khi thay đổi số lượng.";
-  if (
-    ["OPERATIONAL_QUANTITY_ADJUSTMENT", "OTHER"].includes(draft.reason_code) &&
-    !draft.reason_note.trim()
-  )
-    return "Lý do này cần ghi chú.";
-  if (
-    line.current_decision_id &&
-    draftChanged(line, draft) &&
-    !draft.reason_note.trim()
-  )
-    return "Thay đổi nội dung đã lưu cần ghi chú.";
+    return {
+      field: "reason",
+      message: "Số lượng không đổi nên không cần lý do điều chỉnh.",
+    };
+  if (!equalsBaseline && draft.reason_code === "PROPOSAL_ACCEPTED")
+    return {
+      field: "reason",
+      message: "Hãy chọn lý do khi thay đổi số lượng.",
+    };
+  if (equalsBaseline && !line.current_decision_id && draft.reason_note.trim())
+    return {
+      field: "note",
+      message: "Xóa ghi chú điều chỉnh để xác nhận theo đề xuất ban đầu.",
+    };
   return null;
 }
 export function draftLineRequest(

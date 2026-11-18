@@ -7,6 +7,7 @@ import { repositorySupabaseCliInvocation } from "./atlas-staging-contract.mjs";
 import {
   buildIngredientNameCorrectionPayload,
   INGREDIENT_NAME_CORRECTIONS,
+  ingredientNameCorrectionMigrationVersions,
 } from "./correct-atlas-staging-ingredient-names.mjs";
 
 const records = INGREDIENT_NAME_CORRECTIONS.map(
@@ -35,7 +36,11 @@ const snapshot = {
   },
   source_catalog_access: { has_select: true, has_non_select: false },
 };
-const payload = buildIngredientNameCorrectionPayload(snapshot);
+const payload = buildIngredientNameCorrectionPayload(snapshot, {
+  migrationVersions: ingredientNameCorrectionMigrationVersions().filter(
+    (v) => v <= "20261105090000",
+  ),
+});
 const work = mkdtempSync(
   join(tmpdir(), "atlas-ingredient-name-correction-test-"),
 );

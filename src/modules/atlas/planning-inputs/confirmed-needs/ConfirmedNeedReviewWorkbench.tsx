@@ -24,6 +24,7 @@ import {
   exactDecimalEqual,
   exactQuantityDisplay,
   initialConfirmedNeedDraft,
+  defaultConfirmedNeedReason,
   normalizeConfirmedNeedQuantity,
   normalizeConfirmedNeedEntry,
   confirmedNeedInputDisplay,
@@ -147,7 +148,7 @@ function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
   const unchanged = exactDecimalEqual(
     normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
       draft.exact_quantity,
-    line.proposed_confirmed_quantity,
+    initial.exact_quantity,
   );
   const preservesSavedAdjustment =
     line.current_decision_id !== null &&
@@ -160,17 +161,6 @@ function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
     return "Số lượng không đổi nên không cần lý do điều chỉnh.";
   if (!unchanged && draft.reason_code === "PROPOSAL_ACCEPTED")
     return "Hãy chọn lý do khi thay đổi số lượng.";
-  if (
-    ["OPERATIONAL_QUANTITY_ADJUSTMENT", "OTHER"].includes(draft.reason_code) &&
-    !draft.reason_note.trim()
-  )
-    return "Lý do này cần ghi chú.";
-  if (
-    line.current_decision_id &&
-    hasUnsavedLocalChange(line, draft) &&
-    !draft.reason_note.trim()
-  )
-    return "Thay đổi nội dung đã lưu cần ghi chú.";
   return null;
 }
 
@@ -669,9 +659,11 @@ export function ConfirmedNeedReviewWorkbench({
                           quantity_entered: true,
                           reason_code: returnsToSavedBaseline
                             ? initial.reason_code
-                            : draft.reason_code === "PROPOSAL_ACCEPTED"
-                              ? "PLANNING_STEP_ADJUSTMENT"
-                              : draft.reason_code,
+                            : defaultConfirmedNeedReason(
+                                line,
+                                draft,
+                                exactQuantity,
+                              ),
                           reason_note: returnsToSavedBaseline
                             ? initial.reason_note
                             : draft.reason_note,

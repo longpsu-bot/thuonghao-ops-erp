@@ -15,6 +15,8 @@ When code conflicts with approved documentation, stop and report the conflict.
 
 ## Chakra UI agent skills
 
+For Atlas UI work, apply Impeccable's Operate guidance and the [operator design and review principles](docs/ui/atlas-design-language-v3.md#operator-design-and-review-principles). Start from a staff task in the rendered application. Record the before/after result on representative data and inspect keyboard and narrow-screen behavior. Use Taste Skill for visual hierarchy and finish within the Atlas system.
+
 `.agents/skills/chakra-ui-builder` and `.agents/skills/chakra-ui-refactor` are vendored official Chakra UI v3 guidance for building, reviewing, and refactoring Atlas UI. They are advisory: this file, approved OPS / Atlas documents, architecture decisions, business rules, contracts, and tests take precedence. Follow Atlas's existing custom Chakra system, semantic tokens, recipes, accessibility contracts, and design language when a generic example differs.
 
 Do not re-bootstrap Chakra, replace the Atlas provider or system, run generic setup commands, or add dependencies solely because a skill example does so. Keep domain and business outcomes backend-authoritative; do not move them into frontend state. The skills cannot override **FACTS EXPLICIT → STATE DERIVED → SUPPORTING OBJECTS GENERATED**.

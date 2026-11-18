@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(62);
+select plan(66);
 
 set local session_replication_role = replica;
 
@@ -387,9 +387,6 @@ as $$
       else 'PROPOSAL_ACCEPTED'
     end,
     'reason_note', case
-      when p_mode in ('VALID', 'INVALID_KG')
-        and line.ingredient_id = 'd4600000-0000-0000-0000-000000000114'
-        then 'Explicit operator adjustment'
       when p_mode in ('VALID_COUNT', 'INVALID_COUNT')
         and line.ingredient_id = 'd4600000-0000-0000-0000-000000000107'
         then 'Count adjustment fixture'
@@ -527,6 +524,65 @@ select is((select count(*) from atlas_planning.confirmed_need_line_decisions whe
 select is((select row(theoretical_quantity,confirmed_quantity,proposal_rounding_step,proposal_rounding_ingredient_version)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000114' and revision_number=2 and is_current), '(1.225000,1.370000,0.500000,1)', 'POPD-12 v2 Save carries the exact proposal snapshot into the adjusted successor revision');
 select is((select row(read_line->>'theoretical_quantity',read_line->>'proposed_confirmed_quantity',read_line->>'confirmed_quantity_after',read_line->>'proposal_rounding_step')::text from proposal_results r cross join lateral jsonb_array_elements(r.response#>'{workbench,lines}') read_line where r.result_name='review-after-save' and read_line#>>'{ingredient,id}'='d4600000-0000-0000-0000-000000000114'), '(1.225000,1.500000,1.370000,0.500000)', 'POPD-12A v2 post-Save readback keeps the system proposal distinct from the human decision');
 select is((select count(*) from atlas_planning.purchase_handoff_batches), 0::bigint, 'POPD-13 first Save creates no Purchase Handoff');
+
+set local role authenticated;
+insert into proposal_results
+select 'optional-note-replacement', atlas_api.save_confirmed_needs(
+  pg_temp.proposal_save(jsonb_build_array(line || jsonb_build_object('proposed_confirmed_quantity','1.50')))
+  || jsonb_build_object('expected_version',2,'command_id',gen_random_uuid(),
+                        'idempotency_key','optional-note-replacement'))
+from jsonb_array_elements(pg_temp.proposal_decision_lines('VALID')) line
+where line->>'reason_code' = 'OPERATIONAL_QUANTITY_ADJUSTMENT';
+reset role;
+select ok((select response->>'success'='true' from proposal_results where result_name='optional-note-replacement')
+  and exists (select 1 from atlas_planning.confirmed_need_line_decisions d
+    join atlas_planning.confirmed_need_line_decisions prior on prior.confirmed_need_line_decision_id=d.predecessor_decision_id
+    where d.reason_code='OPERATIONAL_QUANTITY_ADJUSTMENT' and prior.reason_code=d.reason_code
+      and d.confirmed_quantity_after=1.50 and prior.confirmed_quantity_after=1.37
+      and d.reason_note is null and prior.reason_note is null),
+  'An ordinary replacement and its predecessor preserve exact quantities and NULL notes');
+select is((select atlas_core.rmvp_06_canonical_evaluation((response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid)->>'outcome'
+  from proposal_results where result_name='examples'), 'VALIDATED',
+  'The saved batch with note-free adjustments passes downstream validation');
+
+-- Edit and then remove a note on an already adjusted line through the public Save.
+set local role authenticated;
+do $test$
+declare
+  version integer;
+  lines jsonb;
+  result jsonb;
+begin
+  for version in 3..4 loop
+    select jsonb_build_array(line || jsonb_build_object(
+        'proposed_confirmed_quantity','1.50',
+        'reason_note',case when version = 3 then 'Reviewed by kitchen' end))
+    into strict lines from jsonb_array_elements(pg_temp.proposal_decision_lines('VALID')) line
+    where line->>'reason_code' = 'OPERATIONAL_QUANTITY_ADJUSTMENT';
+    result := atlas_api.save_confirmed_needs(pg_temp.proposal_save(lines) ||
+      jsonb_build_object('expected_version',version,'command_id',gen_random_uuid(),
+        'idempotency_key','edit-note-' || version));
+    if result->>'success' is distinct from 'true' then
+      raise exception 'Note-only Save failed at version %: %', version, result->>'error_code';
+    end if;
+  end loop;
+end;
+$test$;
+reset role;
+select ok(exists (select 1 from atlas_planning.confirmed_need_line_decisions cleared
+  join atlas_planning.confirmed_need_line_decisions annotated
+    on annotated.confirmed_need_line_decision_id=cleared.predecessor_decision_id
+  join atlas_planning.confirmed_need_line_decisions adjusted
+    on adjusted.confirmed_need_line_decision_id=annotated.predecessor_decision_id
+  where cleared.reason_note is null and annotated.reason_note='Reviewed by kitchen'
+    and cleared.decision_kind='ADJUSTED_QUANTITY_CONFIRMED' and cleared.reason_code=adjusted.reason_code
+    and cleared.confirmed_need_line_revision_id=annotated.confirmed_need_line_revision_id
+    and annotated.confirmed_need_line_revision_id=adjusted.confirmed_need_line_revision_id
+    and cleared.proposed_quantity_before=adjusted.proposed_quantity_before
+    and cleared.confirmed_quantity_after=adjusted.confirmed_quantity_after),
+  'Writing and clearing a note preserves the quantity revision, adjustment reason and original before/after quantities');
+select is((select atlas_core.rmvp_06_canonical_evaluation((response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid)->>'outcome'
+  from proposal_results where result_name='examples'), 'VALIDATED', 'Note-only replacements validate downstream');
 
 set local session_replication_role = replica;
 insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_status) values

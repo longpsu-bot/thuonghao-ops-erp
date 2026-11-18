@@ -225,15 +225,14 @@ Rules:
 
 - `PROPOSAL_ACCEPTED` is valid only for unchanged acceptance.
 - The other three are valid only for adjusted confirmation.
-- `OPERATIONAL_QUANTITY_ADJUSTMENT` and `OTHER` require a note.
-- `PLANNING_STEP_ADJUSTMENT` permits an optional note.
+- As amended on 2026-11-18, all three adjustment reasons permit an optional row note.
 - The first unchanged acceptance has no note.
-- Every decision with a predecessor requires a correction note while retaining its business reason.
+- Every replacement retains its governed reason and predecessor. Its ordinary row note is optional. The released correction command requires an explanation.
 - Every present note is trimmed, nonblank Unicode text of at most 500 characters.
 
 `DECISION_EVIDENCE_CORRECTION` and `MANAGEMENT_OVERRIDE` are excluded.
 
-**Accepted consequence:** Analytics retain the business reason; predecessor plus correction note retains replacement intent.
+**Accepted consequence:** Analytics retain the business reason. The predecessor, actor and timestamp identify the replacement even when staff omit the note.
 
 **Excluded behavior:** No blank/null reason, unlimited note, free text as sole authority, source correction disguised as Planning adjustment, generic reason JSON, or reason lookup table.
 
@@ -324,7 +323,7 @@ H1B1 adds zero roles, capabilities, memberships, runtimes, policies, positive gr
 This registry supersedes only the following earlier H0 uncertainties/proposals:
 
 1. H1B1 business kind, reason, note, actor, command, pointer, and physical details are no longer pending.
-2. Replacement decisions preserve their business reason; predecessor plus required correction note identifies correction.
+2. Replacement decisions preserve their business reason and link to the predecessor.
 3. `DECISION_EVIDENCE_CORRECTION` and `MANAGEMENT_OVERRIDE` are not valid first-slice reason codes.
 4. There is one accountable decision actor and no proxy/recording actor or first-slice separation-of-duties rule.
 5. The current-decision pointer cannot be cleared after first authority in this slice.

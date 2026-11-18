@@ -126,7 +126,7 @@ export function ConfirmedNeedSupportDetail({
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Heading as="h2" fontSize="lg" mb="xs">
+      <Heading as="h2" textStyle="section" mb="xs">
         Cách hình thành nhu cầu
       </Heading>
       <Text textStyle="helper" color="fg.muted" mb="sm">

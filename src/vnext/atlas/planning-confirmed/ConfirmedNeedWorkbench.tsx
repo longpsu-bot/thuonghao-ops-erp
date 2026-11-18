@@ -504,9 +504,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     </Flex>
                   )}
                   {c.allDirty && props.onExportShoppingList && (
-                    <Text fontSize="sm">
-                      Lưu hoặc tải lại để bỏ thay đổi trước khi xuất/nhập Phiếu
-                      đi chợ.
+                    <Text textStyle="helper">
+                      Hãy lưu thay đổi trước khi xuất hoặc nhập Phiếu đi chợ.
+                      Nếu muốn bỏ thay đổi, hãy tải lại dữ liệu.
                     </Text>
                   )}
                 </Flex>

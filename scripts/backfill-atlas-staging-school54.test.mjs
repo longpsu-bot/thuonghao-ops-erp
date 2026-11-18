@@ -7,6 +7,18 @@ import {
   school54ContentChecksum,
   buildSchool54Sql,
 } from "./backfill-atlas-staging-school54.mjs";
+
+// Exercise this one-off package against its approved November 5 checkout.
+vi.mock("./verify-atlas-staging.mjs", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    migrationVersionsFromFilenames: (names) =>
+      actual
+        .migrationVersionsFromFilenames(names)
+        .filter((v) => v <= "20261105090000"),
+  };
+});
 const env = {
   ATLAS_STAGING_PROJECT_REF: "rnzxmxiiqgtdevzregff",
   VITE_SUPABASE_URL: "https://rnzxmxiiqgtdevzregff.supabase.co",
@@ -389,6 +401,12 @@ describe("School54 bounded prerequisite", () => {
     expect(w).toContain("default: false");
   });
   it("enforces server-side read-only Preview and the shared master workflow lock", () => {
+    expect(() =>
+      buildSchool54Sql(snapshot(), {
+        targetProjectRef: env.ATLAS_STAGING_PROJECT_REF,
+        migrationVersions: ["20261118074850"],
+      }),
+    ).toThrow("REPOSITORY_MIGRATION_DRIFT");
     expect(
       buildSchool54Sql(snapshot(), {
         targetProjectRef: env.ATLAS_STAGING_PROJECT_REF,

@@ -14,6 +14,24 @@ The owner's atmosphere correction supersedes the first v3 pass's charcoal shell 
 
 [ARCH-002](../architecture/arch-002-atlas-system-map.md), [D-048](../decisions/decision-atlas-persistent-workspace.md), the thirteen persistent owners (8 October composition amendment), local-state ownership and every business/API/security contract remain authoritative. **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED.** The three-stage operating baseline remains unchanged. V3 supersedes v2 visual color, contrast, typography-legibility and component styling only.
 
+## Operator design and review principles
+
+Use Impeccable in **Operate** mode. Start each bounded change with a staff task, its entry point and an observable outcome. For example, a planner opening **Công thức** should be able to find it by browsing or by typing `cong thuc`, then return to the work already open.
+
+| Design decision                    | Acceptance in the rendered workbench                                                                                                                                                                                                                                                   |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Give the work the space            | Inspect a populated 1366 × 768 laptop view first. Identify the first editable row or primary action and measure any change in rows visible, scrolling or steps. Retain units, draft values and scope at the point of action.                                                           |
+| Group by operator intent           | Align related controls and give each group a meaningful heading. Use available width for parallel groups that staff scan independently. On narrow screens, preserve reading order and keep the controls needed to search or recover reachable while results scroll.                    |
+| Give states distinct meanings      | Use Atlas semantic tokens, Inter and registry icons. Selection, an open screen, an unsaved edit and a blocked action have different meanings. Verify the relevant text or shape as well as the color.                                                                                  |
+| Make the keyboard path predictable | Exercise entry, text editing, selection, dismissal and return focus. Test Vietnamese input, long labels, an empty result, a narrow viewport and visible focus. Preserve native editing keys and composition in search fields.                                                          |
+| Review the outcome                 | Use Impeccable layout, clarify, adapt and harden guidance where each addresses an observed problem. Run its detector on touched UI files and inspect the rendered result after fixes. Record before/after images, fixture, viewport, interaction checks and any remaining limitations. |
+
+The shared **Chức năng** launcher applies these principles to the eight daily jobs and five configuration jobs. The two groups sit side by side when space permits. On phones the results scroll below the search field. Enter opens the sole matching destination after text composition finishes. Arrow keys still traverse results and Escape returns to the launcher trigger. Navigation follows [D-048](../decisions/decision-atlas-persistent-workspace.md).
+
+During **Hàng đặt riêng** review, **Lưu** is the primary action and the visible desktop **Thêm dòng** uses the secondary style. The **Thực đơn** table uses the remaining height of the active workbench after its context, filters, notices and visible footer. Compact and standard text inputs share the input type role (15px on desktop and 16px on narrow screens). Section headings, including **Cách hình thành nhu cầu**, use the section type role. See the [laptop and phone comparisons](../testing/artifacts/atlas-workbench-refinements-20261118/README.md).
+
+In **Hàng đặt riêng**, use **Thêm dòng** as the primary action while entering an incomplete draft. As soon as review is available, **Xem thay đổi** becomes primary and adding another line remains available. Both exits from the Planning source review read **Quay lại chỉnh sửa** and return staff to their draft. In **Xác nhận nhu cầu**, the shopping-list notice explains saving changes and discarding them by reloading in separate sentences. See the [before/after comparisons](../testing/artifacts/atlas-edit-review-20261118/README.md).
+
 ## Color architecture
 
 ### Staff palette follow-up — 15 November 2026
@@ -46,6 +64,10 @@ shows the shared treatment in the local review fixture. The heading icon tile
 is shown only on desktop to preserve space for controls at narrow widths.
 Confirmed Need uses a compact action strip on narrow screens so the first
 quantity input clears the sticky footer.
+For quantity confirmation, present the proposal, last saved value and editable
+quantity as separate fields. On phones, pair proposal with entry and saved
+quantity with the difference. Associate validation with the field requiring
+attention. Show the editable reason default and mark the row note as optional.
 
 ### Workbench hierarchy amendment — 29 October 2026
 

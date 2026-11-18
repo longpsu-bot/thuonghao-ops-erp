@@ -518,6 +518,11 @@ select 'correction90',pg_temp.k1_command('RMVP-05.v3','CONFIRMED_NEED_SAVED',b.v
       'reason_note','Điều chỉnh nhu cầu lần hai'))))
 from atlas_planning.confirmed_need_batches b cross join k1_original_source o
 cross join k1_second_source source where b.confirmed_need_batch_id=o.confirmed_need_batch_id;
+select ok(result#>>'{response,success}'='false' and (result->>'business_unchanged')::boolean,
+  'Released correction rejects a note-only edit on a previously adjusted quantity')
+from (select pg_temp.k1_reject_case('note_only',
+  jsonb_set(request,'{payload,lines,0,proposed_confirmed_quantity}','"110.000000"')) as result
+  from k1_requests where name='correction90') rejected;
 set local role authenticated;
 insert into k1_results select 'correction90',atlas_api.save_confirmed_needs(request)
 from k1_requests where name='correction90';

@@ -108,7 +108,7 @@ describe("AUD-003 V2 precision", () => {
       );
       expect(result.changedLineIds).toHaveLength(1);
       expect(result.drafts[result.changedLineIds[0]!]!.reason_code).toBe(
-        "PROPOSAL_ACCEPTED",
+        "OPERATIONAL_QUANTITY_ADJUSTMENT",
       );
       expect(result.drafts[result.changedLineIds[0]!]!.reason_note).toBe("");
     },
