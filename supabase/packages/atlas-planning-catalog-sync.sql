@@ -53,6 +53,15 @@ begin
       legacy := row_source->>'legacy_id';
       if exists (select 1 from jsonb_array_elements(dish_actions) a
         where a.value->>'object_type'=kind and a.value->>'legacy_id'=legacy and a.value->>'action'='CREATE') then continue; end if;
+      if kind in ('INGREDIENT','SUPPLIER','SUPPLIER_ELIGIBILITY') and exists (
+        select 1 from jsonb_array_elements(snapshot->'source_diagnostics') i
+        where i.value->>'severity'='BLOCKER' and i.value->>'entity'=entity
+          and (i.value->>'legacy_id' is null or i.value->>'legacy_id'=legacy)
+      ) then
+        differences := differences || jsonb_build_array(jsonb_build_object(
+          'object_type',kind,'legacy_id',legacy,'code','SOURCE_VALIDATION_BLOCKED'));
+        continue;
+      end if;
       target := atlas_legacy.master_import_target_id(snapshot,kind,legacy);
       select * into mapping from atlas_legacy.master_data_mappings m
         where m.source_system='OPS_V1' and m.object_type=kind and m.legacy_id=legacy;
@@ -79,10 +88,6 @@ begin
       candidates := dish_actions || actions;
       if kind not in ('INGREDIENT','SUPPLIER','SUPPLIER_ELIGIBILITY') then
         reason := 'CATALOG_AUTHORITY_REVIEW';
-      elsif exists (select 1 from jsonb_array_elements(snapshot->'source_diagnostics') i
-        where i.value->>'severity'='BLOCKER' and i.value->>'entity'=entity
-          and (i.value->>'legacy_id' is null or i.value->>'legacy_id'=legacy)) then
-        reason := 'SOURCE_VALIDATION_BLOCKED';
       elsif desired is null or target is null
         or atlas_legacy.master_import_validate_values(kind,legacy,row_source,desired)<>'[]'::jsonb then
         reason := 'CATALOG_VALUE_INVALID';
@@ -115,14 +120,18 @@ begin
       elsif status is distinct from 'ACTIVE' then
         reason := 'SOURCE_NOT_ACTIVE';
       elsif kind='SUPPLIER_ELIGIBILITY' and (
-        not (exists(select 1 from atlas_admin.ingredients i where i.ingredient_id=(desired->>'ingredient_id')::uuid and i.ingredient_status='ACTIVE')
+        not (exists(select 1 from atlas_admin.ingredients i join atlas_legacy.master_data_mappings m using(ingredient_id)
+          where i.ingredient_id=(desired->>'ingredient_id')::uuid and i.ingredient_status='ACTIVE'
+          and m.source_system='OPS_V1' and m.object_type='INGREDIENT' and m.legacy_id=row_source->>'ingredient_legacy_id')
           or exists(select 1 from jsonb_array_elements(candidates) a where a.value->>'object_type'='INGREDIENT' and a.value->>'target_id'=desired->>'ingredient_id' and a.value->>'action'='CREATE'))
-        or not (exists(select 1 from atlas_admin.suppliers s where s.supplier_id=(desired->>'supplier_id')::uuid and s.supplier_status='ACTIVE')
+        or not (exists(select 1 from atlas_admin.suppliers s join atlas_legacy.master_data_mappings m using(supplier_id)
+          where s.supplier_id=(desired->>'supplier_id')::uuid and s.supplier_status='ACTIVE'
+          and m.source_system='OPS_V1' and m.object_type='SUPPLIER' and m.legacy_id=row_source->>'supplier_legacy_id')
           or exists(select 1 from jsonb_array_elements(candidates) a where a.value->>'object_type'='SUPPLIER' and a.value->>'target_id'=desired->>'supplier_id' and a.value->>'action'='CREATE'))) then
         reason := 'UNAVAILABLE_RELATIONSHIP_ENDPOINT';
       elsif kind='SUPPLIER_ELIGIBILITY' and (
         exists(select 1 from atlas_admin.supplier_eligibilities e where e.ingredient_id=(desired->>'ingredient_id')::uuid
-          and e.eligibility_status='ACTIVE' and coalesce(e.effective_to,'infinity'::date)>=(desired->>'effective_from')::date
+          and e.eligibility_status='ACTIVE'
           and (e.supplier_id=(desired->>'supplier_id')::uuid or e.priority=(desired->>'priority')::int))
         or exists(select 1 from jsonb_array_elements(candidates) a where a.value->>'object_type'='SUPPLIER_ELIGIBILITY' and a.value->>'action'='CREATE'
           and a.value#>>'{values,ingredient_id}'=desired->>'ingredient_id'

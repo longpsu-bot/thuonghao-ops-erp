@@ -429,5 +429,29 @@ insert into evidence values ('catalog-local-drift',pg_temp.run_planning_master_c
   pg_temp.catalog_test_snapshot('synthetic-catalog-local-drift','Supplier 6001 Updated'),false,null,null,'[]',true));
 select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='catalog-local-drift'),
   '$[*] ? (@.legacy_id == "6001" && @.code == "EXISTING_CATALOG_CHANGE_REQUIRES_REVIEW")'),'Atlas-authored drift is disclosed and preserved');
+insert into atlas_admin.supplier_eligibilities(supplier_id,ingredient_id,eligibility_status,priority,effective_from,effective_to)
+select s.supplier_id,i.ingredient_id,'ACTIVE',6,'2001-01-01','2001-12-31'
+from atlas_admin.suppliers s cross join atlas_admin.ingredients i
+where s.supplier_code='v1-supplier-6001' and i.ingredient_code='v1-ingredient-1';
+insert into evidence values ('catalog-ended-active-priority',pg_temp.run_planning_master_catchup(
+  pg_temp.catchup_signed(jsonb_set(pg_temp.catalog_test_snapshot('synthetic-catalog-priority','Supplier 6002'),
+    '{records}',pg_temp.catchup_fixture()->'records' || '{
+      "suppliers":[{"legacy_id":"6002","supplier_code":"v1-supplier-6002","supplier_name":"Supplier 6002","supplier_status":"ACTIVE"}],
+      "supplier_eligibilities":[{"legacy_id":"ingredient:1:supplier:6002","ingredient_legacy_id":"1","supplier_legacy_id":"6002","priority":6}]
+    }')),false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='catalog-ended-active-priority'),
+  '$[*] ? (@.legacy_id == "ingredient:1:supplier:6002" && @.code == "SUPPLIER_RELATIONSHIP_CONFLICT")'),
+  'an ended ACTIVE priority still occupies the unique slot');
+insert into evidence values ('catalog-invalid-priority',pg_temp.run_planning_master_catchup(
+  pg_temp.catchup_signed(pg_temp.catalog_test_snapshot('synthetic-catalog-invalid-priority','Catalog Supplier Candidate')
+    || jsonb_build_object(
+      'records',pg_temp.catchup_fixture()->'records' || '{
+        "supplier_eligibilities":[{"legacy_id":"ingredient:1:supplier:71","ingredient_legacy_id":"1","supplier_legacy_id":"71","priority":60000}]
+      }',
+      'source_diagnostics','[{"severity":"BLOCKER","entity":"supplier_eligibilities","legacy_id":"ingredient:1:supplier:71","code":"INVALID_PRIORITY"}]'::jsonb
+    )),false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='catalog-invalid-priority'),
+  '$[*] ? (@.legacy_id == "ingredient:1:supplier:71" && @.code == "SOURCE_VALIDATION_BLOCKED")'),
+  'malformed V1 rank is isolated before SQL casts can block the rest of preview');
 select * from finish();
 rollback;
