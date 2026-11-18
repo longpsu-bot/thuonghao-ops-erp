@@ -63,11 +63,11 @@ export function assertPlanningSource(snapshot) {
     throw new Error("SOURCE_NOT_PROVEN_READ_ONLY");
 }
 
-function assertDishScope(snapshot, ids) {
+function assertDishScope(snapshot, ids, allowEmpty = false) {
   if (ids == null) return;
   if (
     !Array.isArray(ids) ||
-    !ids.length ||
+    (!allowEmpty && !ids.length) ||
     new Set(ids).size !== ids.length ||
     ids.some(
       (id) =>
@@ -187,6 +187,7 @@ export function buildPlanningCatchupSql(
     planChecksum,
     actorId,
     dishLegacyIds,
+    includeCatalog = false,
     diagnosticBoundary = false,
   } = {},
 ) {
@@ -195,7 +196,9 @@ export function buildPlanningCatchupSql(
   if (diagnosticBoundary && apply)
     throw new Error("DIAGNOSTIC_BOUNDARY_PREVIEW_ONLY");
   assertPlanningSource(snapshot);
-  assertDishScope(snapshot, dishLegacyIds);
+  if (includeCatalog && !Array.isArray(dishLegacyIds))
+    throw new Error("CATALOG_REQUIRES_EXPLICIT_DISH_SCOPE");
+  assertDishScope(snapshot, dishLegacyIds, includeCatalog);
   if (
     apply &&
     (!/^[a-f0-9]{64}$/.test(planChecksum ?? "") ||
@@ -220,6 +223,16 @@ export function buildPlanningCatchupSql(
     );
     sql = `${definition}\n${sql.replace(call, `${temporary}(`)}`;
   }
+  if (includeCatalog) {
+    const catalog = readFileSync(
+      new URL(
+        "../supabase/packages/atlas-planning-catalog-sync.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    sql = `${catalog}\n${sql}`;
+  }
   const encoded = Buffer.from(JSON.stringify(snapshot)).toString("base64");
   return `\\warn CATCHUP_CLIENT_SCRIPT_BEGIN
 set statement_timeout='15min';
@@ -230,7 +243,7 @@ ${diagnosticBoundary ? "set client_connection_check_interval='2s';\n" : ""}\\war
 ${sql}
 \\warn CATCHUP_CLIENT_HELPERS_DONE
 \\warn CATCHUP_CLIENT_QUERY_BEGIN
-select pg_temp.run_planning_master_catchup(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb,${apply},${apply ? `'${planChecksum}'` : "null"},${apply ? `'${actorId}'::uuid` : "null"},${dishLegacyIds == null ? "null" : `'${JSON.stringify(dishLegacyIds).replaceAll("'", "''")}'::jsonb`}) as result;
+select pg_temp.run_planning_master_catchup(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb,${apply},${apply ? `'${planChecksum}'` : "null"},${apply ? `'${actorId}'::uuid` : "null"},${dishLegacyIds == null ? "null" : `'${JSON.stringify(dishLegacyIds).replaceAll("'", "''")}'::jsonb`}${includeCatalog ? ",true" : ""}) as result;
 \\warn CATCHUP_CLIENT_QUERY_DONE
 `;
 }

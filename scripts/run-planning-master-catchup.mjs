@@ -211,6 +211,7 @@ export async function runPlanningMasterCatchup({
         planChecksum,
         actorId,
         dishLegacyIds,
+        includeCatalog: reviewedSync,
       }),
     );
     return phase("PLAN_EXECUTION", () =>
@@ -237,15 +238,6 @@ export async function runPlanningMasterCatchup({
         (dish) => dish.dish_status === "ACTIVE" && !mapped.has(dish.legacy_id),
       )
       .map((dish) => dish.legacy_id);
-    if (!dishLegacyIds.length) {
-      if (apply) throw new Error("REVIEWED_PLANNING_PLAN_MISMATCH");
-      return {
-        success: true,
-        status: "NO_CHANGES",
-        business_writes: 0,
-        catchup_dish_ids: [],
-      };
-    }
     result = await executePlan(false);
     if (result.success === true) {
       if (
@@ -255,11 +247,25 @@ export async function runPlanningMasterCatchup({
         !Array.isArray(result.actions) ||
         result.actions.some(
           (action) =>
-            action.object_type === "SCHOOL" ||
-            !["CREATE", "NO_CHANGE"].includes(action.action),
+            ["SCHOOL", "CUSTOMER", "DELIVERY_LOCATION"].includes(
+              action.object_type,
+            ) ||
+            (!["CREATE", "NO_CHANGE"].includes(action.action) &&
+              !(
+                action.action === "UPDATE" &&
+                ["INGREDIENT", "SUPPLIER"].includes(action.object_type)
+              )),
         )
       )
         throw new Error("REVIEWED_PLANNING_SCOPE_INVALID");
+      if (
+        !result.actions.some(
+          ({ action }) => action === "CREATE" || action === "UPDATE",
+        )
+      ) {
+        if (apply) throw new Error("REVIEWED_PLANNING_PLAN_MISMATCH");
+        return { ...result, status: "NO_CHANGES" };
+      }
       reviewChecksum = catchupReviewChecksum(commitSha, snapshot, result);
       if (apply) {
         if (reviewChecksum !== reviewedPlanChecksum)
@@ -291,6 +297,7 @@ export async function runPlanningMasterCatchup({
           planChecksum,
           actorId,
           dishLegacyIds,
+          includeCatalog: reviewedSync,
         }),
       ),
     );

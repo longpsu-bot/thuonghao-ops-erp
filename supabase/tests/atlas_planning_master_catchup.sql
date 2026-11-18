@@ -3,6 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
 \ir ../packages/atlas-planning-master-catchup.sql
+\ir ../packages/atlas-planning-catalog-sync.sql
 
 -- Entire fixture is synthetic. The source contract matches the retained recipe-import fixture.
 create function pg_temp.catchup_signed(value jsonb) returns jsonb language sql as $$
@@ -404,5 +405,53 @@ select isnt(pg_temp.planning_catchup_protected('[]'),(select value from fingerpr
 select isnt(pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"NO_CHANGE","target_id":"ee120000-0000-4000-8000-000000000033"}]'),(select value from fingerprint_evidence where label='protected-before'),'NO_CHANGE actions never exclude a protected target');
 update atlas_admin.schools set default_teacher_portions=433,version=version+1 where school_code='v1-school-21';
 select isnt(pg_temp.planning_catchup_protected('[{"object_type":"SCHOOL","action":"UPDATE","target_id":"ee120000-0000-4000-8000-000000000033"}]'),(select value from fingerprint_evidence where label='allowed-before'),'an allowed target never hides mutation of another School');
+create function pg_temp.catalog_test_snapshot(key text, supplier_label text) returns jsonb language sql as $$
+  select pg_temp.catchup_signed(
+    jsonb_set(pg_temp.catchup_fixture(),'{records,suppliers}',jsonb_build_array(jsonb_build_object(
+      'legacy_id','6001','supplier_code','v1-supplier-6001','supplier_name',supplier_label,'supplier_status','ACTIVE'
+    ))) || jsonb_build_object('snapshot_id',key)
+  )
+$$;
+insert into evidence values ('catalog-preview',pg_temp.run_planning_master_catchup(
+  pg_temp.catalog_test_snapshot('synthetic-standalone-catalog','Supplier 6001'),false,null,null,'[]',true));
+select is((select value->>'status' from evidence where label='catalog-preview'),'PREVIEW','catalog preview works with zero missing Dishes');
+select is((select count(*) from atlas_admin.suppliers where supplier_code='v1-supplier-6001'),0::bigint,'catalog preview writes no Supplier');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catalog_test_snapshot('synthetic-standalone-catalog','Supplier 6001'),
+  true,(select value->>'plan_checksum' from evidence where label='catalog-preview'),'ee120000-0000-4000-8000-000000000001','[]',true)->>'status','APPLIED','catalog apply imports standalone Supplier');
+select is(pg_temp.run_planning_master_catchup(pg_temp.catalog_test_snapshot('synthetic-standalone-catalog','Supplier 6001'),
+  true,(select value->>'plan_checksum' from evidence where label='catalog-preview'),'ee120000-0000-4000-8000-000000000001','[]',true)->>'status','REPLAYED','same catalog snapshot replays');
+insert into evidence values ('catalog-rename',pg_temp.run_planning_master_catchup(
+  pg_temp.catalog_test_snapshot('synthetic-catalog-rename','Supplier 6001 Updated'),false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'actions' from evidence where label='catalog-rename'),
+  '$[*] ? (@.object_type == "SUPPLIER" && @.legacy_id == "6001" && @.action == "UPDATE")'),'safe name-only drift is eligible on the original mapped Supplier');
+update atlas_admin.suppliers set supplier_name='Atlas verified Supplier 6001', version=version+1 where supplier_code='v1-supplier-6001';
+insert into evidence values ('catalog-local-drift',pg_temp.run_planning_master_catchup(
+  pg_temp.catalog_test_snapshot('synthetic-catalog-local-drift','Supplier 6001 Updated'),false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='catalog-local-drift'),
+  '$[*] ? (@.legacy_id == "6001" && @.code == "EXISTING_CATALOG_CHANGE_REQUIRES_REVIEW")'),'Atlas-authored drift is disclosed and preserved');
+insert into atlas_admin.supplier_eligibilities(supplier_id,ingredient_id,eligibility_status,priority,effective_from,effective_to)
+select s.supplier_id,i.ingredient_id,'ACTIVE',6,'2001-01-01','2001-12-31'
+from atlas_admin.suppliers s cross join atlas_admin.ingredients i
+where s.supplier_code='v1-supplier-6001' and i.ingredient_code='v1-ingredient-1';
+insert into evidence values ('catalog-ended-active-priority',pg_temp.run_planning_master_catchup(
+  pg_temp.catchup_signed(jsonb_set(pg_temp.catalog_test_snapshot('synthetic-catalog-priority','Supplier 6002'),
+    '{records}',pg_temp.catchup_fixture()->'records' || '{
+      "suppliers":[{"legacy_id":"6002","supplier_code":"v1-supplier-6002","supplier_name":"Supplier 6002","supplier_status":"ACTIVE"}],
+      "supplier_eligibilities":[{"legacy_id":"ingredient:1:supplier:6002","ingredient_legacy_id":"1","supplier_legacy_id":"6002","priority":6}]
+    }')),false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='catalog-ended-active-priority'),
+  '$[*] ? (@.legacy_id == "ingredient:1:supplier:6002" && @.code == "SUPPLIER_RELATIONSHIP_CONFLICT")'),
+  'an ended ACTIVE priority still occupies the unique slot');
+insert into evidence values ('catalog-invalid-priority',pg_temp.run_planning_master_catchup(
+  pg_temp.catchup_signed(pg_temp.catalog_test_snapshot('synthetic-catalog-invalid-priority','Catalog Supplier Candidate')
+    || jsonb_build_object(
+      'records',pg_temp.catchup_fixture()->'records' || '{
+        "supplier_eligibilities":[{"legacy_id":"ingredient:1:supplier:71","ingredient_legacy_id":"1","supplier_legacy_id":"71","priority":60000}]
+      }',
+      'source_diagnostics','[{"severity":"BLOCKER","entity":"supplier_eligibilities","legacy_id":"ingredient:1:supplier:71","code":"INVALID_PRIORITY"}]'::jsonb
+    )),false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='catalog-invalid-priority'),
+  '$[*] ? (@.legacy_id == "ingredient:1:supplier:71" && @.code == "SOURCE_VALIDATION_BLOCKED")'),
+  'malformed V1 rank is isolated before SQL casts can block the rest of preview');
 select * from finish();
 rollback;

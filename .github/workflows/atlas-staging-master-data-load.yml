@@ -20,7 +20,7 @@ on:
         description: Reviewed checksum for missing-Dish catch-up apply
         type: string
       reviewed_sync:
-        description: Discover missing active Dishes and their dependencies for review
+        description: Reconcile V1 master data and preview eligible catalog changes
         type: boolean
         default: false
       planning_preview:
@@ -273,7 +273,7 @@ jobs:
             ${{ runner.temp }}/planning-preview/weekly-menu-read-only.json
           if-no-files-found: ignore
           retention-days: 7
-      - name: Preview or apply missing Dishes and dependencies
+      - name: Reconcile and preview or apply eligible master data
         if: ${{ env.REVIEWED_SYNC == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

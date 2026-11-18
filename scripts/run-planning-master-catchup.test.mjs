@@ -47,6 +47,39 @@ afterEach(() => {
     rmSync(root, { recursive: true, force: true });
 });
 describe("repeatable reviewed missing-Dish sync", () => {
+  it("previews standalone catalog changes even when no Dishes are missing", async () => {
+    const { options, snapshot } = fixture();
+    const executeTarget = vi
+      .fn()
+      .mockResolvedValueOnce([
+        { result: { migrations: ["20260101000000", "20260102000000"] } },
+      ])
+      .mockResolvedValueOnce([{ result: { dish_legacy_ids: [] } }])
+      .mockResolvedValueOnce([
+        {
+          result: {
+            success: true,
+            status: "PREVIEW",
+            snapshot_checksum: snapshot.snapshot_checksum,
+            plan_checksum: planChecksum,
+            actions: [
+              { object_type: "SUPPLIER", action: "CREATE", legacy_id: "82" },
+            ],
+          },
+        },
+      ]);
+    const result = await runPlanningMasterCatchup({
+      ...options,
+      snapshotFile: undefined,
+      reviewedSync: true,
+      extractSnapshot: async () => snapshot,
+      executeTarget,
+    });
+    expect(result.status).toBe("PREVIEW");
+    expect(result.reviewed_plan_checksum).toMatch(/^[a-f0-9]{64}$/);
+    expect(executeTarget.mock.calls[2][1]).toContain("'[]'::jsonb,true)");
+  });
+
   it("selects missing active Dishes and refuses unreviewed target plan changes", async () => {
     const { options, snapshot } = fixture();
     snapshot.records.dishes = [
