@@ -159,6 +159,8 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.prepare_school_catering_purchase_orders":
     "prepare_school_catering_purchase_orders",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
+  "atlas_api.get_weekly_pantry_rules": "get_weekly_pantry_rules",
+  "atlas_api.save_weekly_pantry_rule": "save_weekly_pantry_rule",
   "atlas_api.preview_pantry_source": "preview_pantry_source",
   "atlas_api.save_pantry": "save_pantry",
   "atlas_api.save_pantry_draft": "save_pantry_draft",

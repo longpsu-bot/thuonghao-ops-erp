@@ -134,6 +134,48 @@ insert into ng_results select 'attendance',atlas_api.save_attendance(request),nu
 select is((select response->>'success' from ng_results where name='attendance'),'true','B1 real Attendance Save');
 insert into ng_results select 'pantry',atlas_api.save_pantry(request),null from ng_requests where name='pantry';
 select is((select response->>'success' from ng_results where name='pantry'),'true','B1 two-source ADDITIVE Save');
+
+-- Exercise the same School/Ingredient with Recipe, supplement, manual and automatic orders.
+-- Roll the variant back so the original purchase/dispatch scenario below retains its totals.
+savepoint four_sources;
+set constraints all immediate;
+set constraints all deferred;
+do $test$
+declare
+  week_payload jsonb := jsonb_build_object('week_start','2050-09-19');
+  rule_request jsonb;
+  response jsonb;
+  source jsonb;
+begin
+  response := atlas_api.get_weekly_pantry_rules(pg_temp.ng_request('PANTRY-02.v1','READ',week_payload));
+  rule_request := pg_temp.ng_request('PANTRY-02.v1','WEEKLY_PANTRY_RULE_SAVED',week_payload || jsonb_build_object(
+    'school_id',pg_temp.ng_id(5001),'ingredient_id',pg_temp.ng_id(2001),'expected_unit_id',pg_temp.ng_id(13),
+    'expected_menu_token',response->>'menu_token','quantity_per_day','0.4','enabled',true)) || '{"expected_version":0}'::jsonb;
+  response := atlas_api.save_weekly_pantry_rule(rule_request);
+  if response->>'success' is distinct from 'true' then raise exception 'Rule save: %',response; end if;
+  set constraints all immediate;
+  set constraints all deferred;
+  response := atlas_api.execute_need_generation(pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
+    jsonb_build_object('service_date','2050-09-19','expected_current_need_generation_run_id',null)));
+  if response->>'success' is distinct from 'true' then raise exception 'Need generation: %',response; end if;
+  response := atlas_api.get_need_generation_workbench(jsonb_build_object(
+    'contract_version','RMVP-04.v1','requested_by_auth_subject',pg_temp.ng_id(101),'correlation_id',gen_random_uuid(),'payload',jsonb_build_object(
+    'period_start','2050-09-19','period_end','2050-09-19',
+    'filters',jsonb_build_object('school_id',pg_temp.ng_id(5001),'ingredient_id',pg_temp.ng_id(2001)),
+    'detail_group',jsonb_build_object('service_date','2050-09-19','school_id',pg_temp.ng_id(5001),'delivery_location_id',
+    pg_temp.ng_id(11),'ingredient_id',pg_temp.ng_id(2001),'unit_id',pg_temp.ng_id(13)))));
+  source := response#>'{workbench,grouped_requirements,0,source_breakdown}';
+  if source is distinct from jsonb_build_object('recipe_derived_quantity','20.000000','planning_supplement_quantity','5.000000',
+    'recipe_associated_quantity','25.000000','special_order_quantity','3.000000','automatic_pantry_quantity','2.000000',
+    'unclassified_direct_quantity','0','total_theoretical_quantity','30.000000') then
+    raise exception 'Unexpected weekly source breakdown: %',response;
+  end if;
+  if not exists(select from jsonb_array_elements(response#>'{workbench,atomic_detail}') a
+    where a->>'pantry_purpose_code'='auto_weekly_pantry' and a->>'quantity_per_menu_day'='0.400000'
+      and jsonb_array_length(a->'counted_menu_days')=5) then raise exception 'Missing weekly rule lineage'; end if;
+end $test$;
+rollback to savepoint four_sources;
+select pass('real Need separates 20 recipe, 5 supplement, 3 manual, 2 automatic and retains five menu days at 0.4');
 insert into ng_results values('additive',atlas_api.execute_need_generation(pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
 jsonb_build_object('service_date','2050-09-19','expected_current_need_generation_run_id',null))),null);
 select is((select response->>'success' from ng_results where name='additive'),'true','B1 ADDITIVE generation');
@@ -173,7 +215,7 @@ insert into ng_results values('source_read',atlas_api.get_need_generation_workbe
 reset role;
 select is((select response#>'{workbench,grouped_requirements,0,source_breakdown}' from ng_results where name='source_read'),
  jsonb_build_object('recipe_derived_quantity','20.000000','planning_supplement_quantity','5.000000',
- 'recipe_associated_quantity','25.000000','special_order_quantity','3.000000',
+ 'recipe_associated_quantity','25.000000','special_order_quantity','3.000000','automatic_pantry_quantity','0',
  'unclassified_direct_quantity','0','total_theoretical_quantity','28.000000'),
  'B1 public read separates exact R20 B5 R+B25 H3 total28');
 select ok((select count(*)=3 and count(*) filter(where value->>'exact_theoretical_quantity' is not null)=3

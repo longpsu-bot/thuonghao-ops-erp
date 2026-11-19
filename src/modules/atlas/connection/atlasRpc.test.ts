@@ -68,8 +68,8 @@ function edgeClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 118-function browser registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(118);
+  it("contains exactly the reviewed 120-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(120);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.get_confirmed_need_shopping_list_export",
       "atlas_api.record_wholesale_source",
@@ -183,6 +183,8 @@ describe("Atlas RPC transport", () => {
       "atlas_api.save_confirmed_supplier_allocation",
       "atlas_api.prepare_school_catering_purchase_orders",
       "atlas_api.get_pantry_source_workbench",
+      "atlas_api.get_weekly_pantry_rules",
+      "atlas_api.save_weekly_pantry_rule",
       "atlas_api.preview_pantry_source",
       "atlas_api.save_pantry",
       "atlas_api.save_pantry_draft",

@@ -5,6 +5,7 @@ import {
   staleAuthorityMessage,
 } from "../AtlasModuleExit";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
+import { useWeeklyPantryRules } from "./useWeeklyPantryRules";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   activeMenuRows,
@@ -81,6 +82,7 @@ export type PlanningTransition = {
   date?: string;
   schoolIds?: string[];
   refresh?: boolean;
+  weeklyRules?: boolean;
 };
 export type PlanningSourcesProps = AtlasModuleExitProps & {
   api: Pick<
@@ -96,6 +98,8 @@ export type PlanningSourcesProps = AtlasModuleExitProps & {
   >;
   pantryApi: Pick<
     PantryApi,
+    | "weeklyRules"
+    | "saveWeeklyRule"
     | "getWorkbench"
     | "preview"
     | "saveCompleted"
@@ -182,6 +186,7 @@ export function usePlanningSources({
     onServiceDateChange?.(date);
   }, [date, onServiceDateChange]);
   const [job, setJob] = useState<PlanningJob>(fixedJob ?? initialJob);
+  const [weeklyRulesOpen, setWeeklyRulesOpen] = useState(false);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
   const [data, setData] = useState<PlanningInputsWorkbenchData | null>(null);
   const [pantryData, setPantryData] = useState<PantryWorkbenchData | null>(
@@ -367,6 +372,15 @@ export function usePlanningSources({
     };
   }, [week, load, resetPlanning, resetPantry]);
   const authority = source === "planning" ? data : pantryData;
+  const weekly = useWeeklyPantryRules({
+    active: job === "pantry" && weeklyRulesOpen,
+    week,
+    subject: authSubject,
+    api: pantryApi,
+    catalog: pantryData,
+    onCommitted,
+    editable: !freshness.stale && !locked && !loading && !readError && !busy,
+  });
   const schools = [...(authority?.schools ?? [])].sort(compareCanonicalSchools);
   useEffect(() => {
     if (authority && !loading && !readError)
@@ -376,7 +390,8 @@ export function usePlanningSources({
   }, [authority, loading, readError]);
 
   const dirty =
-    job === "menu"
+    weekly.dirty ||
+    (job === "menu"
       ? menuCandidate
       : job === "attendance"
         ? JSON.stringify(attendanceRows) !==
@@ -400,17 +415,18 @@ export function usePlanningSources({
                 pantryData?.school_date_modes ??
                 [],
             ),
-          ]);
+          ]));
   const candidate =
-    dirty ||
-    (job === "attendance" &&
-      attendanceNeedsConfirmation(
-        data?.attendance ?? null,
-        data?.default_attendance_preview ?? [],
-      )) ||
-    (job === "pantry" &&
-      !!pantryData?.batch &&
-      pantryData.batch.pantry_need_batch_status !== "APPROVED");
+    (!weeklyRulesOpen || job !== "pantry") &&
+    (dirty ||
+      (job === "attendance" &&
+        attendanceNeedsConfirmation(
+          data?.attendance ?? null,
+          data?.default_attendance_preview ?? [],
+        )) ||
+      (job === "pantry" &&
+        !!pantryData?.batch &&
+        pantryData.batch.pantry_need_batch_status !== "APPROVED"));
   const pantryRowErrors = pantryRows.map((r) => ({
     ingredient: !r.ingredient_id ? "Chọn nguyên liệu." : "",
     quantity: !r.requested_quantity.trim() ? "Nhập số lượng." : "",
@@ -457,13 +473,22 @@ export function usePlanningSources({
       locked ||
       Boolean(readError) ||
       Boolean(preview) ||
-      syncing,
+      syncing ||
+      weekly.busy ||
+      weekly.uncertain,
     () => load(week, source),
   );
   const exitBlocked =
+    weekly.busy ||
+    weekly.uncertain ||
     busy ||
     Object.values(sourceStates).some((state) => state.recovery !== null);
   const applyTransition = (next: PlanningTransition) => {
+    weekly.cancel();
+    if (next.weeklyRules !== undefined) {
+      setWeeklyRulesOpen(next.weeklyRules);
+      if (!next.job) return;
+    }
     if (next.exit) {
       next.exit();
       return;
@@ -497,7 +522,12 @@ export function usePlanningSources({
   };
   const transition = (next: PlanningTransition) => {
     if (fixedJob && next.job && next.job !== fixedJob) return;
-    if (writeBusy.current) return;
+    if (writeBusy.current || weekly.busy || weekly.uncertain) return;
+    if (next.weeklyRules !== undefined && !next.job) {
+      if (weekly.dirty) setPending(next);
+      else applyTransition(next);
+      return;
+    }
     // School/day are view filters over the same Pantry week, not replacement
     // intent. Retain every authored row, source reference and exact quantity.
     if (
@@ -1143,6 +1173,8 @@ export function usePlanningSources({
     week,
     date,
     job,
+    weeklyRulesOpen,
+    weekly,
     schoolIds,
     schools,
     authority,

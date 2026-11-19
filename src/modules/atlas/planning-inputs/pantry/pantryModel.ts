@@ -10,6 +10,43 @@ export type PantryIssue = {
 
 export type DirectNeedMode = "ADDITIVE" | "COMPLETE";
 
+export type WeeklyPantryProjection = {
+  school_id: string;
+  menu_dates: string[];
+  delivery_date: string | null;
+  total_quantity: string;
+  quantity_per_day: string | null;
+};
+
+export type WeeklyPantryRule = WeeklyPantryProjection & {
+  school_name: string;
+  ingredient_id: string;
+  ingredient_name: string;
+  unit_id: string;
+  unit_name: string;
+  enabled: boolean;
+  effective_from: string | null;
+  rule_revision_id: string | null;
+  version: number;
+};
+
+export function weeklyPantryFromResult(result: AtlasRpcResult) {
+  if (result.kind !== "success") return null;
+  const { rules, menu_token, can_manage, preview } = result.response;
+  if (
+    !Array.isArray(rules) ||
+    typeof menu_token !== "string" ||
+    typeof can_manage !== "boolean"
+  )
+    return null;
+  return {
+    rules: rules as unknown as WeeklyPantryRule[],
+    menu_token,
+    can_manage,
+    preview: objectValue(preview) as unknown as WeeklyPantryProjection | null,
+  };
+}
+
 export type PantrySchoolDateMode = {
   school_id: string;
   service_date: string;

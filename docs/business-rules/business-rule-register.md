@@ -61,6 +61,8 @@ Detailed legacy evidence, approved directions, recommendations, and still-pendin
 
 ## Planned rule domains
 
+| BR-054 | Weekly automatic pantry contributes the School's exact configured purchase-unit quantity per distinct saved menu date, on its first menu date of the week. Source `auto_weekly_pantry` is independent of manual special orders, supplements and recipe quantities. | Owner-approved 19 November 2026, extends BR-051. [Weekly menu pantry](../superpowers/specs/2026-11-19-weekly-menu-pantry.md) |
+
 | BR-052 | Daily Recipe Need does not require a recurring zero-additions confirmation when no Pantry batch overlaps its service date. The backend records verified absence with exact current Menu/Attendance; existing drafts are never inferred empty, later additions make generation outdated, and clearing saved additions remains an explicit reviewed Save. Historical null bindings and multi-day rules remain unchanged. | Owner-approved amendment, 23 October 2026; [contract delta](../implementation-tasks/TASK-ATLAS-OPTIONAL-WEEKLY-ADDITIONS.md) |
 | BR-053 | School Attendance defaults may override student/teacher portions separately for ISO weekdays 1–5. Missing weekday fields use the School's current general defaults; zero is explicit. Existing saved Attendance wins, and changing defaults never rewrites saved/approved Attendance or its snapshots. Configuration uses the existing versioned governed School commands. | Owner-approved parity instruction, 5 November 2026; [weekday contract](../architecture/rmvp-01-independent-atlas-master-data.md#weekday-attendance-defaults-amendment--5-november-2026) |
 

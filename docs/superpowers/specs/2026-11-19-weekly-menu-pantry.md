@@ -26,9 +26,9 @@ Trong **Hàng đặt riêng**, nhân viên chọn trường, nguyên liệu và 
 - Dòng phát sinh thuộc nguồn **Hàng đặt riêng**. Bảo toàn nguồn **Bổ sung**, các dòng nhập tay, bản nháp đang làm việc và tất cả các trường khác khi lưu. Phân biệt đóng góp của lệnh với một dòng nhập tay bằng định danh có kiểu. Không dùng ghi chú làm dấu nhận dạng.
 - Với nhu cầu đang lập, đưa đúng các ngày bị ảnh hưởng vào luồng tính lại hiện có. Khi đã chốt nhu cầu hoặc phát hành chứng từ, hiện tác động lên ngày giao đầu tuần và dùng cơ chế điều chỉnh có thẩm quyền. Đơn mua và phiếu xuất kho đã phát hành giữ nguyên lịch sử của chúng.
 
-## Điểm cần quyết định trước khi nối vào lệnh lưu
+## Tách nguồn khi trùng nguyên liệu
 
-Atlas hiện dùng chung một định danh dòng cho cùng tuần, trường, ngày, điểm giao, nguyên liệu và nguồn Hàng đặt riêng. Khi đã có 0,5 kg tỏi nhập tay và lịch tính thêm 1,6 kg đúng vị trí đó, cần phân biệt hai nghĩa nghiệp vụ. Nếu dòng tay là lượng nhân viên chốt thì giữ 0,5 kg và hiển thị phần theo lịch đã được thay thế. Nếu dòng tay là yêu cầu thêm thì giữ riêng hai căn cứ và cho ra 2,1 kg. OPS V1 bỏ qua dòng đã tồn tại khi chạy lịch. Việc chạy lại cùng lệnh không được nhân đôi lượng trong cả hai trường hợp.
+Hàng đặt riêng tự động, Hàng đặt riêng thủ công và nhu cầu từ thực đơn là các nguồn riêng. Cùng trường, ngày, nguyên liệu và đơn vị, 0,5 kg tỏi nhập tay và 1,6 kg từ lệnh được lưu và hiển thị riêng. Hai phần đóng góp 2,1 kg vào nhu cầu lý thuyết, trước phần từ thực đơn. Chạy lại lệnh chỉ đối chiếu dòng tự động. Nhân viên sửa lượng thủ công tại dòng thủ công và sửa định mức tại lệnh.
 
 ## Nghiệm thu
 

@@ -28,6 +28,7 @@ export type { PlanningInputPreflightData } from "../../../modules/atlas/planning
 export {
   needGenerationWorkbenchFromResult,
   needGenerationSourceBreakdown,
+  contributionSourceLabel,
   needGenerationReadbackFromResult,
   needGenerationContinuitySummaryFromResult,
   needGenerationResultIsStale,

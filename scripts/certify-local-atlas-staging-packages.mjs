@@ -108,7 +108,10 @@ begin
     or (select count(*) from atlas_admin.customers) <> 0
     or (select count(*) from atlas_admin.schools) <> 0
     or (select count(*) from atlas_admin.units) <> 0
-    or (select count(*) from atlas_planning.pantry_need_purposes) <> 0
+    or (select count(*) from atlas_planning.pantry_need_purposes) <> 1
+    or not exists (select from atlas_planning.pantry_need_purposes
+      where pantry_need_purpose_id = '69c413ef-4c9d-4671-b9c5-73a7901cd9f1'
+        and purpose_code = 'auto_weekly_pantry' and note_rule = 'PROHIBITED' and purpose_status = 'ACTIVE')
     or (select count(*) from atlas_planning.planning_quantity_policies) <> 0
     or (select count(*) from atlas_planning.need_generation_calculation_contracts) <> 0
     or (select count(*) from atlas_planning.need_generation_calculation_contract_revisions) <> 0 then

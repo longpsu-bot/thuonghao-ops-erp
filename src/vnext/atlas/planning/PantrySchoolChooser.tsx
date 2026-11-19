@@ -29,12 +29,14 @@ export function PantrySchoolChooser({
   disabled,
   onChange,
   inputRef,
+  label = "Trường cần thêm hàng",
 }: {
   schools: PantrySchool[];
   value: string;
   disabled?: boolean;
   onChange: (id: string) => void;
   inputRef: RefObject<HTMLInputElement | null>;
+  label?: string;
 }) {
   const id = useId();
   const portal = useAtlasPortalContainer();
@@ -123,14 +125,12 @@ export function PantrySchoolChooser({
           minW="var(--atlas-layout-zero, 0)"
           gap="xs"
         >
-          <Field.Label htmlFor={`${id}-input`}>
-            Trường cần thêm hàng
-          </Field.Label>
+          <Field.Label htmlFor={`${id}-input`}>{label}</Field.Label>
           <Input
             id={`${id}-input`}
             ref={inputRef}
             role="combobox"
-            aria-label="Trường cần thêm hàng"
+            aria-label={label}
             aria-autocomplete="list"
             aria-expanded={isOpen}
             aria-controls={`${id}-schools`}
@@ -139,7 +139,7 @@ export function PantrySchoolChooser({
             }
             disabled={disabled}
             value={query}
-            placeholder="Tìm trường cần thêm hàng…"
+            placeholder={`Tìm ${label.toLocaleLowerCase("vi")}…`}
             onFocus={() => {
               setQuery("");
               setOpen(true);
@@ -185,7 +185,7 @@ export function PantrySchoolChooser({
           <Popover.Content
             id={`${id}-schools`}
             role="listbox"
-            aria-label="Trường cần thêm hàng"
+            aria-label={label}
             bg="bg.workbench"
             color="fg.default"
             borderColor="border.strong"

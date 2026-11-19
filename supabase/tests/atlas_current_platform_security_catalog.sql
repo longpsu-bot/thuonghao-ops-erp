@@ -52,7 +52,7 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 117, 'views', 2),
+  jsonb_build_object('ordinary_tables', 118, 'views', 2),
   'CAT-02 exact whole-platform table and view totals include School PXK evidence'
 );
 
@@ -78,9 +78,9 @@ select is(
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 117,
-    'rls_enabled', 117,
-    'rls_forced', 117
+    'authoritative_tables', 118,
+    'rls_enabled', 118,
+    'rls_forced', 118
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -464,8 +464,8 @@ select is(
   ),
   jsonb_build_object(
     -- Recipe history adds one completed-source receipt SELECT policy.
-    'count', 690,
-    'md5', 'd89f0f1c192dffa36a806b13b221d61d'
+    'count', 692,
+    'md5', '96d204baa9d4c35118428c5fc450dc9a'
   ),
   'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
@@ -673,8 +673,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  121,
-  'CAT-14 physical atlas_api function count is exactly one hundred twenty-one'
+  123,
+  'CAT-14 physical atlas_api function count is exactly one hundred twenty-three'
 );
 
 select is(
@@ -748,6 +748,7 @@ select is(
     'get_school_fulfilment_reconciliation_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
+    'get_weekly_pantry_rules(request jsonb)',
     'invalidate_need_generation_run(request jsonb)',
     'invalidate_planning_input_readiness(request jsonb)',
     'prepare_planning_source_correction(request jsonb)',
@@ -790,6 +791,7 @@ select is(
     'save_school_catering_supplier_allocation(request jsonb)',
     'save_weekly_menu(request jsonb)',
     'save_weekly_menu_draft(request jsonb)',
+    'save_weekly_pantry_rule(request jsonb)',
     'set_dish_lifecycle(request jsonb)',
     'set_ingredient_lifecycle(request jsonb)',
     'set_recipe_lifecycle(request jsonb)',
@@ -810,7 +812,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly one hundred twenty-one physical functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly one hundred twenty-three physical functions'
 );
 
 select is(
@@ -976,6 +978,7 @@ select is(
     'get_school_fulfilment_reconciliation_workbench(request jsonb)=atlas_read_runtime',
     'get_school_master_data(request jsonb)=atlas_read_runtime',
     'get_supplier_direct_trace(request jsonb)=atlas_read_runtime',
+    'get_weekly_pantry_rules(request jsonb)=atlas_read_runtime',
     'invalidate_need_generation_run(request jsonb)=atlas_need_generation_runtime',
     'invalidate_planning_input_readiness(request jsonb)=atlas_planning_command_runtime',
     'prepare_planning_source_correction(request jsonb)=atlas_need_generation_runtime',
@@ -1018,6 +1021,7 @@ select is(
     'save_school_catering_supplier_allocation(request jsonb)=atlas_procurement_command_runtime',
     'save_weekly_menu(request jsonb)=atlas_planning_command_runtime',
     'save_weekly_menu_draft(request jsonb)=atlas_planning_command_runtime',
+    'save_weekly_pantry_rule(request jsonb)=atlas_planning_command_runtime',
     'set_dish_lifecycle(request jsonb)=atlas_master_data_command_runtime',
     'set_ingredient_lifecycle(request jsonb)=atlas_master_data_command_runtime',
     'set_recipe_lifecycle(request jsonb)=atlas_master_data_command_runtime',
@@ -1110,6 +1114,7 @@ select is(
     'get_school_fulfilment_reconciliation_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
+    'get_weekly_pantry_rules(request jsonb)',
     'invalidate_need_generation_run(request jsonb)',
     'invalidate_planning_input_readiness(request jsonb)',
     'prepare_planning_source_correction(request jsonb)',
@@ -1152,6 +1157,7 @@ select is(
     'save_school_catering_supplier_allocation(request jsonb)',
     'save_weekly_menu(request jsonb)',
     'save_weekly_menu_draft(request jsonb)',
+    'save_weekly_pantry_rule(request jsonb)',
     'set_dish_lifecycle(request jsonb)',
     'set_ingredient_lifecycle(request jsonb)',
     'set_recipe_lifecycle(request jsonb)',
@@ -1172,7 +1178,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly one hundred eighteen functions'
+  'CAT-18 authenticated execute allowlist is exactly one hundred twenty functions'
 );
 
 select ok(
@@ -1265,6 +1271,7 @@ select ok(
           ('get_school_fulfilment_reconciliation_workbench', 'request jsonb'),
           ('get_school_master_data', 'request jsonb'),
           ('get_supplier_direct_trace', 'request jsonb'),
+          ('get_weekly_pantry_rules', 'request jsonb'),
           ('invalidate_need_generation_run', 'request jsonb'),
           ('invalidate_planning_input_readiness', 'request jsonb'),
           ('prepare_planning_source_correction', 'request jsonb'),
@@ -1307,6 +1314,7 @@ select ok(
           ('save_school_catering_supplier_allocation', 'request jsonb'),
           ('save_weekly_menu', 'request jsonb'),
           ('save_weekly_menu_draft', 'request jsonb'),
+          ('save_weekly_pantry_rule', 'request jsonb'),
           ('set_dish_lifecycle', 'request jsonb'),
           ('set_ingredient_lifecycle', 'request jsonb'),
           ('set_recipe_lifecycle', 'request jsonb'),
@@ -1804,33 +1812,33 @@ select is(
   ),
   jsonb_build_object(
     'schema_count', 10,
-    'table_count', 117,
-    'table_catalog_md5', '67e6194797d937920fb91efd42d48269',
+    'table_count', 118,
+    'table_catalog_md5', 'ea1c9730bda4348ed02e9bf2803cde31',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 117,
-    'rls_forced', 117,
+    'rls_enabled', 118,
+    'rls_forced', 118,
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 690,
-    'policy_catalog_md5', 'd89f0f1c192dffa36a806b13b221d61d',
+    'policy_count', 692,
+    'policy_catalog_md5', '96d204baa9d4c35118428c5fc450dc9a',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 376,
+    'private_function_count', 385,
     -- Recipe history adds two private fixed-path invokers.
     -- Existing owners, browser grants, RLS and policies remain pinned.
-    'private_function_catalog_md5', '042e3b9664b042f66ff733be726ac02c',
-    'trigger_count', 127,
-    'trigger_catalog_md5', '2135f9c53626266e7566dbc0bfaf4d15',
+    'private_function_catalog_md5', '6203a172c076495fe1b257db69bb739f',
+    'trigger_count', 128,
+    'trigger_catalog_md5', 'd4747e67295b9daf23e2939c1f0f5780',
     -- Recipe history adds three read-runtime privileges; no browser grant.
     -- Weekday defaults add one private validator EXECUTE and one column UPDATE.
-    'positive_target_grant_count', 1920,
-    'positive_target_grant_md5', '61da70477c89769f7e65669667fdcb94',
+    'positive_target_grant_count', 1943,
+    'positive_target_grant_md5', 'f86ac8431f5b0b718d2c5dac38c8d174',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 121,
+    'api_function_count', 123,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 118,
+    'authenticated_execute_count', 120,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),
