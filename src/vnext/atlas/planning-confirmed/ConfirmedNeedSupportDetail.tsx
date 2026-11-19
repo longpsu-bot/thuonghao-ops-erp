@@ -478,7 +478,9 @@ export function ConfirmedNeedSupportDetail({
                     </>
                   ) : (
                     (a.dish_name ??
-                    (a.pantry_purpose_code ? null : a.pantry_purpose))
+                    (a.pantry_purpose_code === "school_requested_supplement"
+                      ? null
+                      : a.pantry_purpose))
                   )}{" "}
                   {a.pantry_source_reference &&
                   a.pantry_purpose_code !== "auto_weekly_pantry"
