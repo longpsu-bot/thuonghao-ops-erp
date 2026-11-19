@@ -46,3 +46,10 @@ names, source membership, priority slot swaps, immutable receipts, readback,
 replay and existing protection/rollback behavior. GitHub owns full validation.
 No migration is required for this change. After Apply, retain receipts and use
 a reviewed forward correction for recovery.
+
+Hosted Apply44496831224 rolled back with `UNRELATED_FACTS_CHANGED` because the
+protection classifier did not recognize planned Customer and Delivery Location
+updates. The follow-up adds their typed keys to the existing exact-target
+exclusion predicate. Every other row remains fingerprinted. A rolled-back
+regression reproduces the failure and verifies exact source readback after the
+fix. The failed hosted run created no receipt or partial master updates.

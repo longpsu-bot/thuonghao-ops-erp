@@ -552,5 +552,40 @@ select ok(jsonb_path_exists(pg_temp.planning_catalog_recipe_differences(
  jsonb_set(pg_temp.catchup_fixture(),'{records,recipe_lines,0,quantity_per_basis}','"2.5"'),'[]'),
  '$[*] ? (@.legacy_id == "dish:100:school-type:1")'),
  'D047 unit evidence cannot conceal changed source quantities');
+create temp table authoritative_school_source as
+ select pg_temp.catchup_signed(jsonb_set(jsonb_set(pg_temp.authoritative_swap_snapshot(),
+  '{records,customers,0,customer_name}','"V1 Customer 40 Updated"'),
+  '{records,delivery_locations,0,address_text}','"V1 delivery address updated"')
+  || jsonb_build_object('snapshot_id','synthetic-v1-school-catalog-update')) snapshot;
+insert into evidence select 'authoritative-school-preview',pg_temp.run_planning_master_catchup(snapshot,false,null,null,'[]',true)
+ from authoritative_school_source;
+select is((select count(*) from evidence e cross join lateral jsonb_array_elements(e.value->'actions') a
+ where e.label='authoritative-school-preview' and a->>'object_type' in ('CUSTOMER','DELIVERY_LOCATION') and a->>'action'='UPDATE'),
+ 2::bigint,'source School catalog changes identify exact Customer and Delivery Location targets');
+insert into evidence select 'authoritative-school-apply',pg_temp.run_planning_master_catchup(snapshot,true,
+ (select value->>'plan_checksum' from evidence where label='authoritative-school-preview'),
+ 'ee120000-0000-4000-8000-000000000001','[]',true) from authoritative_school_source;
+select is((select value->>'status' from evidence where label='authoritative-school-apply'),'APPLIED',
+ 'planned Customer and Delivery Location updates pass unrelated-fact protection');
+select is((select customer_name from atlas_admin.customers where customer_code='v1-customer-40'),
+ 'V1 Customer 40 Updated','Customer source update reads back exactly');
+select is((select address_text from atlas_admin.delivery_locations where location_code='v1-location-40'),
+ 'V1 delivery address updated','Delivery Location source update reads back exactly');
+select is((select value->>'unrelated_master_facts_unchanged' from evidence where label='authoritative-school-apply'),
+ 'true','all rows outside exact reviewed School catalog targets remain protected');
+insert into evidence select 'authoritative-school-protected',pg_temp.planning_catchup_protected(value->'actions')
+ from evidence where label='authoritative-school-preview';
+select is((select (value#>>'{atlas_admin.customers,rows}')::bigint from evidence where label='authoritative-school-protected'),
+ (select count(*)-1 from atlas_admin.customers),'Customer protection excludes only the one planned target');
+select is((select (value#>>'{atlas_admin.delivery_locations,rows}')::bigint from evidence where label='authoritative-school-protected'),
+ (select count(*)-1 from atlas_admin.delivery_locations),'Delivery Location protection excludes only the one planned target');
+update atlas_admin.customers set customer_name='Unplanned Customer drift' where customer_code='v1-customer-38';
+update atlas_admin.delivery_locations set address_text='Unplanned Location drift' where location_code='v1-location-38';
+select isnt((select pg_temp.planning_catchup_protected(value->'actions')->'atlas_admin.customers' from evidence where label='authoritative-school-preview'),
+ (select value->'atlas_admin.customers' from evidence where label='authoritative-school-protected'),
+ 'unplanned Customer changes remain detectable');
+select isnt((select pg_temp.planning_catchup_protected(value->'actions')->'atlas_admin.delivery_locations' from evidence where label='authoritative-school-preview'),
+ (select value->'atlas_admin.delivery_locations' from evidence where label='authoritative-school-protected'),
+ 'unplanned Delivery Location changes remain detectable');
 select * from finish();
 rollback;
