@@ -47,7 +47,10 @@ afterEach(() => {
     rmSync(root, { recursive: true, force: true });
 });
 describe("repeatable reviewed missing-Dish sync", () => {
-  it("previews standalone catalog changes even when no Dishes are missing", async () => {
+  it.each([
+    { object_type: "SUPPLIER", action: "CREATE", legacy_id: "82" },
+    { object_type: "DISH", action: "UPDATE", legacy_id: "100" },
+  ])("previews catalog changes without missing Dishes %j", async (action) => {
     const { options, snapshot } = fixture();
     const executeTarget = vi
       .fn()
@@ -62,9 +65,7 @@ describe("repeatable reviewed missing-Dish sync", () => {
             status: "PREVIEW",
             snapshot_checksum: snapshot.snapshot_checksum,
             plan_checksum: planChecksum,
-            actions: [
-              { object_type: "SUPPLIER", action: "CREATE", legacy_id: "82" },
-            ],
+            actions: [action],
           },
         },
       ]);

@@ -427,8 +427,8 @@ select ok(jsonb_path_exists((select value->'actions' from evidence where label='
 update atlas_admin.suppliers set supplier_name='Atlas verified Supplier 6001', version=version+1 where supplier_code='v1-supplier-6001';
 insert into evidence values ('catalog-local-drift',pg_temp.run_planning_master_catchup(
   pg_temp.catalog_test_snapshot('synthetic-catalog-local-drift','Supplier 6001 Updated'),false,null,null,'[]',true));
-select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='catalog-local-drift'),
-  '$[*] ? (@.legacy_id == "6001" && @.code == "EXISTING_CATALOG_CHANGE_REQUIRES_REVIEW")'),'Atlas-authored drift is disclosed and preserved');
+select ok(jsonb_path_exists((select value->'actions' from evidence where label='catalog-local-drift'),
+  '$[*] ? (@.legacy_id == "6001" && @.action == "UPDATE")'),'Owner-authorized V1 truth replaces current mapped Atlas name through a reviewed plan');
 insert into atlas_admin.supplier_eligibilities(supplier_id,ingredient_id,eligibility_status,priority,effective_from,effective_to)
 select s.supplier_id,i.ingredient_id,'ACTIVE',6,'2001-01-01','2001-12-31'
 from atlas_admin.suppliers s cross join atlas_admin.ingredients i
@@ -453,5 +453,104 @@ insert into evidence values ('catalog-invalid-priority',pg_temp.run_planning_mas
 select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='catalog-invalid-priority'),
   '$[*] ? (@.legacy_id == "ingredient:1:supplier:71" && @.code == "SOURCE_VALIDATION_BLOCKED")'),
   'malformed V1 rank is isolated before SQL casts can block the rest of preview');
+do $$
+declare a jsonb; legacy text; target uuid;
+begin
+ foreach legacy in array array['6003','6004'] loop
+  target:=md5('OPS_V1:SUPPLIER:'||legacy)::uuid;
+  insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status)
+    values(target,'v1-supplier-'||legacy,case legacy when '6003' then 'OLD BANANA' else 'THANH BINH' end,'ACTIVE');
+  a:=atlas_legacy.master_recipe_action('SUPPLIER',legacy,'CREATE',target,'{}',repeat('c',64));
+  perform atlas_legacy.master_import_record_mapping(a,'ee120000-0000-4000-8000-000000000002');
+ end loop;
+end $$;
+create function pg_temp.authoritative_catalog_snapshot() returns jsonb language sql as $$
+ select pg_temp.catchup_signed(jsonb_set(
+  jsonb_set(pg_temp.catchup_fixture(),'{records,suppliers}','[
+    {"legacy_id":"6003","supplier_code":"v1-supplier-6003","supplier_name":"THANH BINH","supplier_status":"ACTIVE"},
+    {"legacy_id":"6004","supplier_code":"v1-supplier-6004","supplier_name":"THANH BINH - Xoá hoặc thay thế","supplier_status":"ACTIVE"}
+  ]'),
+  '{records,supplier_eligibilities}','[
+    {"legacy_id":"ingredient:1:supplier:6003","ingredient_legacy_id":"1","supplier_legacy_id":"6003","priority":1},
+    {"legacy_id":"ingredient:1:supplier:6004","ingredient_legacy_id":"1","supplier_legacy_id":"6004","priority":2}
+  ]'
+ ) || jsonb_build_object('snapshot_id','synthetic-v1-authoritative-catalog'))
+$$;
+insert into evidence values ('authoritative-catalog-preview',pg_temp.run_planning_master_catchup(
+ pg_temp.authoritative_catalog_snapshot(),false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'actions' from evidence where label='authoritative-catalog-preview'),
+ '$[*] ? (@.object_type == "SUPPLIER" && @.legacy_id == "6003" && @.action == "UPDATE")'),
+ 'V1 final names resolve collisions against the other Supplier final name');
+select ok(jsonb_path_exists((select value->'actions' from evidence where label='authoritative-catalog-preview'),
+ '$[*] ? (@.object_type == "SUPPLIER" && @.legacy_id == "6004" && @.action == "UPDATE")'),
+ 'source names containing retirement prose are preserved as source facts');
+insert into evidence values ('authoritative-catalog-apply',pg_temp.run_planning_master_catchup(
+ pg_temp.authoritative_catalog_snapshot(),true,
+ (select value->>'plan_checksum' from evidence where label='authoritative-catalog-preview'),
+ 'ee120000-0000-4000-8000-000000000001','[]',true));
+select is((select value->>'status' from evidence where label='authoritative-catalog-apply'),'APPLIED',
+ 'authoritative names and priority membership apply atomically');
+select is((select supplier_name from atlas_admin.suppliers where supplier_code='v1-supplier-6003'),'THANH BINH',
+ 'source name is applied under its original typed identity');
+select is((select array_agg(e.priority order by s.supplier_code) from atlas_admin.supplier_eligibilities e
+ join atlas_admin.suppliers s using(supplier_id) join atlas_admin.ingredients i using(ingredient_id)
+ where i.ingredient_code='v1-ingredient-1' and s.supplier_code in ('v1-supplier-6003','v1-supplier-6004') and e.eligibility_status='ACTIVE'),
+ array[1,2]::smallint[],'source priority slots replace the prior mapped assignment');
+select is(pg_temp.run_planning_master_catchup(pg_temp.authoritative_catalog_snapshot(),true,
+ (select value->>'plan_checksum' from evidence where label='authoritative-catalog-preview'),
+ 'ee120000-0000-4000-8000-000000000001','[]',true)->>'status','REPLAYED',
+ 'authoritative catalog applies replay with the same receipt');
+create function pg_temp.authoritative_swap_snapshot() returns jsonb language sql as $$
+ select pg_temp.catchup_signed(jsonb_set(jsonb_set(pg_temp.authoritative_catalog_snapshot(),
+   '{records,supplier_eligibilities,0,priority}','2'),'{records,supplier_eligibilities,1,priority}','1')
+   || jsonb_build_object('snapshot_id','synthetic-v1-authoritative-swap'))
+$$;
+insert into evidence values ('authoritative-swap-preview',pg_temp.run_planning_master_catchup(
+ pg_temp.authoritative_swap_snapshot(),false,null,null,'[]',true));
+select is(pg_temp.run_planning_master_catchup(pg_temp.authoritative_swap_snapshot(),true,
+ (select value->>'plan_checksum' from evidence where label='authoritative-swap-preview'),
+ 'ee120000-0000-4000-8000-000000000001','[]',true)->>'status','APPLIED','mapped Supplier priorities can swap their unique active slots');
+select is((select array_agg(e.priority order by s.supplier_code) from atlas_admin.supplier_eligibilities e
+ join atlas_admin.suppliers s using(supplier_id) join atlas_admin.ingredients i using(ingredient_id)
+ where i.ingredient_code='v1-ingredient-1' and s.supplier_code in ('v1-supplier-6003','v1-supplier-6004') and e.eligibility_status='ACTIVE'),
+ array[2,1]::smallint[],'priority swap reads back the V1 ordering');
+insert into evidence values ('authoritative-blocked-group',pg_temp.run_planning_master_catchup(
+ pg_temp.catchup_signed(jsonb_set(pg_temp.authoritative_catalog_snapshot(),'{source_diagnostics}',
+ '[{"severity":"BLOCKER","entity":"supplier_eligibilities","legacy_id":"ingredient:1:supplier:6004","code":"INVALID_PRIORITY"}]')
+ || jsonb_build_object('snapshot_id','synthetic-v1-blocked-group')),
+ false,null,null,'[]',true));
+select ok(not jsonb_path_exists((select value->'actions' from evidence where label='authoritative-blocked-group'),
+ '$[*] ? (@.object_type == "SUPPLIER_ELIGIBILITY" && @.action == "UPDATE")'),
+ 'one invalid source membership prevents partial priority moves for its Ingredient');
+select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='authoritative-blocked-group'),
+ '$[*] ? (@.legacy_id == "ingredient:1:supplier:6003" && @.code == "SOURCE_RELATIONSHIP_GROUP_BLOCKED")'),
+ 'blocked priority group retains the otherwise eligible source change in diagnostics');
+update atlas_admin.supplier_eligibilities e set effective_to='2026-09-16'
+ from atlas_admin.suppliers s where s.supplier_id=e.supplier_id and s.supplier_code='v1-supplier-6003';
+insert into evidence values ('authoritative-reopen-preview',pg_temp.run_planning_master_catchup(
+ pg_temp.catchup_signed(pg_temp.authoritative_swap_snapshot() || jsonb_build_object('snapshot_id','synthetic-v1-reopen')),
+ false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'actions' from evidence where label='authoritative-reopen-preview'),
+ '$[*] ? (@.legacy_id == "ingredient:1:supplier:6003" && @.action == "UPDATE" && @.values.effective_to == null)'),
+ 'current V1 membership clears an Atlas expiry even when priority already matches');
+select is(pg_temp.run_planning_master_catchup(
+ pg_temp.catchup_signed(pg_temp.authoritative_swap_snapshot() || jsonb_build_object('snapshot_id','synthetic-v1-reopen')),true,
+ (select value->>'plan_checksum' from evidence where label='authoritative-reopen-preview'),
+ 'ee120000-0000-4000-8000-000000000001','[]',true)->>'status','APPLIED',
+ 'source-present expired membership can be reopened atomically');
+select ok((select e.effective_to is null from atlas_admin.supplier_eligibilities e
+ join atlas_admin.suppliers s using(supplier_id) where s.supplier_code='v1-supplier-6003'),
+ 'reopened source membership reads back without an expiry');
+select ok(not jsonb_path_exists(pg_temp.planning_catalog_recipe_differences(pg_temp.catchup_fixture(),'[]'),
+ '$[*] ? (@.legacy_id == "dish:100:school-type:1")'),
+ 'exact D047 evidence recognizes current V1 purchase-unit semantics');
+select ok(jsonb_path_exists(pg_temp.planning_catalog_recipe_differences(
+ jsonb_set(pg_temp.catchup_fixture(),'{records,ingredients,0,purchase_unit_legacy_id}','"Hũ"'),'[]'),
+ '$[*] ? (@.legacy_id == "dish:100:school-type:1")'),
+ 'stale D047 evidence cannot conceal a changed source Ingredient purchase unit');
+select ok(jsonb_path_exists(pg_temp.planning_catalog_recipe_differences(
+ jsonb_set(pg_temp.catchup_fixture(),'{records,recipe_lines,0,quantity_per_basis}','"2.5"'),'[]'),
+ '$[*] ? (@.legacy_id == "dish:100:school-type:1")'),
+ 'D047 unit evidence cannot conceal changed source quantities');
 select * from finish();
 rollback;

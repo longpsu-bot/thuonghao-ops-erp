@@ -46,7 +46,6 @@ const ISSUER_ADDRESS =
 
 const REVIEWED_IGNORED_DISHES = new Map([["1983", "Deact Test"]]);
 const REVIEWED_IGNORED_INGREDIENTS = new Map([["1170", "Deact test"]]);
-const REVIEWED_ACTIVE_INGREDIENTS = new Map([["903", "Bột mì"]]);
 
 // Fixed relation/column allowlist. No caller-supplied SQL, table, field or project.
 const SOURCE_COLUMNS = Object.freeze({
@@ -539,37 +538,7 @@ export function normalizeOpsV1MasterSnapshot(
   for (const row of s.ingredients) {
     const key = id(row.id);
     if (ignoredIngredientIds.has(key)) continue;
-    let ingredientStatus = lifecycle(row, "ingredients", key);
-    const reviewedName = REVIEWED_ACTIVE_INGREDIENTS.get(key);
-    if (reviewedName) {
-      if (text(row.name) !== reviewedName) {
-        diag(
-          "REVIEWED_SOURCE_DECISION_ID_REUSED",
-          "ingredients",
-          key,
-          "name",
-          text(row.name),
-        );
-      } else if (ingredientStatus === "INACTIVE") {
-        ingredientStatus = "ACTIVE";
-        diag(
-          "REVIEWED_SOURCE_CORRECTION",
-          "ingredients",
-          key,
-          "is_active",
-          "INACTIVE→ACTIVE",
-          "INFO",
-        );
-      } else if (ingredientStatus !== "ACTIVE") {
-        diag(
-          "REVIEWED_SOURCE_CORRECTION_CONFLICT",
-          "ingredients",
-          key,
-          "is_active",
-          ingredientStatus,
-        );
-      }
-    }
+    const ingredientStatus = lifecycle(row, "ingredients", key);
     ingredientStatusById.set(key, ingredientStatus);
     records.ingredients.push({
       legacy_id: key,
