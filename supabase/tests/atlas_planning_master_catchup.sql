@@ -541,5 +541,16 @@ select is(pg_temp.run_planning_master_catchup(
 select ok((select e.effective_to is null from atlas_admin.supplier_eligibilities e
  join atlas_admin.suppliers s using(supplier_id) where s.supplier_code='v1-supplier-6003'),
  'reopened source membership reads back without an expiry');
+select ok(not jsonb_path_exists(pg_temp.planning_catalog_recipe_differences(pg_temp.catchup_fixture(),'[]'),
+ '$[*] ? (@.legacy_id == "dish:100:school-type:1")'),
+ 'exact D047 evidence recognizes current V1 purchase-unit semantics');
+select ok(jsonb_path_exists(pg_temp.planning_catalog_recipe_differences(
+ jsonb_set(pg_temp.catchup_fixture(),'{records,ingredients,0,purchase_unit_legacy_id}','"Hũ"'),'[]'),
+ '$[*] ? (@.legacy_id == "dish:100:school-type:1")'),
+ 'stale D047 evidence cannot conceal a changed source Ingredient purchase unit');
+select ok(jsonb_path_exists(pg_temp.planning_catalog_recipe_differences(
+ jsonb_set(pg_temp.catchup_fixture(),'{records,recipe_lines,0,quantity_per_basis}','"2.5"'),'[]'),
+ '$[*] ? (@.legacy_id == "dish:100:school-type:1")'),
+ 'D047 unit evidence cannot conceal changed source quantities');
 select * from finish();
 rollback;
