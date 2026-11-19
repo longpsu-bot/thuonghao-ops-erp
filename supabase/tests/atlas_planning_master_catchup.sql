@@ -514,5 +514,32 @@ select is((select array_agg(e.priority order by s.supplier_code) from atlas_admi
  join atlas_admin.suppliers s using(supplier_id) join atlas_admin.ingredients i using(ingredient_id)
  where i.ingredient_code='v1-ingredient-1' and s.supplier_code in ('v1-supplier-6003','v1-supplier-6004') and e.eligibility_status='ACTIVE'),
  array[2,1]::smallint[],'priority swap reads back the V1 ordering');
+insert into evidence values ('authoritative-blocked-group',pg_temp.run_planning_master_catchup(
+ pg_temp.catchup_signed(jsonb_set(pg_temp.authoritative_catalog_snapshot(),'{source_diagnostics}',
+ '[{"severity":"BLOCKER","entity":"supplier_eligibilities","legacy_id":"ingredient:1:supplier:6004","code":"INVALID_PRIORITY"}]')
+ || jsonb_build_object('snapshot_id','synthetic-v1-blocked-group')),
+ false,null,null,'[]',true));
+select ok(not jsonb_path_exists((select value->'actions' from evidence where label='authoritative-blocked-group'),
+ '$[*] ? (@.object_type == "SUPPLIER_ELIGIBILITY" && @.action == "UPDATE")'),
+ 'one invalid source membership prevents partial priority moves for its Ingredient');
+select ok(jsonb_path_exists((select value->'catalog_differences' from evidence where label='authoritative-blocked-group'),
+ '$[*] ? (@.legacy_id == "ingredient:1:supplier:6003" && @.code == "SOURCE_RELATIONSHIP_GROUP_BLOCKED")'),
+ 'blocked priority group retains the otherwise eligible source change in diagnostics');
+update atlas_admin.supplier_eligibilities e set effective_to='2026-09-16'
+ from atlas_admin.suppliers s where s.supplier_id=e.supplier_id and s.supplier_code='v1-supplier-6003';
+insert into evidence values ('authoritative-reopen-preview',pg_temp.run_planning_master_catchup(
+ pg_temp.catchup_signed(pg_temp.authoritative_swap_snapshot() || jsonb_build_object('snapshot_id','synthetic-v1-reopen')),
+ false,null,null,'[]',true));
+select ok(jsonb_path_exists((select value->'actions' from evidence where label='authoritative-reopen-preview'),
+ '$[*] ? (@.legacy_id == "ingredient:1:supplier:6003" && @.action == "UPDATE" && @.values.effective_to == null)'),
+ 'current V1 membership clears an Atlas expiry even when priority already matches');
+select is(pg_temp.run_planning_master_catchup(
+ pg_temp.catchup_signed(pg_temp.authoritative_swap_snapshot() || jsonb_build_object('snapshot_id','synthetic-v1-reopen')),true,
+ (select value->>'plan_checksum' from evidence where label='authoritative-reopen-preview'),
+ 'ee120000-0000-4000-8000-000000000001','[]',true)->>'status','APPLIED',
+ 'source-present expired membership can be reopened atomically');
+select ok((select e.effective_to is null from atlas_admin.supplier_eligibilities e
+ join atlas_admin.suppliers s using(supplier_id) where s.supplier_code='v1-supplier-6003'),
+ 'reopened source membership reads back without an expiry');
 select * from finish();
 rollback;
