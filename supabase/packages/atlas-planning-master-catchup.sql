@@ -255,12 +255,31 @@ begin
   protected:=plan->'protected';scoped:=pg_temp.planning_catchup_scope(snapshot,requested_scope);batch:=gen_random_uuid();
   insert into atlas_legacy.import_batches(import_batch_id,source_system,snapshot_id,snapshot_checksum,exported_at,import_status,completed_at,operator_actor_id,execution_database_principal,plan_checksum,snapshot_contract_version,source_counts)
   values(batch,'OPS_V1',snapshot->>'snapshot_id',snapshot->>'snapshot_checksum',(snapshot->>'exported_at')::timestamptz,'COMPLETED',clock_timestamp(),actor,session_user,expected_plan_checksum,'ATLAS-PLANNING-CATCHUP.v1',snapshot->'source_counts');
-  for a in select value from jsonb_array_elements(plan->'actions') where value->>'object_type' not in ('DISH','RECIPE','RECIPE_VERSION','RECIPE_LINE','RECIPE_LINE_REVISION') loop perform atlas_legacy.master_import_write_core(a); end loop;
+  if include_catalog then
+   -- Free all reviewed priority slots before applying permutations in this transaction.
+   update atlas_admin.supplier_eligibilities e set priority=null
+   where exists(select 1 from jsonb_array_elements(plan->'actions') a
+     where a.value->>'object_type'='SUPPLIER_ELIGIBILITY' and a.value->>'action'='UPDATE'
+       and a.value->>'target_id'=e.supplier_eligibility_id::text);
+  end if;
+  for a in select value from jsonb_array_elements(plan->'actions') where value->>'object_type' not in ('DISH','RECIPE','RECIPE_VERSION','RECIPE_LINE','RECIPE_LINE_REVISION') loop
+   if include_catalog and a->>'action'='UPDATE' and a->>'object_type'='DISH_TYPE' then
+    update atlas_admin.dish_types set dish_type_name=a#>>'{values,dish_type_name}',version=version+1,updated_at=clock_timestamp()
+      where dish_type_id=(a->>'target_id')::uuid;
+   elsif include_catalog and a->>'action'='UPDATE' and a->>'object_type'='INGREDIENT_TYPE' then
+    update atlas_admin.ingredient_types set ingredient_type_name=a#>>'{values,ingredient_type_name}'
+      where ingredient_type_id=(a->>'target_id')::uuid;
+   elsif include_catalog and a->>'action'='UPDATE' and a->>'object_type'='INGREDIENT_ORDER_GROUP' then
+    update atlas_admin.ingredient_order_groups set ingredient_order_group_name=a#>>'{values,ingredient_order_group_name}'
+      where ingredient_order_group_id=(a->>'target_id')::uuid;
+   else perform atlas_legacy.master_import_write_core(a);
+   end if;
+  end loop;
   perform atlas_legacy.master_import_apply_recipes(scoped,plan,actor);
   for a in select value from jsonb_array_elements(plan->'actions') where value->>'action' in ('CREATE','UPDATE') loop perform atlas_legacy.master_import_record_mapping(a,batch); end loop;
   if include_catalog then
    for a in select value from jsonb_array_elements(plan->'actions')
-     where value->>'object_type' in ('INGREDIENT','SUPPLIER','SUPPLIER_ELIGIBILITY') and value->>'action' in ('CREATE','UPDATE') loop
+     where value->>'object_type' not in ('DISH','RECIPE','RECIPE_VERSION','RECIPE_LINE','RECIPE_LINE_REVISION') and value->>'action' in ('CREATE','UPDATE') loop
     current_values:=atlas_legacy.master_import_read(a->>'object_type',(a->>'target_id')::uuid);
     if (current_values @> (a->'values')) is not true then raise exception 'CATALOG_READBACK_MISMATCH'; end if;
    end loop;
@@ -268,7 +287,10 @@ begin
   perform atlas_legacy.record_master_recipe_unit_adoption_evidence(scoped,plan,batch,actor);
   for a in select value from jsonb_array_elements(plan->'actions') where value->>'object_type'='SCHOOL' loop
    current_values:=atlas_legacy.master_import_read('SCHOOL',(a->>'target_id')::uuid);
-   if current_values-'school_id'-'version' is distinct from a->'values' then raise exception 'SCHOOL_READBACK_MISMATCH'; end if;
+   if include_catalog then
+    if (current_values @> (a->'values')) is not true then raise exception 'SCHOOL_READBACK_MISMATCH'; end if;
+   elsif current_values-'school_id'-'version' is distinct from a->'values' then raise exception 'SCHOOL_READBACK_MISMATCH';
+   end if;
   end loop;
   if protected is distinct from pg_temp.planning_catchup_protected(plan->'actions') then raise exception 'UNRELATED_FACTS_CHANGED'; end if;
   set constraints all immediate;

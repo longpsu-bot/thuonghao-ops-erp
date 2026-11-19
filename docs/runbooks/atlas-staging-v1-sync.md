@@ -8,6 +8,11 @@ danh mục đã có, bổ sung nguyên liệu, nhà cung cấp và quan hệ cun
 Order, Dish Order và dữ liệu vận hành hằng ngày. Đích ghi duy nhất là Atlas
 Staging `rnzxmxiiqgtdevzregff`.
 
+Theo chỉ đạo ngày 19/11/2026, V1 là nguồn quyết định cho danh mục đã có mapping.
+Tên, trạng thái, cấu hình trường, đơn vị phát hành và thứ tự ưu tiên nhà cung
+cấp được đồng bộ theo V1 trong phạm vi kế hoạch đã đối chiếu. [Phạm vi và
+điều kiện kiểm tra](../implementation-tasks/TASK-ATLAS-V1-AUTHORITATIVE-CATALOG.md).
+
 ## Cách chạy
 
 1. Chọn `mode=preview`. Commit `main` cần có **Frontend CI** và **Supabase
@@ -41,14 +46,14 @@ với từng phần.
 - Lịch sử Change Order lưu trạng thái và ngày hiệu lực gốc để tra cứu. Việc
   nhập lịch sử không kích hoạt quy tắc V1 trong công thức Atlas. [Hợp đồng lưu
   lịch sử](../api/recipe-change-order-history.md).
-- Một tên nguyên liệu hoặc nhà cung cấp được cập nhật khi chỉ tên thay đổi,
-  mapping và phiên bản đích vẫn khớp lần đồng bộ trước, và tên mới không
-  xung đột. Quan hệ cung ứng mới cần hai đầu mối hoạt động và không được trùng
-  nhà cung cấp hoặc thứ tự ưu tiên đang áp dụng.
-- Chênh lệch về cấu hình trường, đơn vị, nhóm, trạng thái, ưu tiên cung ứng
-  đã có, hoặc công thức hiện hành được báo để rà soát. Bản ghi vắng ở V1
-  tiếp tục được giữ trong Atlas. Báo cáo công thức so sánh định lượng cơ sở
-  theo mapping, còn hiệu lực Change Order vẫn do Atlas xác định theo ngày.
+- Danh mục có mapping giữ nguyên định danh và nhận giá trị hiện tại của V1.
+  Tên nhà cung cấp chứa ghi chú vẫn được lưu nguyên nghĩa nguồn. Ưu tiên
+  cung ứng được cập nhật trong cùng giao dịch, quan hệ vắng ở V1 được ngừng
+  dùng và giữ lịch sử. Va chạm với đối tượng chưa có mapping cần được xử lý.
+- View tính BOM V1 dùng đơn vị mua của nguyên liệu. So sánh công thức nhận
+  biết bằng chứng tiếp nhận D-047 khớp đúng phiên bản hiện hành, đơn vị và số
+  lượng. Các khác biệt công thức còn lại tiếp tục được báo theo từng ngữ
+  cảnh. Hiệu lực Change Order vẫn được xác định theo ngày.
 - Khi cần sửa kết quả đã ghi, dùng quy trình hiệu chỉnh có kiểm soát và giữ
   biên nhận nhập. Nếu lượt Apply dừng sau khi gửi lệnh ghi, đối chiếu biên
   nhận theo `snapshot_id` trong Staging trước khi chạy lại. Snapshot gốc ở trong

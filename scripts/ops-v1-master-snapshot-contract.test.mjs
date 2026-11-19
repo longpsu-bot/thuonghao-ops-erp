@@ -710,7 +710,7 @@ describe("owner-approved source resolutions", () => {
     );
   });
 
-  it("imports reviewed Ingredient 903 Bột mì as active and clears its active-Recipe reference blocker", () => {
+  it("preserves current V1 Ingredient 903 lifecycle over the historical Atlas exception", () => {
     const s = source();
     s.ingredients.push({
       id: "903",
@@ -734,26 +734,17 @@ describe("owner-approved source resolutions", () => {
     expect(
       n.records.ingredients.find((r) => r.legacy_id === "903")
         ?.ingredient_status,
-    ).toBe("ACTIVE");
-    expect(n.source_diagnostics).toContainEqual(
-      expect.objectContaining({
-        code: "REVIEWED_SOURCE_CORRECTION",
-        entity: "ingredients",
-        legacy_id: "903",
-        field: "is_active",
-        severity: "INFO",
-      }),
-    );
+    ).toBe("INACTIVE");
     expect(
       n.source_diagnostics.some(
         (d) =>
           d.code === "INACTIVE_INGREDIENT_REFERENCE" &&
           String(d.legacy_id).includes("ingredient:903"),
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it("does not apply Ingredient 903 correction if the source ID has been repurposed", () => {
+  it("uses the actual source name and lifecycle without a pinned Ingredient 903 override", () => {
     const s = source();
     s.ingredients.push({
       id: "903",
@@ -770,7 +761,7 @@ describe("owner-approved source resolutions", () => {
       n.records.ingredients.find((r) => r.legacy_id === "903")
         ?.ingredient_status,
     ).toBe("INACTIVE");
-    expect(n.source_diagnostics).toContainEqual(
+    expect(n.source_diagnostics).not.toContainEqual(
       expect.objectContaining({
         code: "REVIEWED_SOURCE_DECISION_ID_REUSED",
         entity: "ingredients",

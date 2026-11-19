@@ -247,14 +247,23 @@ export async function runPlanningMasterCatchup({
         !Array.isArray(result.actions) ||
         result.actions.some(
           (action) =>
-            ["SCHOOL", "CUSTOMER", "DELIVERY_LOCATION"].includes(
-              action.object_type,
-            ) ||
-            (!["CREATE", "NO_CHANGE"].includes(action.action) &&
-              !(
-                action.action === "UPDATE" &&
-                ["INGREDIENT", "SUPPLIER"].includes(action.object_type)
-              )),
+            !["CREATE", "NO_CHANGE"].includes(action.action) &&
+            !(
+              action.action === "UPDATE" &&
+              [
+                "INGREDIENT",
+                "SUPPLIER",
+                "SUPPLIER_ELIGIBILITY",
+                "CUSTOMER",
+                "DELIVERY_LOCATION",
+                "SCHOOL",
+                "SCHOOL_TYPE",
+                "DISH_TYPE",
+                "INGREDIENT_TYPE",
+                "INGREDIENT_ORDER_GROUP",
+                "UNIT",
+              ].includes(action.object_type)
+            ),
         )
       )
         throw new Error("REVIEWED_PLANNING_SCOPE_INVALID");
