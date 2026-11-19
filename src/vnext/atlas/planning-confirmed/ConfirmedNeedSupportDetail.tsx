@@ -17,6 +17,7 @@ import {
   needGenerationResultMessage,
   needGenerationWorkbenchFromResult,
   needGenerationSourceBreakdown,
+  contributionSourceLabel,
   type ConfirmedNeedLine,
   type NeedGenerationApi,
   type NeedGenerationDetailGroup,
@@ -129,11 +130,6 @@ export function ConfirmedNeedSupportDetail({
       <Heading as="h2" textStyle="section" mb="xs">
         Cách hình thành nhu cầu
       </Heading>
-      <Text textStyle="helper" color="fg.muted" mb="sm">
-        Công thức và Bổ sung tạo nhu cầu gắn với thực đơn; Hàng đặt riêng được
-        giữ riêng. Bằng chứng giữ nguyên nguồn, đề xuất làm tròn và quyết định
-        xác nhận.
-      </Text>
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
@@ -342,12 +338,21 @@ export function ConfirmedNeedSupportDetail({
                               {g.unit_name}
                             </Text>
                             <Text>
-                              Hàng đặt riêng:{" "}
+                              Hàng đặt riêng thủ công:{" "}
                               {exactQuantityDisplay(
                                 source.special_order_quantity,
                               )}{" "}
                               {g.unit_name}
                             </Text>
+                            {source.automatic_pantry_quantity !== undefined && (
+                              <Text>
+                                Hàng đặt riêng tự động:{" "}
+                                {exactQuantityDisplay(
+                                  source.automatic_pantry_quantity,
+                                )}{" "}
+                                {g.unit_name}
+                              </Text>
+                            )}
                             {!/^0(?:\.0+)?$/.test(
                               source.unclassified_direct_quantity,
                             ) && (
@@ -463,19 +468,22 @@ export function ConfirmedNeedSupportDetail({
             <Box mt="sm" aria-label="Nguồn đóng góp chi tiết">
               {data.atomic_detail.map((a, i) => (
                 <Text key={i} textStyle="helper">
-                  {a.contribution_family === "RECIPE_DERIVED"
-                    ? "Công thức"
-                    : a.pantry_purpose_code === "planning_identified_supplement"
-                      ? "Bổ sung"
-                      : a.pantry_purpose_code === "school_requested_supplement"
-                        ? "Hàng đặt riêng"
-                        : "Nguồn trực tiếp (lịch sử)"}{" "}
-                  ·{" "}
-                  {a.dish_name ??
-                    (a.pantry_purpose_code !== "school_requested_supplement"
-                      ? a.pantry_purpose
-                      : null)}{" "}
-                  {a.pantry_source_reference
+                  {contributionSourceLabel(a)} ·{" "}
+                  {a.pantry_purpose_code === "auto_weekly_pantry" &&
+                  a.quantity_per_menu_day &&
+                  a.counted_menu_days ? (
+                    <>
+                      {exactQuantityDisplay(a.quantity_per_menu_day)}{" "}
+                      {a.unit_name}/ngày × {a.counted_menu_days.length} ngày
+                    </>
+                  ) : (
+                    (a.dish_name ??
+                    (a.pantry_purpose_code === "school_requested_supplement"
+                      ? null
+                      : a.pantry_purpose))
+                  )}{" "}
+                  {a.pantry_source_reference &&
+                  a.pantry_purpose_code !== "auto_weekly_pantry"
                     ? `· ${a.pantry_source_reference}`
                     : ""}{" "}
                   ·{" "}

@@ -32,6 +32,8 @@ export type AtlasVNextApis = {
   >;
   pantry: Pick<
     PantryApi,
+    | "weeklyRules"
+    | "saveWeeklyRule"
     | "getWorkbench"
     | "preview"
     | "saveCompleted"

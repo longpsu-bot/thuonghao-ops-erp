@@ -78,6 +78,39 @@ describe("PANTRY-02 API adapter", () => {
     ]);
   });
 
+  it("uses dedicated weekly rule RPCs with exact quantity, unit, menu token and pair version", async () => {
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createPantryApi({ invoke });
+    const preview = { school_id: "school", quantity_per_day: "0.400001" };
+    const payload = {
+      ...preview,
+      ingredient_id: "ingredient",
+      week_start: "2026-11-16",
+      enabled: true,
+      expected_unit_id: "unit",
+      expected_menu_token: "token",
+    };
+    await api.weeklyRules("operator", payload.week_start, preview);
+    await api.saveWeeklyRule("operator", 0, payload);
+    expect(invoke.mock.calls[0]).toMatchObject([
+      "atlas_api.get_weekly_pantry_rules",
+      {
+        contract_version: "PANTRY-02.v1",
+        payload: { week_start: payload.week_start, preview },
+      },
+    ]);
+    expect(invoke.mock.calls[1]).toMatchObject([
+      "atlas_api.save_weekly_pantry_rule",
+      {
+        contract_version: "PANTRY-02.v1",
+        requested_by_auth_subject: "operator",
+        reason_code: "WEEKLY_PANTRY_RULE_SAVED",
+        expected_version: 0,
+        payload,
+      },
+    ]);
+  });
+
   it("builds PANTRY-02.v3 with explicit School/date modes and routes one consequential Save", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createPantryApi({ invoke });

@@ -1,5 +1,31 @@
 # PANTRY-02 Pantry Source API Contract
 
+## Weekly automatic special orders (19 November 2026)
+
+`get_weekly_pantry_rules` reads rules at a Monday-start week under
+`planning.inputs.read`. Each result identifies the School, Ingredient, purchase
+Unit, effective revision and exact quantity per menu day. The read also returns
+the distinct saved menu dates, first delivery date and exact weekly quantity.
+An optional rate preview uses the same dates. `save_weekly_pantry_rule` requires
+`planning.pantry.write`, a current menu token, expected Unit and rule version,
+and a command receipt. It saves an effective-dated rate or stops that rule
+starting in the selected week.
+
+Weekly Menu Save accepts the menu assignments. Under the week lock, the backend
+recomputes the automatic quantity using the latest separately saved rate and
+checks the affected delivery day. A competing change to the rule or the menu
+invalidates a rule editor's reviewed Save through its expected version or menu token.
+
+Automatic rows use the reserved `auto_weekly_pantry` purpose. Manual special
+orders use `school_requested_supplement`. Menu-based recipe quantities and
+planning supplements retain their existing evidence. A common purchasing group
+may contain all four. In the Need read, `special_order_quantity` measures manual
+special orders, and `automatic_pantry_quantity` measures weekly automatic orders.
+Atomic automatic contributions point to the rule revision and menu approval
+and retain the menu dates used. Whole-week changes affect the delivery day
+even when only a later menu date changes. See the
+[business rule and examples](../superpowers/specs/2026-11-19-weekly-menu-pantry.md).
+
 **23 October forward amendment:** the active workbench removes the recurring
 no-additions control. Untouched absent weeks need no Pantry command. Clearing
 saved rows still uses reviewed consequential Save with the existing explicit-zero

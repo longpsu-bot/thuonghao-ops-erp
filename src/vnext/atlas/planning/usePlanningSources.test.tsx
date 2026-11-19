@@ -35,6 +35,152 @@ async function setup() {
   return { ...hook, fixture };
 }
 describe("Planning source safety", () => {
+  it("retains a manual draft while reviewing a weekly rule and its released date correction", async () => {
+    const { result, fixture } = await setup();
+    const impact = {
+      service_date: reviewWeek,
+      operator_message: "Nhu cầu ngày giao đã phát hành.",
+      correction_policy: "PLANNING_RELEASE_CORRECTION_REQUIRED",
+      chains: [
+        {
+          need_generation_run_id: "run",
+          need_generation_run_version: 5,
+          confirmed_need_batch_id: "batch",
+          confirmed_need_batch_version: 3,
+        },
+      ],
+    };
+    vi.spyOn(fixture.pantryApi, "saveWeeklyRule").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "PLANNING_RELEASE_CORRECTION_REQUIRED",
+        safe_message: "",
+        blocking_references: [impact],
+      },
+    });
+    const prepare = vi.spyOn(fixture.pantryApi, "prepareCorrection");
+    act(() => result.current.transition({ job: "pantry" }));
+    addValidPantryDraft(result);
+    const manual = structuredClone(result.current.pantryRows);
+    act(() => result.current.transition({ weeklyRules: true }));
+    await waitFor(() =>
+      expect(result.current.weekly.data?.rules).toHaveLength(1),
+    );
+    expect(result.current.pending).toBeNull();
+    act(() =>
+      result.current.weekly.start(
+        "school-0",
+        result.current.weekly.data!.rules[0],
+        true,
+      ),
+    );
+    await act(() => result.current.weekly.preview());
+    await act(() => result.current.weekly.save());
+    expect(result.current.weekly.impacts).toEqual([impact]);
+    expect(prepare).not.toHaveBeenCalled();
+    await act(() => result.current.weekly.prepareCorrection());
+    expect(prepare).toHaveBeenCalledWith(
+      "operator",
+      expect.any(String),
+      impact.chains[0],
+      expect.any(String),
+    );
+    act(() => result.current.weekly.cancel());
+    act(() => result.current.transition({ weeklyRules: false }));
+    expect(result.current.pantryRows).toEqual(manual);
+    expect(result.current.dirty).toBe(true);
+  });
+  it("reviews an exact weekly rate, saves only its rule and rereads the independent source", async () => {
+    const { result, fixture } = await setup();
+    const saveManual = vi.spyOn(fixture.pantryApi, "saveCompleted");
+    const saveRule = vi.spyOn(fixture.pantryApi, "saveWeeklyRule");
+    act(() => result.current.transition({ job: "pantry", weeklyRules: true }));
+    await waitFor(() =>
+      expect(result.current.weekly.data?.rules).toHaveLength(1),
+    );
+    act(() =>
+      result.current.weekly.start(
+        "school-0",
+        result.current.weekly.data!.rules[0],
+      ),
+    );
+    act(() => result.current.weekly.edit({ rate: "0,400001" }));
+    act(() => result.current.transition({ week: "2026-09-14" }));
+    expect(result.current.pending?.week).toBe("2026-09-14");
+    act(() => result.current.cancelTransition());
+    await act(() => result.current.weekly.preview());
+    expect(result.current.weekly.reviewed?.projection?.total_quantity).toBe(
+      "0.400001",
+    );
+    await act(() => result.current.weekly.save());
+    expect(saveRule).toHaveBeenCalledWith("operator", 1, {
+      week_start: reviewWeek,
+      school_id: "school-0",
+      ingredient_id: "ingredient-1",
+      quantity_per_day: "0.400001",
+      enabled: true,
+      expected_unit_id: "unit-1",
+      expected_menu_token: "review-menu",
+    });
+    const updated = result.current.weekly.data!.rules[0];
+    expect(updated.quantity_per_day).toBe("0.400001");
+    act(() => result.current.weekly.start("school-0", updated, true));
+    await act(() => result.current.weekly.preview());
+    await act(() => result.current.weekly.save());
+    expect(saveRule).toHaveBeenLastCalledWith(
+      "operator",
+      2,
+      expect.objectContaining({ enabled: false }),
+    );
+    expect(result.current.weekly.data?.rules[0].enabled).toBe(false);
+    expect(saveManual).not.toHaveBeenCalled();
+  });
+  it.each([
+    [stale, false],
+    [unknown, true],
+  ] as const)(
+    "requires readback following a rejected or uncertain weekly save",
+    async (response, uncertain) => {
+      const { result, fixture } = await setup();
+      const saveRule = vi
+        .spyOn(fixture.pantryApi, "saveWeeklyRule")
+        .mockResolvedValue(response);
+      act(() =>
+        result.current.transition({ job: "pantry", weeklyRules: true }),
+      );
+      await waitFor(() =>
+        expect(result.current.weekly.data?.rules).toHaveLength(1),
+      );
+      act(() =>
+        result.current.weekly.start(
+          "school-0",
+          result.current.weekly.data!.rules[0],
+          true,
+        ),
+      );
+      await act(() => result.current.weekly.preview());
+      await act(() => result.current.weekly.save());
+      expect(result.current.weekly.uncertain).toBe(uncertain);
+      expect(result.current.weekly.canEdit).toBe(false);
+      expect(result.current.weekly.reviewed).toBeNull();
+      await act(() => result.current.weekly.recover());
+      expect(saveRule).toHaveBeenCalledOnce();
+      expect(result.current.weekly.canEdit).toBe(true);
+      expect(result.current.weekly.draft).toBeNull();
+    },
+  );
+  it("keeps read-only rule data visible and blocks authorship without backend capability", async () => {
+    const { result, fixture } = await setup();
+    vi.spyOn(fixture.pantryApi, "weeklyRules").mockResolvedValue(
+      success({ rules: [], menu_token: "token", can_manage: false }),
+    );
+    act(() => result.current.transition({ job: "pantry", weeklyRules: true }));
+    await waitFor(() => expect(result.current.weekly.data).toBeTruthy());
+    act(() => result.current.weekly.start("school-0"));
+    expect(result.current.weekly.draft).toBeNull();
+    expect(result.current.weekly.canEdit).toBe(false);
+  });
   it.each([
     ["WEEKLY_SHEET_MISSING", /Kiểm tra.*tuần/],
     ["CAPABILITY_DENIED", /Liên hệ.*quyền/],

@@ -20,6 +20,7 @@ import {
 import {
   formatQuantity,
   needGenerationSourceBreakdown,
+  contributionSourceLabel,
   needGenerationContinuitySummaryFromResult,
   needGenerationReadbackFromResult,
   needGenerationResultIsStale,
@@ -1017,7 +1018,8 @@ export function NeedGenerationWorkbench({
                   "Công thức",
                   "Bổ sung",
                   "Công thức + Bổ sung",
-                  "Hàng đặt riêng",
+                  "Hàng đặt riêng thủ công",
+                  "Hàng đặt riêng tự động",
                   "Nguồn trực tiếp (lịch sử)",
                   "Tổng lý thuyết",
                   "Chi tiết",
@@ -1058,6 +1060,11 @@ export function NeedGenerationWorkbench({
                       </td>
                       <td className="quantity-cell">
                         {exactQuantityDisplay(
+                          source?.automatic_pantry_quantity ?? null,
+                        )}
+                      </td>
+                      <td className="quantity-cell">
+                        {exactQuantityDisplay(
                           source?.unclassified_direct_quantity ?? null,
                         )}
                       </td>
@@ -1093,18 +1100,7 @@ export function NeedGenerationWorkbench({
                 <ul>
                   {workbench.atomic_detail.map((item) => (
                     <li key={item.theoretical_need_line_id}>
-                      <b>
-                        {item.contribution_family === "RECIPE_DERIVED"
-                          ? "Công thức"
-                          : item.pantry_purpose_code ===
-                              "planning_identified_supplement"
-                            ? "Bổ sung"
-                            : item.pantry_purpose_code ===
-                                "school_requested_supplement"
-                              ? "Hàng đặt riêng"
-                              : "Nguồn trực tiếp (lịch sử)"}
-                      </b>{" "}
-                      ·{" "}
+                      <b>{contributionSourceLabel(item)}</b> ·{" "}
                       {typeof item.exact_theoretical_quantity === "string"
                         ? exactQuantityDisplay(item.exact_theoretical_quantity)
                         : formatQuantity(item.theoretical_quantity)}{" "}

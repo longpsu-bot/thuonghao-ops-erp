@@ -336,6 +336,12 @@ export function createReviewPantryApi(
     async prepareCorrection() {
       return backendError("CORRECTION_ACTION_NOT_REQUIRED");
     },
+    async weeklyRules() {
+      return success({ rules: [], can_manage: false, menu_token: "review" });
+    },
+    async saveWeeklyRule() {
+      return backendError("CAPABILITY_DENIED");
+    },
     async getWorkbench(_authSubject, _correlationId, weekStart) {
       const error = fail();
       if (error) return error;

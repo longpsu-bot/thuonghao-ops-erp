@@ -77,6 +77,8 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "pantry_v4_purpose_free.sql",
   "pantry_b1_two_source.sql",
   "pantry_b1_composition.sql",
+  "weekly_pantry_rules.sql",
+  "weekly_pantry_generation.sql",
   "pa_06e_h1b1_line_decision_structure_security.sql",
   "pa_06e_h1b1_line_decision_chain_pointer.sql",
   "pa_06e_h1b1_line_decision_policy_quantity_integrity.sql",

@@ -19,6 +19,7 @@ import { AtlasTableViewport } from "../AtlasTableViewport";
 import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
 import { pantryIssueCopy } from "./pantryIssueCopy";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
+import { WeeklyPantryRules } from "./WeeklyPantryRules";
 
 function PantryFeedback({
   error,
@@ -43,15 +44,61 @@ function PantryFeedback({
   );
 }
 
-export function PlanningPantryStage({
-  c,
-  visibleSchoolIds,
-  primaryAdd,
-}: {
+type PantryStageProps = {
   c: PlanningSourcesController;
   visibleSchoolIds: string[];
   primaryAdd: boolean;
-}) {
+};
+
+export function PlanningPantryStage(props: PantryStageProps) {
+  const { c, visibleSchoolIds } = props;
+  return (
+    <>
+      <Flex
+        role="group"
+        aria-label="Cách lập hàng đặt riêng"
+        gap="xs"
+        px="md"
+        py="sm"
+        wrap="wrap"
+      >
+        {(
+          [
+            [false, "Nhập theo ngày"],
+            [true, "Định mức theo tuần"],
+          ] as const
+        ).map(([weekly, label]) => (
+          <Button
+            key={label}
+            size="sm"
+            variant={c.weeklyRulesOpen === weekly ? "secondary" : "tertiary"}
+            aria-pressed={c.weeklyRulesOpen === weekly}
+            disabled={
+              c.busy || c.weekly.busy || c.weekly.uncertain || !!c.preview
+            }
+            onClick={() => {
+              if (weekly !== c.weeklyRulesOpen)
+                c.transition({ weeklyRules: weekly });
+            }}
+          >
+            {label}
+          </Button>
+        ))}
+      </Flex>
+      {c.weeklyRulesOpen ? (
+        <WeeklyPantryRules c={c} visibleSchoolIds={visibleSchoolIds} />
+      ) : (
+        <ManualPantryStage {...props} />
+      )}
+    </>
+  );
+}
+
+function ManualPantryStage({
+  c,
+  visibleSchoolIds,
+  primaryAdd,
+}: PantryStageProps) {
   const [addSchool, setAddSchool] = useState("");
   const [addCategory, setAddCategory] = useState(
     "planning_identified_supplement",

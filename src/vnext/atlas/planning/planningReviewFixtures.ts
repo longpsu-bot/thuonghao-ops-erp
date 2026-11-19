@@ -8,6 +8,7 @@ import type {
   AttendanceLine,
   PantryPreview,
   PantryApi,
+  WeeklyPantryRule,
   PantrySchoolDateMode,
   JsonValue,
   PlanningCorrectionImpact,
@@ -375,6 +376,25 @@ export function pantryPreview(): PantryPreview {
 export function createPlanningReviewFixture() {
   const planning = planningSnapshot(),
     pantry = pantrySnapshot();
+  // The approved review menu has exactly one day per School.
+  const weeklyRules: WeeklyPantryRule[] = [
+    {
+      school_id: pantry.schools[0].school_id,
+      school_name: pantry.schools[0].school_name,
+      ingredient_id: pantry.ingredients[0].ingredient_id,
+      ingredient_name: pantry.ingredients[0].ingredient_name,
+      unit_id: "unit-1",
+      unit_name: "kg",
+      effective_from: reviewWeek,
+      rule_revision_id: "review-rule-1",
+      version: 1,
+      enabled: true,
+      menu_dates: [reviewWeek],
+      delivery_date: reviewWeek,
+      total_quantity: "0.4",
+      quantity_per_day: "0.4",
+    },
+  ];
   return {
     planning,
     pantry,
@@ -414,6 +434,72 @@ export function createPlanningReviewFixture() {
         success({ authoritative_readback: { planning_inputs: planning } }),
     },
     pantryApi: {
+      weeklyRules: async (
+        _subject: string,
+        week: string,
+        preview?: { school_id: string; quantity_per_day: string },
+      ) =>
+        success({
+          rules: structuredClone(weeklyRules),
+          can_manage: true,
+          menu_token: "review-menu",
+          ...(preview
+            ? {
+                preview: {
+                  ...preview,
+                  menu_dates: [week],
+                  delivery_date: week,
+                  total_quantity: preview.quantity_per_day,
+                },
+              }
+            : {}),
+        }),
+      saveWeeklyRule: async (
+        _subject: string,
+        version: number,
+        payload: Parameters<PantryApi["saveWeeklyRule"]>[2],
+      ) => {
+        const index = weeklyRules.findIndex(
+          (r) =>
+            r.school_id === payload.school_id &&
+            r.ingredient_id === payload.ingredient_id,
+        );
+        if (
+          (weeklyRules[index]?.version ?? 0) !== version ||
+          payload.expected_menu_token !== "review-menu"
+        )
+          return stale;
+        const school = pantry.schools.find(
+          (s) => s.school_id === payload.school_id,
+        );
+        const ingredient = pantry.ingredients.find(
+          (i) => i.ingredient_id === payload.ingredient_id,
+        );
+        if (!school || !ingredient) return stale;
+        const rule = {
+          school_id: school.school_id,
+          school_name: school.school_name,
+          ingredient_id: ingredient.ingredient_id,
+          ingredient_name: ingredient.ingredient_name,
+          unit_id: ingredient.purchase_unit.unit_id,
+          unit_name: ingredient.purchase_unit.unit_name,
+          enabled: payload.enabled,
+          effective_from: payload.week_start,
+          version: version + 1,
+          rule_revision_id: `review-rule-${version + 1}`,
+          quantity_per_day: payload.quantity_per_day ?? null,
+          total_quantity: payload.quantity_per_day ?? "0",
+          menu_dates: [payload.week_start],
+          delivery_date: payload.enabled ? payload.week_start : null,
+        };
+        if (index === -1) weeklyRules.push(rule);
+        else weeklyRules[index] = rule;
+        return success({
+          version: rule.version,
+          rule_revision_id: rule.rule_revision_id,
+          affected_weeks: [payload.week_start],
+        });
+      },
       getWorkbench: async () => success({ workbench: pantry }),
       preview: async (
         _subject: string,

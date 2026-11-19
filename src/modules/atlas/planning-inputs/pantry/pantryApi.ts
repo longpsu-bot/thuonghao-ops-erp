@@ -9,6 +9,8 @@ import type { PantrySchoolDateMode } from "./pantryModel";
 
 export const PANTRY_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_pantry_source_workbench",
+  weeklyRules: "atlas_api.get_weekly_pantry_rules",
+  saveWeeklyRule: "atlas_api.save_weekly_pantry_rule",
   preview: "atlas_api.preview_pantry_source",
   saveCompleted: "atlas_api.save_pantry",
   save: "atlas_api.save_pantry_draft",
@@ -121,6 +123,44 @@ export function pantryCompletionRequest(
 export function createPantryApi(invoker: PantryRpcInvoker) {
   const correction = createPlanningCorrectionApi(invoker);
   return {
+    weeklyRules(
+      subject: string,
+      week: string,
+      preview?: { school_id: string; quantity_per_day: string },
+    ) {
+      return invoker.invoke(
+        PANTRY_RPC_FUNCTIONS.weeklyRules,
+        pantryReadRequest(subject, crypto.randomUUID(), {
+          week_start: week,
+          ...(preview ? { preview } : {}),
+        }),
+      );
+    },
+    saveWeeklyRule(
+      subject: string,
+      expectedVersion: number,
+      payload: {
+        week_start: string;
+        school_id: string;
+        ingredient_id: string;
+        expected_unit_id: string;
+        expected_menu_token: string;
+        enabled: boolean;
+        quantity_per_day?: string;
+      },
+    ) {
+      return invoker.invoke(
+        PANTRY_RPC_FUNCTIONS.saveWeeklyRule,
+        pantryCommandRequest(
+          subject,
+          crypto.randomUUID(),
+          expectedVersion,
+          "WEEKLY_PANTRY_RULE_SAVED",
+          payload,
+          null,
+        ),
+      );
+    },
     getCorrectionImpact(
       subject: string,
       correlationId: string,

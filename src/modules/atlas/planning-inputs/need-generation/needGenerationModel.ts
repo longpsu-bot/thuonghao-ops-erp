@@ -37,6 +37,7 @@ export type NeedGenerationSourceBreakdown = {
   planning_supplement_quantity: string;
   recipe_associated_quantity: string;
   special_order_quantity: string;
+  automatic_pantry_quantity?: string;
   unclassified_direct_quantity: string;
   total_theoretical_quantity: string;
 };
@@ -53,6 +54,12 @@ export function needGenerationSourceBreakdown(
     "unclassified_direct_quantity",
     "total_theoretical_quantity",
   ] as const;
+  if (
+    source?.automatic_pantry_quantity !== undefined &&
+    (typeof source.automatic_pantry_quantity !== "string" ||
+      !/^\d+(?:\.\d{1,6})?$/.test(source.automatic_pantry_quantity))
+  )
+    return null;
   return source &&
     fields.every(
       (field) =>
@@ -83,6 +90,8 @@ export type NeedGenerationDetail = {
   recipe_id?: string;
   pantry_purpose?: string;
   pantry_source_reference?: string;
+  counted_menu_days?: string[] | null;
+  quantity_per_menu_day?: string | null;
   warning_references: { issue_code: string; message: string }[];
 };
 
@@ -155,6 +164,20 @@ export type NeedGenerationContinuitySummary = {
   needsReview: number;
   carriedForward: number;
 };
+
+export function contributionSourceLabel(item: NeedGenerationDetail) {
+  if (item.contribution_family === "RECIPE_DERIVED") return "Công thức";
+  switch (item.pantry_purpose_code) {
+    case "planning_identified_supplement":
+      return "Bổ sung";
+    case "school_requested_supplement":
+      return "Hàng đặt riêng thủ công";
+    case "auto_weekly_pantry":
+      return "Hàng đặt riêng tự động";
+    default:
+      return "Nguồn trực tiếp (lịch sử)";
+  }
+}
 
 function record(value: unknown): Record<string, JsonValue> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value)

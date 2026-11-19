@@ -63,6 +63,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const reviewReady =
     c.candidate && c.canEdit && !c.syncing && c.errors.length === 0;
   const fitMenu = props.ownerJob === "menu";
+  const weeklyPantry = c.job === "pantry" && c.weeklyRulesOpen;
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: c.dirty,
     blocked: c.exitBlocked || c.syncing || reviewOpen,
@@ -209,11 +210,13 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
           ariaLabel={`Ngữ cảnh ${label.toLocaleLowerCase("vi")}`}
           moduleLabel={label}
           jobLabel={jobs[c.job]}
-          compactSummary={`${dateSummary} · ${scopeSummary}`}
+          compactSummary={`${weeklyPantry ? weekSummary : dateSummary} · ${scopeSummary}`}
           headingRef={heading}
           details={[
             { label: "Tuần phục vụ", value: weekSummary },
-            { label: "Ngày phục vụ", value: dateSummary },
+            ...(weeklyPantry
+              ? []
+              : [{ label: "Ngày phục vụ", value: dateSummary }]),
             { label: "Trường / điểm giao", value: scopeSummary },
           ]}
         />
@@ -258,7 +261,9 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               templateColumns={{
                 base: "minmax(0, 1fr) auto auto",
                 md: "repeat(2, minmax(0, 1fr))",
-                lg: "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
+                lg: weeklyPantry
+                  ? "repeat(3, minmax(0, 1fr)) auto"
+                  : "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
               }}
             >
               <Box
@@ -290,10 +295,14 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                   />
                 </Box>
                 <Field.Root
-                  display={{
-                    base: filtersOpen ? "block" : "none",
-                    md: "block",
-                  }}
+                  display={
+                    weeklyPantry
+                      ? "none"
+                      : {
+                          base: filtersOpen ? "block" : "none",
+                          md: "block",
+                        }
+                  }
                   order={{ base: 6, md: 2 }}
                   gridColumn={{ base: "1 / -1", md: "auto" }}
                 >
@@ -383,7 +392,13 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               >
                 <AtlasRefreshButton
                   loading={c.loading}
-                  disabled={c.busy || c.locked || reviewOpen}
+                  disabled={
+                    c.busy ||
+                    c.weekly.busy ||
+                    c.weekly.uncertain ||
+                    c.locked ||
+                    reviewOpen
+                  }
                   onClick={() => c.transition({ refresh: true })}
                 />
               </AtlasWorkbarActions>

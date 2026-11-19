@@ -142,6 +142,7 @@ select is(
       'atlas_api.save_pantry_draft(request jsonb)',
       'atlas_api.save_weekly_menu(request jsonb)',
       'atlas_api.save_weekly_menu_draft(request jsonb)',
+      'atlas_api.save_weekly_pantry_rule(request jsonb)',
       'atlas_api.validate_attendance(request jsonb)',
       'atlas_api.validate_pantry(request jsonb)',
       'atlas_api.validate_weekly_menu(request jsonb)',
@@ -152,13 +153,17 @@ select is(
       'atlas_core.issue_222_enforce_source_save(request jsonb, source_kind text, command_name text, contract_version text, capability_code text)',
       'atlas_core.issue_222_save_attendance_impl(request jsonb)',
       'atlas_core.issue_222_save_pantry_impl(request jsonb)',
+      'atlas_core.issue_222_save_pantry_impl(request jsonb, parent_actor uuid)',
       'atlas_core.issue_222_save_weekly_menu_impl(request jsonb)',
       'atlas_core.issue_222_source_impact_payload(source_kind text, source_payload jsonb)',
       'atlas_core.issue_222_source_save_auth_error(request jsonb, command_name text, contract_version text, capability_code text)',
       'atlas_core.school_catering_lock_handoff_source(p_service_date date, p_delivery_location_id uuid, p_ingredient_id uuid, p_unit_id uuid)',
       'atlas_core.school_catering_purchase_handoff_source_kind(p_handoff_batch_id uuid)',
       'atlas_core.uiq03a_lock_weekly_menu_recipe_dishes()',
-      'atlas_planning.pantry_02_snapshot_integrity_guard()'
+      'atlas_core.weekly_pantry_guard(request jsonb, source_kind text, command_name text, contract_version text, v_source_payload jsonb)',
+      'atlas_core.weekly_pantry_refresh(request jsonb, week_start date)',
+      'atlas_planning.pantry_02_snapshot_integrity_guard()',
+      'atlas_planning.weekly_pantry_stamp_snapshot()'
     ]::text[],
     'rmvp_03b_command_functions', array[
       'atlas_api.evaluate_planning_input_readiness(request jsonb)',
@@ -166,7 +171,7 @@ select is(
       'atlas_api.request_planning_input_need_generation(request jsonb)'
     ]::text[]
   ),
-  'planning command runtime retains the exact historical, D-042, and D-044 helper function set, the three accepted source-completion APIs, and exactly three RMVP-03B command functions'
+  'planning command runtime owns exactly the listed source and weekly Pantry functions and three RMVP-03B commands'
 );
 select is(
   jsonb_build_object(

@@ -151,7 +151,8 @@ describe("Confirmed Need Chakra operator surface", () => {
           recipe_derived_quantity: "20.000000",
           planning_supplement_quantity: "5.000000",
           recipe_associated_quantity: "25.000000",
-          special_order_quantity: "3.000000",
+          special_order_quantity: "1.400000",
+          automatic_pantry_quantity: "1.600000",
           unclassified_direct_quantity: "0",
           total_theoretical_quantity: "28.000000",
         },
@@ -180,7 +181,8 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(evidence.getByText("Từ công thức: 20 kg")).toBeVisible();
     expect(evidence.getByText("Bổ sung: 5 kg")).toBeVisible();
     expect(evidence.getByText("Công thức + Bổ sung: 25 kg")).toBeVisible();
-    expect(evidence.getByText("Hàng đặt riêng: 3 kg")).toBeVisible();
+    expect(evidence.getByText("Hàng đặt riêng thủ công: 1,4 kg")).toBeVisible();
+    expect(evidence.getByText("Hàng đặt riêng tự động: 1,6 kg")).toBeVisible();
     expect(
       within(
         screen.getByRole("table", { name: "Cách hình thành nhu cầu" }),

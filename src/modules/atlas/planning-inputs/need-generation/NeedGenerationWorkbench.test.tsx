@@ -818,7 +818,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     ).toBeVisible();
     expect(
       within(calculationDetail).getByRole("columnheader", {
-        name: "Hàng đặt riêng",
+        name: "Hàng đặt riêng thủ công",
       }),
     ).toBeVisible();
     expect(within(details).getByText(/2,5 kg/)).toBeVisible();
