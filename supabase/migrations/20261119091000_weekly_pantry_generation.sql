@@ -201,6 +201,28 @@ select pg_temp.patch_weekly_pantry('atlas_core.issue_222_enforce_source_save(jso
   if source_kind in ('WEEKLY_MENU','PANTRY') then
   perform pg_catalog.pg_advisory_xact_lock$b$);
 
+-- A retry on a week with generated Pantry evidence returns its original receipt
+-- even if Tuesday was subsequently released. Authorization already ran above.
+select pg_temp.patch_weekly_pantry('atlas_core.issue_222_enforce_source_save(jsonb,text,text,text,text)',
+ $a$  return atlas_core.weekly_pantry_guard(request,source_kind,command_name,contract_version,v_source_payload);$a$,
+ $b$  if source_kind='WEEKLY_MENU' and exists (
+      select 1 from atlas_planning.pantry_need_batches b
+      join atlas_planning.pantry_need_approval_snapshots s using(pantry_need_batch_id)
+      join atlas_planning.pantry_need_approval_snapshot_lines l using(pantry_need_approval_snapshot_id)
+      where b.week_start=v_week_start and l.weekly_rule_revision_id is not null)
+    and exists(select 1 from atlas_core.command_receipts r
+      where r.command_id=atlas_core.pa_05b_safe_uuid(request->>'command_id')
+        or (r.command_name=issue_222_enforce_source_save.command_name and r.idempotency_key=request->>'idempotency_key'
+           and r.scope_key=(atlas_core.pa_05b_resolve_actor(request,'PLANNING',issue_222_enforce_source_save.command_name)->>'actor_id')
+             ||':weekly-menu:'||v_week_start::text)) then
+    v_impact:=atlas_core.planning_contract_01_prepare_top_command(request,command_name,contract_version,
+      capability_code,'weekly-menu:'||v_week_start::text);
+    if v_impact->>'status'='RETURN' then
+      return (v_impact->'response')||jsonb_build_object('contract_version',contract_version);
+    end if;
+    raise exception 'Existing Weekly Menu receipt did not resolve';
+  end if;
+  return atlas_core.weekly_pantry_guard(request,source_kind,command_name,contract_version,v_source_payload);$b$);
 select pg_temp.patch_weekly_pantry('atlas_core.issue_222_save_pantry_impl(jsonb)',
  'atlas_core.pantry_02_canonical_rows(', 'atlas_core.weekly_pantry_canonical_rows(');
 select pg_temp.patch_weekly_pantry('atlas_core.issue_222_save_pantry_impl(jsonb)',

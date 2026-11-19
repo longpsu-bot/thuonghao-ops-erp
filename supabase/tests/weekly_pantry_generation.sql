@@ -117,7 +117,8 @@ select is((select count(*) from atlas_planning.pantry_need_approval_snapshots),2
 select is(atlas_core.issue_222_affected_dates('WEEKLY_MENU',(pg_temp.menu_request(initial||friday))->'payload'),
  array['2050-09-20','2050-09-23']::date[],'Friday preview guards both Tuesday and Friday') from scenarios;
 set local role authenticated;
-insert into menu_result select 'add Friday',atlas_api.save_weekly_menu(pg_temp.menu_request(initial||friday)) from scenarios;
+create temporary table friday_request as select pg_temp.menu_request(initial||friday) request from scenarios;
+insert into menu_result select 'add Friday',atlas_api.save_weekly_menu(request) from friday_request;
 call pg_temp.check_commit_constraints();
 reset role;
 
@@ -250,5 +251,9 @@ select is((select response->>'error_code' from menu_result where label='guard'),
  'Friday menu edit stops at the existing Tuesday correction boundary');
 select is((select requested_quantity from current_snapshot where school_id=pg_temp.id(6) and purpose_code_snapshot='auto_weekly_pantry'),
  1.2::numeric,'protected Friday change leaves the current Tuesday snapshot intact');
+set local role authenticated;
+select is((select atlas_api.save_weekly_menu(request) from friday_request),(select response from menu_result where label='add Friday'),
+ 'an exact authorized Friday replay returns its original receipt after Tuesday release');
+reset role;
 select * from finish();
 rollback;
