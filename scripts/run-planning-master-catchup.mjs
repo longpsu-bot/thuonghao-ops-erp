@@ -259,6 +259,7 @@ export async function runPlanningMasterCatchup({
                 "SCHOOL",
                 "SCHOOL_TYPE",
                 "DISH_TYPE",
+                "DISH",
                 "INGREDIENT_TYPE",
                 "INGREDIENT_ORDER_GROUP",
                 "UNIT",
