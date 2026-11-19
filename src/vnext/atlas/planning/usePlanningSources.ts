@@ -6,7 +6,7 @@ import {
 } from "../AtlasModuleExit";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { useWeeklyPantryRules } from "./useWeeklyPantryRules";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   activeMenuRows,
   activeAttendanceRows,
@@ -381,13 +381,17 @@ export function usePlanningSources({
     onCommitted,
     editable: !freshness.stale && !locked && !loading && !readError && !busy,
   });
-  const schools = [...(authority?.schools ?? [])].sort(compareCanonicalSchools);
+  const schools = useMemo(
+    () =>
+      (authority?.schools ?? [])
+        .filter((school) => job !== "menu" || school.school_status === "ACTIVE")
+        .sort(compareCanonicalSchools),
+    [authority?.schools, job],
+  );
   useEffect(() => {
     if (authority && !loading && !readError)
-      setSchoolIds((ids) =>
-        normalizePlanningSchoolScope(ids, authority.schools),
-      );
-  }, [authority, loading, readError]);
+      setSchoolIds((ids) => normalizePlanningSchoolScope(ids, schools));
+  }, [authority, loading, readError, schools]);
 
   const dirty =
     weekly.dirty ||

@@ -302,6 +302,37 @@ describe("Planning source safety", () => {
     );
     expect(fixture.planning.schools[0].school_id).toBe("school-32");
   });
+  it("keeps inactive Schools out of the Weekly Menu catalogue and scope without removing saved source rows", async () => {
+    const fixture = createPlanningReviewFixture();
+    const { result } = renderHook(() =>
+      usePlanningSources({
+        ...fixture,
+        authSubject: "operator",
+        initialWeek: reviewWeek,
+        ownerJob: "menu",
+      }),
+    );
+    await waitFor(() => expect(result.current.data).not.toBeNull());
+    act(() => result.current.transition({ schoolIds: ["school-1"] }));
+    expect(result.current.schoolIds).toEqual(["school-1"]);
+    const rowsBefore = result.current.menuRows;
+    const refreshed = structuredClone(fixture.planning);
+    refreshed.schools[1].school_status = "INACTIVE";
+    fixture.api.getWorkbench = vi
+      .fn()
+      .mockResolvedValue(success({ workbench: refreshed }));
+    act(() => result.current.transition({ refresh: true }));
+    await waitFor(() =>
+      expect(result.current.data?.schools[1].school_status).toBe("INACTIVE"),
+    );
+    expect(
+      result.current.schools.some((school) => school.school_id === "school-1"),
+    ).toBe(false);
+    await waitFor(() => expect(result.current.schoolIds).toEqual([]));
+    expect(result.current.menuRows).toEqual(rowsBefore);
+    expect(result.current.data?.schools).toHaveLength(33);
+    expect(result.current.dirty).toBe(false);
+  });
   it("keeps a fixed source owner on its own job without discarding its draft", async () => {
     const fixture = createPlanningReviewFixture();
     const { result, rerender } = renderHook(

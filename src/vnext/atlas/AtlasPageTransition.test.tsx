@@ -276,9 +276,9 @@ it("Confirmed Need opens Procurement at its exact local date and Allocation stag
   const save = vi.spyOn(apis.confirmedNeed, "save");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
-  open("Thực đơn");
-  await screen.findByRole("table", { name: "Thực đơn theo trường" });
-  const planning = panel("Thực đơn");
+  open("Sĩ số");
+  await screen.findByRole("textbox", { name: "Học sinh Trường Nguyễn Du" });
+  const planning = panel("Sĩ số");
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   fireEvent.change(
     await screen.findByRole("combobox", { name: "Ngày phục vụ" }),

@@ -30,6 +30,7 @@ export function PlanningReview({
           {...fixture}
           authSubject="fixture-operator"
           initialWeek={reviewWeek}
+          ownerJob={scenario === "menu_week" ? "menu" : undefined}
           initialJob={
             scenario.startsWith("attendance") || scenario === "dirty_dialog"
               ? "attendance"
@@ -59,6 +60,7 @@ function story(scenario: PlanningReviewScenario): Story {
         return;
       }
       await canvas.findByRole("table");
+      if (scenario === "menu_week") return;
       if (
         scenario.endsWith("failed") ||
         ["pantry_optional", "pantry_required", "pantry_prohibited"].includes(
@@ -185,6 +187,7 @@ function story(scenario: PlanningReviewScenario): Story {
   };
 }
 export const Menu = story("menu");
+export const MenuWholeWeek = story("menu_week");
 export const MenuAdditionsOnly = story("menu_additions");
 export const MenuReplacementNotification = story("menu_replacement");
 export const MenuDirty = story("menu_dirty");

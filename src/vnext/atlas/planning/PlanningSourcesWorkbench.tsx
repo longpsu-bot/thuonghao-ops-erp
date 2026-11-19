@@ -144,6 +144,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
         {c.job === "menu" ? (
           <PlanningMenuStage
             c={c}
+            days={days}
             visibleSchoolIds={visibleSchoolIds}
             fitWorkspace={fitMenu}
           />
@@ -210,11 +211,11 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
           ariaLabel={`Ngữ cảnh ${label.toLocaleLowerCase("vi")}`}
           moduleLabel={label}
           jobLabel={jobs[c.job]}
-          compactSummary={`${weeklyPantry ? weekSummary : dateSummary} · ${scopeSummary}`}
+          compactSummary={`${weeklyPantry || c.job === "menu" ? weekSummary : dateSummary} · ${scopeSummary}`}
           headingRef={heading}
           details={[
             { label: "Tuần phục vụ", value: weekSummary },
-            ...(weeklyPantry
+            ...(weeklyPantry || c.job === "menu"
               ? []
               : [{ label: "Ngày phục vụ", value: dateSummary }]),
             { label: "Trường / điểm giao", value: scopeSummary },
@@ -261,9 +262,10 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               templateColumns={{
                 base: "minmax(0, 1fr) auto auto",
                 md: "repeat(2, minmax(0, 1fr))",
-                lg: weeklyPantry
-                  ? "repeat(3, minmax(0, 1fr)) auto"
-                  : "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
+                lg:
+                  weeklyPantry || c.job === "menu"
+                    ? "repeat(3, minmax(0, 1fr)) auto"
+                    : "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
               }}
             >
               <Box
@@ -296,7 +298,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 </Box>
                 <Field.Root
                   display={
-                    weeklyPantry
+                    weeklyPantry || c.job === "menu"
                       ? "none"
                       : {
                           base: filtersOpen ? "block" : "none",

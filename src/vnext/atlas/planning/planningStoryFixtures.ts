@@ -25,6 +25,7 @@ export type PlanningReviewScenario =
   | "pantry_prohibited"
   | "menu_read_failure"
   | "menu"
+  | "menu_week"
   | "menu_additions"
   | "menu_replacement"
   | "menu_dirty"
@@ -322,5 +323,39 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
     fixture.pantry.purposes[0].note_rule = "OPTIONAL";
   if (scenario === "pantry_required")
     fixture.pantry.batch!.active_lines[0].note = "";
+  if (scenario === "menu_week") {
+    fixture.planning.schools = fixture.planning.schools.slice(0, 3);
+    fixture.planning.schools[2].school_status = "INACTIVE";
+    fixture.planning.weekly_menu!.lines = fixture.planning.schools.flatMap(
+      (school) =>
+        [
+          "2026-09-07",
+          "2026-09-08",
+          "2026-09-09",
+          "2026-09-10",
+          "2026-09-11",
+        ].flatMap((date, index) =>
+          fixture.planning.dishes
+            .filter(
+              (dish) => dish.dish_id !== (index % 2 ? "dish-1" : "dish-2"),
+            )
+            .flatMap((dish) =>
+              dish.dish_type_code === null
+                ? []
+                : [
+                    {
+                      school_id: school.school_id,
+                      service_date: date,
+                      menu_slot_code: dish.dish_type_code,
+                      dish_id: dish.dish_id,
+                      source_row_reference: `fixture:${school.school_id}:${date}:${dish.dish_id}`,
+                    },
+                  ],
+            ),
+        ),
+    );
+    fixture.planning.weekly_menu!.row_count =
+      fixture.planning.weekly_menu!.lines.length;
+  }
   return fixture;
 }

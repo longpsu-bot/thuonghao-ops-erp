@@ -65,6 +65,196 @@ function openFilters() {
     fireEvent.click(disclosure);
 }
 describe("Planning sources Chakra workbench", () => {
+  it("keeps an entirely rejected School/date visible with its exact source error", async () => {
+    const { fixture } = await show(1);
+    fixture.api.syncMenuFromGoogle = async () =>
+      success({
+        source: { source_name: "Google", sheet_name: "Tuần" },
+        rows: [
+          ["Tên trường", "Ngày", "Món mặn"],
+          ["TH001", "2026-09-08", "Món chưa có"],
+        ],
+      });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    );
+    await screen.findByRole("alert", { name: "Không thể đồng bộ thực đơn" });
+    const table = screen.getByRole("table", { name: "Thực đơn theo trường" });
+    const row = within(table).getByRole("row", { name: /Trường Nguyễn Du/ });
+    expect(within(row).getByText("08/09/2026")).toBeVisible();
+    expect(
+      within(row).getByText("Không tìm thấy món “Món chưa có”"),
+    ).toBeVisible();
+    expect(row.querySelector('[data-invalid="true"]')).toBeInTheDocument();
+  });
+  it("shows a source-empty week without fabricating School/date rows", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.planning.weekly_menu!.lines = [];
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          ownerJob="menu"
+        />
+      </AtlasVNextProvider>,
+    );
+    const table = await screen.findByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    expect(within(table).getAllByRole("row")).toHaveLength(1);
+    expect(
+      screen.getByText(/Chưa có thực đơn trong tuần cho các trường đã chọn/),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    ).toBeEnabled();
+  });
+  it("sorts the whole-week School/date rows by date or School without changing authority", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.planning.schools = fixture.planning.schools.slice(0, 2);
+    const lines = fixture.planning.weekly_menu!.lines.slice(0, 2);
+    fixture.planning.weekly_menu!.lines = [
+      ...lines,
+      { ...lines[0], service_date: "2026-09-09" },
+      { ...lines[1], service_date: "2026-09-08" },
+    ];
+    const read = vi.spyOn(fixture.api, "getWorkbench");
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          ownerJob="menu"
+        />
+      </AtlasVNextProvider>,
+    );
+    const table = await screen.findByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    const values = (column: number) =>
+      within(table)
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => within(row).getAllByRole("cell")[column].textContent);
+    const dateSort = within(table).getByRole("button", {
+      name: "Sắp xếp theo Ngày phục vụ",
+    });
+    fireEvent.click(dateSort);
+    expect(values(1)).toEqual([
+      "07/09/2026",
+      "07/09/2026",
+      "08/09/2026",
+      "09/09/2026",
+    ]);
+    expect(dateSort.closest("th")).toHaveAttribute("aria-sort", "ascending");
+    fireEvent.click(dateSort);
+    expect(values(1)).toEqual([
+      "09/09/2026",
+      "08/09/2026",
+      "07/09/2026",
+      "07/09/2026",
+    ]);
+    const schoolSort = within(table).getByRole("button", {
+      name: "Sắp xếp theo Trường / điểm giao",
+    });
+    fireEvent.click(schoolSort);
+    expect(values(0)).toEqual([
+      "Trường Lê Lợi",
+      "Trường Lê Lợi",
+      "Trường Nguyễn Du",
+      "Trường Nguyễn Du",
+    ]);
+    fireEvent.click(schoolSort);
+    expect(values(0)[0]).toBe("Trường Nguyễn Du");
+    fireEvent.click(schoolSort);
+    expect(values(1)).toEqual([
+      "07/09/2026",
+      "09/09/2026",
+      "07/09/2026",
+      "08/09/2026",
+    ]);
+    expect(read).toHaveBeenCalledOnce();
+    expect(fixture.planning.weekly_menu!.lines).toHaveLength(4);
+  });
+  it("shows multiple service dates and weekend source rows together without menu inputs or a date switcher", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.planning.schools = fixture.planning.schools.slice(0, 1);
+    const source = fixture.planning.weekly_menu!.lines[0];
+    fixture.planning.weekly_menu!.lines = [
+      source,
+      {
+        ...source,
+        service_date: "2026-09-08",
+        dish_id: "dish-2",
+        menu_slot_code: "main",
+      },
+      { ...source, service_date: "2026-09-13" },
+    ];
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          ownerJob="menu"
+        />
+      </AtlasVNextProvider>,
+    );
+    const table = await screen.findByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(3);
+    expect(
+      within(rows[0]).getByText(fixture.planning.dishes[0].dish_name),
+    ).toBeVisible();
+    expect(
+      within(rows[1]).getByText(fixture.planning.dishes[1].dish_name),
+    ).toBeVisible();
+    expect(
+      within(rows[2]).getByText(fixture.planning.dishes[0].dish_name),
+    ).toBeVisible();
+    expect(within(table).queryByRole("textbox")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "Ngày phục vụ" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    ).toBeVisible();
+  });
+  it("excludes inactive Schools from the Weekly Menu table and picker", async () => {
+    const fixture = createPlanningReviewFixture();
+    fixture.planning.schools[1].school_status = "INACTIVE";
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          ownerJob="menu"
+        />
+      </AtlasVNextProvider>,
+    );
+    const table = await screen.findByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    expect(within(table).getByText("Trường Nguyễn Du")).toBeVisible();
+    expect(within(table).queryByText("Trường Lê Lợi")).not.toBeInTheDocument();
+    openFilters();
+    fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
+    expect(
+      await screen.findByRole("checkbox", { name: "Trường Nguyễn Du" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("checkbox", { name: "Trường Lê Lợi" }),
+    ).not.toBeInTheDocument();
+  });
   it("groups Attendance warnings in Vietnamese while retaining every source reference and unknown detail", async () => {
     const { fixture } = await show();
     const preview = attendancePreview();
@@ -517,7 +707,7 @@ describe("Planning sources Chakra workbench", () => {
     });
     expect(
       within(context).getByLabelText(
-        "Tóm tắt công việc: 07/09/2026 · Tất cả trường",
+        "Tóm tắt công việc: 07/09/2026 – 13/09/2026 · Tất cả trường",
       ),
     ).toBeInTheDocument();
     const heading = screen.getByRole("heading", {
@@ -539,7 +729,9 @@ describe("Planning sources Chakra workbench", () => {
     ).toBeTruthy();
 
     const week = within(workbar).getByLabelText("Tuần phục vụ");
-    const date = within(workbar).getByLabelText("Ngày phục vụ");
+    expect(
+      within(workbar).queryByRole("combobox", { name: "Ngày phục vụ" }),
+    ).not.toBeInTheDocument();
     openFilters();
     const scope = within(workbar).getByRole("button", {
       name: "Tất cả trường",
@@ -551,8 +743,7 @@ describe("Planning sources Chakra workbench", () => {
       name: "Làm mới dữ liệu",
     });
     for (const [before, after] of [
-      [week, date],
-      [date, scope],
+      [week, scope],
       [scope, search],
       [search, refresh],
     ] as const)
@@ -592,15 +783,17 @@ describe("Planning sources Chakra workbench", () => {
     ).toBeInTheDocument();
 
     fireEvent.click(disclosure);
-    fireEvent.change(screen.getByRole("combobox", { name: "Ngày phục vụ" }), {
-      target: { value: "2026-09-08" },
-    });
+    expect(
+      screen.queryByRole("combobox", { name: "Ngày phục vụ" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(disclosure);
     expect(
       screen.getByText("Tuần 07/09/2026 – 13/09/2026"),
     ).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Tóm tắt công việc: 08/09/2026 · Tất cả trường"),
+      screen.getByLabelText(
+        "Tóm tắt công việc: 07/09/2026 – 13/09/2026 · Tất cả trường",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -811,7 +1004,7 @@ describe("Planning sources Chakra workbench", () => {
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
     expect(sync).not.toHaveBeenCalled();
   });
-  it("renders every active Dish Type in authoritative order and keeps empty columns", async () => {
+  it("keeps the current Dish Type columns alongside School and service date", async () => {
     await show();
     const table = screen.getByRole("table", {
       name: "Thực đơn theo trường",
@@ -822,6 +1015,7 @@ describe("Planning sources Chakra workbench", () => {
         .map((cell) => cell.textContent),
     ).toEqual([
       "Trường / điểm giao",
+      "Ngày phục vụ",
       "Món mặn",
       "Món canh",
       "Món xào",
@@ -830,7 +1024,10 @@ describe("Planning sources Chakra workbench", () => {
     ]);
     expect(within(table).queryByText("Loại cũ")).not.toBeInTheDocument();
     const firstSchoolRow = within(table).getAllByRole("row")[1];
-    expect(within(firstSchoolRow).getAllByRole("cell")[5]).toHaveTextContent(
+    expect(within(firstSchoolRow).getAllByRole("cell")[1]).toHaveTextContent(
+      "07/09/2026",
+    );
+    expect(within(firstSchoolRow).getAllByRole("cell")[6]).toHaveTextContent(
       "—",
     );
   });
@@ -853,9 +1050,9 @@ describe("Planning sources Chakra workbench", () => {
       width: "100%",
       tableLayout: "fixed",
     });
-    const schoolHeader = within(table).getByRole("columnheader", {
-      name: "Trường / điểm giao",
-    });
+    const schoolHeader = within(table)
+      .getByRole("button", { name: "Sắp xếp theo Trường / điểm giao" })
+      .closest("th")!;
     expect(schoolHeader).toHaveAttribute("data-sticky-column", "school");
     expect(getComputedStyle(schoolHeader).zIndex).toBe(
       "var(--atlas-layer-sticky-corner, 3)",
@@ -954,7 +1151,7 @@ describe("Planning sources Chakra workbench", () => {
     });
     expect(notice.parentElement).toHaveAttribute("data-atlas-portal-root");
   });
-  it("saves the full canonical Menu payload despite School, date, and search filters", async () => {
+  it("saves the full canonical weekly Menu payload despite School and search filters", async () => {
     const fixture = createPlanningReviewFixture();
     const canonicalRows = [
       menuPreview().canonical_rows[0],
@@ -993,9 +1190,6 @@ describe("Planning sources Chakra workbench", () => {
     );
     await screen.findByRole("table", { name: "Thực đơn theo trường" });
     openFilters();
-    fireEvent.change(screen.getByRole("combobox", { name: "Ngày phục vụ" }), {
-      target: { value: "2026-09-08" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
     fireEvent.click(
       await screen.findByRole("button", { name: "Bỏ chọn tất cả" }),
