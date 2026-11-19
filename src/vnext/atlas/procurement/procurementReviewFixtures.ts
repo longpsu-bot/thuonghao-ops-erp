@@ -9,6 +9,7 @@ import type {
   SchoolCateringProcurementApi,
   SchoolCateringPurchaseOrder,
 } from "../bridges/procurement";
+import { derivedDefaultAllocation } from "./procurementAllocationPresentation";
 
 export type ProcurementReviewScenario =
   | "normal"
@@ -338,16 +339,20 @@ export function createProcurementReviewFixture(
 ) {
   const serviceDate =
     scenario === "oct12_recommendations" ? oct12ReviewDate : reviewDate;
-  const preparationReady = ["ready", "oct12_recommendations"].includes(
-    scenario,
-  );
+  const rows = scenario === "empty" ? [] : [reviewFamily(scenario)];
+  const preparationReady =
+    rows.length > 0 &&
+    rows.every(
+      (row) =>
+        row.state === "BALANCED" || Boolean(derivedDefaultAllocation(row)),
+    );
   const fixture = {
     allocation: {
       success: true,
       contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
       date_start: serviceDate,
       date_end: serviceDate,
-      rows: scenario === "empty" ? [] : [reviewFamily(scenario)],
+      rows,
       warnings: [],
       blockers: [],
       preparation: {

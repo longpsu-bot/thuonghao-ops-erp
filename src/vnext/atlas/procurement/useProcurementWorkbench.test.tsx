@@ -600,7 +600,7 @@ describe("Preparation and PO actions", () => {
     expect(result.current.current).toBe(true);
   });
   it("does not prepare when backend readiness or permission is absent", async () => {
-    const { result, prepare } = setup();
+    const { result, prepare } = setup("needs_reallocation");
     await ready(result);
     await act(async () => result.current.prepare(false));
     expect(prepare).not.toHaveBeenCalled();
