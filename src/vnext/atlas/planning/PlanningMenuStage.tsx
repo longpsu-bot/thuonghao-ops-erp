@@ -17,6 +17,14 @@ import {
 import { useLayoutEffect, useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { AtlasSortableColumnHeader } from "../AtlasSortableColumnHeader";
+import {
+  atlasDefaultSort,
+  compareAtlasText,
+  nextAtlasSort,
+  sortAtlasRows,
+  type AtlasSortState,
+} from "../atlasTableSort";
 import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
 import {
   useAtlasPortalContainer,
@@ -25,14 +33,18 @@ import {
 import { viDate, planningIssueMessage } from "../bridges/planning";
 export function PlanningMenuStage({
   c,
+  days,
   visibleSchoolIds,
   fitWorkspace,
 }: {
   c: PlanningSourcesController;
+  days: string[];
   visibleSchoolIds: string[];
   fitWorkspace: boolean;
 }) {
   const [choose, setChoose] = useState(false);
+  const [sort, setSort] =
+    useState<AtlasSortState<"school" | "date">>(atlasDefaultSort);
   const active = useAtlasWorkbenchActive();
   useLayoutEffect(() => {
     if (!active) setChoose(false);
@@ -46,6 +58,28 @@ export function PlanningMenuStage({
       .filter((t) => t.dish_type_status === "ACTIVE")
       .sort((a, b) => a.display_order - b.display_order) ?? [];
   const correctionDates = c.impact?.date_impacts ?? [];
+  const sourceDates = new Set(
+    [...c.menuRows, ...c.menuSyncIssues].map(
+      (row) => `${row.school_id}|${row.service_date}`,
+    ),
+  );
+  const rows = sortAtlasRows(
+    c.schools
+      .filter((school) => visibleSchoolIds.includes(school.school_id))
+      .flatMap((school) =>
+        days
+          .filter((date) => sourceDates.has(`${school.school_id}|${date}`))
+          .map((date) => ({ school, date })),
+      ),
+    sort,
+    {
+      school: (left, right) =>
+        compareAtlasText(left.school.school_name, right.school.school_name),
+      date: (left, right) => compareAtlasText(left.date, right.date),
+    },
+  );
+  const onSort = (key: "school" | "date") =>
+    setSort((current) => nextAtlasSort(current, key));
   const invalidCellCount = new Set(
     c.menuSyncIssues.map((issue) => issue.source_row_reference).filter(Boolean),
   ).size;
@@ -331,6 +365,12 @@ export function PlanningMenuStage({
           Không có trường phù hợp bộ lọc.
         </Text>
       )}
+      {visibleSchoolIds.length > 0 && rows.length === 0 && (
+        <Text role="status" p="sm" color="fg.muted">
+          Chưa có thực đơn trong tuần cho các trường đã chọn. Đồng bộ Google
+          Sheet để tải thực đơn.
+        </Text>
+      )}
       <AtlasTableViewport
         label="Bảng thực đơn theo trường"
         data-testid="weekly-menu-scroll"
@@ -352,6 +392,7 @@ export function PlanningMenuStage({
         >
           <Table.ColumnGroup>
             <Table.Column w="var(--atlas-menu-school-width, 220px)" />
+            <Table.Column w="var(--atlas-menu-date-width, 120px)" />
             {types.map((type) => (
               <Table.Column
                 key={type.dish_type_id}
@@ -361,14 +402,22 @@ export function PlanningMenuStage({
           </Table.ColumnGroup>
           <Table.Header>
             <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
-              <Table.ColumnHeader
+              <AtlasSortableColumnHeader
+                label="Trường / điểm giao"
+                columnKey="school"
+                sort={sort}
+                onSort={onSort}
                 data-sticky-column="school"
                 position="sticky"
                 left="var(--atlas-layout-zero, 0)"
                 zIndex="var(--atlas-layer-sticky-corner, 3)"
-              >
-                Trường / điểm giao
-              </Table.ColumnHeader>
+              />
+              <AtlasSortableColumnHeader
+                label="Ngày phục vụ"
+                columnKey="date"
+                sort={sort}
+                onSort={onSort}
+              />
               {types.map((t) => (
                 <Table.ColumnHeader key={t.dish_type_id}>
                   {t.dish_type_name}
@@ -377,84 +426,83 @@ export function PlanningMenuStage({
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {c.schools
-              .filter((s) => visibleSchoolIds.includes(s.school_id))
-              .map((s) => (
-                <Table.Row key={s.school_id}>
-                  <Table.Cell
-                    data-sticky-column="school"
-                    position="sticky"
-                    left="var(--atlas-layout-zero, 0)"
-                    zIndex="var(--atlas-layer-sticky-cell, 1)"
-                    bg="bg.workbench"
-                  >
-                    {s.school_name}
-                  </Table.Cell>
-                  {types.map((t) => {
-                    const lines = c.menuRows.filter(
-                      (r) =>
-                        r.school_id === s.school_id &&
-                        r.service_date === c.date &&
-                        r.menu_slot_code === t.dish_type_code,
-                    );
-                    const issues = Array.from(
-                      new Map(
-                        c.menuSyncIssues
-                          .filter(
-                            (issue) =>
-                              issue.school_id === s.school_id &&
-                              issue.service_date === c.date &&
-                              issue.menu_slot_code === t.dish_type_code,
-                          )
-                          .map((issue) => [issue.source_row_reference, issue]),
-                      ).values(),
-                    );
-                    return (
-                      <Table.Cell
-                        key={t.dish_type_id}
-                        data-invalid={issues.length > 0 ? "true" : undefined}
-                        bg={issues.length ? "bg.danger" : undefined}
-                      >
-                        {!lines.length && !issues.length && "—"}
-                        {lines.map((line, index) => {
-                          const dish = c.data?.dishes.find(
-                            (d) => d.dish_id === line.dish_id,
-                          );
-                          return dish || !issues.length ? (
-                            <Text
-                              key={`${line.source_row_reference}:${index}`}
-                              textStyle="body"
-                            >
-                              {dish?.dish_name ?? "Món chưa nhận diện"}
-                            </Text>
-                          ) : null;
-                        })}
-                        {issues.map((issue) => (
-                          <Box key={issue.source_row_reference}>
-                            <Text textStyle="helper" color="status.danger">
-                              <Icon asChild mr="xs">
-                                <WarningCircle aria-hidden="true" />
-                              </Icon>
-                              {issue.code === "UNKNOWN_DISH" ||
-                              issue.code === "INVALID_DISH_ID"
-                                ? `Không tìm thấy món “${issue.source_value?.trim()}”`
-                                : issue.code === "AMBIGUOUS_DISH"
-                                  ? `Món “${issue.source_value?.trim()}” có tên trùng; cần kiểm tra.`
-                                  : planningIssueMessage({
-                                      ...issue,
-                                      message: "",
-                                    })}
-                            </Text>
-                            <Text textStyle="helper" color="fg.muted">
-                              Dòng {issue.source_row_number} · cần xử lý
-                            </Text>
-                          </Box>
-                        ))}
-                      </Table.Cell>
-                    );
-                  })}
-                </Table.Row>
-              ))}
+            {rows.map(({ school: s, date }) => (
+              <Table.Row key={`${s.school_id}|${date}`}>
+                <Table.Cell
+                  data-sticky-column="school"
+                  position="sticky"
+                  left="var(--atlas-layout-zero, 0)"
+                  zIndex="var(--atlas-layer-sticky-cell, 1)"
+                  bg="bg.workbench"
+                >
+                  {s.school_name}
+                </Table.Cell>
+                <Table.Cell>{viDate(date)}</Table.Cell>
+                {types.map((t) => {
+                  const lines = c.menuRows.filter(
+                    (r) =>
+                      r.school_id === s.school_id &&
+                      r.service_date === date &&
+                      r.menu_slot_code === t.dish_type_code,
+                  );
+                  const issues = Array.from(
+                    new Map(
+                      c.menuSyncIssues
+                        .filter(
+                          (issue) =>
+                            issue.school_id === s.school_id &&
+                            issue.service_date === date &&
+                            issue.menu_slot_code === t.dish_type_code,
+                        )
+                        .map((issue) => [issue.source_row_reference, issue]),
+                    ).values(),
+                  );
+                  return (
+                    <Table.Cell
+                      key={t.dish_type_id}
+                      data-invalid={issues.length > 0 ? "true" : undefined}
+                      bg={issues.length ? "bg.danger" : undefined}
+                    >
+                      {!lines.length && !issues.length && "—"}
+                      {lines.map((line, index) => {
+                        const dish = c.data?.dishes.find(
+                          (d) => d.dish_id === line.dish_id,
+                        );
+                        return dish || !issues.length ? (
+                          <Text
+                            key={`${line.source_row_reference}:${index}`}
+                            textStyle="body"
+                          >
+                            {dish?.dish_name ?? "Món chưa nhận diện"}
+                          </Text>
+                        ) : null;
+                      })}
+                      {issues.map((issue) => (
+                        <Box key={issue.source_row_reference}>
+                          <Text textStyle="helper" color="status.danger">
+                            <Icon asChild mr="xs">
+                              <WarningCircle aria-hidden="true" />
+                            </Icon>
+                            {issue.code === "UNKNOWN_DISH" ||
+                            issue.code === "INVALID_DISH_ID"
+                              ? `Không tìm thấy món “${issue.source_value?.trim()}”`
+                              : issue.code === "AMBIGUOUS_DISH"
+                                ? `Món “${issue.source_value?.trim()}” có tên trùng; cần kiểm tra.`
+                                : planningIssueMessage({
+                                    ...issue,
+                                    message: "",
+                                  })}
+                          </Text>
+                          <Text textStyle="helper" color="fg.muted">
+                            Dòng {issue.source_row_number} · cần xử lý
+                          </Text>
+                        </Box>
+                      ))}
+                    </Table.Cell>
+                  );
+                })}
+              </Table.Row>
+            ))}
           </Table.Body>
         </Table.Root>
       </AtlasTableViewport>
