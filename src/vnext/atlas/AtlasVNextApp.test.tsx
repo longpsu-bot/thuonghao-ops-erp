@@ -490,7 +490,7 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
   const pxk = vi.spyOn(apis.schoolDispatch, "getWorkbench");
   const reconciliation = vi.spyOn(apis.reconciliation, "getWorkbench");
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
-  await nav("Thực đơn");
+  await nav("Sĩ số");
   fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   const date = await screen.findByRole("combobox", { name: "Ngày phục vụ" });
   fireEvent.change(date, { target: { value: "2026-09-09" } });
