@@ -339,13 +339,19 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
             .filter(
               (dish) => dish.dish_id !== (index % 2 ? "dish-1" : "dish-2"),
             )
-            .map((dish) => ({
-              school_id: school.school_id,
-              service_date: date,
-              menu_slot_code: dish.dish_type_code,
-              dish_id: dish.dish_id,
-              source_row_reference: `fixture:${school.school_id}:${date}:${dish.dish_id}`,
-            })),
+            .flatMap((dish) =>
+              dish.dish_type_code === null
+                ? []
+                : [
+                    {
+                      school_id: school.school_id,
+                      service_date: date,
+                      menu_slot_code: dish.dish_type_code,
+                      dish_id: dish.dish_id,
+                      source_row_reference: `fixture:${school.school_id}:${date}:${dish.dish_id}`,
+                    },
+                  ],
+            ),
         ),
     );
     fixture.planning.weekly_menu!.row_count =
