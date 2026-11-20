@@ -493,12 +493,13 @@ export function useConfirmedNeedWorkbench({
         workbench.allowed_actions.save_confirmed_needs === true)) &&
     !busy &&
     !lock;
-  const canSave =
+  const canReview =
     editable &&
-    (correctionMode
-      ? correctionRead?.allowed === true && Boolean(correctionReason.trim())
-      : workbench?.allowed_actions.save_confirmed_needs === true) &&
     changedLines.length > 0 &&
+    !Object.values(errors).some((error) => error.field === "quantity");
+  const canSave =
+    canReview &&
+    (!correctionMode || Boolean(correctionReason.trim())) &&
     !Object.keys(errors).length;
   const canStartCorrection =
     !freshness.stale &&
@@ -1055,6 +1056,7 @@ export function useConfirmedNeedWorkbench({
     errors,
     released,
     editable,
+    canReview,
     canSave,
     canGenerate,
     canContinue,

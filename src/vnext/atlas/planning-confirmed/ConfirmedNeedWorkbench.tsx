@@ -28,12 +28,13 @@ import {
   type ConfirmedNeedWorkbenchProps,
 } from "./useConfirmedNeedWorkbench";
 import { noDemand, preflightMessage } from "./confirmedNeedAuthority";
+import type { ConfirmedNeedLine } from "../bridges/confirmedNeed";
 import { ConfirmedNeedTable } from "./ConfirmedNeedTable";
 import { ConfirmedNeedIssuedOrders } from "./ConfirmedNeedIssuedOrders";
 import { ConfirmedNeedDirtyExitDialog } from "./ConfirmedNeedDirtyExitDialog";
 import {
   ConfirmedNeedCorrectionPanel,
-  ConfirmedNeedCorrectionReview,
+  ConfirmedNeedSaveReview,
 } from "./ConfirmedNeedCorrection";
 import { ConfirmedNeedCommandFeedback } from "./ConfirmedNeedCommandFeedback";
 import { ConfirmedNeedSupportDetail } from "./ConfirmedNeedSupportDetail";
@@ -65,10 +66,11 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [utilitiesOpen, setUtilitiesOpen] = useState(false);
   const utilitiesId = useId();
-  const [correctionReviewKey, setCorrectionReviewKey] = useState<string | null>(
-    null,
-  );
-  const correctionReviewTrigger = useRef<HTMLButtonElement>(null);
+  const [review, setReview] = useState<{
+    context: string;
+    lines: ConfirmedNeedLine[];
+  } | null>(null);
+  const reviewTrigger = useRef<HTMLButtonElement | null>(null);
   const [dateReset, setDateReset] = useState(0);
   const dateField = useRef<HTMLDivElement>(null);
   const cancelledDate = useRef(false);
@@ -106,6 +108,28 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   }, [filtersOpen]);
   const contextKey = `${c.date}:${c.workbench?.confirmed_need_batch_id}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;
   const correctionContext = `${props.authSubject}:${contextKey}`;
+  function openReview(trigger: HTMLButtonElement, selectedId?: string) {
+    const lines = c.changedLines.filter((line) => {
+      const id = line.confirmed_need_line_id;
+      const draft = c.drafts[id]!;
+      return (
+        c.correctionMode ||
+        draft.reason_code !== "PROPOSAL_ACCEPTED" ||
+        Boolean(draft.reason_note.trim()) ||
+        Boolean(c.errors[id])
+      );
+    });
+    const selected = c.workbench?.lines.find(
+      (line) => line.confirmed_need_line_id === selectedId,
+    );
+    if (selected && !lines.includes(selected)) lines.push(selected);
+    if (!lines.length) {
+      void c.save();
+      return;
+    }
+    reviewTrigger.current = trigger;
+    setReview({ context: correctionContext, lines });
+  }
   const detailOpen = detailKey === contextKey;
   const contextDisabled = c.busy || Boolean(c.lock) || workbookBusy;
   const dateSummary = viDate(c.date);
@@ -600,8 +624,10 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 drafts={c.drafts}
                 errors={c.errors}
                 editable={c.editable}
-                correctionReason={
-                  c.correctionMode ? c.correctionReason : undefined
+                onEditReason={
+                  c.correctionMode
+                    ? undefined
+                    : (id, trigger) => openReview(trigger, id)
                 }
                 onEdit={c.edit}
               />
@@ -638,8 +664,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     <Button
                       variant="businessPrimary"
                       data-atlas-action-priority="primary"
-                      disabled={!c.canSave}
-                      onClick={() => void c.save()}
+                      disabled={!c.canReview}
+                      onClick={(event) => openReview(event.currentTarget)}
                     >
                       Lưu
                     </Button>
@@ -655,10 +681,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   )}
                   {c.correctionMode && (
                     <Button
-                      ref={correctionReviewTrigger}
                       variant="businessPrimary"
-                      disabled={!c.canSave}
-                      onClick={() => setCorrectionReviewKey(correctionContext)}
+                      disabled={!c.canReview}
+                      onClick={(event) => openReview(event.currentTarget)}
                     >
                       Xem lại điều chỉnh
                     </Button>
@@ -703,11 +728,16 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 : null
             }
           />
-          <ConfirmedNeedCorrectionReview
+          <ConfirmedNeedSaveReview
             c={c}
-            open={c.correctionMode && correctionReviewKey === correctionContext}
-            onClose={() => setCorrectionReviewKey(null)}
-            finalFocusEl={() => correctionReviewTrigger.current}
+            open={Boolean(c.editable && review?.context === correctionContext)}
+            lines={
+              c.editable && review?.context === correctionContext
+                ? review.lines
+                : []
+            }
+            onClose={() => setReview(null)}
+            finalFocusEl={() => reviewTrigger.current}
           />
         </Flex>
       </Grid>

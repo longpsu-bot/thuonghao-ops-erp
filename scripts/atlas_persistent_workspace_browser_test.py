@@ -37,8 +37,11 @@ def dirty(page, kind):
     if kind == "need":
         control = page.get_by_role("textbox", name=re.compile("^Số lượng xác nhận")).first
         control.fill("31")
-        page.get_by_role("combobox", name=re.compile("^Lý do")).first.select_option("OTHER")
-        page.get_by_role("textbox", name=re.compile("^Ghi chú Gạo thơm")).first.fill("Điều chỉnh theo ghi nhận tại bếp")
+        page.get_by_role("button", name="Lưu", exact=True).click()
+        dialog = page.get_by_role("dialog", name="Lý do điều chỉnh")
+        dialog.get_by_role("combobox").first.select_option("OTHER")
+        dialog.get_by_role("textbox").first.fill("Điều chỉnh theo ghi nhận tại bếp")
+        dialog.get_by_role("button", name="Quay lại chỉnh sửa").click()
     elif kind == "procurement":
         control = page.get_by_role("textbox", name=re.compile("^Ghi chú cho ")).first
         control.fill("Giữ ghi chú nhà cung ứng")

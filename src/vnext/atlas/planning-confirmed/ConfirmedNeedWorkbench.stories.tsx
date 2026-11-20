@@ -97,16 +97,7 @@ function story(scenario: ConfirmedReviewScenario, action?: Action): Story {
           fireEvent.change(q, {
             target: { value: action === "invalid" ? "10,123" : "12,5" },
           });
-          if (action === "reason" || action === "invalid") return;
-          fireEvent.change(
-            c.getByRole("combobox", { name: "Lý do Gạo thơm" }),
-            { target: { value: "OTHER" } },
-          );
-          if (action === "note") return;
-          fireEvent.change(
-            c.getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
-            { target: { value: "Bếp yêu cầu" } },
-          );
+          if (action === "invalid") return;
           await waitFor(() => {
             expect(q).toHaveValue("12,5");
             expect(q).toHaveAttribute("aria-invalid", "false");
@@ -122,8 +113,24 @@ function story(scenario: ConfirmedReviewScenario, action?: Action): Story {
             );
             expect(c.queryByRole("alert")).not.toBeInTheDocument();
           });
-          if (action === "save" || action === "recover")
-            await userEvent.click(c.getByRole("button", { name: "Lưu" }));
+          if (action === "dirty") return;
+          await userEvent.click(c.getByRole("button", { name: "Lưu" }));
+          const review = within(
+            await c.findByRole("dialog", { name: "Lý do điều chỉnh" }),
+          );
+          if (action === "reason") return;
+          fireEvent.change(
+            review.getByRole("combobox", { name: "Lý do Gạo thơm" }),
+            { target: { value: "OTHER" } },
+          );
+          if (action === "note") return;
+          fireEvent.change(
+            review.getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
+            { target: { value: "Bếp yêu cầu" } },
+          );
+          await userEvent.click(
+            review.getByRole("button", { name: "Lưu điều chỉnh" }),
+          );
           if (action === "recover")
             await userEvent.click(
               await c.findByRole("button", { name: "Tải lại để xác nhận" }),

@@ -3,6 +3,8 @@ import {
   Box,
   Button,
   Dialog,
+  NativeSelect,
+  Input,
   Field,
   Flex,
   Table,
@@ -11,6 +13,9 @@ import {
 } from "@chakra-ui/react";
 import { useRef, useState, type ReactNode } from "react";
 import {
+  confirmedNeedReasonLabels,
+  type ConfirmedNeedLine,
+  type ConfirmedNeedDraftLine,
   exactQuantityDisplay,
   normalizeConfirmedNeedQuantity,
 } from "../bridges/confirmedNeed";
@@ -40,20 +45,6 @@ export function ConfirmedNeedCorrectionPanel({
             Nhập số lượng mới cho các dòng cần đổi. Các dòng còn lại giữ nguyên;
             đơn đã phát hành giữ nguyên cho đến khi có đơn thay thế.
           </Text>
-          <Field.Root required>
-            <Field.Label>
-              Lý do điều chỉnh sau phát hành
-              <Field.RequiredIndicator />
-            </Field.Label>
-            <Textarea
-              aria-label="Lý do điều chỉnh sau phát hành"
-              required
-              rows={2}
-              value={c.correctionReason}
-              disabled={!c.editable}
-              onChange={(event) => c.setCorrectionReason(event.target.value)}
-            />
-          </Field.Root>
           <Button
             mt="sm"
             variant="tertiary"
@@ -208,25 +199,30 @@ export function ConfirmedNeedCorrectionPanel({
   );
 }
 
-export function ConfirmedNeedCorrectionReview({
+export function ConfirmedNeedSaveReview({
   c,
   open,
+  lines,
   onClose,
   finalFocusEl,
 }: {
   c: Controller;
   open: boolean;
+  lines: ConfirmedNeedLine[];
   onClose: () => void;
   finalFocusEl: () => HTMLElement | null;
 }) {
-  const cancel = useRef<HTMLButtonElement>(null);
+  const firstReason = useRef<HTMLSelectElement>(null);
+  const reasonField = useRef<HTMLTextAreaElement>(null);
   return (
     <Dialog.Root
       open={open}
       onOpenChange={(event) => {
         if (!event.open) onClose();
       }}
-      initialFocusEl={() => cancel.current}
+      initialFocusEl={() =>
+        c.correctionMode ? reasonField.current : firstReason.current
+      }
       finalFocusEl={finalFocusEl}
       motionPreset="none"
       scrollBehavior="inside"
@@ -246,55 +242,166 @@ export function ConfirmedNeedCorrectionReview({
         >
           <Dialog.Header>
             <Dialog.Title>
-              Xác nhận điều chỉnh nhu cầu đã phát hành
+              {c.correctionMode
+                ? "Xác nhận điều chỉnh nhu cầu đã phát hành"
+                : "Lý do điều chỉnh"}
             </Dialog.Title>
           </Dialog.Header>
           <Dialog.Body>
-            <Dialog.Description mb="sm">
-              Chỉ các dòng dưới đây được điều chỉnh. Thao tác này chưa phát hành
-              đơn mới cho nhà cung cấp.
-            </Dialog.Description>
-            <Text mb="sm">Lý do: {c.correctionReason}</Text>
-            <Box overflowX="auto">
-              <Table.Root size="sm" aria-label="Rà soát số lượng điều chỉnh">
-                <Table.Header>
-                  <Table.Row>
-                    <Table.ColumnHeader>
-                      Trường / nguyên liệu
-                    </Table.ColumnHeader>
-                    <Table.ColumnHeader>Đã xác nhận</Table.ColumnHeader>
-                    <Table.ColumnHeader>Đề nghị mới</Table.ColumnHeader>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {c.changedLines.map((line) => (
-                    <Table.Row key={line.confirmed_need_line_id}>
-                      <Table.Cell>
-                        {line.school.name} · {line.ingredient.name} (
-                        {confirmedNeedUnitLabel(line.controlled_unit)})
-                      </Table.Cell>
-                      <Table.Cell>
-                        {exactQuantityDisplay(
-                          line.confirmed_quantity_after ?? "0",
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        {exactQuantityDisplay(
-                          normalizeConfirmedNeedQuantity(
-                            c.drafts[line.confirmed_need_line_id]!
-                              .exact_quantity,
-                          ) ?? "0",
-                        )}
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Root>
-            </Box>
+            {c.correctionMode ? (
+              <>
+                <Dialog.Description mb="sm">
+                  Chỉ các dòng dưới đây được điều chỉnh. Thao tác này chưa phát
+                  hành đơn mới cho nhà cung cấp.
+                </Dialog.Description>
+                <Field.Root required>
+                  <Field.Label>
+                    Lý do điều chỉnh sau phát hành
+                    <Field.RequiredIndicator />
+                  </Field.Label>
+                  <Textarea
+                    aria-label="Lý do điều chỉnh sau phát hành"
+                    ref={reasonField}
+                    required
+                    rows={2}
+                    value={c.correctionReason}
+                    disabled={!c.editable}
+                    onChange={(event) =>
+                      c.setCorrectionReason(event.target.value)
+                    }
+                  />
+                </Field.Root>
+                <Box overflowX="auto">
+                  <Table.Root
+                    size="sm"
+                    aria-label="Rà soát số lượng điều chỉnh"
+                  >
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.ColumnHeader>
+                          Trường / nguyên liệu
+                        </Table.ColumnHeader>
+                        <Table.ColumnHeader>Đã xác nhận</Table.ColumnHeader>
+                        <Table.ColumnHeader>Đề nghị mới</Table.ColumnHeader>
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {lines.map((line) => (
+                        <Table.Row key={line.confirmed_need_line_id}>
+                          <Table.Cell>
+                            {line.school.name} · {line.ingredient.name} (
+                            {confirmedNeedUnitLabel(line.controlled_unit)})
+                          </Table.Cell>
+                          <Table.Cell>
+                            {exactQuantityDisplay(
+                              line.confirmed_quantity_after ?? "0",
+                            )}
+                          </Table.Cell>
+                          <Table.Cell>
+                            {exactQuantityDisplay(
+                              normalizeConfirmedNeedQuantity(
+                                c.drafts[line.confirmed_need_line_id]!
+                                  .exact_quantity,
+                              ) ?? "0",
+                            )}
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table.Root>
+                </Box>
+              </>
+            ) : (
+              lines.map((line, index) => {
+                const id = line.confirmed_need_line_id;
+                const draft = c.drafts[id]!;
+                const error = c.errors[id];
+                const unit = confirmedNeedUnitLabel(line.controlled_unit);
+                return (
+                  <Box
+                    key={id}
+                    data-review-line-id={id}
+                    as="fieldset"
+                    minW="var(--atlas-layout-zero, 0)"
+                    py="sm"
+                    borderTopWidth={
+                      index ? "var(--atlas-layout-edge, 1px)" : undefined
+                    }
+                    borderColor="border.subtle"
+                  >
+                    <Box as="legend" fontWeight="semibold">
+                      {line.ingredient.name}
+                    </Box>
+                    <Text textStyle="helper" color="fg.muted">
+                      {line.school.name}
+                      {line.school.name !== line.delivery_location.name &&
+                        ` · ${line.delivery_location.name}`}{" "}
+                      · {line.service_date.split("-").reverse().join("/")}
+                    </Text>
+                    <Text my="xs" textStyle="quantityInline">
+                      {exactQuantityDisplay(
+                        line.confirmed_quantity_after ??
+                          line.proposed_confirmed_quantity,
+                      )}{" "}
+                      →{" "}
+                      {exactQuantityDisplay(
+                        normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
+                          draft.exact_quantity,
+                      )}{" "}
+                      {unit}
+                    </Text>
+                    <Flex gap="sm" direction={{ base: "column", md: "row" }}>
+                      <Field.Root flex="1" invalid={error?.field === "reason"}>
+                        <Field.Label>Lý do</Field.Label>
+                        <NativeSelect.Root>
+                          <NativeSelect.Field
+                            ref={index === 0 ? firstReason : undefined}
+                            aria-label={`Lý do ${line.ingredient.name}`}
+                            value={draft.reason_code}
+                            onChange={(event) =>
+                              c.edit(id, {
+                                reason_code: event.target
+                                  .value as ConfirmedNeedDraftLine["reason_code"],
+                              })
+                            }
+                          >
+                            {Object.entries(confirmedNeedReasonLabels).map(
+                              ([code, label]) => (
+                                <option key={code} value={code}>
+                                  {label}
+                                </option>
+                              ),
+                            )}
+                          </NativeSelect.Field>
+                          <NativeSelect.Indicator />
+                        </NativeSelect.Root>
+                        <Field.ErrorText>{error?.message}</Field.ErrorText>
+                      </Field.Root>
+                      <Field.Root flex="1" invalid={error?.field === "note"}>
+                        <Field.Label>Ghi chú (tùy chọn)</Field.Label>
+                        <Input
+                          aria-label={`Ghi chú ${line.ingredient.name}`}
+                          value={draft.reason_note}
+                          onChange={(event) =>
+                            c.edit(id, { reason_note: event.target.value })
+                          }
+                        />
+                        <Field.ErrorText>{error?.message}</Field.ErrorText>
+                      </Field.Root>
+                    </Flex>
+                  </Box>
+                );
+              })
+            )}
+            {!c.correctionMode && c.changedLines.length > 1 && (
+              <Text textStyle="helper" color="fg.muted" mt="sm">
+                Tổng số dòng sẽ lưu: {c.changedLines.length}.
+              </Text>
+            )}
           </Dialog.Body>
           <Dialog.Footer flexWrap="wrap">
             <Flex gap="sm" wrap="wrap">
-              <Button ref={cancel} variant="secondary" onClick={onClose}>
+              <Button variant="secondary" onClick={onClose}>
                 Quay lại chỉnh sửa
               </Button>
               <Button
