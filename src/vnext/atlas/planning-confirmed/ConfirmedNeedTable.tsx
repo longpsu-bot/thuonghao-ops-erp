@@ -1,4 +1,4 @@
-import { Icon, Box, Button, Input, Table, Text } from "@chakra-ui/react";
+import { Icon, Box, Input, Table, Text } from "@chakra-ui/react";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import type { CSSProperties } from "react";
@@ -42,14 +42,12 @@ export function ConfirmedNeedTable({
   drafts,
   errors,
   editable,
-  onEditReason,
   onEdit,
 }: {
   lines: ConfirmedNeedLine[];
   drafts: Record<string, ConfirmedNeedDraftLine>;
   errors: Record<string, ConfirmedNeedDraftError>;
   editable: boolean;
-  onEditReason?: (line: ConfirmedNeedLine, trigger: HTMLButtonElement) => void;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   type SortKey = "school" | "ingredient" | "proposal";
@@ -350,20 +348,7 @@ export function ConfirmedNeedTable({
                         color="fg.muted"
                         overflowWrap="anywhere"
                       >
-                        {editable && !historical && onEditReason ? (
-                          <Button
-                            variant="tertiary"
-                            size="xs"
-                            aria-label={`Sửa lý do ${line.ingredient.name}`}
-                            onClick={(event) =>
-                              onEditReason(line, event.currentTarget)
-                            }
-                          >
-                            {confirmedNeedReasonLabels[saved.reason_code]}
-                          </Button>
-                        ) : (
-                          confirmedNeedReasonLabels[saved.reason_code]
-                        )}
+                        {confirmedNeedReasonLabels[saved.reason_code]}
                         {saved.reason_note && <Text>{saved.reason_note}</Text>}
                       </Box>
                     )}

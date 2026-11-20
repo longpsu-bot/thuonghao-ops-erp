@@ -120,6 +120,7 @@ export function useConfirmedNeedWorkbench({
     lock: Lock;
     readError: string | null;
     correction: CorrectionDraft;
+    saveReason?: string;
   };
   const days = useRef<Record<string, Day>>({});
   const loadedDate = useRef<string | null>(null);
@@ -137,6 +138,7 @@ export function useConfirmedNeedWorkbench({
   const [workbench, setWorkbench] = useState<ConfirmedNeedWorkbenchData | null>(
     null,
   );
+  const [saveReason, setSaveReason] = useState("");
   const [correctionDraft, setCorrectionDraft] = useState<CorrectionDraft>(null);
   const correctionRequest = useRef<{
     signature: string;
@@ -193,6 +195,7 @@ export function useConfirmedNeedWorkbench({
       dirty,
       lock,
       readError,
+      saveReason,
       correction: correctionMode ? correctionDraft : null,
     };
   const allDirty =
@@ -239,6 +242,7 @@ export function useConfirmedNeedWorkbench({
       correctionRequest.current = null;
       setWorkbench(b);
       resetDrafts(b);
+      setSaveReason("");
       setCorrectionDraft(null);
     },
     [resetDrafts],
@@ -301,6 +305,7 @@ export function useConfirmedNeedWorkbench({
       if (b && p.downstream_currentness === "CURRENT") adopt(b);
       else {
         setWorkbench(null);
+        setSaveReason("");
         setDrafts({});
       }
       setLock(null);
@@ -342,6 +347,7 @@ export function useConfirmedNeedWorkbench({
       setDrafts(cached.drafts);
       setLock(cached.lock);
       setReadError(cached.readError);
+      setSaveReason(cached.saveReason ?? "");
       setCorrectionDraft(cached.correction);
       freshness.acknowledge(cached.authorityRevision);
       setBusy(false);
@@ -355,6 +361,7 @@ export function useConfirmedNeedWorkbench({
     setOperation({ status: "IDLE" });
     setPreflight(null);
     setWorkbench(null);
+    setSaveReason("");
     setCorrectionDraft(null);
     setDrafts({});
     setLock(null);
@@ -501,6 +508,13 @@ export function useConfirmedNeedWorkbench({
     canReview &&
     (!correctionMode || Boolean(correctionReason.trim())) &&
     !Object.keys(errors).length;
+  const hasAdjustedDraft = changedLines.some(
+    (line) =>
+      drafts[line.confirmed_need_line_id]?.reason_code !== "PROPOSAL_ACCEPTED",
+  );
+  useEffect(() => {
+    if (!hasAdjustedDraft) setSaveReason("");
+  }, [hasAdjustedDraft]);
   const canStartCorrection =
     !freshness.stale &&
     correctionCurrent &&
@@ -554,12 +568,19 @@ export function useConfirmedNeedWorkbench({
         !correctionMode &&
         change.exact_quantity !== undefined &&
         change.reason_code === undefined
-      )
+      ) {
         draft.reason_code = defaultConfirmedNeedReason(
           line,
           draft,
           change.exact_quantity,
         );
+        if (
+          !line.current_decision_id &&
+          draft.reason_code === "PROPOSAL_ACCEPTED" &&
+          change.reason_note === undefined
+        )
+          draft.reason_note = "";
+      }
       return { ...d, [id]: draft };
     });
   };
@@ -677,6 +698,7 @@ export function useConfirmedNeedWorkbench({
           workbench.confirmed_need_batch_id,
           workbench.batch_version,
           lines,
+          hasAdjustedDraft ? saveReason : null,
         );
     if (correctionMode)
       correctionRequest.current = {
@@ -814,6 +836,7 @@ export function useConfirmedNeedWorkbench({
         }
         setPreflight(p);
         setWorkbench(null);
+        setSaveReason("");
         setDrafts({});
         setLock(null);
         setOperation({ status: "SUCCEEDED", message: "Không có nhu cầu." });
@@ -913,10 +936,14 @@ export function useConfirmedNeedWorkbench({
             pendingTransition.week
           ? true
           : day === date;
-    if (workbench && shouldDiscard(date)) resetDrafts(workbench);
+    if (workbench && shouldDiscard(date)) {
+      resetDrafts(workbench);
+      setSaveReason("");
+    }
     for (const [dayDate, day] of Object.entries(days.current))
       if (day.workbench && shouldDiscard(dayDate)) {
         day.correction = null;
+        day.saveReason = "";
         day.drafts = Object.fromEntries(
           day.workbench.lines.map((l) => [
             l.confirmed_need_line_id,
@@ -1040,6 +1067,8 @@ export function useConfirmedNeedWorkbench({
     changedLines,
     hiddenDirtyCount,
     dirty,
+    saveReason,
+    setSaveReason,
     correctionRead,
     correctionMode,
     correctionReason,

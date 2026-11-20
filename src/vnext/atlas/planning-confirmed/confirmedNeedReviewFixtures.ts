@@ -507,8 +507,8 @@ export function createConfirmedNeedReviewFixture(
         proposed_quantity_before: "10.250000",
         confirmed_quantity_after: "12.500000",
         planning_tick_count: "50",
-        reason_code: "OTHER",
-        reason_note: "Bếp yêu cầu",
+        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+        reason_note: null,
         policy_revision_id: "policy-revision",
         decided_at: "2026-09-07T03:30:00Z",
         batch_version: 5,
@@ -533,7 +533,7 @@ export function createConfirmedNeedReviewFixture(
         return reviewFailure();
       return reviewSuccess({ workbench: savedSnapshot ? saved : batch });
     },
-    async save() {
+    async save(request) {
       saveAttempted = true;
       if (scenario === "stale")
         return reviewFailure(
@@ -543,6 +543,14 @@ export function createConfirmedNeedReviewFixture(
       if (scenario === "unknown" || scenario === "recovery_failed")
         return reviewFailure("UNREVIEWED_RESULT", "UNKNOWN");
       if (scenario === "missing_readback") return reviewSuccess({});
+      const line = saved.lines[0]!;
+      const submitted = request.payload.lines.find(
+        (entry) => entry.confirmed_need_line_id === line.confirmed_need_line_id,
+      );
+      if (submitted) {
+        line.decision_history[0]!.reason_code = submitted.reason_code;
+        line.decision_history[0]!.reason_note = submitted.reason_note;
+      }
       savedSnapshot = true;
       return reviewSuccess({ authoritative_readback: saved });
     },

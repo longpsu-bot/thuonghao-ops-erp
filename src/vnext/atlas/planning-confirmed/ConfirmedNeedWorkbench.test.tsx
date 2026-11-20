@@ -80,38 +80,27 @@ async function submitReviewed() {
     }),
   );
 }
-it("keeps optional notes editable after returning a quantity to its proposal", async () => {
+it("drops the shared reason when staff revert to accepting the proposal", async () => {
   const h = show("needs_review");
   const input = await quantity();
   const proposed = (input as HTMLInputElement).value;
   fireEvent.change(input, { target: { value: "12" } });
   expect(
-    screen.queryByRole("textbox", { name: "Ghi chú Gạo thơm" }),
+    screen.queryByRole("textbox", { name: "Lý do chung (tùy chọn)" }),
   ).toBeNull();
   await openSaveReview();
-  fireEvent.change(screen.getByRole("textbox", { name: "Ghi chú Gạo thơm" }), {
-    target: { value: "Bếp đề nghị tăng" },
-  });
+  fireEvent.change(
+    screen.getByRole("textbox", { name: "Lý do chung (tùy chọn)" }),
+    {
+      target: { value: "Bếp đề nghị tăng" },
+    },
+  );
   await backToEditing();
   expect(h.save).not.toHaveBeenCalled();
   fireEvent.change(input, { target: { value: proposed } });
-  const dialog = await openSaveReview();
-  const note = within(dialog).getByRole("textbox", {
-    name: "Ghi chú Gạo thơm",
-  });
-  expect(note).toHaveValue("Bếp đề nghị tăng");
-  expect(
-    within(dialog).getByText(
-      "Xóa ghi chú điều chỉnh để xác nhận theo đề xuất ban đầu.",
-    ),
-  ).toBeVisible();
-  const confirm = within(dialog).getByRole("button", {
-    name: "Lưu điều chỉnh",
-  });
-  expect(confirm).toBeDisabled();
-  fireEvent.change(note, { target: { value: "" } });
-  expect(confirm).toBeEnabled();
-  expect(h.save).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+  await waitFor(() => expect(h.save).toHaveBeenCalledOnce());
+  expect(h.save.mock.calls[0]![0].reason_note).toBeNull();
 });
 function openUtilities() {
   const button = screen.getByRole("button", { name: "Tiện ích" });
@@ -185,6 +174,9 @@ describe("K3 explicit released correction UI", () => {
     await waitFor(() => expect(h.save).toHaveBeenCalledTimes(1));
     expect(h.save.mock.calls[0]![0].contract_version).toBe("RMVP-05.v3");
     expect(h.save.mock.calls[0]![0].payload.lines).toHaveLength(1);
+    expect(h.save.mock.calls[0]![0].payload.lines[0]?.reason_note).toBe(
+      "Bếp xác nhận tăng 10 kg",
+    );
   });
   it("keeps an unavailable correction action disabled on a released batch", async () => {
     show("released");
@@ -218,14 +210,14 @@ async function editValid() {
   fireEvent.change(await quantity(), { target: { value: "12,5" } });
 }
 function enterReason() {
-  fireEvent.change(screen.getByRole("combobox", { name: "Lý do Gạo thơm" }), {
-    target: { value: "OTHER" },
-  });
-  fireEvent.change(screen.getByRole("textbox", { name: "Ghi chú Gạo thơm" }), {
-    target: { value: "Bếp yêu cầu" },
-  });
+  fireEvent.change(
+    screen.getByRole("textbox", { name: "Lý do chung (tùy chọn)" }),
+    {
+      target: { value: "Bếp yêu cầu" },
+    },
+  );
 }
-it("saves distinct reasons for both visible and filtered adjustments in one command", async () => {
+it("records one save reason for visible and filtered adjustments without changing their line notes", async () => {
   const h = show();
   await editValid();
   fireEvent.change(
@@ -236,20 +228,22 @@ it("saves distinct reasons for both visible and filtered adjustments in one comm
     target: { value: "gao" },
   });
   const dialog = await openSaveReview();
-  expect(within(dialog).getAllByRole("combobox")).toHaveLength(2);
-  enterReason();
+  expect(within(dialog).getAllByRole("textbox")).toHaveLength(1);
+  expect(within(dialog).queryByRole("combobox")).toBeNull();
   expect(
-    within(dialog).getByRole("combobox", { name: "Lý do Thịt heo" }),
-  ).toHaveValue("OPERATIONAL_QUANTITY_ADJUSTMENT");
+    within(dialog).getByText("2 dòng điều chỉnh trong lần lưu này."),
+  ).toBeVisible();
+  enterReason();
   expect(h.save).not.toHaveBeenCalled();
   fireEvent.click(
     within(dialog).getByRole("button", { name: "Lưu điều chỉnh" }),
   );
   await waitFor(() => expect(h.save).toHaveBeenCalledOnce());
+  expect(h.save.mock.calls[0]![0].reason_note).toBe("Bếp yêu cầu");
   expect(h.save.mock.calls[0]![0].payload.lines).toEqual([
     expect.objectContaining({
-      reason_code: "OTHER",
-      reason_note: "Bếp yêu cầu",
+      reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+      reason_note: null,
     }),
     expect.objectContaining({
       reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
@@ -922,8 +916,8 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
     await openSaveReview();
     expect(
-      screen.getByRole("combobox", { name: "Lý do Gạo thơm" }),
-    ).toHaveValue("OPERATIONAL_QUANTITY_ADJUSTMENT");
+      screen.getByRole("textbox", { name: "Lý do chung (tùy chọn)" }),
+    ).toHaveValue("");
     await backToEditing();
     expect(
       screen.getByRole("button", { name: "Xuất Phiếu đi chợ" }),
@@ -1149,7 +1143,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       within(row).queryByRole("combobox", { name: "Lý do Gạo thơm" }),
     ).not.toBeInTheDocument();
     expect(
-      within(row).queryByRole("textbox", { name: "Ghi chú Gạo thơm" }),
+      within(row).queryByRole("textbox", { name: "Lý do chung (tùy chọn)" }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
@@ -1195,10 +1189,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(await quantity()).toHaveValue("12.5");
     expect(screen.getByText(/1 đã điều chỉnh/)).toBeVisible();
     const row = (await quantity()).closest("tr")!;
-    expect(
-      within(row).getByRole("button", { name: "Sửa lý do Gạo thơm" }),
-    ).toHaveTextContent("Lý do khác");
-    expect(row).toHaveTextContent("Bếp yêu cầu");
+    expect(h.save.mock.calls[0]![0].reason_note).toBe("Bếp yêu cầu");
     expect(row.querySelector('[data-field="delta"]')).toHaveTextContent(
       "+2,25 kg",
     );
@@ -1217,8 +1208,8 @@ describe("Confirmed Need Chakra operator surface", () => {
                 expect.objectContaining({
                   decision_kind: "OPERATIONAL_ADJUSTMENT",
                   confirmed_quantity_after: "12.500000",
-                  reason_code: "OTHER",
-                  reason_note: "Bếp yêu cầu",
+                  reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+                  reason_note: null,
                 }),
               ]),
             }),
@@ -1302,10 +1293,10 @@ describe("Confirmed Need Chakra operator surface", () => {
     ).toBeVisible();
     await openSaveReview();
     expect(
-      screen.getByRole("combobox", { name: "Lý do Gạo thơm" }),
-    ).toHaveValue("OTHER");
+      screen.queryByRole("combobox", { name: "Lý do Gạo thơm" }),
+    ).toBeNull();
     expect(
-      screen.getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
+      screen.getByRole("textbox", { name: "Lý do chung (tùy chọn)" }),
     ).toHaveValue("Bếp yêu cầu");
     await backToEditing();
     fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {

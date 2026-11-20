@@ -111,7 +111,7 @@ export type ConfirmedNeedSaveV2Request = AtlasRpcRequest & {
   requested_by_auth_subject: string;
   requested_at: string;
   reason_code: "CONFIRMED_NEED_SAVED";
-  reason_note: null;
+  reason_note: string | null;
   payload: {
     confirmed_need_batch_id: string;
     lines: ConfirmedNeedLineRequest[];
@@ -322,6 +322,7 @@ export function confirmedNeedSaveV2Request(
   batchId: string,
   expectedVersion: number,
   lines: ConfirmedNeedLineRequest[],
+  saveReason: string | null = null,
 ): ConfirmedNeedSaveV2Request {
   const commandId = crypto.randomUUID();
   return {
@@ -333,7 +334,7 @@ export function confirmedNeedSaveV2Request(
     requested_by_auth_subject: authSubject,
     requested_at: new Date().toISOString(),
     reason_code: "CONFIRMED_NEED_SAVED",
-    reason_note: null,
+    reason_note: saveReason?.trim() || null,
     payload: { confirmed_need_batch_id: batchId, lines },
   };
 }
@@ -377,6 +378,7 @@ export function confirmedNeedSaveV3Request(
   return {
     ...base,
     contract_version: "RMVP-05.v3",
+    reason_note: null,
     idempotency_key: `confirmed-need-released-correction:${base.command_id}`,
     payload: {
       confirmed_need_batch_id: batchId,
