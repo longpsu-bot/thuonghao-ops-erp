@@ -49,6 +49,7 @@ describe("Supplier decisions", () => {
     (need, first, second, savedFirst, savedSecond) => {
       const row = reviewFamily();
       row.family_quantity = need;
+      row.recommendation!.allocated_quantity = need;
       const { onSave } = show(row);
       quantity("NCC An Phú", first);
       click("Thêm nhà cung ứng");
@@ -240,8 +241,7 @@ describe("Supplier decisions", () => {
     expect(
       container.querySelector('[aria-label="Phân bổ Gạo thơm"]'),
     ).toHaveStyle({
-      "--atlas-procurement-detail-desktop-max-height":
-        "var(--atlas-procurement-editor-max-height, max(360px, calc(100dvh - 320px)))",
+      maxHeight: "var(--atlas-allocation-dialog-height, calc(100dvh - 2rem))",
     });
 
     for (const name of ["Đóng", "Lưu phân bổ", "Thêm nhà cung ứng"]) {

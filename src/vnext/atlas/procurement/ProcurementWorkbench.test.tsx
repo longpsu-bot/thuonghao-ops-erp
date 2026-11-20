@@ -149,7 +149,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(read.mock.calls.length).toBe(before);
     expect(dialog).toHaveTextContent(/chưa lưu/i);
     fireEvent.click(
-      within(dialog).getByRole("button", { name: /Bỏ thay đổi/ }),
+      await within(dialog).findByRole("button", { name: /Bỏ thay đổi/ }),
     );
     await waitFor(() => expect(read.mock.calls.length).toBeGreaterThan(before));
     expect(read.mock.lastCall![0].payload).toMatchObject({

@@ -586,6 +586,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 gridColumn="2"
                 variant="secondary"
                 minH="var(--atlas-layout-mobile-target, 44px)"
+                disabled={Boolean(selected)}
                 aria-expanded={filtersOpen}
                 aria-controls={filterId}
                 onClick={() => setFiltersOpen((open) => !open)}
