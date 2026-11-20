@@ -1,5 +1,6 @@
 import {
   loadCompleteConfirmedNeedReview,
+  releasedShoppingListReadable,
   shoppingListRangeDates,
   type ShoppingListRangeContext,
   type ConfirmedNeedAuthorityReader,
@@ -99,6 +100,7 @@ export function createConnectedShoppingListService(
   }
   function scope(
     workbench: ConfirmedNeedWorkbenchData,
+    action: "export" | "import",
     context?: ShoppingListRangeContext,
   ) {
     const dates = shoppingListRangeDates(
@@ -109,7 +111,8 @@ export function createConnectedShoppingListService(
     );
     const batches = context?.workbenches ?? [workbench];
     for (const b of batches) {
-      requireEditable(b);
+      if (action === "import" || !releasedShoppingListReadable(b))
+        requireEditable(b);
       if (context)
         shoppingAssert(cleanLocal(b, context.drafts), "DIRTY_WORKBENCH");
     }
@@ -124,7 +127,7 @@ export function createConnectedShoppingListService(
       workbench: ConfirmedNeedWorkbenchData,
       context?: ShoppingListRangeContext,
     ) {
-      const { dates, batches } = scope(workbench, context);
+      const { dates, batches } = scope(workbench, "export", context);
       const skipped: string[] = [];
       const daily: ShoppingListDailyBatch[] = [];
       // At most seven exact daily authorities; never infer missing reads as no demand.
@@ -168,7 +171,7 @@ export function createConnectedShoppingListService(
           "STALE_AUTHORITY",
         );
         const b = await read(local.confirmed_need_batch_id, date, true);
-        requireEditable(b);
+        if (!releasedShoppingListReadable(b)) requireEditable(b);
         shoppingAssert(
           b.batch_version === local.batch_version,
           "STALE_AUTHORITY",
@@ -189,7 +192,7 @@ export function createConnectedShoppingListService(
       drafts: Record<string, ConfirmedNeedDraftLine>,
       context?: ShoppingListRangeContext,
     ) {
-      const { dates, batches } = scope(workbench, context);
+      const { dates, batches } = scope(workbench, "import", context);
       shoppingAssert(cleanLocal(workbench, drafts), "DIRTY_WORKBENCH");
       const envelope = await readShoppingListEnvelope(await file.arrayBuffer());
       shoppingAssert(

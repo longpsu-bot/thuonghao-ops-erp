@@ -41,6 +41,36 @@ const openSupplierNote = (name: string) => {
   return screen.getByRole("textbox", { name: `Ghi chú cho ${name}` });
 };
 describe("Supplier decisions", () => {
+  it("splits a fractional need by percent and assigns the exact remainder before saving", () => {
+    const row = reviewFamily("manual_split");
+    row.family_quantity = "3.000001";
+    const { onSave } = show(row);
+    const percent = screen.getByRole("textbox", {
+      name: "Tỷ lệ phân bổ NCC An Phú (%)",
+    });
+    fireEvent.change(percent, { target: { value: "101" } });
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    fireEvent.change(percent, { target: { value: "50" } });
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("1.500001");
+    click("Gán phần còn lại cho NCC Bình Minh");
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+    ).toHaveValue("1.5");
+    expect(onSave).not.toHaveBeenCalled();
+    click("Lưu phân bổ");
+    expect(onSave).toHaveBeenCalledWith([
+      expect.objectContaining({
+        supplier_id: "supplier-a",
+        allocated_quantity: "1.500001",
+      }),
+      expect.objectContaining({
+        supplier_id: "supplier-b",
+        allocated_quantity: "1.500000",
+      }),
+    ]);
+  });
   it("opens an empty note on demand and moves focus into its field", () => {
     const row = reviewFamily("manual_split");
     row.splits[1]!.supplier_note = "Bao riêng";
@@ -69,7 +99,6 @@ describe("Supplier decisions", () => {
       screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
       { target: { value: "supplier-c" } },
     );
-    click("Thêm");
     const remove = screen.getByRole("button", { name: "Xóa NCC Thành Công" });
     remove.focus();
     fireEvent.click(remove);
@@ -312,7 +341,6 @@ describe("Supplier decisions", () => {
         target: { value: "supplier-b" },
       },
     );
-    click("Thêm");
     quantity("NCC An Phú", "0");
     quantity("NCC Bình Minh", "100");
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
@@ -356,7 +384,6 @@ describe("Supplier decisions", () => {
         target: { value: "supplier-b" },
       },
     );
-    click("Thêm");
     quantity("NCC Bình Minh", "0");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
     click("Lưu phân bổ");
@@ -372,7 +399,6 @@ describe("Supplier decisions", () => {
       screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
       { target: { value: "supplier-b" } },
     );
-    click("Thêm");
     quantity("NCC Bình Minh", "60");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
 
@@ -439,13 +465,12 @@ describe("Supplier decisions", () => {
       screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
       { target: { value: "supplier-c" } },
     );
-    click("Thêm");
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC Thành Công" }),
     ).toHaveFocus();
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC Thành Công" }),
-    ).toHaveValue("");
+    ).toHaveValue("0");
     expect(openSupplierNote("NCC Thành Công")).toHaveValue("");
     fireEvent.change(openSupplierNote("NCC Thành Công"), {
       target: { value: "Only this supplier" },

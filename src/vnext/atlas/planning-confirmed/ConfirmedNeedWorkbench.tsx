@@ -436,15 +436,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       <Button
                         variant="tertiary"
                         data-atlas-action-priority="tertiary"
-                        disabled={
-                          workbookBusy ||
-                          c.released ||
-                          c.allDirty ||
-                          c.rangeBusy ||
-                          c.busy ||
-                          Boolean(c.lock) ||
-                          !c.editable
-                        }
+                        disabled={workbookBusy || !c.canExportShoppingList}
                         onClick={() => {
                           setWorkbookError(null);
                           setWorkbookBusy(true);

@@ -41,6 +41,17 @@ export function shoppingListRangeDates(range: {
 
 export type ConfirmedNeedAuthorityReader = Pick<ConfirmedNeedApi, "getReview"> &
   Partial<Pick<ConfirmedNeedApi, "getShoppingListExport">>;
+
+export function releasedShoppingListReadable(b: ConfirmedNeedWorkbenchData) {
+  return (
+    b.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF" &&
+    b.blockers.every(
+      (issue) => issue.code === "CONFIRMED_NEED_BATCH_NOT_REVIEWABLE",
+    ) &&
+    b.lines.every((line) => !line.source_stale && !line.blockers.length)
+  );
+}
+
 function coherent(b: ConfirmedNeedWorkbenchData) {
   return JSON.stringify({
     id: b.confirmed_need_batch_id,
@@ -50,6 +61,7 @@ function coherent(b: ConfirmedNeedWorkbenchData) {
     total: b.line_counts,
     paginationTotal: b.pagination.total_lines,
     status: b.batch_status,
+    authoritativeStatus: b.authoritative_batch_status,
     editing: b.editing_allowed,
     actions: b.allowed_actions,
     blockers: b.blockers,

@@ -17,6 +17,8 @@ The workbook is generated from complete saved/current authoritative daily Confir
 
 The connected app loads the workbook code when the tab opens. After a frontend deployment, an open tab can still export and import using its loaded version. Each action continues to check current daily authority.
 
+Staff can re-export a current saved day after release for purchase handoff. The download reads the committed quantities and current supplier advice through the existing authorized export read. Ordinary quantity edits and workbook import stay locked for released batches, including import across a range containing a released day.
+
 A workbook collects 1–7 distinct represented service dates, each with one complete daily batch, one date worksheet and one daily metadata record. This creates no weekly aggregate. The connected UI composes daily authorities over a 1–7 consecutive-day range. Every workbook date must lie inside that range. All daily authorities and the whole workbook are validated before any local draft changes; one stale day rejects the import. Explicit Save remains per daily batch. The A+ codec, geometry and `partialImport=false` contract are unchanged.
 
 Quantity remains exact up to six decimal places, including explicit zero. D exports the shortest exact text representation without rounding; raw numeric XML edits are read before binary conversion. Exact equality to the authoritative baseline preserves the local draft. A real edit must satisfy existing two-decimal entry and current Planning-step/policy rules. Existing governed reason requirements and optimistic concurrency remain backend-authoritative at explicit Save.

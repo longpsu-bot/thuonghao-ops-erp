@@ -128,6 +128,26 @@ describe("K3 explicit released correction UI", () => {
       screen.getByRole("button", { name: "Điều chỉnh nhu cầu đã phát hành" }),
     ).toBeDisabled();
   });
+  it("re-exports a released batch with ordinary edits and import locked", async () => {
+    const onExportShoppingList = vi.fn().mockResolvedValue(undefined);
+    const h = show(
+      "released",
+      { onExportShoppingList, onImportShoppingList: vi.fn() },
+      (f) => {
+        f.batch.blockers = [
+          { code: "CONFIRMED_NEED_BATCH_NOT_REVIEWABLE", message: "Released" },
+        ];
+      },
+    );
+    expect(await quantity()).toBeDisabled();
+    openUtilities();
+    expect(
+      screen.getByRole("button", { name: "Nhập Phiếu đi chợ" }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Phiếu đi chợ" }));
+    await waitFor(() => expect(onExportShoppingList).toHaveBeenCalledOnce());
+    expect(h.save).not.toHaveBeenCalled();
+  });
 });
 async function editValid() {
   fireEvent.change(await quantity(), { target: { value: "12,5" } });

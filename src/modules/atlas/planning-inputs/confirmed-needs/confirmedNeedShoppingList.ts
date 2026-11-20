@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { releasedShoppingListReadable } from "./confirmedNeedReadAuthority";
 import {
   normalizeConfirmedNeedQuantity,
   type ConfirmedNeedDraftLine,
@@ -84,7 +85,7 @@ function validateExport(batch: ShoppingListDailyBatch) {
       b.lines.every(
         (l) => l.service_date === date && !l.source_stale && !l.blockers.length,
       ) &&
-      !b.blockers.length,
+      (!b.blockers.length || releasedShoppingListReadable(b)),
     "STALE_AUTHORITY",
   );
   shoppingAssert(

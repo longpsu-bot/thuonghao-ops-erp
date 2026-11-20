@@ -387,7 +387,31 @@ it.each(["null-run", "blocking-count", "released-batch", "partial-batch"])(
     ).rejects.toMatchObject({ code: "STALE_AUTHORITY" });
   },
 );
-it("blocks the entire export on dirty, released, read-failed or changed authority", async () => {
+it("exports a released day alongside an editable day and rejects import or any additional release blocker", async () => {
+  const f = rangeFixture();
+  const day = f.batches[1]!.workbench;
+  day.authoritative_batch_status = "RELEASED_FOR_PURCHASE_HANDOFF";
+  day.editing_allowed = false;
+  day.allowed_actions.save_confirmed_needs = false;
+  day.blockers = [
+    { code: "CONFIRMED_NEED_BATCH_NOT_REVIEWABLE", message: "Released" },
+  ];
+  await f.service.export(day, f.context);
+  const batches = vi.mocked(downloadConfirmedNeedShoppingList).mock
+    .lastCall![0];
+  expect(batches).toHaveLength(2);
+  await expect(
+    createConfirmedNeedShoppingListXlsx(batches),
+  ).resolves.toBeTruthy();
+  await expect(
+    f.service.import({} as File, day, f.context.drafts, f.context),
+  ).rejects.toMatchObject({ code: "READ_ONLY_WORKBENCH" });
+  day.blockers.push({ code: "STALE_CONFIRMED_NEED_LINE", message: "Stale" });
+  await expect(f.service.export(day, f.context)).rejects.toMatchObject({
+    code: "READ_ONLY_WORKBENCH",
+  });
+});
+it("blocks the entire export on dirty, non-editable unreleased, read-failed or changed authority", async () => {
   const f = rangeFixture();
   const download = vi.mocked(downloadConfirmedNeedShoppingList);
   download.mockClear();

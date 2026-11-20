@@ -23,6 +23,7 @@ import {
   exactDecimalEqual,
   normalizeConfirmedNeedQuantity,
   loadCompleteConfirmedNeedReview,
+  releasedShoppingListReadable,
   shoppingListRangeDates,
   initialConfirmedNeedDraft,
   defaultConfirmedNeedReason,
@@ -1003,6 +1004,17 @@ export function useConfirmedNeedWorkbench({
         !rangeBusy &&
         !allDirty,
     } satisfies ShoppingListRangeContext,
+    canExportShoppingList:
+      !allDirty &&
+      !rangeBusy &&
+      !busy &&
+      !lock &&
+      !freshness.stale &&
+      !rangeError &&
+      (editable ||
+        (sourceCurrent &&
+          workbench &&
+          releasedShoppingListReadable(workbench))),
     operation,
     date,
     week,

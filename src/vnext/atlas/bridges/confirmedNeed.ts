@@ -72,6 +72,7 @@ export type {
 
 export {
   loadCompleteConfirmedNeedReview,
+  releasedShoppingListReadable,
   shoppingListRangeDates,
 } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";
 export type { ShoppingListRangeContext } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedReadAuthority";
