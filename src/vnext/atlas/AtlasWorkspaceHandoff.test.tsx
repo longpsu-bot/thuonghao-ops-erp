@@ -123,36 +123,6 @@ it("Need activates same-context Procurement without a discrepancy, remount or re
   expect(h.ordersRead).toHaveBeenCalledTimes(ordersReads);
 }, 15000);
 
-it("preserves dirty Supplier detail after a sibling commit, suspends Save and still permits discard", async () => {
-  const h = show();
-  await open("Phân bổ NCC");
-  fireEvent.click(await allocationAction());
-  fireEvent.click(
-    screen.getByRole("button", { name: "Thêm ghi chú cho NCC An Phú" }),
-  );
-  const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
-  fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
-  await open("Thực đơn");
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Đồng bộ Google Sheet" }),
-  );
-  await waitFor(() => expect(h.menuSave).toHaveBeenCalledOnce());
-  await open("Phân bổ NCC");
-  expect(screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" })).toBe(
-    note,
-  );
-  expect(note).toHaveValue("Giao trước 05:30");
-  expect(h.allocationRead).toHaveBeenCalledOnce();
-  expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
-  fireEvent.click(screen.getByRole("button", { name: /^Đóng$/ }));
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Bỏ thay đổi và đóng" }),
-  );
-  await waitFor(() =>
-    expect(h.allocationRead.mock.calls.length).toBeGreaterThan(1),
-  );
-}, 15000);
-
 it("Need discloses the intended context while retaining Allocation's different local date", async () => {
   const h = show();
   await planning();
@@ -198,46 +168,37 @@ it("Need discloses the intended context while retaining Allocation's different l
   expect(h.ordersRead).not.toHaveBeenCalled();
 }, 15000);
 
-it("Need returns to Procurement's dirty selected Supplier detail with its note and search intact", async () => {
+it("protects the modal draft from switching owners and restores the filtered list after discard", async () => {
   const h = show();
+  await planning();
   await open("Phân bổ NCC");
   await allocationAction();
+  const needTab = screen.getByRole("tab", { name: "Xác nhận nhu cầu" });
   const panel = screen.getByRole("tabpanel", { name: "Phân bổ NCC" });
   const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
   fireEvent.change(search, { target: { value: "Gạo" } });
-  const selected = await allocationAction();
-  fireEvent.click(selected);
+  const trigger = await allocationAction();
+  fireEvent.click(trigger);
   fireEvent.click(
     screen.getByRole("button", { name: "Thêm ghi chú cho NCC An Phú" }),
   );
   const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
   fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
-  await planning();
-  expect(note.isConnected).toBe(true);
-  expect(panel).toHaveAttribute("hidden");
-  expect(panel).toHaveAttribute("inert");
-  continueAllocation();
-  expect(screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" })).toBe(
-    note,
-  );
-  expect(note).toHaveValue("Giao trước 05:30");
-  expect(search).toBeInTheDocument();
-  expect(search).not.toBeVisible();
-  expect(search).toHaveValue("Gạo");
-  expect(selected).toHaveAttribute("aria-expanded", "true");
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(needTab);
+  expect(panel).not.toHaveAttribute("hidden");
   expect(
-    screen.getByRole("tab", { name: /Phân bổ NCC.*Chưa lưu/ }),
-  ).toBeVisible();
-  expect(h.allocationRead).toHaveBeenCalledOnce();
+    await screen.findByRole("dialog", { name: "Phân bổ Gạo thơm" }),
+  ).toContainElement(note);
+  expect(note).toHaveValue("Giao trước 05:30");
   fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
   fireEvent.click(
     await screen.findByRole("button", { name: "Bỏ thay đổi và đóng" }),
   );
-  expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
-  expect(search).toBeVisible();
+  await waitFor(() => expect(trigger).toHaveFocus());
   expect(search).toHaveValue("Gạo");
   expect(h.allocationRead).toHaveBeenCalledOnce();
+  fireEvent.click(needTab);
+  expect(panel).toHaveAttribute("hidden");
 }, 15000);
 
 it("retains PXK note and selection across switches and includes the hidden draft in a multi-owner sign-out block", async () => {

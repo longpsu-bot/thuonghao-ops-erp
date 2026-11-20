@@ -12,6 +12,8 @@ import {
   Button,
   Icon,
   Field,
+  Dialog,
+  Portal,
   Flex,
   Grid,
   Input,
@@ -21,7 +23,7 @@ import {
 } from "@chakra-ui/react";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
-import type { CSSProperties } from "react";
+import { useAtlasPortalContainer } from "../AtlasVNextProvider";
 import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
 import type { AtlasOperatorDateRange } from "../atlasOperatorDateRange";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
@@ -90,6 +92,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const [search, setSearch] = useState("");
   const [exception, setException] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const portal = useAtlasPortalContainer();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [appliedContinuation, setAppliedContinuation] = useState<string | null>(
     null,
@@ -170,6 +173,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const selected = controller.allocation?.rows.find(
     (row) => row.family.source_fingerprint === selectedKey,
   );
+  useEffect(() => {
+    if (selectedKey && !selected && !controller.loading) setSelectedKey(null);
+  }, [selectedKey, selected, controller.loading]);
   const rows = controller.allocation?.rows ?? [];
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: Boolean(selected && detailStatus.unsaved),
@@ -202,6 +208,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       ].join(" "),
     ).includes(fold(search.trim()));
   });
+  const returnFocusEl = () =>
+    rowTrigger.current?.isConnected ? rowTrigger.current : heading.current;
+  const editorHeading = useRef<HTMLDivElement>(null);
   const detailExit = useRef<AtlasModuleExitHandle>(null);
   useImperativeHandle(props.exitRef, () => ({
     requestExit: (next) => {
@@ -253,6 +262,84 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     needs_update: "Cần cập nhật",
     blocked: "Bị chặn",
   }[exception];
+  const continuationNotice = pendingContinuation && (
+    <Box p="sm" bg="bg.info" role="status">
+      <Text mb="xs">
+        Nhu cầu vừa được mở từ khoảng {pendingContinuation.range.start} →{" "}
+        {pendingContinuation.range.end},{" "}
+        {pendingContinuation.schoolIds.length
+          ? `${pendingContinuation.schoolIds.length} trường`
+          : "tất cả trường"}
+        . Kiểm tra thay đổi đang chỉnh sửa trước khi tải nguồn mới.
+      </Text>
+      <Button
+        variant="secondary"
+        disabled={
+          controller.busy ||
+          controller.loading ||
+          controller.locked ||
+          controller.hasRetry
+        }
+        onClick={() => {
+          const apply = () => {
+            setSelectedKey(null);
+            setAppliedContinuation(pendingContinuation.id);
+            controller.applyNeedScope(
+              pendingContinuation.range,
+              pendingContinuation.schoolIds,
+            );
+          };
+          if (selected) detailExit.current?.requestExit(apply);
+          else apply();
+        }}
+      >
+        Áp dụng ngữ cảnh nhu cầu và tải lại
+      </Button>
+    </Box>
+  );
+  const statusMessages = (
+    <>
+      {controller.stale && (
+        <Text role="status" px="md" py="xs">
+          {staleAuthorityMessage}
+        </Text>
+      )}
+      {controller.feedback && (
+        <ProcurementCommandFeedback
+          feedback={controller.feedback}
+          busy={controller.busy || controller.loading}
+          onReload={() => void controller.reload()}
+          onRetry={async () => {
+            if ((await controller.retry()) && selected) closeDetail();
+          }}
+        />
+      )}
+      {controller.readError && (
+        <Box role="alert" p="md">
+          <Text color="status.warning">
+            <Icon asChild aria-hidden="true" mr="xs">
+              <WarningCircle />
+            </Icon>
+            Không tải được dữ liệu hiện tại: {controller.readError}
+          </Text>
+          {controller.feedback?.kind !== "unknown" && (
+            <Button
+              mt="sm"
+              disabled={controller.loading}
+              onClick={() => void controller.reload()}
+            >
+              Tải lại dữ liệu hiện tại
+            </Button>
+          )}
+        </Box>
+      )}
+      {controller.loading && (
+        <Text role="status" px="md" py="sm" color="fg.muted">
+          Đang tải dữ liệu…
+        </Text>
+      )}
+    </>
+  );
   return (
     <Box
       as="section"
@@ -262,13 +349,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       borderWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
-      h={selected ? "full" : undefined}
     >
       <Grid
         templateColumns="minmax(0, 1fr)"
         templateRows="auto minmax(0, 1fr)"
         alignContent="start"
-        h={selected ? "full" : undefined}
         minH="var(--atlas-layout-zero, 0)"
       >
         <AtlasTaskContext
@@ -303,50 +388,15 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
           minH="var(--atlas-layout-zero, 0)"
           bg="bg.workbench"
         >
-          {pendingContinuation && (
-            <Box p="sm" bg="bg.info" role="status">
-              <Text mb="xs">
-                Nhu cầu vừa được mở từ khoảng {pendingContinuation.range.start}{" "}
-                → {pendingContinuation.range.end},{" "}
-                {pendingContinuation.schoolIds.length
-                  ? `${pendingContinuation.schoolIds.length} trường`
-                  : "tất cả trường"}
-                . Kiểm tra thay đổi đang chỉnh sửa trước khi tải nguồn mới.
-              </Text>
-              <Button
-                variant="secondary"
-                disabled={
-                  controller.busy ||
-                  controller.loading ||
-                  controller.locked ||
-                  controller.hasRetry
-                }
-                onClick={() => {
-                  const apply = () => {
-                    setSelectedKey(null);
-                    setAppliedContinuation(pendingContinuation.id);
-                    controller.applyNeedScope(
-                      pendingContinuation.range,
-                      pendingContinuation.schoolIds,
-                    );
-                  };
-                  if (selected) detailExit.current?.requestExit(apply);
-                  else apply();
-                }}
-              >
-                Áp dụng ngữ cảnh nhu cầu và tải lại
-              </Button>
-            </Box>
-          )}
+          {!selected && continuationNotice}
           <Tabs.Root
             css={{
               "--tabs-content-padding": "var(--atlas-layout-zero, 0)",
               "&[data-orientation=horizontal]": {
-                display: selected ? "flex" : "block",
+                display: "block",
               },
             }}
             flexDirection="column"
-            h={selected ? "full" : undefined}
             minH="var(--atlas-layout-zero, 0)"
             value={controller.stage}
             onValueChange={({ value }) => {
@@ -389,7 +439,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               </Box>
             )}
             <AtlasWorkbar
-              display={selected ? "none" : "grid"}
+              display="grid"
               role="group"
               aria-label="Phạm vi mua hàng"
               bg="bg.toolbar"
@@ -536,6 +586,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 gridColumn="2"
                 variant="secondary"
                 minH="var(--atlas-layout-mobile-target, 44px)"
+                disabled={Boolean(selected)}
                 aria-expanded={filtersOpen}
                 aria-controls={filterId}
                 onClick={() => setFiltersOpen((open) => !open)}
@@ -586,49 +637,12 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 {controller.rangeError}
               </Text>
             )}
-            {controller.stale && (
-              <Text role="status" px="md" py="xs">
-                {staleAuthorityMessage}
-              </Text>
-            )}
-            {controller.feedback && (
-              <ProcurementCommandFeedback
-                feedback={controller.feedback}
-                busy={controller.busy || controller.loading}
-                onReload={() => void controller.reload()}
-                onRetry={() => void controller.retry()}
-              />
-            )}
-            {controller.readError && (
-              <Box role="alert" p="md">
-                <Text color="status.warning">
-                  <Icon asChild aria-hidden="true" mr="xs">
-                    <WarningCircle />
-                  </Icon>
-                  Không tải được dữ liệu hiện tại: {controller.readError}
-                </Text>
-                {controller.feedback?.kind !== "unknown" && (
-                  <Button
-                    mt="sm"
-                    disabled={controller.loading}
-                    onClick={() => void controller.reload()}
-                  >
-                    Tải lại dữ liệu hiện tại
-                  </Button>
-                )}
-              </Box>
-            )}
-            {controller.loading && (
-              <Text role="status" px="md" py="sm" color="fg.muted">
-                Đang tải dữ liệu…
-              </Text>
-            )}
+            {!selected && statusMessages}
             <Tabs.Content
               value={controller.stage}
               p="var(--atlas-layout-zero, 0)"
               pt="var(--atlas-layout-zero, 0)"
               pb="var(--atlas-layout-zero, 0)"
-              flex={selected ? "1" : undefined}
               minH="var(--atlas-layout-zero, 0)"
             >
               {controller.stage === "allocation" ? (
@@ -647,163 +661,170 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                         {message}
                       </Text>
                     ))}
-                    <Grid
-                      data-testid="procurement-master-detail"
-                      style={
-                        {
-                          "--atlas-allocation-directory-width": "340px",
-                        } as CSSProperties
-                      }
-                      minW="var(--atlas-layout-zero, 0)"
-                      minH="var(--atlas-layout-zero, 0)"
-                      h={selected ? "full" : undefined}
-                      gap={selected ? "md" : "var(--atlas-layout-zero, 0)"}
-                      p={
-                        selected
-                          ? { base: "var(--atlas-layout-zero, 0)", lg: "sm" }
-                          : "var(--atlas-layout-zero, 0)"
-                      }
-                      templateColumns={{
-                        base: "minmax(0, 1fr)",
-                        lg: selected
-                          ? "var(--atlas-allocation-directory-width, 340px) minmax(0, 1fr)"
-                          : "minmax(0, 1fr)",
-                      }}
-                    >
-                      <ProcurementAllocationTable
-                        tools={
+                    <ProcurementAllocationTable
+                      tools={
+                        <Flex
+                          role="group"
+                          aria-label="Tổng hợp và lệnh mua hàng"
+                          flex="1"
+                          minW="var(--atlas-layout-zero, 0)"
+                          align="center"
+                          gap="sm"
+                          wrap="wrap"
+                        >
+                          <Text
+                            textStyle="helper"
+                            color="fg.muted"
+                            flex={{ base: "0 1 auto", md: "1" }}
+                          >
+                            Cần xử lý{" "}
+                            {
+                              rows.filter(
+                                (row) =>
+                                  row.state !== "BALANCED" &&
+                                  !derivedDefaultAllocation(row),
+                              ).length
+                            }{" "}
+                            · Đã đủ{" "}
+                            {
+                              rows.filter(
+                                (row) =>
+                                  row.state === "BALANCED" ||
+                                  Boolean(derivedDefaultAllocation(row)),
+                              ).length
+                            }
+                          </Text>
                           <Flex
-                            role="group"
-                            aria-label="Tổng hợp và lệnh mua hàng"
-                            flex="1"
                             minW="var(--atlas-layout-zero, 0)"
-                            align="center"
+                            align={{ base: "stretch", md: "center" }}
                             gap="sm"
                             wrap="wrap"
+                            flex={{ base: "0 1 auto", md: "initial" }}
                           >
-                            <Text
-                              textStyle="helper"
-                              color="fg.muted"
-                              flex={{ base: "0 1 auto", md: "1" }}
-                            >
-                              Cần xử lý{" "}
-                              {
-                                rows.filter(
-                                  (row) =>
-                                    row.state !== "BALANCED" &&
-                                    !derivedDefaultAllocation(row),
-                                ).length
-                              }{" "}
-                              · Đã đủ{" "}
-                              {
-                                rows.filter(
-                                  (row) =>
-                                    row.state === "BALANCED" ||
-                                    Boolean(derivedDefaultAllocation(row)),
-                                ).length
-                              }
-                            </Text>
-                            <Flex
-                              minW="var(--atlas-layout-zero, 0)"
-                              align={{ base: "stretch", md: "center" }}
-                              gap="sm"
-                              wrap="wrap"
-                              flex={{ base: "0 1 auto", md: "initial" }}
-                            >
-                              {canPrepare && (
-                                <Box maxW="var(--atlas-layout-preparation-help-width, 520px)">
-                                  <Button
-                                    variant="businessPrimary"
-                                    aria-describedby={`${ownerId}-preparation-help`}
-                                    onClick={() =>
-                                      void controller.prepare(Boolean(selected))
-                                    }
-                                  >
-                                    Chuẩn bị đơn mua
-                                  </Button>
-                                  <Text
-                                    id={`${ownerId}-preparation-help`}
-                                    textStyle="helper"
-                                    color="fg.muted"
-                                    mt="xs"
-                                  >
-                                    Có thể chốt nhu cầu, chuyển sang Thu mua và
-                                    tạo hoặc cập nhật đơn mua nháp. Chỉ Phát
-                                    hành đơn mua mới cam kết với nhà cung ứng.
-                                  </Text>
-                                </Box>
-                              )}
-                              {multiDay && (
-                                <Text textStyle="helper" color="fg.muted">
-                                  Chọn 1 ngày để chuẩn bị đơn mua.
-                                </Text>
-                              )}
-                              {props.ownerStage === "allocation" &&
-                                props.onOpenOrders && (
-                                  <Button
-                                    variant="secondary"
-                                    disabled={
-                                      Boolean(selected) ||
-                                      controller.busy ||
-                                      Boolean(controller.rangeError)
-                                    }
-                                    onClick={controller.openOrders}
-                                  >
-                                    Xem đơn mua
-                                  </Button>
-                                )}
-                            </Flex>
-                            {!selected &&
-                              !multiDay &&
-                              !(preparation?.ready && preparation.allowed) &&
-                              preparation && (
-                                <Text
-                                  textStyle="helper"
-                                  color="status.warning"
-                                  width="full"
+                            {canPrepare && (
+                              <Box maxW="var(--atlas-layout-preparation-help-width, 520px)">
+                                <Button
+                                  variant="businessPrimary"
+                                  aria-describedby={`${ownerId}-preparation-help`}
+                                  onClick={() =>
+                                    void controller.prepare(Boolean(selected))
+                                  }
                                 >
-                                  {procurementOperatorMessages(
-                                    preparation.blockers,
-                                    "Hoàn tất phân bổ trước khi lên đơn.",
-                                  ).join(" ")}
+                                  Chuẩn bị đơn mua
+                                </Button>
+                                <Text
+                                  id={`${ownerId}-preparation-help`}
+                                  textStyle="helper"
+                                  color="fg.muted"
+                                  mt="xs"
+                                >
+                                  Có thể chốt nhu cầu, chuyển sang Thu mua và
+                                  tạo hoặc cập nhật đơn mua nháp. Chỉ Phát hành
+                                  đơn mua mới cam kết với nhà cung ứng.
                                 </Text>
+                              </Box>
+                            )}
+                            {multiDay && (
+                              <Text textStyle="helper" color="fg.muted">
+                                Chọn 1 ngày để chuẩn bị đơn mua.
+                              </Text>
+                            )}
+                            {props.ownerStage === "allocation" &&
+                              props.onOpenOrders && (
+                                <Button
+                                  variant="secondary"
+                                  disabled={
+                                    Boolean(selected) ||
+                                    controller.busy ||
+                                    Boolean(controller.rangeError)
+                                  }
+                                  onClick={controller.openOrders}
+                                >
+                                  Xem đơn mua
+                                </Button>
                               )}
                           </Flex>
+                          {!selected &&
+                            !multiDay &&
+                            !(preparation?.ready && preparation.allowed) &&
+                            preparation && (
+                              <Text
+                                textStyle="helper"
+                                color="status.warning"
+                                width="full"
+                              >
+                                {procurementOperatorMessages(
+                                  preparation.blockers,
+                                  "Hoàn tất phân bổ trước khi lên đơn.",
+                                ).join(" ")}
+                              </Text>
+                            )}
+                        </Flex>
+                      }
+                      rows={visible}
+                      selectedKey={selected ? selectedKey : null}
+                      disabled={
+                        controller.loading ||
+                        controller.busy ||
+                        Boolean(controller.rangeError)
+                      }
+                      onSelect={(row, trigger) => {
+                        rowTrigger.current = trigger;
+                        setSelectedKey(row.family.source_fingerprint);
+                      }}
+                    />
+                    {selected && (
+                      <Dialog.Root
+                        open
+                        placement="center"
+                        motionPreset="none"
+                        initialFocusEl={() =>
+                          editorHeading.current?.querySelector("h2") ?? null
                         }
-                        rows={visible}
-                        selectedKey={selected ? selectedKey : null}
-                        disabled={
-                          controller.loading ||
-                          controller.busy ||
-                          Boolean(controller.rangeError)
-                        }
-                        onSelect={(row, trigger) => {
-                          rowTrigger.current = trigger;
-                          setSelectedKey(row.family.source_fingerprint);
+                        finalFocusEl={returnFocusEl}
+                        onOpenChange={({ open }) => {
+                          if (!open)
+                            detailExit.current?.requestExit(closeDetail);
                         }}
-                      />
-                      {selected && (
-                        <ProcurementSupplierDetail
-                          exitRef={detailExit}
-                          onWorkspaceStatus={setDetailStatus}
-                          key={`${selected.family.source_fingerprint}:${controller.revision}`}
-                          row={selected}
-                          disabled={commandDisabled}
-                          suspendSave={
-                            controller.stale || Boolean(pendingContinuation)
-                          }
-                          onSave={(splits) =>
-                            void controller.save(selected, splits)
-                          }
-                          onClose={closeDetail}
-                          returnFocusEl={() =>
-                            rowTrigger.current?.isConnected
-                              ? rowTrigger.current
-                              : heading.current
-                          }
-                        />
-                      )}
-                    </Grid>
+                      >
+                        <Portal container={portal}>
+                          <Dialog.Backdrop
+                            bg="bg.navigation"
+                            opacity="var(--atlas-layout-backdrop-opacity, 0.45)"
+                          />
+                          <Dialog.Positioner p="sm">
+                            <Dialog.Content
+                              ref={editorHeading}
+                              aria-label={`Phân bổ ${selected.ingredient_name}`}
+                              w="full"
+                              maxW="var(--atlas-allocation-dialog-width, 56rem)"
+                              borderRadius="workbench"
+                            >
+                              <ProcurementSupplierDetail
+                                exitRef={detailExit}
+                                onWorkspaceStatus={setDetailStatus}
+                                key={`${selected.family.source_fingerprint}:${controller.revision}`}
+                                row={selected}
+                                disabled={commandDisabled}
+                                suspendSave={
+                                  controller.stale ||
+                                  Boolean(pendingContinuation)
+                                }
+                                onSave={async (splits) => {
+                                  if (await controller.save(selected, splits))
+                                    closeDetail();
+                                }}
+                                onClose={closeDetail}
+                                returnFocusEl={returnFocusEl}
+                              >
+                                {continuationNotice}
+                                {statusMessages}
+                              </ProcurementSupplierDetail>
+                            </Dialog.Content>
+                          </Dialog.Positioner>
+                        </Portal>
+                      </Dialog.Root>
+                    )}
                   </>
                 )
               ) : (

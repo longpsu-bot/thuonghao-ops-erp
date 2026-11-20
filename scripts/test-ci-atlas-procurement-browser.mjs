@@ -590,7 +590,7 @@ try {
   await until(
     () =>
       evaluate(
-        `[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Đóng'&&!b.disabled)`,
+        `!document.querySelector('[role=dialog]') && [...document.querySelectorAll('button[aria-expanded=false]')].some(b=>b.getAttribute('aria-label')===${JSON.stringify(editLabel)}&&!b.disabled)`,
       ),
     "ALLOCATION_COMMAND_READBACK",
   );

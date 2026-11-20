@@ -208,6 +208,10 @@ values change. The School index and type columns reserve room for the larger
 header text and sort icons. The 14px desktop body style still serves ordinary
 labels and actions, and the 13px helper style serves secondary details.
 
+### Supplier allocation dialog — 20 November 2026
+
+A row opens one centered dialog over the list. It keeps the ingredient, school, date, unit and running total visible. Staff enter quantities directly. For a 100 kg requirement, entering 30 kg for one supplier and choosing “Tự cân bằng · 70 kg” on the next supplier fills its quantity. Saving returns staff to the original row after authoritative readback. Dismissing a changed draft asks whether to discard it. This replaces the split-pane layout described below.
+
 ### Allocation composition follow-up — 28 October 2026
 
 The Owner rejected cosmetic type/layout changes as too generic and requested a

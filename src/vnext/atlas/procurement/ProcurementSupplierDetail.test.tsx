@@ -41,36 +41,49 @@ const openSupplierNote = (name: string) => {
   return screen.getByRole("textbox", { name: `Ghi chú cho ${name}` });
 };
 describe("Supplier decisions", () => {
-  it("splits a fractional need by percent and assigns the exact remainder before saving", () => {
-    const row = reviewFamily("manual_split");
-    row.family_quantity = "3.000001";
-    const { onSave } = show(row);
-    const percent = screen.getByRole("textbox", {
-      name: "Tỷ lệ phân bổ NCC An Phú (%)",
-    });
-    fireEvent.change(percent, { target: { value: "101" } });
-    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
-    fireEvent.change(percent, { target: { value: "50" } });
-    expect(
-      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
-    ).toHaveValue("1.500001");
-    click("Gán phần còn lại cho NCC Bình Minh");
-    expect(
-      screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
-    ).toHaveValue("1.5");
-    expect(onSave).not.toHaveBeenCalled();
-    click("Lưu phân bổ");
-    expect(onSave).toHaveBeenCalledWith([
-      expect.objectContaining({
-        supplier_id: "supplier-a",
-        allocated_quantity: "1.500001",
-      }),
-      expect.objectContaining({
-        supplier_id: "supplier-b",
-        allocated_quantity: "1.500000",
-      }),
-    ]);
-  });
+  it.each([
+    ["100", "30", "70", "30.000000", "70.000000"],
+    ["3.000001", "1.500001", "1.5", "1.500001", "1.500000"],
+  ])(
+    "balances a new supplier against an exact need of %s",
+    (need, first, second, savedFirst, savedSecond) => {
+      const row = reviewFamily();
+      row.family_quantity = need;
+      row.recommendation!.allocated_quantity = need;
+      const { onSave } = show(row);
+      quantity("NCC An Phú", first);
+      click("Thêm nhà cung ứng");
+      fireEvent.change(
+        screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
+        { target: { value: "supplier-b" } },
+      );
+      expect(
+        screen.getByRole("button", { name: "Lưu phân bổ" }),
+      ).toBeDisabled();
+      expect(
+        screen.queryByRole("textbox", { name: /Tỷ lệ/ }),
+      ).not.toBeInTheDocument();
+      click(`Tự cân bằng cho NCC Bình Minh: ${second.replace(".", ",")} kg`);
+      expect(
+        screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+      ).toHaveValue(first);
+      expect(
+        screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+      ).toHaveValue(second);
+      expect(onSave).not.toHaveBeenCalled();
+      click("Lưu phân bổ");
+      expect(onSave).toHaveBeenCalledWith([
+        expect.objectContaining({
+          supplier_id: "supplier-a",
+          allocated_quantity: savedFirst,
+        }),
+        expect.objectContaining({
+          supplier_id: "supplier-b",
+          allocated_quantity: savedSecond,
+        }),
+      ]);
+    },
+  );
   it("opens an empty note on demand and moves focus into its field", () => {
     const row = reviewFamily("manual_split");
     row.splits[1]!.supplier_note = "Bao riêng";
@@ -228,8 +241,7 @@ describe("Supplier decisions", () => {
     expect(
       container.querySelector('[aria-label="Phân bổ Gạo thơm"]'),
     ).toHaveStyle({
-      "--atlas-procurement-detail-desktop-max-height":
-        "var(--atlas-procurement-editor-max-height, max(360px, calc(100dvh - 320px)))",
+      maxHeight: "var(--atlas-allocation-dialog-height, calc(100dvh - 2rem))",
     });
 
     for (const name of ["Đóng", "Lưu phân bổ", "Thêm nhà cung ứng"]) {

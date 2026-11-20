@@ -162,7 +162,9 @@ export function useProcurementWorkbench({
   const correlation = useRef(crypto.randomUUID());
   const generation = useRef(0);
   const active = useRef(false);
-  const retryCommand = useRef<(() => Promise<void>) | null>(null);
+  const retryCommand = useRef<(() => Promise<boolean | undefined>) | null>(
+    null,
+  );
   const recoveryStage = useRef<ProcurementStage | null>(null);
   const recoveryInvalidation = useRef(false);
   const skipPreparedStageRead = useRef(false);
@@ -413,7 +415,7 @@ export function useProcurementWorkbench({
       // This closure retains the exact request built before the first attempt.
       retryCommand.current = async () => {
         if (generation.current === ticket && !active.current)
-          await runCommand(invoke, target, preparation);
+          return runCommand(invoke, target, preparation);
       };
       setHasRetry(true);
     }
@@ -483,7 +485,7 @@ export function useProcurementWorkbench({
         },
         splits,
       );
-      await runCommand(
+      return runCommand(
         () => purchaseReviewApi.saveConfirmedAllocation(request),
         "allocation",
       );
@@ -495,7 +497,7 @@ export function useProcurementWorkbench({
         family,
         splits,
       );
-      await runCommand(
+      return runCommand(
         () => procurementApi.saveAllocation(request),
         "allocation",
       );
@@ -648,7 +650,7 @@ export function useProcurementWorkbench({
   };
   const retry = async () => {
     if (rangeError) return;
-    await retryCommand.current?.();
+    return retryCommand.current?.();
   };
   const openOrders = () => {
     if (busy || rangeError) return;

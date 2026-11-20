@@ -362,11 +362,13 @@ it("retains independent Ingredient and Supplier drafts while reusing the existin
   expect(supplier).toHaveValue("Nhà cung ứng thử");
 }, 30000);
 
-it("retains Allocation's dirty supplier detail and Orders search with independent panels and dates", async () => {
+it("keeps Allocation and Orders filters independent after closing a changed supplier dialog", async () => {
   const { apis, signOut } = show();
   const allocations = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations"),
     orders = vi.spyOn(apis.procurement, "getPurchaseOrders");
   await open("Phân bổ NCC");
+  const allocationSearch = screen.getByRole("textbox", { name: "Tìm kiếm" });
+  fireEvent.change(allocationSearch, { target: { value: "Gạo" } });
   fireEvent.click(
     await screen.findByRole("button", {
       name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm/,
@@ -378,6 +380,22 @@ it("retains Allocation's dirty supplier detail and Orders search with independen
   const note = screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" });
   fireEvent.change(note, { target: { value: "Giao sớm" } });
   const allocationOwner = owner("Phân bổ NCC");
+  expect(
+    await screen.findByRole("dialog", { name: "Phân bổ Gạo thơm" }),
+  ).toContainElement(note);
+  fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+  );
+  expect(note).toHaveValue("Giao sớm");
+  fireEvent.click(await screen.findByRole("button", { name: "Đóng" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Bỏ thay đổi và đóng" }),
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+
   await open("Đơn mua");
   await waitFor(() => expect(orders).toHaveBeenCalledOnce());
   const search = screen.getByRole("textbox", { name: "Tìm kiếm" });
@@ -386,11 +404,11 @@ it("retains Allocation's dirty supplier detail and Orders search with independen
   await selectOrdersDay("2026-09-08");
   await waitFor(() => expect(orders).toHaveBeenCalledTimes(2));
   const ordersOwner = owner("Đơn mua");
-  retained(allocationOwner, note, "Giao sớm");
+  retained(allocationOwner, allocationSearch, "Gạo");
   await open("Phân bổ NCC");
   retained(ordersOwner, search, "An Phú");
-  expect(screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" })).toBe(
-    note,
+  expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(
+    allocationSearch,
   );
   await open("Đơn mua");
   expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBe(search);
@@ -405,8 +423,7 @@ it("retains Allocation's dirty supplier detail and Orders search with independen
       .getAttribute("aria-controls"),
   );
   expect(new Set(filterIds).size).toBe(2);
-  await guards(["Phân bổ NCC"], signOut);
-  expect(note).toHaveValue("Giao sớm");
+  expect(signOut).not.toHaveBeenCalled();
 }, 30000);
 
 it.each([false, true])(
