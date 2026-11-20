@@ -51,16 +51,16 @@ revoke all on function atlas_core.planning_need_proposal(numeric,numeric,numeric
 grant execute on function atlas_core.planning_need_proposal(numeric,numeric,numeric,numeric)
   to atlas_planning_materialization_runtime, atlas_confirmed_need_review_runtime;
 
-select pg_temp.patch_need_rounding('atlas_planning.pa_06e_h0b1b_confirmed_need_guard()',
-  '      new.origin_need_generation_release_snapshot_id,
-      new.period_start', '      new.origin_need_generation_release_snapshot_id,
-      new.proposal_whole_round_from,
-      new.period_start');
-select pg_temp.patch_need_rounding('atlas_planning.pa_06e_h0b1b_confirmed_need_guard()',
-  '      old.origin_need_generation_release_snapshot_id,
-      old.period_start', '      old.origin_need_generation_release_snapshot_id,
-      old.proposal_whole_round_from,
-      old.period_start');
+create function atlas_planning.guard_need_rounding_threshold() returns trigger
+language plpgsql security invoker set search_path = '' as $$
+begin
+  raise exception using errcode = '23514', message = 'Confirmed Need proposal rounding threshold is immutable';
+end $$;
+revoke all on function atlas_planning.guard_need_rounding_threshold() from public, anon, authenticated, service_role;
+create trigger confirmed_need_batches_guard_rounding_threshold
+before update of proposal_whole_round_from on atlas_planning.confirmed_need_batches
+for each row when (old.proposal_whole_round_from is distinct from new.proposal_whole_round_from)
+execute function atlas_planning.guard_need_rounding_threshold();
 reset role;
 
 set role atlas_planning_materialization_runtime;

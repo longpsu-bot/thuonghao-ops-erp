@@ -1825,10 +1825,10 @@ select is(
     'policy_catalog_md5', '96d204baa9d4c35118428c5fc450dc9a',
     'rmvp_05_unit_lock_policy_count', 1,
     -- Need rounding adds the new-batch threshold and the exact proposal calculation.
-    'private_function_count', 387,
-    'private_function_catalog_md5', '0784f0375fd85b3542677bc7d768aecf',
-    'trigger_count', 128,
-    'trigger_catalog_md5', 'd4747e67295b9daf23e2939c1f0f5780',
+    'private_function_count', 388,
+    'private_function_catalog_md5', 'bfa2b15836fc2dab8a82237fa1a547a1',
+    'trigger_count', 129,
+    'trigger_catalog_md5', '9cc6337199b01dd5faa95a18b2d8baab',
     -- Two calculation EXECUTEs and one threshold EXECUTE for internal runtimes.
     'positive_target_grant_count', 1946,
     'positive_target_grant_md5', '437edea48f09a4b5bdb957195028034f',

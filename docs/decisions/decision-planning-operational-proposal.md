@@ -9,10 +9,10 @@
 
 ## Quy tắc hiện hành và cách thay đổi (20/11/2026)
 
-Quy tắc V1 áp dụng cho **đề xuất vận hành của phiếu nhu cầu lập mới**. Atlas cộng các nguồn của cùng dòng nhu cầu (cùng ngày, trường, điểm giao, nguyên liệu và đơn vị). Sau đó:
+Quy tắc V1 áp dụng cho **đề xuất vận hành của phiếu nhu cầu lập mới**. Atlas cộng các nguồn của cùng dòng nhu cầu (cùng ngày, trường, điểm giao, nguyên liệu và đơn vị) rồi làm tròn tổng qua hai bước.
 
 1. Làm tròn tổng lên đến bội số gần nhất của bước nguyên liệu (`Ingredient.order_step`).
-2. Nếu kết quả bước 1 nhỏ hơn 2, giữ kết quả đó. Từ 2 trở lên, làm tròn đến số nguyên gần nhất; phần lẻ đúng 0,5 làm tròn lên. Ngưỡng tính theo đơn vị của dòng nhu cầu.
+2. Nếu kết quả bước 1 nhỏ hơn 2, giữ kết quả đó. Từ 2 trở lên, làm tròn đến số nguyên gần nhất. Phần lẻ đúng 0,5 làm tròn lên. Ngưỡng tính theo đơn vị của dòng nhu cầu.
 
 | Nhu cầu gốc | Bước nguyên liệu | Sau bước 1 | Đề xuất |
 | ----------: | ---------------: | ---------: | ------: |

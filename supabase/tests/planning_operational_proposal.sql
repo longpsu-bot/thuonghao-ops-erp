@@ -881,7 +881,7 @@ select is((select read_line->>'proposed_confirmed_quantity' from proposal_result
   '2.000000','Confirmed readback retains the V1 proposal');
 select throws_ok($$update atlas_planning.confirmed_need_batches set proposal_whole_round_from=3
   where origin_need_generation_run_id='d4600000-0000-0000-0000-000000001000'$$,'23514',
-  'Confirmed Need batch origin identity is immutable','A batch retains its original rounding rule');
+  'Confirmed Need proposal rounding threshold is immutable','A batch retains its original rounding rule');
 
 -- Simulate a pre-rollout batch using the same 2.01 kg input.
 set local session_replication_role=replica;
