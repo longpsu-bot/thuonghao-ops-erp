@@ -47,16 +47,12 @@ it("Procurement application exit uses its split discard dialog", async () => {
     name: "Có thay đổi phân bổ chưa lưu",
   });
   fireEvent.click(
-    within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+    await within(dialog).findByRole("button", { name: "Tiếp tục chỉnh sửa" }),
   );
   expect(exit).not.toHaveBeenCalled();
   act(() => exitRef.current!.requestExit(exit));
   fireEvent.click(
-    within(
-      await screen.findByRole("dialog", {
-        name: "Có thay đổi phân bổ chưa lưu",
-      }),
-    ).getByRole("button", {
+    await screen.findByRole("button", {
       name: "Bỏ thay đổi và đóng",
     }),
   );

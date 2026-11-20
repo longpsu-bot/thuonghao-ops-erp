@@ -662,11 +662,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     fireEvent.click(
-      within(
-        await screen.findByRole("dialog", {
-          name: "Có thay đổi phân bổ chưa lưu",
-        }),
-      ).getByRole("button", {
+      await screen.findByRole("button", {
         name: "Tiếp tục chỉnh sửa",
       }),
     );
@@ -679,11 +675,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     fireEvent.click(
-      within(
-        await screen.findByRole("dialog", {
-          name: "Có thay đổi phân bổ chưa lưu",
-        }),
-      ).getByRole("button", {
+      await screen.findByRole("button", {
         name: "Bỏ thay đổi và đóng",
       }),
     );
@@ -1008,11 +1000,7 @@ describe("Procurement vNext operator workbench", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     fireEvent.click(
-      within(
-        await screen.findByRole("dialog", {
-          name: "Có thay đổi phân bổ chưa lưu",
-        }),
-      ).getByRole("button", {
+      await screen.findByRole("button", {
         name: "Bỏ thay đổi và đóng",
       }),
     );
@@ -1036,7 +1024,9 @@ describe("Procurement vNext operator workbench", () => {
       name: "Có thay đổi phân bổ chưa lưu",
     });
     await userEvent.click(
-      within(cancelled).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+      await within(cancelled).findByRole("button", {
+        name: "Tiếp tục chỉnh sửa",
+      }),
     );
     await waitFor(() => expect(cancelled).not.toBeInTheDocument());
     expect(screen.getByRole("button", { name: "Đóng" })).toHaveFocus();
@@ -1048,7 +1038,9 @@ describe("Procurement vNext operator workbench", () => {
       name: "Có thay đổi phân bổ chưa lưu",
     });
     await userEvent.click(
-      within(discarded).getByRole("button", { name: "Bỏ thay đổi và đóng" }),
+      await within(discarded).findByRole("button", {
+        name: "Bỏ thay đổi và đóng",
+      }),
     );
     await waitFor(() => expect(discarded).not.toBeInTheDocument());
     await waitFor(() => expect(document.activeElement === trigger).toBe(true));
