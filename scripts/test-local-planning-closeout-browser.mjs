@@ -489,11 +489,12 @@ export async function certifyLocalCloseoutBrowser() {
       ),
     );
     await importFile(modifiedWorkbook);
-    assert(
+    assert.equal(
       await evaluate(
-        `document.querySelector('tr[data-confirmed-need-line-id="${candidate.lineId}"] input[aria-label^="Số lượng xác nhận"]')?.value===${JSON.stringify(proposed)}`,
+        `document.querySelector('tr[data-confirmed-need-line-id="${candidate.lineId}"] input[aria-label^="Số lượng xác nhận"]')?.value`,
       ),
-      "The actual workbook import must propose the selected quantity.",
+      proposed.replace(",", "."),
+      "A workbook quantity must open in its selected cell with the editable decimal separator.",
     );
     const proposedState = await evaluate(preSaveGateStateExpression());
     const importedQuantities = await evaluate(
