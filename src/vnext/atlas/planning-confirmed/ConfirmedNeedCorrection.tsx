@@ -233,6 +233,7 @@ export function ConfirmedNeedSaveReview({
       <Dialog.Backdrop />
       <Dialog.Positioner>
         <Dialog.Content
+          data-need-save-review=""
           _open={{ animationStyle: "detailEnter" }}
           bg="bg.workbench"
           color="fg.default"

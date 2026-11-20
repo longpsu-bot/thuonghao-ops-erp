@@ -49,7 +49,7 @@ export function ConfirmedNeedTable({
   drafts: Record<string, ConfirmedNeedDraftLine>;
   errors: Record<string, ConfirmedNeedDraftError>;
   editable: boolean;
-  onEditReason?: (id: string, trigger: HTMLButtonElement) => void;
+  onEditReason?: (line: ConfirmedNeedLine, trigger: HTMLButtonElement) => void;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   type SortKey = "school" | "ingredient" | "proposal";
@@ -356,10 +356,7 @@ export function ConfirmedNeedTable({
                             size="xs"
                             aria-label={`Sửa lý do ${line.ingredient.name}`}
                             onClick={(event) =>
-                              onEditReason(
-                                line.confirmed_need_line_id,
-                                event.currentTarget,
-                              )
+                              onEditReason(line, event.currentTarget)
                             }
                           >
                             {confirmedNeedReasonLabels[saved.reason_code]}

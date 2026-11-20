@@ -108,21 +108,24 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   }, [filtersOpen]);
   const contextKey = `${c.date}:${c.workbench?.confirmed_need_batch_id}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;
   const correctionContext = `${props.authSubject}:${contextKey}`;
-  function openReview(trigger: HTMLButtonElement, selectedId?: string) {
-    const lines = c.changedLines.filter((line) => {
-      const id = line.confirmed_need_line_id;
-      const draft = c.drafts[id]!;
-      return (
-        c.correctionMode ||
-        draft.reason_code !== "PROPOSAL_ACCEPTED" ||
-        Boolean(draft.reason_note.trim()) ||
-        Boolean(c.errors[id])
-      );
-    });
-    const selected = c.workbench?.lines.find(
-      (line) => line.confirmed_need_line_id === selectedId,
+  const adjustmentLines = c.changedLines.filter((line) => {
+    const id = line.confirmed_need_line_id;
+    const draft = c.drafts[id]!;
+    return (
+      c.correctionMode ||
+      draft.reason_code !== "PROPOSAL_ACCEPTED" ||
+      Boolean(draft.reason_note.trim()) ||
+      Boolean(c.errors[id])
     );
-    if (selected && !lines.includes(selected)) lines.push(selected);
+  });
+  function openReview(
+    trigger: HTMLButtonElement,
+    selected?: ConfirmedNeedLine,
+  ) {
+    const lines =
+      selected && !adjustmentLines.includes(selected)
+        ? [...adjustmentLines, selected]
+        : adjustmentLines;
     if (!lines.length) {
       void c.save();
       return;
@@ -627,7 +630,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 onEditReason={
                   c.correctionMode
                     ? undefined
-                    : (id, trigger) => openReview(trigger, id)
+                    : (line, trigger) => openReview(trigger, line)
                 }
                 onEdit={c.edit}
               />
@@ -664,6 +667,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     <Button
                       variant="businessPrimary"
                       data-atlas-action-priority="primary"
+                      aria-haspopup={
+                        adjustmentLines.length ? "dialog" : undefined
+                      }
                       disabled={!c.canReview}
                       onClick={(event) => openReview(event.currentTarget)}
                     >
@@ -682,6 +688,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   {c.correctionMode && (
                     <Button
                       variant="businessPrimary"
+                      aria-haspopup={
+                        adjustmentLines.length ? "dialog" : undefined
+                      }
                       disabled={!c.canReview}
                       onClick={(event) => openReview(event.currentTarget)}
                     >
