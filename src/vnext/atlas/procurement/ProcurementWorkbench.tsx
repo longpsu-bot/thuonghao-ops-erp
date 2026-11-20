@@ -14,6 +14,8 @@ import {
   Field,
   Dialog,
   Portal,
+  Popover,
+  IconButton,
   Flex,
   Grid,
   Input,
@@ -21,7 +23,7 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
-import { WarningCircle } from "@phosphor-icons/react";
+import { Info, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import { useAtlasPortalContainer } from "../AtlasVNextProvider";
 import { AtlasDateRangeInput } from "../AtlasDateRangeInput";
@@ -78,6 +80,8 @@ export type ProcurementWorkbenchProps = ProcurementControllerProps &
       stage: "allocation" | "orders";
     }) => void;
   };
+const preparationHelp =
+  "Có thể chốt nhu cầu và tạo hoặc cập nhật đơn mua nháp. Chỉ khi phát hành đơn mua mới cam kết với nhà cung ứng.";
 export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const controller = useProcurementWorkbench(props);
   const ownerId = useId();
@@ -702,27 +706,46 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                             flex={{ base: "0 1 auto", md: "initial" }}
                           >
                             {canPrepare && (
-                              <Box maxW="var(--atlas-layout-preparation-help-width, 520px)">
+                              <Flex align="center" gap="xs">
                                 <Button
                                   variant="businessPrimary"
-                                  aria-describedby={`${ownerId}-preparation-help`}
+                                  aria-description={preparationHelp}
                                   onClick={() =>
                                     void controller.prepare(Boolean(selected))
                                   }
                                 >
                                   Chuẩn bị đơn mua
                                 </Button>
-                                <Text
-                                  id={`${ownerId}-preparation-help`}
-                                  textStyle="helper"
-                                  color="fg.muted"
-                                  mt="xs"
+                                <Popover.Root
+                                  positioning={{ placement: "bottom-end" }}
+                                  lazyMount
+                                  unmountOnExit
                                 >
-                                  Có thể chốt nhu cầu, chuyển sang Thu mua và
-                                  tạo hoặc cập nhật đơn mua nháp. Chỉ Phát hành
-                                  đơn mua mới cam kết với nhà cung ứng.
-                                </Text>
-                              </Box>
+                                  <Popover.Trigger asChild>
+                                    <IconButton
+                                      variant="utility"
+                                      size="sm"
+                                      aria-label="Giải thích bước chuẩn bị đơn mua"
+                                    >
+                                      <Info aria-hidden="true" />
+                                    </IconButton>
+                                  </Popover.Trigger>
+                                  <Portal container={portal}>
+                                    <Popover.Positioner>
+                                      <Popover.Content
+                                        aria-label="Chuẩn bị đơn mua"
+                                        bg="bg.workbench"
+                                        color="fg.default"
+                                        maxW="var(--atlas-preparation-hint-width, min(19rem, 90vw))"
+                                      >
+                                        <Popover.Body>
+                                          {preparationHelp}
+                                        </Popover.Body>
+                                      </Popover.Content>
+                                    </Popover.Positioner>
+                                  </Portal>
+                                </Popover.Root>
+                              </Flex>
                             )}
                             {multiDay && (
                               <Text textStyle="helper" color="fg.muted">
@@ -794,6 +817,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                           />
                           <Dialog.Positioner p="sm">
                             <Dialog.Content
+                              _open={{ animationStyle: "detailEnter" }}
                               ref={editorHeading}
                               aria-label={`Phân bổ ${selected.ingredient_name}`}
                               w="full"

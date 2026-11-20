@@ -499,8 +499,34 @@ describe("Supplier decisions", () => {
       screen.queryByRole("textbox", { name: "Ghi chú cho NCC Thành Công" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Xóa NCC An Phú" }),
+      screen.getByRole("button", { name: "Xóa NCC An Phú" }),
+    ).toBeEnabled();
+  });
+  it("removes a saved supplier, balances the remaining supplier, and writes only on Save", () => {
+    const { onSave } = show(reviewFamily("manual_split"));
+    click("Xóa NCC An Phú");
+    expect(
+      screen.queryByRole("group", { name: "NCC An Phú" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+    ).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    click("Tự cân bằng cho NCC Bình Minh: 100 kg");
+    expect(onSave).not.toHaveBeenCalled();
+    click("Lưu phân bổ");
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        supplier_id: "supplier-b",
+        allocated_quantity: "100.000000",
+        supplier_note: null,
+      },
+    ]);
+    click("Xóa NCC Bình Minh");
+    expect(
+      screen.getByRole("button", { name: "Thêm nhà cung ứng" }),
+    ).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
   });
   it("never accepts an ineligible advisory supplier", () => {
     const row = reviewFamily();

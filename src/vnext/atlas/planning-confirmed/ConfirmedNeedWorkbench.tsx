@@ -143,6 +143,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   );
   return (
     <Box
+      h="full"
       as="section"
       aria-label="Xác nhận nhu cầu"
       bg="bg.workbench"
@@ -150,9 +151,13 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
       borderWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
-      overflow="clip"
+      minH="var(--atlas-layout-zero, 0)"
     >
-      <Grid templateColumns="minmax(0, 1fr)" templateRows="auto minmax(0, 1fr)">
+      <Grid
+        h="full"
+        templateColumns="minmax(0, 1fr)"
+        templateRows="auto minmax(0, 1fr)"
+      >
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh xác nhận nhu cầu"
           moduleLabel="Lập nhu cầu"
@@ -163,14 +168,20 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             { label: "Trường / điểm giao", value: scopeSummary },
           ]}
         />
-        <Box minW="var(--atlas-layout-zero, 0)">
+        <Flex
+          direction="column"
+          minH="var(--atlas-layout-zero, 0)"
+          minW="var(--atlas-layout-zero, 0)"
+          overflowY="auto"
+          css={{ "& > *": { flexShrink: 0 } }}
+        >
           <AtlasWorkbar
             display="grid"
             role="group"
             aria-label="Phạm vi xác nhận nhu cầu"
             bg="bg.toolbar"
             px={{ base: "sm", md: "md" }}
-            py={{ base: "sm", md: "var(--atlas-workbar-y, 12px)" }}
+            py="sm"
             gap="sm"
             borderBottomWidth="var(--atlas-layout-edge, 1px)"
             borderColor="border.default"
@@ -281,7 +292,10 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               Bộ lọc
             </Button>
             <Text
-              display={{ base: filtersOpen ? "none" : "block", lg: "none" }}
+              display={{
+                base: filtersOpen || c.filter === "all" ? "none" : "block",
+                lg: "none",
+              }}
               order="3"
               gridColumn="1 / -1"
               textStyle="helper"
@@ -364,7 +378,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 <Flex
                   role="group"
                   aria-label="Ngày trong khoảng"
-                  gridColumn="1 / -1"
+                  gridColumn="1"
+                  gridRow="1"
                   gap="xs"
                   wrap="wrap"
                 >
@@ -380,26 +395,40 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   {c.workbench.line_counts.needs_review} cần rà soát ·{" "}
                   {c.workbench.line_counts.confirmed} đã xác nhận ·{" "}
                   {c.workbench.line_counts.adjusted} đã điều chỉnh
+                  {c.released &&
+                    !c.correctionMode &&
+                    " · Đã chuyển sang mua hàng · Chỉ đọc"}
                 </Text>
-                <Checkbox.Root
-                  minW="var(--atlas-layout-zero, 0)"
-                  checked={c.differencesOnly}
-                  onCheckedChange={(d) =>
-                    c.setDifferencesOnly(d.checked === true)
-                  }
-                >
-                  <Checkbox.HiddenInput />
-                  <Checkbox.Control>
-                    <Checkbox.Indicator />
-                  </Checkbox.Control>
-                  <Checkbox.Label>
-                    Chỉ hiển thị thay đổi chưa lưu
-                  </Checkbox.Label>
-                </Checkbox.Root>
+                {(!c.released || c.correctionMode || c.differencesOnly) && (
+                  <Checkbox.Root
+                    display={{
+                      base:
+                        c.allDirty || c.differencesOnly || utilitiesOpen
+                          ? "inline-flex"
+                          : "none",
+                      lg: "inline-flex",
+                    }}
+                    minW="var(--atlas-layout-zero, 0)"
+                    checked={c.differencesOnly}
+                    onCheckedChange={(d) =>
+                      c.setDifferencesOnly(d.checked === true)
+                    }
+                  >
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control>
+                      <Checkbox.Indicator />
+                    </Checkbox.Control>
+                    <Checkbox.Label>
+                      Chỉ hiển thị thay đổi chưa lưu
+                    </Checkbox.Label>
+                  </Checkbox.Root>
+                )}
                 <Button
                   display={{ base: "inline-flex", lg: "none" }}
                   variant="tertiary"
                   ms="var(--atlas-layout-auto, auto)"
+                  gridColumn="2"
+                  gridRow="1"
                   aria-expanded={utilitiesOpen}
                   aria-controls={utilitiesId}
                   onClick={() => setUtilitiesOpen((open) => !open)}
@@ -519,28 +548,23 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   tại.
                 </Text>
               )}
-              {c.released && !c.correctionMode && (
-                <Text px="md" pb="sm" textStyle="helper" color="fg.muted">
-                  Nhu cầu đã chuyển sang mua hàng · chỉ đọc.
-                </Text>
-              )}
-              <ConfirmedNeedCorrectionPanel c={c} />
-              {c.correctionRead && props.procurementApi && c.workbench && (
-                <ConfirmedNeedIssuedOrders
-                  api={props.procurementApi}
-                  authSubject={props.authSubject}
-                  workbench={c.workbench}
-                  serviceDate={c.date}
-                  schoolIds={c.schoolIds}
-                  onOpenOrders={props.onOpenOrders}
-                />
-              )}
+              <ConfirmedNeedCorrectionPanel key={contextKey} c={c}>
+                {c.correctionRead && props.procurementApi && c.workbench && (
+                  <ConfirmedNeedIssuedOrders
+                    api={props.procurementApi}
+                    authSubject={props.authSubject}
+                    workbench={c.workbench}
+                    serviceDate={c.date}
+                    schoolIds={c.schoolIds}
+                    onOpenOrders={props.onOpenOrders}
+                  />
+                )}
+              </ConfirmedNeedCorrectionPanel>
               <ConfirmedNeedTable
                 lines={c.visibleLines}
                 drafts={c.drafts}
                 errors={c.errors}
                 editable={c.editable}
-                compactEditing={c.dirty && (!c.released || c.correctionMode)}
                 correctionReason={
                   c.correctionMode ? c.correctionReason : undefined
                 }
@@ -562,7 +586,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 aria-label="Thao tác xác nhận nhu cầu"
                 data-atlas-persistent-actions="true"
                 px="md"
-                py={{ base: "sm", lg: "md" }}
+                py="sm"
                 gap="sm"
                 justify="flex-end"
                 align="center"
@@ -650,7 +674,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             onClose={() => setCorrectionReviewKey(null)}
             finalFocusEl={() => correctionReviewTrigger.current}
           />
-        </Box>
+        </Flex>
       </Grid>
     </Box>
   );

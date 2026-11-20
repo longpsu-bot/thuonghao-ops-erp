@@ -208,6 +208,12 @@ values change. The School index and type columns reserve room for the larger
 header text and sort icons. The 14px desktop body style still serves ordinary
 labels and actions, and the 13px helper style serves secondary details.
 
+### Confirmed Need and supplier allocation density — 20 November 2026
+
+The Confirmed Need table uses the available workbench height. Released batches show their read-only state in the counts strip. Staff can expand the history disclosure for related issued orders and source evidence. An active correction keeps the reason and pending procurement review in view. A separate information button explains purchase preparation on demand.
+
+Every participating supplier has a removal control. Removing one updates the draft, focuses the next quantity or the add button, and leaves the remainder available for assignment. Saving requires positive eligible quantities that exactly cover the need. The allocation and confirmation dialogs use the short Atlas detail transition and respect reduced motion.
+
 ### Supplier allocation dialog — 20 November 2026
 
 A row opens one centered dialog over the list. It keeps the ingredient, school, date, unit and running total visible. Staff enter quantities directly. For a 100 kg requirement, entering 30 kg for one supplier and choosing “Tự cân bằng · 70 kg” on the next supplier fills its quantity. Saving returns staff to the original row after authoritative readback. Dismissing a changed draft asks whether to discard it. This replaces the split-pane layout described below.
