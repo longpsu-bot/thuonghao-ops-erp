@@ -6,6 +6,14 @@ saved the rule and stopped it. The displayed week had one menu day. The rule
 list and preview expose the delivery date and exact quantity for that school.
 The 390 px viewport had no page-level horizontal overflow.
 
+On 20 November the school list opened at the top-left of the viewport when
+staff added a rule. The local browser check used the 50-school review fixture.
+At 1720 px the corrected list opened 8 px below the input and matched its
+320 px width. At 390 px it opened 8 px above the input and matched its 302 px
+width. Arrow Down and Enter selected TÂN THÀNH in both layouts.
+In daily entry, searching without accents and clicking the 50th school also
+selected the expected school at both widths.
+
 | State | Laptop | Phone |
 | --- | --- | --- |
 | Daily entry before the change | [1366 px](pantry-before-1366.png) | [390 px](pantry-before-390.png) |

@@ -104,30 +104,28 @@ export function PantrySchoolChooser({
   const highlighted = matches.find((school) => school.school_id === highlight);
   return (
     <Popover.Root
+      ids={{ anchor: `${id}-input`, content: `${id}-schools` }}
       open={isOpen}
       autoFocus={false}
       onOpenChange={({ open: next }) => {
         if (!next) close();
       }}
-      onInteractOutside={(event) => {
-        if (event.target === inputRef.current) event.preventDefault();
-      }}
+      persistentElements={[() => inputRef.current]}
       positioning={{ placement: "bottom-start", sameWidth: true }}
       lazyMount
       unmountOnExit
     >
-      <Popover.Anchor asChild>
-        <Field.Root
-          w={{
-            base: "full",
-            md: "var(--atlas-layout-add-school-width, 320px)",
-          }}
-          minW="var(--atlas-layout-zero, 0)"
-          gap="xs"
-        >
-          <Field.Label htmlFor={`${id}-input`}>{label}</Field.Label>
+      <Field.Root
+        w={{
+          base: "full",
+          md: "var(--atlas-layout-add-school-width, 320px)",
+        }}
+        minW="var(--atlas-layout-zero, 0)"
+        gap="xs"
+      >
+        <Field.Label htmlFor={`${id}-input`}>{label}</Field.Label>
+        <Popover.Anchor asChild>
           <Input
-            id={`${id}-input`}
             ref={inputRef}
             role="combobox"
             aria-label={label}
@@ -178,12 +176,11 @@ export function PantrySchoolChooser({
               } else if (event.key === "Tab") close();
             }}
           />
-        </Field.Root>
-      </Popover.Anchor>
+        </Popover.Anchor>
+      </Field.Root>
       <Portal container={portal}>
         <Popover.Positioner>
           <Popover.Content
-            id={`${id}-schools`}
             role="listbox"
             aria-label={label}
             bg="bg.workbench"
@@ -191,6 +188,7 @@ export function PantrySchoolChooser({
             borderColor="border.strong"
             maxH="var(--atlas-layout-school-list-height, 260px)"
             overflowY="auto"
+            w="full"
             maxW="var(--atlas-layout-school-max-width, calc(100vw - 32px))"
             p="xs"
           >
