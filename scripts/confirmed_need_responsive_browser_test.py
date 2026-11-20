@@ -1,6 +1,7 @@
 """Local production-component fixture review; never connects to hosted APIs."""
 import argparse
 import json
+from urllib.parse import urlsplit
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 
@@ -12,11 +13,11 @@ root = Path('docs/testing/artifacts/confirmed-need-responsive-editing-01') / arg
 root.mkdir(parents=True, exist_ok=True)
 GEOMETRY = """() => {
  const v=document.querySelector('[aria-label="Bảng xác nhận nhu cầu"]');
- const row=document.querySelector('[data-confirmed-need-line]');
+ const row=document.querySelector('input[aria-label="Số lượng xác nhận Gạo thơm"]').closest('tr');
  const rect=e=>{if(!e)return null; const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,position:s.position,insetLeft:s.left,zIndex:s.zIndex};};
  const q=row.querySelector('input'), i=row.querySelector('[data-field="identity"]');
  const overlap=(a,b)=>a&&b&&Math.min(a.right,b.right)>Math.max(a.left,b.left)&&Math.min(a.bottom,b.bottom)>Math.max(a.top,b.top);
- return {viewport:{...rect(v),clientWidth:v.clientWidth,scrollWidth:v.scrollWidth,scrollLeft:v.scrollLeft,scrollTop:v.scrollTop}, identity:rect(i),header:rect(document.querySelector('thead th')),headerRow:rect(document.querySelector('thead tr')),quantity:rect(q),reason:rect(row.querySelector('select')),note:rect(row.querySelector('[data-field="reason"] input')),identityOverlapsQuantity:overlap(rect(i),rect(q)),identityOverlapsReason:overlap(rect(i),rect(row.querySelector('select'))),pageWidth:document.documentElement.clientWidth,pageScrollWidth:document.documentElement.scrollWidth,active:document.activeElement.getAttribute('aria-label'),value:q.value,save:rect([...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Lưu'))};
+ return {viewport:{...rect(v),clientWidth:v.clientWidth,scrollWidth:v.scrollWidth,scrollLeft:v.scrollLeft,scrollTop:v.scrollTop}, identity:rect(i),header:rect(document.querySelector('thead th')),headerRow:rect(document.querySelector('thead tr')),quantity:rect(q),identityOverlapsQuantity:overlap(rect(i),rect(q)),pageWidth:document.documentElement.clientWidth,pageScrollWidth:document.documentElement.scrollWidth,active:document.activeElement.getAttribute('aria-label'),value:q.value,save:rect([...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Lưu'))};
 }"""
 results, failures, errors, blocked, smoke = [], [], [], [], []
 
@@ -43,7 +44,7 @@ with sync_playwright() as p:
         page=browser.new_page(viewport={'width':width,'height':height},device_scale_factor=dpr,locale='vi-VN',reduced_motion='reduce')
         page.on('pageerror', lambda e: errors.append(str(e)))
         def route(r):
-            if r.request.url.startswith(args.url) or r.request.url.startswith('data:'):
+            if urlsplit(r.request.url).netloc == urlsplit(args.url).netloc or r.request.url.startswith('data:'):
                 r.continue_()
             else:
                 blocked.append(r.request.url)
@@ -54,10 +55,10 @@ with sync_playwright() as p:
         q=page.get_by_role('textbox',name='Số lượng xác nhận Gạo thơm',exact=True)
         q.wait_for()
         g=record(page,size,'normal')
-        check(g['identity']['position']==('sticky' if width>=1280 else 'static'), f'{size}: identity position')
-        check(g['header']['position']==('sticky' if width>=1280 else 'static'), f'{size}: identity header position')
+        check(g['identity']['position']==('sticky' if width>=768 else 'static'), f'{size}: identity position')
+        check(g['header']['position']==('sticky' if width>=768 else 'static'), f'{size}: identity header position')
         check(g['headerRow']['position']=='sticky',f'{size}: vertical sticky header')
-        if width>=1280:
+        if width>=768:
             check(g['identity']['insetLeft'] in ['0px','0'],f'{size}: desktop left inset')
         # Native focus first, with no injected scrollIntoView or production reveal.
         q.focus()
@@ -69,44 +70,38 @@ with sync_playwright() as p:
         g=record(page,size,'dirty-quantity')
         check(g['value']=='12,5', f'{size}: exact draft')
         check(fits(g,'quantity') and not g['identityOverlapsQuantity'],f'{size}: dirty quantity visibility')
-        reason=page.get_by_role('combobox',name='Lý do Gạo thơm',exact=True)
-        reason.focus()
-        page.wait_for_timeout(100)
-        g=record(page,size,'reason-focus')
-        check(fits(g,'reason') and not g['identityOverlapsReason'],f'{size}: native focus reason visibility')
-        reason.select_option('OTHER')
-        note=page.get_by_role('textbox',name='Ghi chú Gạo thơm',exact=True)
-        note.focus()
-        note.fill('Bếp yêu cầu')
         save=page.get_by_role('button',name='Lưu',exact=True)
-        expect(save).to_be_enabled()
-        g=record(page,size,'note-edit')
-        check(fits(g,'note'),f'{size}: note visibility')
-        check(save.is_enabled(), f'{size}: valid Save')
-        save.scroll_into_view_if_needed()
+        save.press('Enter')
+        dialog=page.get_by_role('dialog',name='Lý do điều chỉnh',exact=True)
+        reason=dialog.get_by_role('combobox',name='Lý do Gạo thơm',exact=True)
+        expect(reason).to_be_focused()
+        reason.select_option('OTHER')
+        reason.press('Tab')
+        note=dialog.get_by_role('textbox',name='Ghi chú Gạo thơm',exact=True)
+        expect(note).to_be_focused()
+        note.fill('Bếp yêu cầu')
+        expect(dialog.get_by_role('button',name='Lưu điều chỉnh',exact=True)).to_be_enabled()
+        check(dialog.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1'),f'{size}: dialog fits')
+        record(page,size,'note-edit')
+        note.press('Escape')
+        expect(save).to_be_focused()
         g=record(page,size,'dirty-save')
         check(g['save']['top']>=-1 and g['save']['bottom']<=height+1,f'{size}: reachable Save')
-        # Keyboard from quantity to reason/note, relying on native Tab reveal.
-        q.focus()
-        page.keyboard.press('Tab')
-        check(reason.evaluate('(e)=>e===document.activeElement'), f'{size}: Tab quantity to reason')
-        g=page.evaluate(GEOMETRY)
-        check(fits(g,'reason') and not g['identityOverlapsReason'], f'{size}: keyboard reason reveal')
-        page.keyboard.press('Tab')
-        check(note.evaluate('(e)=>e===document.activeElement'), f'{size}: Tab reason to note')
         q.focus()
         page.keyboard.press('Control+a')
         page.keyboard.insert_text('10,123')
         g=record(page,size,'invalid')
         check(q.get_attribute('aria-invalid')=='true',f'{size}: validation error')
         description=q.get_attribute('aria-describedby')
-        check(bool(description) and page.locator(f'[id="{description}"]').count()==1,f'{size}: error association')
+        check(bool(description) and all(page.locator(f'[id="{key}"]').count()==1 for key in description.split()),f'{size}: error association')
         check(fits(g,'quantity') and not g['identityOverlapsQuantity'],f'{size}: invalid quantity reveal')
         # Scroll locally in both axes; header remains sticky vertically.
         page.get_by_role('region',name='Bảng xác nhận nhu cầu',exact=True).evaluate('(e)=>{e.scrollLeft=400;e.scrollTop=30}')
         g=record(page,size,'local-scroll')
-        if width<1280:
-            check(abs(g['identity']['left']-(g['viewport']['left']-g['viewport']['scrollLeft']))<=1,f'{size}: identity moves with local scroll')
+        if width>=768:
+            check(abs(g['identity']['left']-g['viewport']['left'])<=1,f'{size}: recipient stays visible during horizontal scroll')
+        else:
+            check(g['viewport']['scrollWidth']==g['viewport']['clientWidth'],f'{size}: phone rows fit without horizontal scrolling')
         check(abs(g['headerRow']['top']-g['viewport']['top'])<=1,f'{size}: vertical header retained after scroll')
         page.close()
     for width,height in [(1366,768),(390,844)]:
@@ -119,17 +114,17 @@ with sync_playwright() as p:
         q.focus()
         page.keyboard.press('Control+a')
         page.keyboard.insert_text('12,5')
-        page.keyboard.press('Tab')
-        page.keyboard.press('o')
+        page.get_by_role('button',name='Lưu',exact=True).press('Enter')
         page.get_by_role('combobox',name='Lý do Gạo thơm',exact=True).select_option('OTHER')
         note=page.get_by_role('textbox',name='Ghi chú Gạo thơm',exact=True)
         note.fill('Bếp yêu cầu')
-        expect(page.get_by_role('button',name='Lưu',exact=True)).to_be_enabled()
+        note.press('Escape')
         page.get_by_role('region',name='Bảng xác nhận nhu cầu',exact=True).evaluate('(e)=>e.scrollLeft=400')
-        page.get_by_role('button',name='Sắp xếp theo Nguyên liệu / nơi nhận',exact=True).click()
+        page.get_by_role('button',name='Sắp xếp theo Nguyên liệu',exact=True).click()
         page.get_by_role('button',name='Sắp xếp theo Đề xuất vận hành',exact=True).click()
         check(q.input_value()=='12,5',f'{width}: sorting draft preserved')
         search=page.get_by_role('textbox',name='Tìm kiếm',exact=True)
+        if not search.is_visible(): page.get_by_role('button',name='Bộ lọc',exact=True).click()
         search.fill('thit')
         expect(page.get_by_text('Có 1 thay đổi chưa lưu ngoài bộ lọc hiện tại.',exact=True)).to_be_visible()
         search.fill('')
@@ -141,9 +136,11 @@ with sync_playwright() as p:
         q.focus()
         check(q.evaluate('(e)=>e===document.activeElement'),f'{width}: focus retained')
         page.get_by_role('button',name='Lưu',exact=True).click()
+        expect(note).to_have_value('Bếp yêu cầu')
+        page.get_by_role('button',name='Lưu điều chỉnh',exact=True).click()
         expect(page.get_by_text('Đã lưu thay đổi.',exact=True)).to_be_visible()
         check(q.input_value()=='12.5',f'{width}: fixture Save exact readback')
-        check(note.input_value()=='Bếp yêu cầu',f'{width}: fixture Save note readback')
+        expect(q.locator('xpath=ancestor::tr')).to_contain_text('Bếp yêu cầu')
         page.screenshot(path=str(root/f'{width}x{height}-saved-filter-sort-smoke.png'),full_page=True)
         smoke.append({'width':width,'sortingFiltering':'pass','dirtyCancel':'pass','exactFixtureSaveReadback':'12.500000 / 12.5','reason':'OTHER','note':'Bếp yêu cầu'})
         page.close()

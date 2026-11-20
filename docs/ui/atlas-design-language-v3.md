@@ -73,7 +73,10 @@ quantity input clears the sticky footer.
 For quantity confirmation, present the proposal, last saved value and editable
 quantity as separate fields. On phones, pair proposal with entry and saved
 quantity with the difference. Associate validation with the field requiring
-attention. Show the editable reason default and mark the row note as optional.
+attention. Collect each adjusted line’s reason in the Save dialog, beside its
+old and new quantities. Preselect its draft reason and label the note as optional.
+Returning to the table preserves both quantity and reason edits. A released
+Need uses its existing correction review and requires one shared reason there.
 
 ### Workbench hierarchy amendment — 29 October 2026
 

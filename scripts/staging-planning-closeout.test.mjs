@@ -123,10 +123,11 @@ test("real 248-row controller accepts precision proposals, commits one edit and 
     interval: 5,
   });
   assert.equal(edit.proposed, "1.126");
+  assert.equal(saves, 0);
   await planningBrowser.clickBusinessActionOnce({
     evaluate: browserEvaluate,
-    scope: 'section[aria-label="Xác nhận nhu cầu"]',
-    label: "Lưu",
+    scope: '[role="dialog"][data-need-save-review]',
+    label: "Lưu điều chỉnh",
     gate: "save_once",
   });
   assert.equal(saves, 1);
@@ -867,11 +868,10 @@ test("real Confirmed Need rows distinguish one nonzero edit from pending zero de
     ),
     true,
   );
-  assert.doesNotThrow(() =>
-    planningBrowser.assertPreSaveGate({
-      ...state,
-      rendered_rows: 248,
-    }),
+  assert.equal(state.save_present, false);
+  assert.throws(
+    () => planningBrowser.assertPreSaveGate({ ...state, rendered_rows: 248 }),
+    /BROWSER_GATE_pre_save/,
   );
 });
 
@@ -946,80 +946,34 @@ test("pre-Generate waits for service-date read to settle on the exact safe surfa
 });
 
 test("reason selection waits for the real conditional note input to mount", async () => {
-  const line = {
-    ...freshConfirmedNeedLine(0),
-    current_decision_id: "decision-0",
-    current_decision_number: 1,
-    confirmed_quantity_after: "1.000000",
-    confirmation_state: "CONFIRMED_CURRENT",
-  };
-  function DelayedReasonTable() {
-    const [draft, setDraft] = useState(initialConfirmedNeedDraft(line));
-    return React.createElement(
+  const fixture = createConfirmedNeedReviewFixture();
+  render(
+    React.createElement(
       AtlasVNextProvider,
       null,
-      React.createElement(
-        "section",
-        { "aria-label": "Xác nhận nhu cầu" },
-        React.createElement(ConfirmedNeedTable, {
-          lines: [line],
-          drafts: { [line.confirmed_need_line_id]: draft },
-          errors: {},
-          editable: true,
-          onEdit: (_id, change) =>
-            setTimeout(
-              () =>
-                void act(() =>
-                  setDraft((current) => ({ ...current, ...change })),
-                ),
-              40,
-            ),
-        }),
-      ),
-    );
-  }
-  render(React.createElement(DelayedReasonTable));
-  const row =
-    'section[aria-label="Xác nhận nhu cầu"] table[aria-label="Nhu cầu xác nhận"] tbody tr:nth-child(1)';
-  assert.equal(
-    document.querySelector(`${row} input[aria-label^="Ghi chú"]`),
-    null,
+      React.createElement(ConfirmedNeedWorkbench, {
+        ...fixture,
+        authSubject: "operator",
+        initialServiceDate: fixture.batch.service_period.period_start,
+      }),
+    ),
   );
-  assert.equal(
-    document
-      .querySelector(`${row} [data-field="confirmation"]`)
-      ?.getAttribute("data-adjustment-state"),
-    "unchanged",
-  );
-  assert.equal(
-    screen.queryByRole("combobox", { name: "Lý do Ingredient 0" }),
-    null,
-  );
-  fireEvent.change(
-    screen.getByRole("textbox", { name: "Số lượng xác nhận Ingredient 0" }),
-    { target: { value: planningBrowser.minimalPlanningAdjustment(line) } },
-  );
-  await waitFor(() => {
-    assert.equal(
-      document
-        .querySelector(`${row} [data-field="confirmation"]`)
-        ?.getAttribute("data-adjustment-state"),
-      "valid",
-    );
-    assert.ok(screen.getByRole("combobox", { name: "Lý do Ingredient 0" }));
+  const line = fixture.batch.lines[0];
+  const input = await screen.findByRole("textbox", {
+    name: `Số lượng xác nhận ${line.ingredient.name}`,
   });
-  fireEvent.change(
-    screen.getByRole("combobox", { name: "Lý do Ingredient 0" }),
-    {
-      target: { value: "OPERATIONAL_QUANTITY_ADJUSTMENT" },
-    },
-  );
+  fireEvent.change(input, {
+    target: { value: planningBrowser.minimalPlanningAdjustment(line) },
+  });
+  const row = `[role="dialog"] [data-review-line-id=${JSON.stringify(line.confirmed_need_line_id)}]`;
+  assert.equal(document.querySelector(row), null);
+  fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
   await planningBrowser.waitForReasonNoteReady({
     evaluate: browserEvaluate,
     row,
     reason: "OPERATIONAL_QUANTITY_ADJUSTMENT",
     interval: 5,
-    timeout: 1000,
+    timeout: 3000,
   });
   const note = document.querySelector(`${row} input[aria-label^="Ghi chú"]`);
   assert.ok(note);
@@ -1033,15 +987,16 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
     <td data-field="identity">Ingredient ${index}</td><td data-field="unit">kg</td><td data-field="raw-requirement">1</td>
     <td data-field="operational-proposal">1</td><td data-field="confirmation" data-adjustment-state="unchanged"><input aria-label="Số lượng xác nhận ${index}" value="1"></td>
     <td data-field="delta" class="delta">—</td>
-    <td data-field="reason">Theo đề xuất</td>
+
   </tr>`,
   ).join("");
   document.body.innerHTML = `<section aria-label="Xác nhận nhu cầu">
     <table aria-label="Nhu cầu xác nhận"><tbody>${rows}</tbody></table>
-    <button disabled>Lưu</button>
+    <button>Lưu</button><div role="dialog" data-need-save-review><div data-review-line-id="0"></div><button disabled>Lưu điều chỉnh</button></div>
   </section>`;
   const root = document.querySelector('section[aria-label="Xác nhận nhu cầu"]');
   const first = root.querySelector("tbody tr");
+  const editor = root.querySelector("[data-review-line-id]");
   const timers = [
     setTimeout(() => {
       first.querySelector('input[aria-label^="Số lượng xác nhận"]').value =
@@ -1050,25 +1005,24 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
         .querySelector('[data-field="confirmation"]')
         .setAttribute("data-adjustment-state", "invalid");
       first.querySelector(".delta").textContent = "+0,01 kg";
-      first.querySelector('[data-field="reason"]').innerHTML =
-        `<select aria-label="Lý do 0">
+      editor.innerHTML = `<select aria-label="Lý do 0">
         <option value="PROPOSAL_ACCEPTED">Accepted</option>
         <option value="OPERATIONAL_QUANTITY_ADJUSTMENT">Adjusted</option>
       </select><input aria-label="Ghi chú 0" value="">`;
     }, 20),
     setTimeout(() => {
-      first.querySelector('select[aria-label^="Lý do"]').value =
+      editor.querySelector('select[aria-label^="Lý do"]').value =
         "OPERATIONAL_QUANTITY_ADJUSTMENT";
     }, 40),
     setTimeout(() => {
-      first.querySelector('input[aria-label^="Ghi chú"]').value =
+      editor.querySelector('input[aria-label^="Ghi chú"]').value =
         "Owner-approved Staging closeout verification: one minimal quantity edit; no Procurement release.";
       first
         .querySelector('[data-field="confirmation"]')
         .setAttribute("data-adjustment-state", "valid");
     }, 60),
     setTimeout(() => {
-      root.querySelector("button").disabled = false;
+      root.querySelector('[role="dialog"] button').disabled = false;
     }, 80),
   ];
   try {
@@ -2174,8 +2128,8 @@ test("Save click is one-shot and reopened review must match saved decisions", as
       clicks += 1;
       return true;
     },
-    scope: 'section[aria-label="Xác nhận nhu cầu"]',
-    label: "Lưu",
+    scope: '[role="dialog"][data-need-save-review]',
+    label: "Lưu điều chỉnh",
     gate: "save_once",
   });
   assert.equal(clicks, 1);

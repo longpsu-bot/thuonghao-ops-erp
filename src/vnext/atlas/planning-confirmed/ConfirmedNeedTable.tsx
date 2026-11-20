@@ -1,4 +1,4 @@
-import { Icon, Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
+import { Icon, Box, Button, Input, Table, Text } from "@chakra-ui/react";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import type { CSSProperties } from "react";
@@ -33,7 +33,6 @@ import {
 import {
   confirmedNeedSchool,
   confirmedNeedUnitLabel,
-  draftChanged,
   type ConfirmedNeedDraftError,
   historicalQuantity,
 } from "./confirmedNeedDraft";
@@ -43,14 +42,14 @@ export function ConfirmedNeedTable({
   drafts,
   errors,
   editable,
-  correctionReason,
+  onEditReason,
   onEdit,
 }: {
   lines: ConfirmedNeedLine[];
   drafts: Record<string, ConfirmedNeedDraftLine>;
   errors: Record<string, ConfirmedNeedDraftError>;
   editable: boolean;
-  correctionReason?: string;
+  onEditReason?: (line: ConfirmedNeedLine, trigger: HTMLButtonElement) => void;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   type SortKey = "school" | "ingredient" | "proposal";
@@ -133,7 +132,7 @@ export function ConfirmedNeedTable({
             "--atlas-confirmed-need-row-min-height": "46px",
           } as CSSProperties
         }
-        minW="var(--atlas-layout-confirmed-need-table-min, 1120px)"
+        minW="var(--atlas-layout-confirmed-need-table-min, 910px)"
         w="full"
         tableLayout="fixed"
         css={{
@@ -159,7 +158,7 @@ export function ConfirmedNeedTable({
               display: "grid",
               gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gridTemplateAreas:
-                '"identity identity" "ingredient ingredient" "proposal confirmation" "saved delta" "reason reason"',
+                '"identity identity" "ingredient ingredient" "proposal confirmation" "saved delta"',
               columnGap: "var(--atlas-spacing-md)",
               rowGap: "var(--atlas-spacing-xs)",
               padding: "var(--atlas-spacing-sm)",
@@ -194,11 +193,6 @@ export function ConfirmedNeedTable({
             "& td[data-field=delta]": {
               gridArea: "delta",
             },
-            "& td[data-field=reason]": {
-              gridArea: "reason",
-              paddingTop: "var(--atlas-spacing-sm)",
-              borderTop: "1px solid var(--atlas-colors-border-subtle)",
-            },
             // Row facts are visible; retain the input's existing accessible description.
             "& [data-quantity-context]": atlasVisuallyHidden,
           },
@@ -211,7 +205,6 @@ export function ConfirmedNeedTable({
           <Table.Column w="var(--atlas-confirmed-saved-width, 105px)" />
           <Table.Column w="var(--atlas-confirmed-quantity-width, 155px)" />
           <Table.Column w="var(--atlas-confirmed-delta-width, 110px)" />
-          <Table.Column w="var(--atlas-confirmed-reason-width, 210px)" />
         </Table.ColumnGroup>
         <Table.Header css={atlasRecordSortHeader}>
           <Table.Row zIndex="var(--atlas-layout-sticky-header-z, 3)">
@@ -264,12 +257,6 @@ export function ConfirmedNeedTable({
             >
               Thay đổi
             </Table.ColumnHeader>
-            <Table.ColumnHeader
-              h="var(--atlas-confirmed-need-header-height)"
-              py="var(--atlas-layout-zero, 0)"
-            >
-              Lý do điều chỉnh
-            </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -277,7 +264,7 @@ export function ConfirmedNeedTable({
             const draft =
               drafts[line.confirmed_need_line_id] ??
               initialConfirmedNeedDraft(line);
-            const changed = draftChanged(line, draft);
+            const saved = initialConfirmedNeedDraft(line);
             const historical = historicalQuantity(line);
             const error = errors[line.confirmed_need_line_id];
             const quantityInvalid = error?.field === "quantity";
@@ -304,12 +291,6 @@ export function ConfirmedNeedTable({
             );
             const duplicateRecipient =
               line.school.name.trim() === line.delivery_location.name.trim();
-            const showReasonChrome = Boolean(
-              adjusted ||
-              draft.reason_note ||
-              draft.reason_code !== "PROPOSAL_ACCEPTED" ||
-              (line.current_decision_id && changed),
-            );
             return (
               <Table.Row
                 key={line.confirmed_need_line_id}
@@ -361,6 +342,31 @@ export function ConfirmedNeedTable({
                   <Text data-role="ingredient-name" fontWeight="medium">
                     {line.ingredient.name}
                   </Text>
+                  {line.current_decision_id &&
+                    (saved.reason_code !== "PROPOSAL_ACCEPTED" ||
+                      saved.reason_note) && (
+                      <Box
+                        textStyle="helper"
+                        color="fg.muted"
+                        overflowWrap="anywhere"
+                      >
+                        {editable && !historical && onEditReason ? (
+                          <Button
+                            variant="tertiary"
+                            size="xs"
+                            aria-label={`Sửa lý do ${line.ingredient.name}`}
+                            onClick={(event) =>
+                              onEditReason(line, event.currentTarget)
+                            }
+                          >
+                            {confirmedNeedReasonLabels[saved.reason_code]}
+                          </Button>
+                        ) : (
+                          confirmedNeedReasonLabels[saved.reason_code]
+                        )}
+                        {saved.reason_note && <Text>{saved.reason_note}</Text>}
+                      </Box>
+                    )}
                 </Table.Cell>
                 <Table.Cell
                   data-field="operational-proposal"
@@ -500,7 +506,16 @@ export function ConfirmedNeedTable({
                       {confirmedNeedUnitLabel(line.controlled_unit)}
                     </Text>
                   </Box>
-                  {historical && (
+                  {quantityInvalid && (
+                    <Text
+                      id={description}
+                      textStyle="helper"
+                      color="status.danger"
+                    >
+                      {error.message}
+                    </Text>
+                  )}
+                  {historical && !quantityInvalid && (
                     <Text id={description} textStyle="helper" color="fg.muted">
                       Giữ nguyên độ chính xác gốc · chỉ đọc.
                     </Text>
@@ -540,87 +555,6 @@ export function ConfirmedNeedTable({
                       —
                     </Box>
                   )}
-                </Table.Cell>
-                <Table.Cell
-                  data-field="reason"
-                  minW="var(--atlas-layout-reason-width, 255px)"
-                >
-                  <Box display="grid" gap="xs">
-                    {(showReasonChrome ||
-                      (correctionReason !== undefined && changed)) && (
-                      <Text
-                        hideFrom="md"
-                        aria-hidden="true"
-                        textStyle="label"
-                        color="fg.muted"
-                      >
-                        Lý do điều chỉnh
-                      </Text>
-                    )}
-                    {correctionReason !== undefined ? (
-                      <Text textStyle="helper">
-                        {changed
-                          ? correctionReason || "Nhập lý do điều chỉnh ở trên."
-                          : "Giữ nguyên dòng đã xác nhận."}
-                      </Text>
-                    ) : showReasonChrome ? (
-                      <NativeSelect.Root disabled={!editable || historical}>
-                        <NativeSelect.Field
-                          aria-label={`Lý do ${line.ingredient.name}`}
-                          value={draft.reason_code}
-                          aria-invalid={error?.field === "reason"}
-                          aria-describedby={
-                            error?.field === "reason" ? description : undefined
-                          }
-                          onChange={(e) =>
-                            onEdit(line.confirmed_need_line_id, {
-                              reason_code: e.target
-                                .value as ConfirmedNeedDraftLine["reason_code"],
-                            })
-                          }
-                        >
-                          {Object.entries(confirmedNeedReasonLabels).map(
-                            ([code, label]) => (
-                              <option value={code} key={code}>
-                                {label}
-                              </option>
-                            ),
-                          )}
-                        </NativeSelect.Field>
-                        <NativeSelect.Indicator />
-                      </NativeSelect.Root>
-                    ) : (
-                      <Text textStyle="helper" color="fg.muted">
-                        Theo đề xuất
-                      </Text>
-                    )}
-                    {correctionReason === undefined && showReasonChrome && (
-                      <Input
-                        aria-label={`Ghi chú ${line.ingredient.name}`}
-                        placeholder="Ghi chú (tùy chọn)"
-                        aria-invalid={error?.field === "note"}
-                        aria-describedby={
-                          error?.field === "note" ? description : undefined
-                        }
-                        value={draft.reason_note}
-                        disabled={!editable || historical}
-                        onChange={(e) =>
-                          onEdit(line.confirmed_need_line_id, {
-                            reason_note: e.target.value,
-                          })
-                        }
-                      />
-                    )}
-                    {error && (
-                      <Text
-                        id={description}
-                        textStyle="helper"
-                        color="status.danger"
-                      >
-                        {error.message}
-                      </Text>
-                    )}
-                  </Box>
                 </Table.Cell>
               </Table.Row>
             );
