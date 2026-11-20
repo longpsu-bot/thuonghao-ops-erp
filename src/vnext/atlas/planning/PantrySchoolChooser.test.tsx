@@ -67,6 +67,10 @@ it("searches fifty Schools by accent-folded name/reference and commits only the 
   const input = screen.getByRole("combobox", { name: "Trường cần thêm hàng" });
   fireEvent.focus(input);
   expect(await screen.findAllByRole("option")).toHaveLength(40);
+  expect(input).toHaveAttribute("data-part", "anchor");
+  expect(document.getElementById(input.getAttribute("aria-controls")!)).toBe(
+    screen.getByRole("listbox"),
+  );
   fireEvent.change(input, { target: { value: "nguyen du" } });
   expect(input).toHaveValue("nguyen du");
   expect(screen.getAllByRole("option")).toHaveLength(3);
