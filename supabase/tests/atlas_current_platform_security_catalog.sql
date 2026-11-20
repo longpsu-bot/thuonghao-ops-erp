@@ -1824,16 +1824,14 @@ select is(
     'policy_count', 692,
     'policy_catalog_md5', '96d204baa9d4c35118428c5fc450dc9a',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 385,
-    -- Recipe history adds two private fixed-path invokers.
-    -- Existing owners, browser grants, RLS and policies remain pinned.
-    'private_function_catalog_md5', '6203a172c076495fe1b257db69bb739f',
-    'trigger_count', 128,
-    'trigger_catalog_md5', 'd4747e67295b9daf23e2939c1f0f5780',
-    -- Recipe history adds three read-runtime privileges; no browser grant.
-    -- Weekday defaults add one private validator EXECUTE and one column UPDATE.
-    'positive_target_grant_count', 1943,
-    'positive_target_grant_md5', 'f86ac8431f5b0b718d2c5dac38c8d174',
+    -- Need rounding adds the new-batch threshold and the exact proposal calculation.
+    'private_function_count', 388,
+    'private_function_catalog_md5', 'bfa2b15836fc2dab8a82237fa1a547a1',
+    'trigger_count', 129,
+    'trigger_catalog_md5', '9cc6337199b01dd5faa95a18b2d8baab',
+    -- Two calculation EXECUTEs and one threshold EXECUTE for internal runtimes.
+    'positive_target_grant_count', 1946,
+    'positive_target_grant_md5', '437edea48f09a4b5bdb957195028034f',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 123,
     'pa_06a_write_count', 15,

@@ -405,6 +405,21 @@ export function ConfirmedNeedSupportDetail({
                               )}{" "}
                               {confirmedNeedUnitLabel(line.controlled_unit)}
                             </Text>
+                            {line.proposal_whole_round_from && (
+                              <Text
+                                textStyle="helper"
+                                color="fg.muted"
+                                whiteSpace="normal"
+                              >
+                                Từ{" "}
+                                {exactQuantityDisplay(
+                                  line.proposal_whole_round_from,
+                                )}{" "}
+                                {confirmedNeedUnitLabel(line.controlled_unit)}{" "}
+                                sau bước trên, làm tròn đến số nguyên gần nhất
+                                (0,5 làm tròn lên).
+                              </Text>
+                            )}
                             <Text fontWeight="semibold">
                               Đề xuất vận hành:{" "}
                               {exactQuantityDisplay(

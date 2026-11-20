@@ -176,6 +176,7 @@ export type ConfirmedNeedLine = {
   theoretical_quantity: string;
   proposed_confirmed_quantity: string;
   proposal_rounding_step: string | null;
+  proposal_whole_round_from?: string | null;
   current_decision_id: string | null;
   current_decision_number: number | null;
   current_decision_kind: string | null;

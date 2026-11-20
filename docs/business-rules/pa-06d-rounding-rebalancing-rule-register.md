@@ -12,6 +12,8 @@ The three tables below form one register. Join them by Rule ID. “Legacy” des
 
 ## 2. Rule identity, formula, and implementation evidence
 
+The [20 November amendment to D-046](../decisions/decision-planning-operational-proposal.md) adopts QRR-006/007 for new school-catering Draft proposals after the Ingredient ceiling. The batch snapshot controls readback. Earlier recommendations below record the historical evaluation of legacy Procurement.
+
 | Rule ID | Rule name                        | Domain owner                  | Lifecycle stage       | Legacy behavior                                                                                   | Active implementation                                   | Inputs                                         | Formula                                                         |
 | ------- | -------------------------------- | ----------------------------- | --------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------- |
 | QRR-001 | Planning operational proposal    | Planning/master data          | Draft Need review     | No separate Planning proposal rule; master uses purchase-orderable quantity                       | Atlas H0 materializer under D-046                       | Grouped raw need, Ingredient step/version, H1A | `ceil(grouped_raw/Ingredient.order_step)*Ingredient.order_step` |

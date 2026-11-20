@@ -3412,6 +3412,8 @@ select (jsonb_populate_record(null::atlas_planning.planning_quantity_policy_revi
  'revision_number',1,'predecessor_policy_revision_id',null))).*
 from atlas_planning.planning_quantity_policy_revisions r where r.policy_revision_status='ACTIVE'
  and r.unit_id='e4100000-0000-0000-0000-000000000006';
+update atlas_planning.confirmed_need_batches set proposal_whole_round_from=null
+where confirmed_need_batch_id=(select batch_id::uuid from d047_before);
 update atlas_planning.confirmed_need_line_revisions
 set proposal_rounding_step=null,proposal_rounding_ingredient_version=null
 where confirmed_need_batch_id=(select batch_id::uuid from d047_before);
