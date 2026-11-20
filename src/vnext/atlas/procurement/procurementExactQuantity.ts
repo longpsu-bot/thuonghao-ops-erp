@@ -26,26 +26,6 @@ export function sumExactQuantities(values: string[]): bigint | null {
   return sum;
 }
 
-/** Plan a share in the same millionths used by the allocation command. */
-export function quantityFromPercent(
-  need: bigint,
-  input: string,
-): bigint | null {
-  const percent = parseExactQuantity(input);
-  const hundred = 100n * SCALE;
-  return percent === null || percent > hundred
-    ? null
-    : (need * percent + hundred / 2n) / hundred;
-}
-
-export function displayPercent(allocated: bigint | null, need: bigint): string {
-  if (allocated === null || need === 0n) return "";
-  return formatExactQuantityForOperator(
-    (allocated * 100n * SCALE + need / 2n) / need,
-    ".",
-  );
-}
-
 export function formatExactQuantityForOperator(
   value: string | bigint | null,
   separator: "." | "," = ",",

@@ -13,13 +13,15 @@ import {
   Icon,
   IconButton,
   NativeSelect,
+  Portal,
   Stack,
   Text,
   Textarea,
 } from "@chakra-ui/react";
 import { Info, Plus, Trash, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
-import type { CSSProperties } from "react";
+import type { ReactNode } from "react";
+import { useAtlasPortalContainer } from "../AtlasVNextProvider";
 import {
   procurementOperatorMessages,
   allocationFamilyUnitLabel,
@@ -30,8 +32,6 @@ import {
 import {
   formatExactQuantityForOperator as quantity,
   parseExactQuantity,
-  displayPercent,
-  quantityFromPercent,
   sumExactQuantities,
   serializeExactQuantity,
 } from "./procurementExactQuantity";
@@ -47,6 +47,7 @@ const normalizedSupplierNote = (note: string | null | undefined) =>
 
 export function ProcurementSupplierDetail({
   row,
+  children,
   disabled,
   suspendSave = false,
   onSave,
@@ -56,12 +57,14 @@ export function ProcurementSupplierDetail({
   onWorkspaceStatus,
 }: AtlasModuleExitProps & {
   row: AllocationFamilyRow;
+  children?: ReactNode;
   disabled: boolean;
   suspendSave?: boolean;
   onSave: (splits: SupplierSplitInput[]) => void;
   onClose: () => void;
   returnFocusEl?: () => HTMLElement | null;
 }) {
+  const portal = useAtlasPortalContainer();
   const quantityContextId = useId();
   const supplierColumns = "minmax(0, 1fr) 228px minmax(260px, 1.4fr)";
   const eligible = (id: string) =>
@@ -87,10 +90,6 @@ export function ProcurementSupplierDetail({
         ]
       : [];
   const [draft, setDraft] = useState<SupplierSplitInput[]>(() => baseline);
-  const [percentEdit, setPercentEdit] = useState<{
-    id: string;
-    text: string;
-  } | null>(null);
   function setQuantity(id: string, value: string) {
     setDraft((values) =>
       values.map((split) =>
@@ -294,27 +293,11 @@ export function ProcurementSupplierDetail({
       role="region"
       aria-label={`Phân bổ ${row.ingredient_name}`}
       direction="column"
-      style={
-        {
-          "--atlas-procurement-detail-desktop-max-height":
-            "var(--atlas-procurement-editor-max-height, max(360px, calc(100dvh - 320px)))",
-        } as CSSProperties
-      }
       minW="var(--atlas-layout-zero, 0)"
       minH="var(--atlas-layout-zero, 0)"
-      h={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
-      alignSelf="start"
+      maxH="var(--atlas-allocation-dialog-height, calc(100dvh - 2rem))"
       bg="bg.workbench"
-      borderColor="border.subtle"
-      borderWidth={{
-        base: "var(--atlas-layout-zero, 0)",
-        lg: "var(--atlas-layout-edge, 1px)",
-      }}
-      borderRadius={{ base: "var(--atlas-layout-zero, 0)", lg: "workbench" }}
-      maxH={{
-        base: "full",
-        xl: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
-      }}
+      borderRadius="workbench"
     >
       <Box id={`${quantityContextId}-need`} p="md" pb="sm" flexShrink="0">
         <Heading
@@ -381,6 +364,7 @@ export function ProcurementSupplierDetail({
         flex="0 1 auto"
         minW="var(--atlas-layout-zero, 0)"
       >
+        {children}
         {derived && !dirty && (
           <Text color="fg.muted" textStyle="helper">
             Mặc định #{derived.supplier.priority}
@@ -558,56 +542,27 @@ export function ProcurementSupplierDetail({
                     </IconButton>
                   )}
                 </Box>
-                {!locked && need !== null && need > 0n && (
-                  <Flex gap="xs" align="center" wrap="wrap">
-                    <Input
-                      id={`${quantityContextId}-${split.supplier_id}-percent`}
-                      aria-label={`Tỷ lệ phân bổ ${supplier.supplier_name} (%)`}
-                      inputMode="decimal"
-                      textAlign="end"
-                      width="var(--atlas-allocation-percent-width, 12ch)"
-                      value={
-                        percentEdit?.id === split.supplier_id
-                          ? percentEdit.text
-                          : displayPercent(allocated, need)
-                      }
-                      onChange={(event) => {
-                        const text = event.target.value;
-                        setPercentEdit({ id: split.supplier_id, text });
-                        const amount = quantityFromPercent(need, text);
-                        setQuantity(
-                          split.supplier_id,
-                          amount === null ? "" : quantity(amount, "."),
-                        );
+                {!locked &&
+                  draft.length > 1 &&
+                  balance !== null &&
+                  balance >= 0n &&
+                  balance !== allocated && (
+                    <Button
+                      variant="utility"
+                      size="sm"
+                      aria-label={`Tự cân bằng cho ${supplier.supplier_name}: ${quantity(balance)} ${allocationFamilyUnitLabel(row)}`}
+                      onClick={() => {
+                        pendingFocus.current = `${split.supplier_id}:quantity`;
+                        setQuantity(split.supplier_id, quantity(balance, "."));
                       }}
-                      onBlur={() => setPercentEdit(null)}
-                    />
-                    <Text aria-hidden="true">%</Text>
-                    {draft.length > 1 &&
-                      balance !== null &&
-                      balance >= 0n &&
-                      balance !== allocated && (
-                        <Button
-                          variant="utility"
-                          size="sm"
-                          aria-label={`Gán phần còn lại cho ${supplier.supplier_name}`}
-                          onClick={() =>
-                            setQuantity(
-                              split.supplier_id,
-                              quantity(balance, "."),
-                            )
-                          }
-                        >
-                          Gán phần còn lại
-                        </Button>
-                      )}
-                  </Flex>
-                )}
+                    >
+                      Tự cân bằng · {quantity(balance)}{" "}
+                      {allocationFamilyUnitLabel(row)}
+                    </Button>
+                  )}
                 {invalid && (
                   <Field.ErrorText>
-                    {percentEdit?.id === split.supplier_id
-                      ? "Nhập tỷ lệ từ 0 đến 100%, tối đa 6 chữ số thập phân."
-                      : "Nhập số không âm, tối đa 6 chữ số thập phân."}
+                    Nhập số không âm, tối đa 6 chữ số thập phân.
                   </Field.ErrorText>
                 )}
               </Field.Root>
@@ -848,42 +803,47 @@ export function ProcurementSupplierDetail({
         lazyMount
         unmountOnExit
       >
-        <Dialog.Backdrop
-          bg="bg.navigation"
-          opacity="var(--atlas-layout-backdrop-opacity, 0.45)"
-          animation="var(--atlas-layout-motion, none)"
-        />
-        <Dialog.Positioner p="md">
-          <Dialog.Content
-            bg="bg.workbench"
-            color="fg.default"
-            borderRadius="workbench"
-            boxShadow="var(--atlas-layout-shadow, none)"
-          >
-            <Dialog.Header>
-              <Dialog.Title textStyle="section">
-                Có thay đổi phân bổ chưa lưu
-              </Dialog.Title>
-            </Dialog.Header>
-            <Dialog.Body>Đóng và bỏ các thay đổi này?</Dialog.Body>
-            <Dialog.Footer flexWrap="wrap">
-              <Button ref={cancelButton} onClick={() => setDiscardOpen(false)}>
-                Tiếp tục chỉnh sửa
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  setDiscardOpen(false);
-                  const next = pendingExit.current;
-                  pendingExit.current = null;
-                  if (!disabled) next?.();
-                }}
-              >
-                Bỏ thay đổi và đóng
-              </Button>
-            </Dialog.Footer>
-          </Dialog.Content>
-        </Dialog.Positioner>
+        <Portal container={portal}>
+          <Dialog.Backdrop
+            bg="bg.navigation"
+            opacity="var(--atlas-layout-backdrop-opacity, 0.45)"
+            animation="var(--atlas-layout-motion, none)"
+          />
+          <Dialog.Positioner p="md">
+            <Dialog.Content
+              bg="bg.workbench"
+              color="fg.default"
+              borderRadius="workbench"
+              boxShadow="var(--atlas-layout-shadow, none)"
+            >
+              <Dialog.Header>
+                <Dialog.Title textStyle="section">
+                  Có thay đổi phân bổ chưa lưu
+                </Dialog.Title>
+              </Dialog.Header>
+              <Dialog.Body>Đóng và bỏ các thay đổi này?</Dialog.Body>
+              <Dialog.Footer flexWrap="wrap">
+                <Button
+                  ref={cancelButton}
+                  onClick={() => setDiscardOpen(false)}
+                >
+                  Tiếp tục chỉnh sửa
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setDiscardOpen(false);
+                    const next = pendingExit.current;
+                    pendingExit.current = null;
+                    if (!disabled) next?.();
+                  }}
+                >
+                  Bỏ thay đổi và đóng
+                </Button>
+              </Dialog.Footer>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
       </Dialog.Root>
     </Flex>
   );

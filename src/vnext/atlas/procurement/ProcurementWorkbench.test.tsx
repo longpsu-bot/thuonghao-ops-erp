@@ -79,6 +79,33 @@ const workbar = () =>
 const workbarControl = <Element extends HTMLElement>(selector: string) =>
   workbar().querySelector<Element>(selector)!;
 describe("Procurement vNext operator workbench", () => {
+  it("keeps a dirty modal draft on sibling invalidation until staff discard it", async () => {
+    const fixture = createProcurementReviewFixture("manual_split");
+    const read = vi.spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations");
+    const content = (revision: number) => (
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          freshnessRevision={revision}
+        />
+      </AtlasVNextProvider>
+    );
+    const view = render(content(0));
+    fireEvent.click(await action());
+    const note = openSupplierNote("NCC An Phú");
+    fireEvent.change(note, { target: { value: "Giao trước 05:30" } });
+    view.rerender(content(1));
+    expect(note).toHaveValue("Giao trước 05:30");
+    expect(read).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Bỏ thay đổi và đóng" }),
+    );
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+  });
   it("guards a retained dirty allocation before applying the continued School/date context", async () => {
     const fixture = createProcurementReviewFixture("manual_split");
     const read = vi.spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations");
@@ -116,7 +143,9 @@ describe("Procurement vNext operator workbench", () => {
         name: "Áp dụng ngữ cảnh nhu cầu và tải lại",
       }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", {
+      name: "Có thay đổi phân bổ chưa lưu",
+    });
     expect(read.mock.calls.length).toBe(before);
     expect(dialog).toHaveTextContent(/chưa lưu/i);
     fireEvent.click(
@@ -374,9 +403,9 @@ describe("Procurement vNext operator workbench", () => {
     });
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByTestId("procurement-master-detail")).toHaveStyle({
-      "--atlas-allocation-directory-width": "340px",
-    });
+    expect(
+      await screen.findByRole("dialog", { name: "Phân bổ Gạo thơm" }),
+    ).toBeVisible();
   });
 
   it("shows stage identity before job tabs and focuses the visible stage heading", async () => {
@@ -445,8 +474,8 @@ describe("Procurement vNext operator workbench", () => {
     });
     fireEvent.click(disclosure);
     fireEvent.click(await action());
-    expect(workbar()).not.toBeVisible();
-    expect(disclosure).not.toBeVisible();
+    expect(workbar()).toBeVisible();
+    expect(disclosure).toBeDisabled();
     expect(
       workbarControl<HTMLSelectElement>('select[aria-label="Ngoại lệ"]'),
     ).toBeDisabled();
@@ -525,7 +554,7 @@ describe("Procurement vNext operator workbench", () => {
   });
 
   it.each(["busy", "locked", "selected"] as const)(
-    "collapses but retains the locked 390px scope controls when Procurement is %s",
+    "retains the locked 390px scope controls behind the dialog when Procurement is %s",
     async (state) => {
       Object.defineProperty(window, "innerWidth", {
         configurable: true,
@@ -560,7 +589,7 @@ describe("Procurement vNext operator workbench", () => {
       }
       if (state === "locked")
         await screen.findByRole("button", { name: "Tải lại để xác nhận" });
-      await waitFor(() => expect(workbar()).not.toBeVisible());
+      await waitFor(() => expect(workbar()).toBeVisible());
       expect(
         workbarControl<HTMLButtonElement>(
           'button[aria-label="Làm mới dữ liệu"]',
@@ -602,7 +631,7 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(await action());
     const input = screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" });
     fireEvent.change(input, { target: { value: "48,500001" } });
-    expect(workbar()).not.toBeVisible();
+    expect(workbar()).toBeVisible();
     expect(
       workbarControl<HTMLButtonElement>(
         'button[aria-label="Mở lịch — Khoảng ngày"]',
@@ -633,18 +662,28 @@ describe("Procurement vNext operator workbench", () => {
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(
+        await screen.findByRole("dialog", {
+          name: "Có thay đổi phân bổ chưa lưu",
+        }),
+      ).getByRole("button", {
         name: "Tiếp tục chỉnh sửa",
       }),
     );
     await waitFor(() =>
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      expect(
+        screen.queryByRole("dialog", { name: "Có thay đổi phân bổ chưa lưu" }),
+      ).not.toBeInTheDocument(),
     );
     expect(input).toHaveValue("48,500001");
     expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(
+        await screen.findByRole("dialog", {
+          name: "Có thay đổi phân bổ chưa lưu",
+        }),
+      ).getByRole("button", {
         name: "Bỏ thay đổi và đóng",
       }),
     );
@@ -720,6 +759,10 @@ describe("Procurement vNext operator workbench", () => {
         screen.queryByText("Đang chỉnh sửa · chưa lưu"),
       ).not.toBeInTheDocument(),
     );
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    fireEvent.click(await action());
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("48.5");
@@ -740,6 +783,10 @@ describe("Procurement vNext operator workbench", () => {
       allocated_quantity: "60.000000",
       supplier_note: "Giao trước 05:30",
     });
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    fireEvent.click(await action());
     await waitFor(() =>
       expect(openSupplierNote("NCC An Phú")).toHaveValue("Giao trước 05:30"),
     );
@@ -768,7 +815,10 @@ describe("Procurement vNext operator workbench", () => {
       ),
     ).toBeVisible();
     expect(screen.getByText(/Chưa xác nhận kết quả/)).toBeVisible();
-    expect(recovery).toBeEnabled();
+    const retryRead = screen.getByRole("button", {
+      name: "Tải lại để xác nhận",
+    });
+    expect(retryRead).toBeEnabled();
     expect(
       workbarControl<HTMLButtonElement>('button[aria-label="Làm mới dữ liệu"]'),
     ).toBeDisabled();
@@ -779,7 +829,7 @@ describe("Procurement vNext operator workbench", () => {
       /ACCESS_DENIED|NETWORK_FAILURE|private-|fingerprint/,
     );
     expect(save).toHaveBeenCalledTimes(1);
-    fireEvent.click(recovery);
+    fireEvent.click(retryRead);
     await action();
     await waitFor(() =>
       expect(
@@ -958,7 +1008,11 @@ describe("Procurement vNext operator workbench", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     fireEvent.click(
-      within(await screen.findByRole("dialog")).getByRole("button", {
+      within(
+        await screen.findByRole("dialog", {
+          name: "Có thay đổi phân bổ chưa lưu",
+        }),
+      ).getByRole("button", {
         name: "Bỏ thay đổi và đóng",
       }),
     );
@@ -978,7 +1032,9 @@ describe("Procurement vNext operator workbench", () => {
       },
     );
     await userEvent.click(screen.getByRole("button", { name: "Đóng" }));
-    const cancelled = await screen.findByRole("dialog");
+    const cancelled = await screen.findByRole("dialog", {
+      name: "Có thay đổi phân bổ chưa lưu",
+    });
     await userEvent.click(
       within(cancelled).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
@@ -988,7 +1044,9 @@ describe("Procurement vNext operator workbench", () => {
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
     ).toHaveValue("20");
     await userEvent.click(screen.getByRole("button", { name: "Đóng" }));
-    const discarded = await screen.findByRole("dialog");
+    const discarded = await screen.findByRole("dialog", {
+      name: "Có thay đổi phân bổ chưa lưu",
+    });
     await userEvent.click(
       within(discarded).getByRole("button", { name: "Bỏ thay đổi và đóng" }),
     );
