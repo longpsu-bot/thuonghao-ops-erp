@@ -39,7 +39,6 @@ def dirty(page, kind):
         control.fill("31")
         page.get_by_role("button", name="Lưu", exact=True).click()
         dialog = page.get_by_role("dialog", name="Lý do điều chỉnh")
-        dialog.get_by_role("combobox").first.select_option("OTHER")
         dialog.get_by_role("textbox").first.fill("Điều chỉnh theo ghi nhận tại bếp")
         dialog.get_by_role("button", name="Quay lại chỉnh sửa").click()
     elif kind == "procurement":

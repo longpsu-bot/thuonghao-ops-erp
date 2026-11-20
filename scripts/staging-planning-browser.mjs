@@ -354,7 +354,7 @@ export function assertFirstSaveTransition({
         line.confirmed_need_line_id !== adjustedLineId ||
         exact(line.confirmed_quantity_after) !== exact(adjustedQuantity) ||
         decision.reason_code !== "OPERATIONAL_QUANTITY_ADJUSTMENT" ||
-        decision.reason_note !== note
+        (after.save_audit_reason ?? decision.reason_note) !== note
       )
         fail();
     } else {
@@ -408,8 +408,8 @@ export function assertPreSaveGate(state) {
   if (
     state?.rendered_rows !== 248 ||
     state.quantity_adjustment_rows !== 1 ||
-    state.adjustment_reason_rows !== 1 ||
-    state.nonblank_note_rows !== 1 ||
+    state.reason_inputs !== 1 ||
+    state.nonblank_reasons !== 1 ||
     state.invalid_controls !== 0 ||
     !state.save_present ||
     !state.save_enabled
@@ -436,23 +436,6 @@ export async function waitForPreGenerateSurface({
       }
     },
     "pre_generate",
-    timeout,
-    interval,
-  );
-}
-export async function waitForReasonNoteReady({
-  evaluate,
-  row,
-  reason,
-  timeout = 60000,
-  interval = 300,
-}) {
-  return until(
-    () =>
-      evaluate(
-        `(()=>{const root=document.querySelector(${JSON.stringify(row)});const select=root?.querySelector('select[aria-label^="Lý do"]');const note=root?.querySelector('input[aria-label^="Ghi chú"]');return Boolean(select?.value===${JSON.stringify(reason)}&&note&&!note.disabled);})()`,
-      ),
-    "note_input",
     timeout,
     interval,
   );
@@ -690,8 +673,7 @@ export function assertPostSaveResumeReview(review, expectedFingerprint = null) {
       const step = line.effective_policy?.planning_step;
       if (
         decision.reason_code !== "OPERATIONAL_QUANTITY_ADJUSTMENT" ||
-        typeof decision.reason_note !== "string" ||
-        !decision.reason_note.trim() ||
+        !(review.save_audit_reason ?? decision.reason_note)?.trim() ||
         exact(decision.confirmed_quantity_after) ===
           exact(decision.proposed_quantity_before) ||
         !step ||
@@ -708,7 +690,7 @@ export function assertPostSaveResumeReview(review, expectedFingerprint = null) {
 }
 
 export function preSaveGateStateExpression() {
-  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const review=document.querySelector(${JSON.stringify(NEED_REVIEW)});const edits=review?[...review.querySelectorAll('[data-review-line-id]')]:[];const save=review?[...review.querySelectorAll('button')].find(e=>e.textContent.trim()==='Lưu điều chỉnh'):null;const deltaText=r=>${ROW_DELTA_TEXT};return {rendered_rows:rows.length,quantity_delta_rows:rows.filter(r=>{const text=deltaText(r);return Boolean(text&&text!=='—');}).length,quantity_adjustment_rows:rows.filter(r=>r.querySelector('[data-field="confirmation"][data-adjustment-state="valid"]')).length,adjustment_reason_rows:edits.filter(r=>r.querySelector('select[aria-label^="Lý do"]')?.value==='OPERATIONAL_QUANTITY_ADJUSTMENT').length,nonblank_note_rows:edits.filter(r=>(r.querySelector('input[aria-label^="Ghi chú"]')?.value??'').trim()!=='').length,invalid_controls:root?.querySelectorAll('[aria-invalid="true"]').length??0,save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true')};})()`;
+  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const review=document.querySelector(${JSON.stringify(NEED_REVIEW)});const reasons=review?[...review.querySelectorAll('input[data-need-save-reason]')]:[];const save=review?[...review.querySelectorAll('button')].find(e=>e.textContent.trim()==='Lưu điều chỉnh'):null;const deltaText=r=>${ROW_DELTA_TEXT};return {rendered_rows:rows.length,quantity_delta_rows:rows.filter(r=>{const text=deltaText(r);return Boolean(text&&text!=='—');}).length,quantity_adjustment_rows:rows.filter(r=>r.querySelector('[data-field="confirmation"][data-adjustment-state="valid"]')).length,reason_inputs:reasons.length,nonblank_reasons:reasons.filter(r=>r.value.trim()!=='').length,invalid_controls:root?.querySelectorAll('[aria-invalid="true"]').length??0,save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true')};})()`;
 }
 
 export function editableConfirmedNeedCandidateExpression() {
@@ -775,36 +757,17 @@ export async function prepareConfirmedNeedEdit({
     `(()=>{const button=[...document.querySelectorAll(${JSON.stringify(`${CONFIRMED_WORKBENCH} button[aria-haspopup="dialog"]:not(:disabled)`)})].find(b=>b.textContent.trim()==='Lưu');if(!button)return false;button.click();return true;})()`,
   );
   if (!opened) throw new Error("BROWSER_GATE_adjustment_review");
-  const editor = `${NEED_REVIEW} [data-review-line-id=${JSON.stringify(candidate.lineId)}]`;
+  const reasonField = `${NEED_REVIEW} input[data-need-save-reason]`;
   await until(
     () =>
       evaluate(
-        `Boolean(document.querySelector(${JSON.stringify(`${editor} select[aria-label^="Lý do"]`)}))`,
+        `Boolean(document.querySelector(${JSON.stringify(reasonField)}))`,
       ),
-    "reason_input",
+    "shared_reason",
     timeout,
     interval,
   );
-  await evaluate(
-    controlledInputExpression(
-      `${editor} select[aria-label^="Lý do"]`,
-      "OPERATIONAL_QUANTITY_ADJUSTMENT",
-      "select",
-    ),
-  );
-  await waitForReasonNoteReady({
-    evaluate,
-    row: editor,
-    reason: "OPERATIONAL_QUANTITY_ADJUSTMENT",
-    timeout,
-    interval,
-  });
-  await evaluate(
-    controlledInputExpression(
-      `${editor} input[aria-label^="Ghi chú"]`,
-      REHEARSAL_NOTE,
-    ),
-  );
+  await evaluate(controlledInputExpression(reasonField, REHEARSAL_NOTE));
   const preSave = await waitForPreSaveSurface({ evaluate, timeout, interval });
   return {
     line,

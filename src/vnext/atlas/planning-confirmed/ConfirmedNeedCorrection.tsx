@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Dialog,
-  NativeSelect,
   Input,
   Field,
   Flex,
@@ -13,9 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { useRef, useState, type ReactNode } from "react";
 import {
-  confirmedNeedReasonLabels,
   type ConfirmedNeedLine,
-  type ConfirmedNeedDraftLine,
   exactQuantityDisplay,
   normalizeConfirmedNeedQuantity,
 } from "../bridges/confirmedNeed";
@@ -212,7 +209,7 @@ export function ConfirmedNeedSaveReview({
   onClose: () => void;
   finalFocusEl: () => HTMLElement | null;
 }) {
-  const firstReason = useRef<HTMLSelectElement>(null);
+  const sharedReason = useRef<HTMLInputElement>(null);
   const reasonField = useRef<HTMLTextAreaElement>(null);
   return (
     <Dialog.Root
@@ -221,7 +218,7 @@ export function ConfirmedNeedSaveReview({
         if (!event.open) onClose();
       }}
       initialFocusEl={() =>
-        c.correctionMode ? reasonField.current : firstReason.current
+        c.correctionMode ? reasonField.current : sharedReason.current
       }
       finalFocusEl={finalFocusEl}
       motionPreset="none"
@@ -239,7 +236,11 @@ export function ConfirmedNeedSaveReview({
           color="fg.default"
           mx="md"
           borderRadius="workbench"
-          maxW="var(--atlas-correction-review-width, 760px)"
+          maxW={
+            c.correctionMode
+              ? "var(--atlas-correction-review-width, 760px)"
+              : "var(--atlas-dialog-width, 480px)"
+          }
         >
           <Dialog.Header>
             <Dialog.Title>
@@ -313,91 +314,21 @@ export function ConfirmedNeedSaveReview({
                 </Box>
               </>
             ) : (
-              lines.map((line, index) => {
-                const id = line.confirmed_need_line_id;
-                const draft = c.drafts[id]!;
-                const error = c.errors[id];
-                const unit = confirmedNeedUnitLabel(line.controlled_unit);
-                return (
-                  <Box
-                    key={id}
-                    data-review-line-id={id}
-                    as="fieldset"
-                    minW="var(--atlas-layout-zero, 0)"
-                    py="sm"
-                    borderTopWidth={
-                      index ? "var(--atlas-layout-edge, 1px)" : undefined
-                    }
-                    borderColor="border.subtle"
-                  >
-                    <Box as="legend" fontWeight="semibold">
-                      {line.ingredient.name}
-                    </Box>
-                    <Text textStyle="helper" color="fg.muted">
-                      {line.school.name}
-                      {line.school.name !== line.delivery_location.name &&
-                        ` · ${line.delivery_location.name}`}{" "}
-                      · {line.service_date.split("-").reverse().join("/")}
-                    </Text>
-                    <Text my="xs" textStyle="quantityInline">
-                      {exactQuantityDisplay(
-                        line.confirmed_quantity_after ??
-                          line.proposed_confirmed_quantity,
-                      )}{" "}
-                      →{" "}
-                      {exactQuantityDisplay(
-                        normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
-                          draft.exact_quantity,
-                      )}{" "}
-                      {unit}
-                    </Text>
-                    <Flex gap="sm" direction={{ base: "column", md: "row" }}>
-                      <Field.Root flex="1" invalid={error?.field === "reason"}>
-                        <Field.Label>Lý do</Field.Label>
-                        <NativeSelect.Root>
-                          <NativeSelect.Field
-                            ref={index === 0 ? firstReason : undefined}
-                            aria-label={`Lý do ${line.ingredient.name}`}
-                            value={draft.reason_code}
-                            onChange={(event) =>
-                              c.edit(id, {
-                                reason_code: event.target
-                                  .value as ConfirmedNeedDraftLine["reason_code"],
-                              })
-                            }
-                          >
-                            {Object.entries(confirmedNeedReasonLabels).map(
-                              ([code, label]) => (
-                                <option key={code} value={code}>
-                                  {label}
-                                </option>
-                              ),
-                            )}
-                          </NativeSelect.Field>
-                          <NativeSelect.Indicator />
-                        </NativeSelect.Root>
-                        <Field.ErrorText>{error?.message}</Field.ErrorText>
-                      </Field.Root>
-                      <Field.Root flex="1" invalid={error?.field === "note"}>
-                        <Field.Label>Ghi chú (tùy chọn)</Field.Label>
-                        <Input
-                          aria-label={`Ghi chú ${line.ingredient.name}`}
-                          value={draft.reason_note}
-                          onChange={(event) =>
-                            c.edit(id, { reason_note: event.target.value })
-                          }
-                        />
-                        <Field.ErrorText>{error?.message}</Field.ErrorText>
-                      </Field.Root>
-                    </Flex>
-                  </Box>
-                );
-              })
-            )}
-            {!c.correctionMode && c.changedLines.length > 1 && (
-              <Text textStyle="helper" color="fg.muted" mt="sm">
-                Tổng số dòng sẽ lưu: {c.changedLines.length}.
-              </Text>
+              <>
+                <Dialog.Description mb="sm">
+                  {lines.length} dòng điều chỉnh trong lần lưu này.
+                </Dialog.Description>
+                <Field.Root>
+                  <Field.Label>Lý do chung (tùy chọn)</Field.Label>
+                  <Input
+                    data-need-save-reason=""
+                    ref={sharedReason}
+                    maxLength={500}
+                    value={c.saveReason}
+                    onChange={(event) => c.setSaveReason(event.target.value)}
+                  />
+                </Field.Root>
+              </>
             )}
           </Dialog.Body>
           <Dialog.Footer flexWrap="wrap">

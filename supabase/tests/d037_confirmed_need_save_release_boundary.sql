@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
-select plan(39);
+select plan(42);
 
 select has_function('atlas_api', 'save_confirmed_needs', array['jsonb'],
   'D037-01 Save v2 is public');
@@ -70,7 +70,7 @@ create function pg_temp.d037_command(
     'expected_version', p_version,
     'requested_by_auth_subject', 'b6000000-0000-0000-0000-000000000101'::uuid,
     'requested_at', transaction_timestamp() - interval '1 second',
-    'reason_code', p_reason, 'reason_note', null,
+    'reason_code', p_reason, 'reason_note', case when p_key='d037-save' then 'Kitchen adjustment' end,
     'payload', jsonb_build_object(
       'confirmed_need_batch_id', 'b6500000-0000-0000-0000-000000000050'::uuid)
       || case when p_lines is null then '{}'::jsonb
@@ -334,5 +334,13 @@ select ok((select response #>> '{workbench,allowed_actions,release_confirmed_nee
   from d037_results where name = 'read_after_invalidated_handoff'),
   'D037-33 v2 eligibility does not classify invalidated Handoff history as a conflict');
 
+select is((select reason_note from atlas_audit.audit_events where command_id='b6710000-0000-0000-0000-000000000002'),
+  'Kitchen adjustment','Save records one shared reason on its audit event, including after replay');
+select is((select count(*) from atlas_planning.confirmed_need_line_decisions where command_id='b6710000-0000-0000-0000-000000000002' and reason_note is not null),
+  0::bigint,'Save never copies the command reason to individual line decisions');
+select ok(atlas_core.d037_validate_command(
+  pg_temp.d037_command('RMVP-05.v2',gen_random_uuid(),'invalid-note',1,'CONFIRMED_NEED_SAVED',
+    (select pg_temp.d037_lines(response -> 'workbench') from d037_results where name='read')) || '{"reason_note":123}'::jsonb,
+  'save_confirmed_needs') is not null,'Save rejects a non-text reason');
 select * from finish();
 rollback;

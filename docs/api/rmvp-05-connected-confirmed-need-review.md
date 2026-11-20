@@ -1,5 +1,9 @@
 # RMVP-05 Connected Confirmed Need Review API Contract
 
+## Shared adjustment reason for ordinary Save (20 November 2026)
+
+`save_confirmed_needs` v2 accepts a nullable command-level `reason_note` of up to 500 characters. The operator enters it once for the save. PostgreSQL records it on the batch audit event identified by the returned `audit_id`. Each line retains its own decision code and any existing workbook note. Proposal-only saves submit a null command note. Released corrections continue to use the v3 contract.
+
 ## B1 source disclosure amendment — 18 October 2026
 
 The existing Need Generation read supplies original Recipe R, Bổ sung B, derived

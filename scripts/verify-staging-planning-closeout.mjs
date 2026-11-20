@@ -852,7 +852,7 @@ select jsonb_build_object(
         and decision.decision_kind='ADJUSTED_QUANTITY_CONFIRMED'
         and decision.confirmed_quantity_after<>decision.proposed_quantity_before
         and decision.reason_code='OPERATIONAL_QUANTITY_ADJUSTMENT'
-        and nullif(btrim(decision.reason_note),'') is not null
+        and (nullif(btrim(decision.reason_note),'') is not null or exists (select 1 from atlas_audit.audit_events audit where audit.command_id=decision.command_id and audit.aggregate_id=b.confirmed_need_batch_id and nullif(btrim(audit.reason_note),'') is not null))
         and decision.planning_step>0
         and mod(decision.confirmed_quantity_after,decision.planning_step)=0),
     'acceptance_count', (select count(*) from current_decisions decision
@@ -869,7 +869,7 @@ select jsonb_build_object(
         (decision.decision_kind='ADJUSTED_QUANTITY_CONFIRMED'
          and decision.confirmed_quantity_after<>decision.proposed_quantity_before
          and decision.reason_code='OPERATIONAL_QUANTITY_ADJUSTMENT'
-         and nullif(btrim(decision.reason_note),'') is not null
+         and (nullif(btrim(decision.reason_note),'') is not null or exists (select 1 from atlas_audit.audit_events audit where audit.command_id=decision.command_id and audit.aggregate_id=b.confirmed_need_batch_id and nullif(btrim(audit.reason_note),'') is not null))
          and decision.planning_step>0
          and mod(decision.confirmed_quantity_after,decision.planning_step)=0)))
   )), '[]'::jsonb) from scoped_batches b),
@@ -1326,7 +1326,7 @@ export async function verifyPlanningCloseout({
     throw new Error("STAGING_OPERATOR_AUTH_FAILED");
   const readReview = async () => {
     const rows = await sql(
-      `begin read only; select confirmed_need_batch_id from atlas_planning.confirmed_need_batches where period_start='2026-09-17' and period_end='2026-09-17'; rollback;`,
+      `begin read only; select b.confirmed_need_batch_id,b.version,(select a.reason_note from atlas_audit.audit_events a where a.aggregate_id=b.confirmed_need_batch_id and a.aggregate_version_after=b.version and a.reason_code='CONFIRMED_NEED_SAVED') as save_audit_reason from atlas_planning.confirmed_need_batches b where period_start='2026-09-17' and period_end='2026-09-17'; rollback;`,
     );
     if (
       rows.length !== 1 ||
@@ -1351,7 +1351,12 @@ export async function verifyPlanningCloseout({
       });
     if (result.error || !result.data?.success)
       throw new Error("AUTHORITATIVE_REVIEW_FAILED");
-    return result.data.workbench;
+    if (Number(rows[0].version) !== result.data.workbench.batch_version)
+      throw new Error("AUTHORITATIVE_REVIEW_VERSION_CHANGED");
+    return {
+      ...result.data.workbench,
+      save_audit_reason: rows[0].save_audit_reason,
+    };
   };
   try {
     const browserJourney = async (beforeBrowser) => {

@@ -120,14 +120,10 @@ function story(scenario: ConfirmedReviewScenario, action?: Action): Story {
           );
           if (action === "reason") return;
           fireEvent.change(
-            review.getByRole("combobox", { name: "Lý do Gạo thơm" }),
-            { target: { value: "OTHER" } },
-          );
-          if (action === "note") return;
-          fireEvent.change(
-            review.getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
+            review.getByRole("textbox", { name: "Lý do chung (tùy chọn)" }),
             { target: { value: "Bếp yêu cầu" } },
           );
+          if (action === "note") return;
           await userEvent.click(
             review.getByRole("button", { name: "Lưu điều chỉnh" }),
           );

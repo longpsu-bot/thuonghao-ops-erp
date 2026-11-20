@@ -118,14 +118,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
       Boolean(c.errors[id])
     );
   });
-  function openReview(
-    trigger: HTMLButtonElement,
-    selected?: ConfirmedNeedLine,
-  ) {
-    const lines =
-      selected && !adjustmentLines.includes(selected)
-        ? [...adjustmentLines, selected]
-        : adjustmentLines;
+  function openReview(trigger: HTMLButtonElement) {
+    const lines = adjustmentLines;
     if (!lines.length) {
       void c.save();
       return;
@@ -627,11 +621,6 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 drafts={c.drafts}
                 errors={c.errors}
                 editable={c.editable}
-                onEditReason={
-                  c.correctionMode
-                    ? undefined
-                    : (line, trigger) => openReview(trigger, line)
-                }
                 onEdit={c.edit}
               />
               {detailOpen && props.authSubject && (

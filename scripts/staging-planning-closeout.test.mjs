@@ -77,6 +77,7 @@ test("real 248-row controller accepts precision proposals, commits one edit and 
     current = {
       ...structuredClone(before),
       batch_version: 3,
+      save_audit_reason: request.reason_note,
       lines: before.lines.map((line) => {
         const d = decisions.get(line.confirmed_need_line_id);
         assert.ok(d);
@@ -743,8 +744,8 @@ test("pre-Save gate permits exactly one valid business adjustment", () => {
   const safe = {
     rendered_rows: 248,
     quantity_adjustment_rows: 1,
-    adjustment_reason_rows: 1,
-    nonblank_note_rows: 1,
+    reason_inputs: 1,
+    nonblank_reasons: 1,
     invalid_controls: 0,
     save_present: true,
     save_enabled: true,
@@ -945,7 +946,7 @@ test("pre-Generate waits for service-date read to settle on the exact safe surfa
   }
 });
 
-test("reason selection waits for the real conditional note input to mount", async () => {
+test("Save opens the shared reason input", async () => {
   const fixture = createConfirmedNeedReviewFixture();
   render(
     React.createElement(
@@ -965,17 +966,11 @@ test("reason selection waits for the real conditional note input to mount", asyn
   fireEvent.change(input, {
     target: { value: planningBrowser.minimalPlanningAdjustment(line) },
   });
-  const row = `[role="dialog"] [data-review-line-id=${JSON.stringify(line.confirmed_need_line_id)}]`;
-  assert.equal(document.querySelector(row), null);
+  assert.equal(screen.queryByRole("dialog"), null);
   fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
-  await planningBrowser.waitForReasonNoteReady({
-    evaluate: browserEvaluate,
-    row,
-    reason: "OPERATIONAL_QUANTITY_ADJUSTMENT",
-    interval: 5,
-    timeout: 3000,
+  const note = await screen.findByRole("textbox", {
+    name: "Lý do chung (tùy chọn)",
   });
-  const note = document.querySelector(`${row} input[aria-label^="Ghi chú"]`);
   assert.ok(note);
   assert.equal(note.disabled, false);
 });
@@ -992,11 +987,11 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
   ).join("");
   document.body.innerHTML = `<section aria-label="Xác nhận nhu cầu">
     <table aria-label="Nhu cầu xác nhận"><tbody>${rows}</tbody></table>
-    <button>Lưu</button><div role="dialog" data-need-save-review><div data-review-line-id="0"></div><button disabled>Lưu điều chỉnh</button></div>
+    <button>Lưu</button><div role="dialog" data-need-save-review><div data-reason-host></div><button disabled>Lưu điều chỉnh</button></div>
   </section>`;
   const root = document.querySelector('section[aria-label="Xác nhận nhu cầu"]');
   const first = root.querySelector("tbody tr");
-  const editor = root.querySelector("[data-review-line-id]");
+  const editor = root.querySelector("[data-reason-host]");
   const timers = [
     setTimeout(() => {
       first.querySelector('input[aria-label^="Số lượng xác nhận"]').value =
@@ -1005,18 +1000,10 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
         .querySelector('[data-field="confirmation"]')
         .setAttribute("data-adjustment-state", "invalid");
       first.querySelector(".delta").textContent = "+0,01 kg";
-      editor.innerHTML = `<select aria-label="Lý do 0">
-        <option value="PROPOSAL_ACCEPTED">Accepted</option>
-        <option value="OPERATIONAL_QUANTITY_ADJUSTMENT">Adjusted</option>
-      </select><input aria-label="Ghi chú 0" value="">`;
+      editor.innerHTML = '<input data-need-save-reason value="">';
     }, 20),
     setTimeout(() => {
-      editor.querySelector('select[aria-label^="Lý do"]').value =
-        "OPERATIONAL_QUANTITY_ADJUSTMENT";
-    }, 40),
-    setTimeout(() => {
-      editor.querySelector('input[aria-label^="Ghi chú"]').value =
-        "Owner-approved Staging closeout verification: one minimal quantity edit; no Procurement release.";
+      editor.querySelector("input").value = "Kitchen adjustment";
       first
         .querySelector('[data-field="confirmation"]')
         .setAttribute("data-adjustment-state", "valid");
@@ -1032,8 +1019,8 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
       timeout: 1000,
     });
     assert.equal(state.quantity_adjustment_rows, 1);
-    assert.equal(state.adjustment_reason_rows, 1);
-    assert.equal(state.nonblank_note_rows, 1);
+    assert.equal(state.reason_inputs, 1);
+    assert.equal(state.nonblank_reasons, 1);
     assert.equal(state.save_enabled, true);
   } finally {
     timers.forEach(clearTimeout);

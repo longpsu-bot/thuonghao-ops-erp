@@ -157,6 +157,14 @@ export async function certifyLocalCloseoutBrowser() {
   assert.equal(before.lines.length, 248);
   assert.equal(before.batch_version, 2);
   assert(/^[0-9a-f-]{36}$/.test(state.batch));
+  const saveAuditReason = (version) => {
+    assert(Number.isSafeInteger(version));
+    const rows = localSql(
+      `select jsonb_build_object('note',reason_note) from atlas_audit.audit_events where aggregate_id='${state.batch}' and aggregate_version_after=${version} and reason_code='CONFIRMED_NEED_SAVED'`,
+    );
+    assert.equal(rows.length, 1);
+    return rows[0].note;
+  };
   const revisionFacts = () =>
     localSql(`begin read only;
     select jsonb_object_agg(r.confirmed_need_line_id, jsonb_build_object(
@@ -291,6 +299,10 @@ export async function certifyLocalCloseoutBrowser() {
       evaluate(
         "Boolean(document.querySelector('button[aria-label=\"Nhập Phiếu đi chợ\"]:enabled'))",
       );
+    const hasUnsavedChanges = () =>
+      evaluate(
+        "Array.from(document.querySelectorAll('[data-atlas-persistent-actions] button')).some(button => button.textContent.trim() === 'Lưu')",
+      );
     const receiptState = () =>
       localSql(
         "select jsonb_build_object('handoffs',(select count(*) from atlas_planning.purchase_handoff_batches),'save_receipts',(select count(*) from atlas_core.command_receipts where command_name='save_confirmed_needs'),'decisions',(select count(*) from atlas_planning.confirmed_need_line_decisions))",
@@ -368,8 +380,8 @@ export async function certifyLocalCloseoutBrowser() {
     const initialEdit = await prepareConfirmedNeedEdit({ evaluate, before });
     await clickBusinessActionOnce({
       evaluate,
-      scope: 'section[aria-label="Xác nhận nhu cầu"]',
-      label: "Lưu",
+      scope: '[role="dialog"][data-need-save-review]',
+      label: "Lưu điều chỉnh",
       gate: "initial_save_once",
     });
     saves++;
@@ -387,7 +399,10 @@ export async function certifyLocalCloseoutBrowser() {
     const confirmed = await readReview();
     const decisions = assertFirstSaveTransition({
       before,
-      after: confirmed,
+      after: {
+        ...confirmed,
+        save_audit_reason: saveAuditReason(confirmed.batch_version),
+      },
       adjustedLineId: initialEdit.line.confirmed_need_line_id,
       adjustedQuantity: initialEdit.proposed,
       note: initialEdit.note,
@@ -405,10 +420,7 @@ export async function certifyLocalCloseoutBrowser() {
     );
     await open();
     assertReopenedReview(confirmed, await readReview());
-    assert.equal(
-      (await evaluate(preSaveGateStateExpression())).save_present,
-      false,
-    );
+    assert.equal(await hasUnsavedChanges(), false);
     await until(workbookReady, "shopping_list_ready");
     const originalFacts = receiptState();
     assert.deepEqual(originalFacts, {
@@ -437,7 +449,7 @@ export async function certifyLocalCloseoutBrowser() {
       "Fresh unchanged import must complete without an error alert.",
     );
     assert.equal(
-      (await evaluate(preSaveGateStateExpression())).save_present,
+      await hasUnsavedChanges(),
       false,
       "Unchanged import must stay clean.",
     );
@@ -526,34 +538,23 @@ export async function certifyLocalCloseoutBrowser() {
       2,
       "Both confirmed and proposed adjustments remain visible against the original proposal.",
     );
-    assert.equal(
-      proposedState.save_enabled,
-      true,
-      "An imported quantity adjustment is ready to save with its default reason and an optional note.",
-    );
     assert.deepEqual(
       receiptState(),
       originalFacts,
       "Modified import remains a local proposal.",
     );
-    const importedRow = `section[aria-label="Xác nhận nhu cầu"] tr[data-confirmed-need-line-id="${candidate.lineId}"]`;
-    assert.equal(
-      await evaluate(
-        `document.querySelector(${JSON.stringify(`${importedRow} select[aria-label^="Lý do"]:not(:disabled)`)})?.value`,
-      ),
-      "OPERATIONAL_QUANTITY_ADJUSTMENT",
-    );
-    assert.equal(
-      await evaluate(
-        `document.querySelector(${JSON.stringify(`${importedRow} input[aria-label^="Ghi chú"]:not(:disabled)`)})?.value`,
-      ),
-      "",
-    );
+    assert(await click("Lưu"));
+    const review = await until(async () => {
+      const state = await evaluate(preSaveGateStateExpression());
+      return state.save_enabled && state;
+    }, "worksheet_save_review");
+    assert.equal(review.reason_inputs, 1);
+    assert.equal(review.nonblank_reasons, 0);
     console.log("Local browser: save");
     await clickBusinessActionOnce({
       evaluate,
-      scope: 'section[aria-label="Xác nhận nhu cầu"]',
-      label: "Lưu",
+      scope: '[role="dialog"][data-need-save-review]',
+      label: "Lưu điều chỉnh",
       gate: "worksheet_successor_save_once",
     });
     saves++;
@@ -566,6 +567,7 @@ export async function certifyLocalCloseoutBrowser() {
       "save_readback_finished",
     );
     const saved = await readReview();
+    assert.equal(saveAuditReason(saved.batch_version), null);
     assertRevisionTransition(
       confirmed,
       saved,
@@ -679,10 +681,7 @@ export async function certifyLocalCloseoutBrowser() {
         .sort((a, b) => a.id.localeCompare(b.id)),
       "All248 visible reloaded quantities must match the persisted public read, including the imported adjustment.",
     );
-    assert.equal(
-      (await evaluate(preSaveGateStateExpression())).save_present,
-      false,
-    );
+    assert.equal(await hasUnsavedChanges(), false);
     assert.equal(saves, 2);
     await until(workbookReady, "reopened_shopping_list_ready");
     await importFile(originalWorkbook);
@@ -692,10 +691,7 @@ export async function certifyLocalCloseoutBrowser() {
           (await body()).includes("xuất file mới")),
       "The now-stale workbook must show specific recovery guidance.",
     );
-    assert.equal(
-      (await evaluate(preSaveGateStateExpression())).save_present,
-      false,
-    );
+    assert.equal(await hasUnsavedChanges(), false);
     assertReopenedReview(saved, await readReview());
     const evidence = receiptState();
     assert.deepEqual(evidence, {
