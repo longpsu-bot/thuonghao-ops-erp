@@ -628,6 +628,8 @@ describe("Procurement vNext operator workbench", () => {
     const { read, fixture } = show("manual_split");
     const poRead = vi.spyOn(fixture.procurementApi, "getPurchaseOrders");
     openFilters();
+    const orders = screen.getByRole("tab", { name: "Đơn mua" });
+    const allocation = screen.getByRole("tab", { name: "Phân bổ NCC" });
     fireEvent.click(await action());
     const input = screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" });
     fireEvent.change(input, { target: { value: "48,500001" } });
@@ -640,13 +642,9 @@ describe("Procurement vNext operator workbench", () => {
     expect(
       workbarControl<HTMLButtonElement>('button[title="Tất cả trường"]'),
     ).toBeDisabled();
-    const orders = screen.getByRole("tab", { name: "Đơn mua" });
     expect(orders).toBeDisabled();
     fireEvent.click(orders);
-    expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(allocation).toHaveAttribute("aria-selected", "true");
     expect(
       workbarControl<HTMLInputElement>('input[aria-label="Tìm kiếm"]'),
     ).toBeDisabled();

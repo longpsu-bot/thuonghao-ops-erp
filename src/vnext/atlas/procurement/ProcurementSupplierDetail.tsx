@@ -13,7 +13,6 @@ import {
   Icon,
   IconButton,
   NativeSelect,
-  Portal,
   Stack,
   Text,
   Textarea,
@@ -21,7 +20,6 @@ import {
 import { Info, Plus, Trash, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useImperativeHandle, useId } from "react";
 import type { ReactNode } from "react";
-import { useAtlasPortalContainer } from "../AtlasVNextProvider";
 import {
   procurementOperatorMessages,
   allocationFamilyUnitLabel,
@@ -64,7 +62,6 @@ export function ProcurementSupplierDetail({
   onClose: () => void;
   returnFocusEl?: () => HTMLElement | null;
 }) {
-  const portal = useAtlasPortalContainer();
   const quantityContextId = useId();
   const supplierColumns = "minmax(0, 1fr) 228px minmax(260px, 1.4fr)";
   const eligible = (id: string) =>
@@ -803,47 +800,42 @@ export function ProcurementSupplierDetail({
         lazyMount
         unmountOnExit
       >
-        <Portal container={portal}>
-          <Dialog.Backdrop
-            bg="bg.navigation"
-            opacity="var(--atlas-layout-backdrop-opacity, 0.45)"
-            animation="var(--atlas-layout-motion, none)"
-          />
-          <Dialog.Positioner p="md">
-            <Dialog.Content
-              bg="bg.workbench"
-              color="fg.default"
-              borderRadius="workbench"
-              boxShadow="var(--atlas-layout-shadow, none)"
-            >
-              <Dialog.Header>
-                <Dialog.Title textStyle="section">
-                  Có thay đổi phân bổ chưa lưu
-                </Dialog.Title>
-              </Dialog.Header>
-              <Dialog.Body>Đóng và bỏ các thay đổi này?</Dialog.Body>
-              <Dialog.Footer flexWrap="wrap">
-                <Button
-                  ref={cancelButton}
-                  onClick={() => setDiscardOpen(false)}
-                >
-                  Tiếp tục chỉnh sửa
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setDiscardOpen(false);
-                    const next = pendingExit.current;
-                    pendingExit.current = null;
-                    if (!disabled) next?.();
-                  }}
-                >
-                  Bỏ thay đổi và đóng
-                </Button>
-              </Dialog.Footer>
-            </Dialog.Content>
-          </Dialog.Positioner>
-        </Portal>
+        <Dialog.Backdrop
+          bg="bg.navigation"
+          opacity="var(--atlas-layout-backdrop-opacity, 0.45)"
+          animation="var(--atlas-layout-motion, none)"
+        />
+        <Dialog.Positioner p="md">
+          <Dialog.Content
+            bg="bg.workbench"
+            color="fg.default"
+            borderRadius="workbench"
+            boxShadow="var(--atlas-layout-shadow, none)"
+          >
+            <Dialog.Header>
+              <Dialog.Title textStyle="section">
+                Có thay đổi phân bổ chưa lưu
+              </Dialog.Title>
+            </Dialog.Header>
+            <Dialog.Body>Đóng và bỏ các thay đổi này?</Dialog.Body>
+            <Dialog.Footer flexWrap="wrap">
+              <Button ref={cancelButton} onClick={() => setDiscardOpen(false)}>
+                Tiếp tục chỉnh sửa
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setDiscardOpen(false);
+                  const next = pendingExit.current;
+                  pendingExit.current = null;
+                  if (!disabled) next?.();
+                }}
+              >
+                Bỏ thay đổi và đóng
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
       </Dialog.Root>
     </Flex>
   );
