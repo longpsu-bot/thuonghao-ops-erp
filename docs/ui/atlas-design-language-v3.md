@@ -212,7 +212,11 @@ labels and actions, and the 13px helper style serves secondary details.
 
 The Confirmed Need table uses the available workbench height. Released batches show their read-only state in the counts strip. Staff can expand the history disclosure for related issued orders and source evidence. An active correction keeps the reason and pending procurement review in view. A separate information button explains purchase preparation on demand.
 
+Date buttons share a horizontally scrollable row. The summary shows the total and nonzero counts. Export and import share the visible “Phiếu đi chợ” label and each button has a complete accessible name.
+
 Every participating supplier has a removal control. Removing one updates the draft, focuses the next quantity or the add button, and leaves the remainder available for assignment. Saving requires positive eligible quantities that exactly cover the need. The allocation and confirmation dialogs use the short Atlas detail transition and respect reduced motion.
+
+On tablet and desktop the allocation header pairs the ingredient and destination with the running balance, above aligned supplier, quantity and note columns. On phones the balance sits below the destination and notes expand beneath each supplier. Desktop footer buttons fit their labels.
 
 ### Supplier allocation dialog — 20 November 2026
 

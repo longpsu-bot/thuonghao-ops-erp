@@ -105,12 +105,23 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
     carried_forward: "Giữ nguyên",
   }[c.filter];
   const dayControls = (
-    <>
-      {" "}
+    <Flex
+      role="group"
+      aria-label="Ngày trong khoảng"
+      minW="var(--atlas-layout-zero, 0)"
+      gridColumn="1"
+      gridRow="1"
+      flexBasis={c.days.length > 1 ? "full" : undefined}
+      px="xs"
+      py={c.days.length > 1 ? "xs" : undefined}
+      gap="xs"
+      overflowX={c.days.length > 1 ? "auto" : undefined}
+    >
       {c.days.map((day) => (
         <Button
           key={day.date}
           size="sm"
+          flexShrink="0"
           variant={day.date === c.date ? "secondary" : "tertiary"}
           aria-pressed={day.date === c.date}
           disabled={
@@ -139,7 +150,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                         : "Chưa lập"}
         </Button>
       ))}
-    </>
+    </Flex>
   );
   return (
     <Box
@@ -315,18 +326,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               />
             </AtlasWorkbarActions>
           </AtlasWorkbar>
-          {!c.workbench && (
-            <Flex
-              role="group"
-              aria-label="Ngày trong khoảng"
-              px="md"
-              py="xs"
-              gap="xs"
-              wrap="wrap"
-            >
-              {dayControls}
-            </Flex>
-          )}
+          {!c.workbench && <Box px="sm">{dayControls}</Box>}
           <AtlasOperationStatus operation={c.operation} />
           <ConfirmedNeedCommandFeedback
             lock={c.lock}
@@ -368,33 +368,27 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 aria-label="Tiện ích nhu cầu xác nhận"
                 display={{ base: "grid", lg: "flex" }}
                 gridTemplateColumns="minmax(0, 1fr) auto"
-                px="md"
+                px="sm"
                 py="xs"
                 gap="sm"
                 justify="flex-start"
                 align="center"
                 wrap="wrap"
               >
-                <Flex
-                  role="group"
-                  aria-label="Ngày trong khoảng"
-                  gridColumn="1"
-                  gridRow="1"
-                  gap="xs"
-                  wrap="wrap"
-                >
-                  {dayControls}
-                </Flex>
+                {dayControls}
                 <Text
                   textStyle="helper"
                   color="fg.muted"
                   gridColumn="1 / -1"
                   minW="var(--atlas-layout-zero, 0)"
                 >
-                  {c.workbench.line_counts.total} dòng ·{" "}
-                  {c.workbench.line_counts.needs_review} cần rà soát ·{" "}
-                  {c.workbench.line_counts.confirmed} đã xác nhận ·{" "}
-                  {c.workbench.line_counts.adjusted} đã điều chỉnh
+                  {c.workbench.line_counts.total} dòng
+                  {c.workbench.line_counts.needs_review > 0 &&
+                    ` · ${c.workbench.line_counts.needs_review} cần rà soát`}
+                  {c.workbench.line_counts.confirmed > 0 &&
+                    ` · ${c.workbench.line_counts.confirmed} đã xác nhận`}
+                  {c.workbench.line_counts.adjusted > 0 &&
+                    ` · ${c.workbench.line_counts.adjusted} đã điều chỉnh`}
                   {c.released &&
                     !c.correctionMode &&
                     " · Đã chuyển sang mua hàng · Chỉ đọc"}
@@ -442,7 +436,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     base: utilitiesOpen ? "flex" : "none",
                     lg: "flex",
                   }}
-                  gap="sm"
+                  align="center"
+                  gap="xs"
                   wrap="wrap"
                   flexBasis={{
                     base: "full",
@@ -451,7 +446,8 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                   ms={{ lg: "var(--atlas-layout-auto, auto)" }}
                 >
                   <Button
-                    variant="tertiary"
+                    variant="utility"
+                    size="sm"
                     data-atlas-action-priority="tertiary"
                     aria-expanded={detailOpen}
                     onClick={() => setDetailKey(detailOpen ? null : contextKey)}
@@ -461,8 +457,23 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                       : "Xem cách hình thành nhu cầu"}
                   </Button>
                   {props.onExportShoppingList && props.onImportShoppingList && (
-                    <Flex gap="sm" wrap="wrap">
+                    <Flex
+                      role="group"
+                      aria-label="Phiếu đi chợ"
+                      align="center"
+                      gap="xs"
+                    >
+                      <Text
+                        aria-hidden="true"
+                        textStyle="helper"
+                        color="fg.muted"
+                        px="xs"
+                      >
+                        Phiếu đi chợ
+                      </Text>
                       <Button
+                        aria-label="Xuất Phiếu đi chợ"
+                        size="sm"
                         variant="tertiary"
                         data-atlas-action-priority="tertiary"
                         disabled={workbookBusy || !c.canExportShoppingList}
@@ -484,9 +495,11 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                         }}
                       >
                         <FileArrowDown aria-hidden="true" />
-                        Xuất Phiếu đi chợ
+                        Xuất
                       </Button>
                       <AtlasXlsxPicker
+                        aria-label="Nhập Phiếu đi chợ"
+                        size="sm"
                         inputLabel="Nhập Phiếu đi chợ .xlsx"
                         variant="tertiary"
                         data-atlas-action-priority="tertiary"
@@ -520,7 +533,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                             .finally(() => setWorkbookBusy(false));
                         }}
                       >
-                        Nhập Phiếu đi chợ
+                        Nhập
                       </AtlasXlsxPicker>
                     </Flex>
                   )}

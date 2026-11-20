@@ -63,7 +63,7 @@ export function ProcurementSupplierDetail({
   returnFocusEl?: () => HTMLElement | null;
 }) {
   const quantityContextId = useId();
-  const supplierColumns = "minmax(0, 1fr) 228px minmax(260px, 1.4fr)";
+  const supplierColumns = "minmax(0, 1fr) 228px minmax(0, 1.2fr)";
   const eligible = (id: string) =>
     row.eligible_suppliers.some((supplier) => supplier.supplier_id === id);
   const saved = row.splits.filter((split) => eligible(split.supplier_id));
@@ -287,66 +287,74 @@ export function ProcurementSupplierDetail({
       minW="var(--atlas-layout-zero, 0)"
       minH="var(--atlas-layout-zero, 0)"
       maxH="var(--atlas-allocation-dialog-height, calc(100dvh - 2rem))"
+      overflow="hidden"
       bg="bg.workbench"
       borderRadius="workbench"
     >
-      <Box id={`${quantityContextId}-need`} p="md" pb="sm" flexShrink="0">
-        <Heading
-          as="h2"
-          textStyle="section"
-          tabIndex={-1}
-          ref={heading}
-          overflowWrap="anywhere"
-        >
-          {row.ingredient_name}
-        </Heading>
-        <Text color="fg.muted" textStyle="helper" mt="xs">
-          {recipient.primary}
-          {recipient.secondary ? ` · ${recipient.secondary}` : ""}
-          {" · "}
-          {row.service_date.split("-").reverse().join("/")}
-        </Text>
-      </Box>
-      <Box
-        role="status"
-        aria-label="Cân đối phân bổ"
-        aria-live="polite"
-        mx="md"
-        pb="sm"
+      <Flex
+        px="md"
+        py="sm"
+        gap="sm"
+        align={{ base: "start", md: "center" }}
+        direction={{ base: "column", md: "row" }}
+        justify="space-between"
         borderBottomWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
         flexShrink="0"
       >
-        {reconciliationQuantity && reconciliationOutcome ? (
-          <Flex
-            aria-label={reconciliation}
-            align="baseline"
-            wrap="wrap"
-            gap="xs"
+        <Box
+          id={`${quantityContextId}-need`}
+          minW="var(--atlas-layout-zero, 0)"
+        >
+          <Heading
+            as="h2"
+            textStyle="section"
+            tabIndex={-1}
+            ref={heading}
+            overflowWrap="anywhere"
           >
-            <Text
-              as="span"
-              textStyle="quantity"
-              fontVariantNumeric="tabular-nums"
-              color="fg.default"
+            {row.ingredient_name}
+          </Heading>
+          <Text color="fg.muted" textStyle="helper" mt="xs">
+            {recipient.primary}
+            {recipient.secondary ? ` · ${recipient.secondary}` : ""}
+            {" · "}
+            {row.service_date.split("-").reverse().join("/")}
+          </Text>
+        </Box>
+        <Box role="status" aria-label="Cân đối phân bổ" aria-live="polite">
+          {reconciliationQuantity && reconciliationOutcome ? (
+            <Flex
+              aria-label={reconciliation}
+              align={{ base: "baseline", md: "end" }}
+              direction={{ base: "row", md: "column" }}
+              wrap="wrap"
+              gap="xs"
             >
-              {reconciliationQuantity}
-            </Text>
-            <Text as="span" textStyle="unitInline" color="fg.muted" ml="xs">
-              {" đã phân bổ · "}
-            </Text>
-            <Text
-              as="span"
-              fontWeight="semibold"
-              color={remainder !== 0n ? "status.warning" : "fg.primary"}
-            >
-              {reconciliationOutcome}
-            </Text>
-          </Flex>
-        ) : (
-          <Text color="status.warning">{reconciliation}</Text>
-        )}
-      </Box>
+              <Text
+                as="span"
+                textStyle="quantity"
+                fontVariantNumeric="tabular-nums"
+                color="fg.default"
+              >
+                {reconciliationQuantity}
+              </Text>
+              <Box as="span" textStyle="unitInline" color="fg.muted">
+                {" đã phân bổ · "}
+                <Text
+                  as="span"
+                  fontWeight="semibold"
+                  color={remainder !== 0n ? "status.warning" : "fg.primary"}
+                >
+                  {reconciliationOutcome}
+                </Text>
+              </Box>
+            </Flex>
+          ) : (
+            <Text color="status.warning">{reconciliation}</Text>
+          )}
+        </Box>
+      </Flex>
       <Stack
         p="md"
         gap="md"
@@ -387,7 +395,7 @@ export function ProcurementSupplierDetail({
         {draft.length > 0 && (
           <Box
             aria-hidden="true"
-            display={{ base: "none", xl: "grid" }}
+            display={{ base: "none", md: "grid" }}
             gridTemplateColumns={supplierColumns}
             gap="md"
             pb="xs"
@@ -427,9 +435,9 @@ export function ProcurementSupplierDetail({
               aria-labelledby={`${quantityContextId}-${split.supplier_id}-supplier`}
               display="grid"
               gridTemplateColumns={{
-                base: "minmax(0, 1fr)",
-                lg: "minmax(0, 1fr) 228px",
-                xl: supplierColumns,
+                base: "repeat(auto-fit, minmax(min(100%, 9rem), 1fr))",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: supplierColumns,
               }}
               alignItems="start"
               columnGap="md"
@@ -469,7 +477,7 @@ export function ProcurementSupplierDetail({
                 </Text>
               </Stack>
               <Field.Root invalid={invalid} minW="var(--atlas-layout-zero, 0)">
-                <Field.Label display={{ base: "flex", xl: "none" }}>
+                <Field.Label display={{ base: "flex", md: "none" }}>
                   Phân bổ
                 </Field.Label>
                 <Box
@@ -556,14 +564,14 @@ export function ProcurementSupplierDetail({
               </Field.Root>
               <Field.Root
                 minW="var(--atlas-layout-zero, 0)"
-                gridColumn={{ lg: "1 / -1", xl: "3" }}
+                gridColumn={{ base: "1 / -1", md: "3" }}
                 invalid={(split.supplier_note ?? "").length > 500}
               >
                 {!noteOpen && (
                   <Button
                     variant="utility"
                     size="sm"
-                    display={{ base: "inline-flex", xl: "none" }}
+                    display={{ base: "inline-flex", md: "none" }}
                     alignSelf="start"
                     px="var(--atlas-layout-zero, 0)"
                     fontWeight="normal"
@@ -582,7 +590,7 @@ export function ProcurementSupplierDetail({
                 )}
                 <Field.Label
                   htmlFor={noteId}
-                  display={{ base: noteOpen ? "flex" : "none", xl: "none" }}
+                  display={{ base: noteOpen ? "flex" : "none", md: "none" }}
                 >
                   Ghi chú cho NCC
                 </Field.Label>
@@ -593,7 +601,7 @@ export function ProcurementSupplierDetail({
                     if (element) fields.current.set(key, element);
                     else fields.current.delete(key);
                   }}
-                  display={{ base: noteOpen ? "block" : "none", xl: "block" }}
+                  display={{ base: noteOpen ? "block" : "none", md: "block" }}
                   w="full"
                   minW="var(--atlas-layout-zero, 0)"
                   aria-label={`Ghi chú cho ${supplier.supplier_name}`}
@@ -721,11 +729,12 @@ export function ProcurementSupplierDetail({
         position="sticky"
         bottom="var(--atlas-layout-zero, 0)"
         zIndex="var(--atlas-layout-footer-layer, 2)"
-        justify="space-between"
+        justify="flex-end"
         direction="row"
         align="stretch"
         gap="sm"
-        p="md"
+        px="md"
+        py="sm"
         bg="bg.toolbar"
         borderTopWidth="var(--atlas-layout-edge, 1px)"
         borderColor="border.subtle"
@@ -744,7 +753,7 @@ export function ProcurementSupplierDetail({
         <Button
           variant="businessPrimary"
           disabled={!canSave}
-          flex="1"
+          flex={{ base: "1", md: "0 1 auto" }}
           minW="var(--atlas-layout-zero, 0)"
           h="var(--atlas-layout-auto, auto)"
           py="xs"
