@@ -558,3 +558,7 @@ policy and line locks. The unchanged official PXK writer validates a fresh previ
 under these retained locks before persisting its immutable snapshot. No new
 privilege, lock framework, public API or source authority is introduced.
 See the [K3 recovery ledger](../implementation-tasks/TASK-ATLAS-C-K3-OPERATOR-INTEGRATION-01.md).
+
+### Editing a supplier split
+
+The Allocation editor accepts a quantity or a percentage of the displayed requirement for each participating supplier. Percent entry computes a draft quantity rounded to the nearest millionth (half up). “Gán phần còn lại” fills the selected supplier with the exact requirement less the other suppliers' quantities. Selecting an eligible supplier focuses its new quantity field. Staff review the resulting quantities and use the existing explicit Save action.

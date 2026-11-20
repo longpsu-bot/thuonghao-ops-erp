@@ -30,6 +30,8 @@ import {
 import {
   formatExactQuantityForOperator as quantity,
   parseExactQuantity,
+  displayPercent,
+  quantityFromPercent,
   sumExactQuantities,
   serializeExactQuantity,
 } from "./procurementExactQuantity";
@@ -85,6 +87,19 @@ export function ProcurementSupplierDetail({
         ]
       : [];
   const [draft, setDraft] = useState<SupplierSplitInput[]>(() => baseline);
+  const [percentEdit, setPercentEdit] = useState<{
+    id: string;
+    text: string;
+  } | null>(null);
+  function setQuantity(id: string, value: string) {
+    setDraft((values) =>
+      values.map((split) =>
+        split.supplier_id === id
+          ? { ...split, allocated_quantity: value }
+          : split,
+      ),
+    );
+  }
   const [openNotes, setOpenNotes] = useState(() =>
     baseline
       .filter((split) => split.supplier_note)
@@ -105,7 +120,6 @@ export function ProcurementSupplierDetail({
   const recipient = allocationRecipient(row);
   const [added, setAdded] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
-  const [supplierId, setSupplierId] = useState("");
   const [discardOpen, setDiscardOpen] = useState(false);
   const pendingExit = useRef<(() => void) | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -416,7 +430,18 @@ export function ProcurementSupplierDetail({
           const supplier = row.eligible_suppliers.find(
             (item) => item.supplier_id === split.supplier_id,
           )!;
-          const invalid = parseExactQuantity(split.allocated_quantity) === null;
+          const allocated = parseExactQuantity(split.allocated_quantity);
+          const invalid = allocated === null;
+          const others =
+            total !== null && allocated !== null
+              ? total - allocated
+              : sumExactQuantities(
+                  draft
+                    .filter((s) => s.supplier_id !== split.supplier_id)
+                    .map((s) => s.allocated_quantity),
+                );
+          const balance =
+            need !== null && others !== null ? need - others : null;
           const noteOpen = openNotes.includes(split.supplier_id);
           const noteId = `${quantityContextId}-${split.supplier_id}-note`;
           return (
@@ -498,16 +523,7 @@ export function ProcurementSupplierDetail({
                     }
                     disabled={locked}
                     onChange={(event) =>
-                      setDraft((values) =>
-                        values.map((value) =>
-                          value.supplier_id === split.supplier_id
-                            ? {
-                                ...value,
-                                allocated_quantity: event.target.value,
-                              }
-                            : value,
-                        ),
-                      )
+                      setQuantity(split.supplier_id, event.target.value)
                     }
                     minW="var(--atlas-layout-zero, 0)"
                   />
@@ -542,9 +558,56 @@ export function ProcurementSupplierDetail({
                     </IconButton>
                   )}
                 </Box>
+                {!locked && need !== null && need > 0n && (
+                  <Flex gap="xs" align="center" wrap="wrap">
+                    <Input
+                      id={`${quantityContextId}-${split.supplier_id}-percent`}
+                      aria-label={`Tỷ lệ phân bổ ${supplier.supplier_name} (%)`}
+                      inputMode="decimal"
+                      textAlign="end"
+                      width="var(--atlas-allocation-percent-width, 12ch)"
+                      value={
+                        percentEdit?.id === split.supplier_id
+                          ? percentEdit.text
+                          : displayPercent(allocated, need)
+                      }
+                      onChange={(event) => {
+                        const text = event.target.value;
+                        setPercentEdit({ id: split.supplier_id, text });
+                        const amount = quantityFromPercent(need, text);
+                        setQuantity(
+                          split.supplier_id,
+                          amount === null ? "" : quantity(amount, "."),
+                        );
+                      }}
+                      onBlur={() => setPercentEdit(null)}
+                    />
+                    <Text aria-hidden="true">%</Text>
+                    {draft.length > 1 &&
+                      balance !== null &&
+                      balance >= 0n &&
+                      balance !== allocated && (
+                        <Button
+                          variant="utility"
+                          size="sm"
+                          aria-label={`Gán phần còn lại cho ${supplier.supplier_name}`}
+                          onClick={() =>
+                            setQuantity(
+                              split.supplier_id,
+                              quantity(balance, "."),
+                            )
+                          }
+                        >
+                          Gán phần còn lại
+                        </Button>
+                      )}
+                  </Flex>
+                )}
                 {invalid && (
                   <Field.ErrorText>
-                    Nhập số không âm, tối đa 6 chữ số thập phân.
+                    {percentEdit?.id === split.supplier_id
+                      ? "Nhập tỷ lệ từ 0 đến 100%, tối đa 6 chữ số thập phân."
+                      : "Nhập số không âm, tối đa 6 chữ số thập phân."}
                   </Field.ErrorText>
                 )}
               </Field.Root>
@@ -626,7 +689,6 @@ export function ProcurementSupplierDetail({
             disabled={locked || available.length === 0}
             onClick={() => {
               setAdding(!adding);
-              setSupplierId("");
             }}
             minH={{
               base: "var(--atlas-layout-mobile-target, 44px)",
@@ -641,8 +703,26 @@ export function ProcurementSupplierDetail({
               <NativeSelect.Root disabled={locked}>
                 <NativeSelect.Field
                   aria-label="Nhà cung ứng đủ điều kiện"
-                  value={supplierId}
-                  onChange={(event) => setSupplierId(event.target.value)}
+                  value=""
+                  onChange={(event) => {
+                    const id = event.target.value;
+                    if (
+                      locked ||
+                      !available.some((supplier) => supplier.supplier_id === id)
+                    )
+                      return;
+                    pendingFocus.current = `${id}:quantity`;
+                    setDraft((values) => [
+                      ...values,
+                      {
+                        supplier_id: id,
+                        allocated_quantity: "0",
+                        supplier_note: null,
+                      },
+                    ]);
+                    setAdded((ids) => [...ids, id]);
+                    setAdding(false);
+                  }}
                 >
                   <option value="">Chọn nhà cung ứng</option>
                   {available.map((supplier) => (
@@ -656,34 +736,6 @@ export function ProcurementSupplierDetail({
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
-              <Button
-                size="sm"
-                disabled={
-                  locked ||
-                  !available.some(
-                    (supplier) => supplier.supplier_id === supplierId,
-                  )
-                }
-                onClick={() => {
-                  pendingFocus.current = `${supplierId}:quantity`;
-                  setDraft((values) => [
-                    ...values,
-                    {
-                      supplier_id: supplierId,
-                      allocated_quantity: "",
-                      supplier_note: null,
-                    },
-                  ]);
-                  setAdded((ids) => [...ids, supplierId]);
-                  setAdding(false);
-                }}
-                minH={{
-                  base: "var(--atlas-layout-mobile-target, 44px)",
-                  lg: "compact",
-                }}
-              >
-                Thêm
-              </Button>
             </Stack>
           )}
         </Box>
