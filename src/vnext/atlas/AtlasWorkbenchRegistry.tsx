@@ -75,6 +75,7 @@ export type RenderContext = {
     schoolIds?: string[],
   ) => void;
   onOpenOrders: (scope: string | AtlasOperatorDateRange) => void;
+  onOpenAllocation: (range: AtlasOperatorDateRange) => void;
   onOpenPxk: (date: string, schoolIds: string[]) => void;
   onOpenChangeOrders: () => void;
   onProcurementContextChange: (context: AtlasProcurementContext) => void;
@@ -198,6 +199,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
       <ProcurementWorkbench
         {...dateOwner(c)}
         ownerStage="orders"
+        onOpenAllocation={c.onOpenAllocation}
         initialRange={c.seedRange}
         schoolDispatchApi={c.app.apis.schoolDispatch}
         onOpenPxk={c.onOpenPxk}

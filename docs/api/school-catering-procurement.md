@@ -562,3 +562,5 @@ See the [K3 recovery ledger](../implementation-tasks/TASK-ATLAS-C-K3-OPERATOR-IN
 ### Editing a supplier split
 
 The Allocation editor accepts a quantity or a percentage of the displayed requirement for each participating supplier. Percent entry computes a draft quantity rounded to the nearest millionth (half up). “Gán phần còn lại” fills the selected supplier with the exact requirement less the other suppliers' quantities. Selecting an eligible supplier focuses its new quantity field. Staff review the resulting quantities and use the existing explicit Save action.
+
+An empty successful Order read links back to Allocation. A newly opened Allocation tab starts in the selected date range. An existing tab retains its work and discloses a different date range. Opening it runs no preparation or release command. A search with zero matches still uses the search empty state.
