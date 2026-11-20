@@ -447,7 +447,7 @@ describe("School PXK operator table and attached detail", () => {
     );
     await waitFor(() => expect(trigger).toHaveFocus());
   });
-  it("orders non-current work before CURRENT with all explicit action labels", async () => {
+  it("orders all dispatch states by configured School rank and retains their explicit actions", async () => {
     show("MULTIPLE_SCHOOLS");
     await screen.findAllByRole("button", { name: "Xem phiếu" });
     const rows = within(
@@ -455,8 +455,10 @@ describe("School PXK operator table and attached detail", () => {
     )
       .getAllByRole("row")
       .slice(1);
-    expect(rows[0]).toHaveTextContent("Cần thay thế");
-    expect(rows.at(-1)).toHaveTextContent("Đã phát hành");
+    expect(rows[0]).toHaveTextContent("Trường Tiểu học Nguyễn Du");
+    expect(rows[0]).toHaveTextContent("Đã phát hành");
+    expect(rows[1]).toHaveTextContent("Trường Mầm non Hoa Sen");
+    expect(rows.at(-1)).toHaveTextContent("Cơ sở 18");
     for (const label of [
       "Tạo phiếu thay thế",
       "Xem lỗi",

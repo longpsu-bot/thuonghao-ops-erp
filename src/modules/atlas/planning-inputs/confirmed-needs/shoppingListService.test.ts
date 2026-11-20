@@ -76,7 +76,7 @@ describe("connected XLSX authority", () => {
       f.workbench.lines[0]!.confirmed_need_line_id,
     ]);
     expect(imported.drafts[imported.changedLineIds[0]!]?.exact_quantity).toBe(
-      "12,5",
+      "12.5",
     );
     expect({ workbench: f.workbench, drafts: f.drafts }).toEqual(before);
     expect(f.api.getReview).toHaveBeenCalled();

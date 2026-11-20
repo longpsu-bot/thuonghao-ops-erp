@@ -24,16 +24,26 @@ function show(api = createSchoolFulfilmentReviewFixture(), end = "2026-09-24") {
   return { ...hook, read };
 }
 describe("reconciliation authority and presentation", () => {
-  it("retains backend order within both exception and OK groups", async () => {
+  it("orders OK and exception rows together by configured School rank", async () => {
     const rows = [
-      fulfilmentRow({ school_id: "ok-first", comparison_status: "OK" }),
+      fulfilmentRow({
+        school_id: "ok-first",
+        display_order: 2,
+        comparison_status: "OK",
+      }),
       fulfilmentRow({
         school_id: "exception-first",
+        display_order: 4,
         comparison_status: "NO_PXK",
       }),
-      fulfilmentRow({ school_id: "ok-second", comparison_status: "OK" }),
+      fulfilmentRow({
+        school_id: "ok-second",
+        display_order: 1,
+        comparison_status: "OK",
+      }),
       fulfilmentRow({
         school_id: "exception-second",
+        display_order: 3,
         comparison_status: "NO_PO",
       }),
     ];
@@ -45,10 +55,10 @@ describe("reconciliation authority and presentation", () => {
     await waitFor(() => expect(h.result.current.rows).toHaveLength(4));
     act(() => h.result.current.setFilter("all"));
     expect(h.result.current.visibleRows.map((r) => r.school_id)).toEqual([
-      "exception-first",
-      "exception-second",
-      "ok-first",
       "ok-second",
+      "ok-first",
+      "exception-second",
+      "exception-first",
     ]);
   });
   it("reads exact inclusive 31-day scope with null search and refreshes it", async () => {
@@ -103,7 +113,7 @@ describe("reconciliation authority and presentation", () => {
     expect(h.result.current.selected).toBeNull();
     expect(h.read).toHaveBeenCalledTimes(3);
   });
-  it("defaults to exceptions and stably places non-OK before OK without deriving status", async () => {
+  it("defaults to exceptions and uses the school name fallback for older unranked responses", async () => {
     const h = show();
     await waitFor(() =>
       expect(h.result.current.rows.length).toBeGreaterThan(0),
@@ -111,11 +121,11 @@ describe("reconciliation authority and presentation", () => {
     expect(h.result.current.filter).toBe("exceptions");
     expect(
       h.result.current.visibleRows.map((r) => r.comparison_status),
-    ).toEqual(["MISMATCH", "NO_PO", "INGREDIENT_CHANGED", "NO_PXK"]);
+    ).toEqual(["INGREDIENT_CHANGED", "NO_PO", "MISMATCH", "NO_PXK"]);
     act(() => h.result.current.setFilter("all"));
     expect(
       h.result.current.visibleRows.map((r) => r.comparison_status),
-    ).toEqual(["MISMATCH", "NO_PO", "INGREDIENT_CHANGED", "NO_PXK", "OK"]);
+    ).toEqual(["OK", "INGREDIENT_CHANGED", "NO_PO", "MISMATCH", "NO_PXK"]);
     expect(h.read).toHaveBeenCalledTimes(1);
   });
   it.each([
