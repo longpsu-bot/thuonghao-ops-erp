@@ -284,12 +284,12 @@ export async function certifyLocalCloseoutBrowser() {
     };
     const click = (label) =>
       evaluate(
-        `(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(label)});if(!b||b.disabled)return false;b.click();return true;})()`,
+        `(()=>{const b=[...document.querySelectorAll('button')].find(b=>(b.getAttribute('aria-label') || b.textContent.trim())===${JSON.stringify(label)});if(!b||b.disabled)return false;b.click();return true;})()`,
       );
     const body = () => evaluate("document.body?.innerText ?? ''");
     const workbookReady = () =>
       evaluate(
-        "[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Nhập Phiếu đi chợ'&&!b.disabled)",
+        "Boolean(document.querySelector('button[aria-label=\"Nhập Phiếu đi chợ\"]:enabled'))",
       );
     const receiptState = () =>
       localSql(
