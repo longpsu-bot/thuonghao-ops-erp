@@ -375,7 +375,7 @@ export async function certifyMasterSourceAuthoring({
   await until(
     () =>
       evaluate(
-        `document.querySelector('input[aria-label=${JSON.stringify(`Định lượng ${ingredientName}`)}]')?.value==='2,5'`,
+        `document.querySelector('input[aria-label=${JSON.stringify(`Định lượng ${ingredientName}`)}]')?.value==='2.5'`,
       ),
     "AUTHORING_RECIPE_QUANTITY_REOPEN",
   );

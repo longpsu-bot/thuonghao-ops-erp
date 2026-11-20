@@ -416,6 +416,11 @@ export async function certifyLocalCloseoutBrowser() {
       save_receipts: 1,
       decisions: 248,
     });
+    // Simulate a deployment retiring the loaded tab's old JavaScript assets.
+    await connection.send("Network.enable");
+    await connection.send("Network.setBlockedURLs", {
+      urls: ["*/assets/*.js"],
+    });
     assert(await click("Xuất Phiếu đi chợ"));
     const downloaded = await until(
       () => readdirSync(evidenceDir).find((name) => name.endsWith(".xlsx")),
@@ -424,6 +429,7 @@ export async function certifyLocalCloseoutBrowser() {
     const originalWorkbook = join(evidenceDir, downloaded);
     await until(workbookReady, "export_finished");
     await importFile(originalWorkbook);
+    await connection.send("Network.setBlockedURLs", { urls: [] });
     assert(
       await evaluate(
         '!document.querySelector(\'section[aria-label="Xác nhận nhu cầu"] [role="alert"]\')',
@@ -483,11 +489,12 @@ export async function certifyLocalCloseoutBrowser() {
       ),
     );
     await importFile(modifiedWorkbook);
-    assert(
+    assert.equal(
       await evaluate(
-        `document.querySelector('tr[data-confirmed-need-line-id="${candidate.lineId}"] input[aria-label^="Số lượng xác nhận"]')?.value===${JSON.stringify(proposed)}`,
+        `document.querySelector('tr[data-confirmed-need-line-id="${candidate.lineId}"] input[aria-label^="Số lượng xác nhận"]')?.value`,
       ),
-      "The actual workbook import must propose the selected quantity.",
+      proposed.replace(",", "."),
+      "A workbook quantity must open in its selected cell with the editable decimal separator.",
     );
     const proposedState = await evaluate(preSaveGateStateExpression());
     const importedQuantities = await evaluate(

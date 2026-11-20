@@ -1,3 +1,4 @@
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import type { SchoolCateringPurchaseOrder } from "../bridges/procurement";
 import type { SchoolDispatchReleaseApi } from "../bridges/schoolDispatch";
 import {
@@ -94,7 +95,14 @@ export function ProcurementPxkImpact({
           )
         )
           setRead({ ...readScope, rows: [], error: true });
-        else setRead({ ...readScope, rows, error: false });
+        else
+          setRead({
+            ...readScope,
+            rows: rows.sort((a, b) =>
+              compareCanonicalSchools(a.preview, b.preview),
+            ),
+            error: false,
+          });
       })
       .catch(() => {
         if (live) setRead({ ...readScope, rows: [], error: true });

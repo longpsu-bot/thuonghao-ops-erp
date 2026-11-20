@@ -35,6 +35,7 @@ export function PlanningSourceReview({
           activeMenuRows(c.data?.weekly_menu ?? null),
           c.preview.canonical_rows as MenuLine[],
         ).map((r) => ({
+          schoolId: r.school_id,
           school: school(r.school_id),
           context: `${viDate(r.service_date)} · ${c.data?.dish_types.find((t) => t.dish_type_code === r.menu_slot_code)?.dish_type_name ?? "Loại món"}`,
           before: dish(r.previous_dish_id),
@@ -50,6 +51,7 @@ export function PlanningSourceReview({
             c.previousAttendance,
             c.preview.canonical_rows as AttendanceLine[],
           ).map((r) => ({
+            schoolId: r.school_id,
             school: school(r.school_id),
             context: viDate(r.service_date),
             before: `HS ${r.previous_student_portions ?? "—"} · GV ${r.previous_teacher_portions ?? "—"}`,
@@ -57,6 +59,12 @@ export function PlanningSourceReview({
             action: "Đổi",
           }))
         : planningPantryReviewRows(c);
+  const schoolRank = new Map(c.schools.map((s, i) => [s.school_id, i]));
+  changes.sort(
+    (a, b) =>
+      (schoolRank.get(a.schoolId) ?? Infinity) -
+      (schoolRank.get(b.schoolId) ?? Infinity),
+  );
   const correction =
     c.impact?.date_impacts.flatMap((d) =>
       [

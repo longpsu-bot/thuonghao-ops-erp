@@ -32,6 +32,12 @@ During **Hàng đặt riêng** review, **Lưu** is the primary action and the vi
 
 In **Hàng đặt riêng**, use **Thêm dòng** as the primary action while entering an incomplete draft. As soon as review is available, **Xem thay đổi** becomes primary and adding another line remains available. Both exits from the Planning source review read **Quay lại chỉnh sửa** and return staff to their draft. In **Xác nhận nhu cầu**, the shopping-list notice explains saving changes and discarding them by reloading in separate sentences. See the [before/after comparisons](../testing/artifacts/atlas-edit-review-20261118/README.md).
 
+### Quantity entry and table headers — 20 November 2026
+
+When a planner clicks or tabs into an editable table cell, its full text is selected. A second click places the caret. Saved quantities open with a decimal point for keypad entry, so typing `12.5` replaces the existing value. Confirmed Need, Recipe and Allocation still accept a typed comma. The saved baseline and displayed difference use Vietnamese decimal formatting.
+
+The shared table recipe keeps the header above frozen body cells and pinned column headings above adjacent headings during horizontal scrolling. Opening **Thực đơn → Sĩ số → Hàng đặt riêng → Xác nhận nhu cầu** reproduced the missing School heading in the local fixture. At 1440px, the same scroll position now shows **Trường / nơi nhận**. Header hit tests passed on 12 populated workbench tables. At 1440px and 390px, clicking or tabbing selected all five characters of `10.25`, and numeric-keypad input replaced them with `12.5`. See the [desktop before](../testing/artifacts/atlas-workbench-entry-20261120/confirmed-need-before.png), [desktop after](../testing/artifacts/atlas-workbench-entry-20261120/confirmed-need-after.png) and [phone selection](../testing/artifacts/atlas-workbench-entry-20261120/mobile-cell-selection.png).
+
 ## Color architecture
 
 ### Staff palette follow-up — 15 November 2026

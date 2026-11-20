@@ -1,3 +1,4 @@
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import {
   useAtlasAuthorityFreshness,
@@ -57,7 +58,6 @@ export const schoolPxkRowKey = (
     "service_date" | "school_id" | "delivery_location_id"
   >,
 ) => JSON.stringify([r.service_date, r.school_id, r.delivery_location_id]);
-const priority = { REPLACEMENT_REQUIRED: 0, BLOCKED: 1, READY: 2, CURRENT: 3 };
 const safeMessage = (r: AtlasRpcResult) =>
   r.kind === "backend_error"
     ? r.error.safe_message
@@ -225,6 +225,7 @@ export function useSchoolPxkWorkbench({
                       {
                         school_id: r.school_id,
                         school_name: r.preview.school_name,
+                        display_order: r.preview.display_order,
                       },
                     ] as const,
                 ),
@@ -296,7 +297,11 @@ export function useSchoolPxkWorkbench({
           ].join(" "),
         ).includes(foldVietnameseSearch(search)),
     )
-    .sort((a, b) => priority[a.state] - priority[b.state]);
+    .sort(
+      (a, b) =>
+        compareCanonicalSchools(a.preview, b.preview) ||
+        a.service_date.localeCompare(b.service_date),
+    );
   const apply = (next: Transition) => {
     if (next.incomingScope) {
       invalidate();

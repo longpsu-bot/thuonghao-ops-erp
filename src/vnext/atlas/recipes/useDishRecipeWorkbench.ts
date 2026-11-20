@@ -298,7 +298,11 @@ export function useDishRecipeWorkbench({
     sameOwner &&
     ((recipeDraft !== null &&
       authority.effective !== null &&
-      JSON.stringify(recipeDraft) !==
+      JSON.stringify(recipeDraft, (key, value: unknown) =>
+        key === "quantity" && typeof value === "string"
+          ? value.replace(",", ".")
+          : value,
+      ) !==
         JSON.stringify(recipeDraftFor(authority.effective.base_authoring))) ||
       (dishDraft !== null &&
         JSON.stringify(dishDraft) !==

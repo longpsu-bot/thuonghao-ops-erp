@@ -148,7 +148,7 @@ describe("Shopping List V2", () => {
     const id = f.workbench.lines[0]!.confirmed_need_line_id;
     expect(result.changedLineIds).toEqual([id]);
     expect(result.drafts[id]).toMatchObject({
-      exact_quantity: "12,5",
+      exact_quantity: "12.5",
       quantity_entered: true,
     });
     expect(f).toEqual(before);
@@ -375,7 +375,7 @@ describe("Shopping List V2", () => {
       f.workbench.lines[0]!.confirmed_need_line_id,
     ]);
     expect(a.drafts[a.changedLineIds[0]!]).toMatchObject({
-      exact_quantity: "12,5",
+      exact_quantity: "12.5",
       quantity_entered: true,
       reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
       reason_note: "",

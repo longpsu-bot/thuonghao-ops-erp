@@ -67,6 +67,7 @@ export function planningPantryReviewRows(
     if (!row) return [];
     return [
       {
+        schoolId: String(row.school_id ?? ""),
         school: school(row.school_id),
         context: `${viDate(String(row.service_date ?? ""))} · ${c.pantryData?.ingredients.find((i) => i.ingredient_id === row.ingredient_id)?.ingredient_name ?? "Nguyên liệu"}`,
         before: value(before),
@@ -89,6 +90,7 @@ export function planningPantryReviewRows(
         )?.direct_need_mode ?? "ADDITIVE";
       if (prior !== proposed.direct_need_mode)
         rows.push({
+          schoolId: proposed.school_id,
           school: school(proposed.school_id),
           context: `${viDate(proposed.service_date)} · Cách kết hợp`,
           before: label[prior],

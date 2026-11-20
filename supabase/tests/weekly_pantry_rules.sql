@@ -44,9 +44,15 @@ select set_config('request.jwt.claims',jsonb_build_object('sub',pg_temp.id(2),'r
 set local role authenticated;
 select is(pg_temp.read_rules('2050-09-19')->'rules','[]'::jsonb,'empty rule history before first save');
 select is((pg_temp.read_rules('2050-09-19')#>>'{preview,total_quantity}')::numeric,0::numeric,'empty-week preview has zero quantity');
-create temporary table first_command as select pg_temp.rule_command('2050-09-19',0,'0.4',true) request;
+create temporary table first_command as select jsonb_set(pg_temp.rule_command('2050-09-19',0,'0.4',true),
+  '{requested_at}',to_jsonb(now()+interval '60 seconds')) request;
+select is((select atlas_api.save_pantry_draft(jsonb_set(request,'{expected_version}','1')) from first_command)
+  #>>'{field_errors,0,field}','requested_at','legacy Pantry draft still rejects positive clock skew');
+select is((select atlas_api.save_weekly_pantry_rule(jsonb_set(request,'{requested_at}',
+  to_jsonb(now()+interval '60.001 seconds'))) from first_command)#>>'{field_errors,0,field}',
+  'requested_at','a client clock more than 60 seconds ahead is rejected with the timestamp field');
 create temporary table first_result as select atlas_api.save_weekly_pantry_rule(request) response from first_command;
-select is((select response->>'success' from first_result),'true','authorized operator creates a rule with an exact decimal rate');
+select is((select response->>'success' from first_result),'true','authorized operator creates an exact decimal rule at 60 seconds of positive clock skew');
 select diag(response::text) from first_result where response->>'success' is distinct from 'true';
 select is((select atlas_api.save_weekly_pantry_rule(request) from first_command),(select response from first_result),'exact replay returns original receipt');
 select is((select atlas_api.save_weekly_pantry_rule(jsonb_set(request,'{payload,quantity_per_day}','"0.5"')) from first_command)->>'error_code',
@@ -121,7 +127,8 @@ select is((select atlas_api.save_weekly_pantry_rule(response)->>'error_code' fro
   'STALE_VERSION','newly saved menu invalidates an earlier rule preview in a fresh command');
 select is((pg_temp.read_rules('2050-10-10')#>>'{preview,total_quantity}')::numeric,0.8::numeric,
   'draft rate preview uses two distinct menu days without Attendance');
-insert into rule_steps values('create',atlas_api.save_weekly_pantry_rule(pg_temp.onion_command(0,'0.4',true)));
+insert into rule_steps values('create',atlas_api.save_weekly_pantry_rule(jsonb_set(
+  pg_temp.onion_command(0,'0.4',true),'{requested_at}',to_jsonb(now()+interval '60 seconds'))));
 select is((select response->'affected_weeks' from rule_steps where step='create'),
   '["2050-10-10","2050-10-17"]'::jsonb,'rule creation reconciles both weeks with existing menus');
 select diag(response::text) from rule_steps where step='create' and response->>'success' is distinct from 'true';

@@ -77,6 +77,7 @@ export type AllocationFamilyRow = {
   location_name: string;
   school_id: string | null;
   school_name: string | null;
+  display_order?: number | null;
   schools?: ProcurementSchoolOption[];
   ingredient_id: string;
   ingredient_name: string;
@@ -111,6 +112,7 @@ export type ProcurementWorkbenchData = {
 };
 
 export type ProcurementSchoolOption = {
+  display_order?: number | null;
   school_id: string;
   school_name: string;
 };

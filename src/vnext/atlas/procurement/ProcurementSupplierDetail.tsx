@@ -69,7 +69,7 @@ export function ProcurementSupplierDetail({
   const baseline: SupplierSplitInput[] = saved.length
     ? saved.map(({ supplier_id, allocated_quantity, supplier_note }) => ({
         supplier_id,
-        allocated_quantity: quantity(allocated_quantity),
+        allocated_quantity: quantity(allocated_quantity, "."),
         supplier_note: supplier_note ?? null,
       }))
     : derived
@@ -78,6 +78,7 @@ export function ProcurementSupplierDetail({
             supplier_id: derived.recommendation.supplier_id,
             allocated_quantity: quantity(
               derived.recommendation.allocated_quantity,
+              ".",
             ),
             supplier_note: null,
           },
@@ -213,7 +214,7 @@ export function ProcurementSupplierDetail({
     setDraft(
       proposal.map(({ supplier_id, allocated_quantity }) => ({
         supplier_id,
-        allocated_quantity: quantity(allocated_quantity),
+        allocated_quantity: quantity(allocated_quantity, "."),
         supplier_note:
           draft.find((split) => split.supplier_id === supplier_id)
             ?.supplier_note ??
@@ -421,6 +422,7 @@ export function ProcurementSupplierDetail({
           return (
             <Box
               key={split.supplier_id}
+              data-atlas-editable-row=""
               role="group"
               aria-labelledby={`${quantityContextId}-${split.supplier_id}-supplier`}
               display="grid"
@@ -489,7 +491,11 @@ export function ProcurementSupplierDetail({
                     inputMode="decimal"
                     textAlign="end"
                     fontVariantNumeric="tabular-nums"
-                    value={split.allocated_quantity}
+                    value={
+                      locked
+                        ? split.allocated_quantity.replace(".", ",")
+                        : split.allocated_quantity
+                    }
                     disabled={locked}
                     onChange={(event) =>
                       setDraft((values) =>

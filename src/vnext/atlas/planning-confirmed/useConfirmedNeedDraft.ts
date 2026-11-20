@@ -6,7 +6,11 @@ import {
 } from "../bridges/confirmedNeed";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
-import { draftChanged, draftError } from "./confirmedNeedDraft";
+import {
+  confirmedNeedSchool,
+  draftChanged,
+  draftError,
+} from "./confirmedNeedDraft";
 // Local presentation and drafts issue no reads and never replace authority.
 export function useConfirmedNeedDraft(
   workbench: ConfirmedNeedWorkbenchData | null,
@@ -61,7 +65,7 @@ export function useConfirmedNeedDraft(
     new Map(
       workbench?.lines.map((l) => [
         l.school.id,
-        { school_id: l.school.id, school_name: l.school.name },
+        confirmedNeedSchool(l.school),
       ]) ?? [],
     ).values(),
   ).sort(compareCanonicalSchools);

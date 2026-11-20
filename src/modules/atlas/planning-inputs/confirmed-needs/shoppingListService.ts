@@ -19,7 +19,13 @@ import {
   generatedNoDemand,
   planningInputPreflightFromResult,
 } from "../readiness/planningInputReadinessModel";
-import type { ShoppingListDailyBatch } from "./confirmedNeedShoppingList";
+// A deployment can retire old asset URLs while a staff member keeps this tab open.
+import {
+  downloadConfirmedNeedShoppingList,
+  readShoppingListEnvelope,
+  validateShoppingListEnvelope,
+  type ShoppingListDailyBatch,
+} from "./confirmedNeedShoppingList";
 import { shoppingAssert } from "./shoppingListContract";
 
 function cleanLocal(
@@ -174,12 +180,6 @@ export function createConnectedShoppingListService(
         "STALE_AUTHORITY",
       );
       shoppingAssert(daily.length > 0, "NO_ELIGIBLE_DATES");
-      const { downloadConfirmedNeedShoppingList } =
-        await import("./confirmedNeedShoppingList");
-      shoppingAssert(
-        !context?.isCurrent || context.isCurrent(),
-        "STALE_AUTHORITY",
-      );
       await downloadConfirmedNeedShoppingList(daily);
       context?.onSkippedDates?.(skipped);
     },
@@ -191,8 +191,6 @@ export function createConnectedShoppingListService(
     ) {
       const { dates, batches } = scope(workbench, context);
       shoppingAssert(cleanLocal(workbench, drafts), "DIRTY_WORKBENCH");
-      const { readShoppingListEnvelope, validateShoppingListEnvelope } =
-        await import("./shoppingListImport");
       const envelope = await readShoppingListEnvelope(await file.arrayBuffer());
       shoppingAssert(
         envelope.daily.length >= 1 &&

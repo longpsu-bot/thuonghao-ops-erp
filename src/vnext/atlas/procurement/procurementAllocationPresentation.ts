@@ -24,15 +24,25 @@ export function derivedDefaultAllocation(row: AllocationFamilyRow) {
   return supplier ? { recommendation, supplier } : null;
 }
 
-export function allocationRecipient(row: AllocationFamilyRow) {
-  const schools = (
+export function allocationSchools(row: AllocationFamilyRow) {
+  return (
     row.schools ??
     (row.school_id && row.school_name
-      ? [{ school_id: row.school_id, school_name: row.school_name }]
+      ? [
+          {
+            school_id: row.school_id,
+            school_name: row.school_name,
+            display_order: row.display_order,
+          },
+        ]
       : [])
   )
     .slice()
     .sort(compareCanonicalSchools);
+}
+
+export function allocationRecipient(row: AllocationFamilyRow) {
+  const schools = allocationSchools(row);
   const primary =
     schools.map((school) => school.school_name).join(", ") || row.location_name;
   const secondary =
@@ -46,16 +56,10 @@ export function compareAllocationRecipients(
   left: AllocationFamilyRow,
   right: AllocationFamilyRow,
 ) {
-  const leftRecipient = allocationRecipient(left);
-  const rightRecipient = allocationRecipient(right);
-  const leftSchool = leftRecipient.schools[0];
-  const rightSchool = rightRecipient.schools[0];
-  if (leftSchool && rightSchool) {
-    const school = compareCanonicalSchools(leftSchool, rightSchool);
-    if (school) return school;
-  } else if (leftSchool || rightSchool) return leftSchool ? -1 : 1;
-  return (
-    compareAtlasText(leftRecipient.primary, rightRecipient.primary) ||
-    compareAtlasText(leftRecipient.secondary, rightRecipient.secondary)
-  );
+  const leftSchool = allocationSchools(left)[0];
+  const rightSchool = allocationSchools(right)[0];
+  if (leftSchool && rightSchool)
+    return compareCanonicalSchools(leftSchool, rightSchool);
+  if (leftSchool || rightSchool) return leftSchool ? -1 : 1;
+  return compareAtlasText(left.location_name, right.location_name);
 }

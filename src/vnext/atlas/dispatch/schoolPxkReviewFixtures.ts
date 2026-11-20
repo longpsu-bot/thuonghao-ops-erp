@@ -65,6 +65,7 @@ export function pxkRow(
     }),
   );
   const preview = {
+    display_order: index,
     service_date: reviewDate,
     school_id: `school-${index}`,
     delivery_location_id: `location-${index}`,

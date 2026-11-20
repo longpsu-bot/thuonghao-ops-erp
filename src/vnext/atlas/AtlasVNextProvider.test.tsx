@@ -6,6 +6,39 @@ import * as atlas from "./AtlasVNextProvider";
 
 afterEach(cleanup);
 
+it("selects editable cell contents on entry and leaves the caret available for later clicks", () => {
+  render(
+    <atlas.AtlasVNextProvider>
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              <input aria-label="Note" defaultValue="Lunch" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <input aria-label="Quantity" inputMode="decimal" defaultValue="10.25" />
+      <input aria-label="Filter" defaultValue="North" />
+    </atlas.AtlasVNextProvider>,
+  );
+  for (const label of ["Note", "Quantity"]) {
+    const input = screen.getByLabelText<HTMLInputElement>(label);
+    input.focus();
+    expect([input.selectionStart, input.selectionEnd]).toEqual([
+      0,
+      input.value.length,
+    ]);
+    input.setSelectionRange(2, 2);
+    input.click();
+    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+  }
+  const filter = screen.getByLabelText<HTMLInputElement>("Filter");
+  filter.setSelectionRange(1, 1);
+  filter.focus();
+  expect([filter.selectionStart, filter.selectionEnd]).toEqual([1, 1]);
+});
+
 it("provides exactly one Atlas-scoped destination for Chakra portals", async () => {
   expect(atlas).toHaveProperty("useAtlasPortalContainer");
   function Probe() {

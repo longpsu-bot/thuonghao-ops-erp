@@ -31,6 +31,7 @@ import {
   type ConfirmedNeedLine,
 } from "../bridges/confirmedNeed";
 import {
+  confirmedNeedSchool,
   confirmedNeedUnitLabel,
   draftChanged,
   type ConfirmedNeedDraftError,
@@ -59,12 +60,17 @@ export function ConfirmedNeedTable({
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
   const compareSchool = (left: ConfirmedNeedLine, right: ConfirmedNeedLine) =>
     compareCanonicalSchools(
-      { school_id: left.school.id, school_name: left.school.name },
-      { school_id: right.school.id, school_name: right.school.name },
+      confirmedNeedSchool(left.school),
+      confirmedNeedSchool(right.school),
     ) ||
     compareAtlasText(left.delivery_location.name, right.delivery_location.name);
   const comparators = {
-    school: compareSchool,
+    school: (left, right) =>
+      compareAtlasText(left.school.name, right.school.name) ||
+      compareAtlasText(
+        left.delivery_location.name,
+        right.delivery_location.name,
+      ),
     ingredient: (left, right) =>
       compareAtlasText(left.ingredient.name, right.ingredient.name),
     proposal: (left, right) =>
@@ -474,7 +480,10 @@ export function ConfirmedNeedTable({
                       value={
                         draft.quantity_entered
                           ? draft.exact_quantity
-                          : confirmedNeedInputDisplay(draft.exact_quantity)
+                          : confirmedNeedInputDisplay(
+                              draft.exact_quantity,
+                              editable && !historical ? "." : ",",
+                            )
                       }
                       readOnly={historical}
                       disabled={!editable}

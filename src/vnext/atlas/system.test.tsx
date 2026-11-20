@@ -342,10 +342,23 @@ describe("Atlas v3 operational legibility", () => {
     });
   });
   it("gives operational tables an authored header and restrained row rhythm", () => {
+    expect(atlasSystem.getSlotRecipe("table").defaultVariants).toMatchObject({
+      stickyHeader: true,
+    });
+    expect(
+      atlasSystem.getSlotRecipe("table").variants?.stickyHeader?.true,
+    ).toMatchObject({
+      header: {
+        "& :where(tr)": { zIndex: "var(--atlas-layout-sticky-header-z, 3)" },
+      },
+    });
     expect(atlasSystem.getSlotRecipe("table").base).toMatchObject({
       columnHeader: {
         minH: "var(--atlas-table-header-height, 38px)",
         bg: "bg.tableHeader",
+        "&[data-sticky-column]": {
+          zIndex: "var(--atlas-layer-sticky-corner, 3)",
+        },
         color: "fg.default",
         fontWeight: "emphasis",
         borderBottomColor: "border.subtle",

@@ -1,3 +1,4 @@
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import {
   Box,
   Button,
@@ -732,37 +733,44 @@ export function ProcurementOrdersStage({
                         </Text>
                       </Box>
                       <Stack gap="sm">
-                        {line.school_breakdown.map((school) => (
-                          <Flex
-                            key={`${school.school_id}:${school.delivery_location_id}`}
-                            justify="space-between"
-                            align="start"
-                            gap="md"
-                          >
-                            <Box minW="var(--atlas-layout-zero, 0)">
-                              <Text>{school.school_name}</Text>
-                              <Text textStyle="helper" color="fg.muted">
-                                {school.delivery_location_name}
-                              </Text>
-                            </Box>
-                            <Text
-                              whiteSpace="nowrap"
-                              textStyle="quantityInline"
+                        {[...line.school_breakdown]
+                          .sort((a, b) =>
+                            compareCanonicalSchools(
+                              { ...a, display_order: a.school_display_order },
+                              { ...b, display_order: b.school_display_order },
+                            ),
+                          )
+                          .map((school) => (
+                            <Flex
+                              key={`${school.school_id}:${school.delivery_location_id}`}
+                              justify="space-between"
+                              align="start"
+                              gap="md"
                             >
-                              {quantity(school.ordered_quantity)}{" "}
+                              <Box minW="var(--atlas-layout-zero, 0)">
+                                <Text>{school.school_name}</Text>
+                                <Text textStyle="helper" color="fg.muted">
+                                  {school.delivery_location_name}
+                                </Text>
+                              </Box>
                               <Text
-                                as="span"
-                                textStyle="unitInline"
-                                color="fg.secondary"
+                                whiteSpace="nowrap"
+                                textStyle="quantityInline"
                               >
-                                {purchaseOrderLineUnitLabel(
-                                  selected.status,
-                                  line,
-                                )}
+                                {quantity(school.ordered_quantity)}{" "}
+                                <Text
+                                  as="span"
+                                  textStyle="unitInline"
+                                  color="fg.secondary"
+                                >
+                                  {purchaseOrderLineUnitLabel(
+                                    selected.status,
+                                    line,
+                                  )}
+                                </Text>
                               </Text>
-                            </Text>
-                          </Flex>
-                        ))}
+                            </Flex>
+                          ))}
                       </Stack>
                     </Grid>
                     {line.supplier_note && (

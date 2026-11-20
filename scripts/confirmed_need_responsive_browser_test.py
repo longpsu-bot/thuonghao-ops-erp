@@ -142,10 +142,10 @@ with sync_playwright() as p:
         check(q.evaluate('(e)=>e===document.activeElement'),f'{width}: focus retained')
         page.get_by_role('button',name='Lưu',exact=True).click()
         expect(page.get_by_text('Đã lưu thay đổi.',exact=True)).to_be_visible()
-        check(q.input_value()=='12,5',f'{width}: fixture Save exact readback')
+        check(q.input_value()=='12.5',f'{width}: fixture Save exact readback')
         check(note.input_value()=='Bếp yêu cầu',f'{width}: fixture Save note readback')
         page.screenshot(path=str(root/f'{width}x{height}-saved-filter-sort-smoke.png'),full_page=True)
-        smoke.append({'width':width,'sortingFiltering':'pass','dirtyCancel':'pass','exactFixtureSaveReadback':'12.500000 / 12,5','reason':'OTHER','note':'Bếp yêu cầu'})
+        smoke.append({'width':width,'sortingFiltering':'pass','dirtyCancel':'pass','exactFixtureSaveReadback':'12.500000 / 12.5','reason':'OTHER','note':'Bếp yêu cầu'})
         page.close()
     # Released fixture preserves disabled editing.
     page=browser.new_page(viewport={'width':390,'height':844})

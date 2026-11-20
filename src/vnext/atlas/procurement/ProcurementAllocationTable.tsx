@@ -62,17 +62,17 @@ export function ProcurementAllocationTable({
   tools,
   selectedKey,
   disabled,
-  showServiceDate = new Set(rows.map((row) => row.service_date)).size > 1,
   onSelect,
 }: {
   rows: AllocationFamilyRow[];
   tools?: ReactNode;
   selectedKey: string | null;
   disabled: boolean;
-  showServiceDate?: boolean;
   onSelect: (row: AllocationFamilyRow, trigger: HTMLButtonElement) => void;
 }) {
-  type SortKey = "ingredient" | "school" | "need" | "supplier" | "issue";
+  const multiDay = new Set(rows.map((row) => row.service_date)).size > 1;
+  type SortKey =
+    "date" | "ingredient" | "school" | "need" | "supplier" | "issue";
   const [sort, setSort] = useState<AtlasSortState<SortKey>>(atlasDefaultSort);
   const [sortsOpen, setSortsOpen] = useState(false);
   const sortsId = useId();
@@ -85,7 +85,12 @@ export function ProcurementAllocationTable({
   const comparators = {
     ingredient: (left, right) =>
       compareAtlasText(left.ingredient_name, right.ingredient_name),
-    school: compareAllocationRecipients,
+    date: (left, right) => left.service_date.localeCompare(right.service_date),
+    school: (left, right) =>
+      compareAtlasText(
+        allocationRecipient(left).primary,
+        allocationRecipient(right).primary,
+      ),
     need: (left, right) =>
       compareAtlasBigInt(
         left.complete === false || left.family_quantity === null
@@ -106,20 +111,19 @@ export function ProcurementAllocationTable({
     SortKey,
     (left: AllocationFamilyRow, right: AllocationFamilyRow) => number
   >;
-  const byDate = (left: AllocationFamilyRow, right: AllocationFamilyRow) =>
-    left.service_date.localeCompare(right.service_date);
   const sortedRows =
     sort.direction === "default" || sort.key === null
       ? [...rows].sort(
           (left, right) =>
             compareAllocationRecipients(left, right) ||
-            compareAtlasText(left.ingredient_name, right.ingredient_name) ||
-            byDate(left, right),
+            comparators.date(left, right) ||
+            comparators.ingredient(left, right),
         )
       : [...rows].sort(
           (left, right) =>
             comparators[sort.key!](left, right) *
-              (sort.direction === "ascending" ? 1 : -1) || byDate(left, right),
+              (sort.direction === "ascending" ? 1 : -1) ||
+            comparators.date(left, right),
         );
   const onSort = (key: SortKey) =>
     setSort((current) => nextAtlasSort(current, key));
@@ -191,9 +195,8 @@ export function ProcurementAllocationTable({
               "& tbody tr": {
                 display: "grid",
                 gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-                gridTemplateAreas: showServiceDate
-                  ? '"recipient recipient" "ingredient ingredient" "date quantity" "supplier supplier" "issue issue" "action action"'
-                  : '"recipient recipient" "ingredient ingredient" "quantity issue" "supplier supplier" "action action"',
+                gridTemplateAreas:
+                  '"date date" "recipient recipient" "ingredient ingredient" "quantity issue" "supplier supplier" "action action"',
                 columnGap: "var(--atlas-spacing-sm)",
                 borderBottom: "1px solid var(--atlas-colors-border-subtle)",
               },
@@ -233,11 +236,11 @@ export function ProcurementAllocationTable({
                       border: "none",
                       borderInlineEndWidth: 0,
                     },
-                    "& td[data-allocation-recipient-cell], & td[data-allocation-ingredient-cell]":
+                    "& td[data-allocation-date-cell], & td[data-allocation-recipient-cell], & td[data-allocation-ingredient-cell]":
                       {
                         gridColumn: "1 / -1",
                       },
-                    "& td[data-allocation-date-cell], & td[data-allocation-supplier-cell], & td[data-allocation-action-cell]":
+                    "& td[data-allocation-supplier-cell], & td[data-allocation-action-cell]":
                       {
                         display: "none",
                       },
@@ -247,11 +250,9 @@ export function ProcurementAllocationTable({
           }}
         >
           <Table.ColumnGroup>
+            <Table.Column w="var(--atlas-allocation-date-width, 110px)" />
             <Table.Column w="var(--atlas-allocation-recipient-width, 220px)" />
             <Table.Column w="var(--atlas-allocation-ingredient-width, 180px)" />
-            {showServiceDate && (
-              <Table.Column w="var(--atlas-allocation-date-width, 110px)" />
-            )}
             <Table.Column w="var(--atlas-allocation-need-width, 110px)" />
             <Table.Column w="var(--atlas-allocation-supplier-width, 180px)" />
             <Table.Column w="var(--atlas-allocation-issue-width, 170px)" />
@@ -297,9 +298,9 @@ export function ProcurementAllocationTable({
             <Table.Row>
               {(
                 [
+                  ["Ngày dùng", "date"],
                   ["Trường / điểm giao", "school"],
                   ["Nguyên liệu", "ingredient"],
-                  ...(showServiceDate ? [["Ngày dùng", null] as const] : []),
                   ["Nhu cầu", "need"],
                   ["Nhà cung ứng", "supplier"],
                   ["Tình trạng / vấn đề", "issue"],
@@ -314,6 +315,7 @@ export function ProcurementAllocationTable({
                     sort={sort}
                     onSort={onSort}
                     textAlign={key === "need" ? "end" : "start"}
+                    data-sticky-column={key === "school" ? "" : undefined}
                     position={
                       key === "school"
                         ? { base: "static", md: "sticky" }
@@ -330,6 +332,7 @@ export function ProcurementAllocationTable({
                   <Table.ColumnHeader
                     key={label}
                     data-allocation-static-header=""
+                    data-sticky-column={label === "Thao tác" ? "" : undefined}
                     position={
                       label === "Thao tác"
                         ? { base: "static", md: "sticky" }
@@ -371,6 +374,18 @@ export function ProcurementAllocationTable({
                   aria-selected={selectedKey === key}
                   data-attention={attention || undefined}
                 >
+                  <Table.Cell data-allocation-date-cell="">
+                    <Text textStyle="helper" color="fg.muted" hideFrom="md">
+                      Ngày dùng
+                    </Text>
+                    <Text
+                      data-allocation-date
+                      textStyle="helper"
+                      color="fg.muted"
+                    >
+                      {row.service_date.split("-").reverse().join("/")}
+                    </Text>
+                  </Table.Cell>
                   <Table.Cell
                     data-allocation-recipient-cell=""
                     data-sticky-column=""
@@ -420,28 +435,11 @@ export function ProcurementAllocationTable({
                       {row.ingredient_name}
                     </Text>
                   </Table.Cell>
-                  {showServiceDate && (
-                    <Table.Cell
-                      data-allocation-date-cell=""
-                      gridColumn={{ base: "1", md: "auto" }}
-                    >
-                      <Text textStyle="helper" color="fg.muted" hideFrom="md">
-                        Ngày dùng
-                      </Text>
-                      <Text
-                        data-allocation-date
-                        textStyle="helper"
-                        color="fg.muted"
-                      >
-                        {row.service_date.split("-").reverse().join("/")}
-                      </Text>
-                    </Table.Cell>
-                  )}
                   <Table.Cell
                     data-allocation-quantity=""
                     data-allocation-quantity-cell=""
                     gridColumn={{
-                      base: showServiceDate ? "2" : "1",
+                      base: "1",
                       md: "auto",
                     }}
                     textAlign={{ base: "left", md: "right" }}
@@ -503,7 +501,7 @@ export function ProcurementAllocationTable({
                   <Table.Cell
                     data-allocation-issue-cell=""
                     gridColumn={{
-                      base: showServiceDate ? "1 / -1" : "2",
+                      base: "2",
                       md: "auto",
                     }}
                   >
@@ -552,7 +550,7 @@ export function ProcurementAllocationTable({
                       w="full"
                       minW="var(--atlas-layout-zero, 0)"
                       px="xs"
-                      aria-label={`${action} ${row.ingredient_name} · ${recipient.primary}${recipient.secondary ? ` · ${recipient.secondary}` : ""}${showServiceDate ? ` · ${row.service_date.split("-").reverse().join("/")}` : ""}`}
+                      aria-label={`${action} ${row.ingredient_name} · ${recipient.primary}${recipient.secondary ? ` · ${recipient.secondary}` : ""}${multiDay ? ` · ${row.service_date.split("-").reverse().join("/")}` : ""}`}
                       aria-expanded={selectedKey === key}
                       disabled={disabled || Boolean(selectedKey)}
                       onClick={(event) => onSelect(row, event.currentTarget)}

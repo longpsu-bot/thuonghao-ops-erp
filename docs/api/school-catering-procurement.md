@@ -1,5 +1,26 @@
 # School-Catering Procurement API Contract
 
+## School order in the operational workbenches — 20 November 2026
+
+School pickers and tables of School records use the configured v1 display order.
+Equal ranks use School name and stable School ID. Older responses without a rank
+sort after ranked Schools. In Supplier Allocation, **Ngày dùng** is the first
+column. Rows default to School, then earliest service date, then Ingredient.
+Selecting a column header overrides that sequence. Cycling the sort back to
+its default restores it. A shared delivery family appears once, under its first
+ranked School, and retains all contributing Schools.
+
+The confirmed-allocation read includes `schools[].display_order` and exposes
+`display_order` on historical single-School Handoff rows. The Need Generation
+and Confirmed Need reads apply the rank before paging and include it alongside
+the School identity. Dispatch includes it in the current preview and
+Reconciliation includes it on each School row. Issued PO detail uses its frozen
+`school_display_order`. Each read keeps its existing authorization scope.
+
+Migration `20261120090000_workbench_school_display_order.sql` replaces read
+projections. Reverting it requires a forward migration restoring the prior
+function definitions. It performs no master-data or operational-record updates.
+
 ## Corrected-date PO release read parity — 21 October 2026
 
 The existing `get_school_catering_purchase_orders` read now applies K2's existing complete-date document frontier to represented Draft dates in the exact `REOPENED` / previously released single-date Need branch. A target can remain `DRAFT_CURRENT` while another Supplier's stale/missing document blocks its release. In that case `release_eligible` and `allowed_actions.release` are false, with generic date-prefixed prerequisite guidance in existing blocker/disabled-reason arrays. Supplier/status/search filters cannot remove the whole-date prerequisite; they still limit returned documents and never disclose private frontier reasons or hidden identities. A valid replacement frontier remains eligible under all existing per-document gates. Other dates, ordinary initial release, official snapshots and export eligibility retain their existing meanings.

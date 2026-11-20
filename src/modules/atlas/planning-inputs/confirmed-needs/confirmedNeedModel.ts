@@ -164,7 +164,7 @@ export type ConfirmedNeedLine = {
   current_revision_number: number;
   service_date: string;
   customer: { id: string; name: string };
-  school: { id: string; name: string };
+  school: { id: string; name: string; display_order?: number | null };
   delivery_location: { id: string; name: string };
   ingredient: { id: string; name: string };
   controlled_unit: {
@@ -393,10 +393,13 @@ export function normalizeConfirmedNeedEntry(value: string) {
     : null;
 }
 
-export function confirmedNeedInputDisplay(value: string) {
+export function confirmedNeedInputDisplay(
+  value: string,
+  separator: "." | "," = ",",
+) {
   const [integer, fraction] = value.split(".");
   const significant = fraction?.replace(/0+$/, "");
-  return significant ? `${integer},${significant}` : integer!;
+  return significant ? `${integer}${separator}${significant}` : integer!;
 }
 
 function decimalParts(value: string) {

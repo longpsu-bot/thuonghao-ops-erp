@@ -50,6 +50,7 @@ describe("base Recipe draft boundary", () => {
   };
   it("preserves stable identity, exact selected basis and optional note in the save payload", () => {
     const draft = recipeDraftFor(selection);
+    expect(draft.lines[0].quantity).toBe("2.5");
     draft.lines[0].quantity = "0,5";
     expect(recipePayload(selection, draft)).toEqual({
       dish_id: "dish",

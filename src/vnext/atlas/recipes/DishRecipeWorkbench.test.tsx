@@ -519,7 +519,12 @@ describe("Công thức operator workbench", () => {
         screen.getByRole("table", { name: "Công thức hiệu lực" }),
       ).getByText("19"),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("22,5");
+    const input = screen.getByLabelText("Định lượng Bí đỏ");
+    expect(input).toHaveValue("22.5");
+    fireEvent.change(input, { target: { value: "22,5" } });
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
   });
   it("empty catalogue permits business-only Create with no technical fields", async () => {
     await setup("EMPTY_CATALOG");

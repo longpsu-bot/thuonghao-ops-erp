@@ -1,3 +1,4 @@
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   schoolFulfilmentReadRequest,
@@ -123,7 +124,11 @@ export function useSchoolFulfilmentWorkbench({
                 (r) =>
                   [
                     r.school_id,
-                    { school_id: r.school_id, school_name: r.school_name },
+                    {
+                      school_id: r.school_id,
+                      school_name: r.school_name,
+                      display_order: r.display_order,
+                    },
                   ] as const,
               ),
             ]).values(),
@@ -173,10 +178,10 @@ export function useSchoolFulfilmentWorkbench({
           ].join(" "),
         ).includes(foldVietnameseSearch(search)),
     )
-    .sort((a, b) =>
-      filter === "all"
-        ? Number(needsAttention(b)) - Number(needsAttention(a))
-        : 0,
+    .sort(
+      (a, b) =>
+        compareCanonicalSchools(a, b) ||
+        a.service_date.localeCompare(b.service_date),
     );
   const selected =
     visibleRows.find((r) => fulfilmentRowKey(r) === selection) ?? null;

@@ -181,6 +181,29 @@ describe("Planning source safety", () => {
     expect(result.current.weekly.draft).toBeNull();
     expect(result.current.weekly.canEdit).toBe(false);
   });
+  it("keeps a weekly rule editable and identifies a rejected device timestamp", async () => {
+    const { result, fixture } = await setup();
+    vi.spyOn(fixture.pantryApi, "saveWeeklyRule").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "VALIDATION_FAILED",
+        safe_message: "The Pantry command envelope is invalid.",
+        field_errors: [{ field: "requested_at" }],
+      },
+    });
+    act(() => result.current.transition({ job: "pantry", weeklyRules: true }));
+    await waitFor(() => expect(result.current.weekly.canEdit).toBe(true));
+    act(() => result.current.weekly.start("school-0"));
+    act(() =>
+      result.current.weekly.edit({ ingredient_id: "ingredient-1", rate: "1" }),
+    );
+    await act(() => result.current.weekly.preview());
+    await act(() => result.current.weekly.save());
+    expect(result.current.weekly.error).toMatch(/Thời gian trên thiết bị/);
+    expect(result.current.weekly.draft?.rate).toBe("1");
+    expect(result.current.weekly.canEdit).toBe(true);
+  });
   it.each([
     ["WEEKLY_SHEET_MISSING", /Kiểm tra.*tuần/],
     ["CAPABILITY_DENIED", /Liên hệ.*quyền/],
